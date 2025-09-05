@@ -1,5 +1,5 @@
 
-cat > .gitignore <<'EOF'
+
 # Python
 __pycache__/
 *.pyc
@@ -22,4 +22,4 @@ __pycache__/
 *.sock
 htmlcov/
 .coverage
-EOF
+
