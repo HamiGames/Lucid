@@ -1,0 +1,48 @@
+# Path: .pre-commit-config.yaml
+# Pre-commit hooks for Lucid RDP project
+
+repos:
+  # --- Python formatting ---
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  # --- Python linting ---
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.3.0
+    hooks:
+      - id: ruff
+        args: ["--line-length=100"]
+
+  # --- Static type checks ---
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+
+  # --- Security checks ---
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.8
+    hooks:
+      - id: bandit
+        args: ["-ll"]
+
+  # --- Run tests (use devcontainer system Python) ---
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest --maxfail=1 --disable-warnings -q
+        language: system   # use existing Python env (FastAPI already installed)
+        types: [python]
+
+  # --- Check for large files ---
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"] # prevent files >1MB
+
