@@ -1,6 +1,3 @@
-# Lucid RDP — Tor proxy image
-# Path: 02-network-security/tor/Dockerfile
-
 FROM alpine:3.20
 
 # Install required packages
@@ -10,13 +7,19 @@ RUN apk add --no-cache tor tini ca-certificates \
     && install -d -m 700 -o tor -g tor /var/lib/tor \
     && install -d -m 755 -o tor -g tor /etc/tor
 
-# Copy torrc
+# Copy config and entrypoint
 COPY --chown=tor:tor torrc /etc/tor/torrc
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Expose SOCKS and Control ports
+# Expose ports
 EXPOSE 9050 9051
 
+# Run as tor user
 USER tor
 
+# Use tini as init
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["tor", "-f", "/etc/tor/torrc"]
+
+# Entrypoint script wraps tor
+CMD ["/entrypoint.sh"]

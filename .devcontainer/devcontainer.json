@@ -1,9 +1,10 @@
 {
-  "name": "Lucid Dev (Python 3.12)",
+  "name": "Lucid Dev (Python 3.12 + Docker)",
   "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "postCreateCommand": "python -m pip install --upgrade pip && pip install -r .devcontainer/requirements-dev.txt || true",
   "customizations": {
@@ -19,9 +20,7 @@
       ],
       "settings": {
         "editor.formatOnSave": true,
-        "[python]": {
-          "editor.defaultFormatter": "ms-python.black-formatter"
-        },
+        "[python]": { "editor.defaultFormatter": "ms-python.black-formatter" },
         "python.analysis.typeCheckingMode": "basic",
         "ruff.lint.args": ["--line-length", "100"],
         "python.testing.pytestEnabled": true

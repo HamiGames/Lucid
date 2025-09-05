@@ -1,63 +1,91 @@
-version: "3.9"
+# Path: 06-orchestration-runtime/compose/lucid-dev.yaml
+# Lucid RDP — Development Docker Compose Stack
 
 services:
-  tor-proxy:
-    build:
-      context: ./06-orchestration-runtime/tor
-      dockerfile: Dockerfile
-    container_name: compose-tor-proxy-1
-    restart: unless-stopped
-    expose:
-      - "9050"   # only inside Docker network
-    volumes:
-      - compose_tor_data:/var/lib/tor
-    networks:
-      - internal-net
-      - secure-net
-    entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
-
-  lucid_api:
-    build:
-      context: ./06-orchestration-runtime/lucid_api
-      dockerfile: Dockerfile
-    container_name: compose-lucid-api-1
-    restart: unless-stopped
-    expose:
-      - "8000"
-    depends_on:
-      - tor-proxy
-    networks:
-      - internal-net
-
+  # --- API Gateway ---
   api-gateway:
     build:
-      context: ./06-orchestration-runtime/api-gateway
+      context: ../../03-api-gateway/gateway
       dockerfile: Dockerfile
-    container_name: compose-api-gateway-1
-    restart: unless-stopped
-    expose:
-      - "4000"
+    container_name: lucid_api_gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../03-api-gateway/gateway:/app
     depends_on:
       - lucid_api
+      - mongodb
+    environment:
+      - BLOCK_ONION=${BLOCK_ONION:-}
+      - BLOCK_RPC_URL=${BLOCK_RPC_URL:-}
+    networks:
+      - lucid_net
+    profiles: ["dev"]
+
+  # --- Core Lucid API (new FastAPI service) ---
+  lucid_api:
+    build:
+      context: ../../03-api-gateway/api
+      dockerfile: Dockerfile
+    container_name: lucid_api
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../../03-api-gateway/api:/app
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/lucid
+    depends_on:
+      - mongodb
+    networks:
+      - lucid_net
+    profiles: ["dev"]
+
+  # --- MongoDB (Development DB) ---
+  mongodb:
+    image: mongo:6.0
+    container_name: lucid_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - lucid_net
+    profiles: ["dev"]
+
+  # --- Tor Proxy ---
+  tor-proxy:
+    build:
+      context: ../../02-network-security/tor
+      dockerfile: Dockerfile
+    container_name: lucid_tor
+    ports:
+      - "9050:9050"   # SOCKS
+      - "9051:9051"   # Control
+    volumes:
+      - tor_data:/var/lib/tor
+    networks:
+      - lucid_net
+    profiles: ["dev"]
+
+
+  # --- Reverse Tunnel Verification ---
+  tunnel-check:
+    build:
+      context: ../../02-network-security/tunnels
+      dockerfile: Dockerfile
+    container_name: lucid_tunnel_check
+    depends_on:
       - tor-proxy
     networks:
-      - internal-net
+      - lucid_net
+    profiles: ["dev"]
 
-  lucid_db:
-    image: mongo:6.0
-    container_name: compose-lucid-db-1
-    restart: unless-stopped
-    volumes:
-      - compose_gateway_data:/data/db
-    expose:
-      - "27017"
-    networks:
-      - internal-net
 
 volumes:
-  compose_gateway_data:
-  compose_tor_data:
+  mongo_data:
+  tor_data:
 
 networks:
-  internal-net:
-  secure-net:
+  lucid_net:
+    driver: bridge
