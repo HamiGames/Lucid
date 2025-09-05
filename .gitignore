@@ -1,0 +1,25 @@
+
+cat > .gitignore <<'EOF'
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Pre-commit cache
+.pre-commit-cache/
+
+# Temp + logs
+.tmp/
+*.log
+
+# Docker + coverage
+*.pid
+*.sock
+htmlcov/
+.coverage
+EOF

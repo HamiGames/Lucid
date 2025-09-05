@@ -1,0 +1,8 @@
+# TODO: Populate .devcontainer/requirements-dev.txt from Lucid spec
+pip-tools
+ruff
+black
+mypy
+pre-commit
+pytest
+pytest-cov

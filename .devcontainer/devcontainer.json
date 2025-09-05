@@ -1,0 +1,39 @@
+{
+  "name": "Lucid Dev (Python 3.12)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+  },
+  "postCreateCommand": "python -m pip install --upgrade pip && pip install -r .devcontainer/requirements-dev.txt || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-python.black-formatter",
+        "ms-azuretools.vscode-docker",
+        "GitHub.vscode-pull-request-github",
+        "ms-vscode-remote.remote-containers"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "python.analysis.typeCheckingMode": "basic",
+        "ruff.lint.args": ["--line-length", "100"],
+        "python.testing.pytestEnabled": true
+      }
+    }
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/Lucid",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind,consistency=cached"
+  ],
+  "containerEnv": {
+    "LUCID_BUILD_ON_PI": "1"
+  }
+}
