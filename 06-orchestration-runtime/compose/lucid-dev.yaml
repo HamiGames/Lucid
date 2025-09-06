@@ -22,7 +22,7 @@ services:
       - lucid_net
     profiles: ["dev"]
 
-  # --- Core Lucid API (new FastAPI service) ---
+  # --- Core Lucid API (FastAPI service) ---
   lucid_api:
     build:
       context: ../../03-api-gateway/api
@@ -60,14 +60,20 @@ services:
       dockerfile: Dockerfile
     container_name: lucid_tor
     ports:
-      - "9050:9050"   # SOCKS
-      - "9051:9051"   # Control
+      - "9050:9050"   # SOCKS proxy
+      - "9051:9051"   # Control port
     volumes:
       - tor_data:/var/lib/tor
+      - ../../02-network-security/tor/torrc:/etc/tor/torrc:ro
     networks:
       - lucid_net
     profiles: ["dev"]
-
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q 'Bootstrapped 100%' /var/lib/tor/notice.log || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # --- Reverse Tunnel Verification ---
   tunnel-check:
@@ -77,10 +83,11 @@ services:
     container_name: lucid_tunnel_check
     depends_on:
       - tor-proxy
+    volumes:
+      - tor_data:/var/lib/tor   # share Tor state for reading onion hostname
     networks:
       - lucid_net
     profiles: ["dev"]
-
 
 volumes:
   mongo_data:
