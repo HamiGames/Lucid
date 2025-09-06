@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: Lucid RDP API
+  version: 0.1.0
+  description: |
+    Base API contract for the Lucid Remote Desktop Platform.
+    Provides health checks and system metadata including blockchain integration.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://api.lucid.local
+    description: Local API Gateway (dev)
+
+paths:
+  /:
+    get:
+      summary: API root
+      description: Returns basic API metadata and links.
+      operationId: getRoot
+      responses:
+        '200':
+          description: Root metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: lucid-api-gateway
+                  version:
+                    type: string
+                    example: 0.1.0
+                  endpoints:
+                    type: object
+                    properties:
+                      health:
+                        type: string
+                        example: /health
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid request
+      security: []
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns overall service health and metadata.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: api-gateway
+                  time:
+                    type: string
+                    format: date-time
+                    example: 2025-09-01T11:51:33Z
+                  block_onion:
+                    type: string
+                    example: xywt53jb37vyceqrep3usgckeeq4jxtjwjlgcuqimsnmjc7ustgmimqd.onion
+                  block_rpc_url:
+                    type: string
+                    example: http://127.0.0.1:8545
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid request
+      security: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
