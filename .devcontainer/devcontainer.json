@@ -6,7 +6,7 @@
     "ghcr.io/devcontainers/features/node:1": { "version": "20" },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "postCreateCommand": "python -m pip install --upgrade pip && pip install -r .devcontainer/requirements-dev.txt || true",
+  "postCreateCommand": "bash .devcontainer/dev_preinstall.sh",
   "customizations": {
     "vscode": {
       "extensions": [
