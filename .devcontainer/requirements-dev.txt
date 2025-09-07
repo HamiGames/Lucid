@@ -1,9 +1,35 @@
-# TODO: Populate .devcontainer/requirements-dev.txt from Lucid spec
-pip-tools
-ruff
-black
-mypy
-pre-commit
+# --- Runtime: API Gateway ---
+fastapi
+uvicorn[standard]       # ASGI server for FastAPI
+gunicorn                # optional production server (multi-worker)
+httpx                   # async HTTP client
+pydantic                # validation/models
+python-dotenv           # environment variable loading
+
+# --- Runtime: Database ---
+motor                   # async MongoDB driver
+pymongo                 # underlying Mongo driver
+
+# --- Runtime: Blockchain / Networking ---
+requests                # sync HTTP client (fallback use cases)
+cryptography            # crypto helpers
+websockets              # WebSocket support if needed
+
+# --- Testing ---
 pytest
-pytest-cov
-python-multipart
+pytest-cov              # coverage
+httpx[cli]              # HTTPX test client
+asgi-lifespan           # for FastAPI lifespan events in tests
+
+# --- Dev / Lint / Type Checking ---
+black                   # code formatter
+ruff                    # linter
+mypy                    # type checker
+bandit                  # security scanner
+pre-commit              # pre-commit hooks
+types-requests          # type stubs for requests
+types-PyYAML            # type stubs for YAML if used
+types-python-dateutil   # stubs for dateutil if used
+
+# --- Optional: CLI / Utilities ---
+click                   # useful for scripts
