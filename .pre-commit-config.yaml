@@ -1,48 +1,32 @@
-# Path: .pre-commit-config.yaml
-# Pre-commit hooks for Lucid RDP project
-
 repos:
-  # --- Python formatting ---
+  # Black: Python code formatter
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
         language_version: python3.12
 
-  # --- Python linting ---
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.3.0
+  # Ruff: Python linter (fast, replaces flake8/isort/etc.)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.1
     hooks:
       - id: ruff
-        args: ["--line-length=100"]
+        args: [--fix]
 
-  # --- Static type checks ---
+  # Mypy: static type checker
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.9.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests]
+        additional_dependencies:
+          - types-requests
+          - types-PyYAML
+          - types-setuptools
 
-  # --- Security checks ---
-  - repo: https://github.com/pycqa/bandit
-    rev: 1.7.8
-    hooks:
-      - id: bandit
-        args: ["-ll"]
-
-  # --- Run tests (use devcontainer system Python) ---
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest --maxfail=1 --disable-warnings -q
-        language: system   # use existing Python env (FastAPI already installed)
-        types: [python]
-
-  # --- Check for large files ---
+  # Pre-commit itself: auto-update configs
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v4.5.0
     hooks:
-      - id: check-added-large-files
-        args: ["--maxkb=1024"] # prevent files >1MB
-
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace

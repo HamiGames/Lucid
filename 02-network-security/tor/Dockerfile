@@ -1,28 +1,26 @@
 # Path: 02-network-security/tor/Dockerfile
-FROM alpine:3.20
+# Tor Proxy on Alpine (self-contained install)
 
-# Install Tor + tini + required tools (netcat for ControlPort, xxd for cookie auth)
-RUN apk add --no-cache tor tini ca-certificates busybox-extras xxd \
-    && getent group tor || addgroup -S tor \
-    && getent passwd tor || adduser -S -D -H -s /sbin/nologin -G tor tor \
+FROM alpine:3.19
+
+# Install Tor and dependencies
+RUN apk add --no-cache tor tini ca-certificates netcat-openbsd bash curl socat xxd \
+    # Ensure tor user & group exist (avoid "already exists" errors)
+    && addgroup -S tor || true \
+    && adduser -S -D -H -s /sbin/nologin -G tor tor || true \
+    # Prepare directories
     && install -d -m 700 -o tor -g tor /var/lib/tor \
-    && install -d -m 755 -o tor -g tor /etc/tor \
-    && chown -R tor:tor /var/lib/tor
+    && install -d -m 755 -o tor -g tor /etc/tor
 
-# Copy Tor configuration and entrypoint
-COPY --chown=tor:tor torrc /etc/tor/torrc
-COPY entrypoint.sh /entrypoint.sh
+# Copy torrc configuration
+COPY torrc /etc/tor/torrc
+RUN chown tor:tor /etc/tor/torrc
 
-RUN chmod +x /entrypoint.sh
-RUN chown -R tor:tor /var/lib/tor
-# Expose SOCKS and ControlPort
+# Expose SOCKS and Control ports
 EXPOSE 9050 9051
 
 # Run as tor user
 USER tor
 
-# Use tini as init
 ENTRYPOINT ["/sbin/tini", "--"]
-
-# Entrypoint handles Tor startup and onion management
-CMD ["/entrypoint.sh"]
+CMD ["tor", "-f", "/etc/tor/torrc"]

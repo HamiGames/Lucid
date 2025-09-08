@@ -1,12 +1,20 @@
-FROM alpine:3.20
+# Path: 02-network-security/tunnels/Dockerfile
+# Tunnel service (manages onion + validation)
 
-# Install curl for SOCKS5 testing
-RUN apk add --no-cache curl bash
+FROM python:3.12-alpine
 
 WORKDIR /app
 
-# Copy verification script
-COPY verify_tunnel.sh /app/verify_tunnel.sh
-RUN chmod +x /app/verify_tunnel.sh
+# Install tools
+RUN apk add --no-cache bash curl netcat-openbsd socat xxd
 
-ENTRYPOINT ["/app/verify_tunnel.sh"]
+# Install Python dependencies
+RUN pip install --no-cache-dir requests[socks]
+
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 7000
+
+ENTRYPOINT ["/app/entrypoint.sh"]

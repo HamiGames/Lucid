@@ -1,35 +1,33 @@
 # --- Runtime: API Gateway ---
 fastapi
-uvicorn[standard]       # ASGI server for FastAPI
-gunicorn                # optional production server (multi-worker)
-httpx                   # async HTTP client
-pydantic                # validation/models
-python-dotenv           # environment variable loading
+uvicorn[standard]     
+gunicorn                
+httpx                
+pydantic             
+python-dotenv        
 
 # --- Runtime: Database ---
-motor                   # async MongoDB driver
-pymongo                 # underlying Mongo driver
+motor              
+pymongo              
 
 # --- Runtime: Blockchain / Networking ---
-requests                # sync HTTP client (fallback use cases)
-cryptography            # crypto helpers
-websockets              # WebSocket support if needed
+requests    
+cryptography       
+websockets              
 
 # --- Testing ---
 pytest
-pytest-cov              # coverage
-httpx[cli]              # HTTPX test client
-asgi-lifespan           # for FastAPI lifespan events in tests
+pytest-cov          
+httpx[cli]             
+asgi-lifespan          
 
-# --- Dev / Lint / Type Checking ---
-black                   # code formatter
-ruff                    # linter
-mypy                    # type checker
-bandit                  # security scanner
-pre-commit              # pre-commit hooks
-types-requests          # type stubs for requests
-types-PyYAML            # type stubs for YAML if used
-types-python-dateutil   # stubs for dateutil if used
+black        
+ruff                   
+mypy                    
+bandit                  
+pre-commit              
+types-requests          
+types-PyYAML            
+types-python-dateutil   
 
-# --- Optional: CLI / Utilities ---
-click                   # useful for scripts
+click                  

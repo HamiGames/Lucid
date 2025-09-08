@@ -4,8 +4,4 @@ CookieAuthentication 1
 CookieAuthFileGroupReadable 1
 DataDirectory /var/lib/tor
 Log notice stdout
-Log notice file /var/lib/tor/notice.log
 RunAsDaemon 0
-
-HiddenServiceDir /var/lib/tor/hidden_service/
-HiddenServicePort 80 127.0.0.1:8080

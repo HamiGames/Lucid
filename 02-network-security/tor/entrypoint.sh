@@ -1,84 +1,41 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # Path: 02-network-security/tor/entrypoint.sh
-# Extended entrypoint for lucid_tor container
-# Ensures Tor starts and always provides an onion address.
+# Custom entrypoint for Lucid Tor Proxy
 
-set -eu
+set -euo pipefail
 
 log() { printf '[tor-entrypoint] %s\n' "$*"; }
 
-TOR_CONFIG="/etc/tor/torrc"
-ONION_FILE="/var/lib/tor/hidden_service/hostname"
-COOKIE_FILE="/var/lib/tor/control_auth_cookie"
-
-# Ensure config exists
-if [ ! -f "$TOR_CONFIG" ]; then
-    log "Missing torrc at $TOR_CONFIG"
-    exit 1
-fi
-
-# Ensure data directory exists with correct permissions
-if [ ! -d /var/lib/tor ]; then
-    log "Creating /var/lib/tor..."
-    mkdir -p /var/lib/tor
-    chown tor:tor /var/lib/tor
-    chmod 700 /var/lib/tor
-fi
-
-# Start Tor in background
+# Start tor in background
 log "Starting Tor..."
-tor -f "$TOR_CONFIG" &
+tor -f /etc/tor/torrc &
 TOR_PID=$!
 
-# Wait for Tor to bootstrap
+# Wait for tor to bootstrap
 log "Waiting for Tor bootstrap..."
-BOOTSTRAP_OK=0
-for i in $(seq 1 30); do
-    if grep -q "Bootstrapped 100%" <<EOF
-$(tail -n 100 /proc/$TOR_PID/fd/1 2>/dev/null || true)
-EOF
-    then
-        BOOTSTRAP_OK=1
-        break
-    fi
-    sleep 2
+while true; do
+  if grep -q "Bootstrapped 100%: Done" <(docker logs "$HOSTNAME" 2>&1 || true); then
+    break
+  fi
+  sleep 2
 done
+log "Tor bootstrap complete."
 
-if [ "$BOOTSTRAP_OK" -eq 1 ]; then
-    log "Tor bootstrapped successfully."
+# Run seed_env.sh if available
+if [[ -x "/scripts/seed_env.sh" ]]; then
+  log "Seeding environment variables..."
+  /scripts/seed_env.sh
 else
-    log "Tor did not bootstrap within timeout."
+  log "WARN: seed_env.sh not found/executable"
 fi
 
-# Persistent onion service
-if [ -f "$ONION_FILE" ]; then
-    ONION_ADDR=$(tr -d '\r\n' < "$ONION_FILE")
-    log "Persistent onion service available at: $ONION_ADDR"
+# Run create_ephemeral_onion.sh if available
+if [[ -x "/scripts/create_ephemeral_onion.sh" ]]; then
+  log "Creating ephemeral onion service..."
+  /scripts/create_ephemeral_onion.sh --host 127.0.0.1 --ports "80 lucid_api:4000"
 else
-    log "No persistent onion service found, creating ephemeral onion..."
-
-    if [ ! -f "$COOKIE_FILE" ]; then
-        log "Tor control cookie not found at $COOKIE_FILE"
-        wait $TOR_PID
-        exit 1
-    fi
-
-    COOKIE=$(xxd -p -c 256 "$COOKIE_FILE" | tr -d '\n')
-    CMD="ADD_ONION NEW:BEST Flags=DiscardPK Port=80 127.0.0.1:8080"
-
-    REPLY=$(echo -e "AUTHENTICATE $COOKIE\n$CMD\nQUIT" | nc 127.0.0.1 9051 || true)
-
-    SERVICE_ID=$(echo "$REPLY" | grep "250-ServiceID" | awk '{print $2}' || true)
-
-    if [ -n "$SERVICE_ID" ]; then
-        ONION_ADDR="${SERVICE_ID}.onion"
-        log "Ephemeral onion service created at: $ONION_ADDR"
-        echo "$ONION_ADDR" > "$ONION_FILE"
-    else
-        log "Failed to create ephemeral onion. ControlPort reply:"
-        echo "$REPLY"
-    fi
+  log "WARN: create_ephemeral_onion.sh not found/executable"
 fi
 
-# Keep Tor in foreground
+# Bring tor to foreground to keep container alive
 wait $TOR_PID

@@ -17,3 +17,14 @@ git commit -m "Force add/update all project files" --no-verify || echo "[git] No
 
 echo "[git] Push"
 git push origin main --force
+
+
+git add -A
+🔹 Step 2: Commit (even if nothing staged, you’ll get a message)
+powershell
+Copy code
+git commit -m "Force update: sync local changes to GitHub"
+🔹 Step 3: Push with force
+powershell
+Copy code
+git push origin main --force

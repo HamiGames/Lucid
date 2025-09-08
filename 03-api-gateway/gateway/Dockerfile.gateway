@@ -1,0 +1,21 @@
+# Path: 03-api-gateway/gateway/Dockerfile.gateway
+# Lucid API-Gateway (proxy / routing layer)
+
+FROM python:3.12-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache build-base gcc musl-dev libffi-dev netcat-openbsd bash curl
+
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copy Gateway source
+COPY . .
+
+EXPOSE 8080
+
+CMD ["uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "8080"]

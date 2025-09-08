@@ -1,21 +1,17 @@
 #!/usr/bin/env bash
-# Lucid RDP — seed .env file for compose
 # Path: 06-orchestration-runtime/compose/seed_env.sh
+# Seeds .env with required Tor variables
 
 set -euo pipefail
+env_file="$(dirname "$0")/.env"
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-env_file="${script_dir}/.env"
+log() { printf '[seed_env] %s\n' "$*"; }
 
-if [[ -f "$env_file" ]]; then
-  echo "[seed_env] OK: $env_file already exists"
-  exit 0
-fi
+touch "$env_file"
 
-cat > "$env_file" <<'EOF'
-# Lucid RDP — Dev environment variables
-BLOCK_ONION=
-BLOCK_RPC_URL=
-EOF
+# Add defaults if not already present
+grep -q '^ONION=' "$env_file" 2>/dev/null || echo "ONION=" >> "$env_file"
+grep -q '^COOKIE=' "$env_file" 2>/dev/null || echo "COOKIE=" >> "$env_file"
+grep -q '^HEX=' "$env_file" 2>/dev/null || echo "HEX=" >> "$env_file"
 
-echo "[seed_env] Created $env_file"
+log "Seeded environment file: $env_file"

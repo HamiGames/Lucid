@@ -1,98 +1,117 @@
 # Path: 06-orchestration-runtime/compose/lucid-dev.yaml
-# Lucid RDP — Development Docker Compose Stack
+# Lucid RDP — Development Compose (with Tor, API, API-Gateway, Mongo, Tunnel)
+
+name: lucid-dev
 
 services:
-  # --- API Gateway ---
-  api-gateway:
+  tor-proxy:
+    container_name: lucid_tor
     build:
-      context: ../../03-api-gateway/gateway
+      context: ../../02-network-security/tor
       dockerfile: Dockerfile
-    container_name: lucid_api_gateway
+    image: lucid/tor:dev
+    restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "9050:9050"
+      - "9051:9051"
     volumes:
-      - ../../03-api-gateway/gateway:/app
-    depends_on:
-      - lucid_api
-      - mongodb
-    environment:
-      - BLOCK_ONION=${BLOCK_ONION:-}
-      - BLOCK_RPC_URL=${BLOCK_RPC_URL:-}
+      - tor_data:/var/lib/tor
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "9050"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - lucid_net
-    profiles: ["dev"]
 
-  # --- Core Lucid API (FastAPI service) ---
-  lucid_api:
-    build:
-      context: ../../03-api-gateway/api
-      dockerfile: Dockerfile
-    container_name: lucid_api
-    ports:
-      - "4000:4000"
-    volumes:
-      - ../../03-api-gateway/api:/app
-    environment:
-      - MONGO_URL=mongodb://mongodb:27017/lucid
-    depends_on:
-      - mongodb
-    networks:
-      - lucid_net
-    profiles: ["dev"]
-
-  # --- MongoDB (Development DB) ---
   mongodb:
-    image: mongo:6.0
     container_name: lucid_mongo
+    image: mongo:7.0
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=lucid
     networks:
       - lucid_net
-    profiles: ["dev"]
-
-  # --- Tor Proxy ---
-  tor-proxy:
-    build:
-      context: ../../02-network-security/tor
-      dockerfile: Dockerfile
-    container_name: lucid_tor
-    ports:
-      - "9050:9050"   # SOCKS proxy
-      - "9051:9051"   # Control port
-    volumes:
-      - tor_data:/var/lib/tor
-      - ../../02-network-security/tor/torrc:/etc/tor/torrc:ro
-    networks:
-      - lucid_net
-    profiles: ["dev"]
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "grep -q 'Bootstrapped 100%' /var/lib/tor/notice.log || exit 1"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  # --- Reverse Tunnel Verification ---
-  tunnel-check:
+  api:
+    container_name: lucid_api
     build:
-      context: ../../02-network-security/tunnels
-      dockerfile: Dockerfile
-    container_name: lucid_tunnel_check
-    depends_on:
-      - tor-proxy
+      context: ../../03-api-gateway/gateway
+      dockerfile: Dockerfile.api      # ✅ must exist
+    image: lucid/api:dev
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MONGO_URI=mongodb://lucid_mongo:27017/lucid
     volumes:
-      - tor_data:/var/lib/tor   # share Tor state for reading onion hostname
+      - ../../03-api-gateway:/app
+    ports:
+      - "4000:4000"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     networks:
       - lucid_net
-    profiles: ["dev"]
 
-volumes:
-  mongo_data:
-  tor_data:
+  api-gateway:
+    container_name: lucid_api_gateway
+    build:
+      context: ../../03-api-gateway/gateway
+      dockerfile: Dockerfile.gateway  # ✅ must exist
+    image: lucid/api-gateway:dev
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - API_BACKEND=http://lucid_api:4000
+    volumes:
+      - ../../03-api-gateway:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+      - tor-proxy
+    networks:
+      - lucid_net
+
+  tunnel:
+    container_name: lucid_tunnel
+    build:
+      context: ../../02-network-security/tunnels
+      dockerfile: Dockerfile          # ✅ must exist
+    image: lucid/tunnel:dev
+    restart: unless-stopped
+    environment:
+      - API_ENDPOINT=http://lucid_api:4000
+      - SOCKS_PROXY=socks5://lucid_tor:9050
+      - CONTROL_PORT=lucid_tor:9051
+      - COOKIE_FILE=/var/lib/tor/control.authcookie
+      - ENV_FILE=/workspaces/Lucid/06-orchestration-runtime/compose/.env
+    volumes:
+      - tor_data:/var/lib/tor
+      - ../../06-orchestration-runtime/compose/.env:/workspaces/Lucid/06-orchestration-runtime/compose/.env
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - lucid_net
 
 networks:
   lucid_net:
     driver: bridge
+
+volumes:
+  tor_data:
+  mongo_data:

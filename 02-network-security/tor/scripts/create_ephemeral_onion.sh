@@ -1,65 +1,41 @@
 #!/usr/bin/env bash
-# Lucid RDP — create ephemeral onion service
 # Path: 02-network-security/tor/scripts/create_ephemeral_onion.sh
+# Creates an ephemeral onion service via Tor ControlPort
 
 set -euo pipefail
 
-usage() {
-  echo "Usage: $0 --host <ip> --ports \"80 lucid_api:8080\""
-  exit 1
-}
+CONTROL_PORT=9051
+COOKIE_FILE=/var/lib/tor/control.authcookie
+ONION_PORTS=""
+HOST="127.0.0.1"
+env_file="/workspaces/Lucid/06-orchestration-runtime/compose/.env"
 
-HOST_IP=""
-PORTS=""
+log() { printf '[create_ephemeral_onion] %s\n' "$*"; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host)
-      HOST_IP="$2"
-      shift 2
-      ;;
-    --ports)
-      PORTS="$2"
-      shift 2
-      ;;
-    -h|--help)
-      usage
-      ;;
-    *)
-      echo "Unknown argument: $1"
-      usage
-      ;;
+    --host) HOST="$2"; shift 2 ;;
+    --ports) ONION_PORTS="$2"; shift 2 ;;
+    *) log "Unknown arg: $1"; exit 1 ;;
   esac
 done
 
-if [[ -z "$HOST_IP" || -z "$PORTS" ]]; then
-  echo "[create_ephemeral_onion] ERROR: Missing required args"
-  usage
-fi
+[[ -z "$ONION_PORTS" ]] && { log "No ports provided"; exit 1; }
 
-echo "[create_ephemeral_onion] Checking Tor bootstrap state..."
-if ! curl -s --socks5-hostname 127.0.0.1:9050 http://check.torproject.org >/dev/null; then
-  echo "[create_ephemeral_onion] ERROR: Tor is not bootstrapped"
-  exit 1
-fi
+# Authenticate with Tor ControlPort
+COOKIE=$(xxd -p "$COOKIE_FILE" | tr -d '\n')
+AUTH="AUTHENTICATE $COOKIE\r\n"
+ADD_ONION="ADD_ONION NEW:ED25519-V3 Port=$ONION_PORTS\r\n"
+QUIT="QUIT\r\n"
 
-echo "[create_ephemeral_onion] Tor bootstrap complete"
+REPLY=$(printf "$AUTH$ADD_ONION$QUIT" | nc 127.0.0.1 $CONTROL_PORT)
 
-# Convert ports string into Tor control ADD_ONION format
-PORT_ARGS=()
-for mapping in $PORTS; do
-  PORT_ARGS+=("Port=$mapping")
-done
-
-CONTROL_CMD="ADD_ONION NEW:BEST Port=${PORT_ARGS[*]}"
-echo "[create_ephemeral_onion] Connecting to Tor ControlPort at 127.0.0.1:9051"
-
-ONION_ADDR=$(printf "%s\n" "$CONTROL_CMD" | nc 127.0.0.1 9051 | awk '/ServiceID/ {print $2".onion"}')
+ONION_ADDR=$(echo "$REPLY" | grep -oE '[a-z0-9]{56}\.onion' | head -n1)
 
 if [[ -n "$ONION_ADDR" ]]; then
-  echo "[create_ephemeral_onion] SUCCESS: Created onion service at $ONION_ADDR"
-  echo "$ONION_ADDR"
+  log "Ephemeral onion created: $ONION_ADDR"
+  sed -i "/^ONION=/c\ONION=$ONION_ADDR" "$env_file"
 else
-  echo "[create_ephemeral_onion] FAIL: Could not create onion service"
+  log "Failed to create ephemeral onion"
   exit 1
 fi
