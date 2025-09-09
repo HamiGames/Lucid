@@ -1,33 +1,42 @@
 # --- Runtime: API Gateway ---
 fastapi
-uvicorn[standard]     
-gunicorn                
-httpx                
-pydantic             
-python-dotenv        
+uvicorn[standard]
+gunicorn
+httpx
+pydantic
+python-dotenv
+pydantic[email]
+python-multipart
+PyJWT
+dnspython
+email-validator
+python-dateutil
+PyYAML
 
 # --- Runtime: Database ---
-motor              
-pymongo              
+motor
+pymongo
+pytest-asyncio
 
 # --- Runtime: Blockchain / Networking ---
-requests    
-cryptography       
-websockets              
+requests
+cryptography
+websockets
 
 # --- Testing ---
 pytest
-pytest-cov          
-httpx[cli]             
-asgi-lifespan          
+pytest-cov
+httpx[cli]
+asgi-lifespan
+openapi-spec-validator
 
-black        
-ruff                   
-mypy                    
-bandit                  
-pre-commit              
-types-requests          
-types-PyYAML            
-types-python-dateutil   
-
-click                  
+# --- Quality / Security / Tooling ---
+black
+ruff
+mypy
+bandit
+pre-commit
+types-requests
+types-PyYAML
+types-python-dateutil
+click

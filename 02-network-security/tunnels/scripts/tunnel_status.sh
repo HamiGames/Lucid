@@ -1,39 +1,27 @@
 #!/usr/bin/env bash
-# Health check for the onion tunnel via SOCKS5 (9050). Uses curl if available.
-
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$SCRIPT_DIR/_lib.sh"
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-ENV_FILE="${ROOT_DIR}/06-orchestration-runtime/compose/.env"
-TOR_SOCKS="${TOR_SOCKS:-127.0.0.1:9050}"
-TIMEOUT="${TIMEOUT:-10}"
+ONION_ARG=""
+PATH_CHECK="/gateway/health"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --onion) ONION_ARG="$2"; shift 2 ;;
+    --path) PATH_CHECK="$2"; shift 2 ;;
+    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+  esac
+done
 
-# shellcheck disable=SC1090
-[[ -f "${ENV_FILE}" ]] && source "${ENV_FILE}"
-ONION="${ONION:-}"
+load_env
+ADDR="${ONION_ARG:-${ONION:-}}"
+[[ -z "$ADDR" ]] && { echo "[tunnel_status] No onion address provided or found in .env"; exit 2; }
 
-if [[ -z "${ONION}" ]]; then
-  echo "[tunnel_status] ONION not set in ${ENV_FILE}"
-  exit 2
-fi
-
-URL="http://${ONION}/health"
-echo "[tunnel_status] Checking ${URL} via SOCKS5 ${TOR_SOCKS} (timeout=${TIMEOUT}s)"
-
-if command -v curl >/dev/null 2>&1; then
-  set +e
-  BODY="$(curl -sS --max-time "${TIMEOUT}" --socks5-hostname "${TOR_SOCKS}" "${URL}")"
-  CODE=$?
-  set -e
-  if [[ ${CODE} -eq 0 ]]; then
-    echo "[tunnel_status] OK"
-    echo "${BODY}"
-    exit 0
-  else
-    echo "[tunnel_status] FAIL (curl exit=${CODE})"
-    exit ${CODE}
-  fi
+URL="http://${ADDR}${PATH_CHECK}"
+echo "[tunnel_status] Testing ${URL} via SOCKS5 127.0.0.1:9050"
+if curl -sS --max-time 10 --socks5-hostname 127.0.0.1:9050 "$URL" > /dev/null; then
+  echo "OK"
 else
-  echo "[tunnel_status] curl not found; cannot test"
-  exit 3
+  echo "FAIL"
+  exit 1
 fi

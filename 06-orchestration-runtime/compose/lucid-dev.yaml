@@ -1,117 +1,155 @@
-# Path: 06-orchestration-runtime/compose/lucid-dev.yaml
-# Lucid RDP — Development Compose (with Tor, API, API-Gateway, Mongo, Tunnel)
-
 name: lucid-dev
 
+# Reusable anchors
+x-default-env: &default-env
+  LUCID_ENV: dev
+  MONGO_URL: "mongodb://lucid:lucid@lucid_mongo:27017/?authSource=admin"
+  ONION: "${ONION:-}"
+  COOKIE: "${COOKIE:-}"
+  HEX: "${HEX:-}"
+
+x-default-deploy: &default-deploy
+  restart: unless-stopped
+
+# Networks: internal app net + tor alias net
+networks:
+  lucid_net:
+    driver: bridge
+  tor_net:
+    driver: bridge
+
+# Virtual volumes for dev/test; bind in persistent override when needed
+volumes:
+  tor_data: {}
+  mongo_data: {}
+  mongo_configdb: {}
+  gateway_cache: {}
+  logs: {}
+
 services:
+
+  # === Tor proxy (SOCKS + ControlPort) ===
   tor-proxy:
+    <<: *default-deploy
     container_name: lucid_tor
     build:
       context: ../../02-network-security/tor
       dockerfile: Dockerfile
     image: lucid/tor:dev
-    restart: unless-stopped
+    environment: *default-env
     ports:
-      - "9050:9050"
-      - "9051:9051"
+      - "9050:9050"   # SOCKS5
+      - "9051:9051"   # ControlPort
     volumes:
       - tor_data:/var/lib/tor
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "9050"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     networks:
-      - lucid_net
+      lucid_net: {}
+      tor_net:
+        aliases: [tor, tor-proxy]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z -w 2 127.0.0.1 9051"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    profiles: ["dev"]
 
+  # === MongoDB 7 ===
   mongodb:
+    <<: *default-deploy
     container_name: lucid_mongo
-    image: mongo:7.0
-    restart: unless-stopped
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "${MONGO_INITDB_ROOT_USERNAME:-lucid}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_INITDB_ROOT_PASSWORD:-lucid}"
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    environment:
-      - MONGO_INITDB_DATABASE=lucid
+      - mongo_configdb:/data/configdb
     networks:
       - lucid_net
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ping:1}).ok' | grep -q 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 15
+      start_period: 10s
+    profiles: ["dev"]
 
-  api:
+  # === API (FastAPI / Uvicorn :8081) ===
+  lucid_api:
+    <<: *default-deploy
     container_name: lucid_api
     build:
-      context: ../../03-api-gateway/gateway
-      dockerfile: Dockerfile.api      # ✅ must exist
+      context: ../../03-api-gateway/api
+      dockerfile: Dockerfile
     image: lucid/api:dev
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - MONGO_URI=mongodb://lucid_mongo:27017/lucid
+    environment: *default-env
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+    expose:
+      - "8081"
     volumes:
-      - ../../03-api-gateway:/app
-    ports:
-      - "4000:4000"
+      - ../../03-api-gateway/api/app:/app/app:delegated
+      - logs:/var/log/lucid
+    networks:
+      - lucid_net
     depends_on:
       tor-proxy:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    networks:
-      - lucid_net
+    # Healthchecks manual by design
+    profiles: ["dev"]
 
-  api-gateway:
+  # === API Gateway (Nginx :8080 -> http://lucid_api:8081) ===
+  lucid_api_gateway:
+    <<: *default-deploy
     container_name: lucid_api_gateway
     build:
       context: ../../03-api-gateway/gateway
-      dockerfile: Dockerfile.gateway  # ✅ must exist
-    image: lucid/api-gateway:dev
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - API_BACKEND=http://lucid_api:4000
-    volumes:
-      - ../../03-api-gateway:/app
+      dockerfile: Dockerfile.gateway
+    image: lucid/gateway:dev
+    environment: *default-env
     ports:
       - "8080:8080"
-    depends_on:
-      - api
-      - tor-proxy
-    networks:
-      - lucid_net
-
-  tunnel:
-    container_name: lucid_tunnel
-    build:
-      context: ../../02-network-security/tunnels
-      dockerfile: Dockerfile          # ✅ must exist
-    image: lucid/tunnel:dev
-    restart: unless-stopped
-    environment:
-      - API_ENDPOINT=http://lucid_api:4000
-      - SOCKS_PROXY=socks5://lucid_tor:9050
-      - CONTROL_PORT=lucid_tor:9051
-      - COOKIE_FILE=/var/lib/tor/control.authcookie
-      - ENV_FILE=/workspaces/Lucid/06-orchestration-runtime/compose/.env
     volumes:
-      - tor_data:/var/lib/tor
-      - ../../06-orchestration-runtime/compose/.env:/workspaces/Lucid/06-orchestration-runtime/compose/.env
-    depends_on:
-      tor-proxy:
-        condition: service_healthy
-      api:
-        condition: service_started
+      - gateway_cache:/var/cache/nginx
+      - logs:/var/log/nginx
     networks:
       - lucid_net
+    depends_on:
+      - lucid_api
+    # Healthchecks manual by design
+    profiles: ["dev"]
 
-networks:
-  lucid_net:
-    driver: bridge
+  # === Utility toolbox (optional) ===
+  server-tools:
+    <<: *default-deploy
+    container_name: lucid_server_tools
+    image: alpine:3.20
+    command: ["/bin/sh", "-c", "sleep infinity"]
+    environment: *default-env
+    volumes:
+      - logs:/workspace/logs
+    networks:
+      - lucid_net
+    depends_on:
+      - tor-proxy
+      - mongodb
+    profiles: ["dev"]
 
-volumes:
-  tor_data:
-  mongo_data:
+  # === Tunnel tools (optional) ===
+  tunnel-tools:
+    <<: *default-deploy
+    container_name: lucid_tunnel_tools
+    image: alpine:3.20
+    command: ["/bin/sh", "-c", "apk add --no-cache curl netcat-openbsd jq && sleep infinity"]
+    environment: *default-env
+    networks:
+      lucid_net: {}
+
+    depends_on:
+      - tor-proxy
+    profiles: ["dev"]

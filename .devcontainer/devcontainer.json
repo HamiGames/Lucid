@@ -1,41 +1,58 @@
 {
-  "name": "Lucid Dev (Python 3.12)",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "name": "Lucid Dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  "remoteUser": "vscode",
+
   "features": {
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
-    "ghcr.io/devcontainers/features/docker-from-docker:1": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {}
   },
-  "postCreateCommand": "python -m pip install --upgrade pip && pip install -r .devcontainer/requirements-dev.txt || true",
+
+  "containerEnv": {
+    "DOCKER_DEFAULT_PLATFORM": "linux/arm64",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1"
+  },
+
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+
+  "workspaceFolder": "/workspaces/Lucid",
+
+  "forwardPorts": [8080, 8081, 9050, 9051, 27017],
+  "portsAttributes": {
+    "8080": { "label": "Lucid Gateway (nginx)" },
+    "8081": { "label": "Lucid API (uvicorn)" },
+    "9050": { "label": "Tor SOCKS5" },
+    "9051": { "label": "Tor ControlPort" },
+    "27017": { "label": "MongoDB 7" }
+  },
+
+  "postCreateCommand": "pip install -r .devcontainer/requirements-dev.txt && pre-commit install || true",
+
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "charliermarsh.ruff",
+        "astral-sh.ruff",
         "ms-python.black-formatter",
         "ms-azuretools.vscode-docker",
-        "GitHub.vscode-pull-request-github",
-        "ms-vscode-remote.remote-containers"
+        "ms-vscode-remote.remote-containers",
+        "github.vscode-pull-request-github"
       ],
       "settings": {
         "editor.formatOnSave": true,
-        "[python]": { "editor.defaultFormatter": "ms-python.black-formatter" },
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.analysis.typeCheckingMode": "basic",
-        "ruff.lint.args": ["--line-length", "100"],
         "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.nosetestsEnabled": false,
         "python.testing.pytestArgs": ["tests"]
       }
     }
-  },
-  "remoteUser": "vscode",
-  "workspaceFolder": "/workspaces/Lucid",
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind,consistency=cached"
-  ],
-  "containerEnv": {
-    "LUCID_BUILD_ON_PI": "1"
   }
 }

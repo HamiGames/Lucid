@@ -5,8 +5,9 @@
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-/opt/lucid}"
-COMPOSE_FILE="${COMPOSE_FILE:-${REPO_DIR}/06-orchestration-runtime/compose/lucid-dev.yaml}"
-PROFILE="${PROFILE:-dev}"
+if [ ! -d "$REPO_DIR" ] && [ -d "/workspaces/Lucid" ]; then
+  REPO_DIR="/workspaces/Lucid"
+fi
 
 log() { printf '[pi_watcher] %s\n' "$*"; }
 

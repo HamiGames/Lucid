@@ -1,21 +1,16 @@
-# Path: 03-api-gateway/gateway/Dockerfile.gateway
-# Lucid API-Gateway (proxy / routing layer)
+FROM nginx:1.27-alpine
 
-FROM python:3.12-alpine
-
-WORKDIR /app
-
-# Install system dependencies
-RUN apk add --no-cache build-base gcc musl-dev libffi-dev netcat-openbsd bash curl
-
-# Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
-
-# Copy Gateway source
-COPY . .
+RUN rm -f /etc/nginx/conf.d/default.conf
+RUN printf '%s\n' \
+  'server {' \
+  '  listen 8080;' \
+  '  location = /gateway/health { return 200 "ok\n"; }' \
+  '  location / {' \
+  '    proxy_set_header Host $host;' \
+  '    proxy_set_header X-Real-IP $remote_addr;' \
+  '    proxy_pass http://lucid_api:8081;' \
+  '  }' \
+  '}' > /etc/nginx/conf.d/lucid.conf
 
 EXPOSE 8080
-
-CMD ["uvicorn", "gateway.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["nginx","-g","daemon off;"]

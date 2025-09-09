@@ -1,6 +1,6 @@
 # Path: tests/test_models.py
-from ..api.app.db.models.user import User
-from ..api.app.db.models.session import RDPSession
+from api.app.db.models.user import User
+from api.app.db.models.session import RDPSession
 
 
 def test_user_model_defaults():

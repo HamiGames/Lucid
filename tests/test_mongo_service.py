@@ -1,6 +1,6 @@
 # Path: tests/test_mongo_service.py
 import pytest
-from ..api.app.services import mongo_service
+from api.app.services import mongo_service
 
 
 @pytest.mark.asyncio

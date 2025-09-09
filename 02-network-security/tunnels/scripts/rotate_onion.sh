@@ -1,52 +1,50 @@
 #!/usr/bin/env bash
-# Rotate the ephemeral Onion address by invoking the project's creator script.
-# Cross-refs: create_ephemeral_onion.sh, verify_tunnel.sh
-# Requirements: docker running, lucid_tor container healthy, curl installed for checks.
-
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$SCRIPT_DIR/_lib.sh"
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-TOR_SOCKS="127.0.0.1:9050"
-CREATE_SCRIPT="${ROOT_DIR}/02-network-security/tor/scripts/create_ephemeral_onion.sh"
-ENV_FILE="${ROOT_DIR}/06-orchestration-runtime/compose/.env"
-
-usage() {
-  cat <<USAGE
-Usage: $0 --host <HOST_IP> [--ports "80 lucid_api:8080,443 lucid_api:8443"]
-Rotates the ephemeral onion by re-running the canonical creator script, then writes ONION into ${ENV_FILE}.
-USAGE
-}
-
-HOST_IP=""
-PORTS="80 lucid_api:8080"
+CONTAINER="lucid_tor"
+HOST="127.0.0.1"
+PORTS="80 lucid_api_gateway:8080"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST_IP="$2"; shift 2 ;;
+    --host) HOST="$2"; shift 2 ;;
     --ports) PORTS="$2"; shift 2 ;;
-    -h|--help) usage; exit 0 ;;
-    *) echo "[rotate_onion] Unknown arg: $1" >&2; usage; exit 2 ;;
-  case_esac_done
+    --container) CONTAINER="$2"; shift 2 ;;
+    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+  esac
 done
 
-[[ -n "${HOST_IP}" ]] || { echo "[rotate_onion] --host required"; exit 2; }
-[[ -x "${CREATE_SCRIPT}" ]] || { echo "[rotate_onion] Missing ${CREATE_SCRIPT}"; exit 2; }
+load_env
+wait_bootstrap "$CONTAINER"
 
-echo "[rotate_onion] Rotating onion via ${CREATE_SCRIPT} ..."
-ONION_ADDR="$("${CREATE_SCRIPT}" --host "${HOST_IP}" --ports "${PORTS}" | awk '/\[create_ephemeral_onion\] ONION=/{print $NF}' | tail -1)"
+COOKIE="${COOKIE:-}"
+if [[ -z "$COOKIE" ]]; then
+  COOKIE="$(hex_from_cookie_in_container "$CONTAINER")"
+  [[ -n "$COOKIE" ]] && save_env_var "COOKIE" "$COOKIE"
+fi
+AUTH="AUTHENTICATE \"$COOKIE\"\r\n"
 
-if [[ -z "${ONION_ADDR}" ]]; then
-  echo "[rotate_onion] ERROR: Could not obtain new onion address" >&2
-  exit 1
+# delete old
+if [[ -n "${ONION:-}" ]]; then
+  SID="${ONION%.onion}"
+  tor_ctl "$CONTAINER" "${AUTH}DEL_ONION ${SID}\r\nQUIT\r\n" >/dev/null || true
 fi
 
-mkdir -p "$(dirname "${ENV_FILE}")"
-touch "${ENV_FILE}"
-if grep -q '^ONION=' "${ENV_FILE}"; then
-  sed -i.bak "s|^ONION=.*$|ONION=${ONION_ADDR}|" "${ENV_FILE}"
-else
-  echo "ONION=${ONION_ADDR}" >> "${ENV_FILE}"
-fi
+# recreate
+PORT_LINES=""
+while read -r v; do
+  [[ -z "$v" ]] && continue
+  VPORT="$(echo "$v" | awk '{print $1}')"
+  TGT="$(echo "$v" | awk '{print $2}')"
+  PORT_LINES="${PORT_LINES}Port=${VPORT},${TGT}\r\n"
+done < <(echo "$PORTS" | tr ',' '\n')
 
-echo "[rotate_onion] New ONION=${ONION_ADDR}"
-echo "[rotate_onion] Env updated at ${ENV_FILE}"
+RESP="$(tor_ctl "$CONTAINER" "${AUTH}ADD_ONION NEW:ED25519-V3\r\n${PORT_LINES}QUIT\r\n")"
+SERVICE_ID="$(echo "$RESP" | awk -F= '/250-ServiceID=/{print $2}' | tr -d '\r')"
+[[ -z "$SERVICE_ID" ]] && { echo "[rotate_onion] failed:\n$RESP" >&2; exit 3; }
+
+ONION_ADDR="${SERVICE_ID}.onion"
+save_env_var "ONION" "$ONION_ADDR"
+echo "$ONION_ADDR"

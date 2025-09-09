@@ -1,6 +1,6 @@
 # Path: tests/test_db_connection.py
 import pytest
-from ..api.app.db import connection
+from api.app.db import connection
 
 
 @pytest.mark.asyncio

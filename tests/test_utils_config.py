@@ -1,5 +1,5 @@
 # Path: tests/test_utils_config.py
-from ..api.app.utils import config
+from api.app.utils import config
 
 
 def test_load_config(monkeypatch):

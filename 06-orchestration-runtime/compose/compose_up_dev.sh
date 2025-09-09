@@ -1,35 +1,29 @@
 #!/usr/bin/env bash
-# Path: 06-orchestration-runtime/compose/compose_up_dev.sh
-# Bring up the full Lucid RDP dev stack (lucid-dev.yaml)
-
+# Bring up the Lucid dev stack using lucid-dev.yaml
 set -euo pipefail
+here="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+compose="$here/lucid-dev.yaml"
+envfile="$here/.env"
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-compose_file="${script_dir}/lucid-dev.yaml"
-env_file="${script_dir}/.env"
+log(){ printf '[compose_up_dev] %s\n' "$*"; }
+die(){ printf '[compose_up_dev] ERROR: %s\n' "$*" >&2; exit 1; }
 
-log() { printf '[compose_up_dev] %s\n' "$*"; }
-die() { printf '[compose_up_dev] ERROR: %s\n' "$*" >&2; exit 1; }
-
-# --- Pre-flight checks ---
-command -v docker >/dev/null 2>&1 || die "docker not found"
+command -v docker >/dev/null || die "docker not found"
 docker compose version >/dev/null 2>&1 || die "docker compose v2 not found"
-[[ -f "${compose_file}" ]] || die "missing compose file: ${compose_file}"
+[[ -f "$compose" ]] || die "missing compose file: $compose"
 
-# --- Seed .env if available ---
-if [[ -x "${script_dir}/seed_env.sh" ]]; then
-  "${script_dir}/seed_env.sh"
-elif [[ ! -f "${env_file}" ]]; then
-  log "WARN: ${env_file} not found and seed_env.sh missing; proceeding without it"
+# seed env
+if [[ -x "$here/seed_env.sh" ]]; then
+  "$here/seed_env.sh" "$envfile"
 fi
 
-# --- Bring up stack ---
-log "Starting Lucid dev stack..."
-log "docker compose -f ${compose_file} --profile dev up -d --build"
+# buildx for arm64
+docker buildx create --use --name lucid-builder >/dev/null 2>&1 || true
+docker buildx use lucid-builder
+docker buildx inspect --bootstrap >/dev/null
 
-docker compose -f "${compose_file}" --profile dev up -d --build
+DOCKER_DEFAULT_PLATFORM=linux/arm64 \
+docker compose -f "$compose" --profile dev up -d --build
 
-# --- Show status ---
-docker compose -f "${compose_file}" ps
-
+docker compose -f "$compose" ps
 log "Done."

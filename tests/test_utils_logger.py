@@ -1,5 +1,5 @@
 # Path: tests/test_utils_logger.py
-from ..api.app.utils import logger
+from api.app.utils import logger
 
 
 def test_logger_outputs_json(capsys):

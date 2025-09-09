@@ -1,6 +1,6 @@
 # Path: tests/test_blockchain_service.py
 import pytest
-from ..api.app.services import blockchain_service
+from api.app.services import blockchain_service
 
 
 @pytest.mark.asyncio
