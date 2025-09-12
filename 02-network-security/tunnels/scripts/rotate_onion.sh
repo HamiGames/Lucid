@@ -1,50 +1,83 @@
 #!/usr/bin/env bash
-set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$SCRIPT_DIR/_lib.sh"
+# Rotate the ephemeral onion: try to delete existing, then create a new one.
+# Delegates creation to tor/scripts/create_ephemeral_onion.sh
 
-CONTAINER="lucid_tor"
-HOST="127.0.0.1"
-PORTS="80 lucid_api_gateway:8080"
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CREATE_SCRIPT="${SCRIPT_DIR}/../../tor/scripts/create_ephemeral_onion.sh"
+
+CONTROL_HOST="${CONTROL_HOST:-127.0.0.1}"
+CONTROL_PORT="${CONTROL_PORT:-9051}"
+COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+WRITE_ENV="${WRITE_ENV:-/scripts/.onion.env}"
+
+# Input format matches previous usage:
+#   --ports "80 lucid_api:8081"
+#   --ports "80 127.0.0.1:8081, 443 127.0.0.1:8443"
+PORT_SPECS=""
+
+log() { printf '[rotate_onion] %s\n' "$*"; }
+die() { printf '[rotate_onion][ERROR] %s\n' "$*" >&2; exit 1; }
+
+need() { command -v "$1" >/dev/null 2>&1 || die "missing dependency: $1"; }
+
+ctl_send() {
+  local cmd="$1"
+  local cookie_hex
+  [ -r "$COOKIE_FILE" ] || die "cookie not readable: $COOKIE_FILE"
+  cookie_hex="$(xxd -p "$COOKIE_FILE" | tr -d '\n')"
+  printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" \
+    | nc -w 5 "$CONTROL_HOST" "$CONTROL_PORT"
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST="$2"; shift 2 ;;
-    --ports) PORTS="$2"; shift 2 ;;
-    --container) CONTAINER="$2"; shift 2 ;;
-    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+    --control-host) CONTROL_HOST="$2"; shift 2;;
+    --control-port) CONTROL_PORT="$2"; shift 2;;
+    --cookie-file)  COOKIE_FILE="$2";  shift 2;;
+    --write-env)    WRITE_ENV="$2";    shift 2;;
+    --ports)        PORT_SPECS="$2";   shift 2;;
+    --help|-h)
+      cat <<'USAGE'
+Usage:
+  rotate_onion.sh [--control-host 127.0.0.1] [--control-port 9051]
+                  [--cookie-file /var/lib/tor/control_auth_cookie]
+                  [--write-env /scripts/.onion.env]
+                  --ports "80 lucid_api:8081[, 443 lucid_api:8443]"
+Notes:
+ - Attempts to delete the currently active onion (if ONION is known),
+   then creates a new one using create_ephemeral_onion.sh.
+USAGE
+      exit 0;;
+    *)
+      die "unknown argument: $1"
+      ;;
   esac
 done
 
-load_env
-wait_bootstrap "$CONTAINER"
+need nc
+need xxd
 
-COOKIE="${COOKIE:-}"
-if [[ -z "$COOKIE" ]]; then
-  COOKIE="$(hex_from_cookie_in_container "$CONTAINER")"
-  [[ -n "$COOKIE" ]] && save_env_var "COOKIE" "$COOKIE"
-fi
-AUTH="AUTHENTICATE \"$COOKIE\"\r\n"
-
-# delete old
-if [[ -n "${ONION:-}" ]]; then
-  SID="${ONION%.onion}"
-  tor_ctl "$CONTAINER" "${AUTH}DEL_ONION ${SID}\r\nQUIT\r\n" >/dev/null || true
+# Try to read existing ONION to delete
+CURRENT_ONION=""
+if [ -r "$WRITE_ENV" ]; then
+  CURRENT_ONION="$(awk -F= '/^ONION=/{print $2; exit}' "$WRITE_ENV" || true)"
 fi
 
-# recreate
-PORT_LINES=""
-while read -r v; do
-  [[ -z "$v" ]] && continue
-  VPORT="$(echo "$v" | awk '{print $1}')"
-  TGT="$(echo "$v" | awk '{print $2}')"
-  PORT_LINES="${PORT_LINES}Port=${VPORT},${TGT}\r\n"
-done < <(echo "$PORTS" | tr ',' '\n')
+if [ -n "$CURRENT_ONION" ]; then
+  SVC_ID="${CURRENT_ONION%.onion}"
+  log "Deleting existing onion: ${CURRENT_ONION}"
+  DEL_REPLY="$(ctl_send "DEL_ONION ${SVC_ID}")" || true
+  printf '%s\n' "$DEL_REPLY" | sed -n '1,40p'
+fi
 
-RESP="$(tor_ctl "$CONTAINER" "${AUTH}ADD_ONION NEW:ED25519-V3\r\n${PORT_LINES}QUIT\r\n")"
-SERVICE_ID="$(echo "$RESP" | awk -F= '/250-ServiceID=/{print $2}' | tr -d '\r')"
-[[ -z "$SERVICE_ID" ]] && { echo "[rotate_onion] failed:\n$RESP" >&2; exit 3; }
+[ -x "$CREATE_SCRIPT" ] || die "creation script not executable: $CREATE_SCRIPT"
 
-ONION_ADDR="${SERVICE_ID}.onion"
-save_env_var "ONION" "$ONION_ADDR"
-echo "$ONION_ADDR"
+log "Creating new ephemeral onion with ports: ${PORT_SPECS:-<default>}"
+exec "$CREATE_SCRIPT" \
+  --control-host "$CONTROL_HOST" \
+  --control-port "$CONTROL_PORT" \
+  --cookie-file "$COOKIE_FILE" \
+  --write-env "$WRITE_ENV" \
+  ${PORT_SPECS:+--ports "$PORT_SPECS"}

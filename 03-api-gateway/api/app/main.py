@@ -6,13 +6,14 @@ from datetime import datetime, timezone
 from typing import Callable
 
 from fastapi import FastAPI, Request
-from .routes.health import router as health_router
+
+from app.config import Settings, get_settings
+from app.routes import meta, auth, users
 
 _LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 
 def _configure_logging() -> None:
-    # Simple, consistent logging format usable in containers
     logging.basicConfig(
         level=getattr(logging, _LOG_LEVEL, logging.INFO),
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -26,6 +27,7 @@ def _request_logger(app: FastAPI) -> None:
         path = request.url.path
         method = request.method
         start = datetime.now(tz=timezone.utc)
+        response = None  # avoid UnboundLocalError if call_next raises
         try:
             response = await call_next(request)
             return response
@@ -44,22 +46,35 @@ def _request_logger(app: FastAPI) -> None:
 
 def create_app() -> FastAPI:
     """
-    Application factory (kept for tests and parity with project scripts).
+    Application factory.
     - Exposes `app.state.start_time` for health/uptime.
     - Wires routes from app.routes.*
     """
     _configure_logging()
 
-    app = FastAPI(title="Lucid API", version="0.1.0")
+    settings: Settings = get_settings()
+    app = FastAPI(title="Lucid API", version=settings.VERSION)
 
-    # Record monotonic-ish start time for health endpoint
+    # Record start time for health/uptime
     app.state.start_time = datetime.now(tz=timezone.utc)
 
-    # Lightweight request logging middleware (compatible with test suite expectations)
+    # Request logging middleware
     _request_logger(app)
 
     # Routers
-    app.include_router(health_router)
+    app.include_router(meta.router, tags=["meta"])
+    app.include_router(auth.router, prefix="/auth", tags=["auth"])
+    app.include_router(users.router, prefix="/users", tags=["users"])
+
+    # Root fallback mirroring meta
+    @app.get("/", include_in_schema=False)
+    def _root():
+        return {
+            "service": settings.SERVICE_NAME,
+            "status": "ok",
+            "time": datetime.now(timezone.utc).isoformat(),
+            "version": settings.VERSION,
+        }
 
     return app
 

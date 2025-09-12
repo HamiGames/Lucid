@@ -1,67 +1,45 @@
-#!/usr/bin/env bash
-# Create an ephemeral Onion service via Tor ControlPort inside lucid_tor container.
-# Path: 02-network-security/tor/scripts/create_ephemeral_onion.sh
+#!/bin/sh
+set -e
 
-set -euo pipefail
+TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
+TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
+TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/var/lib/tor/control_auth_cookie}"
+OUTDIR="${ONION_DIR:-/run/lucid/onion}"
+# Target: map port 80 of onion to container-local 8080 (adjust if needed)
+TARGET_HOST="${TARGET_HOST:-127.0.0.1}"
+TARGET_PORT="${TARGET_PORT:-8080}"
 
-usage() {
-  echo "Usage: $0 --host <HOST_IP> --ports \"80 127.0.0.1:8080,443 127.0.0.1:8443\""
+# Check cookie
+if [ ! -s "$TOR_COOKIE_PATH" ]; then
+  echo "[onion] control cookie missing or empty at $TOR_COOKIE_PATH" >&2
+  exit 2
+fi
+
+# Cookie -> hex
+if command -v xxd >/dev/null 2>&1; then
+  COOKIE_HEX="$(xxd -p "$TOR_COOKIE_PATH" | tr -d '\n')"
+else
+  COOKIE_HEX="$(hexdump -v -e '1/1 "%02x"' "$TOR_COOKIE_PATH")"
+fi
+
+# Build control sequence (ED25519 v3 onion)
+CONTROL_CMDS=$(printf 'AUTHENTICATE %s\r\nADD_ONION NEW:ED25519-V3 Port=80,%s:%s\r\nQUIT\r\n' "$COOKIE_HEX" "$TARGET_HOST" "$TARGET_PORT")
+
+# Send via netcat
+RESP="$(printf "%s" "$CONTROL_CMDS" | nc -w 5 "$TOR_CONTROL_HOST" "$TOR_CONTROL_PORT" || true)"
+
+# Parse ServiceID
+echo "$RESP" | grep -qE '^250(-| )ServiceID=' || {
+  echo "[onion] failed to create onion" >&2
+  echo "$RESP" | sed -n '1,20p' >&2
+  exit 3
 }
 
-HOST=""
-PORTS=""
+SERVICE_ID="$(echo "$RESP" | awk -F= '/^250(-| )ServiceID=/{id=$2} END{if(id!="")print id}' | tr -d '\r')"
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --host) HOST="$2"; shift 2 ;;
-    --ports) PORTS="$2"; shift 2 ;;
-    -h|--help) usage; exit 0 ;;
-    *) echo "[create_ephemeral_onion] Unknown arg: $1" >&2; usage; exit 1 ;;
-  esac
-done
+# Persist for other services (optional but useful)
+mkdir -p "$OUTDIR"
+echo "${SERVICE_ID}.onion" > "$OUTDIR/onion.txt"
 
-[[ -n "$HOST" ]] || { echo "[create_ephemeral_onion] --host required" >&2; exit 1; }
-[[ -n "$PORTS" ]] || { echo "[create_ephemeral_onion] --ports required" >&2; exit 1; }
-
-# Ensure tor container is running
-if ! docker ps --format '{{.Names}}' | grep -q '^lucid_tor$'; then
-  echo "[create_ephemeral_onion] ERROR: lucid_tor container not running" >&2
-  exit 1
-fi
-
-# Correct cookie file name (Tor writes control_auth_cookie, not control.authcookie)
-COOKIE=$(docker exec lucid_tor xxd -p /var/lib/tor/control_auth_cookie 2>/dev/null | tr -d '\n' || true)
-
-if [[ -z "$COOKIE" ]]; then
-  echo "[create_ephemeral_onion] ERROR: Could not read /var/lib/tor/control_auth_cookie from lucid_tor" >&2
-  exit 1
-fi
-
-# Build Tor control command for ephemeral onion
-CONTROL_CMDS="AUTHENTICATE ${COOKIE}\nADD_ONION NEW:ED25519-V3"
-
-# Validate and append Port mappings
-for p in $PORTS; do
-  if ! echo "$p" | grep -Eq '^[0-9]+ [0-9.]+:[0-9]+$'; then
-    echo "[create_ephemeral_onion] ERROR: Invalid port mapping '$p'"
-    echo "Use format: <VIRTUAL_PORT> <IP:PORT>, e.g. \"80 127.0.0.1:8080\""
-    exit 1
-  fi
-  CONTROL_CMDS="${CONTROL_CMDS} Port=${p}"
-done
-
-CONTROL_CMDS="${CONTROL_CMDS}\nQUIT\n"
-
-# Run command against Tor control port
-OUTPUT=$(docker exec -i lucid_tor sh -c "printf '${CONTROL_CMDS}' | nc 127.0.0.1 9051")
-
-# Extract onion address
-ONION=$(echo "$OUTPUT" | awk '/250-ServiceID=/ {print $1}' | cut -d= -f2).onion
-
-if [[ -z "$ONION" || "$ONION" == ".onion" ]]; then
-  echo "[create_ephemeral_onion] ERROR: Failed to create onion" >&2
-  echo "$OUTPUT"
-  exit 1
-fi
-
-echo "[create_ephemeral_onion] ONION=${ONION}"
+echo "[onion] ServiceID=$SERVICE_ID"
+echo "[onion] wrote ${SERVICE_ID}.onion to $OUTDIR/onion.txt"

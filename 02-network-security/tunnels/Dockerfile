@@ -1,20 +1,25 @@
-# Path: 02-network-security/tunnels/Dockerfile
-# Tunnel service (manages onion + validation)
+# Tunnel tools — Alpine pinned to 3.22.1 (no pip; use distro packages)
+FROM alpine:3.22.1
 
-FROM python:3.12-alpine
+# OS + Python + required tools
+#   - py3-requests provides requests
+#   - py3-pysocks provides the "socks" module used by requests[socks]
+RUN apk update && apk upgrade --no-cache \
+ && apk add --no-cache \
+      python3 py3-requests py3-pysocks \
+      bash netcat-openbsd xxd curl socat bind-tools tini ca-certificates \
+ && addgroup -S app && adduser -S -D -H -s /sbin/nologin -G app app
 
 WORKDIR /app
 
-# Install tools
-RUN apk add --no-cache bash curl netcat-openbsd socat xxd
+# (no pip install step needed anymore)
 
-# Install Python dependencies
-RUN pip install --no-cache-dir requests[socks]
-
-# Copy entrypoint script
+# App files
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+COPY scripts/create_ephemeral_onion.sh /app/scripts/create_ephemeral_onion.sh
+RUN chmod +x /app/entrypoint.sh /app/scripts/create_ephemeral_onion.sh
+
+USER app
 
 EXPOSE 7000
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini","--","/app/entrypoint.sh"]

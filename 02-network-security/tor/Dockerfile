@@ -1,30 +1,20 @@
-# Lucid RDP — tor-proxy container (Alpine, arm64-friendly)
+# Tor proxy image — Alpine pinned; upgraded libs to quiet scanner
+FROM alpine:3.22.1
 
-FROM alpine:3.20
+# Upgrade base + install tor and required tools (xxd, nc for healthcheck)
+RUN apk update && apk upgrade --no-cache \
+ && apk add --no-cache tor tini bash netcat-openbsd xxd su-exec ca-certificates bind-tools
 
-# Tools needed by entrypoint + healthcheck
-# - tor: the daemon
-# - tini: proper signal handling as PID 1
-# - netcat-openbsd: for nc in healthchecks/control calls
-# - bash: entrypoint is a bash script
-# - xxd: to hex-encode the auth cookie
-# - su-exec: drop privileges to tor user
-# - ca-certificates: sane defaults
-RUN apk add --no-cache tor tini ca-certificates netcat-openbsd bash xxd su-exec \
-    && addgroup -S tor || true \
-    && adduser -S -D -H -s /sbin/nologin -G tor tor || true \
-    && install -d -m 700 -o tor -g tor /var/lib/tor \
-    && install -d -m 755 -o tor -g tor /etc/tor \
-    && install -d -m 755 /scripts \
-    && chown tor:tor /scripts
+# Tor package already creates user/group 'tor'; just ensure data dir exists and is owned
+RUN install -d -o tor -g tor /var/lib/tor
 
 # Config + entrypoint
-COPY --chown=tor:tor torrc /etc/tor/torrc
+WORKDIR /usr/local/bin
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 9050 9051
+# torrc must bind ControlPort for other containers; log to stdout; no daemon
+COPY torrc /etc/tor/torrc
 
-# Use tini as PID 1
-ENTRYPOINT ["/sbin/tini","--"]
-CMD ["/usr/local/bin/entrypoint.sh"]
+EXPOSE 9050 9051
+ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/entrypoint.sh"]

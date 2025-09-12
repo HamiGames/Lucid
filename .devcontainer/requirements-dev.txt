@@ -17,7 +17,7 @@ PyYAML
 motor
 pymongo
 pytest-asyncio
-
+netmiko
 # --- Runtime: Blockchain / Networking ---
 requests
 cryptography

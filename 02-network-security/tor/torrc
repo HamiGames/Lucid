@@ -1,8 +1,9 @@
+Log notice stdout
 SocksPort 0.0.0.0:9050
-ControlPort 9051
+ControlPort 0.0.0.0:9051
 CookieAuthentication 1
-CookieAuthFile /var/lib/tor/control_auth_cookie
 CookieAuthFileGroupReadable 1
-User tor
 DataDirectory /var/lib/tor
-Log notice file /var/lib/tor/notice.log
+# HiddenServiceDir /var/lib/tor/hidden_service
+# HiddenServiceVersion 3
+# HiddenServicePort 80 service-name:8080
