@@ -3,12 +3,26 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Callable, Optional
 
 from fastapi import FastAPI, Request
 
 from app.config import Settings, get_settings
-from app.routes import meta, auth, users
+
+# Routers (each defines its own prefix/tags)
+from app.routes.meta import router as meta_router
+from app.routes.auth import router as auth_router
+from app.routes.users import router as users_router
+
+# NEW: proxied Cluster B routers
+from app.routes.chain_proxy import router as chain_proxy_router
+from app.routes.wallets_proxy import router as wallets_proxy_router
+
+# Optional: Mongo health probe (kept non-fatal)
+try:
+    from app.db.connection import ping as mongo_ping  # type: ignore
+except Exception:
+    mongo_ping = None  # type: ignore[assignment]
 
 _LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -27,7 +41,7 @@ def _request_logger(app: FastAPI) -> None:
         path = request.url.path
         method = request.method
         start = datetime.now(tz=timezone.utc)
-        response = None  # avoid UnboundLocalError if call_next raises
+        response = None
         try:
             response = await call_next(request)
             return response
@@ -45,28 +59,31 @@ def _request_logger(app: FastAPI) -> None:
 
 
 def create_app() -> FastAPI:
-    """
-    Application factory.
-    - Exposes `app.state.start_time` for health/uptime.
-    - Wires routes from app.routes.*
-    """
     _configure_logging()
-
     settings: Settings = get_settings()
-    app = FastAPI(title="Lucid API", version=settings.VERSION)
 
-    # Record start time for health/uptime
+    app = FastAPI(
+        title="Lucid API",
+        version=settings.VERSION,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
+    )
+
     app.state.start_time = datetime.now(tz=timezone.utc)
-
-    # Request logging middleware
     _request_logger(app)
 
-    # Routers
-    app.include_router(meta.router, tags=["meta"])
-    app.include_router(auth.router, prefix="/auth", tags=["auth"])
-    app.include_router(users.router, prefix="/users", tags=["users"])
+    # Routers (Cluster A scope)
+    # meta_router should expose /meta/* internally (prefix defined in router)
+    app.include_router(meta_router)
+    app.include_router(auth_router, prefix="/auth")
+    app.include_router(users_router, prefix="/users")
 
-    # Root fallback mirroring meta
+    # Proxied Cluster B endpoints (Blockchain Core)
+    # These appear in the gateway OpenAPI as /chain/* and /wallets/*
+    app.include_router(chain_proxy_router)
+    app.include_router(wallets_proxy_router)
+
     @app.get("/", include_in_schema=False)
     def _root():
         return {
@@ -76,8 +93,27 @@ def create_app() -> FastAPI:
             "version": settings.VERSION,
         }
 
+    @app.get("/health", tags=["meta"], summary="Service health")
+    def _health() -> dict:
+        mongo_ok: Optional[bool] = None
+        mongo_error: Optional[str] = None
+        if mongo_ping:
+            try:
+                mongo_ping()
+                mongo_ok = True
+            except Exception as e:
+                mongo_ok = False
+                mongo_error = str(e)
+
+        return {
+            "ok": True,
+            "service": settings.SERVICE_NAME,
+            "started_at": app.state.start_time.isoformat(),
+            "version": settings.VERSION,
+            "dependencies": {"mongo": {"ok": mongo_ok, "error": mongo_error}},
+        }
+
     return app
 
 
-# ASGI entrypoint used by uvicorn
 app = create_app()

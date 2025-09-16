@@ -1,31 +1,27 @@
-from __future__ import annotations
+# Path: blockchain/node.py
 
-import asyncio
-from .config import DEFAULT_CONFIG
-from .mempool import Mempool
-from .consensus import SimpleProposer
-from .storage import Storage
+from __future__ import annotations
+from typing import Optional, Any
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from blockchain.storage import Storage
 
 
 class Node:
-    def __init__(self) -> None:
-        self.cfg = DEFAULT_CONFIG
-        self.mempool = Mempool()
-        self.proposer = SimpleProposer()
-        self.storage = Storage()
+    def __init__(
+        self,
+        storage: Optional[Storage] = None,
+        db: Optional[AsyncIOMotorDatabase] = None,
+    ) -> None:
+        self.storage: Storage = storage or Storage(db)
 
-    async def run(self) -> None:
-        interval = self.cfg.block_time_secs
-        while True:
-            block = await self.proposer.propose(self.mempool)
-            await self.storage.save_block(block)
-            await asyncio.sleep(interval)
+    async def bootstrap(self) -> None:
+        await self.storage.ensure_indexes()
 
+    async def submit_block(self, block: dict[str, Any]) -> None:
+        await self.storage.save_block(block)
 
-async def _main() -> None:
-    node = Node()
-    await node.run()
+    async def get_block(self, block_hash: str):
+        return await self.storage.get_block_by_hash(block_hash)
 
-
-if __name__ == "__main__":
-    asyncio.run(_main())
+    def is_ready(self) -> bool:
+        return self.storage.is_ready()

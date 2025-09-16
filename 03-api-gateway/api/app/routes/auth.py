@@ -1,22 +1,18 @@
-from fastapi import APIRouter, HTTPException, status
-from app.schemas import (
-    LoginRequest,
-    RefreshRequest,
-    LogoutRequest,
-    TokenPair,
-    ErrorResponse,
-)
+from fastapi import APIRouter, HTTPException
+from starlette.status import HTTP_501_NOT_IMPLEMENTED
+
+from app.schemas.auth import LoginRequest, RefreshRequest, LogoutRequest, TokenPair
+from app.schemas.errors import ErrorResponse
 
 router = APIRouter()
 
 
 def _not_implemented() -> HTTPException:
     return HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        status_code=HTTP_501_NOT_IMPLEMENTED,
         detail=ErrorResponse(
             error_code="not_implemented",
-            message="Auth flows land in Cluster C; skeleton only.",
-            detail=None,
+            message="Auth service is not available in Cluster A.",
         ).model_dump(),
     )
 

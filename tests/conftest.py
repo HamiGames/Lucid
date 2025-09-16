@@ -1,43 +1,22 @@
-"""
-Pytest configuration for Lucid RDP tests.
+# Path: tests/conftest.py
+# Purpose: Make repo packages importable during pytest runs from project root.
+# - Adds repo root for "blockchain"
+# - Adds 03-api-gateway for "api.app.*"
+# - Adds 03-api-gateway/api for "app.*"
+# No pytest hooks are defined (avoids plugin validation errors).
 
-Ensures the repo root and key submodules are on sys.path,
-and registers pytest plugins/marks for async tests.
-"""
-
+from __future__ import annotations
 import sys
 from pathlib import Path
-import pytest
 
+ROOT = Path(__file__).resolve().parents[1]
+EXTRA_PATHS = [
+    ROOT,  # enables "blockchain"
+    ROOT / "03-api-gateway",  # enables "api.app.*"
+    ROOT / "03-api-gateway" / "api",  # enables "app.*"
+]
 
-def _add_path(path: Path):
-    abs_path = str(path.resolve())
-    if abs_path not in sys.path:
-        sys.path.insert(0, abs_path)
-
-
-# 1. Repo root
-REPO_ROOT = Path(__file__).resolve().parents[1]
-_add_path(REPO_ROOT)
-
-# 2. Add API Gateway path (handle "03-api-gateway")
-API_GATEWAY = REPO_ROOT / "03-api-gateway" / "api"
-if API_GATEWAY.exists():
-    _add_path(API_GATEWAY)
-
-# 3. Add other top-level packages
-for subdir in ["blockchain", "wallet", "governance", "client", "db", "utils"]:
-    pkg = REPO_ROOT / subdir
-    if pkg.exists():
-        _add_path(pkg)
-
-
-# --- Pytest Config Hooks ---
-
-def pytest_configure(config):
-    """
-    Register custom marks so pytest doesn't warn about them.
-    """
-    config.addinivalue_line(
-        "markers", "asyncio: mark test as async and run with pytest-asyncio"
-    )
+for p in EXTRA_PATHS:
+    sp = str(p)
+    if sp not in sys.path:
+        sys.path.insert(0, sp)

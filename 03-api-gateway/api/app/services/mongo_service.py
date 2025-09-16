@@ -1,21 +1,40 @@
-# Path: 03-api-gateway/api/app/services/mongo_service.py
-# Async Mongo helpers using Motor (FastAPI + Motor is a common, recommended combo). :contentReference[oaicite:2]{index=2}
-from typing import Tuple
-from ..db.connection import get_client
+# 03-api-gateway/api/app/services/mongo_service.py
+from __future__ import annotations
+
+from typing import Any
+
+from pymongo.database import Database
+from pymongo.errors import PyMongoError
+
+from app.db.connection import get_client
+from app.utils.config import mongo_conn_str, mongo_timeouts_ms
 
 
-async def ping() -> Tuple[bool, float]:
+def _mongo_url() -> str:
     """
-    Returns (ok, latency_ms) using MongoDB 'ping' command.
+    Backward-compatible function kept for existing imports.
+    Now delegates to the single helper used across the app.
     """
-    client = get_client()
-    import time
+    return mongo_conn_str()
 
-    start = time.perf_counter()
+
+def get_db(name: str = "lucid") -> Database:
+    """
+    Get (and lazily create) the named database.
+    """
+    return get_client().get_database(name)
+
+
+def ping(timeout_ms: int | None = None) -> bool:
+    """
+    Ping the server using the unified client.
+    """
     try:
-        await client.admin.command("ping")
-        elapsed = (time.perf_counter() - start) * 1000.0
-        return True, round(elapsed, 2)
-    except Exception:
-        elapsed = (time.perf_counter() - start) * 1000.0
-        return False, round(elapsed, 2)
+        sst, cto = mongo_timeouts_ms()
+        if timeout_ms is not None:
+            sst = cto = timeout_ms
+        # Running a command triggers server selection
+        get_client().admin.command("ping")
+        return True
+    except PyMongoError:
+        return False

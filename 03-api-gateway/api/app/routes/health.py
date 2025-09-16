@@ -1,98 +1,68 @@
+# 03-api-gateway/api/app/routes/health.py
 from __future__ import annotations
 
-import asyncio
-import os
+import time
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter
 
-router = APIRouter(tags=["meta"])
+from app.db.connection import ping as mongo_ping
+from app.utils.config import (
+    mongo_conn_str,
+    service_name,
+    service_version,
+    mongo_timeouts_ms,
+)
 
-# Environment-driven knobs (match compose + project docs)
-MONGO_URL = os.getenv("MONGO_URL")  # example: mongodb://lucid:lucid@lucid_mongo:27017/?authSource=admin
-TOR_CONTROL_HOST = os.getenv("TOR_CONTROL_HOST", "lucid_tor")
-TOR_CONTROL_PORT = int(os.getenv("TOR_CONTROL_PORT", "9051"))
-TOR_CONNECT_TIMEOUT_S = float(os.getenv("TOR_CONNECT_TIMEOUT_S", "0.25"))
-MONGO_PING_TIMEOUT_MS = int(os.getenv("MONGO_PING_TIMEOUT_MS", "200"))
-
-
-async def _check_tor() -> Dict[str, Any]:
-    """Fast, non-blocking connectivity probe to Tor ControlPort (9051)."""
-    try:
-        fut = asyncio.open_connection(TOR_CONTROL_HOST, TOR_CONTROL_PORT)
-        reader, writer = await asyncio.wait_for(fut, timeout=TOR_CONNECT_TIMEOUT_S)
-        try:
-            # Minimal PROTOCOLINFO then quit to avoid leaving sockets open
-            writer.write(b"PROTOCOLINFO\r\nQUIT\r\n")
-            await writer.drain()
-        finally:
-            writer.close()
-            with contextlib.suppress(Exception):
-                await writer.wait_closed()
-        return {"name": "tor", "available": True, "host": TOR_CONTROL_HOST, "port": TOR_CONTROL_PORT}
-    except Exception as exc:  # noqa: BLE001 - health check must not raise
-        return {
-            "name": "tor",
-            "available": False,
-            "host": TOR_CONTROL_HOST,
-            "port": TOR_CONTROL_PORT,
-            "error": type(exc).__name__,
-        }
+router = APIRouter()
+_START_MONO = time.monotonic()
 
 
-def _check_mongo_sync() -> Dict[str, Any]:
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+@router.get("/health")
+def health() -> Dict[str, Any]:
     """
-    Ping MongoDB if pymongo is available; otherwise report 'skipped' gracefully.
-    This avoids hard-coupling tests to driver availability while remaining informative.
+    Lightweight health endpoint.
+    Reports overall status and Mongo connectivity.
     """
-    try:
-        from pymongo import MongoClient  # type: ignore
-    except Exception:
-        return {"name": "mongodb", "available": None, "reason": "pymongo-not-installed"}
+    sst, _ = mongo_timeouts_ms()
 
-    if not MONGO_URL:
-        return {"name": "mongodb", "available": None, "reason": "no-url"}
+    # Attempt a Mongo ping; report 'up'/'down' and fold into overall status.
+    db_ok = mongo_ping(timeout_ms=sst)
+    db_status = "up" if db_ok else "down"
 
-    try:
-        client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=MONGO_PING_TIMEOUT_MS)
-        ok = bool(client.admin.command("ping").get("ok") == 1)
-        return {"name": "mongodb", "available": ok}
-    except Exception as exc:  # noqa: BLE001
-        return {"name": "mongodb", "available": False, "error": type(exc).__name__}
+    status = "ok" if db_ok else "degraded"
 
-
-@router.get("/health", summary="Liveness/readiness with dependency probes")
-async def health(request: Request) -> JSONResponse:
-    """
-    Returns overall status plus dependency checks.
-    - TOR check: TCP connect + PROTOCOLINFO against lucid_tor:9051 (fast).
-    - Mongo check: admin.ping if pymongo is installed; otherwise marked 'skipped'.
-    """
-    # Uptime
-    started: Optional[datetime] = getattr(request.app.state, "start_time", None)
-    now = datetime.now(tz=timezone.utc)
-    uptime_s = (now - started).total_seconds() if started else None
-
-    # Run checks (tor async, mongo sync quickly)
-    tor = await _check_tor()
-    mongo = await asyncio.to_thread(_check_mongo_sync)
-
-    # Determine overall status
-    checks = [c for c in (tor, mongo) if c.get("available") is not None]
-    any_fail = any(c.get("available") is False for c in checks)
-    status = "ok" if not any_fail else "degraded"
-
-    payload = {
+    payload: Dict[str, Any] = {
+        "service": service_name(),
         "status": status,
-        "service": "lucid-api",
-        "environment": os.getenv("LUCID_ENV", "dev"),
-        "uptime_seconds": uptime_s,
-        "dependencies": {"tor": tor, "mongodb": mongo},
+        "db": db_status,
+        "time": _now_iso(),
+        "version": service_version(),
+        "uptime_ms": int((time.monotonic() - _START_MONO) * 1000),
+        # Useful introspection: which URI the app resolved (redact credentials)
+        "mongo": {
+            "uri_host": _redact_host_only(mongo_conn_str()),
+            "timeout_ms": sst,
+        },
     }
-    return JSONResponse(payload)
+    return payload
 
 
-# --- internals ---
-import contextlib  # placed at bottom to keep top section focused on app bits
+def _redact_host_only(uri: str) -> str:
+    """
+    Return only the 'host:port' portion for observability without leaking secrets.
+    """
+    # naive but robust parsing for typical mongodb:// form
+    # mongodb://user:pass@host:port/db?params
+    try:
+        at = uri.split("@", 1)
+        tail = at[1] if len(at) == 2 else at[0]  # after '@' or the whole if no creds
+        host_port = tail.split("/", 1)[0]  # cut at first '/' (before db)
+        return host_port
+    except Exception:
+        return "unknown"

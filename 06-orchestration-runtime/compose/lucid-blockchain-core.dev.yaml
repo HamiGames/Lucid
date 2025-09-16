@@ -1,0 +1,58 @@
+name: lucid-blockchain-dev
+
+services:
+  mongo:
+    container_name: lucid_mongo_27019
+    image: mongo:7
+    platform: linux/amd64
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lucid
+      MONGO_INITDB_ROOT_PASSWORD: lucid
+      MONGO_INITDB_DATABASE: lucid
+    volumes:
+      - mongo_data_27019:/data/db
+    restart: unless-stopped
+
+  blockchain-core:
+    container_name: lucid_blockchain_core
+    build:
+      context: ../../04-blockchain-core/api
+      dockerfile: Dockerfile
+      # Keep amd64 to avoid the ARM64 image warning/error on Windows hosts
+      platforms:
+        - linux/amd64
+    image: lucid/blockchain-core:dev
+    environment:
+      # NOTE: inside the compose network, the service name "mongo" is the host.
+      # We still publish Mongo on host port 27019 for your local tools.
+      MONGO_URI: "mongodb://lucid:lucid@mongo:27017/lucid?authSource=admin&retryWrites=false&directConnection=true"
+      MONGO_DB: "lucid"
+
+      # HTTP
+      API_HOST: "0.0.0.0"
+      API_PORT: "8084"
+
+      # TRON (change as needed)
+      TRON_NETWORK: "mainnet"              # or "shasta"
+      TRONGRID_API_KEY: "${TRONGRID_API_KEY:-}"
+
+      # Key encryption (recommended: set a stable 32-byte urlsafe base64 secret in an .env next to this file)
+      KEY_ENC_SECRET: "${KEY_ENC_SECRET:-}"
+
+      # Optional metadata (surfaced by /health)
+      BLOCK_ONION: "${BLOCK_ONION:-}"
+      BLOCK_RPC_URL: "${BLOCK_RPC_URL:-}"
+    ports:
+      - "8084:8084"   # host:container
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    # Uncomment during development to live-mount code (optional)
+    # volumes:
+    #   - ../../04-blockchain-core/api/app:/app/app:rw
+
+volumes:
+  mongo_data_27019:
+  

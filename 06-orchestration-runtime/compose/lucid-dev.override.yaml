@@ -1,0 +1,14 @@
+﻿services:
+  lucid_api:
+    environment:
+      MONGO_URL: "mongodb://Pickme_admin:PineIrisCatKiteMilkElf-Alls3em5w*l!@lucid_mongo:27017/?authSource=admin"
+      PYTHONPATH: /app
+    working_dir: /app
+    volumes:
+      - ./03-api-gateway/api:/app
+    command: >
+      sh -lc "pip install -r requirements-dev.txt
+      || pip install fastapi uvicorn[standard];
+      exec uvicorn app.main:app --host 0.0.0.0 --port 8081"
+    ports:
+      - "8081:8081"

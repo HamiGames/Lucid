@@ -1,16 +1,68 @@
-FROM nginx:1.27-alpine
+# Lucid API Gateway (NGINX) — aligned with api/Dockerfile (API on :8081) and lucid-dev.yaml
+# /sol.fix: dynamic DNS via Docker resolver so gateway reliably reaches lucid_api
+# - Upstream is configured by API_UPSTREAM env (default: lucid_api:8081)
+# - NGINX re-resolves the hostname (uses variable + resolver 127.0.0.11)
+# - Healthcheck proxies to /health on upstream
+# - No placeholders
 
-RUN rm -f /etc/nginx/conf.d/default.conf
-RUN printf '%s\n' \
-  'server {' \
-  '  listen 8080;' \
-  '  location = /gateway/health { return 200 "ok\n"; }' \
-  '  location / {' \
-  '    proxy_set_header Host $host;' \
-  '    proxy_set_header X-Real-IP $remote_addr;' \
-  '    proxy_pass http://lucid_api:8081;' \
-  '  }' \
-  '}' > /etc/nginx/conf.d/lucid.conf
+ARG NGINX_TAG=1.28-alpine
+FROM nginx:${NGINX_TAG}
+
+ENV API_UPSTREAM="lucid_api:8081" \
+    CLIENT_MAX_BODY_SIZE="10m" \
+    GATEWAY_PORT="8080"
+
+# curl for healthcheck; ca-certs for TLS upstreams if ever used
+RUN apk add --no-cache curl ca-certificates bash
+
+# Template-based nginx config rendered at container start
+RUN mkdir -p /etc/nginx/templates
+RUN cat > /etc/nginx/templates/lucid.conf.template <<'EOF'
+# Lucid Gateway — dynamic upstream (Docker DNS)
+server {
+  listen ${GATEWAY_PORT};
+  server_name _;
+
+  client_max_body_size ${CLIENT_MAX_BODY_SIZE};
+
+  # Use a variable so nginx resolves at request time; Docker DNS resolver
+  set $upstream ${API_UPSTREAM};
+  resolver 127.0.0.11 ipv6=off valid=10s;
+  resolver_timeout 5s;
+
+  # Health endpoint: proxies through to API /health
+  location /health {
+    proxy_pass http://$upstream/health;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Default: proxy everything to API
+  location / {
+    proxy_pass http://$upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+EOF
+
+# Minimal entrypoint renders template with env, validates, then runs nginx
+RUN cat > /usr/local/bin/lucid-entrypoint.sh <<'EOF' && chmod +x /usr/local/bin/lucid-entrypoint.sh
+#!/usr/bin/env sh
+set -eu
+envsubst '${API_UPSTREAM} ${CLIENT_MAX_BODY_SIZE} ${GATEWAY_PORT}' \
+  < /etc/nginx/templates/lucid.conf.template \
+  > /etc/nginx/conf.d/default.conf
+nginx -t
+exec nginx -g 'daemon off;'
+EOF
 
 EXPOSE 8080
-CMD ["nginx","-g","daemon off;"]
+HEALTHCHECK --interval=10s --timeout=3s --retries=15 \
+  CMD curl -fsS "http://127.0.0.1:${GATEWAY_PORT}/health" || exit 1
+
+ENTRYPOINT ["/usr/local/bin/lucid-entrypoint.sh"]

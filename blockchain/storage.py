@@ -1,47 +1,48 @@
+# Path: blockchain/storage.py
+
 from __future__ import annotations
+from typing import Optional, Any
 
-from typing import Any, Dict, Iterable, Optional
-from .block import Block
-from .transaction import Transaction
-from .config import DEFAULT_CONFIG
-
-try:
-    from motor.motor_asyncio import AsyncIOMotorClient  # type: ignore
-except Exception:  # pragma: no cover
-    AsyncIOMotorClient = None  # type: ignore
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.errors import PyMongoError
 
 
 class Storage:
-    """Storage adapter preferring Mongo (Motor). Falls back to in-memory if Motor unavailable."""
+    """
+    Storage helper for blockchain blocks.
+    Avoid truthiness checks on Motor DB (it defines __bool__ returning int).
+    """
 
-    def __init__(self, url: Optional[str] = None, db_name: Optional[str] = None) -> None:
-        self._url = url or DEFAULT_CONFIG.db_url
-        self._db_name = db_name or DEFAULT_CONFIG.db_name
-        self._mem_blocks: Dict[str, Dict[str, Any]] = {}
-        self._mem_txs: Dict[str, Dict[str, Any]] = {}
+    def __init__(self, db: Optional[AsyncIOMotorDatabase] = None) -> None:
+        self._db: Optional[AsyncIOMotorDatabase] = db
 
-        self._client = None
-        self._db = None
-        if AsyncIOMotorClient is not None:
-            self._client = AsyncIOMotorClient(self._url)
-            self._db = self._client[self._db_name]
+    @property
+    def db(self) -> Optional[AsyncIOMotorDatabase]:
+        return self._db
 
-    async def save_block(self, block: Block) -> None:
-        if self._db:
-            await self._db.blocks.insert_one({"hash": block.block_hash, "header": block.header.__dict__, "txs": [t.__dict__ for t in block.txs]})
-        else:
-            self._mem_blocks[block.block_hash] = {"header": block.header.__dict__, "txs": [t.__dict__ for t in block.txs]}
+    def is_ready(self) -> bool:
+        return self._db is not None
 
-    async def get_block(self, block_hash: str) -> Optional[Dict[str, Any]]:
-        if self._db:
-            return await self._db.blocks.find_one({"hash": block_hash})
-        return self._mem_blocks.get(block_hash)
+    async def ensure_indexes(self) -> None:
+        if self._db is None:
+            return
+        try:
+            await self._db["blocks"].create_index("hash", unique=True)
+            await self._db["blocks"].create_index([("height", 1)])
+        except PyMongoError:
+            # keep bootstrap resilient
+            pass
 
-    async def save_txs(self, txs: Iterable[Transaction]) -> None:
-        docs = [{"txid": t.txid, **t.__dict__} for t in txs]
-        if self._db:
-            if docs:
-                await self._db.txs.insert_many(docs, ordered=False)
-        else:
-            for d in docs:
-                self._mem_txs[d["txid"]] = d
+    async def put_block(self, block: dict[str, Any]) -> None:
+        if self._db is None:
+            raise RuntimeError("Storage DB not initialized")
+        await self._db["blocks"].insert_one(block)
+
+    async def get_block_by_hash(self, h: str) -> Optional[dict[str, Any]]:
+        if self._db is None:
+            return None
+        return await self._db["blocks"].find_one({"hash": h})
+
+    # Alias kept for callers/tests that expect this name
+    async def save_block(self, block: dict[str, Any]) -> None:
+        await self.put_block(block)

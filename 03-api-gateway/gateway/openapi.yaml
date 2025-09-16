@@ -15,6 +15,7 @@ servers:
   description: API Gateway (dev)
 - url: http://localhost:8081
   description: Direct API (dev)
+
 paths:
   /:
     get:
@@ -42,6 +43,7 @@ paths:
       security: []
       tags:
       - meta
+
   /health:
     get:
       summary: Health check
@@ -62,6 +64,7 @@ paths:
       security: []
       tags:
       - meta
+
   /auth/login:
     post:
       operationId: authLogin
@@ -91,6 +94,7 @@ paths:
         default:
           $ref: '#/components/responses/ErrorDefault'
       summary: Authenticate with email/password (public)
+
   /auth/refresh:
     post:
       operationId: authRefresh
@@ -117,6 +121,7 @@ paths:
         default:
           $ref: '#/components/responses/ErrorDefault'
       summary: Refresh access token using refresh token (public)
+
   /auth/logout:
     post:
       operationId: authLogout
@@ -130,6 +135,7 @@ paths:
         default:
           $ref: '#/components/responses/ErrorDefault'
       summary: Logout and revoke refresh token
+
   /users:
     get:
       tags:
@@ -196,6 +202,7 @@ paths:
           $ref: '#/components/responses/ErrorDefault'
         default:
           $ref: '#/components/responses/ErrorDefault'
+
   /users/register:
     post:
       tags:
@@ -221,6 +228,7 @@ paths:
           $ref: '#/components/responses/ErrorDefault'
         default:
           $ref: '#/components/responses/ErrorDefault'
+
   /users/me:
     get:
       tags:
@@ -260,6 +268,7 @@ paths:
           $ref: '#/components/responses/ErrorDefault'
         default:
           $ref: '#/components/responses/ErrorDefault'
+
   /users/{id}:
     parameters:
     - in: path
@@ -329,6 +338,195 @@ paths:
           $ref: '#/components/responses/ErrorDefault'
         default:
           $ref: '#/components/responses/ErrorDefault'
+
+  # --------------------- Cluster B (proxied via gateway) ---------------------
+
+  /chain/info:
+    get:
+      tags:
+      - chain
+      summary: Chain info (proxied)
+      responses:
+        '200':
+          description: Chain info
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  network:
+                    type: string
+                    example: mainnet
+                  node:
+                    type: string
+                    format: uri
+                  height:
+                    type: integer
+                    minimum: 0
+                  block_id:
+                    type: string
+                    nullable: true
+                  block_time:
+                    type: integer
+                    nullable: true
+                    description: unix ms
+                  block_onion:
+                    type: string
+                    nullable: true
+                  block_rpc_url:
+                    type: string
+                    nullable: true
+                    format: uri
+
+  /chain/height:
+    get:
+      tags:
+      - chain
+      summary: Latest block height (proxied)
+      responses:
+        '200':
+          description: Height
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  height:
+                    type: integer
+                    minimum: 0
+
+  /chain/balance/{address_base58}:
+    parameters:
+    - in: path
+      name: address_base58
+      required: true
+      schema:
+        type: string
+        pattern: '^T[a-zA-Z0-9]{33}$'
+    get:
+      tags:
+      - chain
+      summary: Account balance in sun (proxied)
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+                  balance_sun:
+                    type: integer
+                    minimum: 0
+
+  /wallets:
+    get:
+      tags:
+      - wallets
+      summary: List wallets (proxied)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Paginated wallets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletsPage'
+    post:
+      tags:
+      - wallets
+      summary: Create wallet (proxied)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                label:
+                  type: string
+                  nullable: true
+                  maxLength: 128
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+
+  /wallets/{wallet_id}:
+    parameters:
+    - in: path
+      name: wallet_id
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - wallets
+      summary: Get wallet by id (proxied)
+      responses:
+        '200':
+          description: Wallet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '404':
+          $ref: '#/components/responses/ErrorDefault'
+
+  /wallets/{wallet_id}/transfer:
+    parameters:
+    - in: path
+      name: wallet_id
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - wallets
+      summary: Transfer from wallet (proxied)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                to_address:
+                  type: string
+                  pattern: '^T[a-zA-Z0-9]{33}$'
+                amount_sun:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Broadcast result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
 components:
   securitySchemes:
     bearerAuth:
@@ -339,6 +537,7 @@ components:
       type: apiKey
       in: header
       name: X-Api-Key
+
   headers:
     RequestId:
       description: Correlates requests across gateway/API.
@@ -359,6 +558,7 @@ components:
       schema:
         type: integer
         minimum: 0
+
   responses:
     Error401:
       description: Unauthorized
@@ -397,6 +597,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
   schemas:
     Root:
       type: object
@@ -415,6 +616,7 @@ components:
             health:
               type: string
               example: /health
+
     Health:
       type: object
       additionalProperties: false
@@ -437,6 +639,7 @@ components:
         block_rpc_url:
           type: string
           format: uri
+
     User:
       type: object
       additionalProperties: false
@@ -460,6 +663,7 @@ components:
         updated_at:
           type: string
           format: date-time
+
     UserCreate:
       type: object
       required:
@@ -479,6 +683,7 @@ components:
           enum:
           - user
           - admin
+
     UserRegister:
       type: object
       required:
@@ -492,6 +697,7 @@ components:
         password:
           type: string
           minLength: 12
+
     UserUpdateSelf:
       type: object
       additionalProperties: false
@@ -499,6 +705,7 @@ components:
         email:
           type: string
           format: email
+
     UserUpdateAdmin:
       type: object
       additionalProperties: false
@@ -511,6 +718,7 @@ components:
           enum:
           - user
           - admin
+
     PaginatedUsers:
       type: object
       additionalProperties: false
@@ -529,6 +737,7 @@ components:
           type: integer
           minimum: 1
           maximum: 200
+
     AuthLoginRequest:
       type: object
       required:
@@ -542,6 +751,7 @@ components:
         password:
           type: string
           minLength: 12
+
     AuthLoginResponse:
       type: object
       additionalProperties: false
@@ -557,6 +767,7 @@ components:
           example: 3600
         refresh_token:
           type: string
+
     AuthRefreshRequest:
       type: object
       required:
@@ -565,6 +776,7 @@ components:
       properties:
         refresh_token:
           type: string
+
     AuthRefreshResponse:
       type: object
       additionalProperties: false
@@ -578,6 +790,7 @@ components:
           type: integer
           minimum: 1
           example: 3600
+
     Error:
       type: object
       additionalProperties: false
@@ -591,9 +804,55 @@ components:
         request_id:
           type: string
           example: 7d67f9f0-7e3a-4ad5-9a5f-0c0f5a7fa2b9
+
+    # --------- New schemas for proxied Cluster B endpoints ----------
+    Wallet:
+      type: object
+      additionalProperties: false
+      properties:
+        _id:
+          type: string
+          example: '65ed0f...'
+        address:
+          type: string
+        public_key:
+          type: string
+        label:
+          type: string
+          nullable: true
+        chain:
+          type: string
+          example: tron
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WalletsPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 200
+
 security:
 - bearerAuth: []
 - apiKeyAuth: []
+
 tags:
 - name: meta
   description: Health & metadata (public)
@@ -601,3 +860,7 @@ tags:
   description: Authentication & token lifecycle
 - name: users
   description: User management
+- name: chain
+  description: Blockchain insights (proxied)
+- name: wallets
+  description: Wallet operations (proxied)

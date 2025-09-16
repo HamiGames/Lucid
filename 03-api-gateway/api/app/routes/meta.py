@@ -1,18 +1,34 @@
-from fastapi import APIRouter, Depends
+# app/routes/meta.py
+from __future__ import annotations
+
+from fastapi import APIRouter
 from datetime import datetime, timezone
 
-from app.schemas import HealthResponse
-from app.config import Settings
-from app.deps import get_config
+# Optional: check Mongo dependency if available
+try:
+    from app.db.connection import ping as mongo_ping
+except Exception:  # keep route resilient even if DB layer imports fail
+    mongo_ping = None  # type: ignore[assignment]
 
-router = APIRouter()
+router = APIRouter(prefix="/meta", tags=["meta"])
+_started = datetime.now(timezone.utc)
 
 
-@router.get("/health", response_model=HealthResponse)
-def health(settings: Settings = Depends(get_config)) -> HealthResponse:
-    return HealthResponse(
-        status="ok",
-        service=settings.SERVICE_NAME,
-        time=datetime.now(timezone.utc).isoformat(),
-        version=settings.VERSION,
-    )
+@router.get("/ping", summary="Liveness & dependency check")
+def ping() -> dict:
+    db_ok = None
+    db_error = None
+    if mongo_ping:
+        try:
+            mongo_ping()
+            db_ok = True
+        except Exception as e:  # surface as string, no stack
+            db_ok = False
+            db_error = str(e)
+
+    return {
+        "ok": True,
+        "service": "lucid-api",
+        "started_at": _started.isoformat(),
+        "dependencies": {"mongo": {"ok": db_ok, "error": db_error}},
+    }

@@ -1,8 +1,0 @@
-FROM python:3.12-slim
-WORKDIR /app
-# Expect a local requirements file in the SAME folder if you ever build this
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
-# Copy everything from this folder into /app (single source directory)
-COPY . /app/
-CMD ["python","-V"]

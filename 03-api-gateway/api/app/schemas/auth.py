@@ -1,9 +1,26 @@
-from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=6, max_length=128)
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def _non_empty(cls, v: str) -> str:
+        if not v:
+            raise ValueError("password must not be empty")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def _username_or_email(cls, _v, values):
+        # ensure at least one of username/email is provided
+        if not (values.get("username") or values.get("email")):
+            raise ValueError("either username or email must be provided")
+        return _v
 
 
 class RefreshRequest(BaseModel):
@@ -15,7 +32,6 @@ class LogoutRequest(BaseModel):
 
 
 class TokenPair(BaseModel):
-    token_type: str = "bearer"
     access_token: str
     refresh_token: str
-    expires_in: int = 900  # seconds (example)
+    token_type: str = "bearer"

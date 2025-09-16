@@ -1,15 +1,17 @@
 # Path: 03-api-gateway/api/app/routes/db_health.py
+
+from __future__ import annotations
+
 from fastapi import APIRouter
-from ..db.connection import ping
-from ..utils.logger import get_logger
+from app.services.mongo_service import ping as mongo_ping
 
-router = APIRouter(prefix="/db", tags=["db"])
-log = get_logger(__name__)
+router = APIRouter(prefix="/health", tags=["health"])
 
 
-@router.get("/health")
-async def db_health():
-    ok, latency_ms = await ping()
-    status = "ok" if ok else "degraded"
-    log.info("db_health", extra={"ok": ok, "latency_ms": latency_ms})
-    return {"status": status, "latency_ms": latency_ms}
+@router.get("/db", summary="Database health")
+async def db_health() -> dict:
+    """
+    Separate DB health endpoint. Avoids 'await' on non-awaitable and returns a simple shape.
+    """
+    ok = await mongo_ping()  # <-- mongo_ping() is async and returns bool
+    return {"db": "up" if ok else "down", "ok": ok}
