@@ -1,3 +1,6 @@
+# Compose for Lucid (dev profile). Host editing in VS Code; runtime on Pi.
+# .env required keys: ONION, COOKIE, HEX. Optional: BLOCK_ONION.
+
 name: lucid-dev
 
 x-default-env: &default-env
@@ -111,16 +114,19 @@ services:
       # Mount the API *project* root so the package `app` exists at /app/app/*
       - ../../03-api-gateway/api:/app
       - onion_state:/run/lucid/onion:ro
-    entrypoint: ["/bin/sh","-lc"]
-    command: >
-      set -e;
-      python -m pip install --upgrade pip >/dev/null;
-      # Pure-Python stack (avoid native wheels on arm64)
-      pip install --no-cache-dir "fastapi>=0.111,<1" "uvicorn>=0.30,<1" pymongo python-dotenv "requests[socks]";
-      # Import onion values from shared volume if envs are empty
-      [ -z "$ONION" ] && [ -f /run/lucid/onion/onion.txt ] && export ONION=$(tr -d '\r\n' </run/lucid/onion/onion.txt);
-      [ -z "$BLOCK_ONION" ] && [ -f /run/lucid/onion/block_onion.txt ] && export BLOCK_ONION=$(tr -d '\r\n' </run/lucid/onion/block_onion.txt);
-      exec uvicorn app.main:app --host 0.0.0.0 --port $$PORT
+    # IMPORTANT: remove entrypoint and supply command as [/bin/sh, -lc, <block>]
+    command:
+      - /bin/sh
+      - -lc
+      - |
+        set -e
+        python -m pip install --upgrade pip >/dev/null
+        # Pure-Python stack (avoid native wheels on arm64)
+        pip install --no-cache-dir "fastapi>=0.111,<1" "uvicorn>=0.30,<1" pymongo python-dotenv "requests[socks]"
+        # Import onion values from shared volume if envs are empty
+        [ -z "$ONION" ] && [ -f /run/lucid/onion/onion.txt ] && export ONION="$(tr -d '\r\n' </run/lucid/onion/onion.txt)"
+        [ -z "$BLOCK_ONION" ] && [ -f /run/lucid/onion/block_onion.txt ] && export BLOCK_ONION="$(tr -d '\r\n' </run/lucid/onion/block_onion.txt)"
+        exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -155,10 +161,10 @@ services:
 
           location / {
             proxy_pass http://lucid_api:8081;
-            proxy_set_header Host $$host;
-            proxy_set_header X-Real-IP $$remote_addr;
-            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $$scheme;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
             proxy_read_timeout 60s;
           }
         }
@@ -211,12 +217,15 @@ services:
         condition: service_healthy
       lucid_api:
         condition: service_started
-    entrypoint: /bin/sh -lc
-    command: |
-      set -e
-      apk add --no-cache bash curl jq bind-tools netcat-openbsd socat openssl || true
-      echo "[server-tools] Ready. Utilities installed (or already present)."
-      exec sleep infinity
+    # IMPORTANT: remove entrypoint and supply command as [/bin/sh, -lc, <block>]
+    command:
+      - /bin/sh
+      - -lc
+      - |
+        set -e
+        apk add --no-cache bash curl jq bind-tools netcat-openbsd socat openssl || true
+        echo "[server-tools] Ready. Utilities installed (or already present)."
+        exec tail -f /dev/null
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
