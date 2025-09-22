@@ -51,7 +51,7 @@ services:
       - ../../02-network-security/tor/scripts/create_ephemeral_onion.sh:/usr/local/bin/create-ephemeral-onion:ro
     networks:
       lucid_net:
-        aliases: [lucid_tor, tor-proxy, tor]
+        aliases: [lucid-dev_lucid_net,lucid_net, tor-proxy, tor]
     restart: unless-stopped
     healthcheck:
       # Robust check: reads cookie -> hex (xxd or hexdump) -> AUTHENTICATE -> GETINFO bootstrap

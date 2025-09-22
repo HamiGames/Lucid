@@ -16,4 +16,3 @@ if [ -f "$FILE" ]; then
 else
   echo "[info] $FILE not found"
 fi
-
