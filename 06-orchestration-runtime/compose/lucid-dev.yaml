@@ -94,6 +94,7 @@ services:
   # Lucid API (Uvicorn on 8081) — pure-Python deps; auto-import onion from volume
   # ────────────────────────────────
   lucid_api:
+    profiles: [dev]
     build:
       context: ../../03-api-gateway/api
       dockerfile: Dockerfile.api
@@ -115,6 +116,7 @@ services:
       start_period: 10s
 
   api-gateway:
+    profiles: [dev]
     build:
       context: ../../03-api-gateway/gateway
       dockerfile: Dockerfile.gateway
