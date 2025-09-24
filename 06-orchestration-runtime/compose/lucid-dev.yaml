@@ -94,85 +94,48 @@ services:
   # Lucid API (Uvicorn on 8081) — pure-Python deps; auto-import onion from volume
   # ────────────────────────────────
   lucid_api:
-    profiles: [dev]
+    build:
+      context: ../../03-api-gateway/api
+      dockerfile: Dockerfile.api
     container_name: lucid_api
-    image: python:3.12-slim
-    working_dir: /app
-    env_file: [./.env]
-    environment:
-      <<: *default-env
-      PORT: "8081"
-    depends_on:
-      lucid_mongo:
-        condition: service_healthy
-      tor-proxy:
-        condition: service_healthy
+    command: >
+      python -m uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8081
+      --proxy-headers
     ports:
       - "8081:8081"
     networks: [lucid_net]
-    volumes:
-      # Mount the API *project* root so the package `app` exists at /app/app/*
-      - ../../03-api-gateway/api:/app
-      - onion_state:/run/lucid/onion:ro
-    # IMPORTANT: use [/bin/sh, -lc, <block>] and escape $ as $$ to avoid Compose var-substitution
-    command:
-      - /bin/sh
-      - -lc
-      - |
-        set -e
-        python -m pip install --upgrade pip >/dev/null
-        # Pure-Python stack (avoid native wheels on arm64)
-        pip install --no-cache-dir "fastapi>=0.111,<1" "uvicorn>=0.30,<1" pymongo python-dotenv "requests[socks]"
-        # Import onion values from shared volume if envs are empty
-        [ -z "$$ONION" ] && [ -f /run/lucid/onion/onion.txt ] && export ONION="$(tr -d '\r\n' </run/lucid/onion/onion.txt)"
-        [ -z "$$BLOCK_ONION" ] && [ -f /run/lucid/onion/block_onion.txt ] && export BLOCK_ONION="$(tr -d '\r\n' </run/lucid/onion/block_onion.txt)"
-        exec uvicorn app.main:app --host 0.0.0.0 --port "$$PORT"
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  # ────────────────────────────────
-  # API Gateway (nginx on 8080) — proxies to lucid_api:8081
-  # ────────────────────────────────
-  lucid_api_gateway:
-    profiles: [dev]
+  api-gateway:
+    build:
+      context: ../../03-api-gateway/gateway
+      dockerfile: Dockerfile.gateway
     container_name: lucid_api_gateway
-    image: nginx:1.28-alpine
-    env_file: [./.env]
     environment:
-      <<: *default-env
+      API_UPSTREAM: "lucid_api:8081"
+      GATEWAY_PORT: "8080"
     depends_on:
       lucid_api:
         condition: service_started
     ports:
       - "8080:8080"
     networks: [lucid_net]
-    volumes:
-      - onion_state:/run/lucid/onion:ro
-    command:
-      - /bin/sh
-      - -lc
-      - |
-        cat >/etc/nginx/conf.d/default.conf <<'EOF'
-        server {
-          listen 8080;
-          client_max_body_size 16m;
-          proxy_http_version 1.1;
-
-          location / {
-            proxy_pass http://lucid_api:8081;
-            proxy_set_header Host $$host;
-            proxy_set_header X-Real-IP $$remote_addr;
-            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $$scheme;
-            proxy_read_timeout 60s;
-          }
-        }
-        EOF
-        exec nginx -g 'daemon off;'
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 
   # ────────────────────────────────
   # Tunnel tools (manage onion + validation) — writes onion to shared volume
