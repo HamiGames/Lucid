@@ -1,0 +1,54 @@
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# System deps kept minimal for fast, cross-arch builds
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# ----------------------------
+# Install Python dependencies
+# ----------------------------
+# Prefer requirement pinning if present; falls back to pyproject if used.
+# (Keep this order to maximize Docker layer caching.)
+COPY requirements.txt /app/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ -f /app/requirements.txt ]; then \
+        pip install -r /app/requirements.txt; \
+    else \
+        python - <<'PY'\n\
+import sys; print('ERROR: requirements.txt not found in /03-api-gateway/api', file=sys.stderr); sys.exit(1)\n\
+PY\
+    fi
+
+# Ensure uvicorn is available even if not pinned in requirements
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python - <<'PY'\n\
+import importlib, sys, subprocess\n\
+try:\n\
+    importlib.import_module('uvicorn')\n\
+except Exception:\n\
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'uvicorn[standard]'])\n\
+PY
+
+# ----------------------------
+# Copy application
+# ----------------------------
+COPY app/ /app/app/
+
+# ----------------------------
+# Healthcheck matches compose
+# ----------------------------
+HEALTHCHECK --interval=20s --timeout=5s --retries=5 --start-period=10s \
+  CMD curl -fsS http://127.0.0.1:8081/health || exit 1
+
+# ----------------------------
+# Runtime (actual entrypoint is provided via compose `command:`)
+# ----------------------------
+EXPOSE 8081
