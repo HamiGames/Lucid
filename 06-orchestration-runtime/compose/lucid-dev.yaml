@@ -23,7 +23,7 @@ volumes:
   tor_data:
     name: lucid-dev_onion_state
     external: true         # silence “already exists” warning
-  mongo_data:
+  mongo_data: {}
   onion_state: {}
 
 services:
