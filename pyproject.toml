@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lucid"
+version = "0.1.0"
+description = "Lucid RDP secure blockchain development platform"
+authors = [
+    { name="PickMe", email="you@example.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    # --- API ---
+    "fastapi",
+    "uvicorn[standard]",
+    "gunicorn",
+    "httpx",
+    "python-dotenv",
+    "python-multipart",
+    "PyJWT",
+    "dnspython",
+    "email-validator",
+    "python-dateutil",
+    "PyYAML",
+    "pydantic",
+
+    # --- Database ---
+    "pymongo",
+    "motor",
+    "pytest-asyncio",
+
+    # --- Blockchain / Networking ---
+    "requests",
+    "cryptography",
+    "websockets",
+    "netmiko",
+
+    # --- Dev/Test ---
+    "black",
+    "ruff",
+    "mypy",
+    "bandit",
+    "pre-commit",
+    "types-requests",
+    "types-PyYAML",
+    "types-python-dateutil",
+    "click",
+
+    # --- Testing ---
+    "pytest",
+    "pytest-cov",
+    "httpx[cli]",
+    "asgi-lifespan",
+    "openapi-spec-validator"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "black",
+    "ruff",
+    "mypy",
+    "bandit"
+]
+
+[tool.setuptools]
+packages = ["app"]  # Change if your package lives elsewhere
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = 3.11
+ignore_missing_imports = true
+strict = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
+
