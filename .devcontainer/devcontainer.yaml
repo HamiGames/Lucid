@@ -6,6 +6,8 @@ build:
 
 workspaceFolder: /workspaces/Lucid
 
+dockerContext: lucid_builder  # <-- critical for buildx + docker-container driver
+
 dockerComposeFile:
   - ../06-orchestration-runtime/compose/lucid-dev.yaml
   - ../06-orchestration-runtime/compose/lucid-blockchain-core.dev.yaml
@@ -20,7 +22,7 @@ runServices:
   - api-gateway
   - tunnel-tools
   - server-tools
-  - blockchain-node  # if defined
+  - blockchain-node  # ensure this exists or remove
 
 overrideCommand: true
 
@@ -51,3 +53,7 @@ forwardPorts:
   - 27017
   - 9050
   - 9051
+
+runArgs:
+  - "--platform=linux/arm64"
+  - "--network=lucid-dev_lucid_net"
