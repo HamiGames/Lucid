@@ -1,0 +1,53 @@
+name: lucid-dev
+
+build:
+  context: ..
+  dockerfile: .devcontainer/Dockerfile
+
+workspaceFolder: /workspaces/Lucid
+
+dockerComposeFile:
+  - ../06-orchestration-runtime/compose/lucid-dev.yaml
+  - ../06-orchestration-runtime/compose/lucid-blockchain-core.dev.yaml
+
+service: devcontainer
+
+runServices:
+  - devcontainer
+  - lucid_mongo
+  - lucid_api
+  - tor-proxy
+  - api-gateway
+  - tunnel-tools
+  - server-tools
+  - blockchain-node  # if defined
+
+overrideCommand: true
+
+postCreateCommand: pre-commit install || true
+
+remoteUser: root
+
+containerEnv:
+  PYTHONUNBUFFERED: "1"
+  DOCKER_DEFAULT_PLATFORM: linux/arm64
+
+customizations:
+  vscode:
+    extensions:
+      - ms-python.python
+      - ms-python.vscode-pylance
+      - astral-sh.ruff
+      - ms-python.black-formatter
+      - ms-vscode-remote.remote-containers
+      - ms-azuretools.vscode-docker
+
+mounts:
+  - source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind
+
+forwardPorts:
+  - 8080
+  - 8081
+  - 27017
+  - 9050
+  - 9051
