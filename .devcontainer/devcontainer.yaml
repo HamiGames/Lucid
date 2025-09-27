@@ -1,19 +1,26 @@
 name: lucid-dev
 
+# Build the dev shell image from your Dockerfile
 build:
   context: ..
   dockerfile: .devcontainer/Dockerfile
 
 workspaceFolder: /workspaces/Lucid
+remoteUser: root
+overrideCommand: true
 
-dockerContext: lucid_builder  # <-- critical for buildx + docker-container driver
+# Use your Buildx-backed docker-container builder
+dockerContext: lucid_builder
 
+# Compose stacks to run alongside the dev shell (paths are relative to this file)
 dockerComposeFile:
   - ../06-orchestration-runtime/compose/lucid-dev.yaml
   - ../06-orchestration-runtime/compose/lucid-blockchain-core.dev.yaml
 
+# The container VS Code will attach to (must exist in the compose files above)
 service: devcontainer
 
+# Extra services to ensure are running (must exist in the compose files)
 runServices:
   - devcontainer
   - lucid_mongo
@@ -22,17 +29,47 @@ runServices:
   - api-gateway
   - tunnel-tools
   - server-tools
-  - blockchain-node  # ensure this exists or remove
+  # - blockchain-node   # uncomment only if this service actually exists
 
-overrideCommand: true
+# Put the dev shell on the same network as the stack
+runArgs:
+  - "--platform=linux/arm64"
+  - "--network=lucid-dev_lucid_net"
 
-postCreateCommand: pre-commit install || true
-
-remoteUser: root
+# Pass the same .env used by your compose stacks to the dev shell
+envFile: ../06-orchestration-runtime/compose/.env
 
 containerEnv:
   PYTHONUNBUFFERED: "1"
   DOCKER_DEFAULT_PLATFORM: linux/arm64
+
+# Mount your repo in-container
+mounts:
+  - source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind
+
+# Host-side check before the container is built (runs on the host, not in the container)
+initializeCommand: |
+  set -e
+  # ensure the shared network exists before compose/Buildx touch it
+  docker network inspect lucid-dev_lucid_net >/dev/null 2>&1 || \
+    docker network create --driver bridge --attachable lucid-dev_lucid_net
+  # ensure the chosen docker context exists/selected
+  docker buildx ls >/dev/null 2>&1 || true
+  docker context ls >/dev/null 2>&1 || true
+
+# Runs inside the dev container after it’s created
+postCreateCommand: |
+  pre-commit install || true
+
+# (Optional) also runs in-container on every start
+# postStartCommand: echo "Dev container started"
+
+forwardPorts:
+  - 8080
+  - 8081
+  - 27017
+  - 9050
+  - 9051
 
 customizations:
   vscode:
@@ -44,16 +81,3 @@ customizations:
       - ms-vscode-remote.remote-containers
       - ms-azuretools.vscode-docker
 
-mounts:
-  - source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind
-
-forwardPorts:
-  - 8080
-  - 8081
-  - 27017
-  - 9050
-  - 9051
-
-runArgs:
-  - "--platform=linux/arm64"
-  - "--network=lucid-dev_lucid_net"
