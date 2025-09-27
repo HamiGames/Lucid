@@ -24,7 +24,20 @@ volumes:
   onion_state: {}
 
 services:
-
+  devcontainer:
+    container_name: lucid_devcontainer
+    build:
+      context: ../..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - type: bind
+        source: ../..
+        target: /workspaces/Lucid
+    networks:
+      - lucid_net
+    command: sleep infinity
+    profiles: [dev]
+    
   tor-proxy:
     profiles: [dev]
     container_name: lucid_tor
