@@ -1,23 +1,25 @@
-﻿{
+{
   "name": "Lucid Dev",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "platform": "linux/arm64"
-  },
-  "remoteUser": "root",
+  "dockerComposeFile": [
+    "06-orchestration-runtime/compose/lucid-dev.yaml"
+  ],
+  "service": "lucid_api",
   "workspaceFolder": "/workspaces/Lucid",
+  "remoteUser": "root",
   "overrideCommand": true,
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
-  "runArgs": [
-    "--platform=linux/arm64"
+  "runServices": [
+    "tor-proxy",
+    "lucid_mongo",
+    "lucid_api",
+    "api-gateway",
+    "tunnel-tools",
+    "server-tools"
   ],
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind"
-  ],
-  "postCreateCommand": "pre-commit install || true",
+  "shutdownAction": "stopCompose",
+  "envFile": "06-orchestration-runtime/compose/.env",
   "containerEnv": {
     "DOCKER_DEFAULT_PLATFORM": "linux/arm64",
     "PYTHONUNBUFFERED": "1"
@@ -34,5 +36,9 @@
       ]
     }
   },
-  "forwardPorts": [8080, 8081, 27017, 9050, 9051]
+  "forwardPorts": [8080, 8081, 27017, 9050, 9051],
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind"
+  ],
+  "postCreateCommand": "pre-commit install || true"
 }
