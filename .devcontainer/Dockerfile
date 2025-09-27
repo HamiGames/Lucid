@@ -1,4 +1,4 @@
-# ⚡ Base Python + Bash + SSL support on Debian Bookworm (arm64 + amd64)
+# 📦 Base Python + Bash + SSL support on Debian Bookworm
 FROM python:3.12-slim-bookworm
 
 # 🧪 Environment setup
@@ -32,16 +32,20 @@ RUN curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor
     apt-get update && apt-get install -y mongodb-mongosh && \
     rm -rf /var/lib/apt/lists/*
 
-# 🌍 Global JS/CLI tools (OpenAPI, blockchain)
+# 🌍 Global JS/CLI tools
 RUN npm install -g \
     @redocly/cli \
     @openapitools/openapi-generator-cli \
     truffle \
     tronweb
 
-# 🐍 Python dev dependencies
+# 🐍 Python requirements
 COPY .devcontainer/requirements-dev.txt /tmp/requirements-dev.txt
 RUN pip install --upgrade pip && \
     pip install -r /tmp/requirements-dev.txt && \
     rm /tmp/requirements-dev.txt
+
+# 🧠 Local package in editable mode
+COPY . /workspaces/Lucid
+RUN pip install -e /workspaces/Lucid
 
