@@ -1,0 +1,108 @@
+# Lucid RDP Docker Network Architecture
+# Implements inter-container communications and external system access
+# Based on LUCID-STRICT requirements for Raspberry Pi 5 deployment
+
+version: '3.8'
+
+networks:
+  # Internal network for inter-container communications
+  # Sessions, user database, node database, block interactions
+  lucid_internal:
+    name: lucid_internal
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+    labels:
+      - "lucid.network.type=internal"
+      - "lucid.network.purpose=inter-container-communications"
+
+  # External system access network for user portals
+  # Dev, node, users, admin interfaces
+  lucid_external:
+    name: lucid_external
+    driver: bridge
+    internal: false
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/24
+          gateway: 172.21.0.1
+    labels:
+      - "lucid.network.type=external"
+      - "lucid.network.purpose=user-portals"
+
+  # Blockchain network for ledger access only
+  # Isolated blockchain operations
+  lucid_blockchain:
+    name: lucid_blockchain
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1
+    labels:
+      - "lucid.network.type=blockchain"
+      - "lucid.network.purpose=ledger-only"
+
+  # Tor-only network for .onion services
+  # All external communications via Tor
+  lucid_tor:
+    name: lucid_tor
+    driver: bridge
+    internal: false
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.23.0.0/24
+          gateway: 172.23.0.1
+    labels:
+      - "lucid.network.type=tor"
+      - "lucid.network.purpose=onion-services"
+
+  # Development network for local dev access
+  # Only active in dev environment
+  lucid_dev:
+    name: lucid_dev
+    driver: bridge
+    internal: false
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.24.0.0/24
+          gateway: 172.24.0.1
+    labels:
+      - "lucid.network.type=development"
+      - "lucid.network.purpose=local-dev-access"
+
+volumes:
+  # Shared volumes for network state
+  lucid_network_state:
+    name: lucid_network_state
+    labels:
+      - "lucid.volume.purpose=network-state"
+  
+  lucid_onion_keys:
+    name: lucid_onion_keys
+    labels:
+      - "lucid.volume.purpose=onion-keys"
