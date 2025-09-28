@@ -1,29 +1,41 @@
-{
+﻿{
   "name": "Lucid Dev",
-  "dockerComposeFile": [
-    "06-orchestration-runtime/compose/lucid-dev.yaml"
-  ],
-  "service": "lucid_api",
+  
+  "build": {
+    "context": "..",
+    "dockerfile": ".devcontainer/Dockerfile"
+  },
+  
   "workspaceFolder": "/workspaces/Lucid",
   "remoteUser": "root",
   "overrideCommand": true,
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
-  },
-  "runServices": [
-    "tor-proxy",
-    "lucid_mongo",
-    "lucid_api",
-    "api-gateway",
-    "tunnel-tools",
-    "server-tools"
+  
+  "runArgs": [
+    "--platform=linux/arm64",
+    "--network=lucid-dev_lucid_net"
   ],
-  "shutdownAction": "stopCompose",
-  "envFile": "06-orchestration-runtime/compose/.env",
+  
   "containerEnv": {
-    "DOCKER_DEFAULT_PLATFORM": "linux/arm64",
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "DOCKER_DEFAULT_PLATFORM": "linux/arm64"
   },
+  
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind"
+  ],
+  
+  "initializeCommand": "docker network inspect lucid-dev_lucid_net >/dev/null 2>&1 || docker network create --driver bridge --attachable lucid-dev_lucid_net",
+  
+  "postCreateCommand": "pre-commit install || true",
+  
+  "forwardPorts": [
+    8080,
+    8081,
+    27017,
+    9050,
+    9051
+  ],
+  
   "customizations": {
     "vscode": {
       "extensions": [
@@ -35,10 +47,5 @@
         "ms-azuretools.vscode-docker"
       ]
     }
-  },
-  "forwardPorts": [8080, 8081, 27017, 9050, 9051],
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind"
-  ],
-  "postCreateCommand": "pre-commit install || true"
+  }
 }

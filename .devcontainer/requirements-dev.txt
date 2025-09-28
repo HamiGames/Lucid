@@ -1,4 +1,5 @@
-# --- Runtime: API Gateway ---
+--- Runtime: API Gateway ---
+
 fastapi
 uvicorn[standard]
 gunicorn
@@ -13,24 +14,32 @@ email-validator
 python-dateutil
 PyYAML
 
-# --- Runtime: Database ---
+
+--- Runtime: Database ---
+
 motor
 pymongo
 pytest-asyncio
 netmiko
-# --- Runtime: Blockchain / Networking ---
+
+--- Runtime: Blockchain / Networking ---
+
 requests
 cryptography
 websockets
 
-# --- Testing ---
+
+--- Testing ---
+
 pytest
 pytest-cov
 httpx[cli]
 asgi-lifespan
 openapi-spec-validator
 
-# --- Quality / Security / Tooling ---
+
+--- Quality / Security / Tooling ---
+
 black
 ruff
 mypy
