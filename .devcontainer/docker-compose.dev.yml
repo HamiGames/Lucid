@@ -1,0 +1,227 @@
+version: '3.8'
+
+# Lucid RDP Development Environment Docker Compose
+# Based on specification requirements for Pi 5 + Ubuntu Server simulation
+# Includes devcontainer, MongoDB 7, and Tor proxy services
+
+networks:
+  lucid-dev_lucid_net:
+    name: lucid-dev_lucid_net
+    driver: bridge
+    attachable: true
+
+volumes:
+  # MongoDB data persistence
+  mongo_data:
+    name: lucid-dev_mongo_data
+  # Tor state and onion services
+  onion_state:
+    name: lucid-dev_onion_state
+  tor_data:
+    name: lucid-dev_tor_data
+
+services:
+  # Main development container (VS Code attaches to this)
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      target: final
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pickme/lucid:dev-latest
+    container_name: lucid_devcontainer
+    hostname: lucid-dev
+    
+    # Development environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - DOCKER_DEFAULT_PLATFORM=linux/arm64
+      - LUCID_ENV=dev
+      - MONGO_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false
+      - SERVICE_NAME=lucid-api
+      - VERSION=0.1.0
+      - BLOCK_ONION=
+      - BLOCK_RPC_URL=
+      - ONION=
+      - TOR_CONTROL_PASSWORD=
+      - PORT=8081
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid
+    
+    # Mount workspace and docker socket
+    volumes:
+      - ../:/workspaces/Lucid:cached
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - onion_state:/run/lucid/onion:ro
+      
+    # Network configuration
+    networks:
+      - lucid-dev_lucid_net
+      
+    # Port mappings for development
+    ports:
+      - "8080:8080"  # API Gateway
+      - "8081:8081"  # API Server
+      - "8082:8082"  # Blockchain Core
+      - "9050:9050"  # Tor SOCKS proxy
+      - "9051:9051"  # Tor control port
+    
+    # Dependencies
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      tor-proxy:
+        condition: service_healthy
+        
+    # Keep container running for development
+    command: /usr/local/bin/start-lucid-dev tail -f /dev/null
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+      
+    # Resource limits for development
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # MongoDB 7 database (per R-MUST-019)
+  lucid_mongo:
+    image: mongo:7
+    container_name: lucid_mongo
+    hostname: lucid-mongo
+    
+    # MongoDB configuration
+    environment:
+      - MONGO_INITDB_DATABASE=lucid
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid
+      
+    # MongoDB startup with authentication
+    command: [
+      "mongod",
+      "--auth",
+      "--bind_ip_all",
+      "--replSet", "rs0"
+    ]
+    
+    # Health check for MongoDB
+    healthcheck:
+      test: |
+        mongosh --quiet -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} \
+        --authenticationDatabase admin --eval "db.runCommand({ ping: 1 }).ok" | grep -q 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+      
+    # Persistence and networking
+    volumes:
+      - mongo_data:/data/db
+      
+    networks:
+      - lucid-dev_lucid_net
+      
+    # Expose MongoDB port
+    ports:
+      - "27017:27017"
+      
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+
+  # Tor proxy service (per R-MUST-014, R-MUST-020)
+  tor-proxy:
+    build:
+      context: ../02-network-security/tor
+      dockerfile: Dockerfile
+    image: lucid/tor:dev
+    container_name: lucid_tor
+    hostname: lucid-tor
+    
+    # Tor environment
+    environment:
+      - LUCID_ENV=dev
+      - TOR_CONTROL_PASSWORD=
+      
+    # Tor configuration and state
+    volumes:
+      - tor_data:/var/lib/tor
+      - onion_state:/run/lucid/onion
+      - ../02-network-security/tor/torrc:/etc/tor/torrc:ro
+      - ../02-network-security/tor/tor-health.sh:/usr/local/bin/tor-health:ro
+      - ../02-network-security/tor/tor-show-onion.sh:/usr/local/bin/tor-show-onion:ro
+      
+    # Tor ports
+    expose:
+      - "9050"  # SOCKS proxy
+      - "9051"  # Control port
+      
+    ports:
+      - "9050:9050"
+      - "9051:9051"
+      
+    # Health check for Tor
+    healthcheck:
+      test: ["CMD-SHELL", "sh /usr/local/bin/tor-health"]
+      interval: 10s
+      timeout: 6s
+      retries: 18
+      start_period: 25s
+      
+    # Networking
+    networks:
+      lucid-dev_lucid_net:
+        aliases:
+          - lucid_tor
+          
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+      
+    restart: unless-stopped
+
+  # Server tools container (optional, for testing)
+  server-tools:
+    image: alpine:3.22.1
+    container_name: lucid_server_tools
+    hostname: server-tools
+    
+    # Development utilities
+    command: >
+      sh -c "
+        apk add --no-cache bash curl jq bind-tools netcat-openbsd socat openssl &&
+        echo 'Server tools ready' &&
+        tail -f /dev/null
+      "
+      
+    # Environment
+    environment:
+      - LUCID_ENV=dev
+      - MONGO_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false
+      
+    # Dependencies
+    depends_on:
+      devcontainer:
+        condition: service_started
+      lucid_mongo:
+        condition: service_healthy
+      tor-proxy:
+        condition: service_healthy
+        
+    # Networking
+    networks:
+      - lucid-dev_lucid_net
+      
+    # Security
+    security_opt:
+      - no-new-privileges:true
+      
+    restart: unless-stopped

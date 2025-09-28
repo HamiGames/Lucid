@@ -1,83 +1,171 @@
-# Base Python + Bash + SSL support on Debian Bookworm
+# Multi-stage Dockerfile for Lucid RDP Development Environment
+# Target: Raspberry Pi 5 (ARM64) with full development stack
+# Based on Spec-1d requirements for Pi 5 + Ubuntu Server simulation
 
-FROM python:3.12-bookworm-slim
+# Stage 1: Base development environment
+FROM python:3.12-slim-bookworm AS base
 
-
-# Environment setup
-
+# Environment setup per LUCID-STRICT requirements
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    DOCKER_DEFAULT_PLATFORM=linux/arm64 \
+    LUCID_ENV=dev
 
-
-# Set workspace
-
+# Set workspace per devcontainer spec
 WORKDIR /workspaces/Lucid
 
+# Stage 2: System dependencies and tools
+FROM base AS system-deps
 
-# System dependencies
-
+# Core system packages for Pi 5 simulation + development tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash curl git ca-certificates gnupg \
-    build-essential pkg-config \
+    # Core system
+    bash curl wget git ca-certificates gnupg lsb-release \
+    # Build tools
+    build-essential pkg-config cmake \
+    # Python development
     python3-dev python3-pip python3-venv \
-    openjdk-17-jdk \
-    netcat-openbsd socat jq \
+    # Network tools for Tor-only environment
+    netcat-openbsd socat jq dnsutils \
+    # Crypto libraries
+    libsodium-dev libssl-dev \
+    # Video/Audio for RDP simulation (per R-SHOULD-001)
+    ffmpeg v4l-utils \
+    # Compression tools (Zstd for chunks)
+    zstd libzstd-dev \
+    # Security tools
+    tor torsocks \
+    # Process management
+    supervisor \
+    # Cleanup
     && rm -rf /var/lib/apt/lists/*
 
+# Stage 3: Node.js 20 LTS (per Spec-1b requirements)
+FROM system-deps AS nodejs
 
-# Node.js 20.x install
-
+# Node.js 20.x install for Admin UI and chain clients
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get update && apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+# Global Node.js tools for blockchain and API development
+RUN npm install -g \
+    # API documentation
+    @redocly/cli \
+    @openapitools/openapi-generator-cli \
+    # Blockchain tools
+    truffle \
+    # TRON integration (per Spec-1b)
+    tronweb@6 \
+    # Development utilities
+    nodemon \
+    # Package management
+    yarn
 
-# MongoDB CLI: `mongosh` (v7 compatible)
+# Stage 4: MongoDB tools (per R-MUST-019 - MongoDB 7 only)
+FROM nodejs AS mongodb-tools
 
+# MongoDB 7 CLI tools (mongosh) for database interaction
 RUN curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb.gpg && \
     echo "deb [arch=arm64,amd64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" \
     > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
-    apt-get update && apt-get install -y mongodb-mongosh && \
+    apt-get update && apt-get install -y mongodb-mongosh mongodb-database-tools && \
     rm -rf /var/lib/apt/lists/*
 
+# Stage 5: Python development environment
+FROM mongodb-tools AS python-dev
 
-# Global JS/CLI tools
-
-RUN npm install -g \
-    @redocly/cli \
-    @openapitools/openapi-generator-cli \
-    truffle \
-    tronweb
-
-
-# Python requirements
-
+# Copy and install Python requirements
 COPY .devcontainer/requirements-dev.txt /tmp/requirements-dev.txt
-RUN pip install --upgrade pip && \
+COPY pyproject.toml /tmp/pyproject.toml
+
+# Install Python dependencies with development extras
+RUN pip install --upgrade pip setuptools wheel && \
     pip install -r /tmp/requirements-dev.txt && \
-    rm /tmp/requirements-dev.txt
+    # Install core cryptography libraries for XChaCha20-Poly1305 and BLAKE3
+    pip install pynacl blake3 && \
+    # Install TRON development tools
+    pip install tronpy && \
+    # Cleanup
+    rm /tmp/requirements-dev.txt /tmp/pyproject.toml
 
+# Stage 6: Development workspace setup
+FROM python-dev AS workspace
 
-# Create necessary directories for project structure
-
-RUN mkdir -p /workspaces/Lucid/02-network-security/tor \
+# Create project directory structure per Spec-1d monorepo layout
+RUN mkdir -p \
+    # Core service directories
+    /workspaces/Lucid/03-api-gateway/api/app \
+    /workspaces/Lucid/04-blockchain-core/api/app \
+    /workspaces/Lucid/02-network-security/tor \
     /workspaces/Lucid/02-network-security/tunnels \
-    /workspaces/Lucid/03-api-gateway/api \
-    /workspaces/Lucid/04-blockchain-core/api \
     /workspaces/Lucid/06-orchestration-runtime/compose \
-    /workspaces/Lucid/08-quality/scripts
+    # Development directories
+    /workspaces/Lucid/tests \
+    /workspaces/Lucid/src \
+    /workspaces/Lucid/wallet \
+    /workspaces/Lucid/blockchain \
+    /workspaces/Lucid/tools \
+    # Build and deployment
+    /workspaces/Lucid/.devcontainer \
+    /workspaces/Lucid/.vscode \
+    /workspaces/Lucid/Build_guide_docs \
+    # Git hooks
+    /workspaces/Lucid/.git/hooks \
+    # Runtime directories
+    /run/lucid/onion \
+    /var/lib/tor \
+    /tmp/lucid
 
+# Set proper permissions for Tor and runtime directories
+RUN chown -R root:root /run/lucid /var/lib/tor /tmp/lucid && \
+    chmod 700 /run/lucid/onion /var/lib/tor
 
-# Set up pre-commit hooks directory
+# Stage 7: Tor configuration (per R-MUST-014, R-MUST-020)
+FROM workspace AS tor-config
 
-RUN mkdir -p /workspaces/Lucid/.git/hooks
+# Create basic Tor configuration for development
+RUN echo "# Lucid Development Tor Configuration" > /etc/tor/torrc && \
+    echo "SocksPort 9050" >> /etc/tor/torrc && \
+    echo "ControlPort 9051" >> /etc/tor/torrc && \
+    echo "CookieAuthentication 1" >> /etc/tor/torrc && \
+    echo "CookieAuthFileGroupReadable 1" >> /etc/tor/torrc && \
+    echo "DataDirectory /var/lib/tor" >> /etc/tor/torrc && \
+    echo "Log notice file /var/log/tor/notices.log" >> /etc/tor/torrc && \
+    # Create log directory
+    mkdir -p /var/log/tor && \
+    chown debian-tor:debian-tor /var/log/tor
 
+# Stage 8: Final development environment
+FROM tor-config AS final
 
-# Local package in editable mode (commented out until we have the actual package)
+# Copy project files (will be mounted in devcontainer)
+# This ensures the container works standalone if needed
+COPY . /workspaces/Lucid/
 
-COPY . /workspaces/Lucid
+# Install project in editable mode
+RUN cd /workspaces/Lucid && pip install -e .
 
-RUN pip install -e /workspaces/Lucid
+# Create startup script for services
+RUN echo '#!/bin/bash' > /usr/local/bin/start-lucid-dev && \
+    echo 'set -e' >> /usr/local/bin/start-lucid-dev && \
+    echo 'echo "Starting Lucid Development Environment..."' >> /usr/local/bin/start-lucid-dev && \
+    echo 'service tor start' >> /usr/local/bin/start-lucid-dev && \
+    echo 'echo "Tor started on ports 9050 (SOCKS) and 9051 (Control)"' >> /usr/local/bin/start-lucid-dev && \
+    echo 'cd /workspaces/Lucid' >> /usr/local/bin/start-lucid-dev && \
+    echo 'exec "$@"' >> /usr/local/bin/start-lucid-dev && \
+    chmod +x /usr/local/bin/start-lucid-dev
+
+# Set working directory and default user
+WORKDIR /workspaces/Lucid
+USER root
+
+# Health check to ensure container is ready
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f --socks5 127.0.0.1:9050 http://check.torproject.org/ || exit 1
+
+# Default command
+CMD ["/usr/local/bin/start-lucid-dev", "bash"]

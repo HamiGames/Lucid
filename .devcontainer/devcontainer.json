@@ -1,51 +1,165 @@
-﻿{
-  "name": "Lucid Dev",
-  
-  "build": {
-    "context": "..",
-    "dockerfile": ".devcontainer/Dockerfile"
-  },
-  
+{
+  "name": "Lucid RDP Development Environment",
+  "dockerComposeFile": "docker-compose.dev.yml",
+  "service": "devcontainer",
   "workspaceFolder": "/workspaces/Lucid",
   "remoteUser": "root",
-  "overrideCommand": true,
+  "overrideCommand": false,
   
-  "runArgs": [
-    "--platform=linux/arm64",
-    "--network=lucid-dev_lucid_net"
+  "runServices": [
+    "devcontainer",
+    "lucid_mongo",
+    "tor-proxy"
   ],
   
   "containerEnv": {
     "PYTHONUNBUFFERED": "1",
-    "DOCKER_DEFAULT_PLATFORM": "linux/arm64"
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "DOCKER_DEFAULT_PLATFORM": "linux/arm64",
+    "LUCID_ENV": "dev",
+    "MONGO_URL": "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false",
+    "SERVICE_NAME": "lucid-api",
+    "VERSION": "0.1.0",
+    "BLOCK_ONION": "",
+    "BLOCK_RPC_URL": "",
+    "ONION": "",
+    "TOR_CONTROL_PASSWORD": "",
+    "PORT": "8081"
   },
-  
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspaces/Lucid,type=bind"
-  ],
   
   "initializeCommand": "docker network inspect lucid-dev_lucid_net >/dev/null 2>&1 || docker network create --driver bridge --attachable lucid-dev_lucid_net",
   
-  "postCreateCommand": "pre-commit install || true",
+  "postCreateCommand": [
+    "bash",
+    "-c",
+    "pre-commit install && pip install -e . && echo 'Lucid Development Environment Ready!'"
+  ],
+  
+  "postStartCommand": [
+    "bash",
+    "-c",
+    "service tor start && echo 'Tor service started on ports 9050 (SOCKS) and 9051 (Control)'"
+  ],
   
   "forwardPorts": [
-    8080,
-    8081,
-    27017,
-    9050,
-    9051
+    {
+      "localPort": 8080,
+      "remotePort": 8080,
+      "label": "API Gateway"
+    },
+    {
+      "localPort": 8081,
+      "remotePort": 8081,
+      "label": "API Server"
+    },
+    {
+      "localPort": 8082,
+      "remotePort": 8082,
+      "label": "Blockchain Core"
+    },
+    {
+      "localPort": 27017,
+      "remotePort": 27017,
+      "label": "MongoDB"
+    },
+    {
+      "localPort": 9050,
+      "remotePort": 9050,
+      "label": "Tor SOCKS"
+    },
+    {
+      "localPort": 9051,
+      "remotePort": 9051,
+      "label": "Tor Control"
+    }
   ],
+  
+  "portsAttributes": {
+    "8080": {
+      "label": "Lucid API Gateway",
+      "onAutoForward": "openPreview"
+    },
+    "8081": {
+      "label": "Lucid API Server",
+      "onAutoForward": "openPreview"
+    },
+    "27017": {
+      "label": "MongoDB",
+      "onAutoForward": "ignore"
+    },
+    "9050": {
+      "label": "Tor SOCKS Proxy",
+      "onAutoForward": "ignore"
+    }
+  },
   
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
+        "ms-python.mypy-type-checker",
         "astral-sh.ruff",
         "ms-python.black-formatter",
         "ms-vscode-remote.remote-containers",
-        "ms-azuretools.vscode-docker"
-      ]
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-json",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer",
+        "ms-python.pytest",
+        "tamasfe.even-better-toml",
+        "eamodio.gitlens",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "black",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
+        "files.associations": {
+          "*.env*": "dotenv"
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        },
+        "ruff.organizeImports": true,
+        "mypy-type-checker.importStrategy": "fromEnvironment"
+      }
+    }
+  },
+  
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": true,
+      "username": "root"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": false,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false,
+      "dockerDashComposeVersion": "v2"
     }
   }
 }
