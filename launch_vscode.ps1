@@ -2,7 +2,7 @@
 # Run this script on your Windows development machine
 
 # Define variables
-$ImageName = "pickme/Lucid"
+$ImageName = "pickme/lucid"
 $ImageTag = "1.0"
 $WorkspaceFolder = "$env:USERPROFILE\Lucid"
 $DevContainerFolder = "$WorkspaceFolder\.devcontainer"
