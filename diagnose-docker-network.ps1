@@ -22,13 +22,13 @@ function Test-NetworkConnectivity {
     try {
         $response = Test-NetConnection -ComputerName "8.8.8.8" -Port 53 -InformationLevel Quiet
         if ($response) {
-            Write-Host "✓ Basic internet connectivity working" -ForegroundColor Green
+            Write-Host "[+] Basic internet connectivity working" -ForegroundColor Green
         } else {
-            Write-Host "✗ No internet connectivity" -ForegroundColor Red
+            Write-Host "[-] No internet connectivity" -ForegroundColor Red
             return $false
         }
     } catch {
-        Write-Host "✗ Network connectivity test failed" -ForegroundColor Red
+        Write-Host "[-] Network connectivity test failed" -ForegroundColor Red
         return $false
     }
     
@@ -36,14 +36,14 @@ function Test-NetworkConnectivity {
     try {
         $response = Test-NetConnection -ComputerName "registry-1.docker.io" -Port 443 -InformationLevel Quiet
         if ($response) {
-            Write-Host "✓ Docker registry reachable" -ForegroundColor Green
+            Write-Host "[+] Docker registry reachable" -ForegroundColor Green
             return $true
         } else {
-            Write-Host "✗ Docker registry not reachable" -ForegroundColor Red
+            Write-Host "[-] Docker registry not reachable" -ForegroundColor Red
             return $false
         }
     } catch {
-        Write-Host "✗ Docker registry connectivity test failed" -ForegroundColor Red
+        Write-Host "[-] Docker registry connectivity test failed" -ForegroundColor Red
         return $false
     }
 }
@@ -61,9 +61,10 @@ function Test-DNSResolution {
     foreach ($domain in $domains) {
         try {
             $result = Resolve-DnsName -Name $domain -ErrorAction Stop
-            Write-Host "✓ DNS resolution for $domain: $($result[0].IPAddress)" -ForegroundColor Green
+            $ip = $result[0].IPAddress
+            Write-Host "[+] DNS resolution for $domain`: $ip" -ForegroundColor Green
         } catch {
-            Write-Host "✗ DNS resolution failed for $domain" -ForegroundColor Red
+            Write-Host "[-] DNS resolution failed for $domain" -ForegroundColor Red
         }
     }
 }
@@ -75,9 +76,13 @@ function Get-DockerConfiguration {
     $dockerConfigPath = "$env:USERPROFILE\.docker\daemon.json"
     if (Test-Path $dockerConfigPath) {
         Write-Host "Found Docker daemon config at: $dockerConfigPath" -ForegroundColor Yellow
-        $config = Get-Content $dockerConfigPath -Raw | ConvertFrom-Json
-        Write-Host "Current configuration:" -ForegroundColor Yellow
-        $config | ConvertTo-Json -Depth 3 | Write-Host
+        try {
+            $config = Get-Content $dockerConfigPath -Raw | ConvertFrom-Json
+            Write-Host "Current configuration:" -ForegroundColor Yellow
+            $config | ConvertTo-Json -Depth 3 | Write-Host
+        } catch {
+            Write-Host "[-] Could not parse Docker configuration" -ForegroundColor Red
+        }
     } else {
         Write-Host "No Docker daemon configuration found" -ForegroundColor Yellow
     }
@@ -85,7 +90,7 @@ function Get-DockerConfiguration {
     # Check Docker Desktop settings
     Write-Host "Docker Desktop info:" -ForegroundColor Yellow
     try {
-        docker system info | Select-String "Registry" | Write-Host
+        docker system info 2>$null | Select-String "Registry" | Write-Host
     } catch {
         Write-Host "Could not retrieve Docker system info" -ForegroundColor Red
     }
@@ -133,7 +138,7 @@ function Fix-DockerDNS {
     
     # Write configuration
     $daemonConfig | ConvertTo-Json -Depth 3 | Set-Content -Path $dockerConfigPath -Encoding UTF8
-    Write-Host "✓ Updated Docker daemon configuration" -ForegroundColor Green
+    Write-Host "[+] Updated Docker daemon configuration" -ForegroundColor Green
     Write-Host "Configuration saved to: $dockerConfigPath" -ForegroundColor Yellow
     
     Write-Host "IMPORTANT: Restart Docker Desktop for changes to take effect!" -ForegroundColor Red
@@ -145,16 +150,26 @@ function Test-DockerPull {
     # Test with a small image first
     try {
         Write-Host "Testing with hello-world image..." -ForegroundColor Yellow
-        docker pull hello-world 2>$null
-        Write-Host "✓ Successfully pulled hello-world image" -ForegroundColor Green
+        $result = docker pull hello-world 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[+] Successfully pulled hello-world image" -ForegroundColor Green
+        } else {
+            Write-Host "[-] Failed to pull hello-world image" -ForegroundColor Red
+            return $false
+        }
         
         # Test with Python base image
         Write-Host "Testing with Python 3.12-slim image..." -ForegroundColor Yellow
-        docker pull python:3.12-slim 2>$null
-        Write-Host "✓ Successfully pulled Python base image" -ForegroundColor Green
-        return $true
+        $result = docker pull python:3.12-slim 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[+] Successfully pulled Python base image" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "[-] Failed to pull Python base image" -ForegroundColor Red
+            return $false
+        }
     } catch {
-        Write-Host "✗ Failed to pull Docker images" -ForegroundColor Red
+        Write-Host "[-] Failed to pull Docker images" -ForegroundColor Red
         return $false
     }
 }
@@ -172,7 +187,7 @@ function Show-AdditionalSolutions {
     Write-Host ""
     
     Write-Host "3. Docker Desktop Reset:" -ForegroundColor Yellow
-    Write-Host "   - Open Docker Desktop → Settings → Troubleshoot → Reset to factory defaults"
+    Write-Host "   - Open Docker Desktop -> Settings -> Troubleshoot -> Reset to factory defaults"
     Write-Host "   - Restart Docker Desktop"
     Write-Host ""
     

@@ -88,8 +88,13 @@ Write-Host ""
 function Test-Docker {
     try {
         docker info *>$null
-        Write-ColorOutput "✓ Docker is running" "Green"
-        return $true
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "[+] Docker is running" "Green"
+            return $true
+        } else {
+            Write-ColorOutput "Error: Docker is not running or not accessible" "Red"
+            return $false
+        }
     } catch {
         Write-ColorOutput "Error: Docker is not running or not accessible" "Red"
         return $false
@@ -99,18 +104,23 @@ function Test-Docker {
 function Ensure-Builder {
     Write-ColorOutput "Checking if builder '$BUILDER_NAME' exists..." "Yellow"
     
-    $builderExists = docker buildx ls | Select-String $BUILDER_NAME
-    
-    if (-not $builderExists) {
-        Write-ColorOutput "Creating builder: $BUILDER_NAME" "Yellow"
-        docker buildx create --name $BUILDER_NAME --use --bootstrap
-    } else {
-        Write-ColorOutput "✓ Builder '$BUILDER_NAME' exists" "Green"
-        docker buildx use $BUILDER_NAME
+    try {
+        $builderExists = docker buildx ls | Select-String $BUILDER_NAME
+        
+        if (-not $builderExists) {
+            Write-ColorOutput "Creating builder: $BUILDER_NAME" "Yellow"
+            docker buildx create --name $BUILDER_NAME --use --bootstrap
+        } else {
+            Write-ColorOutput "[+] Builder '$BUILDER_NAME' exists" "Green"
+            docker buildx use $BUILDER_NAME
+        }
+        
+        # Inspect builder
+        docker buildx inspect --bootstrap
+    } catch {
+        Write-ColorOutput "Error managing Docker buildx builder" "Red"
+        throw
     }
-    
-    # Inspect builder
-    docker buildx inspect --bootstrap
 }
 
 function Ensure-Network {
@@ -118,10 +128,15 @@ function Ensure-Network {
     
     try {
         docker network inspect lucid-dev_lucid_net *>$null
-        Write-ColorOutput "✓ Network 'lucid-dev_lucid_net' already exists" "Green"
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "[+] Network 'lucid-dev_lucid_net' already exists" "Green"
+        } else {
+            docker network create --driver bridge --attachable lucid-dev_lucid_net
+            Write-ColorOutput "[+] Network 'lucid-dev_lucid_net' created" "Green"
+        }
     } catch {
         docker network create --driver bridge --attachable lucid-dev_lucid_net
-        Write-ColorOutput "✓ Network 'lucid-dev_lucid_net' created" "Green"
+        Write-ColorOutput "[+] Network 'lucid-dev_lucid_net' created" "Green"
     }
 }
 
@@ -135,11 +150,19 @@ function Pre-PullImages {
         for ($i = 1; $i -le $MaxRetries; $i++) {
             Write-ColorOutput "Attempting to pull $ImageName (attempt $i/$MaxRetries)..." "Yellow"
             try {
-                docker pull $ImageName
-                Write-ColorOutput "✓ Successfully pulled $ImageName" "Green"
-                return $true
+                $result = docker pull $ImageName 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-ColorOutput "[+] Successfully pulled $ImageName" "Green"
+                    return $true
+                } else {
+                    Write-ColorOutput "[-] Failed to pull $ImageName (attempt $i)" "Red"
+                    if ($i -lt $MaxRetries) {
+                        Write-ColorOutput "Retrying in 5 seconds..." "Yellow"
+                        Start-Sleep -Seconds 5
+                    }
+                }
             } catch {
-                Write-ColorOutput "✗ Failed to pull $ImageName (attempt $i)" "Red"
+                Write-ColorOutput "[-] Failed to pull $ImageName (attempt $i)" "Red"
                 if ($i -lt $MaxRetries) {
                     Write-ColorOutput "Retrying in 5 seconds..." "Yellow"
                     Start-Sleep -Seconds 5
@@ -161,7 +184,7 @@ function Pre-PullImages {
     }
     
     if (-not $pythonPulled) {
-        Write-ColorOutput "✗ Failed to pull any Python base image" "Red"
+        Write-ColorOutput "[-] Failed to pull any Python base image" "Red"
         throw "Cannot pull Python base image"
     }
     
@@ -180,7 +203,7 @@ function Pre-PullImages {
         Write-ColorOutput "Warning: Failed to pull MongoDB image, continuing anyway" "Yellow"
     }
     
-    Write-ColorOutput "✓ Base images pre-pull completed" "Green"
+    Write-ColorOutput "[+] Base images pre-pull completed" "Green"
 }
 
 function Build-Image {
@@ -217,9 +240,9 @@ function Build-Image {
     & docker buildx build @buildArgs
     
     if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput "✓ Multi-platform image built and pushed successfully" "Green"
+        Write-ColorOutput "[+] Multi-platform image built and pushed successfully" "Green"
     } else {
-        Write-ColorOutput "✗ Build failed" "Red"
+        Write-ColorOutput "[-] Build failed" "Red"
         exit $LASTEXITCODE
     }
 }
@@ -231,9 +254,13 @@ function Test-Images {
         Write-ColorOutput "Checking: $tag" "Yellow"
         try {
             docker manifest inspect $tag *>$null
-            Write-ColorOutput "✓ $tag is available" "Green"
+            if ($LASTEXITCODE -eq 0) {
+                Write-ColorOutput "[+] $tag is available" "Green"
+            } else {
+                Write-ColorOutput "[-] $tag is not available" "Red"
+            }
         } catch {
-            Write-ColorOutput "✗ $tag is not available" "Red"
+            Write-ColorOutput "[-] $tag is not available" "Red"
         }
     }
 }
@@ -249,7 +276,7 @@ function Test-LocalBuild {
         $CONTEXT_PATH
     
     if ($LASTEXITCODE -ne 0) {
-        Write-ColorOutput "✗ Local build failed" "Red"
+        Write-ColorOutput "[-] Local build failed" "Red"
         exit $LASTEXITCODE
     }
     
@@ -263,11 +290,11 @@ function Test-LocalBuild {
     $running = docker ps | Select-String $containerId
     
     if ($running) {
-        Write-ColorOutput "✓ Container started successfully" "Green"
+        Write-ColorOutput "[+] Container started successfully" "Green"
         docker stop $containerId *>$null
         docker rm $containerId *>$null
     } else {
-        Write-ColorOutput "✗ Container failed to start" "Red"
+        Write-ColorOutput "[-] Container failed to start" "Red"
         docker logs $containerId
         docker rm $containerId *>$null
         exit 1
