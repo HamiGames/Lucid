@@ -1,6 +1,6 @@
 # Base Python + Bash + SSL support on Debian Bookworm
-
-FROM python:3.12-slim-bookworm
+RUN docker pull debian:bookworm-slim 
+FROM debian:bookworm-slim
 
 
 # Environment setup
