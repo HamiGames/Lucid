@@ -308,51 +308,56 @@ function Test-LocalBuild {
     }
 }
 
-# Main execution
-Write-ColorOutput "Starting Lucid DevContainer build process..." "Blue"
-
-# Pre-checks
-if (-not (Test-Docker)) {
-    exit 1
+# Main execution function
+function Start-Build {
+    Write-ColorOutput "Starting Lucid DevContainer build process..." "Blue"
+    
+    # Pre-checks
+    if (-not (Test-Docker)) {
+        exit 1
+    }
+    
+    Ensure-Network
+    
+    if ($TestOnly) {
+        Write-ColorOutput "Running test-only build..." "Yellow"
+        Test-LocalBuild
+        Write-ColorOutput "[+] Local test completed successfully" "Green"
+        return
+    }
+    
+    # Full build and push process
+    Ensure-Builder
+    Pre-PullImages
+    
+    if ($NoCache) {
+        Write-ColorOutput "Building without cache..." "Yellow"
+        # Cache handling would be modified in Build-Image function
+    }
+    
+    Build-Image
+    Test-Images
+    
+    # Test the pushed image
+    Write-ColorOutput "Testing pushed image..." "Blue"
+    docker run --rm "${IMAGE_NAME}:dev-latest" python --version
+    docker run --rm "${IMAGE_NAME}:dev-latest" node --version
+    docker run --rm "${IMAGE_NAME}:dev-latest" mongosh --version
+    
+    Write-Host ""
+    Write-ColorOutput "===== Build Complete =====" "Green"
+    Write-ColorOutput "[+] Images built and pushed successfully" "Green"
+    Write-ColorOutput "Available tags:" "Yellow"
+    foreach ($tag in $TAGS) {
+        Write-Host "  • $tag"
+    }
+    Write-Host ""
+    Write-ColorOutput "You can now pull the image on your development machine:" "Blue"
+    Write-Host "  docker pull ${IMAGE_NAME}:dev-latest"
+    Write-Host ""
+    Write-ColorOutput "Or use it directly in devcontainer.json:" "Blue"
+    Write-Host "  `"image`": `"${IMAGE_NAME}:dev-latest`""
 }
 
-Ensure-Network
-
-if ($TestOnly) {
-    Write-ColorOutput "Running test-only build..." "Yellow"
-    Test-LocalBuild
-    Write-ColorOutput "✓ Local test completed successfully" "Green"
-    exit 0
-}
-
-# Full build and push process
-Ensure-Builder
-Pre-PullImages
-
-if ($NoCache) {
-    Write-ColorOutput "Building without cache..." "Yellow"
-    # Cache handling would be modified in Build-Image function
-}
-
-Build-Image
-Test-Images
-
-# Test the pushed image
-Write-ColorOutput "Testing pushed image..." "Blue"
-docker run --rm "${IMAGE_NAME}:dev-latest" python --version
-docker run --rm "${IMAGE_NAME}:dev-latest" node --version
-docker run --rm "${IMAGE_NAME}:dev-latest" mongosh --version
-
-Write-Host ""
-Write-ColorOutput "===== Build Complete =====" "Green"
-Write-ColorOutput "✓ Images built and pushed successfully" "Green"
-Write-ColorOutput "Available tags:" "Yellow"
-foreach ($tag in $TAGS) {
-    Write-Host "  • $tag"
-}
-Write-Host ""
-Write-ColorOutput "You can now pull the image on your development machine:" "Blue"
-Write-Host "  docker pull ${IMAGE_NAME}:dev-latest"
-Write-Host ""
-Write-ColorOutput "Or use it directly in devcontainer.json:" "Blue"
-Write-Host "  `"image`": `"${IMAGE_NAME}:dev-latest`""
+# Execute main function
+Start-Build
