@@ -9,7 +9,7 @@ description = "Lucid RDP secure blockchain development platform"
 authors = [
     { name="PickMe", email="you@example.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
 
@@ -67,8 +67,10 @@ dev = [
     "bandit"
 ]
 
-[tool.setuptools]
-packages = ["app"]  # Change if your package lives elsewhere
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["blockchain*", "03-api-gateway*"]
+exclude = ["tests*", "*.tests", "*.tests.*", "__pycache__", "*.pyc"]
 
 [tool.black]
 line-length = 88
