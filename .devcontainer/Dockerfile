@@ -1,6 +1,6 @@
 # Base Python + Bash + SSL support on Debian Bookworm
 
-FROM debian:bookworm-slim
+FROM python:3.12-bookworm-slim
 
 
 # Environment setup
