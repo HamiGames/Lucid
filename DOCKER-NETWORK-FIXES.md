@@ -40,7 +40,10 @@ This script will:
    } | ConvertTo-Json | Set-Content "$env:USERPROFILE\.docker\daemon.json"
    ```
 
-2. **Restart Docker Desktop** (Essential!)
+2. **Restart Docker Desktop** (CRITICAL - MUST DO MANUALLY!):
+   - **Method 1**: Right-click Docker Desktop icon in system tray → "Quit Docker Desktop" → Wait 10 seconds → Start Docker Desktop from Start Menu
+   - **Method 2**: Close Docker Desktop completely → Reopen from Start Menu
+   - **Wait for Docker to fully start** (green whale icon in system tray)
 
 3. **Test the fix**:
    ```powershell

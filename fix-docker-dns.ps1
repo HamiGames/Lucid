@@ -80,13 +80,76 @@ if ($dnsWorking) {
     Write-Host "[-] DNS issues detected" -ForegroundColor Red
 }
 
-# Step 5: Instructions
+# Step 5: Attempt to restart Docker Desktop automatically
 Write-Host ""
-Write-Host "NEXT STEPS:" -ForegroundColor Cyan
-Write-Host "1. RESTART Docker Desktop (Essential!)" -ForegroundColor Red
-Write-Host "2. Wait for Docker to fully start" -ForegroundColor Yellow
-Write-Host "3. Test with: docker pull hello-world" -ForegroundColor Yellow
-Write-Host "4. Then run: .\build-devcontainer.ps1 -TestOnly" -ForegroundColor Yellow
+Write-Host "Attempting to restart Docker Desktop..." -ForegroundColor Yellow
+
+# Try to restart Docker Desktop programmatically
+try {
+    # Stop Docker Desktop
+    $dockerProcess = Get-Process "Docker Desktop" -ErrorAction SilentlyContinue
+    if ($dockerProcess) {
+        Write-Host "Stopping Docker Desktop..." -ForegroundColor Yellow
+        Stop-Process -Name "Docker Desktop" -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 5
+    }
+    
+    # Start Docker Desktop
+    $dockerPath = "${env:ProgramFiles}\Docker\Docker\Docker Desktop.exe"
+    if (Test-Path $dockerPath) {
+        Write-Host "Starting Docker Desktop..." -ForegroundColor Yellow
+        Start-Process -FilePath $dockerPath -WindowStyle Hidden
+        Write-Host "[+] Docker Desktop restart initiated" -ForegroundColor Green
+        
+        # Wait for Docker to start
+        Write-Host "Waiting for Docker to start (this may take 30-60 seconds)..." -ForegroundColor Yellow
+        $timeout = 60
+        $elapsed = 0
+        
+        do {
+            Start-Sleep -Seconds 5
+            $elapsed += 5
+            try {
+                docker info *>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "[+] Docker Desktop is ready!" -ForegroundColor Green
+                    break
+                }
+            } catch { }
+            
+            if ($elapsed -ge $timeout) {
+                Write-Host "[-] Docker startup timeout. Please verify manually." -ForegroundColor Red
+                break
+            }
+            
+            Write-Host "Still waiting for Docker... ($elapsed/$timeout seconds)" -ForegroundColor Yellow
+        } while ($elapsed -lt $timeout)
+        
+    } else {
+        throw "Docker Desktop not found at expected path"
+    }
+} catch {
+    Write-Host "[-] Automatic restart failed. Manual restart required." -ForegroundColor Red
+    $manualRestart = $true
+}
+
+# Step 6: Instructions (manual or verification)
+Write-Host ""
+if ($manualRestart -or $LASTEXITCODE -ne 0) {
+    Write-Host "MANUAL RESTART REQUIRED:" -ForegroundColor Red
+    Write-Host "1. Right-click Docker Desktop icon in system tray" -ForegroundColor Yellow
+    Write-Host "2. Click 'Quit Docker Desktop'" -ForegroundColor Yellow
+    Write-Host "3. Wait 10 seconds" -ForegroundColor Yellow
+    Write-Host "4. Start Docker Desktop from Start Menu" -ForegroundColor Yellow
+    Write-Host "5. Wait for Docker to fully start (green icon in tray)" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "THEN TEST:" -ForegroundColor Cyan
+} else {
+    Write-Host "VERIFY THE FIX:" -ForegroundColor Cyan
+}
+
+Write-Host "1. Test basic pull: docker pull hello-world" -ForegroundColor Yellow
+Write-Host "2. If successful, test build: .\build-devcontainer.ps1 -TestOnly" -ForegroundColor Yellow
 
 Write-Host ""
 Write-Host "If issues persist:" -ForegroundColor Yellow
