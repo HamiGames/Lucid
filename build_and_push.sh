@@ -18,8 +18,8 @@ echo "Platform: linux/arm64"
 echo "Checking if builder '$BUILDER_NAME' exists..."
 if ! docker buildx ls | grep -q "$BUILDER_NAME"; then
   echo "Error: Builder '$BUILDER_NAME' does not exist."
-  echo "Please create it with: docker buildx create --name $BUILDER_NAME --use"
-  exit 1
+  echo "Creating builder: $BUILDER_NAME"
+  docker buildx create --name $BUILDER_NAME --use
 fi
 
 # Use the specified builder
@@ -31,12 +31,17 @@ echo "Ensuring network 'lucid-dev_lucid_net' exists..."
 docker network inspect lucid-dev_lucid_net >/dev/null 2>&1 || \
   docker network create --driver bridge --attachable lucid-dev_lucid_net
 
+# Pre-pull the base image to ensure it's available
+echo "Pre-pulling base image to avoid timeout issues..."
+docker pull python:3.12-slim-bookworm
+
 # Build the image for ARM64 platform (Raspberry Pi 5)
 echo "Building image for ARM64 platform..."
 docker buildx build \
   --platform linux/arm64 \
   --tag "$IMAGE_NAME:$IMAGE_TAG" \
   --file .devcontainer/Dockerfile \
+  --network=host \
   --push \
   .
 
