@@ -3,7 +3,8 @@
 # Based on Spec-1d requirements for Pi 5 + Ubuntu Server simulation
 
 # Stage 1: Base development environment
-FROM python:3.12-slim-bookworm AS base
+# Use more reliable base image tag and add retry logic
+FROM python:3.12-slim AS base
 
 # Environment setup per LUCID-STRICT requirements
 ENV DEBIAN_FRONTEND=noninteractive \

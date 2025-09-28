@@ -128,13 +128,59 @@ function Ensure-Network {
 function Pre-PullImages {
     Write-ColorOutput "Pre-pulling base images to avoid timeout issues..." "Yellow"
     
-    # Base Python image
-    docker pull python:3.12-slim-bookworm
+    # Function to pull with retry
+    function Pull-WithRetry {
+        param([string]$ImageName, [int]$MaxRetries = 3)
+        
+        for ($i = 1; $i -le $MaxRetries; $i++) {
+            Write-ColorOutput "Attempting to pull $ImageName (attempt $i/$MaxRetries)..." "Yellow"
+            try {
+                docker pull $ImageName
+                Write-ColorOutput "✓ Successfully pulled $ImageName" "Green"
+                return $true
+            } catch {
+                Write-ColorOutput "✗ Failed to pull $ImageName (attempt $i)" "Red"
+                if ($i -lt $MaxRetries) {
+                    Write-ColorOutput "Retrying in 5 seconds..." "Yellow"
+                    Start-Sleep -Seconds 5
+                }
+            }
+        }
+        return $false
+    }
+    
+    # Try different Python image variants
+    $pythonImages = @("python:3.12-slim", "python:3.12-slim-bookworm", "python:3.12")
+    $pythonPulled = $false
+    
+    foreach ($image in $pythonImages) {
+        if (Pull-WithRetry -ImageName $image -MaxRetries 2) {
+            $pythonPulled = $true
+            break
+        }
+    }
+    
+    if (-not $pythonPulled) {
+        Write-ColorOutput "✗ Failed to pull any Python base image" "Red"
+        throw "Cannot pull Python base image"
+    }
     
     # MongoDB for development
-    docker pull mongo:7
+    $mongoImages = @("mongo:7.0", "mongo:7", "mongo:latest")
+    $mongoPulled = $false
     
-    Write-ColorOutput "✓ Base images pre-pulled" "Green"
+    foreach ($image in $mongoImages) {
+        if (Pull-WithRetry -ImageName $image -MaxRetries 2) {
+            $mongoPulled = $true
+            break
+        }
+    }
+    
+    if (-not $mongoPulled) {
+        Write-ColorOutput "Warning: Failed to pull MongoDB image, continuing anyway" "Yellow"
+    }
+    
+    Write-ColorOutput "✓ Base images pre-pull completed" "Green"
 }
 
 function Build-Image {
