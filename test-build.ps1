@@ -62,7 +62,7 @@ try {
     # Build for current platform only
     $buildArgs = @(
         "--file", $DOCKERFILE_PATH,
-        "--tag", "$IMAGE_NAME:test-local",
+        "--tag", "${IMAGE_NAME}:test-local",
         "."
     )
     
