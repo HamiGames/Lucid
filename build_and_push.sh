@@ -5,7 +5,7 @@ set -e
 # Run this script from the root of the Lucid repository on the Raspberry Pi 5
 
 # Define variables
-IMAGE_NAME="pickme/Lucid"
+IMAGE_NAME="pickme/lucid"
 IMAGE_TAG="1.0"
 BUILDER_NAME="lucid_builder"
 
