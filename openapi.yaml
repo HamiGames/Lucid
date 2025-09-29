@@ -1,0 +1,1378 @@
+openapi: 3.0.3
+info:
+  title: Lucid RDP API
+  description: |
+    Complete API specification for Lucid RDP blockchain-integrated remote desktop platform.
+    
+    Based on LUCID-STRICT requirements from Build_guide_docs:
+    - Spec-1a: Background & Requirements (R-MUST-001 through R-WONT-002)
+    - Spec-1b: Method, Governance & Consensus (PoOT, dual-chain architecture)
+    - Spec-1c: Tokenomics, Wallet, Client Controls (USDT payouts, trust-nothing)
+    - Spec-1d: Build, Test, Run & Connectivity (monorepo, Pi 5 deployment)
+    
+    **Network Requirements:**
+    - All endpoints accessible only via Tor .onion addresses (R-MUST-014, R-MUST-020)
+    - No clearnet ingress permitted
+    - Service-to-service calls traverse Tor hidden services
+    
+    **Authentication:**
+    - JWT tokens for API access (R-SHOULD-004)
+    - Hardware-backed key storage (R-MUST-008)
+    - Role-based access control
+  version: 1.0.0
+  contact:
+    name: Lucid RDP Development
+    url: https://github.com/HamiGames/Lucid
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://lucid-admin.onion
+    description: Admin UI Backend (.onion only - R-MUST-014)
+  - url: http://lucid-api.onion
+    description: Main API Gateway (.onion only)
+  - url: http://lucid-blockchain.onion  
+    description: Blockchain Integration Service (.onion only)
+  - url: http://lucid-sessions.onion
+    description: Session Management Service (.onion only)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for API access (R-SHOULD-004)
+    
+    HardwareKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Hardware-Key-Signature
+      description: Hardware-backed key signature (R-MUST-008)
+  
+  schemas:
+    # Core Session Management (R-MUST-012)
+    SessionID:
+      type: object
+      required: [session_id, ephemeral_keypair, created_at, expires_at]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Single-use session identifier (R-MUST-012)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        ephemeral_keypair:
+          $ref: '#/components/schemas/EphemeralKeypair'
+        created_at:
+          type: string
+          format: date-time
+          description: Session creation timestamp
+        expires_at:
+          type: string
+          format: date-time
+          description: Session expiration (non-replayable)
+        owner_address:
+          type: string
+          description: TRON address of session owner
+          pattern: '^T[A-Za-z0-9]{33}$'
+        anchor_status:
+          type: string
+          enum: [pending, anchored, failed]
+          description: Blockchain anchoring status
+    
+    EphemeralKeypair:
+      type: object
+      required: [public_key, created_at]
+      properties:
+        public_key:
+          type: string
+          format: base64
+          description: Ed25519 public key for session
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+    
+    # Session Audit Trail (R-MUST-005)
+    SessionAuditTrail:
+      type: object
+      required: [session_id, events, manifest]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+        manifest:
+          $ref: '#/components/schemas/SessionManifest'
+        chunks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChunkMetadata'
+    
+    AuditEvent:
+      type: object
+      required: [event_id, timestamp, actor_identity, event_type]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        actor_identity:
+          type: string
+          description: Identity of the actor performing the action
+        event_type:
+          type: string
+          enum: [
+            session_start, session_end, 
+            rdp_connect, rdp_disconnect,
+            file_transfer_request, file_transfer_approved, file_transfer_denied,
+            clipboard_access, keystroke_capture, window_focus,
+            resource_access, policy_violation, session_void
+          ]
+        resource_accessed:
+          type: string
+          description: Resource that was accessed (if applicable)
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional event metadata
+        keystroke_data:
+          type: string
+          description: Optional keystroke metadata (if enabled)
+        window_focus_data:
+          type: string
+          description: Optional window focus metadata (if enabled)
+    
+    # Session Manifest for Blockchain Anchoring (R-MUST-006, R-MUST-016)
+    SessionManifest:
+      type: object
+      required: [session_id, merkle_root, chunk_count, participant_pubkeys, created_at]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        merkle_root:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+          description: BLAKE3 Merkle root of encrypted chunks
+        chunk_count:
+          type: integer
+          minimum: 1
+          description: Number of encrypted chunks
+        total_size:
+          type: integer
+          description: Total size of session data in bytes
+        participant_pubkeys:
+          type: array
+          items:
+            type: string
+            format: base64
+          description: Public keys of session participants
+        codec_info:
+          type: object
+          properties:
+            video_codec:
+              type: string
+              example: "h264_v4l2m2m"
+            compression:
+              type: string
+              example: "zstd_level_3"
+            encryption:
+              type: string
+              example: "xchacha20_poly1305"
+        recorder_version:
+          type: string
+          example: "1.0.0"
+        device_fingerprint:
+          type: string
+          description: Pi 5 device fingerprint
+        created_at:
+          type: string
+          format: date-time
+        anchored_at:
+          type: string
+          format: date-time
+          description: Blockchain anchor timestamp
+        anchor_txid:
+          type: string
+          description: On-System Chain transaction ID
+    
+    # Chunk Metadata (8-16MB chunks, Zstd compression - Spec-1b)
+    ChunkMetadata:
+      type: object
+      required: [chunk_id, session_id, sequence_number, original_size, compressed_size, encrypted_size]
+      properties:
+        chunk_id:
+          type: string
+          description: Unique chunk identifier
+        session_id:
+          type: string
+          format: uuid
+        sequence_number:
+          type: integer
+          minimum: 0
+        original_size:
+          type: integer
+          description: Original chunk size in bytes (8-16MB)
+          minimum: 8388608
+          maximum: 16777216
+        compressed_size:
+          type: integer
+          description: Zstd compressed size
+        encrypted_size:
+          type: integer
+          description: XChaCha20-Poly1305 encrypted size
+        ciphertext_sha256:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+          description: SHA256 hash of encrypted chunk
+        local_path:
+          type: string
+          description: Local storage path on Pi
+        created_at:
+          type: string
+          format: date-time
+        compression_ratio:
+          type: number
+          format: float
+          description: Compression efficiency ratio
+    
+    # Trust-Nothing Policy (R-MUST-013)
+    TrustNothingPolicy:
+      type: object
+      required: [policy_id, session_id, default_deny, jit_approvals]
+      properties:
+        policy_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        default_deny:
+          type: boolean
+          default: true
+          description: Default deny for all actions
+        jit_approvals:
+          type: object
+          description: Just-in-time approval settings
+          properties:
+            input_allowed:
+              type: boolean
+              default: false
+            clipboard_allowed:
+              type: boolean
+              default: false
+            file_transfer_allowed:
+              type: boolean
+              default: false
+            file_transfer_paths:
+              type: array
+              items:
+                type: string
+              description: Allowed file transfer paths
+            replace_same_name_guard:
+              type: boolean
+              default: true
+        privacy_shield:
+          type: object
+          properties:
+            hide_client_data:
+              type: boolean
+              default: true
+            redaction_zones:
+              type: array
+              items:
+                $ref: '#/components/schemas/RedactionZone'
+            app_allowlist:
+              type: array
+              items:
+                type: string
+        policy_hash:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+          description: Signed policy snapshot hash
+        signature:
+          type: string
+          format: base64
+          description: Policy signature by owner
+    
+    RedactionZone:
+      type: object
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
+        type:
+          type: string
+          enum: [rectangle, window, application]
+    
+    # Blockchain Integration (R-MUST-006, R-MUST-015, R-MUST-016)
+    BlockchainAnchor:
+      type: object
+      required: [session_id, anchor_type, chain, status]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        anchor_type:
+          type: string
+          enum: [session_manifest, chunk_hash]
+        chain:
+          type: string
+          enum: [on_system_data_chain]
+          description: Only On-System Data Chain for session data
+        anchor_data:
+          oneOf:
+            - $ref: '#/components/schemas/SessionManifest'
+            - $ref: '#/components/schemas/ChunkMetadata'
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+        txid:
+          type: string
+          description: On-System Chain transaction ID
+        gas_used:
+          type: integer
+        block_number:
+          type: integer
+        confirmation_time:
+          type: string
+          format: date-time
+    
+    # TRON Integration (R-MUST-015, R-MUST-018)
+    TronPayout:
+      type: object
+      required: [session_id, recipient_address, amount_usdt, router_type]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        recipient_address:
+          type: string
+          pattern: '^T[A-Za-z0-9]{33}$'
+          description: TRON wallet address
+        amount_usdt:
+          type: number
+          format: decimal
+          multipleOf: 0.000001
+          description: USDT amount (TRC-20)
+        router_type:
+          type: string
+          enum: [PR0, PRKYC]
+          description: PayoutRouterV0 (non-KYC) or PayoutRouterKYC
+        reason:
+          type: string
+          description: Payout reason code
+        kyc_hash:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+          description: KYC hash (required for PRKYC)
+        compliance_signature:
+          type: object
+          properties:
+            v:
+              type: integer
+            r:
+              type: string
+            s:
+              type: string
+            expiry:
+              type: integer
+        txid:
+          type: string
+          description: TRON transaction ID
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+    
+    # PoOT Consensus (Spec-1b)
+    WorkCredits:
+      type: object
+      required: [node_id, epoch, credits_total, rank]
+      properties:
+        node_id:
+          type: string
+          description: Node identifier
+        pool_id:
+          type: string
+          description: Pool identifier (if part of pool)
+        epoch:
+          type: integer
+          description: Consensus epoch
+        credits_total:
+          type: integer
+          description: Total work credits
+        relay_bandwidth:
+          type: integer
+          description: Relay bandwidth served (bytes)
+        storage_proofs:
+          type: integer
+          description: Storage availability proofs submitted
+        validation_signatures:
+          type: integer
+          description: Block validation signatures
+        uptime_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        rank:
+          type: integer
+          description: Ranking in current epoch
+        live_score:
+          type: number
+          format: float
+          description: Liveness score for leader selection
+    
+    # Node Worker Data Transfer (DHT+CRDT - R-MUST-017)
+    NodeWorkerSession:
+      type: object
+      required: [worker_id, session_data, dht_metadata]
+      properties:
+        worker_id:
+          type: string
+          description: Node worker identifier
+        session_data:
+          type: object
+          properties:
+            active_sessions:
+              type: array
+              items:
+                type: string
+                format: uuid
+            bandwidth_usage:
+              type: integer
+              description: Bytes transferred
+            storage_used:
+              type: integer
+              description: Bytes stored for replication
+        dht_metadata:
+          type: object
+          description: Encrypted metadata for DHT overlay
+          properties:
+            encrypted_index:
+              type: string
+              format: base64
+            replication_factor:
+              type: integer
+              minimum: 1
+              maximum: 3
+            shard_assignments:
+              type: array
+              items:
+                type: string
+        crdt_state:
+          type: object
+          description: CRDT replication state
+          additionalProperties: true
+    
+    # Hardware-Accelerated Video (R-SHOULD-001)
+    VideoEncodingConfig:
+      type: object
+      properties:
+        codec:
+          type: string
+          enum: [h264_v4l2m2m, hevc_v4l2m2m]
+          description: Pi 5 hardware-accelerated codecs
+        bitrate:
+          type: integer
+          description: Target bitrate in bps
+          minimum: 500000
+          maximum: 10000000
+        resolution:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+        framerate:
+          type: integer
+          minimum: 15
+          maximum: 60
+        hw_accel_device:
+          type: string
+          description: V4L2 device path
+          example: "/dev/video11"
+    
+    # API Response Wrappers
+    ApiResponse:
+      type: object
+      required: [success, timestamp]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          additionalProperties: true
+        errors:
+          type: array
+          items:
+            type: string
+    
+    ErrorResponse:
+      type: object
+      required: [error, code, message]
+      properties:
+        error:
+          type: boolean
+          default: true
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+security:
+  - BearerAuth: []
+  - HardwareKeyAuth: []
+
+paths:
+  # Session Management API (Core RDP functionality)
+  /api/v1/sessions:
+    post:
+      summary: Create new RDP session
+      description: |
+        Create a single-use session ID with ephemeral keypair (R-MUST-012).
+        Implements trust-nothing policy engine (R-MUST-013).
+      tags: [Sessions]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [owner_address, policy]
+              properties:
+                owner_address:
+                  type: string
+                  pattern: '^T[A-Za-z0-9]{33}$'
+                policy:
+                  $ref: '#/components/schemas/TrustNothingPolicy'
+                observer_pubkeys:
+                  type: array
+                  items:
+                    type: string
+                    format: base64
+                  description: Optional observer role (R-SHOULD-008)
+                video_config:
+                  $ref: '#/components/schemas/VideoEncodingConfig'
+      responses:
+        201:
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SessionID'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+    
+    get:
+      summary: List active sessions
+      description: Get all active RDP sessions for authenticated user
+      tags: [Sessions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, failed]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        200:
+          description: Sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SessionID'
+  
+  /api/v1/sessions/{session_id}:
+    get:
+      summary: Get session details
+      tags: [Sessions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Session details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SessionID'
+        404:
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      summary: Terminate session
+      description: End RDP session and trigger blockchain anchoring
+      tags: [Sessions]
+      security:
+        - BearerAuth: []
+        - HardwareKeyAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Session terminated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          anchor_initiated:
+                            type: boolean
+                          chunks_processed:
+                            type: integer
+                          manifest_hash:
+                            type: string
+  
+  /api/v1/sessions/{session_id}/connect:
+    post:
+      summary: Connect to RDP session
+      description: Establish RDP connection with P2P transport over Tor (R-MUST-004)
+      tags: [Sessions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_pubkey, transport_config]
+              properties:
+                client_pubkey:
+                  type: string
+                  format: base64
+                  description: Client's ephemeral public key
+                transport_config:
+                  type: object
+                  properties:
+                    protocol:
+                      type: string
+                      enum: [tor_rdp]
+                      description: Tor-only transport (R-MUST-004, R-SHOULD-002)
+                    onion_address:
+                      type: string
+                      pattern: '^[a-z2-7]{56}\.onion$'
+                      description: Client .onion address
+                    encryption_mode:
+                      type: string
+                      enum: [end_to_end]
+                      default: end_to_end
+      responses:
+        200:
+          description: RDP connection established
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          rdp_endpoint:
+                            type: string
+                            description: RDP server .onion endpoint
+                          shared_secret:
+                            type: string
+                            format: base64
+                          session_key:
+                            type: string
+                            format: base64
+                          transport_ready:
+                            type: boolean
+        403:
+          description: Policy violation - connection denied
+  
+  # Session Audit and Data Transfer
+  /api/v1/sessions/{session_id}/audit:
+    get:
+      summary: Get session audit trail
+      description: Retrieve comprehensive audit trail (R-MUST-005)
+      tags: [Sessions, Audit]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: include_keystrokes
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: include_window_focus
+          in: query
+          schema:
+            type: boolean  
+            default: false
+      responses:
+        200:
+          description: Audit trail retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SessionAuditTrail'
+  
+  /api/v1/sessions/{session_id}/chunks:
+    get:
+      summary: List session chunks
+      description: Get metadata for encrypted session chunks (R-MUST-016)
+      tags: [Sessions, Data]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Chunk metadata retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChunkMetadata'
+  
+  /api/v1/sessions/{session_id}/manifest:
+    get:
+      summary: Get session manifest
+      description: Retrieve session manifest for blockchain anchoring (R-MUST-006)
+      tags: [Sessions, Blockchain]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Session manifest retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SessionManifest'
+    
+    post:
+      summary: Anchor session manifest
+      description: Submit session manifest to On-System Data Chain (R-MUST-006, R-MUST-016)
+      tags: [Sessions, Blockchain]
+      security:
+        - BearerAuth: []
+        - HardwareKeyAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        202:
+          description: Anchoring initiated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BlockchainAnchor'
+  
+  # Blockchain Integration API
+  /api/v1/blockchain/anchors:
+    get:
+      summary: List blockchain anchors
+      description: Get all session anchors on On-System Data Chain
+      tags: [Blockchain]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, failed]
+        - name: chain
+          in: query
+          schema:
+            type: string
+            enum: [on_system_data_chain]
+      responses:
+        200:
+          description: Anchors retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BlockchainAnchor'
+  
+  /api/v1/blockchain/anchors/{anchor_id}:
+    get:
+      summary: Get anchor status
+      tags: [Blockchain]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: anchor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Anchor status retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BlockchainAnchor'
+  
+  # TRON Payout Integration (R-MUST-015, R-MUST-018)
+  /api/v1/tron/payouts:
+    post:
+      summary: Create USDT payout
+      description: |
+        Create USDT-TRC20 payout via isolated Tron-Node System.
+        Uses PayoutRouterV0 (non-KYC) or PayoutRouterKYC based on deployment mode.
+        Monthly payouts: node-worker via PRKYC, end-user via PR0.
+      tags: [TRON, Payouts]
+      security:
+        - BearerAuth: []
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id, recipient_address, amount_usdt, router_type]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                recipient_address:
+                  type: string
+                  pattern: '^T[A-Za-z0-9]{33}$'
+                amount_usdt:
+                  type: number
+                  format: decimal
+                  multipleOf: 0.000001
+                router_type:
+                  type: string
+                  enum: [PR0, PRKYC]
+                  description: PayoutRouterV0 or PayoutRouterKYC
+                reason:
+                  type: string
+                  description: Payout reason code
+                kyc_data:
+                  type: object
+                  description: Required for PRKYC router
+                  properties:
+                    kyc_hash:
+                      type: string
+                      pattern: '^[a-fA-F0-9]{64}$'
+                    compliance_signature:
+                      type: object
+                      properties:
+                        v:
+                          type: integer
+                        r:
+                          type: string
+                        s:
+                          type: string
+                        expiry:
+                          type: integer
+      responses:
+        202:
+          description: Payout initiated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TronPayout'
+        400:
+          description: Invalid payout request
+        403:
+          description: Payout not authorized
+    
+    get:
+      summary: List payouts
+      description: Get USDT payout history
+      tags: [TRON, Payouts]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, failed]
+        - name: router
+          in: query
+          schema:
+            type: string
+            enum: [PR0, PRKYC]
+      responses:
+        200:
+          description: Payouts retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TronPayout'
+  
+  # PoOT Consensus API (Spec-1b)
+  /api/v1/consensus/work-credits:
+    get:
+      summary: Get work credits
+      description: Retrieve PoOT work credits for node ranking
+      tags: [Consensus]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: node_id
+          in: query
+          schema:
+            type: string
+        - name: epoch
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Work credits retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/WorkCredits'
+    
+    post:
+      summary: Submit work proof
+      description: Submit work proof for PoOT consensus
+      tags: [Consensus]
+      security:
+        - BearerAuth: []
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id, proof_type, proof_data]
+              properties:
+                node_id:
+                  type: string
+                pool_id:
+                  type: string
+                  description: Pool identifier (if part of pool)
+                slot:
+                  type: integer
+                  description: Consensus slot
+                proof_type:
+                  type: string
+                  enum: [relay_bandwidth, storage_availability, validation_signature, uptime_beacon]
+                proof_data:
+                  type: object
+                  additionalProperties: true
+                signature:
+                  type: string
+                  format: base64
+      responses:
+        202:
+          description: Work proof submitted
+  
+  # Node Worker API (R-MUST-017)
+  /api/v1/nodes/sessions:
+    get:
+      summary: Get node session data
+      description: Retrieve session data for DHT+CRDT replication
+      tags: [Nodes]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Node session data retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NodeWorkerSession'
+    
+    post:
+      summary: Submit session data transfer
+      description: Submit encrypted session data for DHT replication
+      tags: [Nodes]
+      security:
+        - BearerAuth: []
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [worker_id, session_transfers]
+              properties:
+                worker_id:
+                  type: string
+                session_transfers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      session_id:
+                        type: string
+                        format: uuid
+                      encrypted_metadata:
+                        type: string
+                        format: base64
+                      bytes_transferred:
+                        type: integer
+                      replication_nodes:
+                        type: array
+                        items:
+                          type: string
+      responses:
+        202:
+          description: Session data transfer submitted
+  
+  # Admin UI API (R-MUST-009)
+  /api/v1/admin/provision:
+    post:
+      summary: Provision node
+      description: Initial node provisioning and setup
+      tags: [Admin]
+      security:
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ledger_mode, network_config]
+              properties:
+                ledger_mode:
+                  type: string
+                  enum: [mainnet, testnet]
+                  description: Dual payout mode (R-MUST-007)
+                network_config:
+                  type: object
+                  properties:
+                    onion_address:
+                      type: string
+                      pattern: '^[a-z2-7]{56}\.onion$'
+                    tor_port:
+                      type: integer
+                      minimum: 1024
+                      maximum: 65535
+                wallet_config:
+                  type: object
+                  properties:
+                    hardware_backed:
+                      type: boolean
+                      description: Use TPM/secure element if available
+                    passphrase_protected:
+                      type: boolean
+      responses:
+        201:
+          description: Node provisioned successfully
+  
+  /api/v1/admin/keys/rotate:
+    post:
+      summary: Rotate encryption keys
+      description: Rotate node encryption keys (R-MUST-008, R-MUST-009)
+      tags: [Admin]
+      security:
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key_type]
+              properties:
+                key_type:
+                  type: string
+                  enum: [session_master, wallet, admin, tron_node]
+                backup_current:
+                  type: boolean
+                  default: true
+      responses:
+        200:
+          description: Key rotation completed
+  
+  /api/v1/admin/ledger/switch:
+    post:
+      summary: Switch ledger mode
+      description: Switch between mainnet/testnet modes (R-MUST-007, R-MUST-009)
+      tags: [Admin]
+      security:
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_mode]
+              properties:
+                target_mode:
+                  type: string
+                  enum: [mainnet, testnet]
+                confirm_switch:
+                  type: boolean
+                  default: false
+      responses:
+        200:
+          description: Ledger mode switched
+  
+  # Backup and Recovery (R-SHOULD-005)
+  /api/v1/admin/backup:
+    post:
+      summary: Create encrypted backup
+      description: Create S3-compatible encrypted backup
+      tags: [Admin, Backup]
+      security:
+        - HardwareKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [backup_type, s3_config]
+              properties:
+                backup_type:
+                  type: string
+                  enum: [full, sessions, keys, manifests]
+                s3_config:
+                  type: object
+                  properties:
+                    endpoint:
+                      type: string
+                      format: uri
+                    bucket:
+                      type: string
+                    access_key:
+                      type: string
+                    secret_key:
+                      type: string
+                encryption_key:
+                  type: string
+                  format: base64
+                  description: Client-side encryption key
+      responses:
+        202:
+          description: Backup initiated
+    
+    get:
+      summary: List backups
+      tags: [Admin, Backup]
+      security:
+        - HardwareKeyAuth: []
+      responses:
+        200:
+          description: Backup list retrieved
+
+components:
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: Unauthorized - invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Sessions
+    description: RDP session management and control
+  - name: Audit
+    description: Session audit trails and compliance
+  - name: Data
+    description: Session data and chunk management
+  - name: Blockchain
+    description: On-System Data Chain integration
+  - name: TRON
+    description: TRON blockchain and USDT payouts
+  - name: Payouts
+    description: Monthly payout management
+  - name: Consensus
+    description: PoOT consensus and work credits
+  - name: Nodes
+    description: Node worker operations and DHT
+  - name: Admin
+    description: Administrative functions
+  - name: Backup
+    description: Backup and recovery operations
