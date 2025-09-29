@@ -18,6 +18,11 @@ from app.routes.users import router as users_router
 from app.routes.chain_proxy import router as chain_proxy_router
 from app.routes.wallets_proxy import router as wallets_proxy_router
 
+# NEW: Core API blueprint routers
+from app.routes.sessions import router as sessions_router
+from app.routes.blockchain import router as blockchain_router
+from app.routes.policies import router as policies_router
+
 # Optional: Mongo health probe (kept non-fatal)
 try:
     from app.db.connection import ping as mongo_ping  # type: ignore
@@ -83,6 +88,11 @@ def create_app() -> FastAPI:
     # These appear in the gateway OpenAPI as /chain/* and /wallets/*
     app.include_router(chain_proxy_router)
     app.include_router(wallets_proxy_router)
+    
+    # Core API blueprint endpoints
+    app.include_router(sessions_router)
+    app.include_router(blockchain_router)
+    app.include_router(policies_router)
 
     @app.get("/", include_in_schema=False)
     def _root():
