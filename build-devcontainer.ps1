@@ -31,13 +31,15 @@ try {
 }
 
 $BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+# Create Docker-safe timestamp (no colons)
+$BUILD_DATE_SAFE = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss")
 
-# Tags to build and push
+# Tags to build and push (Docker tags cannot contain colons)
 $TAGS = @(
     "${IMAGE_NAME}:${VERSION}",
     "${IMAGE_NAME}:dev-latest",
     "${IMAGE_NAME}:${VERSION}-${GIT_SHA}",
-    "${IMAGE_NAME}:dev-${BUILD_DATE}"
+    "${IMAGE_NAME}:dev-${BUILD_DATE_SAFE}"
 )
 
 function Write-ColorOutput {
