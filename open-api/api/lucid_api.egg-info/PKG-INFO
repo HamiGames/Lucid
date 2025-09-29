@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: lucid-api
+Version: 0.0.0
+Requires-Python: >=3.11
+Requires-Dist: fastapi<1.0,>=0.111
+Requires-Dist: uvicorn[standard]>=0.30
+Requires-Dist: pydantic<3.0,>=2.5
+Requires-Dist: python-dotenv>=1.0

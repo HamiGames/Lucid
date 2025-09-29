@@ -1,0 +1,866 @@
+openapi: 3.0.3
+info:
+  title: Lucid RDP API
+  version: 0.1.0
+  description: 'Base API contract for the Lucid Remote Desktop Platform.
+
+    Provides health checks and system metadata including blockchain integration.
+
+    '
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+- url: http://localhost:8080
+  description: API Gateway (dev)
+- url: http://localhost:8081
+  description: Direct API (dev)
+
+paths:
+  /:
+    get:
+      summary: API root
+      description: Returns basic API metadata and links.
+      operationId: getRoot
+      responses:
+        '200':
+          description: Root metadata
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Root'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+      security: []
+      tags:
+      - meta
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns overall service health and metadata.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+      security: []
+      tags:
+      - meta
+
+  /auth/login:
+    post:
+      operationId: authLogin
+      tags:
+      - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Authenticated
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '429':
+          $ref: '#/components/responses/Error429'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+      summary: Authenticate with email/password (public)
+
+  /auth/refresh:
+    post:
+      operationId: authRefresh
+      tags:
+      - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRefreshResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '429':
+          $ref: '#/components/responses/Error429'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+      summary: Refresh access token using refresh token (public)
+
+  /auth/logout:
+    post:
+      operationId: authLogout
+      tags:
+      - auth
+      responses:
+        '204':
+          description: Logged out (no content)
+        '401':
+          $ref: '#/components/responses/Error401'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+      summary: Logout and revoke refresh token
+
+  /users:
+    get:
+      tags:
+      - users
+      summary: List users (admin)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - in: query
+        name: search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated users
+          headers:
+            X-Request-ID:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsers'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+    post:
+      tags:
+      - users
+      summary: Create user (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ErrorDefault'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/ErrorDefault'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+
+  /users/register:
+    post:
+      tags:
+      - users
+      security: []
+      summary: Self-register a user (dev)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '409':
+          $ref: '#/components/responses/ErrorDefault'
+        '422':
+          $ref: '#/components/responses/ErrorDefault'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+
+  /users/me:
+    get:
+      tags:
+      - users
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Error401'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+    patch:
+      tags:
+      - users
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateSelf'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '422':
+          $ref: '#/components/responses/ErrorDefault'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+
+  /users/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{24}$'
+    get:
+      tags:
+      - users
+      summary: Get user by id (admin)
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/ErrorDefault'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+    patch:
+      tags:
+      - users
+      summary: Update user by id (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateAdmin'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/ErrorDefault'
+        '422':
+          $ref: '#/components/responses/ErrorDefault'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+    delete:
+      tags:
+      - users
+      summary: Delete user by id (admin)
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/ErrorDefault'
+        default:
+          $ref: '#/components/responses/ErrorDefault'
+
+  # --------------------- Cluster B (proxied via gateway) ---------------------
+
+  /chain/info:
+    get:
+      tags:
+      - chain
+      summary: Chain info (proxied)
+      responses:
+        '200':
+          description: Chain info
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  network:
+                    type: string
+                    example: mainnet
+                  node:
+                    type: string
+                    format: uri
+                  height:
+                    type: integer
+                    minimum: 0
+                  block_id:
+                    type: string
+                    nullable: true
+                  block_time:
+                    type: integer
+                    nullable: true
+                    description: unix ms
+                  block_onion:
+                    type: string
+                    nullable: true
+                  block_rpc_url:
+                    type: string
+                    nullable: true
+                    format: uri
+
+  /chain/height:
+    get:
+      tags:
+      - chain
+      summary: Latest block height (proxied)
+      responses:
+        '200':
+          description: Height
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  height:
+                    type: integer
+                    minimum: 0
+
+  /chain/balance/{address_base58}:
+    parameters:
+    - in: path
+      name: address_base58
+      required: true
+      schema:
+        type: string
+        pattern: '^T[a-zA-Z0-9]{33}$'
+    get:
+      tags:
+      - chain
+      summary: Account balance in sun (proxied)
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+                  balance_sun:
+                    type: integer
+                    minimum: 0
+
+  /wallets:
+    get:
+      tags:
+      - wallets
+      summary: List wallets (proxied)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Paginated wallets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletsPage'
+    post:
+      tags:
+      - wallets
+      summary: Create wallet (proxied)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                label:
+                  type: string
+                  nullable: true
+                  maxLength: 128
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+
+  /wallets/{wallet_id}:
+    parameters:
+    - in: path
+      name: wallet_id
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - wallets
+      summary: Get wallet by id (proxied)
+      responses:
+        '200':
+          description: Wallet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '404':
+          $ref: '#/components/responses/ErrorDefault'
+
+  /wallets/{wallet_id}/transfer:
+    parameters:
+    - in: path
+      name: wallet_id
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - wallets
+      summary: Transfer from wallet (proxied)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                to_address:
+                  type: string
+                  pattern: '^T[a-zA-Z0-9]{33}$'
+                amount_sun:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Broadcast result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+
+  headers:
+    RequestId:
+      description: Correlates requests across gateway/API.
+      schema:
+        type: string
+    RateLimit-Limit:
+      description: Maximum requests allowed in the current window.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimit-Remaining:
+      description: Remaining requests in the current window.
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Reset:
+      description: Seconds until the rate-limit window resets.
+      schema:
+        type: integer
+        minimum: 0
+
+  responses:
+    Error401:
+      description: Unauthorized
+      headers:
+        WWW-Authenticate:
+          description: Challenge; usually "Bearer".
+          schema:
+            type: string
+            example: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error403:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Error429:
+      description: Too Many Requests
+      headers:
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ErrorDefault:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Root:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          example: lucid-api-gateway
+        version:
+          type: string
+          example: 0.1.0
+        endpoints:
+          type: object
+          additionalProperties: false
+          properties:
+            health:
+              type: string
+              example: /health
+
+    Health:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+          - degraded
+          example: ok
+        service:
+          type: string
+          example: api-gateway
+        time:
+          type: string
+          format: date-time
+        block_onion:
+          type: string
+          pattern: '^[a-z2-7]{56}\.onion$'
+        block_rpc_url:
+          type: string
+          format: uri
+
+    User:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: '^[a-f0-9]{24}$'
+          example: 5f8d0d55b54764421b7156c5
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - user
+          - admin
+          default: user
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserCreate:
+      type: object
+      required:
+      - email
+      - password
+      - role
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+        role:
+          type: string
+          enum:
+          - user
+          - admin
+
+    UserRegister:
+      type: object
+      required:
+      - email
+      - password
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+
+    UserUpdateSelf:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+
+    UserUpdateAdmin:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - user
+          - admin
+
+    PaginatedUsers:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 200
+
+    AuthLoginRequest:
+      type: object
+      required:
+      - email
+      - password
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+
+    AuthLoginResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          minimum: 1
+          example: 3600
+        refresh_token:
+          type: string
+
+    AuthRefreshRequest:
+      type: object
+      required:
+      - refresh_token
+      additionalProperties: false
+      properties:
+        refresh_token:
+          type: string
+
+    AuthRefreshResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          minimum: 1
+          example: 3600
+
+    Error:
+      type: object
+      additionalProperties: false
+      properties:
+        error:
+          type: string
+          example: Invalid request
+        code:
+          type: string
+          example: E_VALIDATION
+        request_id:
+          type: string
+          example: 7d67f9f0-7e3a-4ad5-9a5f-0c0f5a7fa2b9
+
+    # --------- New schemas for proxied Cluster B endpoints ----------
+    Wallet:
+      type: object
+      additionalProperties: false
+      properties:
+        _id:
+          type: string
+          example: '65ed0f...'
+        address:
+          type: string
+        public_key:
+          type: string
+        label:
+          type: string
+          nullable: true
+        chain:
+          type: string
+          example: tron
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WalletsPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 200
+
+security:
+- bearerAuth: []
+- apiKeyAuth: []
+
+tags:
+- name: meta
+  description: Health & metadata (public)
+- name: auth
+  description: Authentication & token lifecycle
+- name: users
+  description: User management
+- name: chain
+  description: Blockchain insights (proxied)
+- name: wallets
+  description: Wallet operations (proxied)
