@@ -95,7 +95,7 @@ services:
   lucid_api:
     profiles: [dev]
     build:
-      context: ../../03-api-gateway/api
+      context: ../../open-api/api
       dockerfile: Dockerfile.api
     container_name: lucid_api
     command: >
@@ -117,7 +117,7 @@ services:
   api-gateway:
     profiles: [dev]
     build:
-      context: ../../03-api-gateway/gateway
+      context: ../../03-api-gateways/gateway
       dockerfile: Dockerfile.gateway
     container_name: lucid_api_gateway
     environment:
