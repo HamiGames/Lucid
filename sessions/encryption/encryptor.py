@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import hashlib
 
-from apps.chunker.chunker import ChunkMetadata
+from sessions.core.chunker import ChunkMetadata
 
 logger = logging.getLogger(__name__)
 

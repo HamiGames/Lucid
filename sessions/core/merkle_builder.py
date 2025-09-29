@@ -17,7 +17,7 @@ except ImportError:
     HAS_BLAKE3 = False
     logger.warning("blake3 module not available, falling back to hashlib")
 
-from apps.encryptor.encryptor import EncryptedChunk
+from sessions.encryption.encryptor import EncryptedChunk
 
 logger = logging.getLogger(__name__)
 
