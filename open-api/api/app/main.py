@@ -22,6 +22,11 @@ from app.routes.wallets_proxy import router as wallets_proxy_router
 from app.routes.sessions import router as sessions_router
 from app.routes.blockchain import router as blockchain_router
 from app.routes.policies import router as policies_router
+from app.routes.payouts import router as payouts_router
+from app.routes.nodes import router as nodes_router  
+from app.routes.trust_policy import router as trust_policy_router
+from app.routes.admin import router as admin_router
+from app.routes.analytics import router as analytics_router
 
 # Optional: Mongo health probe (kept non-fatal)
 try:
@@ -93,6 +98,11 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router)
     app.include_router(blockchain_router)
     app.include_router(policies_router)
+    app.include_router(payouts_router)
+    app.include_router(nodes_router)
+    app.include_router(trust_policy_router)
+    app.include_router(admin_router)
+    app.include_router(analytics_router)
 
     @app.get("/", include_in_schema=False)
     def _root():
