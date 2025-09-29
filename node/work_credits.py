@@ -6,9 +6,11 @@ import logging
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
-from motor.motor_asyncio import AsyncIOMotorDatabase
 import hashlib
 import hmac
+
+# Use database adapter to handle motor/pymongo compatibility
+from .database_adapter import DatabaseAdapter, get_database_adapter
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ class WorkCreditsCalculator:
     Tracks and validates operational work proofs from network nodes.
     """
     
-    def __init__(self, db: AsyncIOMotorDatabase, slot_duration_sec: int = 120):
+    def __init__(self, db: DatabaseAdapter, slot_duration_sec: int = 120):
         self.db = db
         self.slot_duration_sec = slot_duration_sec
         self.current_epoch = self._calculate_epoch()

@@ -17,21 +17,46 @@ from enum import Enum
 import uuid
 import json
 
-from cryptography.hazmat.primitives.asymmetric import ed25519
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+# Optional cryptography import
+try:
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+    # Create mock classes if needed
+# Optional cryptography import
+try:
+    from cryptography.hazmat.primitives import hashes, serialization
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+    # Create mock classes if needed
+# Optional cryptography import
+try:
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+    # Create mock classes if needed
 import blake3
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+# Database adapter handles compatibility
+from ..database_adapter import DatabaseAdapter, get_database_adapter
 from tronpy import Tron
 from tronpy.keys import PrivateKey as TronPrivateKey
 
-# Import existing components
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from node.peer_discovery import PeerDiscovery, PeerInfo
-from node.work_credits import WorkCreditsCalculator
-from blockchain.core.blockchain_engine import TronNodeSystem
+# Import existing components using relative imports
+from ..peer_discovery import PeerDiscovery, PeerInfo
+from ..work_credits import WorkCreditsCalculator
+
+# Try to import blockchain components - these might not be available in all environments
+try:
+    from blockchain.core.blockchain_engine import TronNodeSystem
+except ImportError:
+    # Create mock class if not available
+    class TronNodeSystem:
+        def __init__(self, *args, **kwargs):
+            pass
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +168,7 @@ class NodeRegistrationProtocol:
     - Integration with peer discovery and work credits
     """
     
-    def __init__(self, db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery, 
+    def __init__(self, db: DatabaseAdapter, peer_discovery: PeerDiscovery, 
                  work_credits: WorkCreditsCalculator, tron_client: TronNodeSystem):
         self.db = db
         self.peer_discovery = peer_discovery
@@ -965,7 +990,7 @@ def get_registration_protocol() -> Optional[NodeRegistrationProtocol]:
     return _registration_protocol
 
 
-def create_registration_protocol(db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery,
+def create_registration_protocol(db: DatabaseAdapter, peer_discovery: PeerDiscovery,
                                 work_credits: WorkCreditsCalculator, 
                                 tron_client: TronNodeSystem) -> NodeRegistrationProtocol:
     """Create registration protocol instance"""

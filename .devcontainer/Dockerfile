@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    DOCKER_DEFAULT_PLATFORM=linux/arm64 \
+    DOCKER_DEFAULT_PLATFORM=linux/amd64 \
     LUCID_ENV=dev
 
 # Set workspace per devcontainer spec
@@ -73,7 +73,7 @@ FROM nodejs AS mongodb-tools
 RUN curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb.gpg && \
     echo "deb [arch=arm64,amd64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" \
     > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
-    apt-get update && apt-get install -y mongodb-mongosh mongodb-database-tools && \
+    apt-get update && apt-get install -y mongodb-mongosh && \
     rm -rf /var/lib/apt/lists/*
 
 # Stage 5: Python development environment

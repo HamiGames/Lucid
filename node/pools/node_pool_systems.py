@@ -16,13 +16,12 @@ from enum import Enum
 import uuid
 import json
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+# Database adapter handles compatibility
+from ..database_adapter import DatabaseAdapter, get_database_adapter
 
-# Import existing components
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from node.peer_discovery import PeerDiscovery, PeerInfo
-from node.work_credits import WorkCreditsCalculator
+# Import existing components using relative imports
+from ..peer_discovery import PeerDiscovery
+from ..work_credits import WorkCreditsCalculator
 from blockchain.core.blockchain_engine import get_blockchain_engine
 
 logger = logging.getLogger(__name__)
@@ -225,7 +224,7 @@ class NodePoolSystem:
     - Pool health monitoring and maintenance
     """
     
-    def __init__(self, db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery, 
+    def __init__(self, db: DatabaseAdapter, peer_discovery: PeerDiscovery, 
                  work_credits: WorkCreditsCalculator):
         self.db = db
         self.peer_discovery = peer_discovery
@@ -1073,7 +1072,7 @@ def get_node_pool_system() -> Optional[NodePoolSystem]:
     return _node_pool_system
 
 
-def create_node_pool_system(db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery,
+def create_node_pool_system(db: DatabaseAdapter, peer_discovery: PeerDiscovery,
                            work_credits: WorkCreditsCalculator) -> NodePoolSystem:
     """Create node pool system instance"""
     global _node_pool_system

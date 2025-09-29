@@ -7,8 +7,18 @@ from typing import Dict, List, Optional, Set
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
-import aiohttp
-from motor.motor_asyncio import AsyncIOMotorDatabase
+
+# Optional import for HTTP client functionality
+try:
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    aiohttp = None
+    AIOHTTP_AVAILABLE = False
+    # logger.warning("aiohttp not available - HTTP functionality will be limited")
+
+# Use database adapter to handle motor/pymongo compatibility
+from .database_adapter import DatabaseAdapter, get_database_adapter
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +69,7 @@ class PeerDiscovery:
     
     def __init__(
         self,
-        db: AsyncIOMotorDatabase,
+        db: DatabaseAdapter,
         node_id: str,
         onion_address: str,
         port: int = 5050,
@@ -141,6 +151,10 @@ class PeerDiscovery:
             
     async def ping_peer(self, peer_info: PeerInfo) -> bool:
         """Ping a peer to check if it's alive."""
+        if not AIOHTTP_AVAILABLE:
+            logger.debug(f"Cannot ping peer {peer_info.node_id} - aiohttp not available")
+            return False
+            
         try:
             connector = aiohttp.TCPConnector()
             timeout = aiohttp.ClientTimeout(total=10)
@@ -188,6 +202,10 @@ class PeerDiscovery:
                 
     async def request_peer_list(self, peer_info: PeerInfo) -> List[PeerInfo]:
         """Request peer list from another node."""
+        if not AIOHTTP_AVAILABLE:
+            logger.debug(f"Cannot request peer list from {peer_info.node_id} - aiohttp not available")
+            return []
+            
         try:
             connector = aiohttp.TCPConnector()
             timeout = aiohttp.ClientTimeout(total=15)

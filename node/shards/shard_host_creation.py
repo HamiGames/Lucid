@@ -16,13 +16,12 @@ from enum import Enum
 import uuid
 import json
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+# Database adapter handles compatibility
+from ..database_adapter import DatabaseAdapter, get_database_adapter
 
-# Import existing components
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from node.peer_discovery import PeerDiscovery, PeerInfo
-from node.work_credits import WorkCreditsCalculator
+# Import existing components using relative imports
+from ..peer_discovery import PeerDiscovery
+from ..work_credits import WorkCreditsCalculator
 from blockchain.core.blockchain_engine import get_blockchain_engine
 
 logger = logging.getLogger(__name__)
@@ -175,7 +174,7 @@ class ShardHostCreationSystem:
     - Integration with consensus for shard anchoring
     """
     
-    def __init__(self, db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery, 
+    def __init__(self, db: DatabaseAdapter, peer_discovery: PeerDiscovery, 
                  work_credits: WorkCreditsCalculator):
         self.db = db
         self.peer_discovery = peer_discovery
@@ -905,7 +904,7 @@ def get_shard_host_creation() -> Optional[ShardHostCreationSystem]:
     return _shard_host_creation
 
 
-def create_shard_host_creation(db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery,
+def create_shard_host_creation(db: DatabaseAdapter, peer_discovery: PeerDiscovery,
                               work_credits: WorkCreditsCalculator) -> ShardHostCreationSystem:
     """Create shard host creation system instance"""
     global _shard_host_creation

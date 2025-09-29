@@ -17,13 +17,12 @@ import uuid
 import json
 from decimal import Decimal
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+# Database adapter handles compatibility
+from ..database_adapter import DatabaseAdapter, get_database_adapter
 
-# Import existing components
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from node.peer_discovery import PeerDiscovery
-from node.work_credits import WorkCreditsCalculator
+# Import existing components using relative imports
+from ..peer_discovery import PeerDiscovery
+from ..work_credits import WorkCreditsCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +235,7 @@ class NodeVoteSystem:
     - Governance metrics and analytics
     """
     
-    def __init__(self, db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery,
+    def __init__(self, db: DatabaseAdapter, peer_discovery: PeerDiscovery,
                  work_credits: WorkCreditsCalculator):
         self.db = db
         self.peer_discovery = peer_discovery
@@ -1107,7 +1106,7 @@ def get_node_vote_system() -> Optional[NodeVoteSystem]:
     return _node_vote_system
 
 
-def create_node_vote_system(db: AsyncIOMotorDatabase, peer_discovery: PeerDiscovery,
+def create_node_vote_system(db: DatabaseAdapter, peer_discovery: PeerDiscovery,
                            work_credits: WorkCreditsCalculator) -> NodeVoteSystem:
     """Create node vote system instance"""
     global _node_vote_system

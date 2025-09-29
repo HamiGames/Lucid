@@ -7,9 +7,9 @@ import os
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from node.peer_discovery import PeerDiscovery, PeerInfo
-from node.work_credits import WorkCreditsCalculator
+from .peer_discovery import PeerDiscovery, PeerInfo
+from .work_credits import WorkCreditsCalculator
+from .database_adapter import DatabaseAdapter, get_database_adapter
 import uuid
 import json
 
@@ -40,7 +40,7 @@ class NodeManager:
     Coordinates peer discovery, work credits, and node services.
     """
     
-    def __init__(self, config: NodeConfig, db: AsyncIOMotorDatabase):
+    def __init__(self, config: NodeConfig, db: DatabaseAdapter):
         self.config = config
         self.db = db
         self.running = False

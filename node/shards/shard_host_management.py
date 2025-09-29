@@ -8,7 +8,13 @@ import asyncio
 import logging
 import hashlib
 import os
-import aiohttp
+# Optional aiohttp import
+try:
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    aiohttp = None
+    AIOHTTP_AVAILABLE = False
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Set, Tuple
 from dataclasses import dataclass, field
@@ -17,13 +23,12 @@ from enum import Enum
 import uuid
 import json
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+# Database adapter handles compatibility
+from ..database_adapter import DatabaseAdapter, get_database_adapter
 
-# Import existing components
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from node.shards.shard_host_creation import ShardHostCreationSystem, ShardHost, ShardInfo, HostStatus, ShardStatus
-
+# Import existing components using relative imports
+from ..peer_discovery import PeerDiscovery
+from ..work_credits import WorkCreditsCalculator
 logger = logging.getLogger(__name__)
 
 # Management Constants
@@ -175,7 +180,7 @@ class ShardHostManagementSystem:
     - Storage lifecycle management
     """
     
-    def __init__(self, db: AsyncIOMotorDatabase, shard_creation_system: ShardHostCreationSystem):
+    def __init__(self, db: DatabaseAdapter, shard_creation_system: ShardHostCreationSystem):
         self.db = db
         self.shard_creation_system = shard_creation_system
         
@@ -996,7 +1001,7 @@ def get_shard_host_management() -> Optional[ShardHostManagementSystem]:
     return _shard_host_management
 
 
-def create_shard_host_management(db: AsyncIOMotorDatabase,
+def create_shard_host_management(db: DatabaseAdapter,
                                 shard_creation_system: ShardHostCreationSystem) -> ShardHostManagementSystem:
     """Create shard host management system instance"""
     global _shard_host_management
