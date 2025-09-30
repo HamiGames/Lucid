@@ -7,15 +7,9 @@
   "containerEnv": {
     "PYTHONUNBUFFERED": "1",
     "PYTHONDONTWRITEBYTECODE": "1",
-    "DOCKER_DEFAULT_PLATFORM": "linux/amd64",
     "LUCID_ENV": "dev",
-    "MONGO_URL": "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false",
     "SERVICE_NAME": "lucid-api",
     "VERSION": "0.1.0",
-    "BLOCK_ONION": "",
-    "BLOCK_RPC_URL": "",
-    "ONION": "",
-    "TOR_CONTROL_PASSWORD": "",
     "PORT": "8081"
   },
   
@@ -106,7 +100,7 @@
       "installZsh": false,
       "installOhMyZsh": false,
       "upgradePackages": true,
-      "username": "root"
+      "username": "vscode"
     },
     "ghcr.io/devcontainers/features/git:1": {
       "ppa": false,
