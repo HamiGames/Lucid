@@ -2,7 +2,7 @@
   "name": "Lucid RDP Development Environment",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "workspaceFolder": "/workspaces/Lucid",
-  "remoteUser": "vscode",
+  "remoteUser": "root",
   
   "containerEnv": {
     "PYTHONUNBUFFERED": "1",
