@@ -21,27 +21,30 @@ WORKDIR /workspaces/Lucid
 # Stage 2: System dependencies and tools
 FROM base AS system-deps
 
-# Core system packages for Pi 5 simulation + development tools
+# Core system packages - split into smaller chunks to prevent hanging
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Core system
     bash curl wget git ca-certificates gnupg lsb-release \
-    # Build tools
+    && rm -rf /var/lib/apt/lists/*
+
+# Build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential pkg-config cmake \
-    # Python development
+    && rm -rf /var/lib/apt/lists/*
+
+# Python and network tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev python3-pip python3-venv \
-    # Network tools for Tor-only environment
     netcat-openbsd socat jq dnsutils \
-    # Crypto libraries
-    libsodium-dev libssl-dev \
-    # Video/Audio for RDP simulation (per R-SHOULD-001)
-    ffmpeg v4l-utils \
-    # Compression tools (Zstd for chunks)
-    zstd libzstd-dev \
-    # Security tools
-    tor torsocks \
-    # Process management
-    supervisor \
-    # Cleanup
+    && rm -rf /var/lib/apt/lists/*
+
+# Crypto and compression libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libsodium-dev libssl-dev zstd libzstd-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional tools (remove heavy packages that might cause issues)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tor torsocks supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Stage 3: Node.js 20 LTS (per Spec-1b requirements)

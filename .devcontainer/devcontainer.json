@@ -1,14 +1,13 @@
 {
   "name": "Lucid RDP Development Environment",
-  "dockerComposeFile": "docker-compose.dev.yml",
+  "dockerComposeFile": "docker-compose.simple.yml",
   "service": "devcontainer",
   "workspaceFolder": "/workspaces/Lucid",
   "remoteUser": "root",
   "overrideCommand": false,
   
   "runServices": [
-    "devcontainer",
-    "lucid_mongo"
+    "devcontainer"
   ],
   
   "containerEnv": {
@@ -31,16 +30,10 @@
   "postCreateCommand": [
     "bash",
     "-c",
-    "pre-commit install && pip install -e . && echo 'Lucid Development Environment Ready!'"
+    "echo 'Simple Lucid Development Environment Ready!'"
   ],
   
-  "postStartCommand": [
-    "bash",
-    "-c",
-    "service tor start && echo 'Tor service started on ports 9050 (SOCKS) and 9051 (Control)'"
-  ],
-  
-  "forwardPorts": [8080, 8081, 8082, 27017, 9050, 9051],
+  "forwardPorts": [8080, 8081],
   
   "portsAttributes": {
     "8080": {

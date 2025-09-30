@@ -1,0 +1,43 @@
+# Simplified Lucid Development Environment
+# Just the core devcontainer to test basic functionality
+
+networks:
+  lucid-dev_lucid_net:
+    name: lucid-dev_lucid_net
+    driver: bridge
+    attachable: true
+
+services:
+  # Minimal development container
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.simple
+    image: lucid/dev:simple
+    container_name: lucid_devcontainer_simple
+    hostname: lucid-dev-simple
+    
+    # Basic environment
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LUCID_ENV=dev
+      
+    # Mount workspace
+    volumes:
+      - ../:/workspaces/Lucid:cached
+      
+    # Network
+    networks:
+      - lucid-dev_lucid_net
+      
+    # Port mappings - just the basics
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      
+    # Keep running
+    command: tail -f /dev/null
+    
+    # Security
+    security_opt:
+      - no-new-privileges:true
