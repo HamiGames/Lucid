@@ -1,3 +1,0 @@
-03-api-gateway
-03-api-gateways
-blockchain
