@@ -8,8 +8,7 @@
   
   "runServices": [
     "devcontainer",
-    "lucid_mongo",
-    "tor-proxy"
+    "lucid_mongo"
   ],
   
   "containerEnv": {
@@ -27,7 +26,7 @@
     "PORT": "8081"
   },
   
-  "initializeCommand": "docker network inspect lucid-dev_lucid_net >/dev/null 2>&1 || docker network create --driver bridge --attachable lucid-dev_lucid_net",
+  "initializeCommand": "docker network inspect lucid-dev_lucid_net >nul 2>&1 || docker network create --driver bridge --attachable lucid-dev_lucid_net",
   
   "postCreateCommand": [
     "bash",
@@ -41,38 +40,7 @@
     "service tor start && echo 'Tor service started on ports 9050 (SOCKS) and 9051 (Control)'"
   ],
   
-  "forwardPorts": [
-    {
-      "localPort": 8080,
-      "remotePort": 8080,
-      "label": "API Gateway"
-    },
-    {
-      "localPort": 8081,
-      "remotePort": 8081,
-      "label": "API Server"
-    },
-    {
-      "localPort": 8082,
-      "remotePort": 8082,
-      "label": "Blockchain Core"
-    },
-    {
-      "localPort": 27017,
-      "remotePort": 27017,
-      "label": "MongoDB"
-    },
-    {
-      "localPort": 9050,
-      "remotePort": 9050,
-      "label": "Tor SOCKS"
-    },
-    {
-      "localPort": 9051,
-      "remotePort": 9051,
-      "label": "Tor Control"
-    }
-  ],
+  "forwardPorts": [8080, 8081, 8082, 27017, 9050, 9051],
   
   "portsAttributes": {
     "8080": {
