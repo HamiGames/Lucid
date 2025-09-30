@@ -1,0 +1,488 @@
+version: '3.8'
+
+# LUCID RDP - Multi-Profile Production Compose
+# Based on SPEC-4: Clustered Build Stages & Content Inclusion
+# Profiles: blockchain, sessions, node, admin, observability, relay
+
+networks:
+  # Plane-separated networks per SPEC-4
+  lucid_ops:
+    name: lucid_ops_plane
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  lucid_chain:
+    name: lucid_chain_plane  
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  lucid_wallet:
+    name: lucid_wallet_plane
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+  lucid_external:
+    name: lucid_external
+    driver: bridge
+
+volumes:
+  # Blockchain data
+  blockchain_data:
+    name: lucid_blockchain_data
+  blockchain_ledger:
+    name: lucid_blockchain_ledger
+  
+  # Node data
+  node_chunks:
+    name: lucid_node_chunks
+  node_dht:
+    name: lucid_node_dht
+    
+  # MongoDB cluster
+  mongo_data:
+    name: lucid_mongo_data
+  mongo_config:
+    name: lucid_mongo_config
+    
+  # Tor state
+  onion_keys:
+    name: lucid_onion_keys
+  tor_state:
+    name: lucid_tor_state
+
+services:
+  # STAGE 0: Common & Base - Beta Sidecar (Always Required)
+  beta:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.beta
+    image: lucid/beta:${VERSION:-0.1.0}
+    container_name: lucid_beta
+    hostname: beta
+    environment:
+      - BETA_CLUSTER_ID=${CLUSTER_ID}
+      - BETA_PLANES=${BETA_PLANES:-ops,chain,wallet}
+      - TOR_SOCKS=127.0.0.1:9050
+    volumes:
+      - onion_keys:/run/lucid/onion
+      - tor_state:/var/lib/tor
+    networks:
+      - lucid_ops
+      - lucid_chain  
+      - lucid_wallet
+    ports:
+      - "9050:9050"  # Tor SOCKS
+      - "9051:9051"  # Tor Control
+    healthcheck:
+      test: ["CMD", "betactl", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # STAGE 1: Blockchain Group
+  blockchain-core:
+    profiles: ["blockchain"]
+    build:
+      context: ./04-blockchain-core
+      dockerfile: Dockerfile
+    image: lucid/blockchain-core:${VERSION:-0.1.0}
+    container_name: lucid_blockchain_core
+    hostname: blockchain-core
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - VALIDATOR_KEY_FILE=/run/secrets/validator_key
+      - CONSENSUS_PEERS=${CONSENSUS_PEERS}
+    volumes:
+      - blockchain_data:/data/blockchain
+    networks:
+      - lucid_chain
+    ports:
+      - "8082:8082"  # Blockchain RPC
+      - "8083:8083"  # P2P
+    depends_on:
+      - beta
+      - mongo-primary
+    secrets:
+      - validator_key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  blockchain-ledger:
+    profiles: ["blockchain"]
+    build:
+      context: ./04-blockchain-core/ledger
+      dockerfile: Dockerfile
+    image: lucid/blockchain-ledger:${VERSION:-0.1.0}
+    container_name: lucid_blockchain_ledger
+    hostname: blockchain-ledger
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - BLOCKCHAIN_CORE_URL=http://blockchain-core:8082
+    volumes:
+      - blockchain_ledger:/data/ledger
+    networks:
+      - lucid_chain
+    depends_on:
+      - blockchain-core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  blockchain-virtual-machine:
+    profiles: ["blockchain"]
+    build:
+      context: ./04-blockchain-core/vm
+      dockerfile: Dockerfile
+    image: lucid/blockchain-vm:${VERSION:-0.1.0}
+    container_name: lucid_blockchain_vm
+    hostname: blockchain-vm
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - BLOCKCHAIN_CORE_URL=http://blockchain-core:8082
+      - VM_GAS_LIMIT=${VM_GAS_LIMIT:-1000000}
+    networks:
+      - lucid_chain
+    depends_on:
+      - blockchain-core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  blockchain-sessions-data:
+    profiles: ["blockchain"]
+    build:
+      context: ./04-blockchain-core/sessions-indexer
+      dockerfile: Dockerfile
+    image: lucid/blockchain-sessions-data:${VERSION:-0.1.0}
+    container_name: lucid_blockchain_sessions_data
+    hostname: blockchain-sessions-data
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - BLOCKCHAIN_CORE_URL=http://blockchain-core:8082
+    networks:
+      - lucid_chain
+    depends_on:
+      - blockchain-core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  blockchain-governances:
+    profiles: ["blockchain"]
+    build:
+      context: ./04-blockchain-core/governance
+      dockerfile: Dockerfile
+    image: lucid/blockchain-governance:${VERSION:-0.1.0}
+    container_name: lucid_blockchain_governance
+    hostname: blockchain-governance
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - BLOCKCHAIN_CORE_URL=http://blockchain-core:8082
+    networks:
+      - lucid_chain
+    depends_on:
+      - blockchain-core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # STAGE 2: Sessions Group
+  sessions-gateway:
+    profiles: ["sessions"]
+    build:
+      context: ./sessions
+      dockerfile: Dockerfile.gateway
+    image: lucid/sessions-gateway:${VERSION:-0.1.0}
+    container_name: lucid_sessions_gateway
+    hostname: sessions-gateway
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - SESSION_KEY_SALT=${SESSION_KEY_SALT}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - lucid_ops
+    ports:
+      - "8080:8080"  # Session Gateway
+    depends_on:
+      - beta
+      - mongo-primary
+    secrets:
+      - session_salt
+      - jwt_secret
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  sessions-manifests:
+    profiles: ["sessions"]
+    build:
+      context: ./sessions
+      dockerfile: Dockerfile.manifests
+    image: lucid/sessions-manifests:${VERSION:-0.1.0}
+    container_name: lucid_sessions_manifests
+    hostname: sessions-manifests
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - BLOCKCHAIN_VM_URL=http://blockchain-vm:8085
+    networks:
+      - lucid_chain
+    depends_on:
+      - blockchain-virtual-machine
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  sessions-index:
+    profiles: ["sessions"]
+    build:
+      context: ./sessions
+      dockerfile: Dockerfile.index
+    image: lucid/sessions-index:${VERSION:-0.1.0}
+    container_name: lucid_sessions_index
+    hostname: sessions-index
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - BLOCKCHAIN_SESSIONS_DATA_URL=http://blockchain-sessions-data:8086
+    networks:
+      - lucid_chain
+    depends_on:
+      - blockchain-sessions-data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # STAGE 3: Node Systems Group  
+  node-worker:
+    profiles: ["node"]
+    build:
+      context: ./node
+      dockerfile: Dockerfile.worker
+    image: lucid/node-worker:${VERSION:-0.1.0}
+    container_name: lucid_node_worker
+    hostname: node-worker
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - ENCODER_PRESET=${ENCODER_PRESET:-pi_hw}
+      - CHUNK_SIZE=${CHUNK_SIZE:-8388608}  # 8MB
+    volumes:
+      - node_chunks:/data/chunks
+    networks:
+      - lucid_ops
+    depends_on:
+      - sessions-gateway
+    devices:
+      - /dev/video0:/dev/video0  # Pi camera (if available)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  node-data-host:
+    profiles: ["node"]  
+    build:
+      context: ./node
+      dockerfile: Dockerfile.data-host
+    image: lucid/node-data-host:${VERSION:-0.1.0}
+    container_name: lucid_node_data_host
+    hostname: node-data-host
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - DHT_BOOTSTRAP_PEERS=${DHT_BOOTSTRAP_PEERS}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+    volumes:
+      - node_chunks:/data/chunks:ro
+      - node_dht:/data/dht
+    networks:
+      - lucid_ops
+    depends_on:
+      - node-worker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  node-economy:
+    profiles: ["node"]
+    build:
+      context: ./node
+      dockerfile: Dockerfile.economy
+    image: lucid/node-economy:${VERSION:-0.1.0}
+    container_name: lucid_node_economy
+    hostname: node-economy
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - TRON_NODE_URL=http://tron-node:8092
+    networks:
+      - lucid_wallet
+    depends_on:
+      - beta
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8093/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # STAGE 4: Admin/Wallet Group
+  admin-api:
+    profiles: ["admin"]
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.api
+    image: lucid/admin-api:${VERSION:-0.1.0}
+    container_name: lucid_admin_api
+    hostname: admin-api
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - MONGO_URL=${MONGO_URL}
+      - ADMIN_TOKENS=${ADMIN_TOKENS}
+    networks:
+      - lucid_ops
+    ports:
+      - "8081:8081"  # Admin API
+    depends_on:
+      - beta
+    secrets:
+      - admin_tokens
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  walletd:
+    profiles: ["admin"]
+    build:
+      context: ./wallet
+      dockerfile: Dockerfile
+    image: lucid/walletd:${VERSION:-0.1.0}
+    container_name: lucid_walletd
+    hostname: walletd
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-prod}
+      - KEYSTORE_PATH=/data/keystore
+      - LEDGER_PUBKEYS=${LEDGER_PUBKEYS}
+    volumes:
+      - ./wallet/keystore:/data/keystore
+    networks:
+      - lucid_wallet
+    depends_on:
+      - beta
+    secrets:
+      - ledger_pubkeys
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8094/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  tron-node:
+    profiles: ["admin"]
+    build:
+      context: ./wallet/tron
+      dockerfile: Dockerfile
+    image: lucid/tron-node:${VERSION:-0.1.0}
+    container_name: lucid_tron_node
+    hostname: tron-node
+    environment:
+      - TRON_MODE=${TRON_MODE:-shasta}
+      - TRON_RPC_URL=${TRON_RPC_URL}
+      - CIRCUIT_BREAKER_ENABLED=true
+    networks:
+      - lucid_wallet
+    depends_on:
+      - walletd
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8092/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # MongoDB Cluster
+  mongo-primary:
+    image: mongo:7
+    container_name: lucid_mongo_primary
+    hostname: mongo-primary
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--auth"]
+    environment:
+      - MONGO_INITDB_DATABASE=lucid
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-lucid}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-lucid}
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    networks:
+      - lucid_chain
+      - lucid_ops
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: |
+        mongosh --quiet -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} \
+        --authenticationDatabase admin --eval "db.runCommand({ ping: 1 }).ok" | grep -q 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+secrets:
+  validator_key:
+    external: true
+  session_salt:
+    external: true
+  jwt_secret:
+    external: true
+  admin_tokens:
+    external: true
+  ledger_pubkeys:
+    external: true

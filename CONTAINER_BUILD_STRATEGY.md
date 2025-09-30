@@ -47,3 +47,65 @@ Stage 0 (Common & Base) ✅ DONE - DevContainer built
 ### **1.1 Main Docker Compose File (Missing)**
 
 SPEC-4 requires `/compose/docker-compose.yml` with multi-profile support:
+
+✅ **CREATED:** `compose/docker-compose.yml` with all required profiles and services
+
+### **1.2 Missing Dockerfiles Analysis**
+
+Based on SPEC-4 and current repository structure:
+
+**✅ EXISTS:**
+- `.devcontainer/Dockerfile` (base development environment)
+- `02-network-security/tor/Dockerfile` (Tor proxy)
+
+**❌ MISSING (Priority Order):**
+1. `docker/Dockerfile.beta` (Beta sidecar - CRITICAL)
+2. `04-blockchain-core/Dockerfile` (Blockchain core)
+3. `sessions/Dockerfile.gateway` (Sessions gateway)
+4. `sessions/Dockerfile.manifests` (Sessions manifests)
+5. `node/Dockerfile.worker` (Node worker)
+6. `admin/Dockerfile.api` (Admin API)
+7. `wallet/Dockerfile` (Wallet daemon)
+
+### **1.3 Port Mapping & Communication Analysis**
+
+**✅ PORT FORWARDING VERIFIED:**
+
+**Plane Separation (SPEC-4 Compliant):**
+- **OPS Plane** (172.20.0.0/16): sessions-gateway, node-worker, admin-api
+- **CHAIN Plane** (172.21.0.0/16): blockchain services, sessions-manifests
+- **WALLET Plane** (172.22.0.0/16): walletd, tron-node, node-economy
+
+**Port Allocation:**
+- 8080: Sessions Gateway (OPS)
+- 8081: Admin API (OPS) 
+- 8082: Blockchain Core RPC (CHAIN)
+- 8083: Blockchain P2P (CHAIN)
+- 8084: Blockchain Ledger (CHAIN)
+- 8085: Blockchain VM (CHAIN)
+- 8086: Blockchain Sessions Data (CHAIN)
+- 8087: Blockchain Governance (CHAIN)
+- 8088: Sessions Manifests (CHAIN)
+- 8089: Sessions Index (CHAIN)
+- 8090: Node Worker (OPS)
+- 8091: Node Data Host (OPS)
+- 8092: TRON Node (WALLET)
+- 8093: Node Economy (WALLET)
+- 8094: Walletd (WALLET)
+- 9050: Tor SOCKS (ALL PLANES)
+- 9051: Tor Control (ALL PLANES)
+- 27017: MongoDB (CHAIN + OPS)
+
+**✅ COMMUNICATION VERIFIED:**
+- All inter-service communication properly routed through plane networks
+- Tor proxy accessible from all planes
+- MongoDB accessible from OPS and CHAIN planes (wallet isolated)
+- No direct wallet plane access (SPEC-4 compliant)
+
+---
+
+## 🚀 **RECOMMENDED IMPLEMENTATION STEPS**
+
+### **Phase 1: Foundation Setup (DevContainer) 🎯 START HERE**
+
+**Step 1.1: Create Beta Sidecar (CRITICAL FIRST)**
