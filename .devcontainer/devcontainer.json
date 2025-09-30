@@ -1,14 +1,8 @@
 {
   "name": "Lucid RDP Development Environment",
-  "dockerComposeFile": "docker-compose.simple.yml",
-  "service": "devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "workspaceFolder": "/workspaces/Lucid",
-  "remoteUser": "root",
-  "overrideCommand": false,
-  
-  "runServices": [
-    "devcontainer"
-  ],
+  "remoteUser": "vscode",
   
   "containerEnv": {
     "PYTHONUNBUFFERED": "1",
