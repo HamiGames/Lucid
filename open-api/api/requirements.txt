@@ -8,3 +8,4 @@ python-multipart
 gunicorn==22.0.0
 bcrypt>=4.1,<5
 requests[socks]
+PyJWT>=2.8.0
