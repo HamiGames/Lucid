@@ -5,7 +5,7 @@
 # - Healthcheck proxies to /health on upstream
 # - No placeholders
 
-ARG NGINX_TAG=1.28-alpine
+ARG NGINX_TAG=1.27-alpine
 FROM nginx:${NGINX_TAG}
 
 ENV API_UPSTREAM="lucid_api:8081" \
