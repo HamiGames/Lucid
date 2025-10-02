@@ -1,87 +1,150 @@
 {
-  "name": "Lucid RDP Development Environment",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "name": "Lucid Build Factory - Complete Docker-in-Docker Environment",
+  "dockerComposeFile": "docker-compose.dev.yml",
+  "service": "devcontainer",
   "workspaceFolder": "/workspaces/Lucid",
   "remoteUser": "root",
   
-  "containerEnv": {
-    "PYTHONUNBUFFERED": "1",
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "LUCID_ENV": "dev",
-    "SERVICE_NAME": "lucid-api",
-    "VERSION": "0.1.0",
-    "PORT": "8081"
-  },
+  // Pre-build setup: Network and Docker preparation
+  "initializeCommand": "docker network inspect lucid-dev_lucid_net >nul 2>&1 || docker network create --driver bridge --attachable --subnet=172.20.0.0/16 --gateway=172.20.0.1 lucid-dev_lucid_net",
   
-  "initializeCommand": "docker network inspect lucid-dev_lucid_net >nul 2>&1 || docker network create --driver bridge --attachable lucid-dev_lucid_net",
-  
+  // Post-creation: Setup buildx and prepare build factory
   "postCreateCommand": [
     "bash",
     "-c",
-    "echo 'Simple Lucid Development Environment Ready!'"
+    "echo 'Configuring Lucid build factory...' && /workspaces/Lucid/.devcontainer/setup-build-factory.sh"
   ],
   
-  "forwardPorts": [8080, 8081],
+  // Build factory environment variables
+  "containerEnv": {
+    "DOCKER_BUILDKIT": "1",
+    "DOCKER_DEFAULT_PLATFORM": "linux/amd64",
+    "COMPOSE_DOCKER_CLI_BUILD": "1",
+    "DOCKER_HOST": "unix:///var/run/docker.sock",
+    "DOCKER_TLS_CERTDIR": "",
+    "PYTHONUNBUFFERED": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": "/workspaces/Lucid",
+    "LUCID_ENV": "dev",
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64",
+    "MAVEN_HOME": "/usr/share/maven",
+    "GRADLE_HOME": "/usr/share/gradle",
+    "NODE_ENV": "development",
+    "SSH_HOST": "pickme@192.168.0.75",
+    "SSH_PORT": "22",
+    "LUCID_NETWORK": "lucid-dev_lucid_net",
+    "LUCID_BUILDER": "lucid-pi"
+  },
   
+  // Forward development ports
+  "forwardPorts": ["2222:2222", 8080, 8081, 9050, 9051],
+  
+  // Port configuration
   "portsAttributes": {
+    "2222": {
+      "label": "SSH",
+      "onAutoForward": "ignore"
+    },
     "8080": {
-      "label": "Lucid API Gateway",
+      "label": "API Gateway",
       "onAutoForward": "openPreview"
     },
     "8081": {
-      "label": "Lucid API Server",
+      "label": "API Server",
       "onAutoForward": "openPreview"
     },
-    "27017": {
-      "label": "MongoDB",
+    "9050": {
+      "label": "Tor SOCKS",
       "onAutoForward": "ignore"
     },
-    "9050": {
-      "label": "Tor SOCKS Proxy",
+    "9051": {
+      "label": "Tor Control",
       "onAutoForward": "ignore"
     }
   },
   
+  // VS Code customizations
   "customizations": {
     "vscode": {
       "extensions": [
+        // Python development
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-python.mypy-type-checker",
         "astral-sh.ruff",
         "ms-python.black-formatter",
-        "ms-vscode-remote.remote-containers",
+        "ms-python.pytest",
+        
+        // Java development
+        "redhat.java",
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-maven",
+        "vscjava.vscode-gradle",
+        "vscjava.vscode-java-test",
+        "vscjava.vscode-java-debug",
+        
+        // Docker and containers
         "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        
+        // Configuration files
         "redhat.vscode-yaml",
         "ms-vscode.vscode-json",
-        "bradlc.vscode-tailwindcss",
-        "ms-vscode.test-adapter-converter",
-        "hbenl.vscode-test-explorer",
-        "ms-python.pytest",
         "tamasfe.even-better-toml",
+        
+        // Development tools
         "eamodio.gitlens",
         "GitHub.copilot",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "ms-vscode.test-adapter-converter",
+        
+        // Security and cryptography
+        "ms-vscode.hexeditor"
       ],
+      
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        // Python configuration
+        "python.defaultInterpreterPath": "/usr/bin/python3",
         "python.linting.enabled": true,
-        "python.linting.pylintEnabled": false,
         "python.linting.ruffEnabled": true,
         "python.formatting.provider": "black",
         "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": false,
-        "python.testing.pytestArgs": [
-          "tests"
+        "python.testing.pytestArgs": ["tests"],
+        
+        // Java configuration
+        "java.home": "/usr/lib/jvm/java-17-openjdk-amd64",
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-17",
+            "path": "/usr/lib/jvm/java-17-openjdk-amd64",
+            "default": true
+          }
         ],
-        "files.associations": {
-          "*.env*": "dotenv"
-        },
+        "java.compile.nullAnalysis.mode": "automatic",
+        "maven.executable.path": "/usr/bin/mvn",
+        
+        // Docker configuration
+        "docker.dockerPath": "/usr/bin/docker",
+        "docker.composeCommand": "docker-compose",
+        
+        // Terminal configuration
         "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.cwd": "/workspaces/Lucid",
+        
+        // File associations
+        "files.associations": {
+          "*.env*": "dotenv",
+          "docker-compose*.yml": "yaml",
+          "docker-compose*.yaml": "yaml"
+        },
+        
+        // Editor configuration
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.organizeImports": true
         },
+        
+        // Python-specific formatting
         "[python]": {
           "editor.defaultFormatter": "ms-python.black-formatter",
           "editor.formatOnSave": true,
@@ -89,26 +152,21 @@
             "source.organizeImports": true
           }
         },
+        
+        // Ruff configuration
         "ruff.organizeImports": true,
         "mypy-type-checker.importStrategy": "fromEnvironment"
       }
     }
   },
   
+  // Development features - minimal for DinD
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": false,
       "installOhMyZsh": false,
       "upgradePackages": true,
-      "username": "vscode"
-    },
-    "ghcr.io/devcontainers/features/git:1": {
-      "ppa": false,
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-      "moby": false,
-      "dockerDashComposeVersion": "v2"
+      "username": "root"
     }
   }
 }

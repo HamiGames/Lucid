@@ -1,6 +1,6 @@
 param(
   [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
-  [string]$ComposeFile = "06-orchestration-runtime\compose\lucid-dev.yaml",
+  [string]$ComposeFile = ".devcontainer\docker-compose.dev.yml",
   [string]$ProjectName = "lucid-dev",
   # Default to Pi target; respects existing env override
   [string]$Platform = ($(if ($env:LUCID_PLATFORM -and $env:LUCID_PLATFORM.Trim()) {$env:LUCID_PLATFORM} else {"linux/arm64"}))
