@@ -1,0 +1,144 @@
+# Lucid Development Container - Complete Build Factory
+# Docker-in-Docker environment for building entire Lucid project stack
+# Follows SPEC-4 clustered build stages and LUCID-STRICT mode
+
+name: lucid-devcontainer
+
+networks:
+  lucid-dev_lucid_net:
+    name: lucid-dev_lucid_net
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+volumes:
+  docker-data:
+    name: lucid-devcontainer_docker_data
+    driver: local
+  buildx-data:
+    name: lucid-devcontainer_buildx_data
+    driver: local
+
+services:
+  devcontainer:
+    build:
+      context: ../../..
+      dockerfile: infrastructure/containers/.devcontainer/Dockerfile
+      target: final
+      platforms:
+        - linux/amd64
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+        BUILDKIT_PROGRESS: plain
+    
+    image: pickme/lucid:devcontainer-dind
+    container_name: lucid-devcontainer
+    hostname: lucid-dev
+    
+    # Full privileges for Docker-in-Docker build factory
+    privileged: true
+    
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    
+    environment:
+      # Docker-in-Docker configuration
+      - DOCKER_BUILDKIT=1
+      - DOCKER_DEFAULT_PLATFORM=linux/amd64
+      - COMPOSE_DOCKER_CLI_BUILD=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_TLS_CERTDIR=
+      
+      # Development environment
+      - LUCID_ENV=dev
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONPATH=/workspaces/Lucid
+      
+      # Build tools environment
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      - MAVEN_HOME=/usr/share/maven
+      - GRADLE_HOME=/usr/share/gradle
+      - NODE_ENV=development
+      
+      # SSH configuration for Pi connection
+      - SSH_HOST=pickme@192.168.0.75
+      - SSH_PORT=22
+    
+    volumes:
+      # Project source code (development workspace)
+      - type: bind
+        source: ../../..
+        target: /workspaces/Lucid
+        consistency: cached
+      
+      # Docker socket for container building
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      
+      # Docker daemon data directory
+      - docker-data:/var/lib/docker
+      
+      # Buildx builder data
+      - buildx-data:/root/.docker/buildx
+      
+      # SSH keys (Windows compatibility)
+      - type: bind
+        source: ${USERPROFILE:-~}/.ssh
+        target: /root/.ssh
+        read_only: true
+      
+      # Git configuration (Windows compatibility)
+      - type: bind
+        source: ${USERPROFILE:-~}/.gitconfig
+        target: /root/.gitconfig
+        read_only: true
+      
+      # Temporary build space
+      - type: tmpfs
+        target: /tmp/build
+        tmpfs:
+          size: 2G
+    
+    ports:
+      # SSH access for remote development
+      - "2222:2222"
+      # Development server ports
+      - "8080:8080"  # API Gateway
+      - "8081:8081"  # API Server
+      - "8082:8082"  # Blockchain Core
+      - "9050:9050"  # Tor SOCKS
+      - "9051:9051"  # Tor Control
+      - "27017:27017"  # MongoDB (for testing)
+    
+    networks:
+      lucid-dev_lucid_net:
+        ipv4_address: 172.20.0.10
+    
+    # Custom startup for complete build environment
+    command: ["/usr/local/bin/start-dev", "tail", "-f", "/dev/null"]
+    
+    working_dir: /workspaces/Lucid
+    
+    # Resource allocation for build factory
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+          cpus: '6.0'
+        reservations:
+          memory: 4G
+          cpus: '2.0'
+    
+    # Health check for Docker-in-Docker functionality
+    healthcheck:
+      test: ["CMD-SHELL", "docker info >/dev/null 2>&1 && docker buildx ls | grep -q lucid-pi"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3

@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Optional, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from blockchain.storage import Storage
+from blockchain.core.storage import Storage
 
 
 class Node:

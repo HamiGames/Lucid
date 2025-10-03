@@ -1,45 +1,156 @@
-#!/bin/sh
-set -e
+#!/usr/bin/env bash
+# Lucid Multi-Onion Generator - Creates 5 distinct .onion addresses
+# Each onion maps to different internal services with ED25519-V3 keys
+# Cookie authentication with hex encoding for security
 
+set -Eeuo pipefail
+
+# Configuration
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/var/lib/tor/control_auth_cookie}"
 OUTDIR="${ONION_DIR:-/run/lucid/onion}"
-# Target: map port 80 of onion to container-local 8080 (adjust if needed)
-TARGET_HOST="${TARGET_HOST:-127.0.0.1}"
-TARGET_PORT="${TARGET_PORT:-8080}"
+ONION_COUNT="${ONION_COUNT:-5}"
 
-# Check cookie
-if [ ! -s "$TOR_COOKIE_PATH" ]; then
-  echo "[onion] control cookie missing or empty at $TOR_COOKIE_PATH" >&2
-  exit 2
-fi
+# Service mapping configuration for 5 onions
+# Format: "service_name:onion_port:target_host:target_port:env_var"
+declare -a SERVICE_MAP=(
+  "api_gateway:80:gateway:8080:ONION_API_GATEWAY"
+  "api_server:8081:api:8081:ONION_API_SERVER"
+  "tunnel_socks:1080:tunnel:7000:ONION_TUNNEL"
+  "mongo_proxy:27017:mongo:27017:ONION_MONGO"
+  "tor_control:9051:tor-proxy:9051:ONION_TOR_CONTROL"
+)
 
-# Cookie -> hex
-if command -v xxd >/dev/null 2>&1; then
-  COOKIE_HEX="$(xxd -p "$TOR_COOKIE_PATH" | tr -d '\n')"
-else
-  COOKIE_HEX="$(hexdump -v -e '1/1 "%02x"' "$TOR_COOKIE_PATH")"
-fi
+# Logging functions
+log() { printf '[multi-onion] %s\n' "$*"; }
+error() { printf '[multi-onion][ERROR] %s\n' "$*" >&2; }
+die() { error "$*"; exit 1; }
 
-# Build control sequence (ED25519 v3 onion)
-CONTROL_CMDS=$(printf 'AUTHENTICATE %s\r\nADD_ONION NEW:ED25519-V3 Port=80,%s:%s\r\nQUIT\r\n' "$COOKIE_HEX" "$TARGET_HOST" "$TARGET_PORT")
-
-# Send via netcat
-RESP="$(printf "%s" "$CONTROL_CMDS" | nc -w 5 "$TOR_CONTROL_HOST" "$TOR_CONTROL_PORT" || true)"
-
-# Parse ServiceID
-echo "$RESP" | grep -qE '^250(-| )ServiceID=' || {
-  echo "[onion] failed to create onion" >&2
-  echo "$RESP" | sed -n '1,20p' >&2
-  exit 3
+# Validate environment
+validate_environment() {
+  [ -s "$TOR_COOKIE_PATH" ] || die "control cookie missing or empty at $TOR_COOKIE_PATH"
+  command -v xxd >/dev/null 2>&1 || command -v hexdump >/dev/null 2>&1 || die "xxd or hexdump required for cookie hex encoding"
+  command -v nc >/dev/null 2>&1 || die "netcat required for tor control protocol"
+  mkdir -p "$OUTDIR" || die "failed to create output directory: $OUTDIR"
 }
 
-SERVICE_ID="$(echo "$RESP" | awk -F= '/^250(-| )ServiceID=/{id=$2} END{if(id!="")print id}' | tr -d '\r')"
+# Get cookie hex for authentication
+get_cookie_hex() {
+  if command -v xxd >/dev/null 2>&1; then
+    xxd -p "$TOR_COOKIE_PATH" | tr -d '\n'
+  else
+    hexdump -v -e '1/1 "%02x"' "$TOR_COOKIE_PATH"
+  fi
+}
 
-# Persist for other services (optional but useful)
-mkdir -p "$OUTDIR"
-echo "${SERVICE_ID}.onion" > "$OUTDIR/onion.txt"
+# Send control command to tor
+send_control_command() {
+  local cmd="$1"
+  local cookie_hex="$2"
+  
+  printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" | \
+    nc -w 10 "$TOR_CONTROL_HOST" "$TOR_CONTROL_PORT" 2>/dev/null
+}
 
-echo "[onion] ServiceID=$SERVICE_ID"
-echo "[onion] wrote ${SERVICE_ID}.onion to $OUTDIR/onion.txt"
+# Create a single onion service
+create_single_onion() {
+  local service_name="$1"
+  local onion_port="$2"
+  local target_host="$3"
+  local target_port="$4"
+  local env_var="$5"
+  local cookie_hex="$6"
+  
+  log "Creating onion for $service_name: $onion_port -> $target_host:$target_port"
+  
+  # Build ADD_ONION command for ED25519-V3
+  local add_onion_cmd="ADD_ONION NEW:ED25519-V3 Port=${onion_port},${target_host}:${target_port}"
+  
+  # Send command
+  local response
+  response="$(send_control_command "$add_onion_cmd" "$cookie_hex" || true)"
+  
+  # Parse ServiceID from response
+  if echo "$response" | grep -qE '^250(-| )ServiceID='; then
+    local service_id
+    service_id="$(echo "$response" | awk -F= '/^250(-| )ServiceID=/{print $2}' | tr -d '\r' | head -1)"
+    local onion_address="${service_id}.onion"
+    
+    # Write to individual service file
+    echo "$onion_address" > "$OUTDIR/${service_name}.onion"
+    
+    # Write to environment variable format
+    echo "${env_var}=${onion_address}" >> "$OUTDIR/multi-onion.env"
+    
+    # Also write hex-encoded service ID for programmatic use
+    printf '%s' "$service_id" | xxd -p | tr -d '\n' > "$OUTDIR/${service_name}.hex"
+    
+    log "✓ $service_name: $onion_address"
+    return 0
+  else
+    error "Failed to create onion for $service_name"
+    echo "$response" | sed -n '1,10p' >&2
+    return 1
+  fi
+}
+
+# Main execution
+main() {
+  log "Starting multi-onion creation (count: $ONION_COUNT)"
+  
+  validate_environment
+  
+  local cookie_hex
+  cookie_hex="$(get_cookie_hex)"
+  [ -n "$cookie_hex" ] || die "failed to get cookie hex"
+  
+  # Initialize environment file
+  cat > "$OUTDIR/multi-onion.env" << 'EOF'
+# Lucid Multi-Onion Environment Variables
+# Generated by create_ephemeral_onion.sh
+# Each .onion address maps to a different internal service
+EOF
+  
+  # Create summary file
+  cat > "$OUTDIR/onion-summary.txt" << EOF
+# Lucid Multi-Onion Services
+# Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+# Cookie Auth: ED25519-V3
+# Control: $TOR_CONTROL_HOST:$TOR_CONTROL_PORT
+EOF
+  
+  local success_count=0
+  local total_count=${#SERVICE_MAP[@]}
+  
+  # Create each onion service
+  for service_config in "${SERVICE_MAP[@]}"; do
+    IFS=':' read -r service_name onion_port target_host target_port env_var <<< "$service_config"
+    
+    if create_single_onion "$service_name" "$onion_port" "$target_host" "$target_port" "$env_var" "$cookie_hex"; then
+      success_count=$((success_count + 1))
+      
+      # Add to summary
+      printf '%s -> %s:%s (%s)\n' "$service_name" "$target_host" "$target_port" "$(cat "$OUTDIR/${service_name}.onion")" >> "$OUTDIR/onion-summary.txt"
+    fi
+  done
+  
+  # Final status
+  log "Created $success_count/$total_count onion services"
+  
+  if [ "$success_count" -eq "$total_count" ]; then
+    log "✓ All onion services created successfully"
+    log "Environment file: $OUTDIR/multi-onion.env"
+    log "Summary file: $OUTDIR/onion-summary.txt"
+    
+    # Output the environment variables for docker-compose
+    cat "$OUTDIR/multi-onion.env"
+    return 0
+  else
+    error "Only $success_count/$total_count onion services created"
+    return 1
+  fi
+}
+
+# Execute main function
+main "$@"

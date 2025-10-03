@@ -1,17 +1,19 @@
 # Admin Module
 # All modules related to operations used by administrators
 
+# Only import existing modules
 from .system import *
-from .governance import *
-from .policies import *
-from .keys import *
 
-﻿# Path: admin/__init__.py
+# Path: admin/__init__.py
 """
 Admin package for Lucid RDP.
 Handles administrative operations, provisioning, and key management.
 """
 
-from admin.admin_manager import AdminManager
+# Import only what exists
+try:
+    from .system import *
+except ImportError:
+    pass
 
-__all__ = ["AdminManager"]
+__all__ = []

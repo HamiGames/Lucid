@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from blockchain.storage import Storage
-from blockchain.node import Node
+from blockchain.core.storage import Storage
+from blockchain.core.node import Node
 
 
 def test_storage_api_surface():

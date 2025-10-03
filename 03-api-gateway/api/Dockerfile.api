@@ -1,36 +1,80 @@
+# LUCID API SERVER - SPEC-4 Stage 2 Sessions Gateway
+# Professional FastAPI server for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+
 # syntax=docker/dockerfile:1.7
 FROM python:3.12-slim
 
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0" \
+      description="FastAPI server for Lucid sessions gateway" \
+      com.lucid.plane="ops" \
+      com.lucid.service="api-server" \
+      com.lucid.expose="8081"
+
+# Python environment optimizations
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app \
+    UVICORN_WORKERS=1 \
+    UVICORN_HOST=0.0.0.0 \
+    UVICORN_PORT=8081
 
+# Create non-root user for security
+RUN groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid lucid --shell /bin/bash --create-home lucid
+
+# Install system dependencies with security focus
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       curl \
+       ca-certificates \
+       netcat-traditional \
+       jq \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Copy requirements and install Python dependencies
+COPY --chown=lucid:lucid requirements.txt /app/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps -r /app/requirements.txt
+
+# Install FastAPI stack with specific versions for Pi compatibility
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "motor>=3.3.0" \
+        "pymongo>=4.5.0" \
+        "python-multipart>=0.0.6" \
+        "python-jose[cryptography]>=3.3.0" \
+        "passlib[bcrypt]>=1.7.4" \
+        "aiofiles>=23.0.0" \
+        "httpx>=0.25.0"
+
+# Copy application code
+COPY --chown=lucid:lucid app/ /app/app/
+
+# Create directories for onion state and logs
+RUN mkdir -p /run/lucid/onion /var/log/lucid \
+    && chown -R lucid:lucid /run/lucid /var/log/lucid
+
+# Health check with comprehensive validation
+HEALTHCHECK --interval=20s --timeout=5s --retries=5 --start-period=15s \
+    CMD curl -fsS http://127.0.0.1:8081/health || exit 1
+
+# Security and runtime configuration
+EXPOSE 8081
+USER lucid
 WORKDIR /app
 
-# Minimal OS deps (curl for healthcheck)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends curl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
-# ----------------------------
-# Python dependencies
-# ----------------------------
-# REQUIREMENTS MUST EXIST at: /workspaces/Lucid/03-api-gateway/api/requirements.txt
-COPY requirements.txt /app/requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r /app/requirements.txt
-
-# Ensure uvicorn is present (in case it's not pinned in requirements.txt)
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uvicorn[standard]"
-
-# ----------------------------
-# App code
-# ----------------------------
-COPY app/ /app/app/
-
-# Healthcheck (used by compose)
-HEALTHCHECK --interval=20s --timeout=5s --retries=5 --start-period=10s \
-  CMD curl -fsS http://127.0.0.1:8081/health || exit 1
-
-EXPOSE 8081
+# Default command (can be overridden by compose)
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081", "--workers", "1"]
