@@ -81,8 +81,8 @@ def check_tor_connectivity():
         
         session = requests.Session()
         session.proxies = {
-            'http': 'socks5://lucid_tor:9050',
-            'https': 'socks5://lucid_tor:9050'
+            'http': 'socks5://tor-proxy:9050',
+            'https': 'socks5://tor-proxy:9050'
         }
         
         response = session.get('http://check.torproject.org', timeout=10)
@@ -147,7 +147,7 @@ RUN chmod +x /app/scripts/tunnel-manager.py
 # Environment variables for configuration
 ENV TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
-    TOR_PROXY=lucid_tor:9050 \
+    TOR_PROXY=tor-proxy:9050 \
     LUCID_ENV=dev \
     PYTHONUNBUFFERED=1
 

@@ -75,7 +75,7 @@ echo "[health-check] Lucid Core Support Health Check"
 echo "============================================"
 
 # Check Tor proxy
-if curl -fsS --max-time 5 --socks5 lucid_tor:9050 http://check.torproject.org >/dev/null 2>&1; then
+if curl -fsS --max-time 5 --socks5 tor-proxy:9050 http://check.torproject.org >/dev/null 2>&1; then
     echo "✅ Tor proxy: HEALTHY"
 else
     echo "❌ Tor proxy: UNHEALTHY"
@@ -113,7 +113,7 @@ set -euo pipefail
 echo "[network-test] Core Support Network Test"
 echo "========================================"
 
-services=("lucid_tor:9050" "lucid_mongo:27017" "lucid_api_gateway:8080" "lucid_api:8081" "lucid_tunnel_tools:7000")
+services=("tor-proxy:9050" "lucid_mongo:27017" "lucid_api_gateway:8080" "lucid_api:8081" "lucid_tunnel_tools:7000")
 
 for service in "${services[@]}"; do
     host=$(echo "$service" | cut -d: -f1)
