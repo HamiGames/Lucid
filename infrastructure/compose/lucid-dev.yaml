@@ -218,7 +218,7 @@ services:
     <<: *lucid-common
     container_name: tor_proxy
     build:
-      context: ../../02-network-security/tor
+      context: /mnt/myssd/Lucid/02-network-security/tor
       dockerfile: Dockerfile
       platforms:
         - linux/amd64
@@ -244,7 +244,7 @@ services:
       - tor_config:/etc/tor
       - onion_state:/run/lucid/onion
       # Mount the multi-onion scripts
-      - ../../02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
+      - /mnt/myssd/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
     networks:
       lucid_core_net:
         aliases: [tor, tor-proxy, torproxy]
@@ -282,7 +282,7 @@ services:
     <<: *lucid-common
     container_name: lucid_api
     build:
-      context: ../../03-api-gateway/api
+      context: /mnt/myssd/Lucid/03-api-gateway/api
       dockerfile: Dockerfile.api
       platforms:
         - linux/amd64
@@ -299,7 +299,7 @@ services:
     volumes:
       - onion_state:/run/lucid/onion:ro
       # Development bind mount (removed in production)
-      - ../../03-api-gateway/api/app:/app:ro
+      - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
     ports:
       - "8081:8081"  # External devcontainer access
     networks:
@@ -339,7 +339,7 @@ services:
     <<: *lucid-common
     container_name: lucid_api_gateway
     build:
-      context: ../../03-api-gateway/gateway
+      context: /mnt/myssd/Lucid/03-api-gateway/gateway
       dockerfile: Dockerfile.gateway
       platforms:
         - linux/amd64
@@ -390,7 +390,7 @@ services:
     <<: *lucid-common
     container_name: lucid_tunnel_tools
     build:
-      context: ../../02-network-security/tunnels
+      context: /mnt/myssd/Lucid/02-network-security/tunnels
       dockerfile: Dockerfile
       platforms:
         - linux/amd64
@@ -441,7 +441,7 @@ services:
     <<: *lucid-common
     container_name: lucid_server_tools
     build:
-      context: ../../common/server-tools
+      context: /mnt/myssd/Lucid/common/server-tools
       dockerfile: Dockerfile
       platforms:
         - linux/amd64

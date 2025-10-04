@@ -57,7 +57,7 @@ services:
       - LUCID_ENV=dev
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONPATH=/workspaces/Lucid
+      - PYTHONPATH=/mnt/myssd/Lucid
       
       # Build tools environment
       - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
@@ -73,7 +73,7 @@ services:
       # Project source code (development workspace)
       - type: bind
         source: ../../..
-        target: /workspaces/Lucid
+        target: /mnt/myssd/Lucid
         consistency: cached
       
       # Docker socket for container building
@@ -123,7 +123,7 @@ services:
     # Custom startup for complete build environment
     command: ["/usr/local/bin/start-dev", "tail", "-f", "/dev/null"]
     
-    working_dir: /workspaces/Lucid
+    working_dir: /mnt/myssd/Lucid
     
     # Resource allocation for build factory
     deploy:

@@ -41,14 +41,8 @@ RUN apt-get update \
 WORKDIR /app
 RUN chown -R lucid:lucid /app
 
-# Copy requirements and install Python dependencies
-COPY --chown=lucid:lucid requirements.txt /app/requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps -r /app/requirements.txt
-
 # Install FastAPI stack with specific versions for Pi compatibility
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install \
+RUN pip install --no-cache-dir \
         "uvicorn[standard]>=0.24.0" \
         "fastapi>=0.104.0" \
         "pydantic>=2.0.0" \
@@ -59,6 +53,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         "passlib[bcrypt]>=1.7.4" \
         "aiofiles>=23.0.0" \
         "httpx>=0.25.0"
+
+# Copy requirements if it exists and install additional dependencies
+COPY requirements.txt* /app/
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # Copy application code
 COPY --chown=lucid:lucid app/ /app/app/

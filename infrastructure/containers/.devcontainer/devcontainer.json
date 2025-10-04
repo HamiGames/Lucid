@@ -2,7 +2,7 @@
   "name": "Lucid Build Factory - Complete Docker-in-Docker Environment",
   "dockerComposeFile": "docker-compose.dev.yml",
   "service": "devcontainer",
-  "workspaceFolder": "/workspaces/Lucid",
+  "workspaceFolder": "/mnt/myssd/Lucid",
   "remoteUser": "root",
   
   "initializeCommand": "docker network inspect lucid-dev_lucid_net >nul 2>&1 || docker network create --driver bridge --attachable --subnet=172.20.0.0/16 --gateway=172.20.0.1 lucid-dev_lucid_net",
@@ -10,7 +10,7 @@
   "postCreateCommand": [
     "bash",
     "-c",
-    "echo 'Configuring Lucid build factory...' && /workspaces/Lucid/scripts/devcontainer/setup-build-factory.sh"
+    "echo 'Configuring Lucid build factory...' && /mnt/myssd/Lucid/scripts/devcontainer/setup-build-factory.sh"
   ],
   
   "containerEnv": {
@@ -21,7 +21,7 @@
     "DOCKER_TLS_CERTDIR": "",
     "PYTHONUNBUFFERED": "1",
     "PYTHONDONTWRITEBYTECODE": "1",
-    "PYTHONPATH": "/workspaces/Lucid",
+    "PYTHONPATH": "/mnt/myssd/Lucid",
     "LUCID_ENV": "dev",
     "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk-amd64",
     "MAVEN_HOME": "/usr/share/maven",
@@ -105,7 +105,7 @@
         "docker.dockerPath": "/usr/bin/docker",
         "docker.composeCommand": "docker-compose",
         "terminal.integrated.defaultProfile.linux": "bash",
-        "terminal.integrated.cwd": "/workspaces/Lucid",
+        "terminal.integrated.cwd": "/mnt/myssd/Lucid",
         "files.associations": {
           "*.env*": "dotenv",
           "docker-compose*.yml": "yaml",
