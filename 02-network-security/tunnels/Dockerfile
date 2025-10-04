@@ -2,7 +2,7 @@
 # Professional tunneling utilities for Pi deployment
 # Compatible with devcontainer builds and ARM64 Pi architecture
 
-FROM alpine:3.22.1
+FROM alpine:3.19
 
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
@@ -13,8 +13,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="7000"
 
 # Install comprehensive tunneling and network tools
-RUN apk update && apk upgrade --no-cache \
-    && apk add --no-cache \
+RUN apk update && apk upgrade \
+    && apk add --no-cache --update \
        # Python stack for tunnel management
        python3 \
        py3-requests \
@@ -37,7 +37,8 @@ RUN apk update && apk upgrade --no-cache \
        tini \
        jq \
        procps \
-    && rm -rf /var/cache/apk/* \
+    && apk upgrade \
+    && rm -rf /var/cache/apk/* /tmp/* /var/tmp/* \
     && addgroup -S lucid && adduser -S -D -H -s /bin/bash -G lucid lucid
 
 # Create application and data directories

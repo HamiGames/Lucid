@@ -250,8 +250,9 @@ services:
         aliases: [tor, tor-proxy, torproxy]
         ipv4_address: 172.21.0.11
       lucid_dev_net: {}  # External connectivity
+    expose: ["8888", "9050", "9051"]
     healthcheck:
-      test: ["CMD-SHELL", "curl -s --socks5-hostname localhost:9050 http://httpbin.org/ip || exit 1"]
+      test: ["CMD-SHELL", "/usr/local/bin/tor-health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -276,7 +277,7 @@ services:
       - "org.lucid.tor.onion-rotation=supported"
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 3: API Server (SPEC-4 Stage 2)
+  # CORE SUPPORT SERVICE 3: API Server (SPEC-4 Stage 0)
   # =============================================================================
   lucid_api:
     <<: *lucid-common
@@ -298,8 +299,8 @@ services:
       UVICORN_WORKERS: "1"  # Single worker for Pi resource constraints
     volumes:
       - onion_state:/run/lucid/onion:ro
-      # Development bind mount (removed in production)
-      - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
+      # Development bind mount (commented for production deployment)
+      # - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
     ports:
       - "8081:8081"  # External devcontainer access
     networks:
@@ -333,7 +334,7 @@ services:
     working_dir: /app
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 4: API Gateway (SPEC-4 Stage 2)
+  # CORE SUPPORT SERVICE 4: API Gateway (SPEC-4 Stage 0)
   # =============================================================================
   lucid_api_gateway:
     <<: *lucid-common
@@ -480,7 +481,7 @@ services:
         echo "[server-tools] Multi-onion support: Static(5) + Dynamic(unlimited)"
         exec tail -f /dev/null
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://gateway:8080/health >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "/opt/lucid/scripts/health-check.sh || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

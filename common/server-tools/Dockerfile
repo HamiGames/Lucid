@@ -2,7 +2,7 @@
 # Professional utility container for Pi deployment
 # Compatible with devcontainer builds and ARM64 Pi architecture
 
-FROM alpine:3.22.1
+FROM alpine:3.19
 
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
@@ -13,8 +13,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="none"
 
 # Install comprehensive server utilities optimized for Pi
-RUN apk update && apk upgrade --no-cache \
-    && apk add --no-cache \
+RUN apk update && apk upgrade \
+    && apk add --no-cache --update \
        # Core utilities
        bash \
        curl \
@@ -34,7 +34,7 @@ RUN apk update && apk upgrade --no-cache \
        gnupg \
        # System tools
        htop \
-       ps \
+       procps \
        lsof \
        strace \
        # File tools
@@ -50,9 +50,9 @@ RUN apk update && apk upgrade --no-cache \
        nano \
        tree \
        # Monitoring tools
-       procps \
        util-linux \
-    && rm -rf /var/cache/apk/* \
+    && apk upgrade \
+    && rm -rf /var/cache/apk/* /tmp/* /var/tmp/* \
     && adduser -D -s /bin/bash lucid
 
 # Create utility directories
