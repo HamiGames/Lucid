@@ -1,0 +1,48 @@
+# Authentication Service Dockerfile
+# LUCID-STRICT Layer 1 Core Infrastructure
+# Multi-platform build for Pi 5 ARM64
+
+FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libffi-dev \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY auth/requirements.auth.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.auth.txt
+
+# Copy application code
+COPY auth/ /app/auth/
+COPY open-api/api/app/schemas/auth.py /app/auth/schemas/
+COPY open-api/api/app/routes/auth.py /app/auth/routes/
+
+# Create secure directories
+RUN mkdir -p /secrets /tmp/auth && \
+    chmod 700 /secrets && \
+    chmod 755 /tmp/auth
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' auth_user && \
+    chown -R auth_user:auth_user /app /tmp/auth
+USER auth_user
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -fsS http://localhost:8085/health || exit 1
+
+# Expose port
+EXPOSE 8085
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Run service
+CMD ["python", "-m", "auth.main", "--mode=service"]

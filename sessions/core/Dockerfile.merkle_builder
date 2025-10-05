@@ -1,0 +1,40 @@
+# Merkle Tree Builder Dockerfile
+# LUCID-STRICT Layer 1 Core Infrastructure
+# Multi-platform build for Pi 5 ARM64
+
+FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY sessions/core/requirements.merkle.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.merkle.txt
+
+# Copy application code
+COPY sessions/core/merkle_builder.py /app/
+COPY sessions/core/merkle_config.py /app/
+COPY sessions/core/__init__.py /app/
+
+# Create working directories
+RUN mkdir -p /data/merkle_trees /tmp/merkle_build && \
+    chmod 755 /data/merkle_trees /tmp/merkle_build
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import merkle_builder; print('Merkle builder healthy')"
+
+# Expose port
+EXPOSE 8083
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Run service
+CMD ["python", "merkle_builder.py", "--mode=service"]

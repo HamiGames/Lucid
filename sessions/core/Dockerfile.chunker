@@ -1,0 +1,41 @@
+# Session Chunker Dockerfile
+# LUCID-STRICT Layer 1 Core Infrastructure
+# Multi-platform build for Pi 5 ARM64
+
+FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libzstd-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY sessions/core/requirements.chunker.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.chunker.txt
+
+# Copy application code
+COPY sessions/core/chunker.py /app/
+COPY sessions/core/__init__.py /app/
+COPY sessions/core/config.py /app/
+
+# Create storage directory
+RUN mkdir -p /data/chunks && \
+    chmod 755 /data/chunks
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import chunker; print('Chunker service healthy')"
+
+# Expose port
+EXPOSE 8081
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV CHUNK_STORAGE_PATH=/data/chunks
+
+# Run service
+CMD ["python", "chunker.py", "--mode=service"]

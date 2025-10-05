@@ -1,0 +1,40 @@
+# Session Orchestrator Dockerfile
+# LUCID-STRICT Layer 1 Core Infrastructure
+# Multi-platform build for Pi 5 ARM64
+
+FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY sessions/core/requirements.orchestrator.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.orchestrator.txt
+
+# Copy application code
+COPY sessions/core/session_orchestrator.py /app/
+COPY sessions/core/orchestrator_config.py /app/
+COPY sessions/core/__init__.py /app/
+
+# Create working directories
+RUN mkdir -p /data/orchestrator /tmp/orchestrator && \
+    chmod 755 /data/orchestrator /tmp/orchestrator
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -fsS http://localhost:8084/health || exit 1
+
+# Expose port
+EXPOSE 8084
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Run service
+CMD ["python", "session_orchestrator.py", "--mode=service"]

@@ -1,0 +1,46 @@
+# Session Encryptor Dockerfile
+# LUCID-STRICT Layer 1 Core Infrastructure
+# Multi-platform build for Pi 5 ARM64
+
+FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY sessions/encryption/requirements.encryptor.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.encryptor.txt
+
+# Copy application code
+COPY sessions/encryption/ /app/sessions/encryption/
+COPY sessions/core/__init__.py /app/sessions/
+
+# Create secure directories
+RUN mkdir -p /secrets /tmp/encryption && \
+    chmod 700 /secrets && \
+    chmod 755 /tmp/encryption
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' encryptor && \
+    chown -R encryptor:encryptor /app /tmp/encryption
+USER encryptor
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "from sessions.encryption.encryptor import SessionEncryptor; print('Encryptor healthy')"
+
+# Expose port
+EXPOSE 8082
+
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Run service
+CMD ["python", "-m", "sessions.encryption.encryptor", "--mode=service"]
