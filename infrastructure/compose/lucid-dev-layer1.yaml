@@ -15,7 +15,6 @@ x-lucid-layer1-env: &lucid-layer1-env
 
 # SPEC-4 Layer 1 Service Configuration
 x-lucid-layer1-service: &lucid-layer1-service
-  <<: *lucid-common
   restart: unless-stopped
   logging:
     driver: json-file
@@ -53,6 +52,49 @@ volumes:
       - "org.lucid.service=session-pipeline"
       - "org.lucid.component=merkle-builder"
 
+  # Layer 1 Temporary Volumes (merged to avoid duplicate top-level keys)
+  chunker_temp:
+    name: lucid-layer1_chunker_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  encryptor_temp:
+    name: lucid-layer1_encryptor_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  merkle_temp:
+    name: lucid-layer1_merkle_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  orchestrator_temp:
+    name: lucid-layer1_orchestrator_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  auth_temp:
+    name: lucid-layer1_auth_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  auth_secrets:
+    name: lucid-layer1_auth_secrets
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=secrets"
+
 services:
   # =============================================================================
   # LAYER 1: SESSION PIPELINE SERVICES
@@ -71,6 +113,7 @@ services:
     environment:
       <<: *lucid-layer1-env
       MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      CHUNK_STORAGE_PATH: /data/chunks
     volumes:
       - session_chunks:/data/chunks
       - chunker_temp:/tmp/chunker
@@ -114,8 +157,9 @@ services:
     environment:
       <<: *lucid-layer1-env
       MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      ENCRYPTED_STORAGE_PATH: /data/encrypted
     volumes:
-      - encryption_keys:/data/keys
+      - encryption_keys:/data/encrypted
       - encryptor_temp:/tmp/encryption
     secrets:
       - master_encryption_key
@@ -209,6 +253,7 @@ services:
       CHUNKER_SERVICE_URL: http://session-chunker:8081
       ENCRYPTOR_SERVICE_URL: http://session-encryptor:8082
       MERKLE_SERVICE_URL: http://merkle-builder:8083
+      CHUNK_STORAGE_PATH: /data/chunks
     volumes:
       - session_chunks:/data/chunks:ro
       - orchestrator_temp:/tmp/orchestrator
@@ -295,49 +340,7 @@ services:
       - "org.lucid.service=auth-service"
       - "org.lucid.expose=8085"
 
-# Layer 1 Temporary Volumes
-volumes:
-  chunker_temp:
-    name: lucid-layer1_chunker_temp
-    driver: local
-    labels:
-      - "org.lucid.layer=1"
-      - "org.lucid.component=temp"
-  
-  encryptor_temp:
-    name: lucid-layer1_encryptor_temp
-    driver: local
-    labels:
-      - "org.lucid.layer=1"
-      - "org.lucid.component=temp"
-  
-  merkle_temp:
-    name: lucid-layer1_merkle_temp
-    driver: local
-    labels:
-      - "org.lucid.layer=1"
-      - "org.lucid.component=temp"
-  
-  orchestrator_temp:
-    name: lucid-layer1_orchestrator_temp
-    driver: local
-    labels:
-      - "org.lucid.layer=1"
-      - "org.lucid.component=temp"
-  
-  auth_temp:
-    name: lucid-layer1_auth_temp
-    driver: local
-    labels:
-      - "org.lucid.layer=1"
-      - "org.lucid.component=temp"
-  
-  auth_secrets:
-    name: lucid-layer1_auth_secrets
-    driver: local
-    labels:
-      - "org.lucid.layer=1"
-      - "org.lucid.component=secrets"
+# (removed duplicate top-level volumes block)
 
 # Layer 1 Secrets
 secrets:

@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir -r /tmp/requirements.merkle.txt
 
 # Copy application code
 COPY sessions/core/merkle_builder.py /app/
-COPY sessions/core/merkle_config.py /app/
 COPY sessions/core/__init__.py /app/
 
 # Create working directories

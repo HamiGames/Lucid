@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir -r /tmp/requirements.orchestrator.txt
 
 # Copy application code
 COPY sessions/core/session_orchestrator.py /app/
-COPY sessions/core/orchestrator_config.py /app/
 COPY sessions/core/__init__.py /app/
 
 # Create working directories
