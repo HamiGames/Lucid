@@ -1,0 +1,189 @@
+# LUCID INFRASTRUCTURE DEVCONTAINER - SPEC-4 Development Environment (Distroless)
+# Professional development container for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
+# LUCID-STRICT Mode: Enhanced security with minimal attack surface
+
+# syntax=docker/dockerfile:1.7
+FROM ubuntu:22.04 AS infrastructure-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Infrastructure DevContainer service for Lucid (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="infrastructure-devcontainer" \
+      org.lucid.stage="0" \
+      org.lucid.expose="2222"
+
+# Build arguments
+ARG TARGETPLATFORM=linux/amd64
+ARG BUILDPLATFORM=linux/amd64
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Environment configuration for build stage
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/mnt/myssd/Lucid \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=UTC \
+    LUCID_ENV=dev
+
+# System dependencies and build tools (optimized for distroless extraction)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # System essentials for building
+    bash curl wget git ca-certificates gnupg lsb-release software-properties-common \
+    apt-transport-https dirmngr gpg-agent sudo \
+    # Essential build tools
+    build-essential pkg-config cmake gcc g++ make \
+    # Python ecosystem  
+    python3 python3-dev python3-pip python3-venv python3-setuptools python3-wheel \
+    python3-distutils python-is-python3 \
+    # Network and security tools
+    netcat-openbsd socat jq dnsutils openssh-client tor obfs4proxy \
+    # Cryptography stack (essential only)
+    libssl-dev libffi-dev libgmp-dev libsodium-dev \
+    # Essential utilities
+    unzip zip tar gzip xz-utils \
+    # Development utilities
+    vim htop tree less tmux \
+    gosu \
+    && rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# Install Docker CE for container operations
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Docker Compose standalone
+RUN curl -SL https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose
+
+# Install essential Python packages for development
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install \
+    # Core development tools
+    black ruff pytest mypy \
+    # Web framework and networking
+    fastapi uvicorn httpx requests \
+    # Cryptography and security (essential)
+    cryptography pynacl base58 \
+    # Build tools and utilities
+    build twine wheel \
+    # Database and data handling
+    sqlalchemy redis python-multipart python-dotenv
+
+# Set up application directory with Pi mount path reference
+WORKDIR /mnt/myssd/Lucid
+RUN groupadd --gid 1000 lucid && \
+    useradd --uid 1000 --gid lucid --shell /bin/bash --create-home lucid && \
+    chown -R lucid:lucid /mnt/myssd/Lucid
+
+# Configure Docker daemon for container operations
+RUN mkdir -p /etc/docker && \
+    echo '{"storage-driver": "overlay2", "log-level": "info"}' > /etc/docker/daemon.json
+
+# Configure Tor for development and testing
+RUN mkdir -p /etc/tor && \
+    echo 'SOCKSPort 9050' > /etc/tor/torrc && \
+    echo 'ControlPort 9051' >> /etc/tor/torrc && \
+    echo 'CookieAuthentication 1' >> /etc/tor/torrc && \
+    echo 'DataDirectory /var/lib/tor' >> /etc/tor/torrc && \
+    chown -R debian-tor:debian-tor /var/lib/tor
+
+# Create development directories with Pi mount structure
+RUN mkdir -p /mnt/myssd/Lucid/.vscode /var/lib/docker
+
+# Copy project files with Pi mount structure
+COPY --chown=lucid:lucid . /mnt/myssd/Lucid/
+
+# Create startup script
+RUN echo '#!/bin/bash' > /usr/local/bin/start-dev && \
+    echo 'set -e' >> /usr/local/bin/start-dev && \
+    echo 'echo "Starting Lucid Infrastructure DevContainer"' >> /usr/local/bin/start-dev && \
+    echo 'echo "Python: $(python3 --version)"' >> /usr/local/bin/start-dev && \
+    echo 'echo "Docker: $(docker --version)"' >> /usr/local/bin/start-dev && \
+    echo 'cd /mnt/myssd/Lucid' >> /usr/local/bin/start-dev && \
+    echo 'exec "$@"' >> /usr/local/bin/start-dev && \
+    chmod +x /usr/local/bin/start-dev
+
+# Stage 2: Distroless runtime with development dependencies
+FROM gcr.io/distroless/python3-debian12:latest
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Infrastructure DevContainer service for Lucid (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="infrastructure-devcontainer" \
+      org.lucid.stage="0" \
+      org.lucid.expose="2222"
+
+# Copy Python installation and packages from builder
+COPY --from=infrastructure-builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
+COPY --from=infrastructure-builder /usr/bin/python3 /usr/bin/python3
+COPY --from=infrastructure-builder /usr/bin/python3.10 /usr/bin/python3.10
+
+# Copy essential development tools
+COPY --from=infrastructure-builder /usr/bin/curl /usr/bin/curl
+COPY --from=infrastructure-builder /usr/bin/wget /usr/bin/wget
+COPY --from=infrastructure-builder /usr/bin/git /usr/bin/git
+COPY --from=infrastructure-builder /bin/nc /bin/nc
+COPY --from=infrastructure-builder /usr/bin/socat /usr/bin/socat
+COPY --from=infrastructure-builder /usr/bin/jq /usr/bin/jq
+COPY --from=infrastructure-builder /usr/bin/tor /usr/bin/tor
+COPY --from=infrastructure-builder /usr/bin/obfs4proxy /usr/bin/obfs4proxy
+COPY --from=infrastructure-builder /usr/sbin/gosu /usr/sbin/gosu
+COPY --from=infrastructure-builder /bin/bash /bin/bash
+
+# Copy Docker binaries and tools
+COPY --from=infrastructure-builder /usr/bin/docker /usr/bin/docker
+COPY --from=infrastructure-builder /usr/local/bin/docker-compose /usr/local/bin/docker-compose
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=infrastructure-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=infrastructure-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=infrastructure-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=infrastructure-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=infrastructure-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=infrastructure-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=infrastructure-builder /lib/*-linux-*/libffi.so.8 /lib/
+COPY --from=infrastructure-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=infrastructure-builder /etc/passwd /etc/passwd
+COPY --from=infrastructure-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=infrastructure-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy Tor configuration
+COPY --from=infrastructure-builder /etc/tor /etc/tor
+
+# Copy application with Pi mount structure and proper ownership
+COPY --from=infrastructure-builder --chown=lucid:lucid /mnt/myssd/Lucid /mnt/myssd/Lucid
+COPY --from=infrastructure-builder --chown=lucid:lucid /var/lib/docker /var/lib/docker
+COPY --from=infrastructure-builder --chmod=755 /usr/local/bin/start-dev /usr/local/bin/start-dev
+
+# Runtime environment for infrastructure development
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/mnt/myssd/Lucid \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=UTC \
+    LUCID_ENV=dev \
+    DOCKER_HOST=unix:///var/run/docker.sock
+
+# Security and runtime configuration
+EXPOSE 2222
+USER lucid
+WORKDIR /mnt/myssd/Lucid
+
+# Default command for infrastructure development container
+ENTRYPOINT ["/usr/local/bin/start-dev"]
+CMD ["tail", "-f", "/dev/null"]

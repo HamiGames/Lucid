@@ -3,8 +3,6 @@
 # SPEC-4 compliant: Stage 0 Common & Base with plane isolation
 # Dual-network architecture: core services isolated, external connectivity maintained
 
-name: lucid-dev
-
 # SPEC-4 Stage 0 Environment Template (ops plane)
 x-lucid-env: &lucid-env
   # Core identification
@@ -219,12 +217,7 @@ services:
     container_name: tor_proxy
     build:
       context: /mnt/myssd/Lucid/02-network-security/tor
-      dockerfile: Dockerfile
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILDKIT_INLINE_CACHE: 1
+      dockerfile: Dockerfile.distroless
     image: pickme/lucid:tor-proxy
     environment:
       <<: *lucid-env
@@ -243,7 +236,7 @@ services:
       - tor_data:/var/lib/tor
       - tor_config:/etc/tor
       - onion_state:/run/lucid/onion
-      # Mount the multi-onion scripts
+      # Mount the multi-onion scripts from Pi mount path
       - /mnt/myssd/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
     networks:
       lucid_core_net:
@@ -284,12 +277,7 @@ services:
     container_name: lucid_api
     build:
       context: /mnt/myssd/Lucid/03-api-gateway/api
-      dockerfile: Dockerfile.api
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILDKIT_INLINE_CACHE: 1
+      dockerfile: Dockerfile.distroless
     image: pickme/lucid:api-server
     environment:
       <<: *lucid-env
@@ -299,8 +287,8 @@ services:
       UVICORN_WORKERS: "1"  # Single worker for Pi resource constraints
     volumes:
       - onion_state:/run/lucid/onion:ro
-      # Development bind mount (commented for production deployment)
-      # - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
+      # Development bind mount for Pi mount path
+      - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
     ports:
       - "8081:8081"  # External devcontainer access
     networks:
@@ -341,12 +329,7 @@ services:
     container_name: lucid_api_gateway
     build:
       context: /mnt/myssd/Lucid/03-api-gateway/gateway
-      dockerfile: Dockerfile.gateway
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILDKIT_INLINE_CACHE: 1
+      dockerfile: Dockerfile.distroless
     image: pickme/lucid:api-gateway
     environment:
       <<: *lucid-env
@@ -392,12 +375,7 @@ services:
     container_name: lucid_tunnel_tools
     build:
       context: /mnt/myssd/Lucid/02-network-security/tunnels
-      dockerfile: Dockerfile
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILDKIT_INLINE_CACHE: 1
+      dockerfile: Dockerfile.distroless
     image: pickme/lucid:tunnel-tools
     environment:
       <<: *lucid-env
@@ -443,12 +421,7 @@ services:
     container_name: lucid_server_tools
     build:
       context: /mnt/myssd/Lucid/common/server-tools
-      dockerfile: Dockerfile
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILDKIT_INLINE_CACHE: 1
+      dockerfile: Dockerfile.distroless
     image: pickme/lucid:server-tools
     environment:
       <<: *lucid-env

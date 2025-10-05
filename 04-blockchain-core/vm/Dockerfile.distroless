@@ -1,0 +1,137 @@
+# LUCID BLOCKCHAIN VIRTUAL MACHINE - SPEC-4 Stage 1 Chain Plane (Distroless)
+# Professional VM service for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
+# LUCID-STRICT Mode: Enhanced security with minimal attack surface
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim AS vm-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Blockchain Virtual Machine service for Lucid chain plane (Distroless)" \
+      org.lucid.plane="chain" \
+      org.lucid.service="blockchain-vm" \
+      org.lucid.stage="1" \
+      org.lucid.expose="8088"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and create user
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        libffi-dev \
+        libtool \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid lucid --shell /bin/bash --create-home lucid
+
+# Set up application directory with Pi mount path reference
+WORKDIR /mnt/myssd/Lucid/04-blockchain-core/vm
+RUN chown -R lucid:lucid /mnt/myssd/Lucid/04-blockchain-core/vm
+
+# Install VM-specific Python dependencies including EVM support
+RUN pip install --no-cache-dir \
+        "fastapi>=0.104.0" \
+        "uvicorn[standard]>=0.24.0" \
+        "pydantic>=2.0.0" \
+        "web3>=6.11.0" \
+        "py-evm>=0.8.0" \
+        "eth-account>=0.9.0" \
+        "eth-abi>=4.2.1" \
+        "eth-utils>=2.3.0" \
+        "cryptography>=41.0.0" \
+        "rlp>=3.0.0" \
+        "trie>=2.0.2" \
+        "pysha3>=1.0.2" \
+        "grpcio>=1.59.0" \
+        "protobuf>=4.24.0" \
+        "httpx>=0.25.0" \
+        "python-multipart>=0.0.6"
+
+# Copy requirements if it exists and install additional dependencies
+COPY requirements.txt* /mnt/myssd/Lucid/04-blockchain-core/vm/
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# Copy application code with Pi mount structure
+COPY --chown=lucid:lucid . /mnt/myssd/Lucid/04-blockchain-core/vm/
+
+# Create VM-specific directories
+RUN mkdir -p /var/lib/vm /var/log/lucid/vm /var/lib/contracts /var/lib/state-vm \
+    && chown -R lucid:lucid /var/lib/vm /var/log/lucid/vm /var/lib/contracts /var/lib/state-vm
+
+# Stage 2: Distroless runtime with Python and VM dependencies
+FROM gcr.io/distroless/python3-debian12:latest
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Blockchain Virtual Machine service for Lucid chain plane (Distroless Runtime)" \
+      org.lucid.plane="chain" \
+      org.lucid.service="blockchain-vm" \
+      org.lucid.stage="1" \
+      org.lucid.expose="8088"
+
+# Copy Python installation and packages from builder
+COPY --from=vm-builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=vm-builder /usr/local/bin/python3.12 /usr/local/bin/python3.12
+
+# Copy system dependencies for VM operations
+COPY --from=vm-builder /usr/bin/curl /usr/bin/curl
+COPY --from=vm-builder /bin/nc /bin/nc
+COPY --from=vm-builder /usr/bin/jq /usr/bin/jq
+COPY --from=vm-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=vm-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=vm-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=vm-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=vm-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=vm-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=vm-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=vm-builder /lib/*-linux-*/libffi.so.8 /lib/
+COPY --from=vm-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=vm-builder /etc/passwd /etc/passwd
+COPY --from=vm-builder /etc/group /etc/group
+
+# Copy CA certificates for blockchain network communication
+COPY --from=vm-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with Pi mount structure and proper ownership
+COPY --from=vm-builder --chown=lucid:lucid /mnt/myssd/Lucid/04-blockchain-core/vm /mnt/myssd/Lucid/04-blockchain-core/vm
+COPY --from=vm-builder --chown=lucid:lucid /var/lib/vm /var/lib/vm
+COPY --from=vm-builder --chown=lucid:lucid /var/lib/contracts /var/lib/contracts
+COPY --from=vm-builder --chown=lucid:lucid /var/lib/state-vm /var/lib/state-vm
+COPY --from=vm-builder --chown=lucid:lucid /var/log/lucid/vm /var/log/lucid/vm
+
+# Runtime environment for VM service
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/mnt/myssd/Lucid/04-blockchain-core/vm \
+    VM_PORT=8088 \
+    VM_DATA_DIR=/var/lib/vm \
+    CONTRACTS_DIR=/var/lib/contracts \
+    STATE_VM_DIR=/var/lib/state-vm \
+    EVM_TRACE=0 \
+    GAS_LIMIT=8000000
+
+# Security and runtime configuration
+EXPOSE 8088
+USER lucid
+WORKDIR /mnt/myssd/Lucid/04-blockchain-core/vm
+
+# Default command for VM service
+ENTRYPOINT ["/usr/local/bin/python3.12", "main.py"]

@@ -65,15 +65,16 @@ COPY --from=tor-builder /usr/bin/curl /usr/bin/curl
 COPY --from=tor-builder /usr/bin/jq /usr/bin/jq
 COPY --from=tor-builder /usr/sbin/gosu /usr/sbin/gosu
 
-# Copy Tor system libraries (essential for inherent Tor functionality)
-COPY --from=tor-builder /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
-COPY --from=tor-builder /lib/x86_64-linux-gnu/libcrypto.so.3 /lib/x86_64-linux-gnu/libcrypto.so.3
-COPY --from=tor-builder /lib/x86_64-linux-gnu/libssl.so.3 /lib/x86_64-linux-gnu/libssl.so.3
-COPY --from=tor-builder /lib/x86_64-linux-gnu/libevent-2.1.so.7 /lib/x86_64-linux-gnu/libevent-2.1.so.7
-COPY --from=tor-builder /lib/x86_64-linux-gnu/libzstd.so.1 /lib/x86_64-linux-gnu/libzstd.so.1
-COPY --from=tor-builder /lib/x86_64-linux-gnu/liblzma.so.5 /lib/x86_64-linux-gnu/liblzma.so.5
-COPY --from=tor-builder /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/libz.so.1
-COPY --from=tor-builder /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+# Copy Tor system libraries (architecture-aware paths for multi-platform support)
+# Note: distroless handles library path resolution automatically
+COPY --from=tor-builder /lib/*/libc.so.6 /lib/
+COPY --from=tor-builder /lib/*/libcrypto.so.3 /lib/
+COPY --from=tor-builder /lib/*/libssl.so.3 /lib/
+COPY --from=tor-builder /lib/*/libevent-2.1.so.7 /lib/
+COPY --from=tor-builder /lib/*/libzstd.so.1 /lib/
+COPY --from=tor-builder /lib/*/liblzma.so.5 /lib/
+COPY --from=tor-builder /lib/*/libz.so.1 /lib/
+COPY --from=tor-builder /lib*/ld-linux-*.so.2 /lib64/
 
 # Copy Tor system data and GeoIP databases (inherent Tor network data)
 COPY --from=tor-builder /usr/share/tor /usr/share/tor
