@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         bash \
         netcat-openbsd \
         xxd \
-        su-exec \
+        gosu \
         ca-certificates \
         dnsutils \
         curl \
@@ -63,6 +63,7 @@ COPY --from=tor-builder /bin/nc /bin/nc
 COPY --from=tor-builder /usr/bin/xxd /usr/bin/xxd
 COPY --from=tor-builder /usr/bin/curl /usr/bin/curl
 COPY --from=tor-builder /usr/bin/jq /usr/bin/jq
+COPY --from=tor-builder /usr/sbin/gosu /usr/sbin/gosu
 
 # Copy Tor system libraries (essential for inherent Tor functionality)
 COPY --from=tor-builder /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
