@@ -39,6 +39,7 @@ Instead of attempting to build everything simultaneously, we'll use a **dependen
 
 1. **Create Session Orchestrator Core** (Day 1)
    #############
+
    ```
    sessions/core/session_orchestrator.py
    ├── SessionOrchestrator class

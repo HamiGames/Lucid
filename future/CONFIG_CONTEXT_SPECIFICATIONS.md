@@ -31,6 +31,7 @@ Config Context Layers:
 ### **1.1 SESSION CHUNKER - `sessions/core/chunker.py`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # sessions/core/.env.chunker
 # Session Chunker Configuration
@@ -48,6 +49,7 @@ PI_OPTIMIZATION_ENABLED=true             # Pi 5 hardware optimization
 ```
 
 #### **Dockerfile Context:**
+
 ```dockerfile
 # sessions/core/Dockerfile.chunker
 FROM --platform=$TARGETPLATFORM python:3.11-slim as base
@@ -83,6 +85,7 @@ CMD ["python", "chunker.py", "--mode=service"]
 ```
 
 #### **Runtime Configuration:**
+
 ```yaml
 # sessions/core/chunker_config.yaml
 chunker:
@@ -104,6 +107,7 @@ chunker:
 ```
 
 #### **Volume Mount Requirements:**
+
 ```yaml
 volumes:
   - session_chunks_data:/data/chunks          # Persistent chunk storage
@@ -116,6 +120,7 @@ volumes:
 ### **1.2 SESSION ENCRYPTOR - `sessions/encryption/encryptor.py`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # sessions/encryption/.env.encryptor
 # Session Encryptor Configuration
@@ -134,6 +139,7 @@ KEY_ESCROW_ENABLED=false                  # Key escrow for recovery
 ```
 
 #### **Dockerfile Context:**
+
 ```dockerfile
 # sessions/encryption/Dockerfile.encryptor
 FROM --platform=$TARGETPLATFORM python:3.11-slim as base
@@ -174,6 +180,7 @@ CMD ["python", "-m", "sessions.encryption.encryptor", "--mode=service"]
 ```
 
 #### **Secret Management Context:**
+
 ```yaml
 # sessions/encryption/secrets.yaml
 secrets:
@@ -193,6 +200,7 @@ secrets:
 ### **1.3 MERKLE TREE BUILDER - `sessions/core/merkle_builder.py`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # sessions/core/.env.merkle_builder
 # Merkle Tree Builder Configuration
@@ -209,6 +217,7 @@ INTEGRITY_CHECK_ENABLED=true             # Enable integrity checking
 ```
 
 #### **Dockerfile Context:**
+
 ```dockerfile
 # sessions/core/Dockerfile.merkle_builder
 FROM --platform=$TARGETPLATFORM python:3.11-slim as base
@@ -246,6 +255,7 @@ CMD ["python", "merkle_builder.py", "--mode=service"]
 ### **1.4 SESSION ORCHESTRATOR - `sessions/core/session_orchestrator.py`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # sessions/core/.env.orchestrator
 # Session Orchestrator Configuration
@@ -263,6 +273,7 @@ HEALTH_CHECK_INTERVAL=60                 # Health check interval
 ```
 
 #### **Service Dependencies:**
+
 ```yaml
 # sessions/core/dependencies.yaml
 depends_on:
@@ -286,6 +297,7 @@ environment_dependencies:
 ### **2.1 AUTHENTICATION SERVICE - `open-api/api/app/routes/auth.py`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # auth/.env.authentication
 # Authentication Service Configuration
@@ -311,6 +323,7 @@ LOCKOUT_DURATION_MINUTES=15               # Account lockout duration
 ```
 
 #### **Security Context:**
+
 ```yaml
 # auth/security_context.yaml  
 security:
@@ -339,6 +352,7 @@ security:
 ### **3.1 RDP SERVER - `RDP/server/rdp_server.py`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # RDP/server/.env.rdp_server
 # RDP Server Configuration
@@ -366,6 +380,7 @@ ENCRYPTION_LEVEL=high                     # low|medium|high|fips
 ```
 
 #### **Dockerfile Context:**
+
 ```dockerfile
 # RDP/server/Dockerfile.rdp_server
 FROM --platform=$TARGETPLATFORM ubuntu:22.04 as base
@@ -418,6 +433,7 @@ CMD ["/start.sh"]
 ```
 
 #### **Hardware Access Context:**
+
 ```yaml
 # RDP/server/hardware_context.yaml
 privileged: true                          # Required for hardware access
@@ -439,6 +455,7 @@ volumes:
 ### **4.1 FRONTEND APPLICATION - `frontend/`**
 
 #### **Environment Variables Required:**
+
 ```bash
 # frontend/.env.local
 # Frontend Application Configuration  
@@ -462,6 +479,7 @@ PWA_ENABLED=false
 ```
 
 #### **Package.json Context:**
+
 ```json
 {
   "name": "lucid-rdp-frontend",
@@ -507,6 +525,7 @@ PWA_ENABLED=false
 ```
 
 #### **Docker Context:**
+
 ```dockerfile
 # frontend/Dockerfile
 FROM --platform=$TARGETPLATFORM node:18-alpine as dependencies
@@ -535,6 +554,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ### **5.1 MONGODB CONFIGURATION**
 
 #### **Environment Variables Required:**
+
 ```bash
 # database/.env.mongodb
 # MongoDB Configuration
@@ -557,6 +577,7 @@ MONGODB_SSL_MODE=disabled
 ```
 
 #### **Initialization Script Context:**
+
 ```javascript
 // database/init_collections.js
 // MongoDB Collection Initialization
@@ -591,6 +612,7 @@ db.sessions.createIndex({"owner_address": 1, "started_at": -1});
 ### **6.1 TOR INTEGRATION CONFIGURATION**
 
 #### **Environment Variables Required:**
+
 ```bash
 # network/.env.tor
 # Tor Proxy Configuration
@@ -613,6 +635,7 @@ NEW_CIRCUIT_PERIOD=30
 ```
 
 #### **Torrc Configuration Context:**
+
 ```bash
 # network/torrc.template
 SocksPort 9050
@@ -636,6 +659,7 @@ HiddenServiceVersion 3
 ### **7.1 BLOCKCHAIN INTEGRATION**
 
 #### **Environment Variables Required:**
+
 ```bash
 # blockchain/.env.contracts
 # Smart Contract Configuration
@@ -670,6 +694,7 @@ ON_SYSTEM_GAS_PRICE=20000000000         # 20 Gwei
 ### **8.1 PI 5 SPECIFIC CONFIGURATION**
 
 #### **Environment Variables Required:**
+
 ```bash
 # pi/.env.hardware
 # Pi 5 Hardware Configuration
@@ -690,6 +715,7 @@ NETWORK_BUFFER_SIZE_KB=256
 ```
 
 #### **Hardware Configuration Script:**
+
 ```bash
 # pi/scripts/configure_pi5_hardware.sh
 #!/bin/bash
@@ -716,6 +742,7 @@ echo 1 > /proc/sys/vm/overcommit_memory
 ## **COMPLETE CONFIG-CONTEXT INTEGRATION MAP**
 
 ### **Docker Compose Service Integration:**
+
 ```yaml
 # Complete service configuration example
 version: '3.8'
@@ -783,6 +810,7 @@ secrets:
 ```
 
 ### **Environment File Templates:**
+
 ```bash
 # .env.template - Complete environment template
 # Copy this to .env and fill in the values
@@ -850,6 +878,7 @@ THERMAL_THROTTLING_TEMP=80
 ## **CONFIG-CONTEXT VALIDATION CHECKLIST**
 
 ### **Pre-Development Setup:**
+
 - [ ] All environment templates created
 - [ ] Dockerfiles written for each component
 - [ ] Volume mount requirements defined
@@ -858,6 +887,7 @@ THERMAL_THROTTLING_TEMP=80
 - [ ] Hardware requirements documented
 
 ### **Development Phase Validation:**
+
 - [ ] Environment variables properly referenced in code
 - [ ] Docker builds succeed for all platforms
 - [ ] Configuration files validate against schemas
@@ -865,6 +895,7 @@ THERMAL_THROTTLING_TEMP=80
 - [ ] Resource limits appropriate for Pi 5
 
 ### **Integration Testing:**
+
 - [ ] All services start with proper configuration
 - [ ] Inter-service communication functional
 - [ ] Database connections established
