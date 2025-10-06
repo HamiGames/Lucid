@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 # LUCID RDP - Multi-Profile Production Compose
 # Based on SPEC-4: Clustered Build Stages & Content Inclusion

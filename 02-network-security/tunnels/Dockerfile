@@ -1,13 +1,14 @@
-# LUCID TUNNEL TOOLS - SPEC-4 Stage 0 Network Security
-# Professional tunneling utilities for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
+# LUCID TUNNEL TOOLS - SPEC-4 Stage 0 Network Security (Distroless)
+# Professional tunneling utilities for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
 
-FROM alpine:3.19
+# syntax=docker/dockerfile:1.7
+FROM alpine:3.19 AS tunnel-builder
 
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0" \
-      description="Network tunneling tools for Lucid core support" \
+      version="1.0.0-distroless" \
+      description="Network tunneling tools for Lucid core support (Distroless)" \
       com.lucid.plane="ops" \
       com.lucid.service="tunnel-tools" \
       com.lucid.expose="7000"
@@ -37,6 +38,7 @@ RUN apk update && apk upgrade \
        tini \
        jq \
        procps \
+       su-exec \
     && apk upgrade \
     && rm -rf /var/cache/apk/* /tmp/* /var/tmp/* \
     && addgroup -S lucid && adduser -S -D -H -s /bin/bash -G lucid lucid
@@ -145,16 +147,51 @@ EOF
 # Make tunnel manager executable
 RUN chmod +x /app/scripts/tunnel-manager.py
 
+# Stage 2: Distroless runtime with Python and network tools
+FROM gcr.io/distroless/python3-debian12:latest
+
+# Copy Python and all dependencies
+COPY --from=tunnel-builder /usr/bin/python3 /usr/bin/python3
+COPY --from=tunnel-builder /usr/lib/python3.11 /usr/lib/python3.11
+
+# Copy network utilities
+COPY --from=tunnel-builder /usr/bin/nc /usr/bin/nc
+COPY --from=tunnel-builder /usr/bin/socat /usr/bin/socat
+COPY --from=tunnel-builder /usr/bin/curl /usr/bin/curl
+COPY --from=tunnel-builder /usr/bin/wget /usr/bin/wget
+COPY --from=tunnel-builder /usr/bin/xxd /usr/bin/xxd
+COPY --from=tunnel-builder /usr/bin/nslookup /usr/bin/nslookup
+COPY --from=tunnel-builder /usr/bin/openssl /usr/bin/openssl
+COPY --from=tunnel-builder /sbin/tini /sbin/tini
+COPY --from=tunnel-builder /usr/bin/jq /usr/bin/jq
+COPY --from=tunnel-builder /sbin/su-exec /sbin/su-exec
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=tunnel-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=tunnel-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=tunnel-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=tunnel-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=tunnel-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=tunnel-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=tunnel-builder /etc/passwd /etc/passwd
+COPY --from=tunnel-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=tunnel-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application and create directories with proper ownership
+COPY --from=tunnel-builder --chown=lucid:lucid /app /app
+COPY --from=tunnel-builder --chown=lucid:lucid /var/lib/tunnel /var/lib/tunnel
+COPY --from=tunnel-builder --chown=lucid:lucid /var/log/tunnel /var/log/tunnel
+
 # Environment variables for configuration
 ENV TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
     TOR_PROXY=tor-proxy:9050 \
     LUCID_ENV=dev \
     PYTHONUNBUFFERED=1
-
-# Health check using tunnel manager
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python3 /app/scripts/tunnel-manager.py health || exit 1
 
 # Security and runtime configuration
 EXPOSE 7000

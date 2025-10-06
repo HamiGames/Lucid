@@ -1,13 +1,14 @@
-# LUCID SERVER TOOLS - SPEC-4 Stage 0 Utilities
-# Professional utility container for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
+# LUCID SERVER TOOLS - SPEC-4 Stage 0 Utilities (Distroless)
+# Professional utility container for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
 
-FROM alpine:3.19
+# syntax=docker/dockerfile:1.7
+FROM alpine:3.19 AS server-tools-builder
 
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0" \
-      description="Server utilities for Lucid core support" \
+      version="1.0.0-distroless" \
+      description="Server utilities for Lucid core support (Distroless)" \
       com.lucid.plane="ops" \
       com.lucid.service="server-tools" \
       com.lucid.expose="none"
@@ -51,6 +52,7 @@ RUN apk update && apk upgrade \
        tree \
        # Monitoring tools
        util-linux \
+       su-exec \
     && apk upgrade \
     && rm -rf /var/cache/apk/* /tmp/* /var/tmp/* \
     && adduser -D -s /bin/bash lucid
@@ -151,17 +153,6 @@ else
 fi
 EOF
 
-# Environment variables for configuration
-ENV LUCID_ENV=dev \
-    TOOLS_DIR="/opt/lucid/tools" \
-    SCRIPTS_DIR="/opt/lucid/scripts" \
-    LOG_DIR="/var/log/lucid" \
-    PATH="/opt/lucid/scripts:/opt/lucid/tools:$PATH"
-
-# Health check for server tools
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD /opt/lucid/scripts/health-check.sh || exit 1
-
 # Create startup script
 RUN cat > /usr/local/bin/server-tools-start.sh <<'EOF' && chmod +x /usr/local/bin/server-tools-start.sh
 #!/bin/bash
@@ -196,6 +187,59 @@ echo "  - openssl: Certificate/crypto operations"
 # Keep container running
 exec tail -f /dev/null
 EOF
+
+# Stage 2: Distroless runtime with utilities
+FROM gcr.io/distroless/base-debian12:latest
+
+# Copy all system utilities
+COPY --from=server-tools-builder /bin/bash /bin/bash
+COPY --from=server-tools-builder /usr/bin/curl /usr/bin/curl
+COPY --from=server-tools-builder /usr/bin/wget /usr/bin/wget
+COPY --from=server-tools-builder /usr/bin/jq /usr/bin/jq
+COPY --from=server-tools-builder /usr/bin/yq /usr/bin/yq
+COPY --from=server-tools-builder /usr/bin/nslookup /usr/bin/nslookup
+COPY --from=server-tools-builder /usr/bin/nc /usr/bin/nc
+COPY --from=server-tools-builder /usr/bin/socat /usr/bin/socat
+COPY --from=server-tools-builder /usr/bin/openssl /usr/bin/openssl
+COPY --from=server-tools-builder /usr/bin/rsync /usr/bin/rsync
+COPY --from=server-tools-builder /usr/bin/unzip /usr/bin/unzip
+COPY --from=server-tools-builder /bin/tar /bin/tar
+COPY --from=server-tools-builder /bin/gzip /bin/gzip
+COPY --from=server-tools-builder /usr/bin/git /usr/bin/git
+COPY --from=server-tools-builder /usr/bin/vim /usr/bin/vim
+COPY --from=server-tools-builder /usr/bin/tree /usr/bin/tree
+COPY --from=server-tools-builder /usr/local/bin/mongosh /usr/local/bin/mongosh
+COPY --from=server-tools-builder /usr/bin/mongodump /usr/bin/mongodump
+COPY --from=server-tools-builder /sbin/su-exec /sbin/su-exec
+COPY --from=server-tools-builder /usr/bin/tail /usr/bin/tail
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=server-tools-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=server-tools-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=server-tools-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=server-tools-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=server-tools-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=server-tools-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=server-tools-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=server-tools-builder /etc/passwd /etc/passwd
+COPY --from=server-tools-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=server-tools-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy utility directories and scripts
+COPY --from=server-tools-builder --chown=lucid:lucid /opt/lucid /opt/lucid
+COPY --from=server-tools-builder --chown=lucid:lucid /var/log/lucid /var/log/lucid
+COPY --from=server-tools-builder --chmod=755 /usr/local/bin/server-tools-start.sh /usr/local/bin/server-tools-start.sh
+
+# Environment variables for configuration
+ENV LUCID_ENV=dev \
+    TOOLS_DIR="/opt/lucid/tools" \
+    SCRIPTS_DIR="/opt/lucid/scripts" \
+    LOG_DIR="/var/log/lucid" \
+    PATH="/opt/lucid/scripts:/opt/lucid/tools:$PATH"
 
 # Security and runtime configuration
 USER lucid

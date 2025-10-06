@@ -1,14 +1,15 @@
-# LUCID API GATEWAY - SPEC-4 Stage 0 Core Support
-# Professional NGINX reverse proxy for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
+# LUCID API GATEWAY - SPEC-4 Stage 0 Core Support (Distroless)
+# Professional NGINX reverse proxy for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
 
+# syntax=docker/dockerfile:1.7
 ARG NGINX_TAG=1.28-alpine
-FROM nginx:${NGINX_TAG}
+FROM nginx:${NGINX_TAG} AS gateway-builder
 
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0" \
-      description="NGINX API gateway for Lucid sessions" \
+      version="1.0.0-distroless" \
+      description="NGINX API gateway for Lucid sessions (Distroless)" \
       com.lucid.plane="ops" \
       com.lucid.service="api-gateway" \
       com.lucid.expose="8080"
@@ -31,6 +32,7 @@ RUN apk add --no-cache \
         bash \
         jq \
         netcat-openbsd \
+        su-exec \
     && rm -rf /var/cache/apk/* \
     && adduser -D -s /bin/bash lucid
 
@@ -190,9 +192,63 @@ echo "[gateway] Worker Processes: $NGINX_WORKER_PROCESSES"
 exec nginx -g 'daemon off;'
 EOF
 
-# Health check with comprehensive validation
-HEALTHCHECK --interval=20s --timeout=5s --retries=5 --start-period=10s \
-    CMD curl -fsS "http://127.0.0.1:${GATEWAY_PORT}/health" || exit 1
+# Stage 2: Distroless runtime with NGINX
+FROM gcr.io/distroless/base-debian12:latest
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="NGINX API gateway for Lucid sessions (Distroless Runtime)" \
+      com.lucid.plane="ops" \
+      com.lucid.service="api-gateway" \
+      com.lucid.expose="8080"
+
+# Copy NGINX and all dependencies
+COPY --from=gateway-builder /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=gateway-builder /usr/share/nginx /usr/share/nginx
+COPY --from=gateway-builder /etc/nginx /etc/nginx
+
+# Copy system utilities
+COPY --from=gateway-builder /usr/bin/curl /usr/bin/curl
+COPY --from=gateway-builder /usr/bin/nc /usr/bin/nc
+COPY --from=gateway-builder /usr/bin/jq /usr/bin/jq
+COPY --from=gateway-builder /bin/bash /bin/bash
+COPY --from=gateway-builder /sbin/su-exec /sbin/su-exec
+COPY --from=gateway-builder /usr/bin/envsubst /usr/bin/envsubst
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=gateway-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=gateway-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=gateway-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=gateway-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=gateway-builder /lib/*-linux-*/libpcre2-8.so.0 /lib/
+COPY --from=gateway-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=gateway-builder /etc/passwd /etc/passwd
+COPY --from=gateway-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=gateway-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy entrypoint script
+COPY --from=gateway-builder --chmod=755 /usr/local/bin/lucid-entrypoint.sh /usr/local/bin/lucid-entrypoint.sh
+
+# Create runtime directories
+COPY --from=gateway-builder --chown=nginx:nginx /var/cache/nginx /var/cache/nginx
+COPY --from=gateway-builder --chown=nginx:nginx /var/run/nginx /var/run/nginx
+COPY --from=gateway-builder /var/log/nginx /var/log/nginx
+
+# Gateway configuration environment
+ENV API_UPSTREAM="lucid_api:8081" \
+    CLIENT_MAX_BODY_SIZE="16m" \
+    GATEWAY_PORT="8080" \
+    NGINX_WORKER_PROCESSES="1" \
+    NGINX_WORKER_CONNECTIONS="1024" \
+    NGINX_KEEPALIVE_TIMEOUT="65" \
+    NGINX_CLIENT_HEADER_TIMEOUT="60" \
+    NGINX_CLIENT_BODY_TIMEOUT="60" \
+    NGINX_SEND_TIMEOUT="60"
 
 # Security and runtime configuration
 EXPOSE 8080

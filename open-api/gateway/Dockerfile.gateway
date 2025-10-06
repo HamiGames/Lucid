@@ -1,19 +1,19 @@
-# Lucid API Gateway (NGINX) — aligned with api/Dockerfile (API on :8081) and lucid-dev.yaml
-# /sol.fix: dynamic DNS via Docker resolver so gateway reliably reaches lucid_api
+# Lucid API Gateway (NGINX) — Distroless with dynamic DNS
 # - Upstream is configured by API_UPSTREAM env (default: lucid_api:8081)
 # - NGINX re-resolves the hostname (uses variable + resolver 127.0.0.11)
 # - Healthcheck proxies to /health on upstream
-# - No placeholders
+# - Multi-stage distroless build for security
 
+# syntax=docker/dockerfile:1.7
 ARG NGINX_TAG=1.28-alpine
-FROM nginx:${NGINX_TAG}
+FROM nginx:${NGINX_TAG} AS openapi-gateway-builder
 
 ENV API_UPSTREAM="lucid_api:8081" \
     CLIENT_MAX_BODY_SIZE="10m" \
     GATEWAY_PORT="8080"
 
 # curl for healthcheck; ca-certs for TLS upstreams if ever used
-RUN apk add --no-cache curl ca-certificates bash
+RUN apk add --no-cache curl ca-certificates bash su-exec
 
 # Template-based nginx config rendered at container start
 RUN mkdir -p /etc/nginx/templates
@@ -61,8 +61,42 @@ nginx -t
 exec nginx -g 'daemon off;'
 EOF
 
-EXPOSE 8080
-HEALTHCHECK --interval=10s --timeout=3s --retries=15 \
-  CMD curl -fsS "http://127.0.0.1:${GATEWAY_PORT}/health" || exit 1
+# Stage 2: Distroless runtime with NGINX
+FROM gcr.io/distroless/base-debian12:latest
 
+# Copy NGINX and all dependencies
+COPY --from=openapi-gateway-builder /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=openapi-gateway-builder /usr/share/nginx /usr/share/nginx
+COPY --from=openapi-gateway-builder /etc/nginx /etc/nginx
+
+# Copy system utilities
+COPY --from=openapi-gateway-builder /usr/bin/curl /usr/bin/curl
+COPY --from=openapi-gateway-builder /bin/bash /bin/bash
+COPY --from=openapi-gateway-builder /sbin/su-exec /sbin/su-exec
+COPY --from=openapi-gateway-builder /usr/bin/envsubst /usr/bin/envsubst
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=openapi-gateway-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=openapi-gateway-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=openapi-gateway-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=openapi-gateway-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=openapi-gateway-builder /lib/*-linux-*/libpcre2-8.so.0 /lib/
+COPY --from=openapi-gateway-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=openapi-gateway-builder /etc/passwd /etc/passwd
+COPY --from=openapi-gateway-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=openapi-gateway-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy entrypoint script
+COPY --from=openapi-gateway-builder --chmod=755 /usr/local/bin/lucid-entrypoint.sh /usr/local/bin/lucid-entrypoint.sh
+
+# Runtime environment
+ENV API_UPSTREAM="lucid_api:8081" \
+    CLIENT_MAX_BODY_SIZE="10m" \
+    GATEWAY_PORT="8080"
+
+EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/lucid-entrypoint.sh"]
