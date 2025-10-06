@@ -1,0 +1,276 @@
+# LUCID Layer 2 Services - RDP Server & Blockchain Deployment
+# Development Infrastructure Extension
+# SPEC-4 compliant: Layer 2 Service Integration
+# Generated: 2025-10-05
+
+# Import base configuration from lucid-dev.yaml
+include:
+  - lucid-dev.yaml
+
+# SPEC-4 Layer 2 Environment Template
+x-lucid-layer2-env: &lucid-layer2-env
+  LUCID_LAYER: 2
+  LUCID_PHASE: service-integration
+  LUCID_COMPONENTS: rdp-server,blockchain-deployment
+
+# SPEC-4 Layer 2 Service Configuration
+x-lucid-layer2-service: &lucid-layer2-service
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  labels:
+    - "org.lucid.layer=2"
+    - "org.lucid.phase=service-integration"
+    - "org.lucid.plane=ops"
+
+# Layer 2 Persistent Volumes
+volumes:
+  # RDP Server Volumes
+  rdp_sessions:
+    name: lucid-layer2_rdp_sessions
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=rdp-server"
+      - "org.lucid.component=sessions"
+  
+  rdp_recordings:
+    name: lucid-layer2_rdp_recordings
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=rdp-server"
+      - "org.lucid.component=recordings"
+  
+  rdp_display:
+    name: lucid-layer2_rdp_display
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=rdp-server"
+      - "org.lucid.component=display"
+  
+  # Blockchain Deployment Volumes
+  contract_artifacts:
+    name: lucid-layer2_contract_artifacts
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=blockchain-deployment"
+      - "org.lucid.component=contracts"
+  
+  deployment_logs:
+    name: lucid-layer2_deployment_logs
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=blockchain-deployment"
+      - "org.lucid.component=logs"
+  
+  # Temporary volumes
+  rdp_temp:
+    name: lucid-layer2_rdp_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.component=temp"
+  
+  deployment_temp:
+    name: lucid-layer2_deployment_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.component=temp"
+
+# Layer 2 Services
+services:
+  # RDP Server Manager
+  rdp-server-manager:
+    <<: *lucid-layer2-service
+    image: pickme/lucid:rdp-server-manager
+    container_name: lucid_rdp_server_manager
+    profiles: ["rdp-server", "layer2"]
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      RDP_SESSIONS_PATH: /data/sessions
+      RDP_RECORDINGS_PATH: /data/recordings
+      RDP_DISPLAY_PATH: /data/display
+      XRDP_PORT: 3389
+      MAX_CONCURRENT_SESSIONS: 5
+      SESSION_ORCHESTRATOR_URL: http://session-orchestrator:8084
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+      - rdp_display:/data/display
+      - rdp_temp:/tmp/rdp
+    networks:
+      lucid_core_net:
+        aliases: [rdp-server-manager, rdp-manager]
+        ipv4_address: 172.23.0.10
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # xrdp Integration
+  xrdp-integration:
+    <<: *lucid-layer2-service
+    image: pickme/lucid:xrdp-integration
+    container_name: lucid_xrdp_integration
+    profiles: ["rdp-server", "layer2"]
+    environment:
+      <<: *lucid-layer2-env
+      XRDP_PORT: 3389
+      XRDP_CONFIG_PATH: /etc/xrdp
+      DISPLAY_SERVER: wayland
+      HARDWARE_ACCELERATION: true
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_display:/data/display
+    networks:
+      lucid_core_net:
+        aliases: [xrdp-integration, xrdp]
+        ipv4_address: 172.23.0.11
+    depends_on:
+      rdp-server-manager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Session Host Manager
+  session-host-manager:
+    <<: *lucid-layer2-service
+    image: pickme/lucid:session-host-manager
+    container_name: lucid_session_host_manager
+    profiles: ["rdp-server", "layer2"]
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      RDP_SERVER_URL: http://rdp-server-manager:8087
+      XRDP_INTEGRATION_URL: http://xrdp-integration:8088
+      SESSION_RECORDING_PATH: /data/recordings
+      MAX_SESSION_DURATION: 3600
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+      - rdp_display:/data/display
+      - rdp_temp:/tmp/session-host
+    networks:
+      lucid_core_net:
+        aliases: [session-host-manager, session-host]
+        ipv4_address: 172.23.0.12
+    depends_on:
+      rdp-server-manager:
+        condition: service_healthy
+      xrdp-integration:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Contract Deployment
+  contract-deployment:
+    <<: *lucid-layer2-service
+    image: pickme/lucid:contract-deployment
+    container_name: lucid_contract_deployment
+    profiles: ["blockchain-deployment", "layer2"]
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      TRON_NETWORK: ${TRON_NETWORK:-shasta}
+      TRON_RPC_URL: ${TRON_RPC_URL:-https://api.shasta.trongrid.io}
+      CONTRACT_ARTIFACTS_PATH: /data/contracts
+      DEPLOYMENT_LOG_PATH: /data/logs
+    volumes:
+      - contract_artifacts:/data/contracts
+      - deployment_logs:/data/logs
+      - deployment_temp:/tmp/deployment
+    networks:
+      lucid_core_net:
+        aliases: [contract-deployment, deployment]
+        ipv4_address: 172.24.0.10
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Contract Compiler
+  contract-compiler:
+    <<: *lucid-layer2-service
+    image: pickme/lucid:contract-compiler
+    container_name: lucid_contract_compiler
+    profiles: ["blockchain-deployment", "layer2"]
+    environment:
+      <<: *lucid-layer2-env
+      CONTRACT_SOURCE_PATH: /data/contracts/source
+      CONTRACT_ARTIFACTS_PATH: /data/contracts/artifacts
+      COMPILER_VERSION: 0.8.19
+    volumes:
+      - contract_artifacts:/data/contracts
+      - deployment_temp:/tmp/compiler
+    networks:
+      lucid_core_net:
+        aliases: [contract-compiler, compiler]
+        ipv4_address: 172.24.0.11
+    depends_on:
+      contract-deployment:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Deployment Orchestrator
+  deployment-orchestrator:
+    <<: *lucid-layer2-service
+    image: pickme/lucid:deployment-orchestrator
+    container_name: lucid_deployment_orchestrator
+    profiles: ["blockchain-deployment", "layer2"]
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      CONTRACT_DEPLOYMENT_URL: http://contract-deployment:8090
+      CONTRACT_COMPILER_URL: http://contract-compiler:8091
+      DEPLOYMENT_STRATEGY: sequential
+    volumes:
+      - contract_artifacts:/data/contracts
+      - deployment_logs:/data/logs
+      - deployment_temp:/tmp/orchestrator
+    networks:
+      lucid_core_net:
+        aliases: [deployment-orchestrator, deploy-orchestrator]
+        ipv4_address: 172.24.0.12
+    depends_on:
+      contract-deployment:
+        condition: service_healthy
+      contract-compiler:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8092/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

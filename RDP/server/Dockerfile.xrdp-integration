@@ -1,0 +1,120 @@
+# LUCID xrdp INTEGRATION - SPEC-4 Layer 2 Service Integration (Distroless)
+# Professional xrdp service integration for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM debian:12-slim AS xrdp-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="xrdp Integration for Lucid Layer 2 Service Integration (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="xrdp-integration" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8088"
+
+# Install xrdp and dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        xrdp \
+        xrdp-pulseaudio-installer \
+        python3 \
+        python3-pip \
+        python3-venv \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0"
+
+# Create application directories
+RUN mkdir -p /app /data/sessions /var/log/xrdp /etc/xrdp \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid \
+    && chown -R lucid:lucid /app /data
+
+# Copy application code
+COPY RDP/server/ /app/RDP/server/
+
+# Create xrdp user and directories
+RUN useradd -r -s /bin/false xrdp \
+    && mkdir -p /var/run/xrdp \
+    && chown xrdp:xrdp /var/run/xrdp
+
+# Stage 2: Distroless runtime with xrdp and Python
+FROM gcr.io/distroless/base-debian12:latest
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="xrdp Integration for Lucid Layer 2 Service Integration (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="xrdp-integration" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8088"
+
+# Copy xrdp binaries and libraries
+COPY --from=xrdp-builder /usr/sbin/xrdp /usr/sbin/xrdp
+COPY --from=xrdp-builder /usr/sbin/xrdp-sesman /usr/sbin/xrdp-sesman
+COPY --from=xrdp-builder /usr/bin/xrdp-chansrv /usr/bin/xrdp-chansrv
+COPY --from=xrdp-builder /usr/bin/xrdp-sesrun /usr/bin/xrdp-sesrun
+
+# Copy Python and dependencies
+COPY --from=xrdp-builder /usr/bin/python3 /usr/bin/python3
+COPY --from=xrdp-builder /usr/lib/python3.11 /usr/lib/python3.11
+COPY --from=xrdp-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy system utilities
+COPY --from=xrdp-builder /usr/bin/curl /usr/bin/curl
+COPY --from=xrdp-builder /bin/nc /bin/nc
+COPY --from=xrdp-builder /usr/bin/jq /usr/bin/jq
+COPY --from=xrdp-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=xrdp-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=xrdp-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=xrdp-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=xrdp-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=xrdp-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=xrdp-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=xrdp-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy xrdp libraries
+COPY --from=xrdp-builder /usr/lib/x86_64-linux-gnu/libxrdp.so.0 /usr/lib/
+COPY --from=xrdp-builder /usr/lib/x86_64-linux-gnu/libcommon.so.0 /usr/lib/
+
+# Copy user and group information
+COPY --from=xrdp-builder /etc/passwd /etc/passwd
+COPY --from=xrdp-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=xrdp-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=xrdp-builder --chown=lucid:lucid /app /app
+COPY --from=xrdp-builder --chown=lucid:lucid /data /data
+
+# Runtime environment for xrdp integration
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    XRDP_PORT=3389 \
+    XRDP_CONFIG_PATH=/etc/xrdp \
+    DISPLAY_SERVER=wayland \
+    HARDWARE_ACCELERATION=true
+
+# Security and runtime configuration
+EXPOSE 8088
+USER lucid
+WORKDIR /app
+
+# Default command for xrdp integration
+ENTRYPOINT ["/usr/local/bin/python3", "/app/RDP/server/xrdp_integration.py"]

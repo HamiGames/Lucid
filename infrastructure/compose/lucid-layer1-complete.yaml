@@ -1,0 +1,637 @@
+# LUCID Layer 1 Complete Services - Session Pipeline & Authentication
+# Comprehensive Infrastructure with All Missing Components
+# SPEC-4 compliant: Layer 1 Core Infrastructure
+# Generated: 2025-10-05
+
+# Import base configuration
+include:
+  - lucid-dev.yaml
+
+# Layer 1 Environment Template
+x-lucid-layer1-env: &lucid-layer1-env
+  LUCID_LAYER: 1
+  LUCID_PHASE: foundation
+  LUCID_COMPONENTS: session-pipeline,authentication,blockchain-core
+  LUCID_STRICT_MODE: true
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+
+# Layer 1 Service Configuration
+x-lucid-layer1-service: &lucid-layer1-service
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  labels:
+    - "org.lucid.layer=1"
+    - "org.lucid.phase=foundation"
+    - "org.lucid.plane=ops"
+
+# Layer 1 Networks
+networks:
+  lucid_core_net:
+    name: lucid_core_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+          gateway: 172.21.0.1
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.network=core"
+
+  lucid_blockchain_net:
+    name: lucid_core_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.network=blockchain"
+
+# Layer 1 Persistent Volumes
+volumes:
+  # Session Pipeline Volumes
+  session_chunks:
+    name: lucid-layer1_session_chunks
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=session-pipeline"
+      - "org.lucid.component=chunker"
+  
+  encryption_keys:
+    name: lucid-layer1_encryption_keys
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=session-pipeline"
+      - "org.lucid.component=encryptor"
+  
+  merkle_trees:
+    name: lucid-layer1_merkle_trees
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=session-pipeline"
+      - "org.lucid.component=merkle-builder"
+
+  # Blockchain Core Volumes
+  blockchain_data:
+    name: lucid-layer1_blockchain_data
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=blockchain-core"
+      - "org.lucid.component=data"
+  
+  blockchain_ledger:
+    name: lucid-layer1_blockchain_ledger
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=blockchain-core"
+      - "org.lucid.component=ledger"
+  
+  blockchain_governance:
+    name: lucid-layer1_blockchain_governance
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=blockchain-core"
+      - "org.lucid.component=governance"
+  
+  blockchain_vm:
+    name: lucid-layer1_blockchain_vm
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.service=blockchain-core"
+      - "org.lucid.component=vm"
+
+  # Temporary Volumes
+  chunker_temp:
+    name: lucid-layer1_chunker_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  encryptor_temp:
+    name: lucid-layer1_encryptor_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  merkle_temp:
+    name: lucid-layer1_merkle_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  orchestrator_temp:
+    name: lucid-layer1_orchestrator_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  auth_temp:
+    name: lucid-layer1_auth_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=temp"
+  
+  auth_secrets:
+    name: lucid-layer1_auth_secrets
+    driver: local
+    labels:
+      - "org.lucid.layer=1"
+      - "org.lucid.component=secrets"
+
+services:
+  # =============================================================================
+  # LAYER 1: SESSION PIPELINE SERVICES
+  # =============================================================================
+
+  # Session Chunker Service
+  session-chunker:
+    <<: *lucid-layer1-service
+    container_name: lucid_session_chunker
+    build:
+      context: ../../
+      dockerfile: sessions/core/Dockerfile.chunker
+    image: pickme/lucid:session-chunker
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      CHUNK_STORAGE_PATH: /data/chunks
+      CHUNK_SIZE_MIN: ${CHUNK_SIZE_MIN:-8388608}
+      CHUNK_SIZE_MAX: ${CHUNK_SIZE_MAX:-16777216}
+      COMPRESSION_LEVEL: ${COMPRESSION_LEVEL:-3}
+    volumes:
+      - session_chunks:/data/chunks
+      - chunker_temp:/tmp/chunker
+    networks:
+      lucid_core_net:
+        aliases: [chunker, session-chunker]
+        ipv4_address: 172.21.0.20
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    labels:
+      - "org.lucid.service=session-chunker"
+      - "org.lucid.expose=8081"
+
+  # Session Encryptor Service
+  session-encryptor:
+    <<: *lucid-layer1-service
+    container_name: lucid_session_encryptor
+    build:
+      context: ../../
+      dockerfile: sessions/encryption/Dockerfile.encryptor
+    image: pickme/lucid:session-encryptor
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      ENCRYPTED_STORAGE_PATH: /data/encrypted
+    volumes:
+      - encryption_keys:/data/encrypted
+      - encryptor_temp:/tmp/encryption
+    secrets:
+      - master_encryption_key
+    networks:
+      lucid_core_net:
+        aliases: [encryptor, session-encryptor]
+        ipv4_address: 172.21.0.21
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      session-chunker:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "org.lucid.service=session-encryptor"
+      - "org.lucid.expose=8082"
+
+  # Merkle Tree Builder Service
+  merkle-builder:
+    <<: *lucid-layer1-service
+    container_name: lucid_merkle_builder
+    build:
+      context: ../../
+      dockerfile: sessions/core/Dockerfile.merkle_builder
+    image: pickme/lucid:merkle-builder
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+    volumes:
+      - merkle_trees:/data/merkle_trees
+      - merkle_temp:/tmp/merkle_build
+    networks:
+      lucid_core_net:
+        aliases: [merkle-builder, merkle]
+        ipv4_address: 172.21.0.22
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      session-encryptor:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    labels:
+      - "org.lucid.service=merkle-builder"
+      - "org.lucid.expose=8083"
+
+  # Session Orchestrator Service (MISSING - NEEDS BUILD)
+  session-orchestrator:
+    <<: *lucid-layer1-service
+    container_name: lucid_session_orchestrator
+    build:
+      context: ../../
+      dockerfile: sessions/core/Dockerfile.orchestrator
+    image: pickme/lucid:session-orchestrator
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      CHUNKER_SERVICE_URL: http://session-chunker:8081
+      ENCRYPTOR_SERVICE_URL: http://session-encryptor:8082
+      MERKLE_SERVICE_URL: http://merkle-builder:8083
+      CHUNK_STORAGE_PATH: /data/chunks
+      ENABLE_BLOCKCHAIN_ANCHORING: ${ENABLE_BLOCKCHAIN_ANCHORING:-true}
+    volumes:
+      - session_chunks:/data/chunks:ro
+      - orchestrator_temp:/tmp/orchestrator
+    networks:
+      lucid_core_net:
+        aliases: [orchestrator, session-orchestrator]
+        ipv4_address: 172.21.0.23
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      session-chunker:
+        condition: service_healthy
+      session-encryptor:
+        condition: service_healthy
+      merkle-builder:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=session-orchestrator"
+      - "org.lucid.expose=8084"
+
+  # =============================================================================
+  # LAYER 1: AUTHENTICATION SERVICES
+  # =============================================================================
+
+  # Authentication Service
+  auth-service:
+    <<: *lucid-layer1-service
+    container_name: lucid_auth_service
+    build:
+      context: ../../
+      dockerfile: auth/Dockerfile.authentication
+    image: pickme/lucid:authentication
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      TRON_NETWORK: ${TRON_NETWORK:-mainnet}
+      TRON_RPC_URL: ${TRON_RPC_URL:-https://api.trongrid.io}
+    volumes:
+      - auth_temp:/tmp/auth
+      - auth_secrets:/secrets
+    secrets:
+      - jwt_secret_key
+      - tron_private_key
+    networks:
+      lucid_core_net:
+        aliases: [auth, auth-service]
+        ipv4_address: 172.21.0.25
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8085/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "org.lucid.service=auth-service"
+      - "org.lucid.expose=8085"
+
+  # =============================================================================
+  # LAYER 1: BLOCKCHAIN CORE SERVICES (MISSING - NEEDS BUILD)
+  # =============================================================================
+
+  # Blockchain API Service
+  blockchain-api:
+    <<: *lucid-layer1-service
+    container_name: lucid_blockchain_api
+    build:
+      context: ../../
+      dockerfile: 04-blockchain-core/api/Dockerfile
+    image: pickme/lucid:blockchain-api
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      BLOCKCHAIN_NETWORK: ${BLOCKCHAIN_NETWORK:-mainnet}
+      BLOCKCHAIN_RPC_URL: ${BLOCKCHAIN_RPC_URL:-}
+      BLOCKCHAIN_DATA_DIR: /var/lib/blockchain
+    volumes:
+      - blockchain_data:/var/lib/blockchain
+    networks:
+      lucid_blockchain_net:
+        aliases: [blockchain-api, blockchain]
+        ipv4_address: 172.22.0.10
+      lucid_core_net:
+        aliases: [blockchain-api-external]
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+    ports:
+      - "8086:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=blockchain-api"
+      - "org.lucid.expose=8086"
+
+  # Blockchain Governance Service
+  blockchain-governance:
+    <<: *lucid-layer1-service
+    container_name: lucid_blockchain_governance
+    build:
+      context: ../../
+      dockerfile: 04-blockchain-core/governance/Dockerfile
+    image: pickme/lucid:blockchain-governance
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      GOVERNANCE_DATA_DIR: /var/lib/governance
+    volumes:
+      - blockchain_governance:/var/lib/governance
+    networks:
+      lucid_blockchain_net:
+        aliases: [blockchain-governance, governance]
+        ipv4_address: 172.22.0.11
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      blockchain-api:
+        condition: service_healthy
+    ports:
+      - "8087:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    labels:
+      - "org.lucid.service=blockchain-governance"
+      - "org.lucid.expose=8087"
+
+  # Blockchain Sessions Data Service
+  blockchain-sessions-data:
+    <<: *lucid-layer1-service
+    container_name: lucid_blockchain_sessions_data
+    build:
+      context: ../../
+      dockerfile: 04-blockchain-core/sessions-data/Dockerfile
+    image: pickme/lucid:blockchain-sessions-data
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      SESSIONS_DATA_DIR: /var/lib/sessions-data
+    volumes:
+      - blockchain_data:/var/lib/sessions-data
+    networks:
+      lucid_blockchain_net:
+        aliases: [blockchain-sessions-data, sessions-data]
+        ipv4_address: 172.22.0.12
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      blockchain-api:
+        condition: service_healthy
+    ports:
+      - "8088:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    labels:
+      - "org.lucid.service=blockchain-sessions-data"
+      - "org.lucid.expose=8088"
+
+  # Blockchain Virtual Machine Service
+  blockchain-vm:
+    <<: *lucid-layer1-service
+    container_name: lucid_blockchain_vm
+    build:
+      context: ../../
+      dockerfile: 04-blockchain-core/vm/Dockerfile
+    image: pickme/lucid:blockchain-vm
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      VM_DATA_DIR: /var/lib/vm
+    volumes:
+      - blockchain_vm:/var/lib/vm
+    networks:
+      lucid_blockchain_net:
+        aliases: [blockchain-vm, vm]
+        ipv4_address: 172.22.0.13
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      blockchain-api:
+        condition: service_healthy
+    ports:
+      - "8089:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=blockchain-vm"
+      - "org.lucid.expose=8089"
+
+  # Blockchain Ledger Service
+  blockchain-ledger:
+    <<: *lucid-layer1-service
+    container_name: lucid_blockchain_ledger
+    build:
+      context: ../../
+      dockerfile: 04-blockchain-core/ledger/Dockerfile
+    image: pickme/lucid:blockchain-ledger
+    environment:
+      <<: *lucid-layer1-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      LEDGER_DATA_DIR: /var/lib/ledger
+    volumes:
+      - blockchain_ledger:/var/lib/ledger
+    networks:
+      lucid_blockchain_net:
+        aliases: [blockchain-ledger, ledger]
+        ipv4_address: 172.22.0.14
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      blockchain-api:
+        condition: service_healthy
+    ports:
+      - "8090:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=blockchain-ledger"
+      - "org.lucid.expose=8090"
+
+# Layer 1 Secrets
+secrets:
+  master_encryption_key:
+    external: true
+  jwt_secret_key:
+    external: true
+  tron_private_key:
+    external: true
+
+# Service Profiles
+profiles:
+  - layer1
+  - session-pipeline
+  - authentication
+  - blockchain-core
+  - core-infrastructure

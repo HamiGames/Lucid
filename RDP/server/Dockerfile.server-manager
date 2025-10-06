@@ -1,0 +1,124 @@
+# LUCID RDP SERVER MANAGER - SPEC-4 Layer 2 Service Integration (Distroless)
+# Professional RDP server management for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS rdp-server-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="RDP Server Manager for Lucid Layer 2 Service Integration (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="rdp-server-manager" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8087"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and create user
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install RDP server manager Python dependencies
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "motor>=3.3.0" \
+        "pymongo>=4.5.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0"
+
+# Copy application code
+COPY RDP/server/ /app/RDP/server/
+COPY sessions/ /app/sessions/
+COPY auth/ /app/auth/
+
+# Create RDP-specific directories
+RUN mkdir -p /data/sessions /data/recordings /data/display /tmp/rdp \
+    && chown -R lucid:lucid /data /tmp/rdp
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' rdp_user && \
+    chown -R rdp_user:rdp_user /app /data /tmp/rdp
+
+# Stage 2: Distroless runtime with Python and RDP dependencies
+FROM gcr.io/distroless/python3-debian12:latest
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="RDP Server Manager for Lucid Layer 2 Service Integration (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="rdp-server-manager" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8087"
+
+# Copy Python installation and packages from builder
+COPY --from=rdp-server-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=rdp-server-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=rdp-server-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy system dependencies for RDP operations
+COPY --from=rdp-server-builder /usr/bin/curl /usr/bin/curl
+COPY --from=rdp-server-builder /bin/nc /bin/nc
+COPY --from=rdp-server-builder /usr/bin/jq /usr/bin/jq
+COPY --from=rdp-server-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=rdp-server-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=rdp-server-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=rdp-server-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=rdp-server-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=rdp-server-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=rdp-server-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=rdp-server-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=rdp-server-builder /etc/passwd /etc/passwd
+COPY --from=rdp-server-builder /etc/group /etc/group
+
+# Copy CA certificates for RDP network communication
+COPY --from=rdp-server-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=rdp-server-builder --chown=rdp_user:rdp_user /app /app
+COPY --from=rdp-server-builder --chown=rdp_user:rdp_user /data /data
+COPY --from=rdp-server-builder --chown=rdp_user:rdp_user /tmp/rdp /tmp/rdp
+
+# Runtime environment for RDP server manager
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    RDP_SESSIONS_PATH=/data/sessions \
+    RDP_RECORDINGS_PATH=/data/recordings \
+    RDP_DISPLAY_PATH=/data/display \
+    XRDP_PORT=3389 \
+    MAX_CONCURRENT_SESSIONS=5
+
+# Security and runtime configuration
+EXPOSE 8087
+USER rdp_user
+WORKDIR /app
+
+# Default command for RDP server manager
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/RDP/server/rdp_server_manager.py"]

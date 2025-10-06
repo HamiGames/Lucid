@@ -59,7 +59,7 @@ x-lucid-common: &lucid-common
   # Dual network membership: internal core + external devcontainer
   networks:
     - lucid_core_net
-    - lucid_dev_net
+    - lucid-dev_lucid_net
 
 # SPEC-4 Stage 0 Network Topology with Plane Isolation
 networks:
@@ -185,7 +185,7 @@ services:
       lucid_core_net:
         aliases: [mongo, lucid_mongo, mongodb]
         ipv4_address: 172.21.0.10
-      lucid_dev_net: {}  # External connectivity
+      lucid-dev_lucid_net: {}  # External connectivity
     healthcheck:
       test: [
         "CMD-SHELL", 
@@ -242,7 +242,7 @@ services:
       lucid_core_net:
         aliases: [tor, tor-proxy, torproxy]
         ipv4_address: 172.21.0.11
-      lucid_dev_net: {}  # External connectivity
+      lucid-dev_lucid_net: {}  # External connectivity
     expose: ["8888", "9050", "9051"]
     healthcheck:
       test: ["CMD-SHELL", "/usr/local/bin/tor-health || exit 1"]
@@ -295,7 +295,7 @@ services:
       lucid_core_net:
         aliases: [api, lucid_api, api-server]
         ipv4_address: 172.21.0.12
-      lucid_dev_net: {}  # External connectivity
+      lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       lucid_mongo:
         condition: service_healthy
@@ -345,7 +345,7 @@ services:
       lucid_core_net:
         aliases: [gateway, lucid_gateway, api-gateway]
         ipv4_address: 172.21.0.13
-      lucid_dev_net: {}  # External connectivity
+      lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       lucid_api:
         condition: service_healthy
@@ -389,7 +389,7 @@ services:
       lucid_core_net:
         aliases: [tunnel, tunnel-tools, tunnels]
         ipv4_address: 172.21.0.14
-      lucid_dev_net: {}  # External connectivity
+      lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       tor-proxy:
         condition: service_healthy
@@ -429,7 +429,7 @@ services:
       lucid_core_net:
         aliases: [server-tools, utils, lucid-utils]
         ipv4_address: 172.21.0.15
-      lucid_dev_net: {}  # External connectivity
+      lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       tor-proxy:
         condition: service_healthy

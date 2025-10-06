@@ -1,0 +1,448 @@
+# LUCID Layer 2 Complete Services - RDP Server & Blockchain Deployment
+# Comprehensive Infrastructure with All Missing Components
+# SPEC-4 compliant: Layer 2 Service Integration
+# Generated: 2025-10-05
+
+# Import base configuration
+include:
+  - lucid-dev.yaml
+
+# Layer 2 Environment Template
+x-lucid-layer2-env: &lucid-layer2-env
+  LUCID_LAYER: 2
+  LUCID_PHASE: service-integration
+  LUCID_COMPONENTS: rdp-server,blockchain-deployment
+  LUCID_STRICT_MODE: true
+  PYTHONUNBUFFERED: 1
+  PYTHONDONTWRITEBYTECODE: 1
+
+# Layer 2 Service Configuration
+x-lucid-layer2-service: &lucid-layer2-service
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  labels:
+    - "org.lucid.layer=2"
+    - "org.lucid.phase=service-integration"
+    - "org.lucid.plane=ops"
+
+# Layer 2 Networks
+networks:
+  lucid_rdp_net:
+    name: lucid_core_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/24
+          gateway: 172.23.0.1
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.network=rdp"
+
+  lucid_blockchain_deploy_net:
+    name: lucid_core_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/24
+          gateway: 172.24.0.1
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.network=blockchain-deploy"
+
+# Layer 2 Persistent Volumes
+volumes:
+  # RDP Server Volumes
+  rdp_sessions:
+    name: lucid-layer2_rdp_sessions
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=rdp-server"
+      - "org.lucid.component=sessions"
+  
+  rdp_recordings:
+    name: lucid-layer2_rdp_recordings
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=rdp-server"
+      - "org.lucid.component=recordings"
+  
+  rdp_display:
+    name: lucid-layer2_rdp_display
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=rdp-server"
+      - "org.lucid.component=display"
+
+  # Blockchain Deployment Volumes
+  contract_artifacts:
+    name: lucid-layer2_contract_artifacts
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=blockchain-deployment"
+      - "org.lucid.component=contracts"
+  
+  deployment_logs:
+    name: lucid-layer2_deployment_logs
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=blockchain-deployment"
+      - "org.lucid.component=logs"
+  
+  deployment_keys:
+    name: lucid-layer2_deployment_keys
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.service=blockchain-deployment"
+      - "org.lucid.component=keys"
+
+  # Temporary Volumes
+  rdp_temp:
+    name: lucid-layer2_rdp_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.component=temp"
+  
+  deployment_temp:
+    name: lucid-layer2_deployment_temp
+    driver: local
+    labels:
+      - "org.lucid.layer=2"
+      - "org.lucid.component=temp"
+
+services:
+  # =============================================================================
+  # LAYER 2: RDP SERVER SERVICES (MISSING - NEEDS BUILD)
+  # =============================================================================
+
+  # RDP Server Manager Service
+  rdp-server-manager:
+    <<: *lucid-layer2-service
+    container_name: lucid_rdp_server_manager
+    build:
+      context: ../../
+      dockerfile: RDP/server/Dockerfile.server-manager
+    image: pickme/lucid:rdp-server-manager
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      RDP_SESSIONS_PATH: /data/sessions
+      RDP_RECORDINGS_PATH: /data/recordings
+      RDP_DISPLAY_PATH: /data/display
+      XRDP_PORT: 3389
+      XRDP_CONFIG_PATH: /etc/xrdp
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+      - rdp_display:/data/display
+      - rdp_temp:/tmp/rdp
+    devices:
+      - /dev/dri:/dev/dri  # GPU access for hardware acceleration
+    networks:
+      lucid_rdp_net:
+        aliases: [rdp-server-manager, rdp-manager]
+        ipv4_address: 172.23.0.10
+      lucid_core_net:
+        aliases: [rdp-server-external]
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      session-orchestrator:
+        condition: service_healthy
+    ports:
+      - "3389:3389"  # RDP port
+      - "8087:8087"  # Management API
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8087/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+          cpus: '4.0'
+        reservations:
+          memory: 1024M
+          cpus: '2.0'
+    labels:
+      - "org.lucid.service=rdp-server-manager"
+      - "org.lucid.expose=3389,8087"
+
+  # xrdp Integration Service
+  xrdp-integration:
+    <<: *lucid-layer2-service
+    container_name: lucid_xrdp_integration
+    build:
+      context: ../../
+      dockerfile: RDP/server/Dockerfile.xrdp-integration
+    image: pickme/lucid:xrdp-integration
+    environment:
+      <<: *lucid-layer2-env
+      XRDP_PORT: 3389
+      XRDP_CONFIG_PATH: /etc/xrdp
+      DISPLAY_SERVER: wayland
+      HARDWARE_ACCELERATION: true
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_display:/data/display
+      - rdp_temp:/tmp/xrdp
+    devices:
+      - /dev/dri:/dev/dri  # GPU access
+      - /dev/video0:/dev/video0  # Video capture
+    networks:
+      lucid_rdp_net:
+        aliases: [xrdp-integration, xrdp]
+        ipv4_address: 172.23.0.11
+    depends_on:
+      rdp-server-manager:
+        condition: service_healthy
+    ports:
+      - "3388:3388"  # xrdp internal port
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -tuln | grep :3388 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=xrdp-integration"
+      - "org.lucid.expose=3388"
+
+  # Session Host Manager Service
+  session-host-manager:
+    <<: *lucid-layer2-service
+    container_name: lucid_session_host_manager
+    build:
+      context: ../../
+      dockerfile: RDP/server/Dockerfile.session-host
+    image: pickme/lucid:session-host-manager
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      SESSION_HOST_PATH: /data/sessions
+      RECORDING_PATH: /data/recordings
+      MAX_CONCURRENT_SESSIONS: ${MAX_CONCURRENT_SESSIONS:-5}
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+      - rdp_temp:/tmp/session-host
+    networks:
+      lucid_rdp_net:
+        aliases: [session-host-manager, session-host]
+        ipv4_address: 172.23.0.12
+      lucid_core_net:
+        aliases: [session-host-external]
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      rdp-server-manager:
+        condition: service_healthy
+      session-orchestrator:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8088/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=session-host-manager"
+      - "org.lucid.expose=8088"
+
+  # =============================================================================
+  # LAYER 2: BLOCKCHAIN DEPLOYMENT SERVICES (MISSING - NEEDS BUILD)
+  # =============================================================================
+
+  # Contract Deployment Service
+  contract-deployment:
+    <<: *lucid-layer2-service
+    container_name: lucid_contract_deployment
+    build:
+      context: ../../
+      dockerfile: blockchain/deployment/Dockerfile.contract-deployment
+    image: pickme/lucid:contract-deployment
+    environment:
+      <<: *lucid-layer2-env
+      CONTRACT_ARTIFACTS_PATH: /data/contracts
+      DEPLOYMENT_LOGS_PATH: /data/logs
+      ON_SYSTEM_CHAIN_RPC: ${ON_SYSTEM_CHAIN_RPC:-}
+      TRON_RPC_URL: ${TRON_RPC_URL:-https://api.trongrid.io}
+      TRON_NETWORK: ${TRON_NETWORK:-shasta}
+    volumes:
+      - contract_artifacts:/data/contracts
+      - deployment_logs:/data/logs
+      - deployment_keys:/data/keys
+      - deployment_temp:/tmp/deployment
+    secrets:
+      - on_system_private_key
+      - tron_private_key
+    networks:
+      lucid_blockchain_deploy_net:
+        aliases: [contract-deployment, deployment]
+        ipv4_address: 172.24.0.10
+      lucid_core_net:
+        aliases: [contract-deployment-external]
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      blockchain-api:
+        condition: service_healthy
+    ports:
+      - "8089:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8089/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=contract-deployment"
+      - "org.lucid.expose=8089"
+
+  # Smart Contract Compiler Service
+  contract-compiler:
+    <<: *lucid-layer2-service
+    container_name: lucid_contract_compiler
+    build:
+      context: ../../
+      dockerfile: blockchain/deployment/Dockerfile.contract-compiler
+    image: pickme/lucid:contract-compiler
+    environment:
+      <<: *lucid-layer2-env
+      CONTRACT_ARTIFACTS_PATH: /data/contracts
+      COMPILER_VERSION: 0.8.19
+      OPTIMIZATION_ENABLED: true
+      OPTIMIZATION_RUNS: 200
+    volumes:
+      - contract_artifacts:/data/contracts
+      - deployment_temp:/tmp/compiler
+    networks:
+      lucid_blockchain_deploy_net:
+        aliases: [contract-compiler, compiler]
+        ipv4_address: 172.24.0.11
+    depends_on:
+      contract-deployment:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+          cpus: '4.0'
+        reservations:
+          memory: 1024M
+          cpus: '2.0'
+    labels:
+      - "org.lucid.service=contract-compiler"
+      - "org.lucid.expose=8090"
+
+  # Deployment Orchestrator Service
+  deployment-orchestrator:
+    <<: *lucid-layer2-service
+    container_name: lucid_deployment_orchestrator
+    build:
+      context: ../../
+      dockerfile: blockchain/deployment/Dockerfile.deployment-orchestrator
+    image: pickme/lucid:deployment-orchestrator
+    environment:
+      <<: *lucid-layer2-env
+      MONGODB_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin}
+      CONTRACT_ARTIFACTS_PATH: /data/contracts
+      DEPLOYMENT_LOGS_PATH: /data/logs
+      ON_SYSTEM_CHAIN_RPC: ${ON_SYSTEM_CHAIN_RPC:-}
+      TRON_RPC_URL: ${TRON_RPC_URL:-https://api.trongrid.io}
+    volumes:
+      - contract_artifacts:/data/contracts
+      - deployment_logs:/data/logs
+      - deployment_temp:/tmp/orchestrator
+    networks:
+      lucid_blockchain_deploy_net:
+        aliases: [deployment-orchestrator, deploy-orchestrator]
+        ipv4_address: 172.24.0.12
+      lucid_core_net:
+        aliases: [deployment-orchestrator-external]
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      contract-deployment:
+        condition: service_healthy
+      contract-compiler:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8091/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    labels:
+      - "org.lucid.service=deployment-orchestrator"
+      - "org.lucid.expose=8091"
+
+# Layer 2 Secrets
+secrets:
+  on_system_private_key:
+    external: true
+  tron_private_key:
+    external: true
+
+# Service Profiles
+profiles:
+  - layer2
+  - rdp-server
+  - blockchain-deployment
+  - service-integration
