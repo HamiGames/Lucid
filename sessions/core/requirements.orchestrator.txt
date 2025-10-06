@@ -1,36 +1,8 @@
-# Session Orchestrator Requirements
-# LUCID-STRICT Layer 1 Core Infrastructure
-# Multi-platform support for Pi 5 ARM64
+# LUCID Session Orchestrator Requirements
+# Complete session pipeline coordination
 
-# Core dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.0.0
-httpx>=0.25.0
-aiohttp>=3.9.0
-
-# Session pipeline
-zstandard>=0.22.0
+zstd>=1.5.5
 cryptography>=41.0.0
 blake3>=0.3.3
-
-# Database
-pymongo>=4.5.0
-motor>=3.3.0
-
-# Monitoring
-prometheus-client>=0.19.0
-structlog>=23.2.0
-
-# Configuration
-python-dotenv>=1.0.0
-pyyaml>=6.0
-
-# Circuit breaker and resilience
-pybreaker>=0.7.0
-tenacity>=8.2.0
-
-# Testing (for development)
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.1.0
+aiofiles>=23.2.1
+asyncio-mqtt>=0.16.1

@@ -1,39 +1,58 @@
-# Session Orchestrator Dockerfile
-# LUCID-STRICT Layer 1 Core Infrastructure
-# Multi-platform build for Pi 5 ARM64
+# LUCID Session Orchestrator - Distroless Build
+# Coordinates complete session pipeline per SPEC-1b
 
-FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+# Multi-stage build for distroless deployment
+FROM python:3.12-slim-bookworm AS builder
 
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    curl \
+    libzstd-dev \
+    libssl-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
 COPY sessions/core/requirements.orchestrator.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.orchestrator.txt
+RUN pip install --no-cache-dir --user -r /tmp/requirements.orchestrator.txt
+
+# Copy source code
+COPY sessions/core/session_orchestrator.py /app/
+COPY sessions/core/chunker.py /app/
+COPY sessions/encryption/encryptor.py /app/
+COPY sessions/core/merkle_builder.py /app/
+COPY sessions/__init__.py /app/sessions/
+COPY sessions/core/__init__.py /app/sessions/core/
+COPY sessions/encryption/__init__.py /app/sessions/encryption/
+
+# Final distroless stage
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /home/nonroot/.local
 
 # Copy application code
-COPY sessions/core/session_orchestrator.py /app/
-COPY sessions/core/__init__.py /app/
+COPY --from=builder /app /app
 
-# Create working directories
-RUN mkdir -p /data/orchestrator /tmp/orchestrator && \
-    chmod 755 /data/orchestrator /tmp/orchestrator
+# Set working directory
+WORKDIR /app
+
+# Set Python path
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+
+# Create data directories
+USER nonroot
+RUN mkdir -p /data/sessions /data/chunks /data/encrypted /data/merkle_roots
+
+# Expose health check port
+EXPOSE 8086
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -fsS http://localhost:8084/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import session_orchestrator; print('Orchestrator service healthy')"]
 
-# Expose port
-EXPOSE 8084
-
-# Set environment variables
-ENV PYTHONPATH=/app
-
-# Run service
-CMD ["python", "session_orchestrator.py", "--mode=service"]
+# Run the orchestrator service
+ENTRYPOINT ["python3", "/app/session_orchestrator.py"]

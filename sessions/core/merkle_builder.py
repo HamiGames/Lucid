@@ -1,440 +1,401 @@
-# Path: apps/merkle/merkle_builder.py
-# Lucid RDP Merkle Tree Builder - BLAKE3 for session chunk anchoring
-# Based on LUCID-STRICT requirements per Spec-1b
+#!/usr/bin/env python3
+"""
+LUCID Merkle Tree Builder - SPEC-1B Implementation
+BLAKE3 Merkle tree construction for session integrity
+"""
 
-from __future__ import annotations
-
-import logging
-from typing import List, Optional, Tuple, Dict, Any
-from dataclasses import dataclass
-from datetime import datetime, timezone
+import asyncio
 import hashlib
-
-try:
+import logging
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Tuple, Dict
     import blake3
-    HAS_BLAKE3 = True
-except ImportError:
-    HAS_BLAKE3 = False
-    logger.warning("blake3 module not available, falling back to hashlib")
-
-from sessions.encryption.encryptor import EncryptedChunk
 
 logger = logging.getLogger(__name__)
 
-
-@dataclass(frozen=True)
+@dataclass
 class MerkleNode:
-    """Node in a Merkle tree"""
-    hash: bytes
-    level: int
-    position: int
-    left_child: Optional[MerkleNode] = None
-    right_child: Optional[MerkleNode] = None
-    
-    def is_leaf(self) -> bool:
-        """Check if this is a leaf node."""
-        return self.left_child is None and self.right_child is None
-    
-    @property
-    def hash_hex(self) -> str:
-        """Get hex representation of hash."""
-        return self.hash.hex()
+    """Merkle tree node structure"""
+    hash_value: bytes
+    left_child: Optional['MerkleNode'] = None
+    right_child: Optional['MerkleNode'] = None
+    is_leaf: bool = False
+    data_hash: Optional[bytes] = None
 
+@dataclass
+class MerkleRoot:
+    """Merkle tree root with proof generation capability"""
+    root_hash: bytes
+    tree_depth: int
+    leaf_count: int
+    total_nodes: int
+    timestamp: float
+    session_id: str
 
 @dataclass
 class MerkleProof:
-    """Merkle proof for chunk verification"""
-    chunk_hash: str
-    root_hash: str
-    proof_hashes: List[str]
-    positions: List[bool]  # True = right, False = left
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dict for storage/transmission."""
-        return {
-            "chunk_hash": self.chunk_hash,
-            "root_hash": self.root_hash,
-            "proof_hashes": self.proof_hashes,
-            "positions": self.positions
-        }
+    """Merkle proof for a specific leaf"""
+    leaf_hash: bytes
+    proof_path: List[bytes]
+    leaf_index: int
+    root_hash: bytes
 
-
-class LucidMerkleBuilder:
+class MerkleTreeBuilder:
     """
-    BLAKE3-based Merkle tree builder for session chunks.
-    
-    Per Spec-1b:
-    - Uses BLAKE3 for all hashing operations
-    - Builds Merkle root over encrypted chunk ciphertext hashes
-    - Provides proofs for individual chunks
-    - Root is anchored to On-System Data Chain via LucidAnchors contract
+    BLAKE3 Merkle tree construction per SPEC-1b
     """
     
-    def __init__(self, session_id: str):
-        self.session_id = session_id
-        self.chunk_hashes: List[str] = []
-        self.merkle_root: Optional[str] = None
-        self.merkle_tree: Optional[MerkleNode] = None
+    HASH_ALGORITHM = "BLAKE3"
+    
+    def __init__(self, output_dir: str = "/data/merkle_roots"):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        logger.info(f"Merkle builder initialized for session {session_id}")
+        logger.info("MerkleTreeBuilder initialized with BLAKE3 hashing")
     
     def _hash_data(self, data: bytes) -> bytes:
+        """Hash data using BLAKE3"""
+        return blake3.blake3(data).digest()
+    
+    def _hash_concatenated(self, left_hash: bytes, right_hash: bytes) -> bytes:
+        """Hash concatenated left and right hashes"""
+        combined = left_hash + right_hash
+        return self._hash_data(combined)
+    
+    async def build_session_merkle_tree(
+        self, 
+        encrypted_chunks: List[Tuple[str, bytes]], 
+        session_id: str
+    ) -> MerkleRoot:
         """
-        Hash data using BLAKE3.
+        Build BLAKE3-based Merkle tree for session integrity
         
         Args:
-            data: Data to hash
+            encrypted_chunks: List of (chunk_id, encrypted_data) tuples
+            session_id: Session identifier
             
         Returns:
-            32-byte BLAKE3 hash
+            MerkleRoot object with tree metadata
         """
-        if HAS_BLAKE3:
-            return blake3.blake3(data).digest()
-        else:
-            # Fallback to hashlib implementation
-            hasher = hashlib.new('blake2b', digest_size=32)
-            hasher.update(data)
-            return hasher.digest()
-    
-    def add_chunk_hash(self, chunk_hash: str) -> None:
-        """
-        Add encrypted chunk hash to the tree.
+        if not encrypted_chunks:
+            raise ValueError("Cannot build Merkle tree with empty chunk list")
         
-        Args:
-            chunk_hash: SHA256 hash of encrypted chunk ciphertext
-        """
-        self.chunk_hashes.append(chunk_hash)
-        # Clear cached tree/root since we have new data
-        self.merkle_tree = None
-        self.merkle_root = None
+        logger.info(f"Building Merkle tree for session {session_id} with {len(encrypted_chunks)} chunks")
         
-        logger.debug(f"Added chunk hash to session {self.session_id}: {chunk_hash[:16]}...")
-    
-    def build_tree(self) -> MerkleNode:
-        """
-        Build complete Merkle tree from chunk hashes.
-        
-        Returns:
-            Root node of the Merkle tree
-        """
-        if not self.chunk_hashes:
-            raise ValueError("No chunk hashes to build tree from")
-        
-        # Convert hex hashes to bytes for processing
-        leaf_hashes = [bytes.fromhex(h) for h in self.chunk_hashes]
+        # Create leaf nodes
+        leaf_nodes = []
+        for chunk_id, chunk_data in encrypted_chunks:
+            # Hash the chunk data
+            chunk_hash = self._hash_data(chunk_data)
+            
+            # Create leaf node
+            leaf_node = MerkleNode(
+                hash_value=chunk_hash,
+                is_leaf=True,
+                data_hash=chunk_hash
+            )
+            leaf_nodes.append(leaf_node)
         
         # Build tree bottom-up
-        current_level = []
-        for i, leaf_hash in enumerate(leaf_hashes):
-            node = MerkleNode(hash=leaf_hash, level=0, position=i)
-            current_level.append(node)
+        current_level = leaf_nodes
+        tree_depth = 0
         
-        level = 0
         while len(current_level) > 1:
             next_level = []
-            level += 1
             
-            # Process pairs at current level
+            # Process pairs of nodes
             for i in range(0, len(current_level), 2):
-                left = current_level[i]
-                
-                # Handle odd number of nodes by duplicating the last one
-                if i + 1 < len(current_level):
-                    right = current_level[i + 1]
-                else:
-                    right = left  # Duplicate for odd count
+                left_node = current_level[i]
+                right_node = current_level[i + 1] if i + 1 < len(current_level) else left_node
                 
                 # Create parent node
-                combined_data = left.hash + right.hash
-                parent_hash = self._hash_data(combined_data)
-                
-                parent = MerkleNode(
-                    hash=parent_hash,
-                    level=level,
-                    position=i // 2,
-                    left_child=left,
-                    right_child=right
+                parent_hash = self._hash_concatenated(
+                    left_node.hash_value, 
+                    right_node.hash_value
                 )
                 
-                next_level.append(parent)
+                parent_node = MerkleNode(
+                    hash_value=parent_hash,
+                    left_child=left_node,
+                    right_child=right_node,
+                    is_leaf=False
+                )
+                
+                next_level.append(parent_node)
             
             current_level = next_level
+            tree_depth += 1
         
-        # Cache the tree and root
-        self.merkle_tree = current_level[0]
-        self.merkle_root = self.merkle_tree.hash_hex
+        # Root node is the only remaining node
+        root_node = current_level[0]
         
-        logger.info(f"Built Merkle tree for session {self.session_id}: "
-                   f"root={self.merkle_root[:16]}..., chunks={len(self.chunk_hashes)}")
-        
-        return self.merkle_tree
-    
-    def get_root_hash(self) -> str:
-        """
-        Get Merkle root hash, building tree if necessary.
-        
-        Returns:
-            Hex-encoded Merkle root hash
-        """
-        if self.merkle_root is None:
-            self.build_tree()
-        
-        return self.merkle_root
-    
-    def generate_proof(self, chunk_index: int) -> MerkleProof:
-        """
-        Generate Merkle proof for a specific chunk.
-        
-        Args:
-            chunk_index: Index of chunk to prove (0-based)
-            
-        Returns:
-            Merkle proof for the chunk
-        """
-        if chunk_index >= len(self.chunk_hashes):
-            raise IndexError(f"Chunk index {chunk_index} out of range")
-        
-        if self.merkle_tree is None:
-            self.build_tree()
-        
-        chunk_hash = self.chunk_hashes[chunk_index]
-        proof_hashes = []
-        positions = []
-        
-        # Traverse tree from leaf to root, collecting sibling hashes
-        current_index = chunk_index
-        current_level_size = len(self.chunk_hashes)
-        
-        while current_level_size > 1:
-            # Determine sibling position and hash
-            if current_index % 2 == 0:
-                # Current node is left child, sibling is right
-                sibling_index = current_index + 1
-                positions.append(True)  # Sibling is on the right
-            else:
-                # Current node is right child, sibling is left
-                sibling_index = current_index - 1
-                positions.append(False)  # Sibling is on the left
-            
-            # Add sibling hash to proof (if it exists)
-            if sibling_index < current_level_size:
-                if len(self.chunk_hashes) == current_level_size:
-                    # At leaf level, use chunk hashes
-                    sibling_hash = self.chunk_hashes[sibling_index]
-                    proof_hashes.append(sibling_hash)
-                else:
-                    # At internal levels, need to compute hash
-                    # This is a simplified approach - in production would traverse tree
-                    pass
-            else:
-                # Odd number of nodes, sibling is the same as current
-                if len(self.chunk_hashes) == current_level_size:
-                    sibling_hash = self.chunk_hashes[current_index]
-                    proof_hashes.append(sibling_hash)
-            
-            # Move up to next level
-            current_index = current_index // 2
-            current_level_size = (current_level_size + 1) // 2
-        
-        return MerkleProof(
-            chunk_hash=chunk_hash,
-            root_hash=self.get_root_hash(),
-            proof_hashes=proof_hashes,
-            positions=positions
+        # Create MerkleRoot object
+        merkle_root = MerkleRoot(
+            root_hash=root_node.hash_value,
+            tree_depth=tree_depth,
+            leaf_count=len(leaf_nodes),
+            total_nodes=len(leaf_nodes) + tree_depth,
+            timestamp=time.time(),
+            session_id=session_id
         )
+        
+        # Save Merkle root to disk
+        await self._save_merkle_root(merkle_root)
+        
+        logger.info(f"Merkle tree built: depth={tree_depth}, leaves={len(leaf_nodes)}, root={merkle_root.root_hash.hex()[:16]}...")
+        
+        return merkle_root
     
-    def verify_proof(self, proof: MerkleProof) -> bool:
+    async def generate_merkle_proof(
+        self, 
+        merkle_root: MerkleRoot, 
+        chunk_index: int,
+        encrypted_chunks: List[Tuple[str, bytes]]
+    ) -> MerkleProof:
         """
-        Verify a Merkle proof against the current root.
+        Generate Merkle proof for a specific chunk
         
         Args:
-            proof: Merkle proof to verify
+            merkle_root: MerkleRoot object
+            chunk_index: Index of the chunk to prove
+            encrypted_chunks: Original chunk data for verification
             
         Returns:
-            True if proof is valid
+            MerkleProof object
         """
-        try:
-            current_hash = bytes.fromhex(proof.chunk_hash)
+        if chunk_index >= len(encrypted_chunks):
+            raise ValueError(f"Chunk index {chunk_index} out of range")
+        
+        # Rebuild the tree to get proof path
+        leaf_nodes = []
+        for chunk_id, chunk_data in encrypted_chunks:
+            chunk_hash = self._hash_data(chunk_data)
+            leaf_node = MerkleNode(hash_value=chunk_hash, is_leaf=True)
+            leaf_nodes.append(leaf_node)
+        
+        # Build tree and collect proof path
+        current_level = leaf_nodes
+        proof_path = []
+        current_index = chunk_index
+        
+        while len(current_level) > 1:
+            next_level = []
             
-            # Reconstruct path to root using proof
-            for sibling_hex, is_right in zip(proof.proof_hashes, proof.positions):
-                sibling_hash = bytes.fromhex(sibling_hex)
+            for i in range(0, len(current_level), 2):
+                left_node = current_level[i]
+                right_node = current_level[i + 1] if i + 1 < len(current_level) else left_node
                 
-                if is_right:
-                    # Sibling is on the right
-                    combined = current_hash + sibling_hash
-                else:
-                    # Sibling is on the left
-                    combined = sibling_hash + current_hash
+                # Add sibling to proof path if current node is in this pair
+                if current_index == i:
+                    proof_path.append(right_node.hash_value)
+                elif current_index == i + 1:
+                    proof_path.append(left_node.hash_value)
                 
-                current_hash = self._hash_data(combined)
+                # Create parent
+                parent_hash = self._hash_concatenated(
+                    left_node.hash_value, 
+                    right_node.hash_value
+                )
+                
+                parent_node = MerkleNode(
+                    hash_value=parent_hash,
+                    left_child=left_node,
+                    right_child=right_node
+                )
+                
+                next_level.append(parent_node)
             
-            # Compare with expected root
-            calculated_root = current_hash.hex()
-            return calculated_root == proof.root_hash
-            
-        except Exception as e:
-            logger.error(f"Proof verification failed: {e}")
-            return False
+            current_level = next_level
+            current_index //= 2
+        
+        # Create proof
+        target_leaf_hash = leaf_nodes[chunk_index].hash_value
+        
+        proof = MerkleProof(
+            leaf_hash=target_leaf_hash,
+            proof_path=proof_path,
+            leaf_index=chunk_index,
+            root_hash=merkle_root.root_hash
+        )
+        
+        logger.debug(f"Generated Merkle proof for chunk {chunk_index}")
+        return proof
     
-    def get_tree_stats(self) -> Dict[str, Any]:
-        """Get statistics about the current tree."""
+    def verify_merkle_proof(self, proof: MerkleProof) -> bool:
+        """
+        Verify a Merkle proof
+        
+        Args:
+            proof: MerkleProof object to verify
+            
+        Returns:
+            True if proof is valid, False otherwise
+        """
+        current_hash = proof.leaf_hash
+        
+        # Reconstruct root hash using proof path
+        for sibling_hash in proof.proof_path:
+            if proof.leaf_index % 2 == 0:
+                # Current node is left child
+                current_hash = self._hash_concatenated(current_hash, sibling_hash)
+                else:
+                # Current node is right child
+                current_hash = self._hash_concatenated(sibling_hash, current_hash)
+            
+            proof.leaf_index //= 2
+        
+        # Verify against root hash
+        is_valid = current_hash == proof.root_hash
+        
+        logger.debug(f"Merkle proof verification: {'PASS' if is_valid else 'FAIL'}")
+        return is_valid
+    
+    async def _save_merkle_root(self, merkle_root: MerkleRoot):
+        """Save Merkle root metadata to disk"""
+        
+        root_filename = f"{merkle_root.session_id}_merkle_root.json"
+        root_path = self.output_dir / root_filename
+        
+        import json
+        
+        root_data = {
+            "session_id": merkle_root.session_id,
+            "root_hash": merkle_root.root_hash.hex(),
+            "tree_depth": merkle_root.tree_depth,
+            "leaf_count": merkle_root.leaf_count,
+            "total_nodes": merkle_root.total_nodes,
+            "timestamp": merkle_root.timestamp
+        }
+        
+        with open(root_path, 'w') as f:
+            json.dump(root_data, f, indent=2)
+        
+        logger.debug(f"Saved Merkle root to {root_path}")
+    
+    async def load_merkle_root(self, session_id: str) -> Optional[MerkleRoot]:
+        """Load Merkle root from disk"""
+        
+        root_filename = f"{session_id}_merkle_root.json"
+        root_path = self.output_dir / root_filename
+        
+        if not root_path.exists():
+            return None
+        
+        import json
+        
+        with open(root_path, 'r') as f:
+            root_data = json.load(f)
+        
+        merkle_root = MerkleRoot(
+            root_hash=bytes.fromhex(root_data["root_hash"]),
+            tree_depth=root_data["tree_depth"],
+            leaf_count=root_data["leaf_count"],
+            total_nodes=root_data["total_nodes"],
+            timestamp=root_data["timestamp"],
+            session_id=root_data["session_id"]
+        )
+        
+        logger.debug(f"Loaded Merkle root for session {session_id}")
+        return merkle_root
+    
+    def get_merkle_stats(self, session_id: str) -> dict:
+        """Get Merkle tree statistics for a session"""
+        
+        root_filename = f"{session_id}_merkle_root.json"
+        root_path = self.output_dir / root_filename
+        
+        if not root_path.exists():
+            return {
+                "session_id": session_id,
+                "has_merkle_root": False
+            }
+        
+        import json
+        
+        with open(root_path, 'r') as f:
+            root_data = json.load(f)
+        
         return {
-            "session_id": self.session_id,
-            "chunk_count": len(self.chunk_hashes),
-            "has_tree": self.merkle_tree is not None,
-            "root_hash": self.merkle_root,
-            "tree_height": self._calculate_tree_height()
+            "session_id": session_id,
+            "has_merkle_root": True,
+            "tree_depth": root_data["tree_depth"],
+            "leaf_count": root_data["leaf_count"],
+            "total_nodes": root_data["total_nodes"],
+            "root_hash": root_data["root_hash"][:16] + "..."
         }
     
-    def _calculate_tree_height(self) -> int:
-        """Calculate the height of the Merkle tree."""
-        if not self.chunk_hashes:
-            return 0
+    async def cleanup_session_merkle_root(self, session_id: str) -> bool:
+        """Clean up Merkle root for a session"""
         
-        import math
-        chunk_count = len(self.chunk_hashes)
-        return math.ceil(math.log2(chunk_count)) if chunk_count > 1 else 0
-
-
-class SessionMerkleManager:
-    """
-    Manages Merkle tree building for multiple sessions.
-    Interfaces with encryptor and On-System Chain client.
-    """
-    
-    def __init__(self):
-        self.active_builders: Dict[str, LucidMerkleBuilder] = {}
-        logger.info("Session Merkle manager initialized")
-    
-    def start_session(self, session_id: str) -> None:
-        """Start Merkle tree building for a new session."""
-        if session_id in self.active_builders:
-            logger.warning(f"Merkle builder already exists for session {session_id}")
-            return
+        root_filename = f"{session_id}_merkle_root.json"
+        root_path = self.output_dir / root_filename
         
-        builder = LucidMerkleBuilder(session_id)
-        self.active_builders[session_id] = builder
-        
-        logger.info(f"Started Merkle building for session {session_id}")
-    
-    def add_encrypted_chunk(self, session_id: str, encrypted_chunk: EncryptedChunk) -> None:
-        """Add encrypted chunk to session's Merkle tree."""
-        builder = self.active_builders.get(session_id)
-        if not builder:
-            raise ValueError(f"No Merkle builder found for session {session_id}")
-        
-        builder.add_chunk_hash(encrypted_chunk.ciphertext_sha256)
-    
-    def finalize_session(self, session_id: str) -> str:
-        """
-        Finalize Merkle tree for session and return root hash.
-        
-        Args:
-            session_id: Session to finalize
-            
-        Returns:
-            Hex-encoded Merkle root hash for anchoring
-        """
-        builder = self.active_builders.get(session_id)
-        if not builder:
-            raise ValueError(f"No Merkle builder found for session {session_id}")
-        
-        root_hash = builder.get_root_hash()
-        
-        # Keep builder for proof generation
-        logger.info(f"Finalized Merkle tree for session {session_id}: {root_hash[:16]}...")
-        return root_hash
-    
-    def generate_chunk_proof(self, session_id: str, chunk_index: int) -> MerkleProof:
-        """Generate proof for a specific chunk in a session."""
-        builder = self.active_builders.get(session_id)
-        if not builder:
-            raise ValueError(f"No Merkle builder found for session {session_id}")
-        
-        return builder.generate_proof(chunk_index)
-    
-    def verify_chunk_proof(self, session_id: str, proof: MerkleProof) -> bool:
-        """Verify a chunk proof against a session's Merkle root."""
-        builder = self.active_builders.get(session_id)
-        if not builder:
-            raise ValueError(f"No Merkle builder found for session {session_id}")
-        
-        return builder.verify_proof(proof)
-    
-    def cleanup_session(self, session_id: str) -> None:
-        """Remove Merkle builder for completed session."""
-        if session_id in self.active_builders:
-            del self.active_builders[session_id]
-            logger.info(f"Cleaned up Merkle builder for session {session_id}")
-    
-    def get_session_stats(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Get Merkle tree statistics for a session."""
-        builder = self.active_builders.get(session_id)
-        return builder.get_tree_stats() if builder else None
-    
-    def get_active_sessions(self) -> List[str]:
-        """Get list of sessions with active Merkle builders."""
-        return list(self.active_builders.keys())
-
-
-# Module-level instance for service integration
-merkle_manager = SessionMerkleManager()
-
-
-def validate_merkle_root_format(root_hash: str) -> bool:
-    """
-    Validate that a Merkle root hash is properly formatted.
-    
-    Args:
-        root_hash: Hex-encoded hash to validate
-        
-    Returns:
-        True if format is valid (64 hex characters for BLAKE3)
-    """
-    if not isinstance(root_hash, str):
+        if root_path.exists():
+            try:
+                root_path.unlink()
+                logger.info(f"Cleaned up Merkle root for session {session_id}")
+                return True
+            except OSError as e:
+                logger.error(f"Failed to remove Merkle root {root_path}: {e}")
         return False
     
-    if len(root_hash) != 64:  # 32 bytes = 64 hex chars
-        return False
-    
-    try:
-        bytes.fromhex(root_hash)
         return True
-    except ValueError:
-        return False
 
+# CLI interface for testing
+async def main():
+    """Test the Merkle builder with sample data"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="LUCID Merkle Tree Builder")
+    parser.add_argument("--session-id", required=True, help="Session ID")
+    parser.add_argument("--input-dir", required=True, help="Directory containing encrypted chunks")
+    parser.add_argument("--output-dir", default="/data/merkle_roots", help="Output directory")
+    parser.add_argument("--verify-proof", type=int, help="Verify proof for chunk index")
+    
+    args = parser.parse_args()
+    
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
+    
+    # Create Merkle builder
+    builder = MerkleTreeBuilder(args.output_dir)
+    
+    # Load encrypted chunks
+    input_path = Path(args.input_dir)
+    chunk_files = list(input_path.glob("*.enc"))
+    
+    if not chunk_files:
+        print("No encrypted chunk files found")
+        return
+    
+    # Read chunk data
+    encrypted_chunks = []
+    for chunk_file in sorted(chunk_files):
+        with open(chunk_file, 'rb') as f:
+            chunk_data = f.read()
+        chunk_id = chunk_file.stem
+        encrypted_chunks.append((chunk_id, chunk_data))
+    
+    # Build Merkle tree
+    merkle_root = await builder.build_session_merkle_tree(
+        encrypted_chunks, args.session_id
+    )
+    
+    print(f"Built Merkle tree:")
+    print(f"  Root hash: {merkle_root.root_hash.hex()}")
+    print(f"  Tree depth: {merkle_root.tree_depth}")
+    print(f"  Leaf count: {merkle_root.leaf_count}")
+    
+    # Test proof generation and verification
+    if args.verify_proof is not None:
+        proof = await builder.generate_merkle_proof(
+            merkle_root, args.verify_proof, encrypted_chunks
+        )
+        
+        is_valid = builder.verify_merkle_proof(proof)
+        print(f"Proof for chunk {args.verify_proof}: {'VALID' if is_valid else 'INVALID'}")
 
 if __name__ == "__main__":
-    # Test Merkle tree functionality
-    import sys
-    
-    if len(sys.argv) < 2:
-        print("Usage: python merkle_builder.py <session_id>")
-        sys.exit(1)
-    
-    session_id = sys.argv[1]
-    builder = LucidMerkleBuilder(session_id)
-    
-    # Add some test chunk hashes
-    test_hashes = [
-        "a1b2c3d4e5f67890" * 8,  # 64 chars
-        "f0e1d2c3b4a59687" * 8,
-        "9876543210abcdef" * 8,
-        "fedcba0987654321" * 8
-    ]
-    
-    for i, test_hash in enumerate(test_hashes):
-        builder.add_chunk_hash(test_hash)
-        print(f"Added chunk {i}: {test_hash[:16]}...")
-    
-    root_hash = builder.get_root_hash()
-    print(f"Merkle root: {root_hash}")
-    
-    # Test proof generation
-    proof = builder.generate_proof(0)
-    is_valid = builder.verify_proof(proof)
-    print(f"Proof for chunk 0 valid: {is_valid}")
-    
-    stats = builder.get_tree_stats()
-    print(f"Tree stats: {stats}")
+    asyncio.run(main())

@@ -1,39 +1,52 @@
-# Merkle Tree Builder Dockerfile
-# LUCID-STRICT Layer 1 Core Infrastructure
-# Multi-platform build for Pi 5 ARM64
+# LUCID Merkle Tree Builder - Distroless Build
+# Implements BLAKE3 Merkle tree construction per SPEC-1b
 
-FROM --platform=$TARGETPLATFORM python:3.11-slim as base
+# Multi-stage build for distroless deployment
+FROM python:3.12-slim-bookworm AS builder
 
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    gcc \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
-COPY sessions/core/requirements.merkle.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.merkle.txt
+# Copy requirements and install Python dependencies
+COPY sessions/core/requirements.merkle_builder.txt /tmp/
+RUN pip install --no-cache-dir --user -r /tmp/requirements.merkle_builder.txt
+
+# Copy source code
+COPY sessions/core/merkle_builder.py /app/
+COPY sessions/__init__.py /app/sessions/
+COPY sessions/core/__init__.py /app/sessions/core/
+
+# Final distroless stage
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /home/nonroot/.local
 
 # Copy application code
-COPY sessions/core/merkle_builder.py /app/
-COPY sessions/core/__init__.py /app/
+COPY --from=builder /app /app
 
-# Create working directories
-RUN mkdir -p /data/merkle_trees /tmp/merkle_build && \
-    chmod 755 /data/merkle_trees /tmp/merkle_build
+# Set working directory
+WORKDIR /app
+
+# Set Python path
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+
+# Create data directories
+USER nonroot
+RUN mkdir -p /data/merkle_roots
+
+# Expose health check port
+EXPOSE 8085
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import merkle_builder; print('Merkle builder healthy')"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import merkle_builder; print('Merkle builder service healthy')"]
 
-# Expose port
-EXPOSE 8083
-
-# Set environment variables
-ENV PYTHONPATH=/app
-
-# Run service
-CMD ["python", "merkle_builder.py", "--mode=service"]
+# Run the Merkle builder service
+ENTRYPOINT ["python3", "/app/merkle_builder.py"]

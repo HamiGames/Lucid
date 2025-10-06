@@ -1,325 +1,285 @@
-# Path: apps/chunker/chunker.py
-# Lucid RDP Data Chunker - 8-16MB chunks with Zstd compression
-# Based on LUCID-STRICT requirements per Spec-1b
+#!/usr/bin/env python3
+"""
+LUCID Session Chunker - SPEC-1B Implementation
+8-16MB chunking with Zstd compression (level 3)
+"""
 
-from __future__ import annotations
-
-import os
-import zstandard as zstd
-import logging
-from pathlib import Path
-from typing import List, Iterator, Tuple, Optional
-from dataclasses import dataclass
-from datetime import datetime, timezone
+import asyncio
 import hashlib
-import uuid
+import logging
+import os
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import AsyncGenerator, List, Optional, Tuple
+import zstd
 
 logger = logging.getLogger(__name__)
 
-# Runtime variables per specification
-CHUNK_MIN_SIZE = int(os.getenv("LUCID_CHUNK_MIN_SIZE", "8388608"))    # 8MB
-CHUNK_MAX_SIZE = int(os.getenv("LUCID_CHUNK_MAX_SIZE", "16777216"))   # 16MB
-COMPRESSION_LEVEL = int(os.getenv("LUCID_COMPRESSION_LEVEL", "3"))    # Zstd level 3
-BASE_MB_PER_SESSION = int(os.getenv("BASE_MB_PER_SESSION", "5"))      # Per Spec-1c
-
-
-@dataclass(frozen=True)
+@dataclass
 class ChunkMetadata:
-    """Metadata for a compressed chunk"""
+    """Metadata for a session chunk"""
     chunk_id: str
     session_id: str
-    sequence_number: int
-    original_size: int
+    chunk_index: int
+    chunk_size: int
     compressed_size: int
     compression_ratio: float
-    chunk_hash: str
-    created_at: datetime
-    
-    def to_dict(self) -> dict:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": self.chunk_id,
-            "session_id": self.session_id,
-            "idx": self.sequence_number,
-            "original_size": self.original_size,
-            "compressed_size": self.compressed_size,
-            "compression_ratio": self.compression_ratio,
-            "chunk_hash": self.chunk_hash,
-            "created_at": self.created_at
-        }
+    checksum: str
+    timestamp: float
+    file_path: str
 
-
-class LucidChunker:
+class SessionChunker:
     """
-    Handles data chunking with Zstd compression for Lucid RDP sessions.
-    
-    Per Spec-1b: 8-16 MB chunks before compression, Zstd level 3
-    Chunks are prepared for XChaCha20-Poly1305 encryption by encryptor service.
+    Implements 8-16MB chunking with Zstd level 3 compression per SPEC-1b
     """
     
-    def __init__(self, session_id: str, compression_level: int = COMPRESSION_LEVEL):
-        self.session_id = session_id
-        self.compression_level = compression_level
-        self.chunk_counter = 0
-        
-        # Initialize Zstd compressor with specified level
-        self.compressor = zstd.ZstdCompressor(level=compression_level)
-        self.decompressor = zstd.ZstdDecompressor()
-        
-        # Buffer for accumulating data before chunking
-        self.buffer = bytearray()
-        
-        logger.info(f"Chunker initialized for session {session_id}, level {compression_level}")
+    CHUNK_SIZE_MIN = 8 * 1024 * 1024   # 8MB
+    CHUNK_SIZE_MAX = 16 * 1024 * 1024  # 16MB
+    COMPRESSION_LEVEL = 3               # Zstd level 3
     
-    def add_data(self, data: bytes) -> List[ChunkMetadata]:
+    def __init__(self, output_dir: str = "/data/chunks"):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+    async def chunk_session_data(
+        self, 
+        session_id: str, 
+        data_stream: bytes,
+        target_chunk_size: Optional[int] = None
+    ) -> List[ChunkMetadata]:
         """
-        Add data to buffer and return completed chunks.
+        Chunk session data with optimal compression
         
         Args:
-            data: Raw RDP session data from recorder
+            session_id: Unique session identifier
+            data_stream: Raw session data to chunk
+            target_chunk_size: Optional target chunk size (defaults to 8MB)
             
         Returns:
-            List of completed chunk metadata
+            List of ChunkMetadata objects
         """
-        self.buffer.extend(data)
-        completed_chunks = []
-        
-        # Process complete chunks
-        while len(self.buffer) >= CHUNK_MIN_SIZE:
-            # Determine chunk boundary (min to max size)
-            chunk_size = min(len(self.buffer), CHUNK_MAX_SIZE)
+        if target_chunk_size is None:
+            target_chunk_size = self.CHUNK_SIZE_MIN
             
-            # Extract chunk data
-            chunk_data = bytes(self.buffer[:chunk_size])
-            self.buffer = self.buffer[chunk_size:]
+        # Ensure target size is within bounds
+        target_chunk_size = max(
+            self.CHUNK_SIZE_MIN,
+            min(target_chunk_size, self.CHUNK_SIZE_MAX)
+        )
+        
+        chunks = []
+        chunk_index = 0
+        offset = 0
+        
+        logger.info(f"Starting chunking for session {session_id}, target size: {target_chunk_size}")
+        
+        while offset < len(data_stream):
+            # Calculate chunk boundaries
+            chunk_end = min(offset + target_chunk_size, len(data_stream))
+            chunk_data = data_stream[offset:chunk_end]
             
             # Create chunk metadata
-            chunk_meta = self._create_chunk(chunk_data)
-            completed_chunks.append(chunk_meta)
-            
-        return completed_chunks
-    
-    def finalize_buffer(self) -> Optional[ChunkMetadata]:
-        """
-        Process remaining buffer data as final chunk.
-        
-        Returns:
-            Final chunk metadata if buffer has data
-        """
-        if not self.buffer:
-            return None
-        
-        final_data = bytes(self.buffer)
-        self.buffer.clear()
-        
-        return self._create_chunk(final_data)
-    
-    def _create_chunk(self, data: bytes) -> ChunkMetadata:
-        """
-        Compress data and create chunk metadata.
-        
-        Args:
-            data: Raw chunk data
-            
-        Returns:
-            Chunk metadata with compression info
-        """
-        original_size = len(data)
-        
-        # Compress with Zstd
-        try:
-            compressed_data = self.compressor.compress(data)
-            compressed_size = len(compressed_data)
-            compression_ratio = compressed_size / original_size
-            
-            # Calculate chunk hash for integrity verification
-            chunk_hash = hashlib.blake3(compressed_data).hexdigest()
-            
-            # Generate chunk ID
-            chunk_id = f"{self.session_id}-chunk-{self.chunk_counter:06d}"
-            self.chunk_counter += 1
-            
-            metadata = ChunkMetadata(
-                chunk_id=chunk_id,
-                session_id=self.session_id,
-                sequence_number=self.chunk_counter - 1,
-                original_size=original_size,
-                compressed_size=compressed_size,
-                compression_ratio=compression_ratio,
-                chunk_hash=chunk_hash,
-                created_at=datetime.now(timezone.utc)
+            chunk_id = f"{session_id}_chunk_{chunk_index:06d}"
+            chunk_metadata = await self._process_chunk(
+                chunk_id, session_id, chunk_index, chunk_data
             )
             
-            # Store compressed data for encryptor service
-            self._store_compressed_chunk(chunk_id, compressed_data)
+            chunks.append(chunk_metadata)
             
-            logger.debug(f"Created chunk {chunk_id}: {original_size}→{compressed_size} bytes "
-                        f"({compression_ratio:.2f} ratio)")
+            logger.debug(f"Created chunk {chunk_index}: {chunk_metadata.chunk_size} bytes -> {chunk_metadata.compressed_size} bytes")
             
-            return metadata
+            offset = chunk_end
+            chunk_index += 1
             
-        except Exception as e:
-            logger.error(f"Chunk compression failed: {e}")
-            raise
+        logger.info(f"Chunking complete: {len(chunks)} chunks created for session {session_id}")
+        return chunks
     
-    def _store_compressed_chunk(self, chunk_id: str, compressed_data: bytes) -> None:
+    async def _process_chunk(
+        self, 
+        chunk_id: str, 
+        session_id: str, 
+        chunk_index: int, 
+        chunk_data: bytes
+    ) -> ChunkMetadata:
+        """Process a single chunk with compression and metadata"""
+        
+        # Calculate checksum before compression
+        checksum = hashlib.sha256(chunk_data).hexdigest()
+        
+        # Compress with Zstd level 3
+        compressed_data = zstd.compress(chunk_data, level=self.COMPRESSION_LEVEL)
+        
+        # Calculate compression ratio
+        compression_ratio = len(compressed_data) / len(chunk_data) if chunk_data else 0
+        
+        # Save compressed chunk to disk
+        chunk_filename = f"{chunk_id}.zst"
+        chunk_path = self.output_dir / chunk_filename
+        
+        with open(chunk_path, 'wb') as f:
+            f.write(compressed_data)
+        
+        # Create metadata
+        metadata = ChunkMetadata(
+            chunk_id=chunk_id,
+            session_id=session_id,
+            chunk_index=chunk_index,
+            chunk_size=len(chunk_data),
+            compressed_size=len(compressed_data),
+            compression_ratio=compression_ratio,
+            checksum=checksum,
+            timestamp=time.time(),
+            file_path=str(chunk_path)
+        )
+        
+        return metadata
+    
+    async def stream_chunk_session_data(
+        self, 
+        session_id: str, 
+        data_stream: AsyncGenerator[bytes, None]
+    ) -> AsyncGenerator[ChunkMetadata, None]:
         """
-        Store compressed chunk data for encryptor service.
+        Stream chunking for large session data
         
         Args:
-            chunk_id: Unique chunk identifier
-            compressed_data: Zstd compressed data
+            session_id: Unique session identifier
+            data_stream: Async generator yielding data chunks
+            
+        Yields:
+            ChunkMetadata objects as chunks are processed
         """
-        # Create session chunk directory
-        chunk_dir = Path(f"/tmp/lucid/chunks/{self.session_id}")
-        chunk_dir.mkdir(parents=True, exist_ok=True)
+        chunk_index = 0
+        current_chunk = b""
+        target_size = self.CHUNK_SIZE_MIN
         
-        # Store compressed chunk
-        chunk_file = chunk_dir / f"{chunk_id}.zst"
-        chunk_file.write_bytes(compressed_data)
+        logger.info(f"Starting stream chunking for session {session_id}")
         
-        logger.debug(f"Stored compressed chunk: {chunk_file}")
+        async for data_chunk in data_stream:
+            current_chunk += data_chunk
+            
+            # Process chunk when we reach target size
+            while len(current_chunk) >= target_size:
+                # Extract chunk data
+                chunk_data = current_chunk[:target_size]
+                current_chunk = current_chunk[target_size:]
+                
+                # Create chunk metadata
+                chunk_id = f"{session_id}_chunk_{chunk_index:06d}"
+                metadata = await self._process_chunk(
+                    chunk_id, session_id, chunk_index, chunk_data
+                )
+                
+                yield metadata
+                chunk_index += 1
+        
+        # Process remaining data
+        if current_chunk:
+            chunk_id = f"{session_id}_chunk_{chunk_index:06d}"
+            metadata = await self._process_chunk(
+                chunk_id, session_id, chunk_index, current_chunk
+            )
+            yield metadata
+        
+        logger.info(f"Stream chunking complete: {chunk_index + 1} chunks for session {session_id}")
     
-    def decompress_chunk(self, chunk_id: str) -> bytes:
-        """
-        Decompress a stored chunk for verification or recovery.
+    async def get_chunk_data(self, chunk_metadata: ChunkMetadata) -> bytes:
+        """Retrieve and decompress chunk data"""
         
-        Args:
-            chunk_id: Chunk identifier
-            
-        Returns:
-            Original uncompressed data
-        """
-        try:
-            chunk_file = Path(f"/tmp/lucid/chunks/{self.session_id}/{chunk_id}.zst")
-            
-            if not chunk_file.exists():
-                raise FileNotFoundError(f"Chunk file not found: {chunk_file}")
-            
-            compressed_data = chunk_file.read_bytes()
-            original_data = self.decompressor.decompress(compressed_data)
-            
-            logger.debug(f"Decompressed chunk {chunk_id}: {len(original_data)} bytes")
-            return original_data
-            
-        except Exception as e:
-            logger.error(f"Chunk decompression failed for {chunk_id}: {e}")
-            raise
+        if not os.path.exists(chunk_metadata.file_path):
+            raise FileNotFoundError(f"Chunk file not found: {chunk_metadata.file_path}")
+        
+        with open(chunk_metadata.file_path, 'rb') as f:
+            compressed_data = f.read()
+        
+        # Decompress with Zstd
+        decompressed_data = zstd.decompress(compressed_data)
+        
+        # Verify checksum
+        calculated_checksum = hashlib.sha256(decompressed_data).hexdigest()
+        if calculated_checksum != chunk_metadata.checksum:
+            raise ValueError(f"Checksum mismatch for chunk {chunk_metadata.chunk_id}")
+        
+        return decompressed_data
     
-    def get_chunk_stats(self) -> dict:
-        """Get chunker statistics for session monitoring."""
+    async def cleanup_session_chunks(self, session_id: str) -> int:
+        """Clean up all chunks for a session"""
+        
+        chunk_files = list(self.output_dir.glob(f"{session_id}_chunk_*.zst"))
+        removed_count = 0
+        
+        for chunk_file in chunk_files:
+            try:
+                chunk_file.unlink()
+                removed_count += 1
+            except OSError as e:
+                logger.error(f"Failed to remove chunk file {chunk_file}: {e}")
+        
+        logger.info(f"Cleaned up {removed_count} chunks for session {session_id}")
+        return removed_count
+    
+    def get_chunking_stats(self, session_id: str) -> dict:
+        """Get chunking statistics for a session"""
+        
+        chunk_files = list(self.output_dir.glob(f"{session_id}_chunk_*.zst"))
+        
+        if not chunk_files:
+            return {
+                "session_id": session_id,
+                "total_chunks": 0,
+                "total_size": 0,
+                "total_compressed_size": 0,
+                "average_compression_ratio": 0.0
+            }
+        
+        total_size = 0
+        total_compressed_size = 0
+        
+        for chunk_file in chunk_files:
+            total_compressed_size += chunk_file.stat().st_size
+        
         return {
-            "session_id": self.session_id,
-            "chunks_created": self.chunk_counter,
-            "buffer_size": len(self.buffer),
-            "compression_level": self.compression_level
+            "session_id": session_id,
+            "total_chunks": len(chunk_files),
+            "total_size": total_size,  # Would need to read metadata for accurate size
+            "total_compressed_size": total_compressed_size,
+            "average_compression_ratio": total_compressed_size / total_size if total_size > 0 else 0.0
         }
 
-
-class SessionChunkManager:
-    """
-    Manages chunking for multiple sessions.
-    Interfaces with session recorder and encryptor services.
-    """
+# CLI interface for testing
+async def main():
+    """Test the chunker with sample data"""
+    import argparse
     
-    def __init__(self):
-        self.active_chunkers: dict[str, LucidChunker] = {}
-        logger.info("Session chunk manager initialized")
+    parser = argparse.ArgumentParser(description="LUCID Session Chunker")
+    parser.add_argument("--session-id", required=True, help="Session ID")
+    parser.add_argument("--input-file", required=True, help="Input file to chunk")
+    parser.add_argument("--output-dir", default="/data/chunks", help="Output directory")
+    parser.add_argument("--chunk-size", type=int, default=8*1024*1024, help="Target chunk size")
     
-    def start_chunking(self, session_id: str, compression_level: int = COMPRESSION_LEVEL) -> None:
-        """Start chunking for a new session."""
-        if session_id in self.active_chunkers:
-            logger.warning(f"Chunker already exists for session {session_id}")
-            return
-        
-        chunker = LucidChunker(session_id, compression_level)
-        self.active_chunkers[session_id] = chunker
-        
-        logger.info(f"Started chunking for session {session_id}")
+    args = parser.parse_args()
     
-    def process_session_data(self, session_id: str, data: bytes) -> List[ChunkMetadata]:
-        """Process data for a session and return completed chunks."""
-        chunker = self.active_chunkers.get(session_id)
-        if not chunker:
-            raise ValueError(f"No chunker found for session {session_id}")
-        
-        return chunker.add_data(data)
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
     
-    def finalize_session(self, session_id: str) -> Optional[ChunkMetadata]:
-        """Finalize chunking for a session and clean up."""
-        chunker = self.active_chunkers.get(session_id)
-        if not chunker:
-            logger.warning(f"No chunker found for session {session_id}")
-            return None
-        
-        # Process final chunk
-        final_chunk = chunker.finalize_buffer()
-        
-        # Remove from active chunkers
-        del self.active_chunkers[session_id]
-        
-        logger.info(f"Finalized chunking for session {session_id}")
-        return final_chunk
+    # Create chunker
+    chunker = SessionChunker(args.output_dir)
     
-    def get_session_stats(self, session_id: str) -> Optional[dict]:
-        """Get statistics for a specific session."""
-        chunker = self.active_chunkers.get(session_id)
-        return chunker.get_chunk_stats() if chunker else None
+    # Read input file
+    with open(args.input_file, 'rb') as f:
+        data = f.read()
     
-    def get_all_sessions(self) -> List[str]:
-        """Get list of all active chunking sessions."""
-        return list(self.active_chunkers.keys())
-
-
-# Module-level instance for service integration
-chunk_manager = SessionChunkManager()
-
-
-def calculate_work_units(total_bytes: int) -> int:
-    """
-    Calculate work units for PoOT consensus per Spec-1c.
+    # Chunk the data
+    chunks = await chunker.chunk_session_data(
+        args.session_id, 
+        data, 
+        args.chunk_size
+    )
     
-    Args:
-        total_bytes: Total compressed bytes processed
-        
-    Returns:
-        Work units for consensus calculation
-    """
-    base_mb = BASE_MB_PER_SESSION * 1024 * 1024  # Convert to bytes
-    return max(1, total_bytes // base_mb)
-
-
-def validate_chunk_integrity(chunk_meta: ChunkMetadata, stored_data: bytes) -> bool:
-    """
-    Validate chunk integrity using stored hash.
-    
-    Args:
-        chunk_meta: Chunk metadata with hash
-        stored_data: Stored compressed chunk data
-        
-    Returns:
-        True if chunk is valid
-    """
-    calculated_hash = hashlib.blake3(stored_data).hexdigest()
-    return calculated_hash == chunk_meta.chunk_hash
-
+    print(f"Created {len(chunks)} chunks:")
+    for chunk in chunks:
+        print(f"  {chunk.chunk_id}: {chunk.chunk_size} -> {chunk.compressed_size} bytes (ratio: {chunk.compression_ratio:.3f})")
 
 if __name__ == "__main__":
-    # Test chunker functionality
-    import sys
-    
-    if len(sys.argv) < 2:
-        print("Usage: python chunker.py <session_id>")
-        sys.exit(1)
-    
-    session_id = sys.argv[1]
-    chunker = LucidChunker(session_id)
-    
-    # Test with sample data
-    test_data = b"X" * (10 * 1024 * 1024)  # 10MB test data
-    chunks = chunker.add_data(test_data)
-    
-    print(f"Created {len(chunks)} chunks for session {session_id}")
-    for chunk in chunks:
-        print(f"  {chunk.chunk_id}: {chunk.original_size}→{chunk.compressed_size} "
-              f"({chunk.compression_ratio:.2f} ratio)")
+    asyncio.run(main())

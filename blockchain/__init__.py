@@ -1,10 +1,12 @@
-# Blockchain Module
-# All modules and scripts related to blockchain system functions
+"""
+LUCID Blockchain Components
+On-System Data Chain and TRON integration
+"""
 
-from .core import *
+from .on_system_chain import OnSystemChainClient, AnchorTransaction, ChunkStoreEntry, SessionManifest, AnchorStatus
+from .tron_node import TronNodeClient, TronTransaction, PayoutRecord, USDTBalance, TronNetwork, TransactionStatus
 
-# Path: blockchain/__init__.py
-from blockchain.core.storage import Storage
-from blockchain.core.node import Node
-
-__all__ = ["Storage", "Node"]
+__all__ = [
+    'OnSystemChainClient', 'AnchorTransaction', 'ChunkStoreEntry', 'SessionManifest', 'AnchorStatus',
+    'TronNodeClient', 'TronTransaction', 'PayoutRecord', 'USDTBalance', 'TronNetwork', 'TransactionStatus'
+]

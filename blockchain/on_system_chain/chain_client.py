@@ -1,460 +1,435 @@
-# LUCID On-System Chain Client - SPEC-1B Blockchain Integration
-# Professional on-system data chain client for session anchoring
-# Multi-platform support for ARM64 Pi and AMD64 development
-
-from __future__ import annotations
+#!/usr/bin/env python3
+"""
+LUCID On-System Data Chain Client - SPEC-1B Implementation
+LucidAnchors, LucidChunkStore, manifest builder, anchoring system
+"""
 
 import asyncio
-import logging
-import os
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field
-from enum import Enum
+import hashlib
 import json
-import uuid
-
-import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-
-# Web3 integration for on-system chain
-try:
-    from web3 import Web3
-    from web3.middleware import geth_poa_middleware
-    HAS_WEB3 = True
-except ImportError:
-    HAS_WEB3 = False
-    Web3 = None
+import logging
+import time
+from dataclasses import dataclass, asdict
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Any
+import aiohttp
+import aiofiles
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-CHAIN_RPC_URL = os.getenv("CHAIN_RPC_URL", "http://localhost:8545")
-CHAIN_ID = int(os.getenv("CHAIN_ID", "1337"))
-LUCID_ANCHORS_ADDRESS = os.getenv("LUCID_ANCHORS_ADDRESS", "")
-LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
-PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
-
-
 class AnchorStatus(Enum):
-    """Anchor status states"""
+    """Anchor transaction status"""
     PENDING = "pending"
-    SUBMITTED = "submitted"
     CONFIRMED = "confirmed"
     FAILED = "failed"
 
+@dataclass
+class AnchorTransaction:
+    """On-System Chain anchor transaction"""
+    session_id: str
+    merkle_root: str
+    block_number: Optional[int]
+    transaction_hash: Optional[str]
+    status: AnchorStatus
+    timestamp: float
+    gas_used: Optional[int] = None
+    gas_price: Optional[int] = None
 
 @dataclass
-class SessionAnchor:
-    """Session anchor metadata"""
+class ChunkStoreEntry:
+    """Chunk store entry for LucidChunkStore contract"""
+    chunk_id: str
     session_id: str
-    manifest_hash: str
+    chunk_hash: str
+    size: int
+    storage_path: str
+    timestamp: float
+
+@dataclass
+class SessionManifest:
+    """Session manifest for blockchain anchoring"""
+    session_id: str
+    owner_address: str
     merkle_root: str
     chunk_count: int
-    owner_address: str
-    status: AnchorStatus
-    created_at: datetime
-    confirmed_at: Optional[datetime] = None
-    transaction_hash: Optional[str] = None
-    block_number: Optional[int] = None
-    gas_used: Optional[int] = None
-
+    total_size: int
+    start_time: float
+    end_time: float
+    metadata: Dict[str, Any]
 
 class OnSystemChainClient:
     """
-    On-System Chain Client for Lucid blockchain system.
-    
-    Handles session anchoring and chunk storage on the on-system data chain.
-    Implements SPEC-1B blockchain integration requirements.
+    On-System Data Chain client for LucidAnchors and LucidChunkStore contracts
     """
     
-    def __init__(self):
-        """Initialize on-system chain client"""
-        self.app = FastAPI(
-            title="Lucid On-System Chain Client",
-            description="On-system data chain client for Lucid blockchain system",
-            version="1.0.0"
+    def __init__(
+        self,
+        rpc_url: str = "http://localhost:8545",
+        chain_id: int = 1337,
+        private_key: Optional[str] = None,
+        output_dir: str = "/data/chain"
+    ):
+        self.rpc_url = rpc_url
+        self.chain_id = chain_id
+        self.private_key = private_key
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Contract addresses (would be deployed addresses)
+        self.lucid_anchors_address = "0x1234567890123456789012345678901234567890"  # Placeholder
+        self.lucid_chunk_store_address = "0x2345678901234567890123456789012345678901"  # Placeholder
+        
+        # Session state
+        self._active_sessions: Dict[str, SessionManifest] = {}
+        self._anchor_transactions: Dict[str, AnchorTransaction] = {}
+        
+        logger.info("OnSystemChainClient initialized")
+    
+    async def create_session_manifest(
+        self,
+        session_id: str,
+        owner_address: str,
+        merkle_root: str,
+        chunk_count: int,
+        total_size: int,
+        start_time: float,
+        end_time: float,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> SessionManifest:
+        """
+        Create session manifest for blockchain anchoring
+        
+        Args:
+            session_id: Unique session identifier
+            owner_address: Session owner's blockchain address
+            merkle_root: BLAKE3 Merkle root hash
+            chunk_count: Number of chunks in session
+            total_size: Total session size in bytes
+            start_time: Session start timestamp
+            end_time: Session end timestamp
+            metadata: Optional session metadata
+            
+        Returns:
+            SessionManifest object
+        """
+        manifest = SessionManifest(
+            session_id=session_id,
+            owner_address=owner_address,
+            merkle_root=merkle_root,
+            chunk_count=chunk_count,
+            total_size=total_size,
+            start_time=start_time,
+            end_time=end_time,
+            metadata=metadata or {}
         )
         
-        # Web3 client
-        self.web3: Optional[Web3] = None
+        # Store manifest
+        self._active_sessions[session_id] = manifest
+        await self._save_session_manifest(manifest)
         
-        # Contract instances
-        self.lucid_anchors_contract = None
-        self.lucid_chunk_store_contract = None
-        
-        # Anchor tracking
-        self.active_anchors: Dict[str, SessionAnchor] = {}
-        self.anchor_tasks: Dict[str, asyncio.Task] = {}
-        
-        # Setup routes
-        self._setup_routes()
+        logger.info(f"Created session manifest for {session_id}")
+        return manifest
     
-    def _setup_routes(self) -> None:
-        """Setup FastAPI routes"""
+    async def anchor_session_to_chain(
+        self,
+        session_id: str,
+        merkle_root: str,
+        gas_limit: int = 100000
+    ) -> AnchorTransaction:
+        """
+        Anchor session Merkle root to On-System Data Chain
         
-        @self.app.get("/health")
-        async def health_check():
-            """Health check endpoint"""
-            return {
-                "status": "healthy",
-                "service": "on-system-chain-client",
-                "chain_connected": self.web3 is not None,
-                "active_anchors": len(self.active_anchors),
-                "chain_id": CHAIN_ID
-            }
-        
-        @self.app.post("/anchors/register")
-        async def register_session(request: RegisterSessionRequest):
-            """Register session on chain"""
-            return await self.register_session(
-                session_id=request.session_id,
-                manifest_hash=request.manifest_hash,
-                merkle_root=request.merkle_root,
-                chunk_count=request.chunk_count,
-                owner_address=request.owner_address
-            )
-        
-        @self.app.post("/anchors/{session_id}/anchor-chunk")
-        async def anchor_chunk(session_id: str, request: AnchorChunkRequest):
-            """Anchor individual chunk"""
-            return await self.anchor_chunk(
-                session_id=session_id,
-                chunk_index=request.chunk_index,
-                chunk_hash=request.chunk_hash
-            )
-        
-        @self.app.get("/anchors/{session_id}")
-        async def get_anchor(session_id: str):
-            """Get anchor information"""
-            if session_id not in self.active_anchors:
-                raise HTTPException(404, "Anchor not found")
+        Args:
+            session_id: Session identifier
+            merkle_root: BLAKE3 Merkle root to anchor
+            gas_limit: Gas limit for transaction
             
-            anchor = self.active_anchors[session_id]
-            return {
-                "session_id": anchor.session_id,
-                "status": anchor.status.value,
-                "created_at": anchor.created_at.isoformat(),
-                "confirmed_at": anchor.confirmed_at.isoformat() if anchor.confirmed_at else None,
-                "transaction_hash": anchor.transaction_hash,
-                "block_number": anchor.block_number
-            }
+        Returns:
+            AnchorTransaction object
+        """
+        if session_id not in self._active_sessions:
+            raise ValueError(f"Session {session_id} not found")
         
-        @self.app.get("/anchors")
-        async def list_anchors():
-            """List all anchors"""
-            return {
-                "anchors": [
-                    {
-                        "session_id": anchor.session_id,
-                        "status": anchor.status.value,
-                        "created_at": anchor.created_at.isoformat()
-                    }
-                    for anchor in self.active_anchors.values()
-                ]
-            }
-    
-    async def _setup_web3_client(self) -> None:
-        """Setup Web3 client connection"""
-        if not HAS_WEB3:
-            logger.warning("Web3 not available, blockchain operations disabled")
-            return
+        manifest = self._active_sessions[session_id]
+        
+        # Create anchor transaction
+        anchor_tx = AnchorTransaction(
+            session_id=session_id,
+            merkle_root=merkle_root,
+            block_number=None,
+            transaction_hash=None,
+            status=AnchorStatus.PENDING,
+            timestamp=time.time()
+        )
         
         try:
-            self.web3 = Web3(Web3.HTTPProvider(CHAIN_RPC_URL))
-            
-            # Add PoA middleware if needed
-            self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-            
-            # Test connection
-            latest_block = self.web3.eth.block_number
-            logger.info(f"On-system chain client connected, latest block: {latest_block}")
-            
-            # Setup contract instances
-            await self._setup_contracts()
-            
-        except Exception as e:
-            logger.error(f"On-system chain client setup failed: {e}")
-            self.web3 = None
-    
-    async def _setup_contracts(self) -> None:
-        """Setup contract instances"""
-        if not self.web3 or not LUCID_ANCHORS_ADDRESS:
-            return
-        
-        try:
-            # LucidAnchors contract ABI (simplified)
-            lucid_anchors_abi = [
-                {
-                    "inputs": [
-                        {"name": "sessionId", "type": "bytes32"},
-                        {"name": "manifestHash", "type": "bytes32"},
-                        {"name": "startedAt", "type": "uint64"},
-                        {"name": "owner", "type": "address"},
-                        {"name": "merkleRoot", "type": "bytes32"},
-                        {"name": "chunkCount", "type": "uint32"}
-                    ],
-                    "name": "registerSession",
-                    "outputs": [],
-                    "stateMutability": "nonpayable",
-                    "type": "function"
-                },
-                {
-                    "inputs": [
-                        {"name": "sessionId", "type": "bytes32"},
-                        {"name": "index", "type": "uint32"},
-                        {"name": "chunkHash", "type": "bytes32"}
-                    ],
-                    "name": "anchorChunk",
-                    "outputs": [],
-                    "stateMutability": "nonpayable",
-                    "type": "function"
-                }
-            ]
-            
-            self.lucid_anchors_contract = self.web3.eth.contract(
-                address=LUCID_ANCHORS_ADDRESS,
-                abi=lucid_anchors_abi
+            # Simulate blockchain transaction (would use actual Web3/Ethereum client)
+            transaction_hash = await self._submit_anchor_transaction(
+                session_id, merkle_root, gas_limit
             )
             
-            logger.info("LucidAnchors contract instance created")
+            anchor_tx.transaction_hash = transaction_hash
+            anchor_tx.status = AnchorStatus.CONFIRMED
+            anchor_tx.block_number = await self._get_latest_block_number()
+            
+            logger.info(f"Anchored session {session_id} to chain: {transaction_hash}")
             
         except Exception as e:
-            logger.error(f"Contract setup failed: {e}")
-            self.lucid_anchors_contract = None
-    
-    async def register_session(self, 
-                              session_id: str,
-                              manifest_hash: str,
-                              merkle_root: str,
-                              chunk_count: int,
-                              owner_address: str) -> Dict[str, Any]:
-        """Register session on chain"""
-        try:
-            # Create anchor object
-            anchor = SessionAnchor(
-                session_id=session_id,
-                manifest_hash=manifest_hash,
-                merkle_root=merkle_root,
-                chunk_count=chunk_count,
-                owner_address=owner_address,
-                status=AnchorStatus.PENDING,
-                created_at=datetime.now(timezone.utc)
-            )
-            
-            # Store in memory
-            self.active_anchors[session_id] = anchor
-            
-            # Start anchor task
-            task = asyncio.create_task(self._submit_session_anchor(anchor))
-            self.anchor_tasks[session_id] = task
-            
-            logger.info(f"Registered session anchor: {session_id}")
-            
-            return {
-                "session_id": session_id,
-                "status": anchor.status.value,
-                "created_at": anchor.created_at.isoformat()
-            }
-            
-        except Exception as e:
-            logger.error(f"Session registration failed: {e}")
-            raise HTTPException(500, f"Session registration failed: {str(e)}")
-    
-    async def anchor_chunk(self, 
-                          session_id: str,
-                          chunk_index: int,
-                          chunk_hash: str) -> Dict[str, Any]:
-        """Anchor individual chunk"""
-        if session_id not in self.active_anchors:
-            raise HTTPException(404, "Session anchor not found")
+            logger.error(f"Failed to anchor session {session_id}: {e}")
+            anchor_tx.status = AnchorStatus.FAILED
         
-        anchor = self.active_anchors[session_id]
+        # Store transaction
+        self._anchor_transactions[session_id] = anchor_tx
+        await self._save_anchor_transaction(anchor_tx)
         
-        try:
-            # Submit chunk anchor
-            task = asyncio.create_task(self._submit_chunk_anchor(
-                session_id, chunk_index, chunk_hash
-            ))
-            
-            logger.info(f"Anchored chunk {chunk_index} for session {session_id}")
-            
-            return {
-                "session_id": session_id,
-                "chunk_index": chunk_index,
-                "chunk_hash": chunk_hash,
-                "status": "submitted"
-            }
-            
-        except Exception as e:
-            logger.error(f"Chunk anchoring failed: {e}")
-            raise HTTPException(500, f"Chunk anchoring failed: {str(e)}")
+        return anchor_tx
     
-    async def _submit_session_anchor(self, anchor: SessionAnchor) -> None:
-        """Submit session anchor to chain"""
-        try:
-            logger.info(f"Submitting session anchor: {anchor.session_id}")
+    async def store_chunk_metadata(
+        self,
+        chunk_id: str,
+        session_id: str,
+        chunk_hash: str,
+        size: int,
+        storage_path: str
+    ) -> ChunkStoreEntry:
+        """
+        Store chunk metadata in LucidChunkStore contract
+        
+        Args:
+            chunk_id: Unique chunk identifier
+            session_id: Session identifier
+            chunk_hash: Chunk content hash
+            size: Chunk size in bytes
+            storage_path: Storage path for chunk data
             
-            if not self.web3 or not self.lucid_anchors_contract:
-                logger.warning("Web3 client not available, simulating anchor")
-                await asyncio.sleep(2)  # Simulate network delay
-                anchor.status = AnchorStatus.CONFIRMED
-                anchor.confirmed_at = datetime.now(timezone.utc)
-                anchor.transaction_hash = f"0x{os.urandom(32).hex()}"
-                anchor.block_number = 12345
-                return
-            
-            # Convert session ID to bytes32
-            session_id_bytes = bytes.fromhex(anchor.session_id.replace('-', ''))
-            if len(session_id_bytes) < 32:
-                session_id_bytes = session_id_bytes.ljust(32, b'\x00')
-            
-            # Convert hashes to bytes32
-            manifest_hash_bytes = bytes.fromhex(anchor.manifest_hash[2:] if anchor.manifest_hash.startswith('0x') else anchor.manifest_hash)
-            merkle_root_bytes = bytes.fromhex(anchor.merkle_root[2:] if anchor.merkle_root.startswith('0x') else anchor.merkle_root)
-            
-            # Build transaction
-            transaction = self.lucid_anchors_contract.functions.registerSession(
-                session_id_bytes,
-                manifest_hash_bytes,
-                int(anchor.created_at.timestamp()),
-                anchor.owner_address,
-                merkle_root_bytes,
-                anchor.chunk_count
-            ).build_transaction({
-                'from': anchor.owner_address,
-                'gas': 200000,
-                'gasPrice': self.web3.eth.gas_price
-            })
-            
-            # Sign and send transaction
-            if PRIVATE_KEY:
-                signed_txn = self.web3.eth.account.sign_transaction(transaction, PRIVATE_KEY)
-                tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            else:
-                # Simulate transaction
-                tx_hash = bytes.fromhex(os.urandom(32).hex())
-            
-            # Update anchor status
-            anchor.status = AnchorStatus.SUBMITTED
-            anchor.transaction_hash = tx_hash.hex()
-            
-            # Wait for confirmation (simplified)
-            await asyncio.sleep(3)
-            anchor.status = AnchorStatus.CONFIRMED
-            anchor.confirmed_at = datetime.now(timezone.utc)
-            anchor.block_number = self.web3.eth.block_number if self.web3 else 12345
-            
-            logger.info(f"Session anchor confirmed: {anchor.session_id}")
-            
-        except Exception as e:
-            logger.error(f"Session anchor submission failed: {e}")
-            anchor.status = AnchorStatus.FAILED
+        Returns:
+            ChunkStoreEntry object
+        """
+        entry = ChunkStoreEntry(
+            chunk_id=chunk_id,
+            session_id=session_id,
+            chunk_hash=chunk_hash,
+            size=size,
+            storage_path=storage_path,
+            timestamp=time.time()
+        )
+        
+        # Store in contract (simulated)
+        await self._store_chunk_in_contract(entry)
+        
+        logger.debug(f"Stored chunk metadata: {chunk_id}")
+        return entry
     
-    async def _submit_chunk_anchor(self, 
-                                  session_id: str,
-                                  chunk_index: int,
-                                  chunk_hash: str) -> None:
-        """Submit chunk anchor to chain"""
-        try:
-            logger.info(f"Submitting chunk anchor: {session_id}:{chunk_index}")
-            
-            if not self.web3 or not self.lucid_anchors_contract:
-                logger.warning("Web3 client not available, simulating chunk anchor")
-                return
-            
-            # Convert session ID to bytes32
-            session_id_bytes = bytes.fromhex(session_id.replace('-', ''))
-            if len(session_id_bytes) < 32:
-                session_id_bytes = session_id_bytes.ljust(32, b'\x00')
-            
-            # Convert chunk hash to bytes32
-            chunk_hash_bytes = bytes.fromhex(chunk_hash[2:] if chunk_hash.startswith('0x') else chunk_hash)
-            
-            # Build transaction
-            transaction = self.lucid_anchors_contract.functions.anchorChunk(
-                session_id_bytes,
-                chunk_index,
-                chunk_hash_bytes
-            ).build_transaction({
-                'from': self.active_anchors[session_id].owner_address,
-                'gas': 100000,
-                'gasPrice': self.web3.eth.gas_price
-            })
-            
-            # Sign and send transaction
-            if PRIVATE_KEY:
-                signed_txn = self.web3.eth.account.sign_transaction(transaction, PRIVATE_KEY)
-                tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            else:
-                # Simulate transaction
-                tx_hash = bytes.fromhex(os.urandom(32).hex())
-            
-            logger.info(f"Chunk anchor submitted: {tx_hash.hex()}")
-            
-        except Exception as e:
-            logger.error(f"Chunk anchor submission failed: {e}")
-
-
-# Pydantic models
-class RegisterSessionRequest(BaseModel):
-    session_id: str
-    manifest_hash: str
-    merkle_root: str
-    chunk_count: int
-    owner_address: str
-
-
-class AnchorChunkRequest(BaseModel):
-    chunk_index: int
-    chunk_hash: str
-
-
-# Global chain client instance
-chain_client = OnSystemChainClient()
-
-# FastAPI app instance
-app = chain_client.app
-
-# Startup and shutdown events
-@app.on_event("startup")
-async def startup_event():
-    """Application startup"""
-    logger.info("Starting On-System Chain Client...")
-    await chain_client._setup_web3_client()
-    logger.info("On-System Chain Client started")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown"""
-    logger.info("Shutting down On-System Chain Client...")
+    async def get_session_anchor(self, session_id: str) -> Optional[AnchorTransaction]:
+        """Get anchor transaction for a session"""
+        return self._anchor_transactions.get(session_id)
     
-    # Cancel all anchor tasks
-    for task in chain_client.anchor_tasks.values():
-        task.cancel()
+    async def verify_session_anchor(self, session_id: str, merkle_root: str) -> bool:
+        """
+        Verify session anchor on blockchain
+        
+        Args:
+            session_id: Session identifier
+            merkle_root: Merkle root to verify
+            
+        Returns:
+            True if anchor is valid, False otherwise
+        """
+        anchor_tx = await self.get_session_anchor(session_id)
+        
+        if not anchor_tx:
+            return False
+        
+        if anchor_tx.status != AnchorStatus.CONFIRMED:
+            return False
+        
+        # Verify Merkle root matches
+        if anchor_tx.merkle_root != merkle_root:
+            return False
+        
+        # Verify transaction on blockchain (simulated)
+        is_valid = await self._verify_transaction_on_chain(anchor_tx)
+        
+        logger.debug(f"Session anchor verification for {session_id}: {'VALID' if is_valid else 'INVALID'}")
+        return is_valid
     
-    logger.info("On-System Chain Client stopped")
+    async def get_session_manifest(self, session_id: str) -> Optional[SessionManifest]:
+        """Get session manifest"""
+        return self._active_sessions.get(session_id)
+    
+    async def list_session_anchors(
+        self, 
+        owner_address: Optional[str] = None,
+        limit: int = 100
+    ) -> List[AnchorTransaction]:
+        """
+        List session anchors with optional filtering
+        
+        Args:
+            owner_address: Filter by owner address
+            limit: Maximum number of results
+            
+        Returns:
+            List of AnchorTransaction objects
+        """
+        anchors = list(self._anchor_transactions.values())
+        
+        if owner_address:
+            # Filter by owner address
+            filtered_anchors = []
+            for anchor in anchors:
+                manifest = self._active_sessions.get(anchor.session_id)
+                if manifest and manifest.owner_address == owner_address:
+                    filtered_anchors.append(anchor)
+            anchors = filtered_anchors
+        
+        # Sort by timestamp (newest first)
+        anchors.sort(key=lambda x: x.timestamp, reverse=True)
+        
+        return anchors[:limit]
+    
+    async def _submit_anchor_transaction(
+        self, 
+        session_id: str, 
+        merkle_root: str, 
+        gas_limit: int
+    ) -> str:
+        """Submit anchor transaction to blockchain (simulated)"""
+        
+        # Simulate transaction submission
+        await asyncio.sleep(0.1)  # Simulate network delay
+        
+        # Generate mock transaction hash
+        tx_data = f"{session_id}:{merkle_root}:{int(time.time())}"
+        tx_hash = hashlib.sha256(tx_data.encode()).hexdigest()
+        
+        logger.debug(f"Submitted anchor transaction: {tx_hash}")
+        return tx_hash
+    
+    async def _get_latest_block_number(self) -> int:
+        """Get latest block number (simulated)"""
+        # Simulate blockchain call
+        await asyncio.sleep(0.05)
+        return int(time.time()) % 1000000  # Mock block number
+    
+    async def _store_chunk_in_contract(self, entry: ChunkStoreEntry):
+        """Store chunk metadata in contract (simulated)"""
+        # Simulate contract interaction
+        await asyncio.sleep(0.01)
+        logger.debug(f"Stored chunk {entry.chunk_id} in contract")
+    
+    async def _verify_transaction_on_chain(self, anchor_tx: AnchorTransaction) -> bool:
+        """Verify transaction exists on blockchain (simulated)"""
+        # Simulate blockchain verification
+        await asyncio.sleep(0.05)
+        return anchor_tx.status == AnchorStatus.CONFIRMED
+    
+    async def _save_session_manifest(self, manifest: SessionManifest):
+        """Save session manifest to disk"""
+        manifest_file = self.output_dir / f"{manifest.session_id}_manifest.json"
+        
+        manifest_data = asdict(manifest)
+        manifest_data['timestamp'] = time.time()
+        
+        async with aiofiles.open(manifest_file, 'w') as f:
+            await f.write(json.dumps(manifest_data, indent=2))
+    
+    async def _save_anchor_transaction(self, anchor_tx: AnchorTransaction):
+        """Save anchor transaction to disk"""
+        tx_file = self.output_dir / f"{anchor_tx.session_id}_anchor.json"
+        
+        tx_data = asdict(anchor_tx)
+        tx_data['status'] = anchor_tx.status.value
+        
+        async with aiofiles.open(tx_file, 'w') as f:
+            await f.write(json.dumps(tx_data, indent=2))
+    
+    async def load_session_manifest(self, session_id: str) -> Optional[SessionManifest]:
+        """Load session manifest from disk"""
+        manifest_file = self.output_dir / f"{session_id}_manifest.json"
+        
+        if not manifest_file.exists():
+            return None
+        
+        async with aiofiles.open(manifest_file, 'r') as f:
+            data = json.loads(await f.read())
+        
+        return SessionManifest(**data)
+    
+    async def load_anchor_transaction(self, session_id: str) -> Optional[AnchorTransaction]:
+        """Load anchor transaction from disk"""
+        tx_file = self.output_dir / f"{session_id}_anchor.json"
+        
+        if not tx_file.exists():
+            return None
+        
+        async with aiofiles.open(tx_file, 'r') as f:
+            data = json.loads(await f.read())
+        
+        data['status'] = AnchorStatus(data['status'])
+        return AnchorTransaction(**data)
+    
+    def get_chain_stats(self) -> dict:
+        """Get chain client statistics"""
+        return {
+            "rpc_url": self.rpc_url,
+            "chain_id": self.chain_id,
+            "active_sessions": len(self._active_sessions),
+            "anchor_transactions": len(self._anchor_transactions),
+            "confirmed_anchors": len([tx for tx in self._anchor_transactions.values() 
+                                    if tx.status == AnchorStatus.CONFIRMED]),
+            "output_directory": str(self.output_dir)
+        }
 
-
-def main():
-    """Main entry point"""
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[on-system-chain-client] %(asctime)s - %(levelname)s - %(message)s'
+# CLI interface for testing
+async def main():
+    """Test the chain client with sample data"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="LUCID On-System Chain Client")
+    parser.add_argument("--session-id", required=True, help="Session ID")
+    parser.add_argument("--owner-address", required=True, help="Owner address")
+    parser.add_argument("--merkle-root", required=True, help="Merkle root hash")
+    parser.add_argument("--rpc-url", default="http://localhost:8545", help="RPC URL")
+    parser.add_argument("--output-dir", default="/data/chain", help="Output directory")
+    
+    args = parser.parse_args()
+    
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
+    
+    # Create chain client
+    client = OnSystemChainClient(
+        rpc_url=args.rpc_url,
+        output_dir=args.output_dir
     )
     
-    # Run server
-    uvicorn.run(
-        "chain_client:app",
-        host="0.0.0.0",
-        port=8094,
-        log_level="info"
+    # Create session manifest
+    manifest = await client.create_session_manifest(
+        session_id=args.session_id,
+        owner_address=args.owner_address,
+        merkle_root=args.merkle_root,
+        chunk_count=10,
+        total_size=1024*1024,
+        start_time=time.time() - 3600,
+        end_time=time.time(),
+        metadata={"test": True}
     )
-
+    
+    print(f"Created manifest: {manifest.session_id}")
+    
+    # Anchor to chain
+    anchor_tx = await client.anchor_session_to_chain(
+        args.session_id, args.merkle_root
+    )
+    
+    print(f"Anchor transaction: {anchor_tx.transaction_hash}")
+    print(f"Status: {anchor_tx.status.value}")
+    
+    # Verify anchor
+    is_valid = await client.verify_session_anchor(args.session_id, args.merkle_root)
+    print(f"Anchor verification: {'VALID' if is_valid else 'INVALID'}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

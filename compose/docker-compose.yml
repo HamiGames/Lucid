@@ -1,8 +1,9 @@
-
-
-# LUCID RDP - Multi-Profile Production Compose
+# LUCID RDP - Multi-Profile Production Compose (Fixed)
 # Based on SPEC-4: Clustered Build Stages & Content Inclusion
 # Profiles: blockchain, sessions, node, admin, observability, relay
+# Uses existing images from registry instead of building
+
+version: '3.8'
 
 networks:
   # Plane-separated networks per SPEC-4
@@ -56,12 +57,10 @@ volumes:
 services:
   # STAGE 0: Common & Base - Beta Sidecar (Always Required)
   beta:
-    build:
-      context: ./docker
-      dockerfile: Dockerfile.beta
-    image: lucid/beta:${VERSION:-0.1.0}
+    image: pickme/lucid:beta
     container_name: lucid_beta
     hostname: beta
+    pull_policy: always
     environment:
       - BETA_CLUSTER_ID=${CLUSTER_ID}
       - BETA_PLANES=${BETA_PLANES:-ops,chain,wallet}
@@ -86,12 +85,10 @@ services:
   # STAGE 1: Blockchain Group
   blockchain-core:
     profiles: ["blockchain"]
-    build:
-      context: ./04-blockchain-core
-      dockerfile: Dockerfile
-    image: lucid/blockchain-core:${VERSION:-0.1.0}
+    image: pickme/lucid:blockchain-core
     container_name: lucid_blockchain_core
     hostname: blockchain-core
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -118,12 +115,10 @@ services:
 
   blockchain-ledger:
     profiles: ["blockchain"]
-    build:
-      context: ./04-blockchain-core/ledger
-      dockerfile: Dockerfile
-    image: lucid/blockchain-ledger:${VERSION:-0.1.0}
+    image: pickme/lucid:blockchain-ledger
     container_name: lucid_blockchain_ledger
     hostname: blockchain-ledger
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -143,12 +138,10 @@ services:
 
   blockchain-virtual-machine:
     profiles: ["blockchain"]
-    build:
-      context: ./04-blockchain-core/vm
-      dockerfile: Dockerfile
-    image: lucid/blockchain-vm:${VERSION:-0.1.0}
+    image: pickme/lucid:blockchain-vm
     container_name: lucid_blockchain_vm
     hostname: blockchain-vm
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -167,12 +160,10 @@ services:
 
   blockchain-sessions-data:
     profiles: ["blockchain"]
-    build:
-      context: ./04-blockchain-core/sessions-indexer
-      dockerfile: Dockerfile
-    image: lucid/blockchain-sessions-data:${VERSION:-0.1.0}
+    image: pickme/lucid:blockchain-sessions-data
     container_name: lucid_blockchain_sessions_data
     hostname: blockchain-sessions-data
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -190,12 +181,10 @@ services:
 
   blockchain-governances:
     profiles: ["blockchain"]
-    build:
-      context: ./04-blockchain-core/governance
-      dockerfile: Dockerfile
-    image: lucid/blockchain-governance:${VERSION:-0.1.0}
+    image: pickme/lucid:blockchain-governance
     container_name: lucid_blockchain_governance
     hostname: blockchain-governance
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -214,12 +203,10 @@ services:
   # STAGE 2: Sessions Group
   sessions-gateway:
     profiles: ["sessions"]
-    build:
-      context: ./sessions
-      dockerfile: Dockerfile.gateway
-    image: lucid/sessions-gateway:${VERSION:-0.1.0}
+    image: pickme/lucid:sessions-gateway
     container_name: lucid_sessions_gateway
     hostname: sessions-gateway
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -244,12 +231,10 @@ services:
 
   sessions-manifests:
     profiles: ["sessions"]
-    build:
-      context: ./sessions
-      dockerfile: Dockerfile.manifests
-    image: lucid/sessions-manifests:${VERSION:-0.1.0}
+    image: pickme/lucid:sessions-manifests
     container_name: lucid_sessions_manifests
     hostname: sessions-manifests
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -267,12 +252,10 @@ services:
 
   sessions-index:
     profiles: ["sessions"]
-    build:
-      context: ./sessions
-      dockerfile: Dockerfile.index
-    image: lucid/sessions-index:${VERSION:-0.1.0}
+    image: pickme/lucid:sessions-index
     container_name: lucid_sessions_index
     hostname: sessions-index
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -291,12 +274,10 @@ services:
   # STAGE 3: Node Systems Group  
   node-worker:
     profiles: ["node"]
-    build:
-      context: ./node
-      dockerfile: Dockerfile.worker
-    image: lucid/node-worker:${VERSION:-0.1.0}
+    image: pickme/lucid:node-worker
     container_name: lucid_node_worker
     hostname: node-worker
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -319,12 +300,10 @@ services:
 
   node-data-host:
     profiles: ["node"]  
-    build:
-      context: ./node
-      dockerfile: Dockerfile.data-host
-    image: lucid/node-data-host:${VERSION:-0.1.0}
+    image: pickme/lucid:node-data-host
     container_name: lucid_node_data_host
     hostname: node-data-host
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -348,12 +327,10 @@ services:
 
   node-economy:
     profiles: ["node"]
-    build:
-      context: ./node
-      dockerfile: Dockerfile.economy
-    image: lucid/node-economy:${VERSION:-0.1.0}
+    image: pickme/lucid:node-economy
     container_name: lucid_node_economy
     hostname: node-economy
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -372,12 +349,10 @@ services:
   # STAGE 4: Admin/Wallet Group
   admin-api:
     profiles: ["admin"]
-    build:
-      context: ./admin
-      dockerfile: Dockerfile.api
-    image: lucid/admin-api:${VERSION:-0.1.0}
+    image: pickme/lucid:admin-api
     container_name: lucid_admin_api
     hostname: admin-api
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - MONGO_URL=${MONGO_URL}
@@ -399,12 +374,10 @@ services:
 
   walletd:
     profiles: ["admin"]
-    build:
-      context: ./wallet
-      dockerfile: Dockerfile
-    image: lucid/walletd:${VERSION:-0.1.0}
+    image: pickme/lucid:walletd
     container_name: lucid_walletd
     hostname: walletd
+    pull_policy: always
     environment:
       - LUCID_ENV=${LUCID_ENV:-prod}
       - KEYSTORE_PATH=/data/keystore
@@ -426,12 +399,10 @@ services:
 
   tron-node:
     profiles: ["admin"]
-    build:
-      context: ./wallet/tron
-      dockerfile: Dockerfile
-    image: lucid/tron-node:${VERSION:-0.1.0}
+    image: pickme/lucid:tron-node
     container_name: lucid_tron_node
     hostname: tron-node
+    pull_policy: always
     environment:
       - TRON_MODE=${TRON_MODE:-shasta}
       - TRON_RPC_URL=${TRON_RPC_URL}
@@ -452,6 +423,7 @@ services:
     image: mongo:7
     container_name: lucid_mongo_primary
     hostname: mongo-primary
+    pull_policy: always
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--auth"]
     environment:
       - MONGO_INITDB_DATABASE=lucid

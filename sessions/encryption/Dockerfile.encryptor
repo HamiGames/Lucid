@@ -1,71 +1,53 @@
-# Session Encryptor Dockerfile - Distroless
-# LUCID-STRICT Layer 1 Core Infrastructure
-# Multi-platform build for Pi 5 ARM64
+# LUCID Session Encryptor - Distroless Build
+# Implements XChaCha20-Poly1305 per-chunk encryption per SPEC-1b
 
-# syntax=docker/dockerfile:1.7
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
+# Multi-stage build for distroless deployment
+FROM python:3.12-slim-bookworm AS builder
 
-# Build environment
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
     build-essential \
-    libffi-dev \
     libssl-dev \
-    ca-certificates \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
 COPY sessions/encryption/requirements.encryptor.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.encryptor.txt
+RUN pip install --no-cache-dir --user -r /tmp/requirements.encryptor.txt
+
+# Copy source code
+COPY sessions/encryption/encryptor.py /app/
+COPY sessions/__init__.py /app/sessions/
+COPY sessions/encryption/__init__.py /app/sessions/encryption/
+
+# Final distroless stage
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /home/nonroot/.local
 
 # Copy application code
-COPY sessions/encryption/ /app/sessions/encryption/
-COPY sessions/core/__init__.py /app/sessions/
-
-# Create secure directories
-RUN mkdir -p /secrets /tmp/encryption && \
-    chmod 700 /secrets && \
-    chmod 755 /tmp/encryption
-
-# Stage 2: Distroless runtime
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
-
-# Copy Python installation and packages from builder
-COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
-
-# Copy required dynamic libraries
-COPY --from=builder /lib/*-linux-*/libc.so.6 /lib/
-COPY --from=builder /lib/*-linux-*/libssl.so.3 /lib/
-COPY --from=builder /lib/*-linux-*/libcrypto.so.3 /lib/
-COPY --from=builder /lib*/ld-linux-*.so.2 /lib64/
-
-# Copy CA certificates
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Copy application
 COPY --from=builder /app /app
-
-# Runtime environment
-ENV PYTHONPATH=/app \
-    ENCRYPTED_STORAGE_PATH=/data/encrypted
-
-# Create secure directories
-VOLUME ["/data/encrypted", "/tmp/encryption", "/secrets"]
-
-# Expose port
-EXPOSE 8082
 
 # Set working directory
 WORKDIR /app
 
-# Run service
-ENTRYPOINT ["/usr/local/bin/python3.11", "-m", "sessions.encryption.encryptor"]
+# Set Python path
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+
+# Create data directories
+USER nonroot
+RUN mkdir -p /data/encrypted
+
+# Expose health check port
+EXPOSE 8084
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import encryptor; print('Encryptor service healthy')"]
+
+# Run the encryptor service
+ENTRYPOINT ["python3", "/app/encryptor.py"]

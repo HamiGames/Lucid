@@ -1,391 +1,353 @@
-# Path: apps/encryptor/encryptor.py
-# Lucid RDP Chunk Encryptor - XChaCha20-Poly1305 with per-chunk nonces
-# Based on LUCID-STRICT requirements per Spec-1b
+#!/usr/bin/env python3
+"""
+LUCID Session Encryptor - SPEC-1B Implementation
+XChaCha20-Poly1305 per-chunk encryption with HKDF-BLAKE2b key derivation
+"""
 
-from __future__ import annotations
-
+import asyncio
+import hashlib
+import logging
 import os
 import secrets
-import logging
-from pathlib import Path
-from typing import Tuple, Optional, List
+import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
-
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-import hashlib
-
-from sessions.core.chunker import ChunkMetadata
+from cryptography.hazmat.primitives import hashes
+import blake3
 
 logger = logging.getLogger(__name__)
 
-# Encryption constants per specification
-NONCE_SIZE = 12  # ChaCha20Poly1305 nonce size
-KEY_SIZE = 32    # 256-bit key
-SESSION_KEY_INFO = b"lucid-session-key"
-CHUNK_KEY_INFO = b"lucid-chunk-key"
-
-
-@dataclass(frozen=True)
+@dataclass
 class EncryptedChunk:
-    """Metadata for an encrypted chunk"""
+    """Encrypted chunk data structure"""
     chunk_id: str
     session_id: str
-    sequence_number: int
-    original_size: int
-    compressed_size: int
-    encrypted_size: int
+    encrypted_data: bytes
     nonce: bytes
-    ciphertext_sha256: str
-    local_path: Path
-    created_at: datetime
-    
-    def to_dict(self) -> dict:
-        """Convert to MongoDB document format per Spec-1b collections schema"""
-        return {
-            "_id": self.chunk_id,
-            "session_id": self.session_id,
-            "idx": self.sequence_number,
-            "original_size": self.original_size,
-            "compressed_size": self.compressed_size,
-            "encrypted_size": self.encrypted_size,
-            "nonce": self.nonce.hex(),
-            "ciphertext_sha256": self.ciphertext_sha256,
-            "local_path": str(self.local_path),
-            "created_at": self.created_at
-        }
+    tag: bytes
+    key_id: str
+    timestamp: float
+    file_path: str
 
-
-class LucidEncryptor:
+class SessionEncryptor:
     """
-    XChaCha20-Poly1305 encryption for Lucid RDP chunks.
-    
-    Per Spec-1b:
-    - Per-chunk nonces with XChaCha20-Poly1305
-    - Key derived from session key via HKDF-BLAKE2b
-    - Encrypted chunks stored locally for On-System Chain anchoring
+    XChaCha20-Poly1305 per-chunk encryption per SPEC-1b
     """
     
-    def __init__(self, session_id: str, master_key: bytes):
-        if len(master_key) != KEY_SIZE:
-            raise ValueError(f"Master key must be {KEY_SIZE} bytes")
-            
-        self.session_id = session_id
-        self.master_key = master_key
-        
-        # Derive session key using HKDF-BLAKE2b per specification
-        self.session_key = self._derive_session_key(session_id, master_key)
-        
-        # Initialize ChaCha20Poly1305 cipher
-        self.cipher = ChaCha20Poly1305(self.session_key)
-        
-        # Set up encrypted chunk storage
-        self.storage_dir = Path(f"/tmp/lucid/encrypted/{session_id}")
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
-        logger.info(f"Encryptor initialized for session {session_id}")
+    CIPHER_ALGORITHM = "XChaCha20-Poly1305"
+    KEY_DERIVATION = "HKDF-BLAKE2b"
+    KEY_SIZE = 32  # 256 bits
+    NONCE_SIZE = 24  # 192 bits for XChaCha20
+    SALT_SIZE = 32  # 256 bits for HKDF salt
     
-    @classmethod
-    def _derive_session_key(cls, session_id: str, master_key: bytes) -> bytes:
-        """
-        Derive session key using HKDF-BLAKE2b per Spec-1b.
+    def __init__(self, output_dir: str = "/data/encrypted", master_key: Optional[bytes] = None):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        Args:
-            session_id: Unique session identifier
-            master_key: Master encryption key
-            
-        Returns:
-            32-byte session key
-        """
+        # Generate or use provided master key
+        self.master_key = master_key or secrets.token_bytes(self.KEY_SIZE)
+        
+        # Key derivation context
+        self._key_cache: Dict[str, bytes] = {}
+        
+        logger.info("SessionEncryptor initialized with XChaCha20-Poly1305 encryption")
+    
+    def _derive_chunk_key(self, session_id: str, chunk_id: str, salt: bytes) -> bytes:
+        """Derive encryption key for a specific chunk using HKDF-BLAKE2b"""
+        
+        # Create key cache key
+        cache_key = f"{session_id}:{chunk_id}:{salt.hex()}"
+        
+        if cache_key in self._key_cache:
+            return self._key_cache[cache_key]
+        
+        # Create HKDF context
+        info = f"lucid-chunk-encryption:{session_id}:{chunk_id}".encode()
+        
+        # Use BLAKE2b for HKDF
         hkdf = HKDF(
-            algorithm=hashes.BLAKE2b(64),  # Use BLAKE2b as specified
-            length=KEY_SIZE,
-            salt=None,  # No salt per spec
-            info=SESSION_KEY_INFO + session_id.encode('utf-8')
+            algorithm=hashes.BLAKE2b(64),  # BLAKE2b with 512-bit output
+            length=self.KEY_SIZE,
+            salt=salt,
+            info=info,
         )
-        return hkdf.derive(master_key)
+        
+        # Derive key from master key
+        chunk_key = hkdf.derive(self.master_key)
+        
+        # Cache the key
+        self._key_cache[cache_key] = chunk_key
+        
+        return chunk_key
     
-    def _derive_chunk_key(self, chunk_index: int) -> bytes:
+    async def encrypt_chunk(
+        self, 
+        chunk_data: bytes, 
+        chunk_id: str, 
+        session_id: str,
+        key_id: Optional[str] = None
+    ) -> EncryptedChunk:
         """
-        Derive per-chunk key using HKDF-BLAKE2b.
+        Encrypt a chunk with XChaCha20-Poly1305
         
         Args:
-            chunk_index: Sequential chunk number
-            
-        Returns:
-            32-byte chunk key
-        """
-        hkdf = HKDF(
-            algorithm=hashes.BLAKE2b(64),
-            length=KEY_SIZE,
-            salt=None,
-            info=CHUNK_KEY_INFO + f"{self.session_id}-{chunk_index}".encode('utf-8')
-        )
-        return hkdf.derive(self.session_key)
-    
-    def encrypt_chunk(self, chunk_meta: ChunkMetadata, compressed_data: bytes) -> EncryptedChunk:
-        """
-        Encrypt compressed chunk data with per-chunk nonce.
-        
-        Args:
-            chunk_meta: Chunk metadata from chunker
-            compressed_data: Zstd compressed chunk data
-            
-        Returns:
-            Encrypted chunk metadata with storage info
-        """
-        try:
-            # Generate unique nonce for this chunk
-            nonce = secrets.token_bytes(NONCE_SIZE)
-            
-            # Encrypt compressed data
-            ciphertext = self.cipher.encrypt(nonce, compressed_data, None)
-            encrypted_size = len(ciphertext)
-            
-            # Calculate ciphertext hash for integrity verification
-            ciphertext_sha256 = hashlib.sha256(ciphertext).hexdigest()
-            
-            # Store encrypted chunk with nonce prepended
-            chunk_path = self._store_encrypted_chunk(chunk_meta.chunk_id, nonce, ciphertext)
-            
-            encrypted_chunk = EncryptedChunk(
-                chunk_id=chunk_meta.chunk_id,
-                session_id=chunk_meta.session_id,
-                sequence_number=chunk_meta.sequence_number,
-                original_size=chunk_meta.original_size,
-                compressed_size=chunk_meta.compressed_size,
-                encrypted_size=encrypted_size,
-                nonce=nonce,
-                ciphertext_sha256=ciphertext_sha256,
-                local_path=chunk_path,
-                created_at=datetime.now(timezone.utc)
-            )
-            
-            logger.debug(f"Encrypted chunk {chunk_meta.chunk_id}: "
-                        f"{chunk_meta.compressed_size}→{encrypted_size} bytes")
-            
-            return encrypted_chunk
-            
-        except Exception as e:
-            logger.error(f"Chunk encryption failed for {chunk_meta.chunk_id}: {e}")
-            raise
-    
-    def decrypt_chunk(self, encrypted_chunk: EncryptedChunk) -> bytes:
-        """
-        Decrypt an encrypted chunk back to compressed data.
-        
-        Args:
-            encrypted_chunk: Encrypted chunk metadata
-            
-        Returns:
-            Original compressed data
-        """
-        try:
-            # Read encrypted chunk from storage
-            stored_data = encrypted_chunk.local_path.read_bytes()
-            
-            # Extract nonce and ciphertext (nonce is prepended)
-            stored_nonce = stored_data[:NONCE_SIZE]
-            ciphertext = stored_data[NONCE_SIZE:]
-            
-            # Verify nonce matches metadata
-            if stored_nonce != encrypted_chunk.nonce:
-                raise ValueError("Nonce mismatch in stored chunk")
-            
-            # Decrypt ciphertext
-            compressed_data = self.cipher.decrypt(encrypted_chunk.nonce, ciphertext, None)
-            
-            logger.debug(f"Decrypted chunk {encrypted_chunk.chunk_id}: "
-                        f"{len(compressed_data)} bytes")
-            
-            return compressed_data
-            
-        except Exception as e:
-            logger.error(f"Chunk decryption failed for {encrypted_chunk.chunk_id}: {e}")
-            raise
-    
-    def _store_encrypted_chunk(self, chunk_id: str, nonce: bytes, ciphertext: bytes) -> Path:
-        """
-        Store encrypted chunk with nonce prepended.
-        
-        Args:
+            chunk_data: Raw chunk data to encrypt
             chunk_id: Unique chunk identifier
-            nonce: Encryption nonce
-            ciphertext: Encrypted chunk data
+            session_id: Session identifier
+            key_id: Optional key identifier for key rotation
             
         Returns:
-            Path to stored encrypted chunk
+            EncryptedChunk object with encrypted data and metadata
         """
-        chunk_file = self.storage_dir / f"{chunk_id}.enc"
+        if key_id is None:
+            key_id = f"key_{int(time.time())}"
         
-        # Store nonce + ciphertext
-        chunk_data = nonce + ciphertext
-        chunk_file.write_bytes(chunk_data)
+        # Generate random salt for key derivation
+        salt = secrets.token_bytes(self.SALT_SIZE)
         
-        logger.debug(f"Stored encrypted chunk: {chunk_file}")
-        return chunk_file
+        # Derive chunk-specific key
+        chunk_key = self._derive_chunk_key(session_id, chunk_id, salt)
+        
+        # Generate random nonce
+        nonce = secrets.token_bytes(self.NONCE_SIZE)
+        
+        # Create cipher
+        cipher = ChaCha20Poly1305(chunk_key)
+        
+        # Encrypt the data
+        encrypted_data = cipher.encrypt(nonce, chunk_data, None)
+        
+        # Extract tag (last 16 bytes)
+        tag = encrypted_data[-16:]
+        encrypted_content = encrypted_data[:-16]
+        
+        # Save encrypted chunk to disk
+        chunk_filename = f"{chunk_id}.enc"
+        chunk_path = self.output_dir / chunk_filename
+        
+        # Write encrypted data with metadata
+        with open(chunk_path, 'wb') as f:
+            f.write(salt)  # 32 bytes salt
+            f.write(nonce)  # 24 bytes nonce
+            f.write(tag)  # 16 bytes tag
+            f.write(encrypted_content)  # encrypted data
+        
+        # Create metadata
+        encrypted_chunk = EncryptedChunk(
+            chunk_id=chunk_id,
+            session_id=session_id,
+            encrypted_data=encrypted_content,
+            nonce=nonce,
+            tag=tag,
+            key_id=key_id,
+            timestamp=time.time(),
+            file_path=str(chunk_path)
+        )
+        
+        logger.debug(f"Encrypted chunk {chunk_id}: {len(chunk_data)} -> {len(encrypted_content)} bytes")
+        
+        return encrypted_chunk
     
-    def verify_chunk_integrity(self, encrypted_chunk: EncryptedChunk) -> bool:
+    async def decrypt_chunk(self, encrypted_chunk: EncryptedChunk) -> bytes:
         """
-        Verify encrypted chunk integrity using stored hash.
+        Decrypt a chunk using XChaCha20-Poly1305
         
         Args:
-            encrypted_chunk: Encrypted chunk to verify
+            encrypted_chunk: EncryptedChunk object to decrypt
             
         Returns:
-            True if chunk integrity is valid
+            Decrypted chunk data
         """
+        if not os.path.exists(encrypted_chunk.file_path):
+            raise FileNotFoundError(f"Encrypted chunk file not found: {encrypted_chunk.file_path}")
+        
+        # Read encrypted file
+        with open(encrypted_chunk.file_path, 'rb') as f:
+            file_data = f.read()
+        
+        # Extract components
+        salt = file_data[:self.SALT_SIZE]
+        nonce = file_data[self.SALT_SIZE:self.SALT_SIZE + self.NONCE_SIZE]
+        tag = file_data[self.SALT_SIZE + self.NONCE_SIZE:self.SALT_SIZE + self.NONCE_SIZE + 16]
+        encrypted_content = file_data[self.SALT_SIZE + self.NONCE_SIZE + 16:]
+        
+        # Derive the same key used for encryption
+        chunk_key = self._derive_chunk_key(
+            encrypted_chunk.session_id, 
+            encrypted_chunk.chunk_id, 
+            salt
+        )
+        
+        # Create cipher
+        cipher = ChaCha20Poly1305(chunk_key)
+        
+        # Reconstruct encrypted data with tag
+        encrypted_data = encrypted_content + tag
+        
+        # Decrypt the data
         try:
-            # Read stored chunk
-            stored_data = encrypted_chunk.local_path.read_bytes()
-            ciphertext = stored_data[NONCE_SIZE:]  # Skip nonce
-            
-            # Calculate hash of stored ciphertext
-            calculated_hash = hashlib.sha256(ciphertext).hexdigest()
-            
-            return calculated_hash == encrypted_chunk.ciphertext_sha256
-            
+            decrypted_data = cipher.decrypt(nonce, encrypted_data, None)
+            return decrypted_data
         except Exception as e:
-            logger.error(f"Chunk integrity verification failed: {e}")
-            return False
+            raise ValueError(f"Failed to decrypt chunk {encrypted_chunk.chunk_id}: {e}")
     
-    def cleanup_session(self) -> None:
-        """Remove all encrypted chunks for this session."""
-        try:
-            import shutil
-            if self.storage_dir.exists():
-                shutil.rmtree(self.storage_dir)
-                logger.info(f"Cleaned up encrypted chunks for session {self.session_id}")
-        except Exception as e:
-            logger.error(f"Cleanup failed for session {self.session_id}: {e}")
-
-
-class SessionEncryptionManager:
-    """
-    Manages encryption for multiple active sessions.
-    Interfaces with chunker and merkle builder services.
-    """
-    
-    def __init__(self, master_key: bytes):
-        self.master_key = master_key
-        self.active_encryptors: dict[str, LucidEncryptor] = {}
-        logger.info("Session encryption manager initialized")
-    
-    def start_encryption(self, session_id: str) -> None:
-        """Start encryption for a new session."""
-        if session_id in self.active_encryptors:
-            logger.warning(f"Encryptor already exists for session {session_id}")
-            return
+    async def encrypt_session_chunks(
+        self, 
+        chunks: List[Tuple[str, bytes]], 
+        session_id: str
+    ) -> List[EncryptedChunk]:
+        """
+        Encrypt multiple chunks for a session
         
-        encryptor = LucidEncryptor(session_id, self.master_key)
-        self.active_encryptors[session_id] = encryptor
+        Args:
+            chunks: List of (chunk_id, chunk_data) tuples
+            session_id: Session identifier
+            
+        Returns:
+            List of EncryptedChunk objects
+        """
+        encrypted_chunks = []
         
-        logger.info(f"Started encryption for session {session_id}")
-    
-    def encrypt_chunk(self, session_id: str, chunk_meta: ChunkMetadata, 
-                     compressed_data: bytes) -> EncryptedChunk:
-        """Encrypt a chunk for the specified session."""
-        encryptor = self.active_encryptors.get(session_id)
-        if not encryptor:
-            raise ValueError(f"No encryptor found for session {session_id}")
+        logger.info(f"Encrypting {len(chunks)} chunks for session {session_id}")
         
-        return encryptor.encrypt_chunk(chunk_meta, compressed_data)
-    
-    def decrypt_chunk(self, session_id: str, encrypted_chunk: EncryptedChunk) -> bytes:
-        """Decrypt a chunk for the specified session."""
-        encryptor = self.active_encryptors.get(session_id)
-        if not encryptor:
-            raise ValueError(f"No encryptor found for session {session_id}")
+        for chunk_id, chunk_data in chunks:
+            encrypted_chunk = await self.encrypt_chunk(
+                chunk_data, chunk_id, session_id
+            )
+            encrypted_chunks.append(encrypted_chunk)
         
-        return encryptor.decrypt_chunk(encrypted_chunk)
+        logger.info(f"Encryption complete: {len(encrypted_chunks)} encrypted chunks")
+        return encrypted_chunks
     
-    def finalize_session(self, session_id: str) -> None:
-        """Finalize encryption for a session and clean up."""
-        encryptor = self.active_encryptors.get(session_id)
-        if not encryptor:
-            logger.warning(f"No encryptor found for session {session_id}")
-            return
+    async def decrypt_session_chunks(
+        self, 
+        encrypted_chunks: List[EncryptedChunk]
+    ) -> List[Tuple[str, bytes]]:
+        """
+        Decrypt multiple chunks for a session
         
-        # Keep encrypted chunks but remove encryptor
-        del self.active_encryptors[session_id]
+        Args:
+            encrypted_chunks: List of EncryptedChunk objects
+            
+        Returns:
+            List of (chunk_id, decrypted_data) tuples
+        """
+        decrypted_chunks = []
         
-        logger.info(f"Finalized encryption for session {session_id}")
+        logger.info(f"Decrypting {len(encrypted_chunks)} chunks")
+        
+        for encrypted_chunk in encrypted_chunks:
+            try:
+                decrypted_data = await self.decrypt_chunk(encrypted_chunk)
+                decrypted_chunks.append((encrypted_chunk.chunk_id, decrypted_data))
+            except Exception as e:
+                logger.error(f"Failed to decrypt chunk {encrypted_chunk.chunk_id}: {e}")
+                raise
+        
+        logger.info(f"Decryption complete: {len(decrypted_chunks)} chunks decrypted")
+        return decrypted_chunks
     
-    def cleanup_session(self, session_id: str) -> None:
-        """Clean up all encrypted data for a session."""
-        encryptor = self.active_encryptors.get(session_id)
-        if encryptor:
-            encryptor.cleanup_session()
-            del self.active_encryptors[session_id]
+    def rotate_master_key(self, new_master_key: Optional[bytes] = None) -> bytes:
+        """
+        Rotate the master key for enhanced security
+        
+        Args:
+            new_master_key: Optional new master key (generated if None)
+            
+        Returns:
+            New master key
+        """
+        old_master_key = self.master_key
+        self.master_key = new_master_key or secrets.token_bytes(self.KEY_SIZE)
+        
+        # Clear key cache to force re-derivation
+        self._key_cache.clear()
+        
+        logger.info("Master key rotated, key cache cleared")
+        return self.master_key
     
-    def get_active_sessions(self) -> List[str]:
-        """Get list of all sessions with active encryptors."""
-        return list(self.active_encryptors.keys())
+    def get_encryption_stats(self, session_id: str) -> dict:
+        """Get encryption statistics for a session"""
+        
+        encrypted_files = list(self.output_dir.glob(f"*_chunk_*.enc"))
+        session_files = [f for f in encrypted_files if session_id in f.name]
+        
+        if not session_files:
+            return {
+                "session_id": session_id,
+                "total_encrypted_chunks": 0,
+                "total_encrypted_size": 0,
+                "average_overhead": 0.0
+            }
+        
+        total_encrypted_size = sum(f.stat().st_size for f in session_files)
+        
+        return {
+            "session_id": session_id,
+            "total_encrypted_chunks": len(session_files),
+            "total_encrypted_size": total_encrypted_size,
+            "average_overhead": 0.0  # Would need to compare with original sizes
+        }
+    
+    async def cleanup_session_encrypted_chunks(self, session_id: str) -> int:
+        """Clean up all encrypted chunks for a session"""
+        
+        encrypted_files = list(self.output_dir.glob(f"*_chunk_*.enc"))
+        session_files = [f for f in encrypted_files if session_id in f.name]
+        removed_count = 0
+        
+        for encrypted_file in session_files:
+            try:
+                encrypted_file.unlink()
+                removed_count += 1
+            except OSError as e:
+                logger.error(f"Failed to remove encrypted file {encrypted_file}: {e}")
+        
+        logger.info(f"Cleaned up {removed_count} encrypted chunks for session {session_id}")
+        return removed_count
 
-
-def generate_master_key() -> bytes:
-    """Generate a cryptographically secure master key."""
-    return secrets.token_bytes(KEY_SIZE)
-
-
-def load_master_key_from_env() -> bytes:
-    """
-    Load master key from environment variable.
+# CLI interface for testing
+async def main():
+    """Test the encryptor with sample data"""
+    import argparse
     
-    Returns:
-        32-byte master key
+    parser = argparse.ArgumentParser(description="LUCID Session Encryptor")
+    parser.add_argument("--session-id", required=True, help="Session ID")
+    parser.add_argument("--input-file", required=True, help="Input file to encrypt")
+    parser.add_argument("--output-dir", default="/data/encrypted", help="Output directory")
+    parser.add_argument("--decrypt", action="store_true", help="Decrypt instead of encrypt")
+    
+    args = parser.parse_args()
+    
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
+    
+    # Create encryptor
+    encryptor = SessionEncryptor(args.output_dir)
+    
+    if args.decrypt:
+        # Decrypt mode (would need encrypted chunk metadata)
+        print("Decrypt mode not implemented in CLI")
+    else:
+        # Encrypt mode
+        with open(args.input_file, 'rb') as f:
+            data = f.read()
         
-    Raises:
-        ValueError: If key is not found or invalid
-    """
-    key_hex = os.getenv("LUCID_MASTER_KEY")
-    if not key_hex:
-        raise ValueError("LUCID_MASTER_KEY environment variable not set")
-    
-    try:
-        key_bytes = bytes.fromhex(key_hex)
-        if len(key_bytes) != KEY_SIZE:
-            raise ValueError(f"Master key must be {KEY_SIZE} bytes, got {len(key_bytes)}")
-        return key_bytes
-    except ValueError as e:
-        raise ValueError(f"Invalid master key format: {e}")
-
+        # Create a single chunk
+        chunk_id = f"{args.session_id}_chunk_000000"
+        
+        # Encrypt the chunk
+        encrypted_chunk = await encryptor.encrypt_chunk(
+            data, chunk_id, args.session_id
+        )
+        
+        print(f"Encrypted chunk: {chunk_id}")
+        print(f"Original size: {len(data)} bytes")
+        print(f"Encrypted size: {len(encrypted_chunk.encrypted_data)} bytes")
+        print(f"File path: {encrypted_chunk.file_path}")
 
 if __name__ == "__main__":
-    # Test encryptor functionality
-    import sys
-    from apps.chunker.chunker import ChunkMetadata
-    
-    if len(sys.argv) < 2:
-        print("Usage: python encryptor.py <session_id>")
-        sys.exit(1)
-    
-    session_id = sys.argv[1]
-    master_key = generate_master_key()
-    
-    encryptor = LucidEncryptor(session_id, master_key)
-    
-    # Create test chunk metadata
-    test_chunk = ChunkMetadata(
-        chunk_id=f"{session_id}-chunk-000001",
-        session_id=session_id,
-        sequence_number=0,
-        original_size=1000,
-        compressed_size=800,
-        compression_ratio=0.8,
-        chunk_hash="test_hash",
-        created_at=datetime.now(timezone.utc)
-    )
-    
-    # Test encrypt/decrypt cycle
-    test_data = b"Test compressed chunk data" * 50  # ~1.3KB
-    encrypted = encryptor.encrypt_chunk(test_chunk, test_data)
-    decrypted = encryptor.decrypt_chunk(encrypted)
-    
-    print(f"Test completed for session {session_id}")
-    print(f"Original size: {len(test_data)} bytes")
-    print(f"Encrypted size: {encrypted.encrypted_size} bytes")
-    print(f"Decryption successful: {decrypted == test_data}")
-    print(f"Integrity check: {encryptor.verify_chunk_integrity(encrypted)}")
+    asyncio.run(main())

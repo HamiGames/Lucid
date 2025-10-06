@@ -1,5 +1,5 @@
-# LUCID TRON Node Client - Distroless Build
-# Implements isolated TRON integration using TronWeb 6, PayoutRouterV0/KYC, USDT-TRC20 per SPEC-1b
+# LUCID DHT/CRDT Node - Distroless Build
+# Implements distributed hash table, conflict-free replicated data, peer discovery, gossip protocol per SPEC-1b
 
 # Multi-stage build for distroless deployment
 FROM python:3.12-slim-bookworm AS builder
@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY blockchain/tron_node/requirements.tron-client.txt /tmp/
-RUN pip install --no-cache-dir --user -r /tmp/requirements.tron-client.txt
+COPY node/dht_crdt/requirements.dht-node.txt /tmp/
+RUN pip install --no-cache-dir --user -r /tmp/requirements.dht-node.txt
 
 # Copy source code
-COPY blockchain/tron_node/tron_client.py /app/
-COPY blockchain/__init__.py /app/blockchain/
-COPY blockchain/tron_node/__init__.py /app/blockchain/tron_node/
+COPY node/dht_crdt/dht_node.py /app/
+COPY node/__init__.py /app/node/
+COPY node/dht_crdt/__init__.py /app/node/dht_crdt/
 
 # Final distroless stage
 FROM gcr.io/distroless/python3-debian12:nonroot
@@ -39,14 +39,14 @@ ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
 
 # Create data directories
 USER nonroot
-RUN mkdir -p /data/tron
+RUN mkdir -p /data/dht
 
-# Expose health check port
-EXPOSE 8088
+# Expose DHT port
+EXPOSE 8089
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import tron_client; print('TRON client service healthy')"]
+    CMD ["python3", "-c", "import dht_node; print('DHT/CRDT node service healthy')"]
 
-# Run the TRON client service
-ENTRYPOINT ["python3", "/app/tron_client.py"]
+# Run the DHT/CRDT node service
+ENTRYPOINT ["python3", "/app/dht_node.py"]
