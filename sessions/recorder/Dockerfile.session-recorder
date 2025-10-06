@@ -1,0 +1,149 @@
+# LUCID SESSION RECORDER - SPEC-1B Session Recording (Distroless)
+# Professional session recording with hardware acceleration for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS recorder-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Session Recorder for Lucid SPEC-1B Session Recording (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="session-recorder" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8093"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and FFmpeg with hardware acceleration
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # FFmpeg with hardware acceleration
+        ffmpeg \
+        libavcodec-extra \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
+        libswresample-dev \
+        # X11 and display support
+        xvfb \
+        x11-utils \
+        x11-xserver-utils \
+        # Audio support
+        pulseaudio \
+        pulseaudio-utils \
+        # Hardware acceleration libraries
+        libv4l-dev \
+        libv4l2-0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0"
+
+# Copy application code
+COPY sessions/recorder/ /app/sessions/recorder/
+COPY sessions/ /app/sessions/
+
+# Create recording directories
+RUN mkdir -p /data/recordings /tmp/recorder \
+    && chown -R lucid:lucid /data /tmp/recorder
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' recorder_user && \
+    chown -R recorder_user:recorder_user /app /data /tmp/recorder
+
+# Stage 2: Distroless runtime with Python and recording dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Session Recorder for Lucid SPEC-1B Session Recording (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="session-recorder" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8093"
+
+# Copy Python installation and packages from builder
+COPY --from=recorder-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=recorder-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=recorder-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy FFmpeg and system dependencies
+COPY --from=recorder-builder /usr/bin/ffmpeg /usr/bin/ffmpeg
+COPY --from=recorder-builder /usr/bin/curl /usr/bin/curl
+COPY --from=recorder-builder /bin/nc /bin/nc
+COPY --from=recorder-builder /usr/bin/jq /usr/bin/jq
+COPY --from=recorder-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=recorder-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=recorder-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=recorder-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=recorder-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=recorder-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=recorder-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=recorder-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy FFmpeg libraries
+COPY --from=recorder-builder /usr/lib/x86_64-linux-gnu/libavcodec.so.59 /usr/lib/
+COPY --from=recorder-builder /usr/lib/x86_64-linux-gnu/libavformat.so.59 /usr/lib/
+COPY --from=recorder-builder /usr/lib/x86_64-linux-gnu/libavutil.so.57 /usr/lib/
+COPY --from=recorder-builder /usr/lib/x86_64-linux-gnu/libswscale.so.6 /usr/lib/
+COPY --from=recorder-builder /usr/lib/x86_64-linux-gnu/libswresample.so.4 /usr/lib/
+
+# Copy user and group information
+COPY --from=recorder-builder /etc/passwd /etc/passwd
+COPY --from=recorder-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=recorder-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=recorder-builder --chown=recorder_user:recorder_user /app /app
+COPY --from=recorder-builder --chown=recorder_user:recorder_user /data /data
+COPY --from=recorder-builder --chown=recorder_user:recorder_user /tmp/recorder /tmp/recorder
+
+# Runtime environment for session recorder
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    RECORDING_PATH=/data/recordings \
+    FFMPEG_PATH=/usr/bin/ffmpeg \
+    XRDP_DISPLAY=:10 \
+    HARDWARE_ACCELERATION=true \
+    VIDEO_CODEC=h264_v4l2m2m \
+    AUDIO_CODEC=opus \
+    BITRATE=2000k \
+    FPS=30
+
+# Security and runtime configuration
+EXPOSE 8093
+USER recorder_user
+WORKDIR /app
+
+# Default command for session recorder
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/sessions/recorder/session_recorder.py"]

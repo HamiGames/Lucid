@@ -1,0 +1,132 @@
+# LUCID TRON NODE CLIENT - SPEC-1B TRON Integration (Distroless)
+# Professional TRON blockchain client for USDT payouts
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS tron-client-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="TRON Node Client for Lucid SPEC-1B TRON Integration (Distroless)" \
+      org.lucid.plane="chain" \
+      org.lucid.service="tron-node-client" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8095"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # TRON and blockchain dependencies
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "tronpy>=0.4.0" \
+        "requests>=2.31.0" \
+        "cryptography>=41.0.0"
+
+# Copy application code
+COPY blockchain/tron_node/ /app/blockchain/tron_node/
+COPY blockchain/ /app/blockchain/
+
+# Create TRON data directories
+RUN mkdir -p /data/tron /tmp/tron-client \
+    && chown -R lucid:lucid /data /tmp/tron-client
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' tron_user && \
+    chown -R tron_user:tron_user /app /data /tmp/tron-client
+
+# Stage 2: Distroless runtime with Python and TRON dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="TRON Node Client for Lucid SPEC-1B TRON Integration (Distroless Runtime)" \
+      org.lucid.plane="chain" \
+      org.lucid.service="tron-node-client" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8095"
+
+# Copy Python installation and packages from builder
+COPY --from=tron-client-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=tron-client-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=tron-client-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy system utilities
+COPY --from=tron-client-builder /usr/bin/curl /usr/bin/curl
+COPY --from=tron-client-builder /bin/nc /bin/nc
+COPY --from=tron-client-builder /usr/bin/jq /usr/bin/jq
+COPY --from=tron-client-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=tron-client-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=tron-client-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=tron-client-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=tron-client-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=tron-client-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=tron-client-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=tron-client-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=tron-client-builder /etc/passwd /etc/passwd
+COPY --from=tron-client-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=tron-client-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=tron-client-builder --chown=tron_user:tron_user /app /app
+COPY --from=tron-client-builder --chown=tron_user:tron_user /data /data
+COPY --from=tron-client-builder --chown=tron_user:tron_user /tmp/tron-client /tmp/tron-client
+
+# Runtime environment for TRON node client
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    TRON_NETWORK=shasta \
+    TRON_RPC_URL=https://api.shasta.trongrid.io \
+    PRIVATE_KEY= \
+    PAYOUT_ROUTER_V0_ADDRESS= \
+    PAYOUT_ROUTER_KYC_ADDRESS= \
+    USDT_TRC20_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t \
+    COMPLIANCE_SIGNER_KEY=
+
+# Security and runtime configuration
+EXPOSE 8095
+USER tron_user
+WORKDIR /app
+
+# Default command for TRON node client
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/blockchain/tron_node/tron_client.py"]

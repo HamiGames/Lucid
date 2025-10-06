@@ -50,7 +50,7 @@ RUN useradd -r -s /bin/false xrdp \
     && chown xrdp:xrdp /var/run/xrdp
 
 # Stage 2: Distroless runtime with xrdp and Python
-FROM gcr.io/distroless/base-debian12:latest
+FROM gcr.io/distroless/base-debian12:nonroot
 
 # Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \

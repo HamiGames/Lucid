@@ -214,11 +214,9 @@ services:
   # =============================================================================
   tor-proxy:
     <<: *lucid-common
-    container_name: tor_proxy
-    build:
-      context: /mnt/myssd/Lucid/02-network-security/tor
-      dockerfile: Dockerfile.distroless
+    container_name: tor-proxy
     image: pickme/lucid:tor-proxy
+    pull_policy: always
     environment:
       <<: *lucid-env
       TOR_SOCKS_PORT: "9050"
@@ -275,10 +273,8 @@ services:
   lucid_api:
     <<: *lucid-common
     container_name: lucid_api
-    build:
-      context: /mnt/myssd/Lucid/03-api-gateway/api
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid:api-server
+    pull_policy: always
     environment:
       <<: *lucid-env
       PYTHONPATH: /app
@@ -327,10 +323,8 @@ services:
   lucid_api_gateway:
     <<: *lucid-common
     container_name: lucid_api_gateway
-    build:
-      context: /mnt/myssd/Lucid/03-api-gateway/gateway
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid:api-gateway
+    pull_policy: always
     environment:
       <<: *lucid-env
       API_UPSTREAM: "lucid_api:8081"
@@ -373,10 +367,8 @@ services:
   tunnel-tools:
     <<: *lucid-common
     container_name: lucid_tunnel_tools
-    build:
-      context: /mnt/myssd/Lucid/02-network-security/tunnels
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid:tunnel-tools
+    pull_policy: always
     environment:
       <<: *lucid-env
       TUNNEL_PORT: "7000"
@@ -419,10 +411,8 @@ services:
   server-tools:
     <<: *lucid-common
     container_name: lucid_server_tools
-    build:
-      context: /mnt/myssd/Lucid/common/server-tools
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid:server-tools
+    pull_policy: always
     environment:
       <<: *lucid-env
     networks:
