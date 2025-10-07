@@ -1,0 +1,141 @@
+# LUCID KEYSTROKE MONITOR - SPEC-1B Keystroke Metadata Capture (Distroless)
+# Professional keystroke monitoring for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS keystroke-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Keystroke Monitor for Lucid SPEC-1B Keystroke Metadata Capture (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="keystroke-monitor" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8098"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and input monitoring tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # Input monitoring dependencies
+        python3-dev \
+        python3-pynput \
+        python3-keyboard \
+        # X11 support for input capture
+        xvfb \
+        x11-utils \
+        x11-xserver-utils \
+        # Audio support
+        pulseaudio \
+        pulseaudio-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies for keystroke monitoring
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "pynput>=1.7.6" \
+        "keyboard>=0.13.5" \
+        "cryptography>=41.0.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0"
+
+# Copy application code
+COPY sessions/recorder/ /app/sessions/recorder/
+COPY sessions/ /app/sessions/
+COPY RDP/ /app/RDP/
+
+# Create keystroke monitoring directories
+RUN mkdir -p /var/log/lucid/keystrokes /opt/lucid/input /data/keystrokes /tmp/keystroke \
+    && chown -R lucid:lucid /var/log/lucid /opt/lucid /data /tmp/keystroke
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' keystroke_user && \
+    chown -R keystroke_user:keystroke_user /app /data /tmp/keystroke /var/log/lucid /opt/lucid
+
+# Stage 2: Distroless runtime with Python and keystroke monitoring dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Keystroke Monitor for Lucid SPEC-1B Keystroke Metadata Capture (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="keystroke-monitor" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8098"
+
+# Copy Python installation and packages from builder
+COPY --from=keystroke-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=keystroke-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=keystroke-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy system dependencies
+COPY --from=keystroke-builder /usr/bin/curl /usr/bin/curl
+COPY --from=keystroke-builder /bin/nc /bin/nc
+COPY --from=keystroke-builder /usr/bin/jq /usr/bin/jq
+COPY --from=keystroke-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=keystroke-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=keystroke-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=keystroke-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=keystroke-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=keystroke-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=keystroke-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=keystroke-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=keystroke-builder /etc/passwd /etc/passwd
+COPY --from=keystroke-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=keystroke-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=keystroke-builder --chown=keystroke_user:keystroke_user /app /app
+COPY --from=keystroke-builder --chown=keystroke_user:keystroke_user /data /data
+COPY --from=keystroke-builder --chown=keystroke_user:keystroke_user /tmp/keystroke /tmp/keystroke
+COPY --from=keystroke-builder --chown=keystroke_user:keystroke_user /var/log/lucid /var/log/lucid
+COPY --from=keystroke-builder --chown=keystroke_user:keystroke_user /opt/lucid /opt/lucid
+
+# Runtime environment for keystroke monitor
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    KEYSTROKE_LOG_PATH=/var/log/lucid/keystrokes \
+    INPUT_PATH=/opt/lucid/input \
+    DISPLAY=:10 \
+    XDG_RUNTIME_DIR=/tmp/keystroke \
+    CAPTURE_MODE=metadata \
+    PRIVACY_MODE=enabled \
+    SENSITIVE_FIELDS=password,ssn,credit_card
+
+# Security and runtime configuration
+EXPOSE 8098
+USER keystroke_user
+WORKDIR /app
+
+# Default command for keystroke monitor service
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/sessions/recorder/keystroke_monitor.py"]

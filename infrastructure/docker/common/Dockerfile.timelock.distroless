@@ -1,0 +1,144 @@
+# LUCID TIMELOCK - SPEC-3 Timelock Implementation (Distroless)
+# Professional timelock implementation for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS timelock-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Timelock for SPEC-3 Timelock Implementation (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="timelock" \
+      org.lucid.layer="3" \
+      org.lucid.expose="8109"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and timelock tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # Timelock dependencies
+        python3-dev \
+        # Cryptographic tools
+        openssl \
+        # Database support
+        sqlite3 \
+        # Time utilities
+        dateutils \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies for timelock
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "web3>=6.11.0" \
+        "eth-account>=0.9.0" \
+        "cryptography>=41.0.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0" \
+        "python-dateutil>=2.8.0"
+
+# Copy application code
+COPY common/ /app/common/
+COPY common/governance/ /app/common/governance/
+COPY wallet/ /app/wallet/
+COPY auth/ /app/auth/
+COPY blockchain/ /app/blockchain/
+
+# Create timelock directories
+RUN mkdir -p /opt/lucid/governance/timelock /opt/lucid/governance/queues /data/timelock /tmp/timelock \
+    && chown -R lucid:lucid /opt/lucid /data /tmp/timelock
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' timelock_user && \
+    chown -R timelock_user:timelock_user /app /data /tmp/timelock /opt/lucid
+
+# Stage 2: Distroless runtime with Python and timelock dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Timelock for SPEC-3 Timelock Implementation (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="timelock" \
+      org.lucid.layer="3" \
+      org.lucid.expose="8109"
+
+# Copy Python installation and packages from builder
+COPY --from=timelock-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=timelock-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=timelock-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy timelock and system tools
+COPY --from=timelock-builder /usr/bin/openssl /usr/bin/openssl
+COPY --from=timelock-builder /usr/bin/sqlite3 /usr/bin/sqlite3
+COPY --from=timelock-builder /usr/bin/dateutils /usr/bin/dateutils
+COPY --from=timelock-builder /usr/bin/curl /usr/bin/curl
+COPY --from=timelock-builder /bin/nc /bin/nc
+COPY --from=timelock-builder /usr/bin/jq /usr/bin/jq
+COPY --from=timelock-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=timelock-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=timelock-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=timelock-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=timelock-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=timelock-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=timelock-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=timelock-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=timelock-builder /etc/passwd /etc/passwd
+COPY --from=timelock-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=timelock-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=timelock-builder --chown=timelock_user:timelock_user /app /app
+COPY --from=timelock-builder --chown=timelock_user:timelock_user /data /data
+COPY --from=timelock-builder --chown=timelock_user:timelock_user /tmp/timelock /tmp/timelock
+COPY --from=timelock-builder --chown=timelock_user:timelock_user /opt/lucid /opt/lucid
+
+# Runtime environment for timelock
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    TIMELOCK_PATH=/opt/lucid/governance/timelock \
+    QUEUES_PATH=/opt/lucid/governance/queues \
+    XDG_RUNTIME_DIR=/tmp/timelock \
+    MIN_DELAY_SECONDS=86400 \
+    MAX_DELAY_SECONDS=2592000 \
+    GRACE_PERIOD_SECONDS=1296000 \
+    EXECUTION_TIMEOUT_SECONDS=604800 \
+    MAX_QUEUE_SIZE=1000
+
+# Security and runtime configuration
+EXPOSE 8109
+USER timelock_user
+WORKDIR /app
+
+# Default command for timelock service
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/common/governance/timelock.py"]

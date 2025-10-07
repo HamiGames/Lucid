@@ -1,4 +1,5 @@
 # 🔧 SPIN-UP REQUIREMENTS GUIDE
+
 ## Complete Setup Instructions for Missing Lucid RDP Components
 
 **Version:** 1.0.0  
@@ -18,9 +19,11 @@ This guide provides detailed spin-up requirements for implementing all missing L
 ### **1.1 RDP Hosting System**
 
 #### **Component: `RDP/recorder/rdp_host.py`**
+
 **Purpose:** Main RDP hosting service with xrdp integration
 
 **Spin-Up Requirements:**
+
 ```bash
 # System Dependencies
 sudo apt-get update
@@ -41,6 +44,7 @@ sudo chown -R $USER:$USER /opt/lucid/rdp
 ```
 
 **Verification:**
+
 ```bash
 # Test xrdp installation
 sudo systemctl status xrdp
@@ -51,9 +55,11 @@ python3 -c "import fastapi, uvicorn, websockets"
 ```
 
 #### **Component: `RDP/recorder/wayland_integration.py`**
+
 **Purpose:** Wayland display server integration
 
 **Spin-Up Requirements:**
+
 ```bash
 # Wayland Dependencies
 sudo apt-get install -y wayland-protocols weston
@@ -71,6 +77,7 @@ mkdir -p /opt/lucid/display
 ```
 
 **Verification:**
+
 ```bash
 # Test Wayland installation
 wayland-info
@@ -81,9 +88,11 @@ python3 -c "import wayland"
 ```
 
 #### **Component: `RDP/recorder/clipboard_handler.py`**
+
 **Purpose:** Clipboard transfer toggles
 
 **Spin-Up Requirements:**
+
 ```bash
 # Clipboard Dependencies
 sudo apt-get install -y xclip xsel
@@ -100,6 +109,7 @@ mkdir -p /opt/lucid/transfer
 ```
 
 **Verification:**
+
 ```bash
 # Test clipboard tools
 xclip -version
@@ -110,9 +120,11 @@ python3 -c "import pyperclip"
 ```
 
 #### **Component: `RDP/recorder/file_transfer_handler.py`**
+
 **Purpose:** File transfer toggles
 
 **Spin-Up Requirements:**
+
 ```bash
 # File Transfer Dependencies
 sudo apt-get install -y rsync
@@ -130,6 +142,7 @@ mkdir -p /opt/lucid/downloads
 ```
 
 **Verification:**
+
 ```bash
 # Test rsync
 rsync --version
@@ -141,9 +154,11 @@ python3 -c "import paramiko"
 ### **1.2 Session Audit Trail System**
 
 #### **Component: `sessions/recorder/audit_trail.py`**
+
 **Purpose:** Session audit logging
 
 **Spin-Up Requirements:**
+
 ```bash
 # Logging Dependencies
 sudo apt-get install -y rsyslog
@@ -162,15 +177,18 @@ sudo chown -R $USER:$USER /var/log/lucid
 ```
 
 **Verification:**
+
 ```bash
 # Test logging system
 python3 -c "import structlog, logging"
 ```
 
 #### **Component: `sessions/recorder/keystroke_monitor.py`**
+
 **Purpose:** Keystroke metadata capture
 
 **Spin-Up Requirements:**
+
 ```bash
 # Input Monitoring Dependencies
 sudo apt-get install -y python3-pynput
@@ -187,15 +205,18 @@ mkdir -p /opt/lucid/input
 ```
 
 **Verification:**
+
 ```bash
 # Test input monitoring
 python3 -c "import pynput, keyboard"
 ```
 
 #### **Component: `sessions/recorder/window_focus_monitor.py`**
+
 **Purpose:** Window focus tracking
 
 **Spin-Up Requirements:**
+
 ```bash
 # Window Management Dependencies
 sudo apt-get install -y python3-xlib
@@ -213,15 +234,18 @@ mkdir -p /opt/lucid/focus
 ```
 
 **Verification:**
+
 ```bash
 # Test window management
 python3 -c "import Xlib, ewmh"
 ```
 
 #### **Component: `sessions/recorder/resource_monitor.py`**
+
 **Purpose:** Resource access tracking
 
 **Spin-Up Requirements:**
+
 ```bash
 # System Monitoring Dependencies
 sudo apt-get install -y python3-psutil
@@ -238,6 +262,7 @@ mkdir -p /opt/lucid/monitoring
 ```
 
 **Verification:**
+
 ```bash
 # Test system monitoring
 python3 -c "import psutil, netifaces"
@@ -246,9 +271,11 @@ python3 -c "import psutil, netifaces"
 ### **1.3 Wallet Management System**
 
 #### **Component: `wallet/walletd/software_vault.py`**
+
 **Purpose:** Passphrase-protected vault
 
 **Spin-Up Requirements:**
+
 ```bash
 # Cryptographic Dependencies
 sudo apt-get install -y python3-cryptography
@@ -267,15 +294,18 @@ sudo chown -R $USER:$USER /opt/lucid/wallet
 ```
 
 **Verification:**
+
 ```bash
 # Test cryptography
 python3 -c "import cryptography, argon2"
 ```
 
 #### **Component: `wallet/walletd/role_manager.py`**
+
 **Purpose:** Role-based access control
 
 **Spin-Up Requirements:**
+
 ```bash
 # Authentication Dependencies
 sudo apt-get install -y python3-jwt
@@ -292,15 +322,18 @@ mkdir -p /opt/lucid/permissions
 ```
 
 **Verification:**
+
 ```bash
 # Test authentication
 python3 -c "import jwt, passlib"
 ```
 
 #### **Component: `wallet/walletd/key_rotation.py`**
+
 **Purpose:** Key rotation system
 
 **Spin-Up Requirements:**
+
 ```bash
 # Key Management Dependencies
 sudo apt-get install -y python3-cryptography
@@ -318,6 +351,7 @@ mkdir -p /opt/lucid/keys/backup
 ```
 
 **Verification:**
+
 ```bash
 # Test key management
 python3 -c "import cryptography, paramiko"
@@ -330,9 +364,11 @@ python3 -c "import cryptography, paramiko"
 ### **2.1 Smart Contract Development**
 
 #### **Component: `contracts/LucidAnchors.sol`**
+
 **Purpose:** Session anchoring contract
 
 **Spin-Up Requirements:**
+
 ```bash
 # Solidity Development Dependencies
 npm install -g truffle
@@ -350,6 +386,7 @@ mkdir -p contracts/abi
 ```
 
 **Verification:**
+
 ```bash
 # Test Solidity tools
 truffle version
@@ -358,9 +395,11 @@ solc --version
 ```
 
 #### **Component: `contracts/PayoutRouterV0.sol`**
+
 **Purpose:** No-KYC payout router
 
 **Spin-Up Requirements:**
+
 ```bash
 # TRON Development Dependencies
 pip install tronpy
@@ -373,6 +412,7 @@ mkdir -p contracts/tron/test
 ```
 
 **Verification:**
+
 ```bash
 # Test TRON tools
 python3 -c "import tronpy"
@@ -382,9 +422,11 @@ tronbox version
 ### **2.2 On-System Data Chain Client**
 
 #### **Component: `blockchain/chain-client/on_system_chain_client.py`**
+
 **Purpose:** On-System Chain client
 
 **Spin-Up Requirements:**
+
 ```bash
 # Blockchain Dependencies
 pip install web3 eth-account
@@ -399,15 +441,18 @@ mkdir -p blockchain/keys
 ```
 
 **Verification:**
+
 ```bash
 # Test blockchain libraries
 python3 -c "import web3, tronpy, base58"
 ```
 
 #### **Component: `blockchain/chain-client/lucid_anchors_client.py`**
+
 **Purpose:** LucidAnchors contract client
 
 **Spin-Up Requirements:**
+
 ```bash
 # Contract Interaction Dependencies
 pip install web3 eth-account
@@ -420,6 +465,7 @@ mkdir -p blockchain/chain-client/abi
 ```
 
 **Verification:**
+
 ```bash
 # Test contract interaction
 python3 -c "import web3, tronpy"
@@ -428,9 +474,11 @@ python3 -c "import web3, tronpy"
 ### **2.3 TRON Integration System**
 
 #### **Component: `payment-systems/tron-node/payout_router_v0.py`**
+
 **Purpose:** PayoutRouterV0 integration
 
 **Spin-Up Requirements:**
+
 ```bash
 # TRON Integration Dependencies
 pip install tronpy
@@ -444,15 +492,18 @@ mkdir -p payment-systems/abi
 ```
 
 **Verification:**
+
 ```bash
 # Test TRON integration
 python3 -c "import tronpy, base58"
 ```
 
 #### **Component: `payment-systems/tron-node/usdt_trc20.py`**
+
 **Purpose:** USDT-TRC20 integration
 
 **Spin-Up Requirements:**
+
 ```bash
 # USDT Integration Dependencies
 pip install tronpy
@@ -465,6 +516,7 @@ mkdir -p payment-systems/trc20
 ```
 
 **Verification:**
+
 ```bash
 # Test USDT integration
 python3 -c "import tronpy, base58"
@@ -477,9 +529,11 @@ python3 -c "import tronpy, base58"
 ### **3.1 Minimal Web Admin UI**
 
 #### **Component: `admin/admin-ui/`**
+
 **Purpose:** Complete Next.js application
 
 **Spin-Up Requirements:**
+
 ```bash
 # Node.js Installation
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -499,6 +553,7 @@ npm install @types/node
 ```
 
 **Verification:**
+
 ```bash
 # Test Node.js
 node --version
@@ -510,9 +565,11 @@ npm run dev
 ```
 
 #### **Component: `admin/admin-ui/src/pages/provisioning.tsx`**
+
 **Purpose:** Provisioning interface
 
 **Spin-Up Requirements:**
+
 ```bash
 # React Dependencies
 npm install react react-dom
@@ -522,6 +579,7 @@ npm install react-hook-form
 ```
 
 **Verification:**
+
 ```bash
 # Test React components
 npm run build
@@ -530,9 +588,11 @@ npm run build
 ### **3.2 Governance System**
 
 #### **Component: `common/governance/lucid_governor.py`**
+
 **Purpose:** Governor implementation
 
 **Spin-Up Requirements:**
+
 ```bash
 # Governance Dependencies
 pip install fastapi uvicorn
@@ -547,15 +607,18 @@ mkdir -p common/parameters
 ```
 
 **Verification:**
+
 ```bash
 # Test governance libraries
 python3 -c "import fastapi, web3, cryptography"
 ```
 
 #### **Component: `common/governance/timelock.py`**
+
 **Purpose:** Timelock implementation
 
 **Spin-Up Requirements:**
+
 ```bash
 # Timelock Dependencies
 pip install fastapi uvicorn
@@ -569,6 +632,7 @@ mkdir -p common/governance/queues
 ```
 
 **Verification:**
+
 ```bash
 # Test timelock libraries
 python3 -c "import fastapi, web3, cryptography"
@@ -581,9 +645,11 @@ python3 -c "import fastapi, web3, cryptography"
 ### **4.1 PoOT Consensus System**
 
 #### **Component: `node/consensus/leader_selection.py`**
+
 **Purpose:** Leader selection algorithm
 
 **Spin-Up Requirements:**
+
 ```bash
 # Consensus Dependencies
 pip install asyncio websockets
@@ -598,15 +664,18 @@ mkdir -p node/proofs
 ```
 
 **Verification:**
+
 ```bash
 # Test consensus libraries
 python3 -c "import asyncio, websockets, cryptography, psutil"
 ```
 
 #### **Component: `node/consensus/task_proofs.py`**
+
 **Purpose:** Task proof collection
 
 **Spin-Up Requirements:**
+
 ```bash
 # Proof Collection Dependencies
 pip install asyncio websockets
@@ -620,6 +689,7 @@ mkdir -p node/consensus/tasks
 ```
 
 **Verification:**
+
 ```bash
 # Test proof collection
 python3 -c "import asyncio, websockets, cryptography, psutil"
@@ -628,9 +698,11 @@ python3 -c "import asyncio, websockets, cryptography, psutil"
 ### **4.2 OTA Update Mechanism**
 
 #### **Component: `tools/ops/ota/update_manager.py`**
+
 **Purpose:** OTA update system
 
 **Spin-Up Requirements:**
+
 ```bash
 # OTA Dependencies
 pip install cryptography
@@ -645,15 +717,18 @@ mkdir -p tools/ops/versions
 ```
 
 **Verification:**
+
 ```bash
 # Test OTA libraries
 python3 -c "import cryptography, requests, fastapi"
 ```
 
 #### **Component: `tools/ops/ota/signature_verifier.py`**
+
 **Purpose:** Release signature verification
 
 **Spin-Up Requirements:**
+
 ```bash
 # Signature Verification Dependencies
 pip install cryptography
@@ -667,6 +742,7 @@ mkdir -p tools/ops/keys
 ```
 
 **Verification:**
+
 ```bash
 # Test signature verification
 python3 -c "import cryptography, requests"
@@ -677,9 +753,11 @@ python3 -c "import cryptography, requests"
 ## **🛠️ BUILD SYSTEM COMPONENTS**
 
 ### **Component: `scripts/build_ffmpeg_pi.sh`**
+
 **Purpose:** FFmpeg cross-compilation
 
 **Spin-Up Requirements:**
+
 ```bash
 # Build Dependencies
 sudo apt-get install -y build-essential cmake
@@ -698,6 +776,7 @@ mkdir -p scripts/cross-compile
 ```
 
 **Verification:**
+
 ```bash
 # Test build tools
 gcc --version
@@ -706,9 +785,11 @@ pkg-config --version
 ```
 
 ### **Component: `scripts/build_contracts.sh`**
+
 **Purpose:** Contract compilation
 
 **Spin-Up Requirements:**
+
 ```bash
 # Solidity Dependencies
 npm install -g truffle
@@ -722,6 +803,7 @@ mkdir -p scripts/abi
 ```
 
 **Verification:**
+
 ```bash
 # Test contract build tools
 truffle version
@@ -729,9 +811,11 @@ hardhat --version
 ```
 
 ### **Component: `scripts/build_pi_image.sh`**
+
 **Purpose:** Pi flashable image
 
 **Spin-Up Requirements:**
+
 ```bash
 # Pi Image Dependencies
 sudo apt-get install -y docker.io docker-compose
@@ -745,6 +829,7 @@ mkdir -p scripts/boot
 ```
 
 **Verification:**
+
 ```bash
 # Test Docker
 docker --version
@@ -759,9 +844,11 @@ qemu-arm-static --version
 ## **🧪 TESTING FRAMEWORK COMPONENTS**
 
 ### **Component: `tests/test_tor_connectivity.sh`**
+
 **Purpose:** Tor connectivity tests
 
 **Spin-Up Requirements:**
+
 ```bash
 # Testing Dependencies
 pip install pytest pytest-asyncio
@@ -776,6 +863,7 @@ mkdir -p tests/chaos
 ```
 
 **Verification:**
+
 ```bash
 # Test testing tools
 pytest --version
@@ -783,9 +871,11 @@ python3 -c "import requests, websockets, docker"
 ```
 
 ### **Component: `tests/test_hardware_encoding.sh`**
+
 **Purpose:** Hardware encoding tests
 
 **Spin-Up Requirements:**
+
 ```bash
 # Hardware Testing Dependencies
 sudo apt-get install -y ffmpeg
@@ -799,6 +889,7 @@ mkdir -p tests/v4l2
 ```
 
 **Verification:**
+
 ```bash
 # Test hardware tools
 ffmpeg -version
@@ -807,9 +898,11 @@ python3 -c "import cv2"
 ```
 
 ### **Component: `tests/test_blockchain_integration.sh`**
+
 **Purpose:** Blockchain integration tests
 
 **Spin-Up Requirements:**
+
 ```bash
 # Blockchain Testing Dependencies
 pip install web3 eth-account
@@ -823,6 +916,7 @@ mkdir -p tests/tron
 ```
 
 **Verification:**
+
 ```bash
 # Test blockchain testing
 python3 -c "import web3, tronpy, pytest"
@@ -833,6 +927,7 @@ python3 -c "import web3, tronpy, pytest"
 ## **📊 COMPLETE SPIN-UP CHECKLIST**
 
 ### **System Requirements:**
+
 - ✅ Ubuntu 20.04+ or Raspberry Pi OS 64-bit
 - ✅ Python 3.8+ with pip
 - ✅ Node.js 20+ with npm
@@ -840,6 +935,7 @@ python3 -c "import web3, tronpy, pytest"
 - ✅ Git and build tools
 
 ### **Python Dependencies:**
+
 - ✅ fastapi uvicorn websockets asyncio
 - ✅ cryptography libsodium argon2-cffi
 - ✅ psutil pynput keyboard
@@ -847,12 +943,14 @@ python3 -c "import web3, tronpy, pytest"
 - ✅ pytest pytest-asyncio
 
 ### **Node.js Dependencies:**
+
 - ✅ Next.js 14+ with TypeScript
 - ✅ React 18+ with hooks
 - ✅ Tailwind CSS for styling
 - ✅ Axios for API calls
 
 ### **System Tools:**
+
 - ✅ xrdp for RDP hosting
 - ✅ Wayland for display server
 - ✅ FFmpeg for video encoding
@@ -860,6 +958,7 @@ python3 -c "import web3, tronpy, pytest"
 - ✅ MongoDB for data storage
 
 ### **Build Tools:**
+
 - ✅ Docker Buildx for multi-arch builds
 - ✅ Truffle/Hardhat for smart contracts
 - ✅ CMake for native compilation
@@ -870,6 +969,7 @@ python3 -c "import web3, tronpy, pytest"
 ## **🚀 QUICK START COMMANDS**
 
 ### **Complete System Setup:**
+
 ```bash
 # Update system
 sudo apt-get update && sudo apt-get upgrade -y
@@ -891,6 +991,7 @@ chmod -R 755 RDP admin blockchain common node payment-systems tools contracts te
 ```
 
 ### **Verification:**
+
 ```bash
 # Test Python environment
 python3 -c "import fastapi, uvicorn, websockets, asyncio, cryptography, libsodium, argon2, psutil, pynput, keyboard, web3, tronpy, base58, pytest"
@@ -910,24 +1011,28 @@ truffle version && hardhat --version
 ## **📈 SUCCESS METRICS**
 
 ### **Phase 1 Complete When:**
+
 - ✅ All Python dependencies installed
 - ✅ RDP hosting system functional
 - ✅ Session audit trail logging
 - ✅ Wallet management working
 
 ### **Phase 2 Complete When:**
+
 - ✅ Smart contracts compiled
 - ✅ Blockchain clients connected
 - ✅ TRON integration working
 - ✅ Payout system functional
 
 ### **Phase 3 Complete When:**
+
 - ✅ Next.js admin UI running
 - ✅ Governance system active
 - ✅ Voting system functional
 - ✅ Parameter registry working
 
 ### **Phase 4 Complete When:**
+
 - ✅ PoOT consensus running
 - ✅ OTA updates working
 - ✅ Testing framework complete

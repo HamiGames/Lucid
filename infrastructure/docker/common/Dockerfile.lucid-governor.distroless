@@ -1,0 +1,141 @@
+# LUCID GOVERNOR - SPEC-3 Governance System (Distroless)
+# Professional governor implementation for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS governor-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Lucid Governor for SPEC-3 Governance System (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="lucid-governor" \
+      org.lucid.layer="3" \
+      org.lucid.expose="8108"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and governance tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # Governance dependencies
+        python3-dev \
+        # Cryptographic tools
+        openssl \
+        # Database support
+        sqlite3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies for governance
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "web3>=6.11.0" \
+        "eth-account>=0.9.0" \
+        "cryptography>=41.0.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0"
+
+# Copy application code
+COPY common/ /app/common/
+COPY common/governance/ /app/common/governance/
+COPY wallet/ /app/wallet/
+COPY auth/ /app/auth/
+COPY blockchain/ /app/blockchain/
+
+# Create governance directories
+RUN mkdir -p /opt/lucid/governance /opt/lucid/voting /opt/lucid/parameters /data/governance /tmp/governor \
+    && chown -R lucid:lucid /opt/lucid /data /tmp/governor
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' governor_user && \
+    chown -R governor_user:governor_user /app /data /tmp/governor /opt/lucid
+
+# Stage 2: Distroless runtime with Python and governance dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Lucid Governor for SPEC-3 Governance System (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="lucid-governor" \
+      org.lucid.layer="3" \
+      org.lucid.expose="8108"
+
+# Copy Python installation and packages from builder
+COPY --from=governor-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=governor-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=governor-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy governance and system tools
+COPY --from=governor-builder /usr/bin/openssl /usr/bin/openssl
+COPY --from=governor-builder /usr/bin/sqlite3 /usr/bin/sqlite3
+COPY --from=governor-builder /usr/bin/curl /usr/bin/curl
+COPY --from=governor-builder /bin/nc /bin/nc
+COPY --from=governor-builder /usr/bin/jq /usr/bin/jq
+COPY --from=governor-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=governor-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=governor-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=governor-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=governor-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=governor-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=governor-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=governor-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=governor-builder /etc/passwd /etc/passwd
+COPY --from=governor-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=governor-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=governor-builder --chown=governor_user:governor_user /app /app
+COPY --from=governor-builder --chown=governor_user:governor_user /data /data
+COPY --from=governor-builder --chown=governor_user:governor_user /tmp/governor /tmp/governor
+COPY --from=governor-builder --chown=governor_user:governor_user /opt/lucid /opt/lucid
+
+# Runtime environment for governor
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    GOVERNANCE_PATH=/opt/lucid/governance \
+    VOTING_PATH=/opt/lucid/voting \
+    PARAMETERS_PATH=/opt/lucid/parameters \
+    XDG_RUNTIME_DIR=/tmp/governor \
+    VOTING_PERIOD_SECONDS=172800 \
+    PROPOSAL_THRESHOLD=1000 \
+    QUORUM_THRESHOLD=4000 \
+    VOTING_DELAY_SECONDS=86400 \
+    EXECUTION_DELAY_SECONDS=172800
+
+# Security and runtime configuration
+EXPOSE 8108
+USER governor_user
+WORKDIR /app
+
+# Default command for governor service
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/common/governance/lucid_governor.py"]

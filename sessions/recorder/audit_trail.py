@@ -418,7 +418,7 @@ class AuditTrailLogger:
             action_performed=violation_type,
             result="failure",
             severity=AuditSeverity.CRITICAL,
-            metadata={**metadata or {}, "description": description}
+            metadata=dict(metadata or {}, description=description)
         )
     
     async def log_policy_violation(
@@ -436,7 +436,7 @@ class AuditTrailLogger:
             action_performed=policy_name,
             result="failure",
             severity=AuditSeverity.WARNING,
-            metadata={**metadata or {}, "description": description}
+            metadata=dict(metadata or {}, description=description)
         )
     
     async def get_events(

@@ -1,0 +1,216 @@
+# LUCID RDP Tunnel Tools - Network Tunneling and Connection Management
+# SPEC-4 Compliant: Secure tunneling, connection pooling, network diagnostics
+
+FROM alpine:3.20 AS base
+
+LABEL org.lucid.plane="ops"
+LABEL org.lucid.service="tunnel-tools"
+LABEL org.lucid.stage="1"
+
+# Install networking and tunneling tools
+RUN apk add --no-cache \
+    openssh-client \
+    openssh-server \
+    autossh \
+    socat \
+    netcat-openbsd \
+    curl \
+    wget \
+    iptables \
+    iproute2 \
+    tcpdump \
+    nmap \
+    bind-tools \
+    ca-certificates \
+    bash \
+    jq \
+    python3 \
+    py3-pip \
+    && rm -rf /var/cache/apk/*
+
+# Install Python networking libraries
+RUN pip3 install --no-cache-dir \
+    paramiko==3.4.0 \
+    sshtunnel==0.4.0 \
+    pyngrok==7.1.8 \
+    requests==2.31.0 \
+    asyncio-mqtt==0.16.1
+
+# Create tunnel tools directory
+WORKDIR /opt/lucid/tunnel-tools
+
+# Copy tunnel management scripts
+COPY <<EOF /opt/lucid/tunnel-tools/tunnel-manager.py
+#!/usr/bin/env python3
+"""
+LUCID RDP Tunnel Manager
+SPEC-4 compliant tunnel management with connection pooling and monitoring
+"""
+
+import asyncio
+import json
+import logging
+import os
+import signal
+import sys
+import time
+from typing import Dict, List, Optional
+import paramiko
+from sshtunnel import SSHTunnelForwarder
+import requests
+
+class TunnelManager:
+    def __init__(self):
+        self.tunnels: Dict[str, SSHTunnelForwarder] = {}
+        self.config = self._load_config()
+        self.running = True
+        
+    def _load_config(self) -> Dict:
+        """Load tunnel configuration from environment or config file"""
+        return {
+            'tunnel_pool_size': int(os.getenv('TUNNEL_POOL_SIZE', '10')),
+            'connection_timeout': int(os.getenv('CONNECTION_TIMEOUT', '30')),
+            'health_check_interval': int(os.getenv('HEALTH_CHECK_INTERVAL', '60')),
+            'tunnels': json.loads(os.getenv('TUNNEL_CONFIGS', '[]'))
+        }
+    
+    async def create_tunnel(self, tunnel_id: str, config: Dict) -> bool:
+        """Create a new SSH tunnel"""
+        try:
+            tunnel = SSHTunnelForwarder(
+                ssh_address_or_host=(config['ssh_host'], config['ssh_port']),
+                ssh_username=config['ssh_user'],
+                ssh_password=config.get('ssh_password'),
+                ssh_pkey=config.get('ssh_key_path'),
+                remote_bind_address=(config['remote_host'], config['remote_port']),
+                local_bind_address=(config['local_host'], config['local_port'])
+            )
+            
+            tunnel.start()
+            self.tunnels[tunnel_id] = tunnel
+            logging.info(f"Tunnel {tunnel_id} created successfully")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to create tunnel {tunnel_id}: {e}")
+            return False
+    
+    async def health_check(self) -> Dict[str, bool]:
+        """Perform health check on all tunnels"""
+        results = {}
+        for tunnel_id, tunnel in self.tunnels.items():
+            try:
+                # Test tunnel connectivity
+                response = requests.get(
+                    f"http://{tunnel.local_bind_host}:{tunnel.local_bind_port}/health",
+                    timeout=5
+                )
+                results[tunnel_id] = response.status_code == 200
+            except:
+                results[tunnel_id] = False
+        return results
+    
+    async def cleanup(self):
+        """Clean up all tunnels"""
+        for tunnel_id, tunnel in self.tunnels.items():
+            try:
+                tunnel.stop()
+                logging.info(f"Tunnel {tunnel_id} stopped")
+            except Exception as e:
+                logging.error(f"Error stopping tunnel {tunnel_id}: {e}")
+        self.tunnels.clear()
+
+async def main():
+    manager = TunnelManager()
+    
+    # Setup signal handlers
+    def signal_handler(signum, frame):
+        logging.info("Received shutdown signal")
+        asyncio.create_task(manager.cleanup())
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # Initialize tunnels from config
+    for tunnel_config in manager.config['tunnels']:
+        await manager.create_tunnel(
+            tunnel_config['id'],
+            tunnel_config
+        )
+    
+    # Main monitoring loop
+    while manager.running:
+        health_results = await manager.health_check()
+        logging.info(f"Tunnel health check: {health_results}")
+        await asyncio.sleep(manager.config['health_check_interval'])
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
+EOF
+
+# Make tunnel manager executable
+RUN chmod +x /opt/lucid/tunnel-tools/tunnel-manager.py
+
+# Create tunnel configuration template
+COPY <<EOF /opt/lucid/tunnel-tools/tunnel-config.json
+{
+  "tunnel_pool_size": 10,
+  "connection_timeout": 30,
+  "health_check_interval": 60,
+  "tunnels": [
+    {
+      "id": "rdp-tunnel-1",
+      "ssh_host": "tunnel-server.example.com",
+      "ssh_port": 22,
+      "ssh_user": "lucid",
+      "ssh_key_path": "/etc/ssh/keys/lucid-tunnel.key",
+      "remote_host": "127.0.0.1",
+      "remote_port": 3389,
+      "local_host": "127.0.0.1",
+      "local_port": 13389
+    }
+  ]
+}
+EOF
+
+# Create SSH directory and keys
+RUN mkdir -p /etc/ssh/keys /var/log/tunnel-tools
+RUN chmod 700 /etc/ssh/keys
+
+# Health check script
+COPY <<EOF /opt/lucid/tunnel-tools/health-check.sh
+#!/bin/bash
+# Tunnel tools health check
+
+# Check if tunnel manager is running
+if ! pgrep -f "tunnel-manager.py" > /dev/null; then
+    echo "ERROR: Tunnel manager not running"
+    exit 1
+fi
+
+# Check tunnel connectivity
+if ! curl -f -s http://localhost:8088/health > /dev/null; then
+    echo "ERROR: Tunnel health endpoint not responding"
+    exit 1
+fi
+
+echo "✅ Tunnel tools healthy"
+exit 0
+EOF
+
+RUN chmod +x /opt/lucid/tunnel-tools/health-check.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /opt/lucid/tunnel-tools/health-check.sh
+
+# Expose tunnel management API
+EXPOSE 8088
+
+# Volume for SSH keys and logs
+VOLUME ["/etc/ssh/keys", "/var/log/tunnel-tools"]
+
+# Entry point
+CMD ["/opt/lucid/tunnel-tools/tunnel-manager.py"]

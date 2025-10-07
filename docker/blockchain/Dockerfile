@@ -21,7 +21,7 @@ RUN groupadd --gid 1000 lucid \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
-COPY --chown=lucid:lucid app /app/app
+COPY --chown=lucid:lucid blockchain/ /app/blockchain/
 
 # Stage 2: Distroless runtime
 FROM gcr.io/distroless/python3-debian12:latest
