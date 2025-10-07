@@ -1,0 +1,415 @@
+# LUCID RDP GUI Hooks - Event-driven GUI Components
+# SPEC-4 Compliant: Hook-based GUI system, event handling, plugin architecture
+
+FROM pickme/lucid:devcontainer-dind as base
+
+LABEL org.lucid.plane="gui"
+LABEL org.lucid.service="gui-hooks"
+LABEL org.lucid.stage="2"
+
+WORKDIR /workspaces/Lucid
+
+# Install hook and plugin development tools
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    python3-setuptools \
+    python3-wheel \
+    build-essential \
+    cmake \
+    pkg-config \
+    # GUI libraries
+    libgtk-3-dev \
+    libglib2.0-dev \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    libatk1.0-dev \
+    # Event handling
+    libevent-dev \
+    libev-dev \
+    # Plugin system
+    libdl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python hook and event libraries
+RUN pip install --no-cache-dir \
+    pluggy==1.3.0 \
+    eventlet==0.33.3 \
+    gevent==23.9.1 \
+    asyncio==3.4.3 \
+    aiofiles==23.2.1 \
+    watchdog==3.0.0 \
+    pydantic==2.5.0 \
+    fastapi==0.104.1 \
+    uvicorn==0.24.0 \
+    websockets==12.0 \
+    redis==5.0.1 \
+    celery==5.3.4
+
+# Copy GUI hooks system
+COPY <<EOF /workspaces/Lucid/gui/gui_hooks.py
+#!/usr/bin/env python3
+"""
+LUCID RDP GUI Hooks System
+SPEC-4 compliant event-driven GUI components with plugin architecture
+"""
+
+import os
+import sys
+import json
+import logging
+import asyncio
+import inspect
+from typing import Dict, List, Callable, Any, Optional
+from dataclasses import dataclass, field
+from enum import Enum
+import pluggy
+import eventlet
+from pydantic import BaseModel
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import uvicorn
+
+class HookType(Enum):
+    """Types of GUI hooks"""
+    WINDOW_EVENT = "window_event"
+    USER_INPUT = "user_input"
+    SYSTEM_EVENT = "system_event"
+    RDP_EVENT = "rdp_event"
+    PLUGIN_EVENT = "plugin_event"
+    CUSTOM_EVENT = "custom_event"
+
+class EventPriority(Enum):
+    """Event processing priority"""
+    LOW = 1
+    NORMAL = 2
+    HIGH = 3
+    CRITICAL = 4
+
+@dataclass
+class GUIEvent:
+    """GUI event data structure"""
+    event_id: str
+    event_type: HookType
+    priority: EventPriority
+    data: Dict[str, Any]
+    timestamp: float
+    source: str = ""
+    target: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+class HookHandler:
+    """Individual hook handler"""
+    
+    def __init__(self, func: Callable, priority: EventPriority = EventPriority.NORMAL):
+        self.func = func
+        self.priority = priority
+        self.name = func.__name__
+        self.module = func.__module__
+    
+    async def execute(self, event: GUIEvent) -> Any:
+        """Execute the hook handler"""
+        try:
+            if asyncio.iscoroutinefunction(self.func):
+                return await self.func(event)
+            else:
+                return self.func(event)
+        except Exception as e:
+            logging.error(f"Hook {self.name} failed: {e}")
+            raise
+
+class GUIHookManager:
+    """Main GUI hook management system"""
+    
+    def __init__(self):
+        self.hooks: Dict[HookType, List[HookHandler]] = {}
+        self.event_queue = asyncio.Queue()
+        self.websocket_clients: List[WebSocket] = []
+        self.plugins: Dict[str, Any] = {}
+        self.running = False
+        
+    def register_hook(self, event_type: HookType, handler: Callable, 
+                     priority: EventPriority = EventPriority.NORMAL):
+        """Register a hook handler"""
+        if event_type not in self.hooks:
+            self.hooks[event_type] = []
+        
+        hook_handler = HookHandler(handler, priority)
+        self.hooks[event_type].append(hook_handler)
+        
+        # Sort by priority (highest first)
+        self.hooks[event_type].sort(key=lambda h: h.priority.value, reverse=True)
+        
+        logging.info(f"Registered hook {hook_handler.name} for {event_type.value}")
+    
+    def emit_event(self, event: GUIEvent):
+        """Emit an event to be processed"""
+        self.event_queue.put_nowait(event)
+        logging.debug(f"Emitted event {event.event_id} of type {event.event_type.value}")
+    
+    async def process_events(self):
+        """Process events from the queue"""
+        while self.running:
+            try:
+                event = await asyncio.wait_for(self.event_queue.get(), timeout=1.0)
+                await self._handle_event(event)
+            except asyncio.TimeoutError:
+                continue
+            except Exception as e:
+                logging.error(f"Error processing event: {e}")
+    
+    async def _handle_event(self, event: GUIEvent):
+        """Handle a specific event"""
+        event_type = event.event_type
+        
+        if event_type not in self.hooks:
+            logging.debug(f"No handlers for event type {event_type.value}")
+            return
+        
+        # Execute all handlers for this event type
+        for handler in self.hooks[event_type]:
+            try:
+                result = await handler.execute(event)
+                if result is not None:
+                    logging.debug(f"Hook {handler.name} returned: {result}")
+            except Exception as e:
+                logging.error(f"Handler {handler.name} failed: {e}")
+        
+        # Broadcast to WebSocket clients
+        await self._broadcast_to_clients(event)
+    
+    async def _broadcast_to_clients(self, event: GUIEvent):
+        """Broadcast event to WebSocket clients"""
+        if not self.websocket_clients:
+            return
+        
+        message = {
+            "type": "event",
+            "event": {
+                "id": event.event_id,
+                "type": event.event_type.value,
+                "priority": event.priority.value,
+                "data": event.data,
+                "timestamp": event.timestamp,
+                "source": event.source,
+                "target": event.target
+            }
+        }
+        
+        disconnected = []
+        for client in self.websocket_clients:
+            try:
+                await client.send_text(json.dumps(message))
+            except Exception:
+                disconnected.append(client)
+        
+        # Remove disconnected clients
+        for client in disconnected:
+            self.websocket_clients.remove(client)
+    
+    async def start(self):
+        """Start the hook manager"""
+        self.running = True
+        logging.info("GUI Hook Manager started")
+    
+    async def stop(self):
+        """Stop the hook manager"""
+        self.running = False
+        logging.info("GUI Hook Manager stopped")
+
+# Global hook manager instance
+hook_manager = GUIHookManager()
+
+# Decorator for registering hooks
+def hook(event_type: HookType, priority: EventPriority = EventPriority.NORMAL):
+    """Decorator for registering GUI hooks"""
+    def decorator(func):
+        hook_manager.register_hook(event_type, func, priority)
+        return func
+    return decorator
+
+# Example hook implementations
+@hook(HookType.WINDOW_EVENT, EventPriority.HIGH)
+async def window_event_handler(event: GUIEvent):
+    """Handle window events"""
+    logging.info(f"Window event: {event.data}")
+    
+    # Example: Handle window resize
+    if event.data.get("action") == "resize":
+        width = event.data.get("width", 0)
+        height = event.data.get("height", 0)
+        logging.info(f"Window resized to {width}x{height}")
+
+@hook(HookType.USER_INPUT, EventPriority.NORMAL)
+async def user_input_handler(event: GUIEvent):
+    """Handle user input events"""
+    input_type = event.data.get("type")
+    
+    if input_type == "keyboard":
+        key = event.data.get("key")
+        logging.info(f"Keyboard input: {key}")
+    elif input_type == "mouse":
+        x = event.data.get("x", 0)
+        y = event.data.get("y", 0)
+        button = event.data.get("button")
+        logging.info(f"Mouse input: {button} at ({x}, {y})")
+
+@hook(HookType.RDP_EVENT, EventPriority.CRITICAL)
+async def rdp_event_handler(event: GUIEvent):
+    """Handle RDP-specific events"""
+    action = event.data.get("action")
+    
+    if action == "session_start":
+        session_id = event.data.get("session_id")
+        logging.info(f"RDP session started: {session_id}")
+    elif action == "session_end":
+        session_id = event.data.get("session_id")
+        logging.info(f"RDP session ended: {session_id}")
+
+# FastAPI application for WebSocket connections
+app = FastAPI(title="LUCID GUI Hooks API")
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time event streaming"""
+    await websocket.accept()
+    hook_manager.websocket_clients.append(websocket)
+    
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        hook_manager.websocket_clients.remove(websocket)
+
+@app.get("/hooks")
+async def list_hooks():
+    """List all registered hooks"""
+    hooks_info = {}
+    for event_type, handlers in hook_manager.hooks.items():
+        hooks_info[event_type.value] = [
+            {
+                "name": handler.name,
+                "module": handler.module,
+                "priority": handler.priority.value
+            }
+            for handler in handlers
+        ]
+    return hooks_info
+
+@app.post("/events")
+async def emit_event(event_data: Dict[str, Any]):
+    """Emit a custom event"""
+    event = GUIEvent(
+        event_id=f"custom_{int(asyncio.get_event_loop().time() * 1000)}",
+        event_type=HookType.CUSTOM_EVENT,
+        priority=EventPriority.NORMAL,
+        data=event_data,
+        timestamp=asyncio.get_event_loop().time()
+    )
+    
+    hook_manager.emit_event(event)
+    return {"status": "event_emitted", "event_id": event.event_id}
+
+async def main():
+    """Main application entry point"""
+    logging.basicConfig(level=logging.INFO)
+    
+    # Start hook manager
+    await hook_manager.start()
+    
+    # Start event processing task
+    event_task = asyncio.create_task(hook_manager.process_events())
+    
+    # Start FastAPI server
+    config = uvicorn.Config(
+        app, 
+        host="0.0.0.0", 
+        port=8091, 
+        log_level="info"
+    )
+    server = uvicorn.Server(config)
+    
+    try:
+        await server.serve()
+    except KeyboardInterrupt:
+        logging.info("Shutting down...")
+        await hook_manager.stop()
+        event_task.cancel()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+EOF
+
+# Make GUI hooks executable
+RUN chmod +x /workspaces/Lucid/gui/gui_hooks.py
+
+# Create hook configuration
+COPY <<EOF /etc/lucid/gui-hooks.conf
+[hooks]
+enable_window_hooks = true
+enable_input_hooks = true
+enable_system_hooks = true
+enable_rdp_hooks = true
+enable_plugin_hooks = true
+
+[event_processing]
+max_queue_size = 1000
+processing_timeout = 30
+enable_priority_processing = true
+
+[websocket]
+port = 8091
+max_connections = 100
+heartbeat_interval = 30
+
+[plugins]
+plugin_dir = /opt/lucid/plugins
+auto_load_plugins = true
+plugin_timeout = 60
+
+[logging]
+log_level = INFO
+log_file = /var/log/lucid/gui-hooks.log
+max_log_size = 100MB
+EOF
+
+# Create plugin directory
+RUN mkdir -p /opt/lucid/plugins
+RUN chmod 755 /opt/lucid/plugins
+
+# Create example plugin
+COPY <<EOF /opt/lucid/plugins/example_plugin.py
+#!/usr/bin/env python3
+"""
+Example LUCID GUI Plugin
+Demonstrates how to create custom GUI plugins
+"""
+
+from gui.gui_hooks import hook, HookType, EventPriority, GUIEvent
+import logging
+
+@hook(HookType.CUSTOM_EVENT, EventPriority.NORMAL)
+async def example_custom_handler(event: GUIEvent):
+    """Example custom event handler"""
+    logging.info(f"Example plugin received event: {event.data}")
+
+@hook(HookType.USER_INPUT, EventPriority.LOW)
+async def example_input_handler(event: GUIEvent):
+    """Example user input handler"""
+    logging.info(f"Example plugin processed input: {event.data}")
+EOF
+
+RUN chmod +x /opt/lucid/plugins/example_plugin.py
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8091/hooks || exit 1
+
+# Expose WebSocket API
+EXPOSE 8091
+
+# Volume for plugins and logs
+VOLUME ["/opt/lucid/plugins", "/var/log/lucid"]
+
+# Entry point
+CMD ["/workspaces/Lucid/gui/gui_hooks.py"]
