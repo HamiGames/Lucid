@@ -242,7 +242,7 @@ start_services() {
     # Check if compose file exists
     local compose_file="${SCRIPT_DIR}/_compose_resolved.yaml"
     if [[ ! -f "$compose_file" ]]; then
-        compose_file="${SCRIPT_DIR}/docker-compose.yml"
+        compose_file="${SCRIPT_DIR}/infrastructure/compose/docker-compose.yml"
     fi
     
     if [[ ! -f "$compose_file" ]]; then
@@ -294,7 +294,7 @@ stop_services() {
     
     local compose_file="${SCRIPT_DIR}/_compose_resolved.yaml"
     if [[ ! -f "$compose_file" ]]; then
-        compose_file="${SCRIPT_DIR}/docker-compose.yml"
+        compose_file="${SCRIPT_DIR}/infrastructure/compose/docker-compose.yml"
     fi
     
     if [[ -f "$compose_file" ]]; then

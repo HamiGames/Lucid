@@ -3,7 +3,7 @@
 
 param(
     [string]$Profiles = "blockchain,sessions,admin",
-    [string]$ComposeFile = "compose/docker-compose.yml",
+    [string]$ComposeFile = "infrastructure/compose/docker-compose.yml",
     [switch]$Build = $false,
     [switch]$DetachMode = $true,
     [switch]$Verbose = $false,

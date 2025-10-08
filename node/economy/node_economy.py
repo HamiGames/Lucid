@@ -17,10 +17,12 @@ import hashlib
 
 # Import from reorganized structure
 import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from payment_systems.tron_node.tron_client import TronNodeSystem
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent / "payment-systems"))
+from tron_node.tron_client import TronNodeClient
 from blockchain.core.blockchain_engine import PayoutRouter
-from payment_systems.governance.payout_governance import PayoutGovernance
+# Note: payout_governance module not found in payment-systems, may need to be created or imported differently
+# from payment_systems.governance.payout_governance import PayoutGovernance
 
 logger = logging.getLogger(__name__)
 

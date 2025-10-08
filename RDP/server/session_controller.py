@@ -25,7 +25,7 @@ import subprocess
 # Import existing project modules
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from session.session_recorder import SessionRecorder, SessionMetadata
+from sessions.session_recorder import SessionRecorder, SessionMetadata
 from RDP.server.rdp_server_manager import RDPServerManager, RDPSession, SessionStatus
 
 logger = logging.getLogger(__name__)

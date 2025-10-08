@@ -8,7 +8,7 @@ set -euo pipefail
 LUCID_HOME="/opt/lucid"
 LUCID_USER="lucid"
 LUCID_SERVICE="lucid-rdp"
-DOCKER_COMPOSE_FILE="$LUCID_HOME/docker-compose.yml"
+DOCKER_COMPOSE_FILE="$LUCID_HOME/infrastructure/compose/docker-compose.yml"
 ENV_FILE="$LUCID_HOME/.env"
 
 # Logging function

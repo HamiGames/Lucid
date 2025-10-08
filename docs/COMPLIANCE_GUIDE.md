@@ -353,7 +353,7 @@ grep -r "pull_policy: always" infrastructure/compose/
 ### **Examples**
 - `infrastructure/compose/lucid-layer1-complete.yaml` - Layer 1 deployment
 - `infrastructure/compose/lucid-layer2-complete.yaml` - Layer 2 deployment
-- `compose/docker-compose.yml` - Main deployment
+- `infrastructure/compose/docker-compose.yml` - Main deployment
 
 ---
 

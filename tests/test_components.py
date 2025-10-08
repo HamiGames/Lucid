@@ -8,7 +8,7 @@ def test_imports():
     """Test that all components can be imported."""
     try:
         from node import NodeManager, PeerDiscovery
-        from session import SessionRecorder, ChunkManager, EncryptionManager
+        from sessions import SessionRecorder, ChunkManager, EncryptionManager
         from wallet import WalletManager  
         from admin import AdminManager
         from user import UserManager
@@ -39,7 +39,7 @@ async def test_node_manager():
 @pytest.mark.asyncio 
 async def test_session_recorder():
     """Test session recorder."""
-    from session import SessionRecorder
+    from sessions import SessionRecorder
     
     # Mock database
     mock_db = AsyncMock()

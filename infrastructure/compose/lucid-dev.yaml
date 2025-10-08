@@ -1,5 +1,5 @@
-# LUCID CORE SUPPORT SERVICES - Development Infrastructure
-# Professional Docker Compose for Core Support Services ONLY
+# LUCID CORE SUPPORT SERVICES - Distroless Development Infrastructure
+# Professional Docker Compose for Core Support Services ONLY with Pre-built Distroless Images
 # SPEC-4 compliant: Stage 0 Common & Base with plane isolation
 # Dual-network architecture: core services isolated, external connectivity maintained
 
@@ -38,7 +38,7 @@ x-lucid-env: &lucid-env
   
   # Security environment
   AGE_PRIVATE_KEY: ${AGE_PRIVATE_KEY:-}
-  
+
 # SPEC-4 Pi-compatible common configuration with plane isolation
 x-lucid-common: &lucid-common
   restart: unless-stopped
@@ -56,6 +56,8 @@ x-lucid-common: &lucid-common
     - "org.lucid.cluster=${CLUSTER_ID:-dev-core}"
     - "org.lucid.tor.multi-onion=enabled"
     - "org.lucid.tor.cookie-auth=ed25519-v3"
+    - "org.lucid.distroless=true"
+    - "org.lucid.prebuilt=true"
   # Dual network membership: internal core + external devcontainer
   networks:
     - lucid_core_net
@@ -209,13 +211,14 @@ services:
       - "org.lucid.tor.accessible=internal"
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 2: TOR Proxy (SPEC-4 Stage 0)
+  # CORE SUPPORT SERVICE 2: TOR Proxy (SPEC-4 Stage 0) - DISTROLESS
   # Multi-Onion + Dynamic Onion Support with Cookie Auth
+  # Pre-built distroless image: pickme/lucid:tor-proxy:latest
   # =============================================================================
   tor-proxy:
     <<: *lucid-common
     container_name: tor-proxy
-    image: pickme/lucid:tor-proxy
+    image: pickme/lucid:tor-proxy:latest
     pull_policy: always
     environment:
       <<: *lucid-env
@@ -266,14 +269,16 @@ services:
       - "org.lucid.tor.dynamic-onions=unlimited"
       - "org.lucid.tor.wallet-support=enabled"
       - "org.lucid.tor.onion-rotation=supported"
+      - "org.lucid.distroless=true"
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 3: API Server (SPEC-4 Stage 0)
+  # CORE SUPPORT SERVICE 3: API Server (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:api-server:latest
   # =============================================================================
   lucid_api:
     <<: *lucid-common
     container_name: lucid_api
-    image: pickme/lucid:api-server
+    image: pickme/lucid:api-server:latest
     pull_policy: always
     environment:
       <<: *lucid-env
@@ -315,15 +320,17 @@ services:
       - "org.lucid.service=api-server"
       - "org.lucid.expose=8081"
       - "org.lucid.tor.onion-target=primary"
+      - "org.lucid.distroless=true"
     working_dir: /app
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 4: API Gateway (SPEC-4 Stage 0)
+  # CORE SUPPORT SERVICE 4: API Gateway (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:api-gateway:latest
   # =============================================================================
   lucid_api_gateway:
     <<: *lucid-common
     container_name: lucid_api_gateway
-    image: pickme/lucid:api-gateway
+    image: pickme/lucid:api-gateway:latest
     pull_policy: always
     environment:
       <<: *lucid-env
@@ -360,14 +367,16 @@ services:
     labels:
       - "org.lucid.service=api-gateway"
       - "org.lucid.expose=8080"
+      - "org.lucid.distroless=true"
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 5: Tunnel Tools (SPEC-4 Stage 0)
+  # CORE SUPPORT SERVICE 5: Tunnel Tools (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:tunnel-tools:latest
   # =============================================================================
   tunnel-tools:
     <<: *lucid-common
     container_name: lucid_tunnel_tools
-    image: pickme/lucid:tunnel-tools
+    image: pickme/lucid:tunnel-tools:latest
     pull_policy: always
     environment:
       <<: *lucid-env
@@ -404,14 +413,16 @@ services:
     labels:
       - "org.lucid.service=tunnel-tools"
       - "org.lucid.expose=7000"
+      - "org.lucid.distroless=true"
 
   # =============================================================================
-  # CORE SUPPORT SERVICE 6: Server Tools (SPEC-4 Stage 0)
+  # CORE SUPPORT SERVICE 6: Server Tools (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:server-tools:latest
   # =============================================================================
   server-tools:
     <<: *lucid-common
     container_name: lucid_server_tools
-    image: pickme/lucid:server-tools
+    image: pickme/lucid:server-tools:latest
     pull_policy: always
     environment:
       <<: *lucid-env
@@ -442,6 +453,7 @@ services:
         echo "[server-tools] API Server: http://api:8081"
         echo "[server-tools] Tunnel Tools: tcp://tunnel:7000"
         echo "[server-tools] Multi-onion support: Static(5) + Dynamic(unlimited)"
+        echo "[server-tools] Distroless: All services running on pre-built distroless images"
         exec tail -f /dev/null
     healthcheck:
       test: ["CMD-SHELL", "/opt/lucid/scripts/health-check.sh || exit 1"]
@@ -460,3 +472,4 @@ services:
     labels:
       - "org.lucid.service=server-tools"
       - "org.lucid.expose=none"
+      - "org.lucid.distroless=true"

@@ -1,0 +1,200 @@
+# LUCID CORE SERVICES - Distroless Deployment
+# Phase 1: Core Support Services (MongoDB, Tor, API Gateway, API Server, Tools)
+# Aligned with LUCID_DISTROLESS_BUILD_GUIDE.md Phase 3.1
+
+
+# Core services with distroless images
+services:
+  lucid_mongo:
+    image: mongo:7
+    container_name: lucid_mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lucid
+      MONGO_INITDB_ROOT_PASSWORD: lucid
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - lucid_core_net
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet -u lucid -p lucid --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  tor-proxy:
+    image: pickme/lucid:tor-proxy:latest
+    container_name: tor-proxy
+    pull_policy: always
+    environment:
+      TOR_SOCKS_PORT: "9050"
+      TOR_CONTROL_PORT: "9051"
+      ONION_COUNT: "5"
+    volumes:
+      - tor_data:/var/lib/tor
+      - onion_state:/run/lucid/onion
+    networks:
+      - lucid_core_net
+    ports:
+      - "9050:9050"
+      - "9051:9051"
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/local/bin/tor-health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  api-server:
+    image: pickme/lucid:api-server:latest
+    container_name: lucid_api
+    pull_policy: always
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "8081"
+      MONGO_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - tor-proxy
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  api-gateway:
+    image: pickme/lucid:api-gateway:latest
+    container_name: lucid_api_gateway
+    pull_policy: always
+    environment:
+      API_UPSTREAM: "lucid_api:8081"
+      GATEWAY_PORT: "8080"
+    networks:
+      - lucid_core_net
+    depends_on:
+      - api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
+  tunnel-tools:
+    image: pickme/lucid:tunnel-tools:latest
+    container_name: lucid_tunnel_tools
+    pull_policy: always
+    environment:
+      TUNNEL_PORT: "7000"
+      TUNNEL_MODE: "client"
+    volumes:
+      - onion_state:/run/lucid/onion
+      - tunnel_data:/var/lib/tunnel
+    networks:
+      - lucid_core_net
+    depends_on:
+      - tor-proxy
+      - lucid_api
+    ports:
+      - "7000:7000"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 7000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
+  server-tools:
+    image: pickme/lucid:server-tools:latest
+    container_name: lucid_server_tools
+    pull_policy: always
+    environment:
+      LUCID_ENV: production
+      LUCID_PLANE: ops
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+      - tunnel_data:/var/lib/tunnel:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - tor-proxy
+      - lucid_mongo
+      - lucid_api
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/lucid/scripts/health-check.sh || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 32M
+          cpus: '0.05'
+
+networks:
+  lucid_core_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  mongo_data:
+  tor_data:
+  onion_state:
+  tunnel_data:

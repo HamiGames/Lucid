@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
-    import blake3
+import blake3
 
 logger = logging.getLogger(__name__)
 
@@ -240,7 +240,7 @@ class MerkleTreeBuilder:
             if proof.leaf_index % 2 == 0:
                 # Current node is left child
                 current_hash = self._hash_concatenated(current_hash, sibling_hash)
-                else:
+            else:
                 # Current node is right child
                 current_hash = self._hash_concatenated(sibling_hash, current_hash)
             

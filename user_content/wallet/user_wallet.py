@@ -21,8 +21,9 @@ from cryptography.hazmat.primitives import serialization
 
 # Import from reorganized structure
 import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from payment_systems.tron_node.tron_client import TronNodeSystem
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent / "payment-systems"))
+from tron_node.tron_client import TronNodeClient
 from blockchain.core.blockchain_engine import PayoutRouter
 
 logger = logging.getLogger(__name__)

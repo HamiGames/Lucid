@@ -26,7 +26,10 @@ from sessions.encryption.session_crypto import SessionCrypto
 from RDP.server.rdp_server import RDPServer
 from RDP.security.trust_controller import TrustController
 from blockchain.core.blockchain_engine import PayoutRouter
-from payment_systems.tron_node.tron_client import TronNodeSystem
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent / "payment-systems"))
+from tron_node.tron_client import TronNodeClient
 
 logger = logging.getLogger(__name__)
 

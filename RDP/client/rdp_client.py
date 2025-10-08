@@ -27,7 +27,7 @@ import platform
 # Import existing project modules
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from session.session_recorder import SessionRecorder, SessionMetadata
+from sessions.session_recorder import SessionRecorder, SessionMetadata
 
 logger = logging.getLogger(__name__)
 

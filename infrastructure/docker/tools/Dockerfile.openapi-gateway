@@ -1,0 +1,83 @@
+# LUCID OpenAPI Gateway - Distroless Build
+# NGINX gateway for OpenAPI services
+# Multi-stage build for distroless deployment
+
+# syntax=docker/dockerfile:1.7
+FROM nginx:1.25-alpine AS gateway-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="OpenAPI Gateway for Lucid API Services (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="openapi-gateway" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8095"
+
+# Install build dependencies
+RUN apk add --no-cache \
+    curl \
+    ca-certificates
+
+# Copy NGINX configuration for OpenAPI
+COPY 03-api-gateway/nginx/openapi.conf /etc/nginx/nginx.conf
+COPY 03-api-gateway/nginx/openapi.d/ /etc/nginx/conf.d/
+
+# Create health check script
+RUN echo '#!/bin/sh' > /usr/local/bin/openapi-health && \
+    echo 'curl -f http://localhost:8095/health || exit 1' >> /usr/local/bin/openapi-health && \
+    chmod +x /usr/local/bin/openapi-health
+
+# Create non-root user
+RUN addgroup -g 1000 lucid && \
+    adduser -u 1000 -G lucid -s /bin/sh -D lucid
+
+# Final distroless stage
+FROM gcr.io/distroless/base-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="OpenAPI Gateway for Lucid API Services (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="openapi-gateway" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8095"
+
+# Copy NGINX from builder
+COPY --from=gateway-builder /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=gateway-builder /usr/lib/nginx /usr/lib/nginx
+COPY --from=gateway-builder /etc/nginx /etc/nginx
+COPY --from=gateway-builder /var/cache/nginx /var/cache/nginx
+COPY --from=gateway-builder /var/log/nginx /var/log/nginx
+COPY --from=gateway-builder /usr/local/bin/openapi-health /usr/local/bin/openapi-health
+
+# Copy required libraries
+COPY --from=gateway-builder /lib/ld-musl-x86_64.so.1 /lib/
+COPY --from=gateway-builder /usr/lib/libssl.so.3 /usr/lib/
+COPY --from=gateway-builder /usr/lib/libcrypto.so.3 /usr/lib/
+COPY --from=gateway-builder /usr/lib/libz.so.1 /usr/lib/
+COPY --from=gateway-builder /usr/lib/libpcre2-8.so.0 /usr/lib/
+
+# Create necessary directories
+USER nonroot
+RUN mkdir -p /var/cache/nginx/client_temp \
+    /var/cache/nginx/proxy_temp \
+    /var/cache/nginx/fastcgi_temp \
+    /var/cache/nginx/uwsgi_temp \
+    /var/cache/nginx/scgi_temp
+
+# Runtime environment
+ENV OPENAPI_PORT=8095 \
+    NGINX_WORKER_PROCESSES=1 \
+    NGINX_WORKER_CONNECTIONS=1024
+
+# Expose OpenAPI gateway port
+EXPOSE 8095
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD ["/usr/local/bin/openapi-health"]
+
+# Run NGINX
+ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]

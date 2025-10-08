@@ -64,7 +64,7 @@ Lucid/
 │   ├── transaction-data/        # Transaction data management
 │   ├── vm-system/              # Blockchain VM system
 │   ├── ledger/                 # Ledger management
-│   └── api/                    # Blockchain API (from 04-blockchain-core)
+│   └── api/                    # Blockchain API
 │
 ├── wallet/                      # Wallet specific features
 │   └── (wallet modules to be organized)

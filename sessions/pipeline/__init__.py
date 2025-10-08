@@ -1,1 +1,0 @@
-# Sessions Pipeline Module

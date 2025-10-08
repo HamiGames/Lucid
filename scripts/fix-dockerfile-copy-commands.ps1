@@ -119,9 +119,6 @@ function Fix-DockerfileCopyCommands {
 # Get all Dockerfiles in both locations
 $dockerfiles = @()
 
-# Get Dockerfiles from dockerfiles/ directory
-$dockerfiles += Get-ChildItem -Path "dockerfiles" -Recurse -Name "Dockerfile*" | ForEach-Object { "dockerfiles/$_" }
-
 # Get Dockerfiles from infrastructure/docker/ directory
 $dockerfiles += Get-ChildItem -Path "infrastructure/docker" -Recurse -Name "Dockerfile*" | ForEach-Object { "infrastructure/docker/$_" }
 

@@ -46,9 +46,9 @@ Stage 0 (Common & Base) ✅ DONE - DevContainer built
 
 ### **1.1 Main Docker Compose File (Missing)**
 
-SPEC-4 requires `/compose/docker-compose.yml` with multi-profile support:
+SPEC-4 requires `/infrastructure/compose/docker-compose.yml` with multi-profile support:
 
-✅ **CREATED:** `compose/docker-compose.yml` with all required profiles and services
+✅ **CREATED:** `infrastructure/compose/docker-compose.yml` with all required profiles and services
 
 ### **1.2 Missing Dockerfiles Analysis**
 

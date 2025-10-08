@@ -6,7 +6,7 @@ This document prescribes **what to build, package, and include** per **container
 ---
 
 ## Cluster taxonomy (profiles)
-Each physical/virtual site runs the same `docker-compose.yml`; **profiles** enable the role for that site. All clusters run the **`beta` sidecar** and expose onion endpoints per plane (no plane bridging).
+Each physical/virtual site runs the same `infrastructure/compose/docker-compose.yml`; **profiles** enable the role for that site. All clusters run the **`beta` sidecar** and expose onion endpoints per plane (no plane bridging).
 
 - **Blockchain Group**: `blockchain-core`, `blockchain-ledger`, `blockchain-virtual-machine`, `blockchain-sessions-data`, `blockchain-governances`.
 - **Sessions Group**: `sessions-gateway`, `sessions-manifests`, `sessions-index`.
@@ -189,7 +189,7 @@ Each stage lists **content inclusion** (what must ship in each container), **sec
 
 ## GitOps assets & repos
 **Config Repo** (single source of truth)
-- `/compose/docker-compose.yml` (multi‑profile)
+- `/infrastructure/compose/docker-compose.yml` (multi‑profile)
 - `/clusters/clusters.yaml` (inventory, waves)
 - `/clusters/<id>/.env` (plane pins, onions, shard roles)
 - `/policies/` (signatures, SBOM, profile allow‑lists)
