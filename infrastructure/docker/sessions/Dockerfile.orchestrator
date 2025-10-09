@@ -1,0 +1,58 @@
+# LUCID Session Orchestrator - Distroless Build
+# Coordinates complete session pipeline per SPEC-1b
+
+# Multi-stage build for distroless deployment
+FROM python:3.12-slim-bookworm AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libzstd-dev \
+    libssl-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY sessions/core/requirements.orchestrator.txt /tmp/
+RUN pip install --no-cache-dir --user -r /tmp/requirements.orchestrator.txt
+
+# Copy source code
+COPY sessions/core/session_orchestrator.py /app/
+COPY sessions/core/chunker.py /app/
+COPY sessions/encryption/encryptor.py /app/
+COPY sessions/core/merkle_builder.py /app/
+COPY sessions/__init__.py /app/sessions/
+COPY sessions/core/__init__.py /app/sessions/core/
+COPY sessions/encryption/__init__.py /app/sessions/encryption/
+
+# Final distroless stage
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /home/nonroot/.local
+
+# Copy application code
+COPY --from=builder /app /app
+
+# Set working directory
+WORKDIR /app
+
+# Set Python path
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+
+# Create data directories
+USER nonroot
+RUN mkdir -p /data/sessions /data/chunks /data/encrypted /data/merkle_roots
+
+# Expose health check port
+EXPOSE 8086
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import session_orchestrator; print('Orchestrator service healthy')"]
+
+# Run the orchestrator service
+ENTRYPOINT ["python3", "/app/session_orchestrator.py"]

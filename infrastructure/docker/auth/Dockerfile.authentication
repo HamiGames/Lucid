@@ -1,0 +1,84 @@
+# Authentication Service Dockerfile - Distroless
+# LUCID-STRICT Layer 1 Core Infrastructure
+# Multi-platform build for Pi 5 ARM64
+
+# syntax=docker/dockerfile:1.7
+FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
+
+# Build environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libffi-dev \
+    libssl-dev \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY auth/requirements.auth.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.auth.txt
+
+# Copy application code
+COPY auth/ /app/auth/
+COPY 03-api-gateway/api/app/schemas/auth.py /app/auth/schemas/
+COPY 03-api-gateway/api/app/routes/auth.py /app/auth/routes/
+
+# Create secure directories
+RUN mkdir -p /secrets /tmp/auth && \
+    chmod 700 /secrets && \
+    chmod 755 /tmp/auth
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' auth_user && \
+    chown -R auth_user:auth_user /app /tmp/auth
+
+# Stage 2: Distroless runtime
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+# Copy Python installation and packages from builder
+COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+
+# Copy required dynamic libraries
+COPY --from=builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy CA certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application
+COPY --from=builder /app /app
+
+# Copy user and group information
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+
+# Runtime environment
+ENV PYTHONPATH=/app
+
+# Create secure directories
+VOLUME ["/secrets", "/tmp/auth"]
+
+# Expose port
+EXPOSE 8085
+
+# Set working directory
+WORKDIR /app
+
+# Run as non-root user
+USER auth_user
+
+# Run service
+ENTRYPOINT ["/usr/local/bin/python3.11", "-m", "auth.main"]
+CMD ["--mode=service"]

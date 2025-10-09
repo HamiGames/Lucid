@@ -1,0 +1,71 @@
+# LUCID RDP SERVER MANAGER - Simple Build
+# Professional RDP server management for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+FROM python:3.11-slim
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0" \
+      description="RDP Server Manager for Lucid Layer 2 Service Integration" \
+      org.lucid.plane="ops" \
+      org.lucid.service="rdp-server-manager" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8087"
+
+# Build-time environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "motor>=3.3.0" \
+        "pymongo>=4.5.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0"
+
+# Create application directories
+RUN mkdir -p /app /data/sessions /data/recordings /data/display /tmp/rdp \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid \
+    && chown -R lucid:lucid /app /data /tmp/rdp
+
+# Copy application code
+COPY RDP/server/ /app/RDP/server/
+COPY sessions/ /app/sessions/
+COPY auth/ /app/auth/
+
+# Set working directory
+WORKDIR /app
+
+# Runtime environment
+ENV PYTHONPATH=/app \
+    RDP_SESSIONS_PATH=/data/sessions \
+    RDP_RECORDINGS_PATH=/data/recordings \
+    RDP_DISPLAY_PATH=/data/display \
+    XRDP_PORT=3389 \
+    MAX_CONCURRENT_SESSIONS=5
+
+# Expose port
+EXPOSE 8087
+
+# Run as non-root user
+USER lucid
+
+# Default command
+ENTRYPOINT ["python3", "/app/RDP/server/rdp_server_manager.py"]

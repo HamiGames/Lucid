@@ -1,0 +1,11 @@
+Log notice stdout
+SocksPort 0.0.0.0:9050
+ControlPort 0.0.0.0:9051
+CookieAuthentication 1
+CookieAuthFileGroupReadable 1
+DataDirectory /var/lib/tor
+
+# Hidden Service (must match compose volume target)
+HiddenServiceDir /var/lib/tor/hidden_service
+HiddenServiceVersion 3
+HiddenServicePort 80 lucid_api:8081

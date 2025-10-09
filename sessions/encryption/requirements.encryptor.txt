@@ -1,0 +1,6 @@
+# LUCID Session Encryptor Requirements
+# XChaCha20-Poly1305 encryption and BLAKE3 hashing
+
+cryptography>=41.0.0
+blake3>=0.3.3
+aiofiles>=23.2.1

@@ -1,0 +1,332 @@
+# LUCID RDP GUI Builder - Desktop Environment and GUI Framework
+# SPEC-4 Compliant: GUI construction, desktop environments, window management
+
+FROM pickme/lucid:devcontainer-dind as base
+
+LABEL org.lucid.plane="gui"
+LABEL org.lucid.service="gui-builder"
+LABEL org.lucid.stage="2"
+
+WORKDIR /workspaces/Lucid
+
+# Install GUI development tools and desktop environments
+RUN apt-get update && apt-get install -y \
+    # Desktop environments
+    xfce4 \
+    xfce4-goodies \
+    xfce4-panel \
+    xfce4-session \
+    xfce4-settings \
+    xfce4-terminal \
+    # Window managers
+    openbox \
+    fluxbox \
+    i3 \
+    # GUI toolkits
+    python3-tk \
+    python3-pyqt5 \
+    python3-pyqt5.qtwidgets \
+    python3-pyqt5.qtgui \
+    python3-pyqt5.qtcore \
+    python3-kivy \
+    # Graphics and multimedia
+    x11vnc \
+    xvfb \
+    mesa-utils \
+    mesa-common-dev \
+    libgl1-mesa-dri \
+    libgl1-mesa-glx \
+    # Development tools
+    build-essential \
+    cmake \
+    pkg-config \
+    libgtk-3-dev \
+    libglib2.0-dev \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    libatk1.0-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python GUI libraries
+RUN pip install --no-cache-dir \
+    tkinter \
+    PyQt5==5.15.10 \
+    PySide2==5.15.2.1 \
+    kivy==2.2.0 \
+    pygame==2.5.2 \
+    matplotlib==3.8.2 \
+    seaborn==0.13.0 \
+    plotly==5.17.0 \
+    dash==2.14.2 \
+    streamlit==1.28.2
+
+# Copy GUI builder scripts
+COPY <<EOF /workspaces/Lucid/gui/gui_builder.py
+#!/usr/bin/env python3
+"""
+LUCID RDP GUI Builder
+SPEC-4 compliant GUI construction and desktop environment management
+"""
+
+import os
+import sys
+import json
+import logging
+import asyncio
+import subprocess
+from typing import Dict, List, Optional
+import tkinter as tk
+from tkinter import ttk
+import PyQt5.QtWidgets as QtWidgets
+import PyQt5.QtCore as QtCore
+from kivy.app import App
+from kivy.uix.label import Label
+
+class LUCIDGUIBuilder:
+    def __init__(self):
+        self.desktop_env = os.getenv('DESKTOP_ENV', 'xfce4')
+        self.display = os.getenv('DISPLAY', ':0')
+        self.resolution = os.getenv('RESOLUTION', '1920x1080')
+        self.vnc_port = int(os.getenv('VNC_PORT', '5900'))
+        
+    def start_desktop_environment(self) -> bool:
+        """Start the configured desktop environment"""
+        try:
+            if self.desktop_env == 'xfce4':
+                cmd = ['startxfce4']
+            elif self.desktop_env == 'openbox':
+                cmd = ['openbox']
+            elif self.desktop_env == 'fluxbox':
+                cmd = ['fluxbox']
+            elif self.desktop_env == 'i3':
+                cmd = ['i3']
+            else:
+                logging.error(f"Unsupported desktop environment: {self.desktop_env}")
+                return False
+            
+            # Start desktop environment in background
+            subprocess.Popen(cmd, env={**os.environ, 'DISPLAY': self.display})
+            logging.info(f"Started {self.desktop_env} on {self.display}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to start desktop environment: {e}")
+            return False
+    
+    def start_vnc_server(self) -> bool:
+        """Start VNC server for remote access"""
+        try:
+            cmd = [
+                'x11vnc',
+                '-display', self.display,
+                '-rfbport', str(self.vnc_port),
+                '-forever',
+                '-noxdamage',
+                '-noxrecord',
+                '-noxfixes',
+                '-noxrandr',
+                '-shared',
+                '-nopw'
+            ]
+            
+            subprocess.Popen(cmd)
+            logging.info(f"VNC server started on port {self.vnc_port}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to start VNC server: {e}")
+            return False
+    
+    def create_tkinter_app(self) -> tk.Tk:
+        """Create a sample Tkinter application"""
+        root = tk.Tk()
+        root.title("LUCID RDP GUI Builder")
+        root.geometry("800x600")
+        
+        # Create main frame
+        main_frame = ttk.Frame(root, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Add widgets
+        ttk.Label(main_frame, text="LUCID RDP Control Panel").grid(row=0, column=0, columnspan=2, pady=10)
+        
+        ttk.Button(main_frame, text="Start Session", 
+                  command=lambda: self.start_rdp_session()).grid(row=1, column=0, pady=5)
+        
+        ttk.Button(main_frame, text="Stop Session", 
+                  command=lambda: self.stop_rdp_session()).grid(row=1, column=1, pady=5)
+        
+        ttk.Button(main_frame, text="View Logs", 
+                  command=lambda: self.view_logs()).grid(row=2, column=0, pady=5)
+        
+        ttk.Button(main_frame, text="System Status", 
+                  command=lambda: self.show_status()).grid(row=2, column=1, pady=5)
+        
+        return root
+    
+    def create_pyqt_app(self) -> QtWidgets.QApplication:
+        """Create a sample PyQt5 application"""
+        app = QtWidgets.QApplication(sys.argv)
+        
+        window = QtWidgets.QMainWindow()
+        window.setWindowTitle("LUCID RDP GUI Builder")
+        window.setGeometry(100, 100, 800, 600)
+        
+        # Create central widget
+        central_widget = QtWidgets.QWidget()
+        window.setCentralWidget(central_widget)
+        
+        # Create layout
+        layout = QtWidgets.QVBoxLayout()
+        central_widget.setLayout(layout)
+        
+        # Add widgets
+        title = QtWidgets.QLabel("LUCID RDP Control Panel")
+        title.setAlignment(QtCore.Qt.AlignCenter)
+        layout.addWidget(title)
+        
+        button_layout = QtWidgets.QHBoxLayout()
+        
+        start_btn = QtWidgets.QPushButton("Start Session")
+        start_btn.clicked.connect(self.start_rdp_session)
+        button_layout.addWidget(start_btn)
+        
+        stop_btn = QtWidgets.QPushButton("Stop Session")
+        stop_btn.clicked.connect(self.stop_rdp_session)
+        button_layout.addWidget(stop_btn)
+        
+        layout.addLayout(button_layout)
+        
+        return app, window
+    
+    def create_kivy_app(self):
+        """Create a sample Kivy application"""
+        class LUCIDApp(App):
+            def build(self):
+                return Label(text='LUCID RDP GUI Builder')
+        
+        return LUCIDApp()
+    
+    def start_rdp_session(self):
+        """Start RDP session (placeholder)"""
+        logging.info("Starting RDP session...")
+    
+    def stop_rdp_session(self):
+        """Stop RDP session (placeholder)"""
+        logging.info("Stopping RDP session...")
+    
+    def view_logs(self):
+        """View system logs (placeholder)"""
+        logging.info("Viewing logs...")
+    
+    def show_status(self):
+        """Show system status (placeholder)"""
+        logging.info("Showing system status...")
+
+async def main():
+    builder = LUCIDGUIBuilder()
+    
+    # Start virtual display
+    subprocess.run(['Xvfb', builder.display, '-screen', '0', builder.resolution], 
+                  check=False, capture_output=True)
+    
+    # Start desktop environment
+    if not builder.start_desktop_environment():
+        logging.error("Failed to start desktop environment")
+        return
+    
+    # Start VNC server
+    if not builder.start_vnc_server():
+        logging.error("Failed to start VNC server")
+        return
+    
+    # Wait for desktop environment to start
+    await asyncio.sleep(5)
+    
+    # Create and run GUI application
+    gui_type = os.getenv('GUI_TYPE', 'tkinter')
+    
+    if gui_type == 'tkinter':
+        app = builder.create_tkinter_app()
+        app.mainloop()
+    elif gui_type == 'pyqt5':
+        app, window = builder.create_pyqt_app()
+        window.show()
+        app.exec_()
+    elif gui_type == 'kivy':
+        app = builder.create_kivy_app()
+        app.run()
+    else:
+        logging.error(f"Unsupported GUI type: {gui_type}")
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
+EOF
+
+# Make GUI builder executable
+RUN chmod +x /workspaces/Lucid/gui/gui_builder.py
+
+# Create X11 configuration
+COPY <<EOF /etc/X11/xorg.conf.d/99-lucid.conf
+Section "Device"
+    Identifier "Virtual GPU"
+    Driver "dummy"
+    VideoRam 256000
+EndSection
+
+Section "Monitor"
+    Identifier "Virtual Monitor"
+    HorizSync 5.0 - 1000.0
+    VertRefresh 5.0 - 200.0
+    Modeline "1920x1080" 148.50 1920 2008 2052 2200 1080 1084 1089 1125 +Hsync +Vsync
+EndSection
+
+Section "Screen"
+    Identifier "Virtual Screen"
+    Device "Virtual GPU"
+    Monitor "Virtual Monitor"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+        Modes "1920x1080"
+    EndSubSection
+EndSection
+EOF
+
+# Create GUI configuration
+COPY <<EOF /etc/lucid/gui.conf
+[desktop]
+environment = xfce4
+resolution = 1920x1080
+color_depth = 24
+
+[vnc]
+port = 5900
+password = 
+shared = true
+forever = true
+
+[applications]
+default_browser = firefox
+default_terminal = xfce4-terminal
+default_file_manager = thunar
+
+[security]
+enable_vnc_auth = false
+allow_remote_connections = true
+EOF
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD pgrep -f "gui_builder.py" || exit 1
+
+# Expose VNC port
+EXPOSE 5900
+
+# Volume for GUI data
+VOLUME ["/tmp/.X11-unix"]
+
+# Entry point
+CMD ["/workspaces/Lucid/gui/gui_builder.py"]

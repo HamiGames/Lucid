@@ -1,0 +1,48 @@
+SPEC-1 — Table of Contents (Lucid RDP)
+Documents
+SPEC-1A — Background & Requirements
+Background
+Requirements
+Must Have (R?MUST?001 … R?MUST?020)
+Should Have (R?SHOULD?001 … R?SHOULD?008)
+Could Have (R?COULD?001 … R?COULD?006)
+Won’t Have (R?WONT?001 … R?WONT?002)
+SPEC-1B — Method, Governance & Consensus
+Method
+High?Level Architecture (Pi 5, Tor?only, MongoDB, On?System Data Chain, TRON routers)
+On?Chain Contracts (LucidAnchors, PayoutRouterV0, PayoutRouterKYC)
+Off?Chain Data & Proofs (manifests, chunking, Merkle roots)
+Key Management & Roles (multisig, deploy/pauser/compliance)
+Sequence (Anchor & Payout)
+Centralised Relay Point (Lucid Cloud Relay)
+Governance Addendum (Immutable at Launch)
+LucidGovernor + Timelock, ParamRegistry (bounded)
+Roles & Voting Power (one?node?one?vote eligibility)
+Cross?Chain Governance (signer rotation for TRON)
+Consensus (PoOT — Proof of Operational Tasks)
+WorkCredits inputs, leader selection, pools, anti?grief
+Consensus Parameters (slotDurationSec=120s ? 30 blocks/hour, timeouts, cooldown)
+Metrics & Collections (session_events, slot_metrics)
+SPEC-1C — Tokenomics, Wallet, Client Controls & Execution
+Reward Policy Addendum (finalized & immutable)
+Max 30 blocks/hour, fallback blocks (2 LUCID), halving every 5% of 42B
+Node?density?aware per?block rewards
+Node Worker Duties (VM processing, in?house transfers)
+Tokenomics & Voting (transferable LUCID, snapshots, stimulus targets, net?of?fees)
+Revenue Split 18%/2%/40%/40% + Stimulus (10% × Goal_k)
+Min payout $10; fees from local TRON node; USDT unit of account
+Wallet & Cash?Out (USDT direct only)
+Any?time withdrawals; TRX staking for energy/bandwidth; connectors (Exchange/OTC/PSP)
+Client?Controlled Session Policy & P2P Paths
+Path 1 (Rendezvous), Path 2 (VM Contract Re?Entry)
+Client Control Policy — Expanded Settings & Rolling Limits
+Rolling 24h free tier (2 actions), de?clutter, file allow/deny, shell/USB/audio/webcam/keyboard/mouse, privacy shield/redaction
+Implementation, Milestones & Gathering Results
+SPEC-1 — Combined (Monolithic) (optional reference)
+Spec-1-lucid Rdp (single?file consolidated draft kept for comparison and quick search)
+
+Quick Index by Requirement Code
+R?MUST: 001–020 (core platform); 021–024 (governance/relay/Mongo); 033–037 (consensus & rewards); 041–049 (tokenomics/wallet); 056–057 (off?ramp); 061 (USDT direct only); 063–071 (client controls & limits).
+R?SHOULD: 001–008 (performance, identity, APIs, backups, bootstrap).
+R?COULD: 001–006 (SSO, federation, mobile, PQ crypto, advanced privacy).
+Tip: Use the canvas search box to jump to a code (e.g., R?MUST?033) in the relevant document.

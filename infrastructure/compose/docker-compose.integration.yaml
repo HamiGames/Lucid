@@ -1,0 +1,302 @@
+# LUCID INTEGRATION SERVICES - Distroless Deployment
+# Phase 4: Integration Services (OpenAPI, RDP, Admin UI, Contract Deployment)
+# Aligned with LUCID_DISTROLESS_BUILD_GUIDE.md Phase 3.4
+
+
+
+services:
+  openapi-gateway:
+    image: pickme/lucid:openapi-gateway:latest
+    container_name: openapi_gateway
+    pull_policy: always
+    environment:
+      OPENAPI_GATEWAY_PORT: "8095"
+      OPENAPI_SERVER_URL: "http://openapi_server:8096"
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_api
+    ports:
+      - "8095:8095"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
+  openapi-server:
+    image: pickme/lucid:openapi-server:latest
+    container_name: openapi_server
+    pull_policy: always
+    environment:
+      OPENAPI_SERVER_PORT: "8096"
+      API_GATEWAY_URL: "http://lucid_api_gateway:8080"
+      BLOCKCHAIN_API_URL: "http://blockchain_api:8084"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - lucid_api_gateway
+      - blockchain_api
+    ports:
+      - "8096:8096"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  rdp-server-manager:
+    image: pickme/lucid:rdp-server-manager:latest
+    container_name: rdp_server_manager
+    pull_policy: always
+    environment:
+      RDP_MANAGER_PORT: "8097"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+      - rdp_temp:/tmp/rdp
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+    ports:
+      - "8097:8097"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8097/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  admin-ui:
+    image: pickme/lucid:admin-ui:latest
+    container_name: admin_ui
+    pull_policy: always
+    environment:
+      ADMIN_UI_PORT: "8098"
+      API_GATEWAY_URL: "http://lucid_api_gateway:8080"
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_api_gateway
+    ports:
+      - "8098:8098"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8098/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
+  contract-deployment:
+    image: pickme/lucid:contract-deployment:latest
+    container_name: contract_deployment
+    pull_policy: always
+    environment:
+      DEPLOYMENT_PORT: "8099"
+      BLOCKCHAIN_API_URL: "http://blockchain_api:8084"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - contract_data:/data/contracts
+      - deployment_temp:/tmp/deployment
+    networks:
+      - lucid_core_net
+    depends_on:
+      - blockchain_api
+    ports:
+      - "8099:8099"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8099/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  contract-compiler:
+    image: pickme/lucid:contract-compiler:latest
+    container_name: contract_compiler
+    pull_policy: always
+    environment:
+      COMPILER_PORT: "8100"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - contract_data:/data/contracts
+      - deployment_temp:/tmp/compilation
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+    ports:
+      - "8100:8100"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8100/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  deployment-orchestrator:
+    image: pickme/lucid:deployment-orchestrator:latest
+    container_name: deployment_orchestrator
+    pull_policy: always
+    environment:
+      ORCHESTRATOR_PORT: "8101"
+      BLOCKCHAIN_API_URL: "http://blockchain_api:8084"
+      CONTRACT_DEPLOYMENT_URL: "http://contract_deployment:8099"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - deployment_temp:/tmp/orchestration
+    networks:
+      - lucid_core_net
+    depends_on:
+      - blockchain_api
+      - contract-deployment
+    ports:
+      - "8101:8101"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8101/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  session-host-manager:
+    image: pickme/lucid:session-host-manager:latest
+    container_name: session_host_manager
+    pull_policy: always
+    environment:
+      HOST_MANAGER_PORT: "8102"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+    ports:
+      - "8102:8102"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8102/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  xrdp-integration:
+    image: pickme/lucid:xrdp-integration:latest
+    container_name: xrdp_integration
+    pull_policy: always
+    environment:
+      XRDP_PORT: "3389"
+      XRDP_DISPLAY: ":10"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - rdp_sessions:/data/sessions
+      - rdp_recordings:/data/recordings
+      - rdp_temp:/tmp/rdp
+    networks:
+      - lucid_core_net
+    depends_on:
+      - rdp-server-manager
+    ports:
+      - "3389:3389"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3389 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+networks:
+  lucid_core_net:
+    external: true
+
+volumes:
+  onion_state:
+  rdp_sessions:
+  rdp_recordings:
+  rdp_temp:
+  contract_data:
+  deployment_temp:

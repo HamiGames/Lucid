@@ -1,0 +1,369 @@
+# LUCID RDP Desktop Environment - Full Desktop Experience
+# SPEC-4 Compliant: Complete desktop environment with applications and window management
+
+FROM pickme/lucid:devcontainer-dind as base
+
+LABEL org.lucid.plane="gui"
+LABEL org.lucid.service="desktop-environment"
+LABEL org.lucid.stage="2"
+
+WORKDIR /workspaces/Lucid
+
+# Install complete desktop environment
+RUN apt-get update && apt-get install -y \
+    # Core desktop
+    xfce4 \
+    xfce4-goodies \
+    xfce4-panel \
+    xfce4-session \
+    xfce4-settings \
+    xfce4-terminal \
+    thunar \
+    thunar-volman \
+    # Applications
+    firefox-esr \
+    chromium-browser \
+    libreoffice \
+    gedit \
+    gimp \
+    vlc \
+    file-roller \
+    evince \
+    # System tools
+    htop \
+    gnome-system-monitor \
+    gnome-disk-utility \
+    network-manager \
+    network-manager-gnome \
+    # Development tools
+    code \
+    git \
+    nano \
+    vim \
+    # Media and graphics
+    imagemagick \
+    ffmpeg \
+    # Audio
+    pulseaudio \
+    pavucontrol \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional Python GUI tools
+RUN pip install --no-cache-dir \
+    jupyter==1.0.0 \
+    jupyterlab==4.0.9 \
+    notebook==7.0.6 \
+    ipywidgets==8.1.1 \
+    voila==0.5.6
+
+# Copy desktop environment setup script
+COPY <<EOF /workspaces/Lucid/gui/desktop_setup.py
+#!/usr/bin/env python3
+"""
+LUCID RDP Desktop Environment Setup
+SPEC-4 compliant desktop environment configuration and management
+"""
+
+import os
+import sys
+import json
+import logging
+import subprocess
+import asyncio
+from typing import Dict, List
+
+class DesktopEnvironment:
+    def __init__(self):
+        self.display = os.getenv('DISPLAY', ':0')
+        self.resolution = os.getenv('RESOLUTION', '1920x1080')
+        self.vnc_port = int(os.getenv('VNC_PORT', '5900'))
+        self.desktop_env = os.getenv('DESKTOP_ENV', 'xfce4')
+        
+    def setup_display(self) -> bool:
+        """Setup virtual display"""
+        try:
+            # Start Xvfb with specified resolution
+            cmd = [
+                'Xvfb', self.display,
+                '-screen', '0', f'{self.resolution}x24',
+                '-ac', '+extension', 'GLX',
+                '+render', '-noreset'
+            ]
+            
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logging.info(f"Started Xvfb on {self.display} with resolution {self.resolution}")
+            
+            # Wait for display to be ready
+            import time
+            time.sleep(3)
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to setup display: {e}")
+            return False
+    
+    def setup_audio(self) -> bool:
+        """Setup audio system"""
+        try:
+            # Start PulseAudio
+            subprocess.Popen([
+                'pulseaudio', '--start', '--exit-idle-time=-1'
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            logging.info("Started PulseAudio")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to setup audio: {e}")
+            return False
+    
+    def start_desktop_environment(self) -> bool:
+        """Start the desktop environment"""
+        try:
+            env = os.environ.copy()
+            env['DISPLAY'] = self.display
+            
+            if self.desktop_env == 'xfce4':
+                cmd = ['startxfce4']
+            else:
+                logging.error(f"Unsupported desktop environment: {self.desktop_env}")
+                return False
+            
+            subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logging.info(f"Started {self.desktop_env} desktop environment")
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to start desktop environment: {e}")
+            return False
+    
+    def start_vnc_server(self) -> bool:
+        """Start VNC server for remote access"""
+        try:
+            cmd = [
+                'x11vnc',
+                '-display', self.display,
+                '-rfbport', str(self.vnc_port),
+                '-forever',
+                '-noxdamage',
+                '-noxrecord',
+                '-noxfixes',
+                '-noxrandr',
+                '-shared',
+                '-nopw',
+                '-bg'
+            ]
+            
+            subprocess.run(cmd, check=True)
+            logging.info(f"Started VNC server on port {self.vnc_port}")
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to start VNC server: {e}")
+            return False
+    
+    def setup_autostart(self) -> bool:
+        """Setup autostart applications"""
+        try:
+            autostart_dir = os.path.expanduser('~/.config/autostart')
+            os.makedirs(autostart_dir, exist_ok=True)
+            
+            # Create autostart entries for key applications
+            autostart_apps = [
+                {
+                    'name': 'lucid-rdp-manager',
+                    'exec': '/workspaces/Lucid/gui/rdp_manager.py',
+                    'icon': 'preferences-desktop-remote-desktop'
+                },
+                {
+                    'name': 'lucid-system-monitor',
+                    'exec': 'gnome-system-monitor',
+                    'icon': 'utilities-system-monitor'
+                }
+            ]
+            
+            for app in autostart_apps:
+                desktop_file = f"{autostart_dir}/{app['name']}.desktop"
+                with open(desktop_file, 'w') as f:
+                    f.write(f"""[Desktop Entry]
+Type=Application
+Name={app['name'].replace('-', ' ').title()}
+Exec={app['exec']}
+Icon={app['icon']}
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+""")
+                
+                os.chmod(desktop_file, 0o755)
+            
+            logging.info("Setup autostart applications")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to setup autostart: {e}")
+            return False
+    
+    def create_desktop_shortcuts(self) -> bool:
+        """Create desktop shortcuts for LUCID applications"""
+        try:
+            desktop_dir = os.path.expanduser('~/Desktop')
+            os.makedirs(desktop_dir, exist_ok=True)
+            
+            shortcuts = [
+                {
+                    'name': 'LUCID RDP Manager',
+                    'exec': '/workspaces/Lucid/gui/rdp_manager.py',
+                    'icon': 'preferences-desktop-remote-desktop'
+                },
+                {
+                    'name': 'LUCID System Status',
+                    'exec': '/workspaces/Lucid/gui/system_status.py',
+                    'icon': 'utilities-system-monitor'
+                },
+                {
+                    'name': 'LUCID Logs',
+                    'exec': '/workspaces/Lucid/gui/log_viewer.py',
+                    'icon': 'utilities-log-viewer'
+                }
+            ]
+            
+            for shortcut in shortcuts:
+                desktop_file = f"{desktop_dir}/{shortcut['name'].replace(' ', '_')}.desktop"
+                with open(desktop_file, 'w') as f:
+                    f.write(f"""[Desktop Entry]
+Type=Application
+Name={shortcut['name']}
+Exec={shortcut['exec']}
+Icon={shortcut['icon']}
+Terminal=false
+""")
+                
+                os.chmod(desktop_file, 0o755)
+            
+            logging.info("Created desktop shortcuts")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to create desktop shortcuts: {e}")
+            return False
+
+async def main():
+    desktop = DesktopEnvironment()
+    
+    logging.info("Setting up LUCID Desktop Environment...")
+    
+    # Setup components in order
+    if not desktop.setup_display():
+        logging.error("Failed to setup display")
+        return
+    
+    if not desktop.setup_audio():
+        logging.warning("Failed to setup audio (continuing anyway)")
+    
+    if not desktop.start_desktop_environment():
+        logging.error("Failed to start desktop environment")
+        return
+    
+    # Wait for desktop to start
+    await asyncio.sleep(10)
+    
+    if not desktop.start_vnc_server():
+        logging.error("Failed to start VNC server")
+        return
+    
+    if not desktop.setup_autostart():
+        logging.warning("Failed to setup autostart (continuing anyway)")
+    
+    if not desktop.create_desktop_shortcuts():
+        logging.warning("Failed to create desktop shortcuts (continuing anyway)")
+    
+    logging.info("Desktop environment setup complete!")
+    logging.info(f"VNC server running on port {desktop.vnc_port}")
+    logging.info(f"Connect using: vncviewer localhost:{desktop.vnc_port}")
+    
+    # Keep the container running
+    try:
+        while True:
+            await asyncio.sleep(60)
+    except KeyboardInterrupt:
+        logging.info("Shutting down desktop environment...")
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
+EOF
+
+# Make desktop setup executable
+RUN chmod +x /workspaces/Lucid/gui/desktop_setup.py
+
+# Create desktop configuration
+COPY <<EOF /etc/lucid/desktop.conf
+[display]
+resolution = 1920x1080
+color_depth = 24
+dpi = 96
+
+[desktop_environment]
+type = xfce4
+theme = Adwaita
+icon_theme = Adwaita
+cursor_theme = Adwaita
+
+[vnc]
+port = 5900
+password = 
+shared = true
+forever = true
+no_password = true
+
+[applications]
+default_browser = firefox-esr
+default_terminal = xfce4-terminal
+default_file_manager = thunar
+default_text_editor = gedit
+
+[autostart]
+enable_lucid_apps = true
+enable_system_monitor = true
+enable_network_manager = true
+
+[security]
+enable_vnc_auth = false
+allow_remote_connections = true
+restrict_local_access = false
+EOF
+
+# Create desktop launcher script
+COPY <<EOF /usr/local/bin/lucid-desktop
+#!/bin/bash
+# LUCID Desktop Environment Launcher
+
+echo "Starting LUCID Desktop Environment..."
+
+# Set display
+export DISPLAY=${DISPLAY:-:0}
+
+# Start desktop setup
+python3 /workspaces/Lucid/gui/desktop_setup.py
+
+echo "Desktop environment stopped."
+EOF
+
+RUN chmod +x /usr/local/bin/lucid-desktop
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD pgrep -f "desktop_setup.py" || exit 1
+
+# Expose VNC port
+EXPOSE 5900
+
+# Volume for desktop data
+VOLUME ["/tmp/.X11-unix", "/home/lucid"]
+
+# Entry point
+CMD ["lucid-desktop"]

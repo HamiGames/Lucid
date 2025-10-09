@@ -1,0 +1,144 @@
+SPEC-3 — GitOps Console Cluster Design
+Background
+This document defines a GitOps-based single-console operating model for Lucid RDP, aligned with the platform’s constraints: - Tor-only transport and .onion endpoints for every surface. - Plane isolation (ops, chain, wallet) per cluster; TRON isolation (only Tron-Node speaks to TRON). - DHT/CRDT overlay and On?System Data Chain participation for encrypted chunks/manifests. - MongoDB 7 only (replicas/shards; no SQL), containerized runtime on Raspberry Pi 5 with Docker + Compose.
+Requirements (MoSCoW)
+Must - M1. One Config Repo (private, onion-served Git) is the source of truth for cluster state. - M2. Each cluster reconciles state from Git via a local lucid?reconciler (pull-only) over Tor. - M3. The same compose file is used network?wide; Compose profiles select domain group per cluster. - M4. Secrets are stored encrypted-at-rest in Git using SOPS/age; decryption happens on?cluster. - M5. Image supply chain is locked: pinned digests, signature verification, SBOM check. - M6. beta sidecar runs in every cluster: per?plane onion publishing, discovery, name resolution; no plane bridging. - M7. Tor-only cross-cluster traffic; QUIC/UDP disabled; fail-closed if Tor unhealthy. - M8. Tron?Node is the only container permitted to access TRON; wallet plane isolated. - M9. Single Console performs changes by commit (PRs) with policy gates; emergency break?glass path is signed and restricted.
+Should - S1. Cloud Relay (onion) for bootstrap/rendezvous and mongos access in tough networks. - S2. Change windows and staged rollouts with health?based promotion (canary by cluster tag). - S3. Inventory & labels to target updates (group=blockchain/node/sessions/admin/observability; site tags; hardware class). - S4. Observability via read?only onion metrics/logs with tight rate limits.
+
+Method
+Domain-based cluster model
+Break the network into domain groups, each running a subset of services via Compose profiles. All groups include the beta sidecar and the three planes.
+Blockchain Group: blockchain-core, blockchain-ledger, blockchain-virtual-machine, blockchain-sessions-data, blockchain-governances.
+Node Systems Group: node-worker, node-data-host, node-economy, node-governances.
+Sessions Group: sessions-gateway, sessions-manifests, sessions-index.
+Admin/Wallet Group: admin-api, admin-ui, walletd, tron-node, observer.
+Observability Group: metrics, logs, anomaly.
+Relay/Directory (optional): cloud-relay, mongos-onion.
+GitOps control plane (single console)
+Components - Config Repo (private Git over .onion): - /compose/docker-compose.yml (single file, multi-profile) - /clusters/clusters.yaml (inventory & desired profiles) - /clusters/<id>/.env (plane pins, onion seeds, shard roles) - /policies/ (policy-as-code: signature, SBOM, profile allow?lists) - /secrets/*.enc.yaml (SOPS+age) - CI/Gates (run against PRs): - Verify image signatures, digest pins, SBOM and CVE budget, compose lint, profile allow?lists, SOPS decrypt smoke (without secrets output). - Console UI: a thin web app that opens PRs (operator doesn’t need raw Git). - lucid?reconciler (per cluster): a daemon that watches the repo (git pull over Tor), decrypts cluster?scoped secrets with age key, renders env, and reconciles Docker Compose state locally.
+Reconciliation loop 1. git pull ? detect new commit for this cluster’s path. 2. Validate policies (cosign attestations, digest pins), fetch images via onion registry mirror. 3. Render compose with cluster env and profiles from clusters.yaml. 4. docker compose up --detach --remove-orphans (idempotent). 5. Health gates: wait on per?service healthchecks; rollback on failures.
+Addressing & discovery
+beta exposes per?plane onion services, watching container labels (com.lucid.plane, com.lucid.service, com.lucid.expose).
+Services use URIs like beta://sessions-gateway@ops and rely on beta to resolve to .onion:port with pubkey pins.
+ACLs in beta ensure src.plane == dst.plane; wallet plane deny?by?default except for approved pairs.
+PlantUML — GitOps control & runtime
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor Operator as Op
+package "Console (.onion)" {
+  [Web UI]
+  [CI/Gates]
+}
+node "Config Repo (.onion git)" as Git
+
+Op --> [Web UI] : propose change (profiles/secrets)
+[Web UI] --> Git : PR commit
+[CI/Gates] --> Git : verify (signatures, SBOM, pins, SOPS)
+
+package "Cluster: blockchain (bc-a)" {
+  [beta]
+  [lucid-reconciler] as RecA
+  [blockchain-core]
+  [blockchain-ledger]
+  [blockchain-virtual-machine]
+}
+
+package "Cluster: node (ns-a)" {
+  [beta]
+  [lucid-reconciler] as RecB
+  [node-worker]
+  [node-data-host]
+  [node-economy]
+}
+
+Git --> RecA : pull over Tor
+Git --> RecB : pull over Tor
+RecA --> beta : publish onions per plane
+RecB --> beta : publish onions per plane
+
+[blockchain-virtual-machine] <--> [sessions-manifests] : chain plane onion
+[node-economy] --> [tron-node] : wallet plane onion (strict)
+
+@enduml
+Compose profiles (single file)
+One docker-compose.yml with profiles: blockchain, node, sessions, admin, observability, relay.
+beta is always enabled; attaches to all planes; does L7 routing (no plane bridge).
+A working profile skeleton is included in the prior “Container Systems Guide — beta sidecar”; reuse that layout here.
+Inventory & desired state
+# clusters/clusters.yaml
+clusters:
+  - id: bc-a
+    group: blockchain
+    profiles: [blockchain]
+    env: clusters/bc-a/.env
+  - id: ns-a
+    group: node
+    profiles: [node]
+    env: clusters/ns-a/.env
+  - id: ss-a
+    group: sessions
+    profiles: [sessions]
+    env: clusters/ss-a/.env
+  - id: adm-a
+    group: admin
+    profiles: [admin]
+    env: clusters/adm-a/.env
+  - id: sre-a
+    group: observability
+    profiles: [observability]
+    env: clusters/sre-a/.env
+Secrets and keys
+SOPS/age encrypts per?cluster secrets (age recipient = cluster’s reconciling key).
+lucid?reconciler mounts the age private key from hardware token or sealed file.
+Secrets are injected as Compose secrets: and env_file:; never stored plaintext on disk.
+Image policy (secure supply chain)
+Private onion registry/mirror; clusters read?only.
+All images pinned by digest and accompanied by signed attestations.
+CI blocks merges if:
+a digest is missing or changed without a matching signature,
+SBOM has critical CVEs above budget,
+compose profiles reference disallowed services for a group.
+Rollouts & health
+Staged rollout: labels in clusters.yaml (e.g., wave: canary/core/all).
+lucid?reconciler only applies a commit when the cluster’s label matches the commit’s wave.
+Health policy: a service must pass its HEALTHCHECK and beta must publish onions before promoting the next wave.
+
+Implementation
+Bootstrap Git & keys
+Generate age keypairs per cluster; provision read token for repo over Tor git.
+Initialize Config Repo with compose, clusters.yaml, policies, and starter secrets (encrypted).
+Build & publish images
+Build on Pi 5; push to onion registry; write image digests into compose.
+Generate SBOM and sign images; attach attestations in the repo.
+Deploy lucid?reconciler (per cluster)
+Systemd unit to start lucid?reconciler container on boot.
+Mountage key; point to Git remote over .onion; set poll interval.
+First pull: render profiles and docker compose up -d.
+Enable beta & planes
+Bring up beta; verify Tor health and onion publication for each plane.
+Enforce ACLs (wallet deny-by-default; specific allow?pairs only).
+Wire domain groups
+Bring up services per cluster via profiles; verify cross-cluster calls with beta resolve.
+CI/Gates
+Add pipelines to verify signatures, SBOM, digest pins, and SOPS integrity on every PR.
+Add policy allow?lists per group.
+Observability
+Deploy read?only metrics/logs behind onion; add Console dashboards that pull via Tor.
+
+Milestones
+M1: Config Repo + CI/Gates + onion registry online; reconciler running; beta healthy.
+M2: Blockchain + Sessions clusters reconciling; anchors flow end?to?end.
+M3: Node cluster online near users; chunk replication across DHT; staged rollout exercised.
+M4: Admin/Wallet cluster live; TRON payouts tested; wallet plane locked down.
+M5: Observability and Cloud Relay (optional) deployed; incident drill (Tor outage, rollback).
+
+Gathering Results
+Compliance: PR audit trail (who/what/when); image signature logs; SBOM diff per release.
+Performance: anchor latency, DHT availability, RDP/encode CPU budgets on Pi.
+Security: Tor egress tests must fail when Tor is down (fail?closed); wallet plane access logs show only Tron?Node RPC outbound.
+Reliability: reconciliation SLO (e.g., <60s to converge after commit); rollout pass rates; rollback time.
+
+Need Professional Help in Developing Your Architecture?
+Please contact me at sammuti.com :)
