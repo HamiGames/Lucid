@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/main.py
-src/lucid_rdp.egg-info/PKG-INFO
-src/lucid_rdp.egg-info/SOURCES.txt
-src/lucid_rdp.egg-info/dependency_links.txt
-src/lucid_rdp.egg-info/requires.txt
-src/lucid_rdp.egg-info/top_level.txt
-tests/test_main.py

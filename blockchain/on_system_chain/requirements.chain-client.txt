@@ -1,6 +1,0 @@
-# LUCID On-System Chain Client Requirements
-# Blockchain interaction and manifest management
-
-aiohttp>=3.8.0
-aiofiles>=23.2.1
-web3>=6.0.0

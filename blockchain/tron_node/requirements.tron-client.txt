@@ -1,6 +1,0 @@
-# LUCID TRON Node Client Requirements
-# TRON blockchain integration and USDT-TRC20 support
-
-aiohttp>=3.8.0
-aiofiles>=23.2.1
-tronpy>=0.4.0

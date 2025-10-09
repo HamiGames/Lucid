@@ -1,9 +1,0 @@
-
-{"file":".devcontainer/devcontainer.json","status":"PASS","local":"24d92f61a603b705e9e61a720c0ef0642699e31943b725d3dc0aae4f35d7e04f","remote":"24d92f61a603b705e9e61a720c0ef0642699e31943b725d3dc0aae4f35d7e04f"}
-{"file":".devcontainer/Dockerfile","status":"PASS","local":"192422c729ca20d2fc24241af6fdefe7125acf8ec10e3b7949f147f91ddafa35","remote":"192422c729ca20d2fc24241af6fdefe7125acf8ec10e3b7949f147f91ddafa35"}
-{"file":"06-orchestration-runtime/compose/lucid-dev.yaml","status":"FAIL","local":"aff29d2e2c7e6bbcc59bdd6bf7a419e597d144bc0720b5a91599b9eed7b5de45","remote":"441d170591bda9ce2dbe7284c862d9826f88a6b5a438ffecc205145984e68f4a"}
-{"file":"06-orchestration-runtime/compose/dev.override.yaml","status":"FAIL","local":"f1f3e7ea90d1cf5f0e220fff0385c02e40d873f4e53019ce04255f409e0b8b29","remote":"4e1295a326876384506860e8a6e076088ae5578be80aa1393214e6c9a0fbdabf"}
-{"file":"02-network-security/tor/Dockerfile","status":"FAIL","local":"9abb89ffe18b6c93dc4f70961e6ff59c291b1abd83a8c725f97a48a0398a408e","remote":"e401e376bd904de25e72ad95e775d2f50932c75a6393e6f94815a59d3f81c95d"}
-{"file":"02-network-security/tor/torrc","status":"FAIL","local":"3670eb6740baff2e4985d56eb62583dee5bd1f2909a8e69d3ff616e20dee36af","remote":"d425b14bd7be5e51db6a2a70bd03b6493b0de60330bdf959341c2afebb434809"}
-{"file":"03-api-gateway/api/Dockerfile.api","status":"FAIL","local":"76929e935ce04cc3b930fded341fe1ca7df2c5634c88b85907b899899999ac56","remote":"8098c7e3f190c489fb77d59f1193f16d81aad00ebd5aeb3d75db2e3206a7925c"}
-{"file":"03-api-gateway/api/requirements.txt","status":"FAIL","local":"e19fc2d2649e8815d397b1c57c13baaaa5fcd1cc6b92f34638a1331bd03aacdc","remote":"4ceb5bd89fc416b6d718c329a1ad91a514175908ad2bb8512de30cae50644589"}

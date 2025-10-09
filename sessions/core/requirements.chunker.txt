@@ -1,6 +1,0 @@
-# LUCID Session Chunker Requirements
-# Zstd compression and async processing
-
-zstd>=1.5.5
-asyncio-mqtt>=0.16.1
-aiofiles>=23.2.1
