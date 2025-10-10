@@ -41,7 +41,7 @@ RUN chmod +x /tmp/build-env.sh
 RUN /tmp/build-env.sh
 
 # Copy requirements and install Python dependencies
-COPY database/services/monitoring/requirements-monitoring.txt /tmp/
+COPY ../../../database/services/monitoring/requirements-monitoring.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements-monitoring.txt
 
 # Copy source code

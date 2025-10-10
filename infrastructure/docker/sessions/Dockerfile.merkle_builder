@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY sessions/core/requirements.merkle_builder.txt /tmp/
+COPY ../../../sessions/core/requirements.merkle_builder.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.merkle_builder.txt
 
 # Copy source code

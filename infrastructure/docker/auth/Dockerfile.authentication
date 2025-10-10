@@ -33,11 +33,11 @@ RUN chmod +x /tmp/build-env.sh
 RUN /tmp/build-env.sh
 
 # Install Python dependencies
-COPY ../../auth/requirements.auth.txt /tmp/
+COPY ../../../auth/requirements.auth.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.auth.txt
 
 # Copy application code
-COPY ../../auth/ /app/auth/
+COPY ../../../auth/ /app/auth/
 COPY ../../../03-api-gateway/api/app/schemas/auth.py /app/auth/schemas/
 COPY ../../../03-api-gateway/api/app/routes/auth.py /app/auth/routes/
 

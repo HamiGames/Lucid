@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY 02-network-security/tunnel-tools/requirements.txt /tmp/
+COPY ../../../02-network-security/tunnel-tools/requirements.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
 
 # Copy source code

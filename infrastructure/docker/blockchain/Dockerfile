@@ -18,10 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --gid 1000 lucid \
     && useradd --uid 1000 --gid lucid --shell /bin/bash --create-home lucid
 
-COPY requirements.txt /app/requirements.txt
+COPY ../../../requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
-COPY --chown=lucid:lucid blockchain/ /app/blockchain/
+COPY --chown=lucid:lucid ../../../blockchain/ /app/blockchain/
 
 # Stage 2: Distroless runtime
 FROM gcr.io/distroless/python3-debian12:latest

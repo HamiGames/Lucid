@@ -18,12 +18,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY RDP/requirements.txt /tmp/
+COPY ../../../RDP/requirements.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
 
 # Copy source code
-COPY RDP/ /app/rdp/
-COPY common/ /app/common/
+COPY ../../../RDP/ /app/rdp/
+COPY ../../../common/ /app/common/
 
 # Create non-root user
 RUN groupadd --gid 1000 lucid && \

@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY blockchain/on_system_chain/requirements.chain-client.txt /tmp/
+COPY ../../../blockchain/on_system_chain/requirements.chain-client.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.chain-client.txt
 
 # Copy source code

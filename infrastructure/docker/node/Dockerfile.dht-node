@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY node/dht_crdt/requirements.dht-node.txt /tmp/
+COPY ../../../node/dht_crdt/requirements.dht-node.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.dht-node.txt
 
 # Copy source code

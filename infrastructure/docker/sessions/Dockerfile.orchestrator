@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY sessions/core/requirements.orchestrator.txt /tmp/
+COPY ../../../sessions/core/requirements.orchestrator.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.orchestrator.txt
 
 # Copy source code

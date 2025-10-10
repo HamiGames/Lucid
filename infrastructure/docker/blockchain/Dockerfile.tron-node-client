@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY payment-systems/tron-node/requirements.tron-client.txt /tmp/
+COPY ../../../payment-systems/tron-node/requirements.tron-client.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.tron-client.txt
 
 # Copy source code
