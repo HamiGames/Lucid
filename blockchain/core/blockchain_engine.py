@@ -28,6 +28,14 @@ from tronpy import Tron
 from tronpy.keys import PrivateKey as TronPrivateKey
 import httpx
 
+# Import from updated models and components
+from .models import (
+    ChainType, ConsensusState, PayoutRouter, TaskProofType, SessionStatus, PayoutStatus,
+    SessionAnchor, TronPayout, TaskProof, WorkCreditsTally, LeaderSchedule,
+    ChunkMetadata, SessionManifest, generate_session_id, calculate_work_credits_formula
+)
+from ..on_system_chain.chain_client import OnSystemChainClient
+
 logger = logging.getLogger(__name__)
 
 # =============================================================================
@@ -66,191 +74,20 @@ PAYOUT_ROUTER_KYC_ADDRESS = os.getenv("PAYOUT_ROUTER_KYC_ADDRESS", "")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
 
 # =============================================================================
-# ENUMS AND DATA STRUCTURES
+# ENHANCED ON-SYSTEM CHAIN CLIENT (PRIMARY BLOCKCHAIN)
 # =============================================================================
 
-class ChainType(Enum):
-    """Blockchain types in dual-chain architecture"""
-    ON_SYSTEM_DATA = "on_system_data_chain"  # Primary blockchain
-    TRON_PAYOUTS = "tron_payouts"            # Payment layer only
-
-
-class ConsensusState(Enum):
-    """PoOT consensus states"""
-    CALCULATING = "calculating"
-    LEADER_SELECTED = "leader_selected"
-    BLOCK_PROPOSED = "block_proposed"
-    BLOCK_CONFIRMED = "block_confirmed"
-    SLOT_MISSED = "slot_missed"
-
-
-class PayoutRouter(Enum):
-    """TRON payout router types (R-MUST-018)"""
-    PR0 = "PayoutRouterV0"      # Non-KYC for end-users
-    PRKYC = "PayoutRouterKYC"   # KYC-gated for node-workers
-
-
-# =============================================================================
-# UPDATED DATA STRUCTURES
-# =============================================================================
-
-@dataclass
-class SessionAnchor:
+class EnhancedOnSystemChainClient:
     """
-    On-System Chain session anchor (Spec-1b lines 56-59).
+    Enhanced On-System Data Chain client for session anchoring (R-MUST-016).
     
-    REBUILT: Removed TRON-specific fields, focused on On-System Chain anchoring.
-    Uses LucidAnchors contract for session manifest anchoring.
-    """
-    session_id: str
-    manifest_hash: str
-    merkle_root: str
-    started_at: int
-    owner_address: str
-    chunk_count: int
-    block_number: Optional[int] = None
-    txid: Optional[str] = None
-    gas_used: int = 0
-    status: str = "pending"  # pending, confirmed, failed
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": self.session_id,
-            "owner_addr": self.owner_address,
-            "started_at": self.started_at,
-            "ended_at": None,
-            "manifest_hash": self.manifest_hash,
-            "merkle_root": self.merkle_root,
-            "chunk_count": self.chunk_count,
-            "anchor_txid": self.txid,  # On-System Chain txid
-            "block_number": self.block_number,
-            "gas_used": self.gas_used,
-            "status": self.status
-        }
-
-
-@dataclass 
-class TronPayout:
-    """
-    TRON USDT payout transaction (Payment layer only).
-    
-    REBUILT: Marked as payment-layer only, not blockchain core.
-    Monthly payout distribution via PayoutRouterV0/PRKYC.
-    """
-    session_id: str
-    recipient_address: str
-    amount_usdt: float
-    router_type: PayoutRouter
-    reason: str
-    kyc_hash: Optional[str] = None
-    compliance_signature: Optional[Dict[str, Any]] = None
-    txid: Optional[str] = None
-    status: str = "pending"  # pending, confirmed, failed
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": f"{self.session_id}_{self.recipient_address}",
-            "session_id": self.session_id,
-            "to_addr": self.recipient_address,
-            "usdt_amount": self.amount_usdt,
-            "router": self.router_type.value,
-            "reason": self.reason,
-            "txid": self.txid,    # TRON txid
-            "status": self.status,
-            "created_at": self.created_at,
-            "kyc_hash": self.kyc_hash,
-            "compliance_sig": self.compliance_signature
-        }
-
-
-@dataclass
-class WorkCreditsProof:
-    """PoOT work credits proof submission (Spec-1b lines 129-134)"""
-    node_id: str
-    pool_id: Optional[str]
-    slot: int
-    proof_type: str  # relay_bandwidth, storage_availability, validation_signature, uptime_beacon
-    proof_data: Dict[str, Any]
-    signature: bytes
-    timestamp: datetime
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": f"{self.node_id}_{self.slot}_{self.proof_type}",
-            "nodeId": self.node_id,
-            "poolId": self.pool_id,
-            "slot": self.slot,
-            "type": self.proof_type,
-            "value": self.proof_data,
-            "sig": self.signature.hex(),
-            "ts": self.timestamp
-        }
-
-
-@dataclass
-class WorkCreditsTally:
-    """PoOT work credits tally per epoch"""
-    epoch: int
-    entity_id: str  # node_id or pool_id
-    credits_total: int
-    relay_bandwidth: int
-    storage_proofs: int
-    validation_signatures: int
-    uptime_score: float
-    live_score: float
-    rank: int
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": f"{self.epoch}_{self.entity_id}",
-            "epoch": self.epoch,
-            "entityId": self.entity_id,
-            "credits": self.credits_total,
-            "liveScore": self.live_score,
-            "rank": self.rank
-        }
-
-
-@dataclass
-class LeaderSchedule:
-    """Block leader schedule per slot (Spec-1b lines 135-157)"""
-    slot: int
-    primary: str  # entity_id
-    fallbacks: List[str]  # fallback entity_ids
-    winner: Optional[str] = None
-    reason: str = ""
-    deadline: datetime = field(default_factory=datetime.now)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": self.slot,
-            "slot": self.slot,
-            "primary": self.primary,
-            "fallbacks": self.fallbacks,
-            "result": {"winner": self.winner, "reason": self.reason}
-        }
-
-
-# =============================================================================
-# ON-SYSTEM CHAIN CLIENT (PRIMARY BLOCKCHAIN)
-# =============================================================================
-
-class OnSystemChainClient:
-    """
-    On-System Data Chain client for session anchoring (R-MUST-016).
-    
-    REBUILT: Primary blockchain client (not secondary).
+    REBUILT: Primary blockchain client integrating both anchor and chain client functionality.
     Handles:
     - LucidAnchors contract interactions for session manifests
     - LucidChunkStore contract integration for chunk metadata
     - EVM JSON-RPC interface (not TRON API)
     - Gas estimation and circuit breakers
+    - Enhanced error handling and retry logic
     """
     
     def __init__(self, rpc_url: str, contract_addresses: Dict[str, str]):
@@ -258,7 +95,30 @@ class OnSystemChainClient:
         self.contracts = contract_addresses
         self.session = httpx.AsyncClient(timeout=30.0)
         
-        logger.info(f"On-System Chain client initialized: {rpc_url}")
+        # Initialize the enhanced chain client
+        self.chain_client = OnSystemChainClient(
+            rpc_url=rpc_url,
+            contract_addresses=contract_addresses
+        )
+        
+        logger.info(f"Enhanced On-System Chain client initialized: {rpc_url}")
+    
+    async def start(self) -> bool:
+        """Start the chain client"""
+        try:
+            # Start the underlying chain client
+            return await self.chain_client.start()
+        except Exception as e:
+            logger.error(f"Failed to start chain client: {e}")
+            return False
+    
+    async def stop(self) -> None:
+        """Stop the chain client"""
+        try:
+            await self.chain_client.stop()
+            await self.session.aclose()
+        except Exception as e:
+            logger.error(f"Failed to stop chain client: {e}")
     
     async def anchor_session_manifest(self, anchor: SessionAnchor) -> str:
         """
@@ -268,42 +128,36 @@ class OnSystemChainClient:
         Gas-efficient: uses events for data, minimal storage writes
         """
         try:
-            # Prepare contract call data
-            call_data = {
-                "to": self.contracts.get("LucidAnchors", LUCID_ANCHORS_ADDRESS),
-                "data": self._encode_register_session_call({
-                    "sessionId": anchor.session_id.replace("-", ""),
-                    "manifestHash": anchor.manifest_hash,
-                    "startedAt": anchor.started_at,
-                    "owner": anchor.owner_address,
-                    "merkleRoot": anchor.merkle_root,
-                    "chunkCount": anchor.chunk_count
-                }),
-                "gas": "0x15F90",  # 90,000 gas limit
-                "gasPrice": "0x3B9ACA00"  # 1 Gwei
-            }
+            # Create session manifest for the chain client using the models.py version
+            manifest = SessionManifest(
+                session_id=anchor.session_id,
+                owner_address=anchor.owner_address,
+                started_at=datetime.fromtimestamp(anchor.started_at, timezone.utc),
+                ended_at=datetime.now(timezone.utc),
+                manifest_hash=anchor.manifest_hash,
+                merkle_root=anchor.merkle_root,
+                chunk_count=anchor.chunk_count
+            )
             
-            # Submit transaction
-            payload = {
-                "jsonrpc": "2.0",
-                "method": "eth_sendTransaction",
-                "params": [call_data],
-                "id": 1
-            }
+            # Use the enhanced chain client to anchor
+            anchor_tx = await self.chain_client.anchor_session_to_chain(
+                session_id=anchor.session_id,
+                merkle_root=anchor.merkle_root,
+                owner_address=anchor.owner_address,
+                chunk_count=anchor.chunk_count,
+                started_at=anchor.started_at
+            )
             
-            response = await self.session.post(self.rpc_url, json=payload)
-            response.raise_for_status()
+            tx_hash = anchor_tx.transaction_hash if anchor_tx else None
             
-            result = response.json()
-            if "error" in result:
-                raise Exception(f"RPC error: {result['error']}")
-            
-            txid = result["result"]
-            anchor.txid = txid
-            anchor.status = "pending"
-            
-            logger.info(f"Session anchored to On-System Chain: {txid}")
-            return txid
+            if tx_hash:
+                anchor.txid = tx_hash
+                anchor.status = "pending"
+                logger.info(f"Session anchored to On-System Chain: {tx_hash}")
+                return tx_hash
+            else:
+                anchor.status = "failed"
+                raise Exception("Failed to anchor session manifest")
             
         except Exception as e:
             logger.error(f"Failed to anchor session manifest: {e}")
@@ -313,26 +167,17 @@ class OnSystemChainClient:
     async def get_transaction_status(self, txid: str) -> Tuple[str, Optional[int]]:
         """Get On-System Chain transaction confirmation status"""
         try:
-            # Get transaction receipt
-            payload = {
-                "jsonrpc": "2.0",
-                "method": "eth_getTransactionReceipt",
-                "params": [txid],
-                "id": 1
-            }
-            
-            response = await self.session.post(self.rpc_url, json=payload)
-            response.raise_for_status()
-            
-            result = response.json()
-            if "error" in result or not result["result"]:
-                return "pending", None
-            
-            receipt = result["result"]
-            if receipt.get("status") == "0x1":
-                return "confirmed", int(receipt.get("blockNumber", "0x0"), 16)
+            # Use the chain client to get transaction status
+            anchor_tx = await self.chain_client.get_session_anchor_status(txid)
+            if anchor_tx:
+                if anchor_tx.status.value == "confirmed":
+                    return "confirmed", anchor_tx.block_number
+                elif anchor_tx.status.value == "failed":
+                    return "failed", None
+                else:
+                    return "pending", None
             else:
-                return "failed", None
+                return "unknown", None
                 
         except Exception as e:
             logger.error(f"Failed to get transaction status: {e}")
@@ -345,74 +190,38 @@ class OnSystemChainClient:
         Per Spec-1b: storeChunkMetadata(sessionId, chunkIndex, ciphertextSha256, sizeBytes)
         """
         try:
-            call_data = {
-                "to": self.contracts.get("LucidChunkStore", LUCID_CHUNK_STORE_ADDRESS),
-                "data": self._encode_store_chunk_call({
-                    "sessionId": session_id.replace("-", ""),
-                    "chunkIndex": chunk_idx,
-                    "ciphertextSha256": metadata["ciphertext_sha256"],
-                    "sizeBytes": metadata["size_bytes"]
-                }),
-                "gas": "0x13880",  # 80,000 gas limit
-                "gasPrice": "0x3B9ACA00"
-            }
+            # Create chunk metadata for the chain client
+            chunk_metadata = ChunkMetadata(
+                chunk_id=f"{session_id}_{chunk_idx:03d}",
+                session_id=session_id,
+                chunk_hash=metadata["ciphertext_sha256"],
+                size=metadata["size_bytes"],
+                storage_path=metadata.get("local_path", ""),
+                timestamp=datetime.now(timezone.utc),
+                encrypted=metadata.get("encrypted", False)
+            )
             
-            payload = {
-                "jsonrpc": "2.0",
-                "method": "eth_sendTransaction",
-                "params": [call_data],
-                "id": 1
-            }
+            # Use the chain client to store metadata
+            chunk_entry = await self.chain_client.store_chunk_metadata(
+                chunk_id=chunk_metadata.chunk_id,
+                session_id=session_id,
+                chunk_hash=metadata["ciphertext_sha256"],
+                size=metadata["size_bytes"],
+                storage_path=metadata.get("local_path", ""),
+                owner_address="0x0000000000000000000000000000000000000000"  # Default owner
+            )
             
-            response = await self.session.post(self.rpc_url, json=payload)
-            response.raise_for_status()
+            tx_hash = chunk_entry.chunk_id if chunk_entry else None
             
-            result = response.json()
-            if "error" in result:
-                raise Exception(f"RPC error: {result['error']}")
-            
-            txid = result["result"]
-            logger.info(f"Chunk metadata stored: {txid}")
-            return txid
-            
+            if tx_hash:
+                logger.info(f"Chunk metadata stored: {tx_hash}")
+                return tx_hash
+            else:
+                raise Exception("Failed to store chunk metadata")
+                
         except Exception as e:
             logger.error(f"Failed to store chunk metadata: {e}")
             raise
-    
-    def _encode_register_session_call(self, params: Dict[str, Any]) -> str:
-        """Encode registerSession contract call (simplified)"""
-        # Method signature: registerSession(bytes32,bytes32,uint256,address,bytes32,uint256)
-        method_sig = "0x" + hashlib.sha3_256(b"registerSession(bytes32,bytes32,uint256,address,bytes32,uint256)").hexdigest()[:8]
-        
-        # Encode parameters (simplified - would use proper ABI encoding in production)
-        encoded_params = ""
-        encoded_params += params["sessionId"].ljust(64, "0")  # bytes32
-        encoded_params += params["manifestHash"].ljust(64, "0")  # bytes32
-        encoded_params += hex(params["startedAt"])[2:].rjust(64, "0")  # uint256
-        encoded_params += params["owner"][2:].rjust(64, "0")  # address
-        encoded_params += params["merkleRoot"].ljust(64, "0")  # bytes32
-        encoded_params += hex(params["chunkCount"])[2:].rjust(64, "0")  # uint256
-        
-        return method_sig + encoded_params
-    
-    def _encode_store_chunk_call(self, params: Dict[str, Any]) -> str:
-        """Encode storeChunkMetadata contract call (simplified)"""
-        # Method signature: storeChunkMetadata(bytes32,uint256,bytes32,uint256)
-        method_sig = "0x" + hashlib.sha3_256(b"storeChunkMetadata(bytes32,uint256,bytes32,uint256)").hexdigest()[:8]
-        
-        # Encode parameters (simplified - would use proper ABI encoding in production)
-        encoded_params = ""
-        encoded_params += params["sessionId"].ljust(64, "0")  # bytes32
-        encoded_params += hex(params["chunkIndex"])[2:].rjust(64, "0")  # uint256
-        encoded_params += params["ciphertextSha256"].ljust(64, "0")  # bytes32
-        encoded_params += hex(params["sizeBytes"])[2:].rjust(64, "0")  # uint256
-        
-        return method_sig + encoded_params
-    
-    async def close(self):
-        """Close HTTP session"""
-        await self.session.aclose()
-
 
 # =============================================================================
 # ISOLATED TRON NODE SYSTEM (PAYMENT SERVICE ONLY)
@@ -610,7 +419,7 @@ class PoOTConsensusEngine:
         except Exception as e:
             logger.error(f"Failed to setup MongoDB indexes: {e}")
     
-    async def submit_work_proof(self, proof: WorkCreditsProof) -> bool:
+    async def submit_work_proof(self, proof: TaskProof) -> bool:
         """
         Submit work credits proof for PoOT consensus.
         
@@ -621,7 +430,7 @@ class PoOTConsensusEngine:
             # Store proof in MongoDB (sharded collection)
             await self.db["task_proofs"].insert_one(proof.to_dict())
             
-            logger.info(f"Work proof submitted: {proof.node_id} - {proof.proof_type}")
+            logger.info(f"Work proof submitted: {proof.node_id} - {proof.type.value}")
             return True
             
         except Exception as e:
@@ -659,25 +468,25 @@ class PoOTConsensusEngine:
                         "uptime_score": 0.0
                     }
                 
-                # Calculate credits based on proof type
-                if proof_type == "relay_bandwidth":
+                # Calculate credits based on proof type using the formula
+                if proof_type == TaskProofType.RELAY_BANDWIDTH.value:
                     # W_t = max(S_t, ceil(B_t / BASE_MB_PER_SESSION))
                     bandwidth_mb = value.get("bandwidth_mb", 0)
                     sessions = value.get("sessions_relayed", 0)
-                    credits = max(sessions, (bandwidth_mb + BASE_MB_PER_SESSION - 1) // BASE_MB_PER_SESSION)
+                    credits = calculate_work_credits_formula(sessions, bandwidth_mb, BASE_MB_PER_SESSION)
                     entity_credits[entity_id]["relay_bandwidth"] += credits
                     
-                elif proof_type == "storage_availability":
+                elif proof_type == TaskProofType.STORAGE_AVAILABILITY.value:
                     storage_gb = value.get("storage_gb", 0)
                     uptime_hours = value.get("uptime_hours", 0)
                     credits = int(storage_gb * uptime_hours / 24)  # Daily storage hours
                     entity_credits[entity_id]["storage_proofs"] += credits
                     
-                elif proof_type == "validation_signature":
+                elif proof_type == TaskProofType.VALIDATION_SIGNATURE.value:
                     signatures_count = value.get("signatures_count", 0)
                     entity_credits[entity_id]["validation_signatures"] += signatures_count
                     
-                elif proof_type == "uptime_beacon":
+                elif proof_type == TaskProofType.UPTIME_BEACON.value:
                     uptime_hours = value.get("uptime_hours", 0)
                     entity_credits[entity_id]["uptime_score"] = min(uptime_hours / (LEADER_WINDOW_DAYS * 24), 1.0)
             
@@ -827,7 +636,7 @@ class BlockchainEngine:
         self.db = self.mongo_client.get_default_database()
         
         # Initialize blockchain clients
-        self.on_chain_client = OnSystemChainClient(
+        self.on_chain_client = EnhancedOnSystemChainClient(
             ON_SYSTEM_CHAIN_RPC,
             {
                 "LucidAnchors": LUCID_ANCHORS_ADDRESS,
@@ -849,6 +658,9 @@ class BlockchainEngine:
         try:
             self.running = True
             
+            # Start the On-System Chain client
+            await self.on_chain_client.start()
+            
             # Start consensus slot timer
             asyncio.create_task(self._slot_timer())
             
@@ -868,7 +680,7 @@ class BlockchainEngine:
         """Stop blockchain engine"""
         try:
             self.running = False
-            await self.on_chain_client.close()
+            await self.on_chain_client.stop()
             self.mongo_client.close()
             logger.info("Blockchain engine stopped")
             

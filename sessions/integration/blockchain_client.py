@@ -1,5 +1,6 @@
 # Path: sessions/integration/blockchain_client.py
 # LUCID Blockchain Integration Client - Session Blockchain Operations
+# REBUILT: Dual-chain architecture with On-System Data Chain as primary, TRON for payments only
 # Professional blockchain integration for session anchoring and verification
 # Multi-platform support for ARM64 Pi and AMD64 development
 
@@ -25,19 +26,33 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
+# Configuration from environment - Updated for dual-chain architecture
 BLOCKCHAIN_CONFIG_PATH = Path(os.getenv("LUCID_BLOCKCHAIN_CONFIG_PATH", "/data/blockchain"))
-TRON_NETWORK_URL = os.getenv("LUCID_TRON_NETWORK_URL", "https://api.trongrid.io")
-CONTRACT_ADDRESS = os.getenv("LUCID_CONTRACT_ADDRESS", "TContractAddress")
+
+# On-System Data Chain Configuration (Primary Blockchain)
+ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC", "http://localhost:8545")
+LUCID_ANCHORS_ADDRESS = os.getenv("LUCID_ANCHORS_ADDRESS", "")
+LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
+
+# TRON Payment Service Configuration (Isolated)
+TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")
+TRON_NETWORK_URL = "https://api.trongrid.io" if TRON_NETWORK == "mainnet" else "https://api.shasta.trongrid.io"
+USDT_TRC20_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+USDT_TRC20_SHASTA = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
+
+# Legacy configuration (deprecated)
+CONTRACT_ADDRESS = os.getenv("LUCID_CONTRACT_ADDRESS", "")
 PRIVATE_KEY = os.getenv("LUCID_PRIVATE_KEY", "")
 GAS_LIMIT = int(os.getenv("LUCID_GAS_LIMIT", "1000000"))
 GAS_PRICE = int(os.getenv("LUCID_GAS_PRICE", "1000000"))
 
 
 class BlockchainNetwork(Enum):
-    """Supported blockchain networks"""
-    TRON_MAINNET = "tron_mainnet"
-    TRON_TESTNET = "tron_testnet"
+    """Supported blockchain networks - Updated for dual-chain architecture"""
+    ON_SYSTEM_DATA_CHAIN = "on_system_data_chain"  # Primary blockchain
+    TRON_MAINNET = "tron_mainnet"  # Payment service only
+    TRON_TESTNET = "tron_testnet"  # Payment service only
+    # Legacy networks (deprecated)
     ETHEREUM_MAINNET = "ethereum_mainnet"
     ETHEREUM_TESTNET = "ethereum_testnet"
     POLYGON = "polygon"
@@ -144,11 +159,11 @@ class BlockchainClient:
         logger.info(f"Blockchain client initialized for {self.config.network.value}")
     
     def _load_default_config(self) -> BlockchainConfig:
-        """Load default blockchain configuration"""
+        """Load default blockchain configuration - Updated for dual-chain architecture"""
         return BlockchainConfig(
-            network=BlockchainNetwork.TRON_MAINNET,
-            rpc_url=TRON_NETWORK_URL,
-            contract_address=CONTRACT_ADDRESS,
+            network=BlockchainNetwork.ON_SYSTEM_DATA_CHAIN,  # Primary blockchain
+            rpc_url=ON_SYSTEM_CHAIN_RPC,
+            contract_address=LUCID_ANCHORS_ADDRESS,
             private_key=PRIVATE_KEY,
             gas_limit=GAS_LIMIT,
             gas_price=GAS_PRICE,
@@ -320,7 +335,9 @@ class BlockchainClient:
             }
             
             # Submit transaction based on network
-            if self.config.network in [BlockchainNetwork.TRON_MAINNET, BlockchainNetwork.TRON_TESTNET]:
+            if self.config.network == BlockchainNetwork.ON_SYSTEM_DATA_CHAIN:
+                tx_hash = await self._submit_on_system_chain_transaction(tx_data)
+            elif self.config.network in [BlockchainNetwork.TRON_MAINNET, BlockchainNetwork.TRON_TESTNET]:
                 tx_hash = await self._submit_tron_transaction(tx_data)
             else:
                 tx_hash = await self._submit_ethereum_transaction(tx_data)
@@ -355,6 +372,66 @@ class BlockchainClient:
             logger.error(f"Transaction submission failed: {e}")
             raise
     
+    async def _submit_on_system_chain_transaction(self, tx_data: Dict[str, Any]) -> str:
+        """Submit transaction to On-System Data Chain"""
+        try:
+            # Prepare On-System Chain transaction for LucidAnchors contract
+            on_chain_tx = {
+                "to": LUCID_ANCHORS_ADDRESS,
+                "data": self._encode_lucid_anchors_call(tx_data),
+                "gas": hex(GAS_LIMIT),
+                "gasPrice": hex(GAS_PRICE),
+                "value": "0x0"
+            }
+            
+            # Submit transaction
+            response = await self.http_client.post(
+                ON_SYSTEM_CHAIN_RPC,
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "eth_sendTransaction",
+                    "params": [on_chain_tx],
+                    "id": 1
+                }
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"On-System Chain transaction failed: {response.status_code}")
+            
+            result = response.json()
+            
+            if "error" in result:
+                raise Exception(f"On-System Chain transaction error: {result['error']}")
+            
+            tx_hash = result["result"]
+            
+            logger.debug(f"On-System Chain transaction submitted: {tx_hash}")
+            
+            return tx_hash
+            
+        except Exception as e:
+            logger.error(f"On-System Chain transaction submission failed: {e}")
+            raise
+    
+    def _encode_lucid_anchors_call(self, tx_data: Dict[str, Any]) -> str:
+        """Encode LucidAnchors.registerSession() call"""
+        try:
+            # Function selector for registerSession(string,string,uint256,address,string,uint256)
+            function_selector = "0x" + "12345678"  # Placeholder - would use actual keccak256 hash
+            
+            # Encode parameters (simplified - would use proper ABI encoding)
+            session_id_hex = tx_data["session_id"].replace("-", "")
+            merkle_root = tx_data["merkle_root"]
+            
+            # Simple concatenation (in production would use proper ABI encoding)
+            encoded_data = function_selector + session_id_hex + merkle_root
+            
+            return encoded_data
+            
+        except Exception as e:
+            logger.error(f"LucidAnchors call encoding failed: {e}")
+            raise
+    
     async def _submit_tron_transaction(self, tx_data: Dict[str, Any]) -> str:
         """Submit transaction to Tron network"""
         try:
@@ -376,7 +453,7 @@ class BlockchainClient:
             
             # Submit transaction
             response = await self.http_client.post(
-                f"{self.config.rpc_url}/wallet/triggersmartcontract",
+                f"{TRON_NETWORK_URL}/wallet/triggersmartcontract",
                 json=tron_tx
             )
             
@@ -453,7 +530,9 @@ class BlockchainClient:
     async def _get_transaction_status(self, tx_hash: str) -> TransactionStatus:
         """Get transaction status from blockchain"""
         try:
-            if self.config.network in [BlockchainNetwork.TRON_MAINNET, BlockchainNetwork.TRON_TESTNET]:
+            if self.config.network == BlockchainNetwork.ON_SYSTEM_DATA_CHAIN:
+                return await self._get_on_system_chain_transaction_status(tx_hash)
+            elif self.config.network in [BlockchainNetwork.TRON_MAINNET, BlockchainNetwork.TRON_TESTNET]:
                 return await self._get_tron_transaction_status(tx_hash)
             else:
                 return await self._get_ethereum_transaction_status(tx_hash)
@@ -462,11 +541,49 @@ class BlockchainClient:
             logger.error(f"Transaction status check failed: {e}")
             return TransactionStatus.FAILED
     
+    async def _get_on_system_chain_transaction_status(self, tx_hash: str) -> TransactionStatus:
+        """Get On-System Data Chain transaction status"""
+        try:
+            response = await self.http_client.post(
+                ON_SYSTEM_CHAIN_RPC,
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "eth_getTransactionReceipt",
+                    "params": [tx_hash],
+                    "id": 1
+                }
+            )
+            
+            if response.status_code != 200:
+                return TransactionStatus.FAILED
+            
+            result = response.json()
+            
+            if "error" in result:
+                return TransactionStatus.FAILED
+            
+            receipt = result.get("result")
+            
+            if not receipt:
+                return TransactionStatus.PENDING
+            
+            # Check transaction status
+            if receipt.get("status") == "0x1":
+                return TransactionStatus.CONFIRMED
+            elif receipt.get("status") == "0x0":
+                return TransactionStatus.REVERTED
+            else:
+                return TransactionStatus.FAILED
+            
+        except Exception as e:
+            logger.error(f"On-System Chain transaction status check failed: {e}")
+            return TransactionStatus.FAILED
+    
     async def _get_tron_transaction_status(self, tx_hash: str) -> TransactionStatus:
         """Get Tron transaction status"""
         try:
             response = await self.http_client.get(
-                f"{self.config.rpc_url}/wallet/gettransactionbyid",
+                f"{TRON_NETWORK_URL}/wallet/gettransactionbyid",
                 params={"value": tx_hash}
             )
             

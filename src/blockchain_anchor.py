@@ -1,4 +1,5 @@
 # Lucid RDP Blockchain Anchor System
+# REBUILT: Dual-chain architecture with On-System Data Chain as primary, TRON for payments only
 # Handles session manifest anchoring to On-System Data Chain and TRON
 # Based on LUCID-STRICT requirements for dual-chain architecture
 
@@ -16,39 +17,70 @@ import httpx
 from tronpy import Tron
 from tronpy.keys import PrivateKey
 
-from .session_recorder import SessionManifest
+# Import updated models from blockchain.core.models
+from blockchain.core.models import (
+    SessionAnchor, TronPayout, SessionManifest, ChainType, PayoutRouter,
+    SessionStatus, PayoutStatus, generate_session_id
+)
 
 logger = logging.getLogger(__name__)
 
-# Runtime variables aligned for Windows 11 and Raspberry Pi 5
+# On-System Data Chain Configuration (Primary Blockchain)
+ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC", "http://localhost:8545")
+LUCID_ANCHORS_ADDRESS = os.getenv("LUCID_ANCHORS_ADDRESS", "")
+LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
+
+# TRON Payment Service Configuration (Isolated)
 TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")  # shasta for testnet, mainnet for prod
-TRON_PRIVATE_KEY = os.getenv("TRON_PRIVATE_KEY", "")  # Must be provided
-ON_CHAIN_RPC_URL = os.getenv("ON_CHAIN_RPC_URL", "http://localhost:8545")
-ANCHOR_CONTRACT_ADDRESS = os.getenv("ANCHOR_CONTRACT_ADDRESS", "")
+TRON_PRIVATE_KEY = os.getenv("TRON_PRIVATE_KEY", "")  # Must be provided for payments
+USDT_TRC20_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+USDT_TRC20_SHASTA = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
+
+# MongoDB Configuration
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017/lucid")
 BLOCK_ONION = os.getenv("BLOCK_ONION", "")  # Blockchain service onion address
+
+# Legacy configuration (deprecated)
+ON_CHAIN_RPC_URL = ON_SYSTEM_CHAIN_RPC
+ANCHOR_CONTRACT_ADDRESS = LUCID_ANCHORS_ADDRESS
 
 
 @dataclass
 class AnchorResult:
-    """Result of anchoring operation"""
+    """Result of anchoring operation - Updated for dual-chain architecture"""
     session_id: str
     anchor_txid: str
-    on_chain_txid: Optional[str]
-    tron_txid: Optional[str]
+    on_system_chain_txid: Optional[str]  # Primary blockchain transaction
+    tron_payment_txid: Optional[str]     # Payment transaction (if applicable)
     anchor_timestamp: datetime
     gas_used: int
-    anchor_fee: int  # in TRX or wei
+    anchor_fee: int  # in ETH/wei (On-System Chain)
+    payment_fee: int  # in TRX (TRON payments)
     status: str  # "pending", "confirmed", "failed"
+    
+    # Legacy compatibility
+    on_chain_txid: Optional[str] = None
+    tron_txid: Optional[str] = None
+    
+    def __post_init__(self):
+        """Set legacy fields for backward compatibility"""
+        if self.on_chain_txid is None:
+            self.on_chain_txid = self.on_system_chain_txid
+        if self.tron_txid is None:
+            self.tron_txid = self.tron_payment_txid
 
 
 class OnSystemChainClient:
-    """Client for On-System Data Chain operations"""
+    """Client for On-System Data Chain operations - Updated for dual-chain architecture"""
     
-    def __init__(self, rpc_url: str, contract_address: str):
-        self.rpc_url = rpc_url
-        self.contract_address = contract_address
+    def __init__(self, rpc_url: str = None, contract_address: str = None):
+        self.rpc_url = rpc_url or ON_SYSTEM_CHAIN_RPC
+        self.contract_address = contract_address or LUCID_ANCHORS_ADDRESS
+        self.chunk_store_address = LUCID_CHUNK_STORE_ADDRESS
         self.session = httpx.AsyncClient()
+        
+        logger.info(f"OnSystemChainClient initialized: {self.rpc_url}")
+        logger.info(f"Contracts: Anchors={self.contract_address}, ChunkStore={self.chunk_store_address}")
     
     async def anchor_manifest(self, manifest: SessionManifest) -> str:
         """Anchor session manifest to On-System Data Chain"""
@@ -129,14 +161,19 @@ class OnSystemChainClient:
 
 
 class TronChainClient:
-    """Client for TRON blockchain operations (isolated service)"""
+    """Client for TRON blockchain operations (isolated payment service only)"""
     
-    def __init__(self, network: str, private_key_hex: str):
+    def __init__(self, network: str = None, private_key_hex: str = None):
+        network = network or TRON_NETWORK
+        private_key_hex = private_key_hex or TRON_PRIVATE_KEY
+        
         if network == "mainnet":
             self.tron = Tron()
+            self.usdt_contract = USDT_TRC20_MAINNET
         else:
             # Shasta testnet
             self.tron = Tron(network="shasta")
+            self.usdt_contract = USDT_TRC20_SHASTA
         
         if private_key_hex:
             self.private_key = PrivateKey(bytes.fromhex(private_key_hex))
@@ -145,7 +182,8 @@ class TronChainClient:
             self.private_key = None
             self.address = None
         
-        logger.info(f"TRON client initialized: {network}, address: {self.address}")
+        logger.info(f"TRON payment client initialized: {network}, address: {self.address}")
+        logger.info(f"USDT contract: {self.usdt_contract}")
     
     async def create_payout(self, session_id: str, to_address: str, 
                           usdt_amount: int, reason: str) -> str:
@@ -154,13 +192,8 @@ class TronChainClient:
             raise ValueError("TRON private key not configured")
         
         try:
-            # Get USDT-TRC20 contract (Tether on TRON)
-            usdt_contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"  # Mainnet USDT
-            if self.tron.is_shasta:
-                usdt_contract_address = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"  # Shasta USDT
-            
-            # Build transfer transaction
-            contract = self.tron.get_contract(usdt_contract_address)
+            # Build transfer transaction using configured USDT contract
+            contract = self.tron.get_contract(self.usdt_contract)
             
             # USDT has 6 decimals
             amount_with_decimals = usdt_amount * (10 ** 6)
@@ -212,8 +245,8 @@ class BlockchainAnchor:
         self.payouts_collection: AsyncIOMotorCollection = self.db.payouts
         
         # Initialize chain clients
-        self.on_chain_client = OnSystemChainClient(ON_CHAIN_RPC_URL, ANCHOR_CONTRACT_ADDRESS)
-        self.tron_client = TronChainClient(TRON_NETWORK, TRON_PRIVATE_KEY) if TRON_PRIVATE_KEY else None
+        self.on_chain_client = OnSystemChainClient()  # Uses default configuration
+        self.tron_client = TronChainClient() if TRON_PRIVATE_KEY else None
         
         logger.info("Blockchain anchor service initialized")
     
@@ -230,11 +263,12 @@ class BlockchainAnchor:
             anchor_result = AnchorResult(
                 session_id=manifest.session_id,
                 anchor_txid=on_chain_txid,
-                on_chain_txid=on_chain_txid,
-                tron_txid=None,
+                on_system_chain_txid=on_chain_txid,
+                tron_payment_txid=None,
                 anchor_timestamp=datetime.now(timezone.utc),
                 gas_used=21000,  # Estimate
                 anchor_fee=0,  # Free for On-System Chain
+                payment_fee=0,  # No TRON payment in session anchoring
                 status="pending"
             )
             
@@ -273,11 +307,13 @@ class BlockchainAnchor:
                 "session_id": session_id,
                 "to_addr": to_address,
                 "usdt_amount": usdt_amount,
-                "router": "PayoutRouterV0" if TRON_NETWORK == "mainnet" else "TestRouter",
+                "router": "PayoutRouterV0" if TRON_NETWORK == "mainnet" else "PayoutRouterKYC",
                 "reason": reason,
                 "txid": tron_txid,
                 "status": "pending",
-                "created_at": datetime.now(timezone.utc)
+                "created_at": datetime.now(timezone.utc),
+                "network": TRON_NETWORK,
+                "service_type": "tron_payment_only"
             }
             
             await self.payouts_collection.insert_one(payout_record)
@@ -299,15 +335,14 @@ class BlockchainAnchor:
             for anchor in pending_anchors:
                 # Check On-System Chain status
                 on_chain_status = await self.on_chain_client.get_anchor_status(
-                    anchor["on_chain_txid"]
+                    anchor.get("on_system_chain_txid") or anchor.get("on_chain_txid")
                 )
                 
-                # Check TRON status if applicable
+                # Check TRON status if applicable (for payments only)
                 tron_status = "confirmed"
-                if anchor.get("tron_txid"):
-                    tron_status = await self.tron_client.get_transaction_status(
-                        anchor["tron_txid"]
-                    )
+                if anchor.get("tron_payment_txid") or anchor.get("tron_txid"):
+                    tron_txid = anchor.get("tron_payment_txid") or anchor.get("tron_txid")
+                    tron_status = await self.tron_client.get_transaction_status(tron_txid)
                 
                 # Update status if both chains confirmed
                 if on_chain_status == "confirmed" and tron_status == "confirmed":
