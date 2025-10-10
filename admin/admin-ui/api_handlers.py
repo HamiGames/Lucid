@@ -32,7 +32,7 @@ app = FastAPI(
 # CORS middleware for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8098"],
+    allow_origins=["http://admin-ui-distroless:3000", "http://api-gateway-distroless:8098"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

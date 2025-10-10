@@ -1,0 +1,29 @@
+Category,Component,Current State,Target State,Implementation Details,Priority,Dependencies,Files Affected
+Core Architecture,Blockchain Engine,TRON embedded in core consensus,On-System Data Chain as primary,Replace TRON with EVM-compatible On-System Chain,High,None,blockchain/core/blockchain_engine.py
+Core Architecture,Session Anchoring,TRON-based anchoring,LucidAnchors contract,registerSession(sessionId manifestHash startedAt owner merkleRoot chunkCount),High,LucidAnchors contract,blockchain/core/blockchain_engine.py
+Core Architecture,Chunk Storage,TRON chunk storage,LucidChunkStore contract,Encrypted chunk metadata storage,High,LucidChunkStore contract,blockchain/core/blockchain_engine.py
+Consensus,PoOT Engine,Mixed TRON/PoOT,Pure PoOT on On-System Chain,Work credits from relay bandwidth storage proofs validation signatures uptime beacons,High,MongoDB collections,blockchain/core/blockchain_engine.py
+Consensus,Leader Selection,TRON-based selection,Work credits ranking,Top-ranked entity with 16-slot cooldown fallback mechanism,High,Work credits calculation,blockchain/core/blockchain_engine.py
+Consensus,Slot Timer,Variable timing,120s fixed slots,Immutable slot duration per Spec-1b line 170,High,None,blockchain/core/blockchain_engine.py
+TRON Integration,TronNodeSystem,Embedded in blockchain engine,Isolated payment service,USDT-TRC20 payouts only via PayoutRouterV0/PRKYC,Medium,TRON network,blockchain/core/blockchain_engine.py
+TRON Integration,Payment Processing,Core blockchain feature,Payment rail only,Monthly payout distribution router selection,Medium,TRON contracts,blockchain/core/blockchain_engine.py
+Data Structures,SessionAnchor,TRON-specific fields,On-System Chain focused,session_id manifest_hash merkle_root started_at owner_address chunk_count block_number txid gas_used status,High,None,blockchain/core/blockchain_engine.py
+Data Structures,TronPayout,Core blockchain component,Payment layer only,Mark as payment-service only not blockchain core,Medium,None,blockchain/core/blockchain_engine.py
+Data Structures,WorkCreditsProof,Not implemented,PoOT proof submission,node_id pool_id slot proof_type proof_data signature timestamp,High,MongoDB task_proofs,blockchain/core/blockchain_engine.py
+Data Structures,WorkCreditsTally,Not implemented,Epoch work tally,epoch entity_id credits_total relay_bandwidth storage_proofs validation_signatures uptime_score live_score rank,High,MongoDB work_tally,blockchain/core/blockchain_engine.py
+Data Structures,LeaderSchedule,Not implemented,Block leader schedule,slot primary fallbacks winner reason deadline,High,MongoDB leader_schedule,blockchain/core/blockchain_engine.py
+Environment Variables,On-System Chain,Not configured,Primary blockchain config,ON_SYSTEM_CHAIN_RPC LUCID_ANCHORS_ADDRESS LUCID_CHUNK_STORE_ADDRESS,High,On-System Chain deployment,blockchain/api/app/config.py
+Environment Variables,TRON Config,Core blockchain vars,Payment layer only,TRON_NETWORK USDT_TRC20_MAINNET USDT_TRC20_SHASTA PAYOUT_ROUTER_V0_ADDRESS PAYOUT_ROUTER_KYC_ADDRESS,Medium,TRON contracts,blockchain/api/app/config.py
+Environment Variables,PoOT Parameters,Not configured,Consensus parameters,SLOT_DURATION_SEC SLOT_TIMEOUT_MS COOLDOWN_SLOTS LEADER_WINDOW_DAYS D_MIN BASE_MB_PER_SESSION,High,None,blockchain/api/app/config.py
+MongoDB Schema,Sessions Collection,Basic structure,On-System Chain anchoring,_id owner_addr started_at ended_at manifest_hash merkle_root chunk_count anchor_txid block_number gas_used status,High,MongoDB sharding,scripts/database/init_mongodb_schema.js
+MongoDB Schema,Chunks Collection,Basic structure,Sharded storage,_id session_id idx local_path ciphertext_sha256 size_bytes shard_key_session_id_idx,High,MongoDB sharding,scripts/database/init_mongodb_schema.js
+MongoDB Schema,Payouts Collection,Not implemented,TRON payment tracking,_id session_id to_addr usdt_amount router reason txid status created_at kyc_hash compliance_sig,Medium,TRON integration,scripts/database/init_mongodb_schema.js
+MongoDB Schema,Consensus Collections,Not implemented,PoOT consensus data,task_proofs work_tally leader_schedule with proper indexes,High,MongoDB sharding,scripts/database/init_mongodb_schema.js
+Docker Configuration,Blockchain API,TRON-focused,On-System Chain focused,Update environment variables and dependencies,Medium,Docker build,infrastructure/docker/blockchain/env/*.env
+Docker Configuration,Compose Files,TRON service,On-System Chain service,Add On-System Chain service container separate TRON as payment service,Medium,Docker compose,docker-compose.yml docker-compose.pi.yml
+Testing,Unit Tests,TRON-based tests,On-System Chain tests,PoOT consensus work credits leader selection session anchoring TRON payment isolation,High,Test framework,blockchain/core/tests/
+Testing,Integration Tests,Basic flow,End-to-end flow,Session anchoring PoOT consensus slot progression monthly payout MongoDB sharding,High,Test environment,blockchain/core/tests/
+Dependencies,Remove,tronpy,Move to payment service,Isolate TRON dependencies from core consensus,Medium,Payment service refactor,blockchain/core/blockchain_engine.py
+Dependencies,Add,httpx,On-System Chain RPC,HTTP client for On-System Chain JSON-RPC calls,High,None,blockchain/core/blockchain_engine.py
+Dependencies,Add,blake3,Merkle computation,Blake3 hashing for Merkle root computation,High,None,blockchain/core/blockchain_engine.py
+Dependencies,Keep,motor,MongoDB driver,MongoDB async driver already present,Low,None,blockchain/core/blockchain_engine.py

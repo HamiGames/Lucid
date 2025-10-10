@@ -6,7 +6,7 @@ import httpx
 from fastapi import APIRouter, HTTPException, Depends, Query, Path, status
 from fastapi.responses import JSONResponse
 
-BLOCKCHAIN_CORE_URL = os.getenv("BLOCKCHAIN_CORE_URL", "http://127.0.0.1:8084")
+BLOCKCHAIN_CORE_URL = os.getenv("BLOCKCHAIN_CORE_URL", "http://blockchain-core-distroless:8084")
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
 

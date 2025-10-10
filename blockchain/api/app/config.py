@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     MONGO_URI: str = Field(
         default=os.getenv(
             "MONGO_URI",
-            "mongodb://lucid:lucid@127.0.0.1:27019/lucid?authSource=admin&retryWrites=false&directConnection=true",
+            "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true",
         )
     )
     MONGO_DB: str = Field(default=os.getenv("MONGO_DB", "lucid"))

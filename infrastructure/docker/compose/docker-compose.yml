@@ -70,27 +70,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # PostgreSQL (Additional Database)
-  lucid-postgres:
-    image: postgres:15-alpine
-    container_name: lucid-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${LUCID_POSTGRES_DB:-lucid_postgres}
-      POSTGRES_USER: ${LUCID_POSTGRES_USER:-lucid}
-      POSTGRES_PASSWORD: ${LUCID_POSTGRES_PASSWORD:-lucid_password}
-    volumes:
-      - lucid_postgres_data:/var/lib/postgresql/data
-      - ./postgres/init:/docker-entrypoint-initdb.d:ro
-      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-    networks:
-      - lucid-infra-network
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${LUCID_POSTGRES_USER:-lucid}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Elasticsearch (Logging and Search)
   lucid-elasticsearch:
@@ -261,7 +240,6 @@ services:
     environment:
       - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb:27017/lucid?authSource=admin
       - LUCID_REDIS_URL=redis://lucid-redis:6379
-      - LUCID_POSTGRES_URL=postgresql://lucid:lucid_password@lucid-postgres:5432/lucid_postgres
       - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch:9200
       - LUCID_JAEGER_URL=http://lucid-jaeger:14268/api/traces
       - LUCID_MINIO_URL=http://lucid-minio:9000
@@ -276,8 +254,6 @@ services:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-postgres:
         condition: service_healthy
 
   # Session Management Service (Infrastructure)
@@ -328,11 +304,12 @@ services:
 
   # Backup Service
   lucid-backup:
-    image: postgres:15-alpine
+    image: mongo:7.0
     container_name: lucid-backup
     restart: "no"
     environment:
-      PGPASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
     volumes:
       - lucid_backup_data:/backups
       - ./backup/scripts:/scripts:ro
@@ -341,7 +318,6 @@ services:
     command: ["sh", "-c", "while true; do sleep 86400; done"]  # Sleep for 24 hours
     depends_on:
       - lucid-mongodb
-      - lucid-postgres
 
   # Log Aggregator
   lucid-log-aggregator:
@@ -372,8 +348,6 @@ volumes:
   lucid_mongodb_config:
     driver: local
   lucid_redis_data:
-    driver: local
-  lucid_postgres_data:
     driver: local
   
   # Search and logging volumes

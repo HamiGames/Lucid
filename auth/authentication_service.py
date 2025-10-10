@@ -79,7 +79,7 @@ class AuthenticationService:
         """Initialize the authentication service"""
         try:
             # Initialize database connection
-            mongo_uri = os.getenv("MONGO_URI", "mongodb://lucid:lucid@127.0.0.1:27019/lucid?authSource=admin")
+            mongo_uri = os.getenv("MONGO_URI", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin")
             self.db_client = AsyncIOMotorClient(mongo_uri)
             db = self.db_client.lucid
             

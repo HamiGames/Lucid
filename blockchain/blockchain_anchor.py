@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 # Runtime variables aligned for Windows 11 and Raspberry Pi 5
 TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")  # shasta for testnet, mainnet for prod
 TRON_PRIVATE_KEY = os.getenv("TRON_PRIVATE_KEY", "")  # Must be provided
-ON_CHAIN_RPC_URL = os.getenv("ON_CHAIN_RPC_URL", "http://localhost:8545")
+ON_CHAIN_RPC_URL = os.getenv("ON_CHAIN_RPC_URL", "http://on-chain-distroless:8545")
 ANCHOR_CONTRACT_ADDRESS = os.getenv("ANCHOR_CONTRACT_ADDRESS", "")
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017/lucid")
+MONGO_URL = os.getenv("MONGO_URL", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
 BLOCK_ONION = os.getenv("BLOCK_ONION", "")  # Blockchain service onion address
 
 

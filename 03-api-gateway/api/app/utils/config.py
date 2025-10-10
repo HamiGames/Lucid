@@ -30,7 +30,7 @@ def mongo_conn_str() -> str:
         return url
 
     # Smart default by runtime location
-    host = "host.docker.internal" if in_container() else "127.0.0.1"
+    host = "host.docker.internal" if in_container() else "api-gateway-distroless"
     # Use explicit auth + direct connection to avoid SRV/discovery pitfalls.
     return (
         f"mongodb://lucid:lucid@{host}:27017/"

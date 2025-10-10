@@ -235,7 +235,7 @@ class LucidAnchorsClient:
     def __init__(
         self,
         contract_address: str = LUCID_ANCHORS_CONTRACT_ADDRESS,
-        rpc_url: str = "http://localhost:8545",
+        rpc_url: str = "http://on-chain-distroless:8545",
         private_key: Optional[str] = None,
         output_dir: str = "/data/anchors"
     ):
@@ -798,7 +798,7 @@ def get_anchors_client() -> Optional[LucidAnchorsClient]:
 
 def create_anchors_client(
     contract_address: str = LUCID_ANCHORS_CONTRACT_ADDRESS,
-    rpc_url: str = "http://localhost:8545",
+    rpc_url: str = "http://on-chain-distroless:8545",
     private_key: Optional[str] = None,
     output_dir: str = "/data/anchors"
 ) -> LucidAnchorsClient:

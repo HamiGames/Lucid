@@ -43,7 +43,7 @@ GOVERNANCE_QUORUM_PCT = float(os.getenv("GOVERNANCE_QUORUM_PCT", "0.67"))  # 67%
 POLICY_CACHE_TTL_SEC = int(os.getenv("POLICY_CACHE_TTL_SEC", "300"))  # 5-minute policy cache
 
 # MongoDB Configuration
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/lucid")
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
 
 # Multi-signature Configuration (per Spec-1c)
 MULTISIG_THRESHOLD = int(os.getenv("MULTISIG_THRESHOLD", "3"))  # 3-of-5 multisig
@@ -1121,7 +1121,7 @@ if __name__ == "__main__":
         # Create test admin account
         admin_id = await controller.create_admin_account(
             username="test_admin",
-            email="admin@test.com",
+            email="admin@lucid-distroless.local",
             password="secure_password_123",
             role=AdminRole.SUPER_ADMIN,
             creator_admin_id="system"

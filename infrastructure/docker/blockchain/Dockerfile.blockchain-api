@@ -19,19 +19,19 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy build environment script
-COPY infrastructure/docker/blockchain/build-env.sh /tmp/build-env.sh
+COPY build-env.sh /tmp/build-env.sh
 RUN chmod +x /tmp/build-env.sh
 
 # Execute build environment script to generate .env files
 RUN /tmp/build-env.sh
 
 # Copy requirements and install Python dependencies
-COPY blockchain/api/requirements.txt /tmp/
+COPY ../../blockchain/api/requirements.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
 
 # Copy source code
-COPY blockchain/api/app/ /app/app/
-COPY blockchain/api/ /app/
+COPY ../../blockchain/api/app/ /app/app/
+COPY ../../blockchain/api/ /app/
 
 # Create non-root user
 RUN groupadd --gid 1000 lucid && \
@@ -56,7 +56,7 @@ COPY --from=builder /root/.local /home/nonroot/.local
 COPY --from=builder /app /app
 
 # Copy generated environment files
-COPY --from=builder /tmp/infrastructure/docker/blockchain/env/blockchain-api.env /app/.env
+COPY --from=builder /tmp/env/blockchain-api.env /app/.env
 
 # Set working directory
 WORKDIR /app

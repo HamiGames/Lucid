@@ -295,9 +295,9 @@ class SystemDiagnostics:
         
         # Test endpoints
         endpoints = [
-            {"name": "localhost", "url": "http://localhost:8084", "service": "blockchain-api"},
-            {"name": "localhost", "url": "http://localhost:8085", "service": "authentication"},
-            {"name": "localhost", "url": "http://localhost:3000", "service": "admin-ui"},
+            {"name": "blockchain-api", "url": "http://blockchain-api-distroless:8084", "service": "blockchain-api"},
+            {"name": "authentication", "url": "http://auth-service-distroless:8085", "service": "authentication"},
+            {"name": "admin-ui", "url": "http://admin-ui-distroless:3000", "service": "admin-ui"},
         ]
         
         for endpoint in endpoints:

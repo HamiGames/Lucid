@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 class TimelockTester:
     """Timelock governance system tester"""
     
-    def __init__(self, mongo_uri: str = "mongodb://localhost:27017/lucid"):
+    def __init__(self, mongo_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin"):
         self.mongo_uri = mongo_uri
         self.client: AsyncIOMotorClient = None
         self.timelock: TimelockGovernance = None

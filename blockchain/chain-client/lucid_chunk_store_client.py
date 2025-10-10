@@ -173,7 +173,7 @@ class LucidChunkStoreClient:
     def __init__(
         self,
         contract_address: str = LUCID_CHUNK_STORE_CONTRACT_ADDRESS,
-        rpc_url: str = "http://localhost:8545",
+        rpc_url: str = "http://on-chain-distroless:8545",
         private_key: Optional[str] = None,
         output_dir: str = "/data/chunk-store"
     ):
@@ -821,7 +821,7 @@ def get_chunk_store_client() -> Optional[LucidChunkStoreClient]:
 
 def create_chunk_store_client(
     contract_address: str = LUCID_CHUNK_STORE_CONTRACT_ADDRESS,
-    rpc_url: str = "http://localhost:8545",
+    rpc_url: str = "http://on-chain-distroless:8545",
     private_key: Optional[str] = None,
     output_dir: str = "/data/chunk-store"
 ) -> LucidChunkStoreClient:
@@ -843,9 +843,9 @@ async def main():
         print("Chunk store client started successfully")
         
         # Add storage nodes
-        await client.add_storage_node("node_001", "http://node1.example.com", 1000000000)  # 1GB
-        await client.add_storage_node("node_002", "http://node2.example.com", 1000000000)  # 1GB
-        await client.add_storage_node("node_003", "http://node3.example.com", 1000000000)  # 1GB
+        await client.add_storage_node("node_001", "http://storage-node-001-distroless:8080", 1000000000)  # 1GB
+        await client.add_storage_node("node_002", "http://storage-node-002-distroless:8080", 1000000000)  # 1GB
+        await client.add_storage_node("node_003", "http://storage-node-003-distroless:8080", 1000000000)  # 1GB
         
         # List storage nodes
         nodes = await client.list_storage_nodes()

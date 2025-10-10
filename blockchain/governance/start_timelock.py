@@ -48,7 +48,7 @@ class TimelockService:
     
     def __init__(
         self,
-        mongo_uri: str = "mongodb://lucid:lucid@127.0.0.1:27019/lucid?authSource=admin",
+        mongo_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin",
         output_dir: str = "/data/timelock",
         config: Optional[TimelockConfig] = None
     ):
@@ -194,7 +194,7 @@ async def main():
         type=str,
         default=os.getenv(
             "MONGO_URI",
-            "mongodb://lucid:lucid@127.0.0.1:27019/lucid?authSource=admin"
+            "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin"
         ),
         help="MongoDB connection URI"
     )

@@ -486,7 +486,7 @@ if __name__ == "__main__":
         from motor.motor_asyncio import AsyncIOMotorClient
         
         # Connect to MongoDB
-        client = AsyncIOMotorClient("mongodb://localhost:27017")
+        client = AsyncIOMotorClient("mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
         db = client["lucid_test"]
         
         # Create payout router

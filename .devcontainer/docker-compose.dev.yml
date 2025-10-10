@@ -21,6 +21,9 @@ volumes:
   buildx-data:
     name: lucid-devcontainer_buildx_data
     driver: local
+  lucid-mongo-data:
+    name: lucid-devcontainer_mongo_data
+    driver: local
 
 services:
   devcontainer:
@@ -214,7 +217,3 @@ services:
       start_period: 30s
       retries: 3
 
-volumes:
-  lucid-mongo-data:
-    name: lucid-devcontainer_mongo_data
-    driver: local

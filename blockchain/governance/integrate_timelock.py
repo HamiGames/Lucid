@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 class TimelockIntegrator:
     """Timelock governance system integrator"""
     
-    def __init__(self, mongo_uri: str = "mongodb://lucid:lucid@127.0.0.1:27019/lucid?authSource=admin"):
+    def __init__(self, mongo_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin"):
         self.mongo_uri = mongo_uri
         self.client: AsyncIOMotorClient = None
         self.timelock: TimelockGovernance = None

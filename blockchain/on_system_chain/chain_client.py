@@ -65,7 +65,7 @@ class OnSystemChainClient:
     
     def __init__(
         self,
-        rpc_url: str = "http://localhost:8545",
+        rpc_url: str = "http://on-chain-distroless:8545",
         chain_id: int = 1337,
         private_key: Optional[str] = None,
         output_dir: str = "/data/chain"
@@ -391,7 +391,7 @@ async def main():
     parser.add_argument("--session-id", required=True, help="Session ID")
     parser.add_argument("--owner-address", required=True, help="Owner address")
     parser.add_argument("--merkle-root", required=True, help="Merkle root hash")
-    parser.add_argument("--rpc-url", default="http://localhost:8545", help="RPC URL")
+    parser.add_argument("--rpc-url", default="http://on-chain-distroless:8545", help="RPC URL")
     parser.add_argument("--output-dir", default="/data/chain", help="Output directory")
     
     args = parser.parse_args()
