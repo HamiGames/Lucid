@@ -21,9 +21,9 @@ import blake3
 logger = logging.getLogger(__name__)
 
 # Session ID Constants per R-MUST-012
-SESSION_ID_ENTROPY_BITS = int(os.getenv("SESSION_ID_ENTROPY_BITS", "256"))  # 256-bit entropy
-SESSION_EXPIRY_HOURS = int(os.getenv("SESSION_EXPIRY_HOURS", "8"))  # 8-hour sessions
-SESSION_CLEANUP_HOURS = int(os.getenv("SESSION_CLEANUP_HOURS", "24"))  # 24-hour cleanup
+SESSION_ID_ENTROPY_BITS = int(os.getenv("LUCID_SESSION_ID_ENTROPY_BITS", "256"))  # 256-bit entropy
+SESSION_EXPIRY_HOURS = int(os.getenv("LUCID_SESSION_EXPIRY_HOURS", "8"))  # 8-hour sessions
+SESSION_CLEANUP_HOURS = int(os.getenv("LUCID_SESSION_CLEANUP_HOURS", "24"))  # 24-hour cleanup
 
 
 class SessionType(Enum):

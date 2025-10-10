@@ -32,12 +32,12 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-AUDIT_LOG_PATH = Path(os.getenv("AUDIT_LOG_PATH", "/var/log/lucid/audit"))
-AUDIT_SESSIONS_PATH = Path(os.getenv("AUDIT_SESSIONS_PATH", "/var/log/lucid/sessions"))
-AUDIT_KEYSTROKES_PATH = Path(os.getenv("AUDIT_KEYSTROKES_PATH", "/var/log/lucid/keystrokes"))
-AUDIT_WINDOWS_PATH = Path(os.getenv("AUDIT_WINDOWS_PATH", "/var/log/lucid/windows"))
-AUDIT_RESOURCES_PATH = Path(os.getenv("AUDIT_RESOURCES_PATH", "/var/log/lucid/resources"))
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
+AUDIT_LOG_PATH = Path(os.getenv("LUCID_AUDIT_LOG_PATH", "/var/log/lucid/audit"))
+AUDIT_SESSIONS_PATH = Path(os.getenv("LUCID_AUDIT_SESSIONS_PATH", "/var/log/lucid/sessions"))
+AUDIT_KEYSTROKES_PATH = Path(os.getenv("LUCID_AUDIT_KEYSTROKES_PATH", "/var/log/lucid/keystrokes"))
+AUDIT_WINDOWS_PATH = Path(os.getenv("LUCID_AUDIT_WINDOWS_PATH", "/var/log/lucid/windows"))
+AUDIT_RESOURCES_PATH = Path(os.getenv("LUCID_AUDIT_RESOURCES_PATH", "/var/log/lucid/resources"))
+MONGODB_URL = os.getenv("LUCID_MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
 
 
 class AuditEventType(Enum):

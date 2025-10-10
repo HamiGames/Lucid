@@ -37,16 +37,16 @@ from blockchain.core.blockchain_engine import get_blockchain_engine, BlockchainE
 logger = logging.getLogger(__name__)
 
 # Pipeline Constants per Spec-1a, Spec-1b
-CHUNK_SIZE_MB = int(os.getenv("CHUNK_SIZE_MB", "16"))  # 16MB chunks for efficient storage
-MAX_SESSION_SIZE_GB = int(os.getenv("MAX_SESSION_SIZE_GB", "100"))  # 100GB session limit
-ENCRYPTION_CHUNK_SIZE = int(os.getenv("ENCRYPTION_CHUNK_SIZE", "65536"))  # 64KB encryption chunks
-MERKLE_BATCH_SIZE = int(os.getenv("MERKLE_BATCH_SIZE", "1000"))  # Batch size for merkle tree
-COMPRESSION_LEVEL = int(os.getenv("COMPRESSION_LEVEL", "6"))  # zstd compression level
+CHUNK_SIZE_MB = int(os.getenv("LUCID_CHUNK_SIZE_MB", "16"))  # 16MB chunks for efficient storage
+MAX_SESSION_SIZE_GB = int(os.getenv("LUCID_MAX_SESSION_SIZE_GB", "100"))  # 100GB session limit
+ENCRYPTION_CHUNK_SIZE = int(os.getenv("LUCID_ENCRYPTION_CHUNK_SIZE", "65536"))  # 64KB encryption chunks
+MERKLE_BATCH_SIZE = int(os.getenv("LUCID_MERKLE_BATCH_SIZE", "1000"))  # Batch size for merkle tree
+COMPRESSION_LEVEL = int(os.getenv("LUCID_PIPELINE_COMPRESSION_LEVEL", "6"))  # zstd compression level
 
 # Storage Configuration (per Spec-1d)
-STORAGE_ROOT = Path(os.getenv("STORAGE_ROOT", "./data/session_storage"))
-TEMP_STORAGE = Path(os.getenv("TEMP_STORAGE", "./data/temp"))
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/lucid")
+STORAGE_ROOT = Path(os.getenv("LUCID_STORAGE_ROOT", "./data/session_storage"))
+TEMP_STORAGE = Path(os.getenv("LUCID_TEMP_STORAGE", "./data/temp"))
+MONGODB_URI = os.getenv("LUCID_MONGODB_URI", "mongodb://localhost:27017/lucid")
 
 
 class SessionState(Enum):

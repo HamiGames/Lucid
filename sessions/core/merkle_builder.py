@@ -49,8 +49,8 @@ class MerkleTreeBuilder:
     
     HASH_ALGORITHM = "BLAKE3"
     
-    def __init__(self, output_dir: str = "/data/merkle_roots"):
-        self.output_dir = Path(output_dir)
+    def __init__(self, output_dir: str = None):
+        self.output_dir = Path(output_dir or os.getenv("LUCID_MERKLE_OUTPUT_DIR", "/data/merkle_roots"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info("MerkleTreeBuilder initialized with BLAKE3 hashing")

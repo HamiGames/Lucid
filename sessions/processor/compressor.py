@@ -25,10 +25,10 @@ import brotli
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-COMPRESSION_PATH = Path(os.getenv("COMPRESSION_PATH", "/data/compression"))
-DEFAULT_COMPRESSION_LEVEL = int(os.getenv("DEFAULT_COMPRESSION_LEVEL", "3"))
-MAX_CHUNK_SIZE = int(os.getenv("MAX_CHUNK_SIZE", "1048576"))  # 1MB
-COMPRESSION_THRESHOLD = int(os.getenv("COMPRESSION_THRESHOLD", "1024"))  # 1KB
+COMPRESSION_PATH = Path(os.getenv("LUCID_COMPRESSION_PATH", "/data/compression"))
+DEFAULT_COMPRESSION_LEVEL = int(os.getenv("LUCID_DEFAULT_COMPRESSION_LEVEL", "3"))
+MAX_CHUNK_SIZE = int(os.getenv("LUCID_MAX_CHUNK_SIZE", "1048576"))  # 1MB
+COMPRESSION_THRESHOLD = int(os.getenv("LUCID_COMPRESSION_THRESHOLD", "1024"))  # 1KB
 
 
 class CompressionAlgorithm(Enum):

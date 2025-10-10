@@ -82,6 +82,8 @@ class ManifestAnchor:
     
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
+        self.manifest_dir = Path(os.getenv("LUCID_MANIFEST_DIR", "/data/manifests"))
+        self.manifest_dir.mkdir(parents=True, exist_ok=True)
         
     def calculate_merkle_root(self, chunk_hashes: List[str]) -> str:
         """Calculate Merkle root from chunk hashes using BLAKE3."""

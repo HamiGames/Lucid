@@ -61,10 +61,10 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Registration Protocol Constants
-REGISTRATION_TIMEOUT_SEC = int(os.getenv("REGISTRATION_TIMEOUT_SEC", "300"))  # 5 minutes
-MIN_STAKE_REQUIREMENT_USDT = float(os.getenv("MIN_STAKE_REQUIREMENT_USDT", "100.0"))  # $100 minimum
-MAX_PENDING_REGISTRATIONS = int(os.getenv("MAX_PENDING_REGISTRATIONS", "1000"))
-CHALLENGE_VALIDITY_SEC = int(os.getenv("CHALLENGE_VALIDITY_SEC", "120"))  # 2 minutes
+REGISTRATION_TIMEOUT_SEC = int(os.getenv("LUCID_REGISTRATION_TIMEOUT_SEC", "300"))  # 5 minutes
+MIN_STAKE_REQUIREMENT_USDT = float(os.getenv("LUCID_MIN_STAKE_REQUIREMENT_USDT", "100.0"))  # $100 minimum
+MAX_PENDING_REGISTRATIONS = int(os.getenv("LUCID_MAX_PENDING_REGISTRATIONS", "1000"))
+CHALLENGE_VALIDITY_SEC = int(os.getenv("LUCID_CHALLENGE_VALIDITY_SEC", "120"))  # 2 minutes
 
 
 class RegistrationStatus(Enum):

@@ -7,6 +7,16 @@ try:
 except ImportError:
     pass
 
+try:
+    from .wallet import *
+except ImportError:
+    pass
+
+try:
+    from .payment_acceptor import *
+except ImportError:
+    pass
+
 # Note: governance and distribution modules don't exist yet
 # from .governance import *
 # from .distribution import *

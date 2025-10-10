@@ -5,16 +5,25 @@
 # syntax=docker/dockerfile:1.7
 FROM python:3.12-slim-bookworm AS builder
 
-# Install build dependencies
+# Install build dependencies including bash for script execution
 RUN apt-get update && apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
     curl \
+    bash \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
+
+# Copy build environment script
+COPY infrastructure/docker/blockchain/build-env.sh /tmp/build-env.sh
+RUN chmod +x /tmp/build-env.sh
+
+# Execute build environment script to generate .env files
+RUN /tmp/build-env.sh
 
 # Copy requirements and install Python dependencies
 COPY blockchain/api/requirements.txt /tmp/
@@ -45,6 +54,9 @@ COPY --from=builder /root/.local /home/nonroot/.local
 
 # Copy application code
 COPY --from=builder /app /app
+
+# Copy generated environment files
+COPY --from=builder /tmp/infrastructure/docker/blockchain/env/blockchain-api.env /app/.env
 
 # Set working directory
 WORKDIR /app

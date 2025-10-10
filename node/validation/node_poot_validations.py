@@ -29,12 +29,12 @@ from ..work_credits import WorkCreditsCalculator
 logger = logging.getLogger(__name__)
 
 # pOot Validation Constants
-POOT_CHALLENGE_VALIDITY_MINUTES = int(os.getenv("POOT_CHALLENGE_VALIDITY_MINUTES", "15"))  # 15 minutes
-POOT_PROOF_CACHE_MINUTES = int(os.getenv("POOT_PROOF_CACHE_MINUTES", "60"))  # 1 hour
-MIN_TOKEN_STAKE_AMOUNT = Decimal(os.getenv("MIN_TOKEN_STAKE_AMOUNT", "100.0"))  # Minimum stake
-MAX_VALIDATION_ATTEMPTS = int(os.getenv("MAX_VALIDATION_ATTEMPTS", "3"))  # Max attempts per period
-FRAUD_DETECTION_WINDOW_HOURS = int(os.getenv("FRAUD_DETECTION_WINDOW_HOURS", "24"))  # 24 hours
-CHALLENGE_COMPLEXITY_BYTES = int(os.getenv("CHALLENGE_COMPLEXITY_BYTES", "32"))  # 32 bytes
+POOT_CHALLENGE_VALIDITY_MINUTES = int(os.getenv("LUCID_POOT_CHALLENGE_VALIDITY_MINUTES", "15"))  # 15 minutes
+POOT_PROOF_CACHE_MINUTES = int(os.getenv("LUCID_POOT_PROOF_CACHE_MINUTES", "60"))  # 1 hour
+MIN_TOKEN_STAKE_AMOUNT = Decimal(os.getenv("LUCID_MIN_TOKEN_STAKE_AMOUNT", "100.0"))  # Minimum stake
+MAX_VALIDATION_ATTEMPTS = int(os.getenv("LUCID_MAX_VALIDATION_ATTEMPTS", "3"))  # Max attempts per period
+FRAUD_DETECTION_WINDOW_HOURS = int(os.getenv("LUCID_FRAUD_DETECTION_WINDOW_HOURS", "24"))  # 24 hours
+CHALLENGE_COMPLEXITY_BYTES = int(os.getenv("LUCID_CHALLENGE_COMPLEXITY_BYTES", "32"))  # 32 bytes
 
 
 class ProofType(Enum):

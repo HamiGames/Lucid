@@ -96,15 +96,15 @@ class UptimeBeaconSystem:
             directory.mkdir(parents=True, exist_ok=True)
         
         # Configuration
-        self.node_id = os.getenv("NODE_ID", "node-001")
-        self.mongodb_url = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid")
-        self.consensus_api_url = os.getenv("CONSENSUS_API_URL", "http://consensus-api:8080")
+        self.node_id = os.getenv("LUCID_NODE_ID", "node-001")
+        self.mongodb_url = os.getenv("LUCID_MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid")
+        self.consensus_api_url = os.getenv("LUCID_CONSENSUS_API_URL", "http://consensus-api:8080")
         
         # Beacon parameters
-        self.beacon_interval = int(os.getenv("BEACON_INTERVAL", "60"))  # seconds
-        self.beacon_timeout = int(os.getenv("BEACON_TIMEOUT", "30"))  # seconds
-        self.max_consecutive_failures = int(os.getenv("MAX_CONSECUTIVE_FAILURES", "5"))
-        self.uptime_threshold = float(os.getenv("UPTIME_THRESHOLD", "0.8"))  # 80%
+        self.beacon_interval = int(os.getenv("LUCID_BEACON_INTERVAL", "60"))  # seconds
+        self.beacon_timeout = int(os.getenv("LUCID_BEACON_TIMEOUT", "30"))  # seconds
+        self.max_consecutive_failures = int(os.getenv("LUCID_MAX_CONSECUTIVE_FAILURES", "5"))
+        self.uptime_threshold = float(os.getenv("LUCID_UPTIME_THRESHOLD", "0.8"))  # 80%
         
         # Node key pair for signing
         self.node_private_key = self._load_or_generate_key()

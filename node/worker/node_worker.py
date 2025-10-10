@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 # Node Worker Constants
 RDP_PORT_RANGE = (3389, 4000)  # RDP port range
-MAX_CONCURRENT_SESSIONS = int(os.getenv("MAX_CONCURRENT_SESSIONS", "10"))
-SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT", "7200"))  # 2 hours
-BANDWIDTH_LIMIT_MBPS = float(os.getenv("BANDWIDTH_LIMIT_MBPS", "100.0"))
-MIN_STORAGE_GB = float(os.getenv("MIN_STORAGE_GB", "50.0"))
+MAX_CONCURRENT_SESSIONS = int(os.getenv("LUCID_MAX_CONCURRENT_SESSIONS", "10"))
+SESSION_TIMEOUT = int(os.getenv("LUCID_SESSION_TIMEOUT", "7200"))  # 2 hours
+BANDWIDTH_LIMIT_MBPS = float(os.getenv("LUCID_BANDWIDTH_LIMIT_MBPS", "100.0"))
+MIN_STORAGE_GB = float(os.getenv("LUCID_MIN_STORAGE_GB", "50.0"))
 
 
 class SessionState(Enum):

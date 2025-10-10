@@ -1,0 +1,102 @@
+# RDP Distroless Image for Lucid Project
+# Multi-stage build for RDP services with minimal attack surface
+# Target: ARM64 (Raspberry Pi) and AMD64 (Development)
+
+# Build stage
+FROM python:3.11-slim-bookworm as builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+# Install build dependencies for RDP components
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
+    # RDP protocol dependencies
+    libfreerdp-dev \
+    libfreerdp2-dev \
+    libx11-dev \
+    libxext-dev \
+    libxrender-dev \
+    libxtst-dev \
+    libxi-dev \
+    libxrandr-dev \
+    libxss-dev \
+    # Audio and multimedia
+    libasound2-dev \
+    libpulse-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswscale-dev \
+    # Network and security
+    libssl-dev \
+    libcrypto++-dev \
+    # Additional RDP libraries
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python build environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Python RDP dependencies
+COPY RDP/requirements.txt /tmp/
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r /tmp/requirements.txt
+
+# Copy RDP source code
+COPY RDP/ /app/RDP/
+COPY sessions/ /app/sessions/
+COPY auth/ /app/auth/
+COPY src/core/ /app/src/core/
+
+# Runtime stage - Distroless base with RDP support
+FROM gcr.io/distroless/python3-debian12
+
+# Set runtime environment
+ENV PYTHONPATH=/app:/app/RDP:/app/sessions:/app/auth:/app/src \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    RDP_PORT=3389 \
+    RDP_SESMAN_PORT=3350 \
+    RDP_CHANSRV_PORT=3351 \
+    DISPLAY=:10
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
+# Create non-root user
+USER nonroot:nonroot
+
+# Set working directory
+WORKDIR /app
+
+# Expose RDP service ports
+EXPOSE 3389 3350 3351
+
+# Health check for RDP service
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["python", "-c", "import socket; s=socket.socket(); s.settimeout(5); s.connect(('localhost', 3389)); s.close()"]
+
+# Default command - RDP service launcher
+CMD ["python", "-m", "RDP.server.rdp_server_manager"]

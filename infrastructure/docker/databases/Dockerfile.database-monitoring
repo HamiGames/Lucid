@@ -1,0 +1,109 @@
+# LUCID Database Monitoring Service - Distroless Build
+# Professional database monitoring and health check service for Pi deployment
+# Multi-stage build for distroless deployment with security hardening
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim-bookworm AS monitoring-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Database Monitoring Service for Lucid Database Services (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="database-monitoring" \
+      org.lucid.layer="0" \
+      org.lucid.expose="8091"
+
+# Build-time environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libssl-dev \
+        pkg-config \
+        curl \
+        bash \
+        git \
+        && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy build environment script
+COPY infrastructure/docker/databases/build-env.sh /tmp/build-env.sh
+RUN chmod +x /tmp/build-env.sh
+
+# Execute build environment script to generate .env files
+RUN /tmp/build-env.sh
+
+# Copy requirements and install Python dependencies
+COPY database/services/monitoring/requirements-monitoring.txt /tmp/
+RUN pip install --no-cache-dir --user -r /tmp/requirements-monitoring.txt
+
+# Copy source code
+COPY database/services/monitoring/ /app/monitoring/
+
+# Create non-root user
+RUN groupadd --gid 1000 lucid && \
+    useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Create monitoring directories
+RUN mkdir -p /data/monitoring /data/metrics /var/log/monitoring && \
+    chown -R lucid:lucid /data /var/log/monitoring
+
+# Final distroless stage
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Database Monitoring Service for Lucid Database Services (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="database-monitoring" \
+      org.lucid.layer="0" \
+      org.lucid.expose="8091"
+
+# Copy Python dependencies from builder
+COPY --from=monitoring-builder /root/.local /home/nonroot/.local
+
+# Copy application code
+COPY --from=monitoring-builder /app /app
+
+# Copy generated environment files
+COPY --from=monitoring-builder /tmp/infrastructure/docker/databases/env/database-monitoring.env /app/.env
+
+# Copy user and group information
+COPY --from=monitoring-builder /etc/passwd /etc/passwd
+COPY --from=monitoring-builder /etc/group /etc/group
+
+# Set working directory
+WORKDIR /app
+
+# Set Python path
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+
+# Runtime environment
+ENV MONITORING_SERVICE_PORT=8091 \
+    MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin \
+    MONITORING_INTERVAL=30 \
+    METRICS_PORT=9216 \
+    PROMETHEUS_ENABLED=true \
+    PYTHONUNBUFFERED=1
+
+# Create data directories
+USER nonroot
+RUN mkdir -p /data/monitoring /data/metrics /var/log/monitoring
+
+# Expose monitoring service ports
+EXPOSE 8091 9216
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["python3", "-c", "import requests; requests.get('http://localhost:8091/health', timeout=5)"]
+
+# Run the database monitoring service
+ENTRYPOINT ["python3", "/app/monitoring/main.py"]

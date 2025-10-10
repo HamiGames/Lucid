@@ -35,12 +35,12 @@ from ..work_credits import WorkCreditsCalculator
 logger = logging.getLogger(__name__)
 
 # Operator Sync Constants
-SYNC_HEARTBEAT_INTERVAL_SEC = int(os.getenv("SYNC_HEARTBEAT_INTERVAL_SEC", "30"))  # 30 seconds
-OPERATOR_TIMEOUT_MINUTES = int(os.getenv("OPERATOR_TIMEOUT_MINUTES", "5"))  # 5 minutes
-CONFLICT_RESOLUTION_TIMEOUT_SEC = int(os.getenv("CONFLICT_RESOLUTION_TIMEOUT_SEC", "60"))  # 1 minute
-MAX_SYNC_RETRIES = int(os.getenv("MAX_SYNC_RETRIES", "3"))  # Max retry attempts
-STATE_CHECKPOINT_INTERVAL_MINUTES = int(os.getenv("STATE_CHECKPOINT_INTERVAL_MINUTES", "15"))  # 15 minutes
-OPERATION_BATCH_SIZE = int(os.getenv("OPERATION_BATCH_SIZE", "100"))  # Operations per batch
+SYNC_HEARTBEAT_INTERVAL_SEC = int(os.getenv("LUCID_SYNC_HEARTBEAT_INTERVAL_SEC", "30"))  # 30 seconds
+OPERATOR_TIMEOUT_MINUTES = int(os.getenv("LUCID_OPERATOR_TIMEOUT_MINUTES", "5"))  # 5 minutes
+CONFLICT_RESOLUTION_TIMEOUT_SEC = int(os.getenv("LUCID_CONFLICT_RESOLUTION_TIMEOUT_SEC", "60"))  # 1 minute
+MAX_SYNC_RETRIES = int(os.getenv("LUCID_MAX_SYNC_RETRIES", "3"))  # Max retry attempts
+STATE_CHECKPOINT_INTERVAL_MINUTES = int(os.getenv("LUCID_STATE_CHECKPOINT_INTERVAL_MINUTES", "15"))  # 15 minutes
+OPERATION_BATCH_SIZE = int(os.getenv("LUCID_OPERATION_BATCH_SIZE", "100"))  # Operations per batch
 
 
 class OperatorRole(Enum):

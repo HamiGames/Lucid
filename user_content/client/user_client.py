@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 # User Client Constants
 DEFAULT_API_BASE = os.getenv("LUCID_API_BASE", "http://lucid-api.onion")
-CONNECTION_TIMEOUT = int(os.getenv("CONNECTION_TIMEOUT_SEC", "30"))
-SESSION_POLL_INTERVAL = int(os.getenv("SESSION_POLL_INTERVAL_SEC", "5"))
+CONNECTION_TIMEOUT = int(os.getenv("LUCID_CONNECTION_TIMEOUT_SEC", "30"))
+SESSION_POLL_INTERVAL = int(os.getenv("LUCID_SESSION_POLL_INTERVAL_SEC", "5"))
 
 
 class ConnectionStatus(Enum):

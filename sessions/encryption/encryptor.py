@@ -43,12 +43,16 @@ class SessionEncryptor:
     NONCE_SIZE = 24  # 192 bits for XChaCha20
     SALT_SIZE = 32  # 256 bits for HKDF salt
     
-    def __init__(self, output_dir: str = "/data/encrypted", master_key: Optional[bytes] = None):
-        self.output_dir = Path(output_dir)
+    def __init__(self, output_dir: str = None, master_key: Optional[bytes] = None):
+        self.output_dir = Path(output_dir or os.getenv("LUCID_ENCRYPTION_OUTPUT_DIR", "/data/encrypted"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate or use provided master key
-        self.master_key = master_key or secrets.token_bytes(self.KEY_SIZE)
+        master_key_env = os.getenv("LUCID_MASTER_KEY")
+        if master_key_env:
+            self.master_key = bytes.fromhex(master_key_env)
+        else:
+            self.master_key = master_key or secrets.token_bytes(self.KEY_SIZE)
         
         # Key derivation context
         self._key_cache: Dict[str, bytes] = {}

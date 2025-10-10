@@ -25,10 +25,10 @@ import blake3
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-MANIFEST_PATH = Path(os.getenv("MANIFEST_PATH", "/data/manifests"))
-DEFAULT_CHUNK_SIZE = int(os.getenv("DEFAULT_CHUNK_SIZE", "1048576"))  # 1MB
-MANIFEST_SIGNATURE_ALGORITHM = "Ed25519"
-MANIFEST_HASH_ALGORITHM = "BLAKE3"
+MANIFEST_PATH = Path(os.getenv("LUCID_MANIFEST_PATH", "/data/manifests"))
+DEFAULT_CHUNK_SIZE = int(os.getenv("LUCID_MANIFEST_CHUNK_SIZE", "1048576"))  # 1MB
+MANIFEST_SIGNATURE_ALGORITHM = os.getenv("LUCID_MANIFEST_SIGNATURE_ALGORITHM", "Ed25519")
+MANIFEST_HASH_ALGORITHM = os.getenv("LUCID_MANIFEST_HASH_ALGORITHM", "BLAKE3")
 
 
 class ManifestStatus(Enum):

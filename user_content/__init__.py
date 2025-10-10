@@ -12,7 +12,35 @@ try:
 except ImportError:
     pass
 
-# Note: wallet module doesn't exist in user_content directory (it's separate)
-# from .wallet import *
+try:
+    from .wallet import *
+except ImportError:
+    pass
+
+# Import new modules when they are implemented
+try:
+    from .auth import *
+except ImportError:
+    pass
+
+try:
+    from .profile import *
+except ImportError:
+    pass
+
+try:
+    from .settings import *
+except ImportError:
+    pass
+
+try:
+    from .notifications import *
+except ImportError:
+    pass
+
+try:
+    from .backup import *
+except ImportError:
+    pass
 
 __all__ = []

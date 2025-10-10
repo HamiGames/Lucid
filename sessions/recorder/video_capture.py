@@ -27,14 +27,14 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-VIDEO_CAPTURE_PATH = Path(os.getenv("VIDEO_CAPTURE_PATH", "/data/video_capture"))
-FFMPEG_PATH = os.getenv("FFMPEG_PATH", "/usr/bin/ffmpeg")
-HARDWARE_ACCELERATION = os.getenv("HARDWARE_ACCELERATION", "true").lower() == "true"
-VIDEO_CODEC = os.getenv("VIDEO_CODEC", "h264_v4l2m2m")
-BITRATE = os.getenv("BITRATE", "2000k")
-FPS = int(os.getenv("FPS", "30"))
-RESOLUTION = os.getenv("RESOLUTION", "1920x1080")
-XRDP_DISPLAY = os.getenv("XRDP_DISPLAY", ":10")
+VIDEO_CAPTURE_PATH = Path(os.getenv("LUCID_VIDEO_CAPTURE_PATH", "/data/video_capture"))
+FFMPEG_PATH = os.getenv("LUCID_FFMPEG_PATH", "/usr/bin/ffmpeg")
+HARDWARE_ACCELERATION = os.getenv("LUCID_HARDWARE_ACCELERATION", "true").lower() == "true"
+VIDEO_CODEC = os.getenv("LUCID_VIDEO_CODEC", "h264_v4l2m2m")
+BITRATE = os.getenv("LUCID_BITRATE", "2000k")
+FPS = int(os.getenv("LUCID_FPS", "30"))
+RESOLUTION = os.getenv("LUCID_RESOLUTION", "1920x1080")
+XRDP_DISPLAY = os.getenv("LUCID_XRDP_DISPLAY", ":10")
 
 
 class CaptureStatus(Enum):

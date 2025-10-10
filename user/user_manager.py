@@ -74,7 +74,7 @@ class UserManager:
         """Authenticate user with username/password."""
         try:
             user_doc = await self.db["users"].find_one({
-                "": [
+                "$or": [
                     {"username": username},
                     {"email": username}
                 ]
@@ -89,7 +89,7 @@ class UserManager:
             # Update last login
             await self.db["users"].update_one(
                 {"user_id": user_doc["user_id"]},
-                {"": {"last_login": datetime.now(timezone.utc).isoformat()}}
+                {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}}
             )
             
             return UserProfile(

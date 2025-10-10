@@ -26,12 +26,12 @@ import httpx
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-BLOCKCHAIN_CONFIG_PATH = Path(os.getenv("BLOCKCHAIN_CONFIG_PATH", "/data/blockchain"))
-TRON_NETWORK_URL = os.getenv("TRON_NETWORK_URL", "https://api.trongrid.io")
-CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS", "TContractAddress")
-PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
-GAS_LIMIT = int(os.getenv("GAS_LIMIT", "1000000"))
-GAS_PRICE = int(os.getenv("GAS_PRICE", "1000000"))
+BLOCKCHAIN_CONFIG_PATH = Path(os.getenv("LUCID_BLOCKCHAIN_CONFIG_PATH", "/data/blockchain"))
+TRON_NETWORK_URL = os.getenv("LUCID_TRON_NETWORK_URL", "https://api.trongrid.io")
+CONTRACT_ADDRESS = os.getenv("LUCID_CONTRACT_ADDRESS", "TContractAddress")
+PRIVATE_KEY = os.getenv("LUCID_PRIVATE_KEY", "")
+GAS_LIMIT = int(os.getenv("LUCID_GAS_LIMIT", "1000000"))
+GAS_PRICE = int(os.getenv("LUCID_GAS_PRICE", "1000000"))
 
 
 class BlockchainNetwork(Enum):

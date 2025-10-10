@@ -34,12 +34,12 @@ class SessionChunker:
     Implements 8-16MB chunking with Zstd level 3 compression per SPEC-1b
     """
     
-    CHUNK_SIZE_MIN = 8 * 1024 * 1024   # 8MB
-    CHUNK_SIZE_MAX = 16 * 1024 * 1024  # 16MB
-    COMPRESSION_LEVEL = 3               # Zstd level 3
+    CHUNK_SIZE_MIN = int(os.getenv("LUCID_CHUNK_SIZE_MIN", "8388608"))   # 8MB default
+    CHUNK_SIZE_MAX = int(os.getenv("LUCID_CHUNK_SIZE_MAX", "16777216"))  # 16MB default
+    COMPRESSION_LEVEL = int(os.getenv("LUCID_COMPRESSION_LEVEL", "3"))   # Zstd level 3 default
     
-    def __init__(self, output_dir: str = "/data/chunks"):
-        self.output_dir = Path(output_dir)
+    def __init__(self, output_dir: str = None):
+        self.output_dir = Path(output_dir or os.getenv("LUCID_CHUNKER_OUTPUT_DIR", "/data/chunks"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
     async def chunk_session_data(

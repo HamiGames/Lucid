@@ -55,12 +55,12 @@ class SessionOrchestrator:
     
     def __init__(
         self,
-        chunker_dir: str = "/data/chunks",
-        encryptor_dir: str = "/data/encrypted", 
-        merkle_dir: str = "/data/merkle_roots",
-        output_dir: str = "/data/sessions"
+        chunker_dir: str = None,
+        encryptor_dir: str = None, 
+        merkle_dir: str = None,
+        output_dir: str = None
     ):
-        self.output_dir = Path(output_dir)
+        self.output_dir = Path(output_dir or os.getenv("LUCID_SESSION_OUTPUT_DIR", "/data/sessions"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize pipeline components

@@ -116,9 +116,9 @@ class TorManager:
             directory.mkdir(parents=True, exist_ok=True)
         
         # Configuration
-        self.node_id = os.getenv("NODE_ID", "node-001")
-        self.tor_control_port = int(os.getenv("TOR_CONTROL_PORT", "9051"))
-        self.tor_socks_port = int(os.getenv("TOR_SOCKS_PORT", "9050"))
+        self.node_id = os.getenv("LUCID_NODE_ID", "node-001")
+        self.tor_control_port = int(os.getenv("LUCID_TOR_CONTROL_PORT", "9051"))
+        self.tor_socks_port = int(os.getenv("LUCID_TOR_SOCKS_PORT", "9050"))
         self.tor_data_dir = self.data_dir / "tor_data"
         self.tor_config_file = self.config_dir / "torrc"
         

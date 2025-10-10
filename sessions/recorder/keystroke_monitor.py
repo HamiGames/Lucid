@@ -56,11 +56,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-KEYSTROKE_LOG_PATH = Path(os.getenv("KEYSTROKE_LOG_PATH", "/var/log/lucid/keystrokes"))
-KEYSTROKE_CACHE_PATH = Path(os.getenv("KEYSTROKE_CACHE_PATH", "/tmp/lucid/keystrokes"))
-KEYSTROKE_MAX_EVENTS = int(os.getenv("KEYSTROKE_MAX_EVENTS", "10000"))
-KEYSTROKE_BATCH_SIZE = int(os.getenv("KEYSTROKE_BATCH_SIZE", "100"))
-KEYSTROKE_FLUSH_INTERVAL = int(os.getenv("KEYSTROKE_FLUSH_INTERVAL", "30"))
+KEYSTROKE_LOG_PATH = Path(os.getenv("LUCID_KEYSTROKE_LOG_PATH", "/var/log/lucid/keystrokes"))
+KEYSTROKE_CACHE_PATH = Path(os.getenv("LUCID_KEYSTROKE_CACHE_PATH", "/tmp/lucid/keystrokes"))
+KEYSTROKE_MAX_EVENTS = int(os.getenv("LUCID_KEYSTROKE_MAX_EVENTS", "10000"))
+KEYSTROKE_BATCH_SIZE = int(os.getenv("LUCID_KEYSTROKE_BATCH_SIZE", "100"))
+KEYSTROKE_FLUSH_INTERVAL = int(os.getenv("LUCID_KEYSTROKE_FLUSH_INTERVAL", "30"))
 
 
 class KeystrokeEventType(Enum):

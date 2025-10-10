@@ -1,0 +1,122 @@
+# Distroless Development Configuration for Lucid Project
+# Development-friendly configuration for distroless containers
+
+version: '3.8'
+
+services:
+  # Development distroless configuration
+  dev-distroless:
+    image: lucid/base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - HOT_RELOAD=true
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - ./src:/app/src:rw
+      - ./logs:/app/logs:rw
+      - ./cache:/app/cache:rw
+      - ./temp:/app/temp:rw
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE  # For debugging
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["python", "-c", "import sys; sys.exit(0)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    command: >
+      sh -c "
+        echo 'Starting development distroless container...' &&
+        python /app/src/main.py
+      "
+
+  # Development minimal configuration
+  dev-minimal:
+    image: lucid/minimal-base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - ./src:/app/src:rw
+      - ./logs:/app/logs:rw
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["python", "-c", "import sys; print('dev minimal healthy'); sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Development tools container
+  dev-tools:
+    image: lucid/base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - DEBUG_TOOLS=true
+    networks:
+      - lucid-dev
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - ./src:/app/src:ro
+      - ./logs:/app/logs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE
+      - NET_ADMIN
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Development tools container ready' &&
+        tail -f /dev/null
+      "
+
+networks:
+  lucid-dev:
+    driver: bridge
+    name: lucid-distroless-dev
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+
+volumes:
+  lucid-dev-data:
+    name: lucid-distroless-dev-data
+  lucid-dev-logs:
+    name: lucid-distroless-dev-logs
+  lucid-dev-cache:
+    name: lucid-distroless-dev-cache

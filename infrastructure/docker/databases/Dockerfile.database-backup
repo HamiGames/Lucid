@@ -1,0 +1,119 @@
+# LUCID Database Backup Service - Distroless Build
+# Professional database backup and restore service for Pi deployment
+# Multi-stage build for distroless deployment with security hardening
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim-bookworm AS backup-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Database Backup Service for Lucid Database Services (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="database-backup" \
+      org.lucid.layer="0" \
+      org.lucid.expose="8089"
+
+# Build-time environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libssl-dev \
+        pkg-config \
+        curl \
+        bash \
+        git \
+        cron \
+        && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy build environment script
+COPY infrastructure/docker/databases/build-env.sh /tmp/build-env.sh
+RUN chmod +x /tmp/build-env.sh
+
+# Execute build environment script to generate .env files
+RUN /tmp/build-env.sh
+
+# Copy requirements and install Python dependencies
+COPY database/services/backup/requirements-backup.txt /tmp/
+RUN pip install --no-cache-dir --user -r /tmp/requirements-backup.txt
+
+# Copy source code
+COPY database/services/backup/ /app/backup/
+COPY database/ /app/database/
+
+# Create non-root user
+RUN groupadd --gid 1000 lucid && \
+    useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Create backup directories
+RUN mkdir -p /data/backups /data/temp /var/log/backup && \
+    chown -R lucid:lucid /data /var/log/backup
+
+# Copy backup scripts
+COPY infrastructure/docker/databases/backup-scripts/ /app/backup-scripts/
+RUN chmod +x /app/backup-scripts/*.sh
+
+# Final distroless stage
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Database Backup Service for Lucid Database Services (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="database-backup" \
+      org.lucid.layer="0" \
+      org.lucid.expose="8089"
+
+# Copy Python dependencies from builder
+COPY --from=backup-builder /root/.local /home/nonroot/.local
+
+# Copy application code
+COPY --from=backup-builder /app /app
+
+# Copy backup scripts
+COPY --from=backup-builder /app/backup-scripts /app/backup-scripts
+
+# Copy generated environment files
+COPY --from=backup-builder /tmp/infrastructure/docker/databases/env/database-backup.env /app/.env
+
+# Copy user and group information
+COPY --from=backup-builder /etc/passwd /etc/passwd
+COPY --from=backup-builder /etc/group /etc/group
+
+# Set working directory
+WORKDIR /app
+
+# Set Python path
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+
+# Runtime environment
+ENV BACKUP_SERVICE_PORT=8089 \
+    MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin \
+    BACKUP_SCHEDULE="0 2 * * *" \
+    BACKUP_RETENTION_DAYS=30 \
+    BACKUP_COMPRESSION=true \
+    BACKUP_ENCRYPTION=true \
+    PYTHONUNBUFFERED=1
+
+# Create data directories
+USER nonroot
+RUN mkdir -p /data/backups /data/temp /var/log/backup
+
+# Expose backup service port
+EXPOSE 8089
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["python3", "-c", "import requests; requests.get('http://localhost:8089/health', timeout=5)"]
+
+# Run the database backup service
+ENTRYPOINT ["python3", "/app/backup/main.py"]

@@ -26,9 +26,9 @@ import blake3
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-INPUT_CONTROL_PATH = Path(os.getenv("INPUT_CONTROL_PATH", "/data/input_control"))
-INPUT_VALIDATION_TIMEOUT = float(os.getenv("INPUT_VALIDATION_TIMEOUT", "5.0"))
-MAX_INPUT_SIZE = int(os.getenv("MAX_INPUT_SIZE", "1048576"))  # 1MB
+INPUT_CONTROL_PATH = Path(os.getenv("LUCID_INPUT_CONTROL_PATH", "/data/input_control"))
+INPUT_VALIDATION_TIMEOUT = float(os.getenv("LUCID_INPUT_VALIDATION_TIMEOUT", "5.0"))
+MAX_INPUT_SIZE = int(os.getenv("LUCID_MAX_INPUT_SIZE", "1048576"))  # 1MB
 
 
 class InputType(Enum):

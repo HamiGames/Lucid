@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         git \
         build-essential \
+        bash \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && groupadd --gid 1000 lucid \
@@ -32,6 +33,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set up application directory
 WORKDIR /app
 RUN chown -R lucid:lucid /app
+
+# Copy build environment script
+COPY infrastructure/docker/admin/build-env.sh /tmp/build-env.sh
+RUN chmod +x /tmp/build-env.sh
+
+# Execute build environment script to generate .env files
+RUN /tmp/build-env.sh
 
 # Install Next.js dependencies
 RUN npm install --global \
@@ -74,6 +82,9 @@ COPY --from=admin-ui-builder /usr/local/bin/npm /usr/local/bin/npm
 
 # Copy application with proper ownership
 COPY --from=admin-ui-builder --chown=adminui_user:adminui_user /app /app
+
+# Copy generated environment files
+COPY --from=admin-ui-builder /tmp/infrastructure/docker/admin/env/admin-ui.env /app/.env
 
 # Runtime environment for admin UI
 ENV NODE_ENV=production \

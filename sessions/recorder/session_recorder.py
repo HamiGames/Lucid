@@ -26,14 +26,14 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-RECORDING_PATH = Path(os.getenv("RECORDING_PATH", "/data/recordings"))
-FFMPEG_PATH = os.getenv("FFMPEG_PATH", "/usr/bin/ffmpeg")
-XRDP_DISPLAY = os.getenv("XRDP_DISPLAY", ":10")
-HARDWARE_ACCELERATION = os.getenv("HARDWARE_ACCELERATION", "true").lower() == "true"
-VIDEO_CODEC = os.getenv("VIDEO_CODEC", "h264_v4l2m2m")
-AUDIO_CODEC = os.getenv("AUDIO_CODEC", "opus")
-BITRATE = os.getenv("BITRATE", "2000k")
-FPS = int(os.getenv("FPS", "30"))
+RECORDING_PATH = Path(os.getenv("LUCID_RECORDING_PATH", "/data/recordings"))
+FFMPEG_PATH = os.getenv("LUCID_FFMPEG_PATH", "/usr/bin/ffmpeg")
+XRDP_DISPLAY = os.getenv("LUCID_XRDP_DISPLAY", ":10")
+HARDWARE_ACCELERATION = os.getenv("LUCID_HARDWARE_ACCELERATION", "true").lower() == "true"
+VIDEO_CODEC = os.getenv("LUCID_VIDEO_CODEC", "h264_v4l2m2m")
+AUDIO_CODEC = os.getenv("LUCID_AUDIO_CODEC", "opus")
+BITRATE = os.getenv("LUCID_BITRATE", "2000k")
+FPS = int(os.getenv("LUCID_FPS", "30"))
 
 
 class RecordingStatus(Enum):

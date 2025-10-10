@@ -32,11 +32,11 @@ from ..work_credits import WorkCreditsCalculator
 logger = logging.getLogger(__name__)
 
 # Management Constants
-HEALTH_CHECK_INTERVAL_SEC = int(os.getenv("HEALTH_CHECK_INTERVAL_SEC", "60"))  # 1 minute
-PERFORMANCE_WINDOW_HOURS = int(os.getenv("PERFORMANCE_WINDOW_HOURS", "24"))  # 24 hours
-DEGRADED_THRESHOLD_FAILURES = int(os.getenv("DEGRADED_THRESHOLD_FAILURES", "3"))  # 3 failed checks
-MAINTENANCE_WINDOW_HOURS = int(os.getenv("MAINTENANCE_WINDOW_HOURS", "2"))  # 2 hour maintenance window
-BACKUP_REDUNDANCY_FACTOR = int(os.getenv("BACKUP_REDUNDANCY_FACTOR", "2"))  # Additional backup copies
+HEALTH_CHECK_INTERVAL_SEC = int(os.getenv("LUCID_HEALTH_CHECK_INTERVAL_SEC", "60"))  # 1 minute
+PERFORMANCE_WINDOW_HOURS = int(os.getenv("LUCID_PERFORMANCE_WINDOW_HOURS", "24"))  # 24 hours
+DEGRADED_THRESHOLD_FAILURES = int(os.getenv("LUCID_DEGRADED_THRESHOLD_FAILURES", "3"))  # 3 failed checks
+MAINTENANCE_WINDOW_HOURS = int(os.getenv("LUCID_MAINTENANCE_WINDOW_HOURS", "2"))  # 2 hour maintenance window
+BACKUP_REDUNDANCY_FACTOR = int(os.getenv("LUCID_BACKUP_REDUNDANCY_FACTOR", "2"))  # Additional backup copies
 
 
 class MaintenanceType(Enum):

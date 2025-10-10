@@ -25,11 +25,11 @@ from cryptography.hazmat.backends import default_backend
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-TASK_PROOF_TIMEOUT = int(os.getenv("TASK_PROOF_TIMEOUT", "300"))  # 5 minutes
-MINIMUM_PROOF_COUNT = int(os.getenv("MINIMUM_PROOF_COUNT", "3"))
-PROOF_VERIFICATION_TIMEOUT = int(os.getenv("PROOF_VERIFICATION_TIMEOUT", "60"))  # 1 minute
-TASK_DIFFICULTY_LEVEL = int(os.getenv("TASK_DIFFICULTY_LEVEL", "4"))  # Hash difficulty
-PROOF_STORAGE_PATH = Path(os.getenv("PROOF_STORAGE_PATH", "/data/consensus/proofs"))
+TASK_PROOF_TIMEOUT = int(os.getenv("LUCID_TASK_PROOF_TIMEOUT", "300"))  # 5 minutes
+MINIMUM_PROOF_COUNT = int(os.getenv("LUCID_MINIMUM_PROOF_COUNT", "3"))
+PROOF_VERIFICATION_TIMEOUT = int(os.getenv("LUCID_PROOF_VERIFICATION_TIMEOUT", "60"))  # 1 minute
+TASK_DIFFICULTY_LEVEL = int(os.getenv("LUCID_TASK_DIFFICULTY_LEVEL", "4"))  # Hash difficulty
+PROOF_STORAGE_PATH = Path(os.getenv("LUCID_PROOF_STORAGE_PATH", "/data/consensus/proofs"))
 
 
 class TaskType(Enum):

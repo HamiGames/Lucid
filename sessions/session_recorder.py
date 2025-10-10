@@ -77,17 +77,17 @@ class SessionRecorder:
         self,
         db: AsyncIOMotorDatabase,
         temp_dir: Optional[str] = None,
-        max_chunk_size: int = 16 * 1024 * 1024,  # 16MB
-        video_codec: str = "h264",
-        audio_enabled: bool = True,
-        keylog_enabled: bool = False
+        max_chunk_size: Optional[int] = None,
+        video_codec: Optional[str] = None,
+        audio_enabled: Optional[bool] = None,
+        keylog_enabled: Optional[bool] = None
     ):
         self.db = db
-        self.temp_dir = Path(temp_dir or tempfile.gettempdir()) / "lucid_sessions"
-        self.max_chunk_size = max_chunk_size
-        self.video_codec = video_codec
-        self.audio_enabled = audio_enabled
-        self.keylog_enabled = keylog_enabled
+        self.temp_dir = Path(temp_dir or os.getenv("LUCID_RECORDER_TEMP_DIR", str(tempfile.gettempdir()))) / "lucid_sessions"
+        self.max_chunk_size = max_chunk_size or int(os.getenv("LUCID_RECORDER_MAX_CHUNK_SIZE", "16777216"))  # 16MB
+        self.video_codec = video_codec or os.getenv("LUCID_RECORDER_VIDEO_CODEC", "h264")
+        self.audio_enabled = audio_enabled if audio_enabled is not None else os.getenv("LUCID_RECORDER_AUDIO_ENABLED", "true").lower() == "true"
+        self.keylog_enabled = keylog_enabled if keylog_enabled is not None else os.getenv("LUCID_RECORDER_KEYLOG_ENABLED", "false").lower() == "true"
         
         # Create temp directory
         self.temp_dir.mkdir(parents=True, exist_ok=True)

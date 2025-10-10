@@ -62,11 +62,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-WINDOW_LOG_PATH = Path(os.getenv("WINDOW_LOG_PATH", "/var/log/lucid/windows"))
-WINDOW_CACHE_PATH = Path(os.getenv("WINDOW_CACHE_PATH", "/tmp/lucid/windows"))
-WINDOW_MONITOR_INTERVAL = float(os.getenv("WINDOW_MONITOR_INTERVAL", "1.0"))
-WINDOW_MAX_EVENTS = int(os.getenv("WINDOW_MAX_EVENTS", "10000"))
-WINDOW_BATCH_SIZE = int(os.getenv("WINDOW_BATCH_SIZE", "100"))
+WINDOW_LOG_PATH = Path(os.getenv("LUCID_WINDOW_LOG_PATH", "/var/log/lucid/windows"))
+WINDOW_CACHE_PATH = Path(os.getenv("LUCID_WINDOW_CACHE_PATH", "/tmp/lucid/windows"))
+WINDOW_MONITOR_INTERVAL = float(os.getenv("LUCID_WINDOW_MONITOR_INTERVAL", "1.0"))
+WINDOW_MAX_EVENTS = int(os.getenv("LUCID_WINDOW_MAX_EVENTS", "10000"))
+WINDOW_BATCH_SIZE = int(os.getenv("LUCID_WINDOW_BATCH_SIZE", "100"))
 
 
 class WindowEventType(Enum):

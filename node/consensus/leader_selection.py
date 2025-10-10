@@ -25,11 +25,11 @@ from cryptography.hazmat.backends import default_backend
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-LEADER_SELECTION_INTERVAL = int(os.getenv("LEADER_SELECTION_INTERVAL", "30"))  # seconds
-CONSENSUS_ROUND_DURATION = int(os.getenv("CONSENSUS_ROUND_DURATION", "10"))  # seconds
-MINIMUM_STAKE_THRESHOLD = float(os.getenv("MINIMUM_STAKE_THRESHOLD", "1000.0"))
-LEADER_SELECTION_ALGORITHM = os.getenv("LEADER_SELECTION_ALGORITHM", "weighted_random")
-NETWORK_SIZE_ESTIMATE = int(os.getenv("NETWORK_SIZE_ESTIMATE", "100"))
+LEADER_SELECTION_INTERVAL = int(os.getenv("LUCID_LEADER_SELECTION_INTERVAL", "30"))  # seconds
+CONSENSUS_ROUND_DURATION = int(os.getenv("LUCID_CONSENSUS_ROUND_DURATION", "10"))  # seconds
+MINIMUM_STAKE_THRESHOLD = float(os.getenv("LUCID_MINIMUM_STAKE_THRESHOLD", "1000.0"))
+LEADER_SELECTION_ALGORITHM = os.getenv("LUCID_LEADER_SELECTION_ALGORITHM", "weighted_random")
+NETWORK_SIZE_ESTIMATE = int(os.getenv("LUCID_NETWORK_SIZE_ESTIMATE", "100"))
 
 
 class NodeStatus(Enum):

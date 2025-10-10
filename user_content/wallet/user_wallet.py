@@ -29,10 +29,10 @@ from blockchain.core.blockchain_engine import PayoutRouter
 logger = logging.getLogger(__name__)
 
 # User Wallet Constants
-TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")  # shasta/mainnet
-USDT_CONTRACT = os.getenv("USDT_TRC20_ADDRESS", "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs")  # Shasta testnet
-MIN_BALANCE_USDT = float(os.getenv("MIN_BALANCE_USDT", "1.0"))  # $1 minimum balance
-SESSION_COST_PER_GB = float(os.getenv("SESSION_COST_PER_GB", "0.01"))  # $0.01 per GB
+TRON_NETWORK = os.getenv("LUCID_TRON_NETWORK", "shasta")  # shasta/mainnet
+USDT_CONTRACT = os.getenv("LUCID_USDT_TRC20_ADDRESS", "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs")  # Shasta testnet
+MIN_BALANCE_USDT = float(os.getenv("LUCID_MIN_BALANCE_USDT", "1.0"))  # $1 minimum balance
+SESSION_COST_PER_GB = float(os.getenv("LUCID_SESSION_COST_PER_GB", "0.01"))  # $0.01 per GB
 
 
 class TransactionType(Enum):

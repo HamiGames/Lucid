@@ -26,9 +26,9 @@ import blake3
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-POLICY_PATH = Path(os.getenv("POLICY_PATH", "/data/policies"))
-POLICY_CACHE_SIZE = int(os.getenv("POLICY_CACHE_SIZE", "1000"))
-POLICY_CACHE_TTL = int(os.getenv("POLICY_CACHE_TTL", "3600"))  # 1 hour
+POLICY_PATH = Path(os.getenv("LUCID_POLICY_PATH", "/data/policies"))
+POLICY_CACHE_SIZE = int(os.getenv("LUCID_POLICY_CACHE_SIZE", "1000"))
+POLICY_CACHE_TTL = int(os.getenv("LUCID_POLICY_CACHE_TTL", "3600"))  # 1 hour
 
 
 class PolicyType(Enum):

@@ -27,11 +27,11 @@ from blockchain.core.blockchain_engine import get_blockchain_engine
 logger = logging.getLogger(__name__)
 
 # Pool System Constants
-MIN_POOL_SIZE = int(os.getenv("MIN_POOL_SIZE", "3"))  # Minimum 3 nodes per pool
-MAX_POOL_SIZE = int(os.getenv("MAX_POOL_SIZE", "50"))  # Maximum 50 nodes per pool
-POOL_SYNC_INTERVAL_SEC = int(os.getenv("POOL_SYNC_INTERVAL_SEC", "30"))  # 30 seconds
-POOL_HEALTH_CHECK_SEC = int(os.getenv("POOL_HEALTH_CHECK_SEC", "120"))  # 2 minutes
-REWARD_DISTRIBUTION_THRESHOLD = float(os.getenv("REWARD_DISTRIBUTION_THRESHOLD", "1.0"))  # 1 USDT
+MIN_POOL_SIZE = int(os.getenv("LUCID_MIN_POOL_SIZE", "3"))  # Minimum 3 nodes per pool
+MAX_POOL_SIZE = int(os.getenv("LUCID_MAX_POOL_SIZE", "50"))  # Maximum 50 nodes per pool
+POOL_SYNC_INTERVAL_SEC = int(os.getenv("LUCID_POOL_SYNC_INTERVAL_SEC", "30"))  # 30 seconds
+POOL_HEALTH_CHECK_SEC = int(os.getenv("LUCID_POOL_HEALTH_CHECK_SEC", "120"))  # 2 minutes
+REWARD_DISTRIBUTION_THRESHOLD = float(os.getenv("LUCID_REWARD_DISTRIBUTION_THRESHOLD", "1.0"))  # 1 USDT
 
 
 class PoolStatus(Enum):

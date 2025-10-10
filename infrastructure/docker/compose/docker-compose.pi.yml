@@ -1,0 +1,638 @@
+# Path: infrastructure/docker/compose/docker-compose.pi.yml
+# Raspberry Pi infrastructure Docker Compose file for Lucid project
+# Optimized for ARM64 architecture and limited Pi resources
+
+version: '3.8'
+
+services:
+  # MongoDB Database (Pi Optimized)
+  lucid-mongodb-pi:
+    image: mongo:7.0
+    container_name: lucid-mongodb-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid_pi}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_pi_password}
+      MONGO_INITDB_DATABASE: ${LUCID_MONGODB_DATABASE:-lucid_pi}
+    ports:
+      - "27017:27017"
+    volumes:
+      - lucid_mongodb_pi_data:/data/db
+      - lucid_mongodb_pi_config:/data/configdb
+      - ./mongodb/mongod-pi.conf:/etc/mongod.conf:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+
+  # Redis Cache (Pi Optimized)
+  lucid-redis-pi:
+    image: redis:7-alpine
+    container_name: lucid-redis-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "6379:6379"
+    volumes:
+      - lucid_redis_pi_data:/data
+      - ./redis/redis-pi.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL (Pi Optimized)
+  lucid-postgres-pi:
+    image: postgres:15-alpine
+    container_name: lucid-postgres-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${LUCID_POSTGRES_DB:-lucid_pi}
+      POSTGRES_USER: ${LUCID_POSTGRES_USER:-lucid_pi}
+      POSTGRES_PASSWORD: ${LUCID_POSTGRES_PASSWORD:-lucid_pi_password}
+    volumes:
+      - lucid_postgres_pi_data:/var/lib/postgresql/data
+      - ./postgres/postgresql-pi.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LUCID_POSTGRES_USER:-lucid_pi}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch (Pi Optimized - Single Node)
+  lucid-elasticsearch-pi:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: lucid-elasticsearch-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    volumes:
+      - lucid_elasticsearch_pi_data:/usr/share/elasticsearch/data
+    networks:
+      - lucid-infra-pi-network
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+  # Kibana (Pi Optimized)
+  lucid-kibana-pi:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: lucid-kibana-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://lucid-elasticsearch-pi:9200
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      lucid-elasticsearch-pi:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Prometheus (Pi Optimized)
+  lucid-prometheus-pi:
+    image: prom/prometheus:latest
+    container_name: lucid-prometheus-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus-pi.yml:/etc/prometheus/prometheus.yml:ro
+      - lucid_prometheus_pi_data:/prometheus
+    networks:
+      - lucid-infra-pi-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Grafana (Pi Optimized)
+  lucid-grafana-pi:
+    image: grafana/grafana:latest
+    container_name: lucid-grafana-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${LUCID_GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: lucid-postgres-pi:5432
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: grafana
+      GF_DATABASE_PASSWORD: ${LUCID_GRAFANA_DB_PASSWORD:-grafana_password}
+    volumes:
+      - lucid_grafana_pi_data:/var/lib/grafana
+      - ./grafana/provisioning-pi:/etc/grafana/provisioning:ro
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      - lucid-prometheus-pi
+      - lucid-postgres-pi
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Jaeger (Pi Optimized)
+  lucid-jaeger-pi:
+    image: jaegertracing/all-in-one:latest
+    container_name: lucid-jaeger-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+      SPAN_STORAGE_TYPE: elasticsearch
+      ES_SERVER_URLS: http://lucid-elasticsearch-pi:9200
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      lucid-elasticsearch-pi:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # MinIO (Pi Optimized)
+  lucid-minio-pi:
+    image: minio/minio:latest
+    container_name: lucid-minio-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${LUCID_MINIO_USER:-lucid_pi}
+      MINIO_ROOT_PASSWORD: ${LUCID_MINIO_PASSWORD:-lucid_pi_password}
+    volumes:
+      - lucid_minio_pi_data:/data
+    networks:
+      - lucid-infra-pi-network
+    command: server /data --console-address ":9001"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Vault (Pi Optimized)
+  lucid-vault-pi:
+    image: vault:latest
+    container_name: lucid-vault-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${LUCID_VAULT_ROOT_TOKEN:-lucid_pi_token}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    volumes:
+      - lucid_vault_pi_data:/vault/data
+      - ./vault/vault-pi.hcl:/vault/config/vault.hcl:ro
+    networks:
+      - lucid-infra-pi-network
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # Consul (Pi Optimized)
+  lucid-consul-pi:
+    image: consul:latest
+    container_name: lucid-consul-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8500:8500"
+    volumes:
+      - lucid_consul_pi_data:/consul/data
+      - ./consul/consul-pi.json:/consul/config/consul.json:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["consul", "agent", "-server", "-ui", "-node=pi-server-1", "-bootstrap-expect=1", "-client=0.0.0.0", "-config-file=/consul/config/consul.json"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # NATS (Pi Optimized)
+  lucid-nats-pi:
+    image: nats:latest
+    container_name: lucid-nats-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - lucid_nats_pi_data:/data
+      - ./nats/nats-server-pi.conf:/etc/nats/nats-server.conf:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/varz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Gateway (Pi Optimized)
+  lucid-api-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api:${LUCID_TAG:-latest}
+    container_name: lucid-api-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8000:8000"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis-pi:6379
+      - LUCID_POSTGRES_URL=postgresql://lucid_pi:lucid_pi_password@lucid-postgres-pi:5432/lucid_pi
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-pi:9200
+      - LUCID_JAEGER_URL=http://lucid-jaeger-pi:14268/api/traces
+      - LUCID_MINIO_URL=http://lucid-minio-pi:9000
+      - LUCID_VAULT_URL=http://lucid-vault-pi:8200
+      - LUCID_CONSUL_URL=http://lucid-consul-pi:8500
+      - LUCID_NATS_URL=nats://lucid-nats-pi:4222
+      - LUCID_WORKERS=2
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_api_pi_logs:/app/logs
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+      lucid-redis-pi:
+        condition: service_healthy
+      lucid-postgres-pi:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+  # Session Management Service (Pi Optimized)
+  lucid-sessions-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/sessions:${LUCID_TAG:-latest}
+    container_name: lucid-sessions-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8080:8080"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis-pi:6379
+      - LUCID_API_URL=http://lucid-api-pi:8000
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-pi:9200
+      - LUCID_MINIO_URL=http://lucid-minio-pi:9000
+      - LUCID_NATS_URL=nats://lucid-nats-pi:4222
+      - LUCID_WORKERS=2
+      - LUCID_LOG_LEVEL=INFO
+      - LUCID_CHUNK_SIZE_MB=8
+      - LUCID_MAX_SESSION_SIZE_GB=5
+    volumes:
+      - lucid_sessions_pi_data:/app/data
+      - lucid_sessions_pi_logs:/app/logs
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+      lucid-redis-pi:
+        condition: service_healthy
+      lucid-api-pi:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Storage Service (Pi Optimized)
+  lucid-storage-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage:${LUCID_TAG:-latest}
+    container_name: lucid-storage-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8081:8081"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_STORAGE_ROOT=/app/storage
+      - LUCID_MINIO_URL=http://lucid-minio-pi:9000
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-pi:9200
+      - LUCID_WORKERS=2
+      - LUCID_LOG_LEVEL=INFO
+      - LUCID_CLEANUP_INTERVAL=7200  # 2 hours for Pi
+    volumes:
+      - lucid_storage_pi_data:/app/storage
+      - lucid_storage_pi_logs:/app/logs
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+      lucid-minio-pi:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Backup Service (Pi Optimized)
+  lucid-backup-pi:
+    image: postgres:15-alpine
+    container_name: lucid-backup-pi
+    restart: "no"
+    platform: linux/arm64
+    environment:
+      PGPASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_pi_password}
+    volumes:
+      - lucid_backup_pi_data:/backups
+      - ./backup/scripts:/scripts:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["sh", "-c", "while true; do sleep 86400; done"]
+    depends_on:
+      - lucid-mongodb-pi
+      - lucid-postgres-pi
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # Log Aggregator (Pi Optimized)
+  lucid-log-aggregator-pi:
+    image: fluent/fluent-bit:latest
+    container_name: lucid-log-aggregator-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    volumes:
+      - ./fluent-bit/fluent-bit-pi.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - lucid_logs_pi:/var/log
+    networks:
+      - lucid-infra-pi-network
+    depends_on:
+      lucid-elasticsearch-pi:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.1'
+        reservations:
+          memory: 64M
+          cpus: '0.05'
+
+  # Pi System Monitor
+  lucid-pi-monitor:
+    image: prom/node-exporter:latest
+    container_name: lucid-pi-monitor
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - lucid-infra-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+        reservations:
+          memory: 32M
+          cpus: '0.05'
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  # Pi Temperature Monitor
+  lucid-temp-monitor:
+    image: python:3.11-slim
+    container_name: lucid-temp-monitor
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9101:9101"
+    volumes:
+      - /sys/class/thermal:/sys/class/thermal:ro
+      - ./monitoring/temp-monitor.py:/app/temp-monitor.py:ro
+    networks:
+      - lucid-infra-pi-network
+    command: ["python", "/app/temp-monitor.py"]
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.05'
+        reservations:
+          memory: 32M
+          cpus: '0.02'
+
+# Networks
+networks:
+  lucid-infra-pi-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
+
+# Volumes (Pi Optimized)
+volumes:
+  # Database volumes
+  lucid_mongodb_pi_data:
+    driver: local
+  lucid_mongodb_pi_config:
+    driver: local
+  lucid_redis_pi_data:
+    driver: local
+  lucid_postgres_pi_data:
+    driver: local
+  
+  # Search and logging volumes
+  lucid_elasticsearch_pi_data:
+    driver: local
+  
+  # Monitoring volumes
+  lucid_prometheus_pi_data:
+    driver: local
+  lucid_grafana_pi_data:
+    driver: local
+  
+  # Storage volumes
+  lucid_minio_pi_data:
+    driver: local
+  
+  # Infrastructure volumes
+  lucid_vault_pi_data:
+    driver: local
+  lucid_consul_pi_data:
+    driver: local
+  lucid_nats_pi_data:
+    driver: local
+  
+  # Application volumes
+  lucid_api_pi_logs:
+    driver: local
+  lucid_sessions_pi_data:
+    driver: local
+  lucid_sessions_pi_logs:
+    driver: local
+  lucid_storage_pi_data:
+    driver: local
+  lucid_storage_pi_logs:
+    driver: local
+  lucid_backup_pi_data:
+    driver: local
+  lucid_logs_pi:
+    driver: local

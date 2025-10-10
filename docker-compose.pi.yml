@@ -1,0 +1,479 @@
+# Path: docker-compose.pi.yml
+# Raspberry Pi Docker Compose file for Lucid project
+# Optimized for ARM64 architecture and limited resources
+
+version: '3.8'
+
+services:
+  # MongoDB Database (Pi Optimized)
+  lucid-mongodb-pi:
+    image: mongo:7.0
+    container_name: lucid-mongodb-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid_pi}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_pi_password}
+      MONGO_INITDB_DATABASE: ${LUCID_MONGODB_DATABASE:-lucid_pi}
+    ports:
+      - "27017:27017"
+    volumes:
+      - lucid_mongodb_pi_data:/data/db
+      - lucid_mongodb_pi_config:/data/configdb
+      - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+
+  # Redis Cache (Pi Optimized)
+  lucid-redis-pi:
+    image: redis:7-alpine
+    container_name: lucid-redis-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "6379:6379"
+    volumes:
+      - lucid_redis_pi_data:/data
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "100mb", "--maxmemory-policy", "allkeys-lru"]
+
+  # Tor Service (Pi Optimized)
+  lucid-tor-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tor:${LUCID_TAG:-latest}
+    container_name: lucid-tor-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9050:9050"  # SOCKS proxy
+      - "9051:9051"  # Control port
+    volumes:
+      - lucid_tor_pi_data:/var/lib/tor
+      - lucid_tor_pi_config:/etc/tor
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    depends_on:
+      - lucid-mongodb-pi
+
+  # API Gateway (Pi Optimized)
+  lucid-api-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api:${LUCID_TAG:-latest}
+    container_name: lucid-api-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8000:8000"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis-pi:6379
+      - LUCID_TOR_SOCKS_URL=socks5://lucid-tor-pi:9050
+      - LUCID_TOR_CONTROL_PORT=9051
+      - LUCID_WORKERS=2  # Reduced for Pi
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_api_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+      lucid-redis-pi:
+        condition: service_started
+      lucid-tor-pi:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+  # Blockchain Service (Pi Optimized)
+  lucid-blockchain-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain:${LUCID_TAG:-latest}
+    container_name: lucid-blockchain-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8545:8545"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_TRON_NETWORK=${LUCID_TRON_NETWORK:-shasta}
+      - LUCID_USDT_TRC20_ADDRESS=${LUCID_USDT_TRC20_ADDRESS:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
+      - LUCID_SYNC_INTERVAL=300  # 5 minutes for Pi
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_blockchain_pi_data:/app/data
+      - lucid_blockchain_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+
+  # RDP Service (Pi Optimized with hardware acceleration)
+  lucid-rdp-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/rdp:${LUCID_TAG:-latest}
+    container_name: lucid-rdp-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "3389:3389"
+      - "3350:3350"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_XRDP_DISPLAY=:10
+      - LUCID_FFMPEG_PATH=/usr/bin/ffmpeg
+      - LUCID_HARDWARE_ACCELERATION=true
+      - LUCID_VIDEO_CODEC=h264_v4l2m2m  # Pi hardware encoder
+      - LUCID_BITRATE=1000k  # Reduced for Pi
+      - LUCID_FPS=24  # Reduced for Pi
+      - LUCID_RESOLUTION=1280x720  # Reduced for Pi
+    volumes:
+      - lucid_rdp_pi_sessions:/app/sessions
+      - lucid_rdp_pi_recordings:/app/recordings
+      - lucid_rdp_pi_logs:/app/logs
+      - /dev/vchiq:/dev/vchiq:ro  # Pi GPU access
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+    privileged: true
+
+  # Session Management Service (Pi Optimized)
+  lucid-sessions-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/sessions:${LUCID_TAG:-latest}
+    container_name: lucid-sessions-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8080:8080"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis-pi:6379
+      - LUCID_API_URL=http://lucid-api-pi:8000
+      - LUCID_WORKERS=2  # Reduced for Pi
+      - LUCID_LOG_LEVEL=INFO
+      - LUCID_CHUNK_SIZE_MB=8  # Reduced for Pi
+      - LUCID_MAX_SESSION_SIZE_GB=10  # Reduced for Pi
+    volumes:
+      - lucid_sessions_pi_data:/app/data
+      - lucid_sessions_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+      lucid-redis-pi:
+        condition: service_started
+      lucid-api-pi:
+        condition: service_healthy
+
+  # Storage Service (Pi Optimized)
+  lucid-storage-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage:${LUCID_TAG:-latest}
+    container_name: lucid-storage-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8081:8081"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_STORAGE_ROOT=/app/storage
+      - LUCID_WORKERS=2  # Reduced for Pi
+      - LUCID_LOG_LEVEL=INFO
+      - LUCID_CLEANUP_INTERVAL=3600  # 1 hour for Pi
+    volumes:
+      - lucid_storage_pi_data:/app/storage
+      - lucid_storage_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+
+  # Database Service (Pi Optimized)
+  lucid-database-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/database:${LUCID_TAG:-latest}
+    container_name: lucid-database-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8082:8082"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_BACKUP_SCHEDULE=0 3 * * *  # 3 AM for Pi (less busy)
+      - LUCID_LOG_LEVEL=INFO
+      - LUCID_BACKUP_RETENTION_DAYS=7  # Reduced for Pi storage
+    volumes:
+      - lucid_database_pi_backups:/app/backups
+      - lucid_database_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+
+  # VM Management Service (Pi Optimized)
+  lucid-vm-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/vm:${LUCID_TAG:-latest}
+    container_name: lucid-vm-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8083:8083"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - LUCID_MAX_VMS=2  # Reduced for Pi
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - lucid_vm_pi_data:/app/data
+      - lucid_vm_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+
+  # GUI Service (Pi Optimized)
+  lucid-gui-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui:${LUCID_TAG:-latest}
+    container_name: lucid-gui-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8084:8084"
+    environment:
+      - LUCID_API_URL=http://lucid-api-pi:8000
+      - LUCID_DISPLAY=${DISPLAY:-:0}
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - lucid_gui_pi_data:/app/data
+      - lucid_gui_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    depends_on:
+      lucid-api-pi:
+        condition: service_healthy
+
+  # Node Service (Pi Optimized)
+  lucid-node-pi:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/node:${LUCID_TAG:-latest}
+    container_name: lucid-node-pi
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "8085:8085"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_pi:lucid_pi_password@lucid-mongodb-pi:27017/lucid_pi?authSource=admin
+      - LUCID_NODE_ID=${LUCID_NODE_ID:-pi-node-001}
+      - LUCID_CONSENSUS_API_URL=http://lucid-api-pi:8000
+      - LUCID_LOG_LEVEL=INFO
+      - LUCID_CONSENSUS_ROUND_DURATION=30  # Longer for Pi
+      - LUCID_LEADER_SELECTION_INTERVAL=60  # Longer for Pi
+    volumes:
+      - lucid_node_pi_data:/app/data
+      - lucid_node_pi_logs:/app/logs
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    depends_on:
+      lucid-mongodb-pi:
+        condition: service_healthy
+      lucid-api-pi:
+        condition: service_healthy
+
+  # Pi System Monitor
+  lucid-pi-monitor:
+    image: prom/node-exporter:latest
+    container_name: lucid-pi-monitor
+    restart: unless-stopped
+    platform: linux/arm64
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - lucid-pi-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+        reservations:
+          memory: 32M
+          cpus: '0.05'
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+# Networks
+networks:
+  lucid-pi-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+
+# Volumes (Pi Optimized)
+volumes:
+  # Database volumes
+  lucid_mongodb_pi_data:
+    driver: local
+  lucid_mongodb_pi_config:
+    driver: local
+  lucid_redis_pi_data:
+    driver: local
+  
+  # Service volumes
+  lucid_tor_pi_data:
+    driver: local
+  lucid_tor_pi_config:
+    driver: local
+  
+  # Application data volumes
+  lucid_api_pi_logs:
+    driver: local
+  lucid_blockchain_pi_data:
+    driver: local
+  lucid_blockchain_pi_logs:
+    driver: local
+  lucid_rdp_pi_sessions:
+    driver: local
+  lucid_rdp_pi_recordings:
+    driver: local
+  lucid_rdp_pi_logs:
+    driver: local
+  lucid_sessions_pi_data:
+    driver: local
+  lucid_sessions_pi_logs:
+    driver: local
+  lucid_storage_pi_data:
+    driver: local
+  lucid_storage_pi_logs:
+    driver: local
+  lucid_database_pi_backups:
+    driver: local
+  lucid_database_pi_logs:
+    driver: local
+  lucid_vm_pi_data:
+    driver: local
+  lucid_vm_pi_logs:
+    driver: local
+  lucid_gui_pi_data:
+    driver: local
+  lucid_gui_pi_logs:
+    driver: local
+  lucid_node_pi_data:
+    driver: local
+  lucid_node_pi_logs:
+    driver: local

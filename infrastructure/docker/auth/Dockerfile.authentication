@@ -11,17 +11,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies
+# Install system dependencies including bash for script execution
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libffi-dev \
     libssl-dev \
     curl \
     ca-certificates \
+    bash \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
+
+# Copy build environment script
+COPY infrastructure/docker/auth/build-env.sh /tmp/build-env.sh
+RUN chmod +x /tmp/build-env.sh
+
+# Execute build environment script to generate .env files
+RUN /tmp/build-env.sh
 
 # Install Python dependencies
 COPY auth/requirements.auth.txt /tmp/
@@ -59,6 +68,9 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 
 # Copy application
 COPY --from=builder /app /app
+
+# Copy generated environment files
+COPY --from=builder /tmp/infrastructure/docker/auth/env/authentication.env /app/.env
 
 # Copy user and group information
 COPY --from=builder /etc/passwd /etc/passwd

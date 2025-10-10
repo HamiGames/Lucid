@@ -1,0 +1,81 @@
+Module,Component,Type,Name,Description,Parameters,Return Type,Features,Requirements,Factory Function
+connection_params.py,Enum,ConnectionType,RDP,"Remote Desktop Protocol connection",N/A,ConnectionType,Protocol specification,Standard RDP protocol support,No
+connection_params.py,Enum,ConnectionType,SSH,"Secure Shell connection",N/A,ConnectionType,Protocol specification,SSH client/server support,No
+connection_params.py,Enum,ConnectionType,VNC,"Virtual Network Computing connection",N/A,ConnectionType,Protocol specification,VNC viewer/server support,No
+connection_params.py,Enum,ConnectionType,WEBSOCKET,"WebSocket connection",N/A,ConnectionType,Protocol specification,WebSocket protocol support,No
+connection_params.py,Enum,ConnectionType,BLOCKCHAIN,"Blockchain network connection",N/A,ConnectionType,Protocol specification,Blockchain protocol support,No
+connection_params.py,Enum,ConnectionType,NODE,"Distributed node connection",N/A,ConnectionType,Protocol specification,Node protocol support,No
+connection_params.py,Enum,SecurityLevel,LOW,"Low security level",N/A,SecurityLevel,Security classification,Basic encryption,No
+connection_params.py,Enum,SecurityLevel,MEDIUM,"Medium security level",N/A,SecurityLevel,Security classification,Standard encryption,No
+connection_params.py,Enum,SecurityLevel,HIGH,"High security level",N/A,SecurityLevel,Security classification,Strong encryption,No
+connection_params.py,Enum,SecurityLevel,MAXIMUM,"Maximum security level",N/A,SecurityLevel,Security classification,Maximum encryption,No
+connection_params.py,Enum,AuthenticationMethod,PASSWORD,"Password authentication",N/A,AuthenticationMethod,Auth method specification,Password-based auth,No
+connection_params.py,Enum,AuthenticationMethod,KEY,"Private key authentication",N/A,AuthenticationMethod,Auth method specification,Key-based auth,No
+connection_params.py,Enum,AuthenticationMethod,CERTIFICATE,"Certificate authentication",N/A,AuthenticationMethod,Auth method specification,Certificate-based auth,No
+connection_params.py,Enum,AuthenticationMethod,TOKEN,"Token authentication",N/A,AuthenticationMethod,Auth method specification,Token-based auth,No
+connection_params.py,Enum,AuthenticationMethod,HARDWARE_WALLET,"Hardware wallet authentication",N/A,AuthenticationMethod,Auth method specification,Hardware wallet auth,No
+connection_params.py,DataClass,ConnectionCredentials,ConnectionCredentials,"Connection credentials data structure","username: str, password: Optional[str], private_key: Optional[str], certificate: Optional[str], token: Optional[str], wallet_address: Optional[str], encrypted: bool",ConnectionCredentials,Credential management,Secure credential storage,No
+connection_params.py,DataClass,NetworkConfig,NetworkConfig,"Network configuration data structure","host: str, port: int, protocol: str, timeout: int, keepalive: bool, compression: bool, encryption: bool",NetworkConfig,Network settings,Network protocol support,No
+connection_params.py,DataClass,SecurityConfig,SecurityConfig,"Security configuration data structure","level: SecurityLevel, authentication_method: AuthenticationMethod, encryption_algorithm: str, key_exchange: str, certificate_validation: bool, require_mfa: bool, session_timeout: int",SecurityConfig,Security settings,Security protocol support,No
+connection_params.py,DataClass,ConnectionParameters,ConnectionParameters,"Core connection parameters data structure","connection_id: str, name: str, connection_type: ConnectionType, network_config: NetworkConfig, credentials: ConnectionCredentials, security_config: SecurityConfig, metadata: Optional[Dict[str Any]], created_at: Optional[str], updated_at: Optional[str]",ConnectionParameters,Complete connection spec,All connection types,No
+connection_params.py,Class,ConnectionParameterManager,__init__,"Initialize connection parameter manager","config_dir: Optional[str]",None,Manager initialization,Configuration directory setup,No
+connection_params.py,Class,ConnectionParameterManager,_encrypt_credentials,"Encrypt sensitive credential data","credentials: ConnectionCredentials",ConnectionCredentials,Credential encryption,Fernet encryption library,No
+connection_params.py,Class,ConnectionParameterManager,_decrypt_credentials,"Decrypt sensitive credential data","credentials: ConnectionCredentials",ConnectionCredentials,Credential decryption,Fernet decryption library,No
+connection_params.py,Class,ConnectionParameterManager,save_connection,"Save connection parameters to file","connection: ConnectionParameters, encrypt: bool",bool,Connection persistence,JSON serialization,No
+connection_params.py,Class,ConnectionParameterManager,load_connection,"Load connection parameters from file","connection_id: str, decrypt: bool",Optional[ConnectionParameters],Connection loading,JSON deserialization,No
+connection_params.py,Class,ConnectionParameterManager,list_connections,"List all available connection IDs",None,List[str],Connection listing,Directory traversal,No
+connection_params.py,Class,ConnectionParameterManager,delete_connection,"Delete connection parameters","connection_id: str",bool,Connection deletion,File system operations,No
+connection_params.py,Class,ConnectionParameterManager,create_connection,"Create new connection parameters","name: str, connection_type: ConnectionType, host: str, port: int, username: str, password: Optional[str], security_level: SecurityLevel, **kwargs",ConnectionParameters,Connection creation,Parameter validation,No
+connection_params.py,Class,ConnectionParameterManager,validate_connection,"Validate connection parameters","connection: ConnectionParameters",List[str],Parameter validation,Input validation,No
+connection_params.py,Factory Function,create_rdp_connection,create_rdp_connection,"Create RDP connection parameters","name: str, host: str, username: str, password: str, port: int, security_level: SecurityLevel",ConnectionParameters,RDP connection factory,RDP protocol support,Yes
+connection_params.py,Factory Function,create_blockchain_connection,create_blockchain_connection,"Create blockchain connection parameters","name: str, host: str, wallet_address: str, port: int, security_level: SecurityLevel",ConnectionParameters,Blockchain connection factory,Blockchain protocol support,Yes
+connection_params.py,Factory Function,create_node_connection,create_node_connection,"Create node connection parameters","name: str, host: str, port: int, security_level: SecurityLevel",ConnectionParameters,Node connection factory,Node protocol support,Yes
+session_manager.py,Enum,SessionState,CREATED,"Session created state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,INITIALIZING,"Session initializing state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,ACTIVE,"Session active state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,PAUSED,"Session paused state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,SUSPENDED,"Session suspended state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,TERMINATING,"Session terminating state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,TERMINATED,"Session terminated state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionState,ERROR,"Session error state",N/A,SessionState,State management,Session lifecycle,No
+session_manager.py,Enum,SessionType,RDP,"RDP session type",N/A,SessionType,Session classification,RDP protocol support,No
+session_manager.py,Enum,SessionType,SSH,"SSH session type",N/A,SessionType,Session classification,SSH protocol support,No
+session_manager.py,Enum,SessionType,VNC,"VNC session type",N/A,SessionType,Session classification,VNC protocol support,No
+session_manager.py,Enum,SessionType,BLOCKCHAIN,"Blockchain session type",N/A,SessionType,Session classification,Blockchain protocol support,No
+session_manager.py,Enum,SessionType,NODE,"Node session type",N/A,SessionType,Session classification,Node protocol support,No
+session_manager.py,Enum,SessionType,ADMIN,"Admin session type",N/A,SessionType,Session classification,Admin functionality,No
+session_manager.py,Enum,SessionType,USER,"User session type",N/A,SessionType,Session classification,User functionality,No
+session_manager.py,Enum,EncryptionLevel,NONE,"No encryption",N/A,EncryptionLevel,Encryption classification,No encryption,No
+session_manager.py,Enum,EncryptionLevel,BASIC,"Basic encryption",N/A,EncryptionLevel,Encryption classification,Basic encryption,No
+session_manager.py,Enum,EncryptionLevel,STANDARD,"Standard encryption",N/A,EncryptionLevel,Encryption classification,Standard encryption,No
+session_manager.py,Enum,EncryptionLevel,HIGH,"High encryption",N/A,EncryptionLevel,Encryption classification,High encryption,No
+session_manager.py,Enum,EncryptionLevel,MAXIMUM,"Maximum encryption",N/A,EncryptionLevel,Encryption classification,Maximum encryption,No
+session_manager.py,DataClass,SessionMetadata,SessionMetadata,"Session metadata data structure","session_id: str, name: str, description: Optional[str], tags: Optional[List[str]], created_by: Optional[str], organization: Optional[str], project: Optional[str], environment: Optional[str]",SessionMetadata,Session identification,Metadata management,No
+session_manager.py,DataClass,SessionConfig,SessionConfig,"Session configuration data structure","session_type: SessionType, timeout: int, max_idle_time: int, encryption_level: EncryptionLevel, audit_logging: bool, resource_monitoring: bool, auto_save: bool, save_interval: int, max_connections: int, allow_multiple_users: bool",SessionConfig,Session behavior,Configuration management,No
+session_manager.py,DataClass,SessionConnection,SessionConnection,"Session connection data structure","connection_id: str, user_id: str, connected_at: str, last_activity: str, ip_address: str, user_agent: Optional[str], is_active: bool",SessionConnection,Connection tracking,Connection management,No
+session_manager.py,DataClass,SessionStats,SessionStats,"Session statistics data structure","total_connections: int, active_connections: int, bytes_transferred: int, commands_executed: int, errors_count: int, uptime_seconds: int, last_activity: Optional[str]",SessionStats,Performance metrics,Statistics tracking,No
+session_manager.py,DataClass,Session,Session,"Complete session data structure","session_id: str, metadata: SessionMetadata, config: SessionConfig, state: SessionState, connections: List[SessionConnection], stats: SessionStats, created_at: str, updated_at: str, started_at: Optional[str], ended_at: Optional[str], encryption_key: Optional[str], data: Optional[Dict[str Any]]",Session,Complete session data,Session management,No
+session_manager.py,Class,SessionManager,__init__,"Initialize session manager","storage_dir: Optional[str]",None,Manager initialization,Storage directory setup,No
+session_manager.py,Class,SessionManager,_load_existing_sessions,"Load existing sessions from storage",None,None,Session loading,JSON deserialization,No
+session_manager.py,Class,SessionManager,_load_session_from_file,"Load session from file","session_id: str",bool,Session loading,File system operations,No
+session_manager.py,Class,SessionManager,_save_session_to_file,"Save session to file","session: Session",bool,Session persistence,JSON serialization,No
+session_manager.py,Class,SessionManager,_generate_session_id,"Generate unique session ID",None,str,ID generation,UUID generation,No
+session_manager.py,Class,SessionManager,_generate_encryption_key,"Generate encryption key based on level","encryption_level: EncryptionLevel",str,Key generation,Cryptographic key generation,No
+session_manager.py,Class,SessionManager,_emit_event,"Emit session event to registered handlers","event_type: str, session: Session, **kwargs",None,Event system,Event handling,No
+session_manager.py,Class,SessionManager,create_session,"Create new session","name: str, session_type: SessionType, config: Optional[SessionConfig], metadata: Optional[SessionMetadata], **kwargs",Session,Session creation,Session lifecycle,No
+session_manager.py,Class,SessionManager,get_session,"Get session by ID","session_id: str",Optional[Session],Session retrieval,Session lookup,No
+session_manager.py,Class,SessionManager,list_sessions,"List sessions optionally filtered by state","state: Optional[SessionState]",List[Session],Session listing,Session filtering,No
+session_manager.py,Class,SessionManager,update_session_state,"Update session state","session_id: str, new_state: SessionState",bool,State management,Session lifecycle,No
+session_manager.py,Class,SessionManager,add_connection,"Add connection to session","session_id: str, user_id: str, ip_address: str, user_agent: Optional[str]",Optional[str],Connection management,Connection tracking,No
+session_manager.py,Class,SessionManager,remove_connection,"Remove connection from session","session_id: str, connection_id: str",bool,Connection management,Connection tracking,No
+session_manager.py,Class,SessionManager,update_connection_activity,"Update connection activity timestamp","session_id: str, connection_id: str",bool,Activity tracking,Connection monitoring,No
+session_manager.py,Class,SessionManager,update_session_stats,"Update session statistics","session_id: str, **kwargs",bool,Statistics management,Performance tracking,No
+session_manager.py,Class,SessionManager,delete_session,"Delete session","session_id: str",bool,Session deletion,Session lifecycle,No
+session_manager.py,Class,SessionManager,cleanup_expired_sessions,"Cleanup expired sessions",None,int,Session cleanup,Session lifecycle,No
+session_manager.py,Class,SessionManager,register_event_handler,"Register event handler","event_type: str, handler: Callable",None,Event system,Event handling,No
+session_manager.py,Class,SessionManager,unregister_event_handler,"Unregister event handler","event_type: str, handler: Callable",None,Event system,Event handling,No
+session_manager.py,Class,SessionManager,start_cleanup_task,"Start background cleanup task","interval: int",None,Background processing,Async task management,No
+session_manager.py,Class,SessionManager,stop_cleanup_task,"Stop background cleanup task",None,None,Background processing,Async task management,No
+session_manager.py,Factory Function,create_rdp_session,create_rdp_session,"Create RDP session","name: str, host: str, port: int, timeout: int, encryption_level: EncryptionLevel",Session,RDP session factory,RDP protocol support,Yes
+session_manager.py,Factory Function,create_blockchain_session,create_blockchain_session,"Create blockchain session","name: str, network: str, timeout: int, encryption_level: EncryptionLevel",Session,Blockchain session factory,Blockchain protocol support,Yes
+session_manager.py,Factory Function,create_node_session,create_node_session,"Create node session","name: str, node_type: str, timeout: int, encryption_level: EncryptionLevel",Session,Node session factory,Node protocol support,Yes

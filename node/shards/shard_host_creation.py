@@ -27,11 +27,11 @@ from blockchain.core.blockchain_engine import get_blockchain_engine
 logger = logging.getLogger(__name__)
 
 # Shard Host Constants
-SHARD_SIZE_MB = int(os.getenv("SHARD_SIZE_MB", "64"))  # 64MB per shard
-REPLICATION_FACTOR = int(os.getenv("REPLICATION_FACTOR", "3"))  # 3 replicas per shard
-MIN_STORAGE_NODES = int(os.getenv("MIN_STORAGE_NODES", "5"))  # Minimum storage nodes
-SHARD_TIMEOUT_SEC = int(os.getenv("SHARD_TIMEOUT_SEC", "300"))  # 5 minutes
-MAX_SHARDS_PER_NODE = int(os.getenv("MAX_SHARDS_PER_NODE", "1000"))
+SHARD_SIZE_MB = int(os.getenv("LUCID_SHARD_SIZE_MB", "64"))  # 64MB per shard
+REPLICATION_FACTOR = int(os.getenv("LUCID_REPLICATION_FACTOR", "3"))  # 3 replicas per shard
+MIN_STORAGE_NODES = int(os.getenv("LUCID_MIN_STORAGE_NODES", "5"))  # Minimum storage nodes
+SHARD_TIMEOUT_SEC = int(os.getenv("LUCID_SHARD_TIMEOUT_SEC", "300"))  # 5 minutes
+MAX_SHARDS_PER_NODE = int(os.getenv("LUCID_MAX_SHARDS_PER_NODE", "1000"))
 
 
 class ShardStatus(Enum):

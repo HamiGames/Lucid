@@ -21,7 +21,11 @@ class EncryptionManager:
     """
     
     def __init__(self, master_key: Optional[bytes] = None):
-        self.master_key = master_key or self._generate_master_key()
+        master_key_env = os.getenv("LUCID_ENCRYPTION_MASTER_KEY")
+        if master_key_env:
+            self.master_key = bytes.fromhex(master_key_env)
+        else:
+            self.master_key = master_key or self._generate_master_key()
         self.backend = default_backend()
         
     def _generate_master_key(self) -> bytes:

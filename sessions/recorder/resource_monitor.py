@@ -26,11 +26,11 @@ import netifaces
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-RESOURCE_LOG_PATH = Path(os.getenv("RESOURCE_LOG_PATH", "/var/log/lucid/resources"))
-RESOURCE_CACHE_PATH = Path(os.getenv("RESOURCE_CACHE_PATH", "/tmp/lucid/resources"))
-RESOURCE_MONITOR_INTERVAL = float(os.getenv("RESOURCE_MONITOR_INTERVAL", "5.0"))
-RESOURCE_MAX_EVENTS = int(os.getenv("RESOURCE_MAX_EVENTS", "10000"))
-RESOURCE_BATCH_SIZE = int(os.getenv("RESOURCE_BATCH_SIZE", "100"))
+RESOURCE_LOG_PATH = Path(os.getenv("LUCID_RESOURCE_LOG_PATH", "/var/log/lucid/resources"))
+RESOURCE_CACHE_PATH = Path(os.getenv("LUCID_RESOURCE_CACHE_PATH", "/tmp/lucid/resources"))
+RESOURCE_MONITOR_INTERVAL = float(os.getenv("LUCID_RESOURCE_MONITOR_INTERVAL", "5.0"))
+RESOURCE_MAX_EVENTS = int(os.getenv("LUCID_RESOURCE_MAX_EVENTS", "10000"))
+RESOURCE_BATCH_SIZE = int(os.getenv("LUCID_RESOURCE_BATCH_SIZE", "100"))
 
 
 class ResourceType(Enum):

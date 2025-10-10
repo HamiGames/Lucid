@@ -1,0 +1,417 @@
+# Path: infrastructure/docker/compose/docker-compose.yml
+# Main infrastructure Docker Compose file for Lucid project
+# Production-ready configuration with infrastructure services
+
+version: '3.8'
+
+services:
+  # Load Balancer (Nginx)
+  lucid-loadbalancer:
+    image: nginx:alpine
+    container_name: lucid-loadbalancer
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - lucid_nginx_logs:/var/log/nginx
+    networks:
+      - lucid-infra-network
+    depends_on:
+      - lucid-api
+      - lucid-sessions
+      - lucid-storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MongoDB Database (Infrastructure)
+  lucid-mongodb:
+    image: mongo:7.0
+    container_name: lucid-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+      MONGO_INITDB_DATABASE: ${LUCID_MONGODB_DATABASE:-lucid}
+    volumes:
+      - lucid_mongodb_data:/data/db
+      - lucid_mongodb_config:/data/configdb
+      - ./mongodb/init:/docker-entrypoint-initdb.d:ro
+      - ./mongodb/mongod.conf:/etc/mongod.conf:ro
+    networks:
+      - lucid-infra-network
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache (Infrastructure)
+  lucid-redis:
+    image: redis:7-alpine
+    container_name: lucid-redis
+    restart: unless-stopped
+    volumes:
+      - lucid_redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - lucid-infra-network
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL (Additional Database)
+  lucid-postgres:
+    image: postgres:15-alpine
+    container_name: lucid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${LUCID_POSTGRES_DB:-lucid_postgres}
+      POSTGRES_USER: ${LUCID_POSTGRES_USER:-lucid}
+      POSTGRES_PASSWORD: ${LUCID_POSTGRES_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - lucid-infra-network
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LUCID_POSTGRES_USER:-lucid}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch (Logging and Search)
+  lucid-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: lucid-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - lucid_elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - lucid-infra-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Kibana (Log Visualization)
+  lucid-kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: lucid-kibana
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://lucid-elasticsearch:9200
+    networks:
+      - lucid-infra-network
+    depends_on:
+      lucid-elasticsearch:
+        condition: service_healthy
+
+  # Prometheus (Metrics Collection)
+  lucid-prometheus:
+    image: prom/prometheus:latest
+    container_name: lucid-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - lucid_prometheus_data:/prometheus
+    networks:
+      - lucid-infra-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  # Grafana (Metrics Visualization)
+  lucid-grafana:
+    image: grafana/grafana:latest
+    container_name: lucid-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${LUCID_GRAFANA_PASSWORD:-admin}
+    volumes:
+      - lucid_grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - lucid-infra-network
+    depends_on:
+      - lucid-prometheus
+
+  # Jaeger (Distributed Tracing)
+  lucid-jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: lucid-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    networks:
+      - lucid-infra-network
+
+  # MinIO (Object Storage)
+  lucid-minio:
+    image: minio/minio:latest
+    container_name: lucid-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${LUCID_MINIO_USER:-lucid}
+      MINIO_ROOT_PASSWORD: ${LUCID_MINIO_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_minio_data:/data
+    networks:
+      - lucid-infra-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Vault (Secrets Management)
+  lucid-vault:
+    image: vault:latest
+    container_name: lucid-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${LUCID_VAULT_ROOT_TOKEN:-lucid_root_token}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    volumes:
+      - lucid_vault_data:/vault/data
+      - ./vault/vault.hcl:/vault/config/vault.hcl:ro
+    networks:
+      - lucid-infra-network
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+
+  # Consul (Service Discovery)
+  lucid-consul:
+    image: consul:latest
+    container_name: lucid-consul
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    volumes:
+      - lucid_consul_data:/consul/data
+      - ./consul/consul.json:/consul/config/consul.json:ro
+    networks:
+      - lucid-infra-network
+    command: ["consul", "agent", "-server", "-ui", "-node=server-1", "-bootstrap-expect=1", "-client=0.0.0.0", "-config-file=/consul/config/consul.json"]
+
+  # NATS (Message Broker)
+  lucid-nats:
+    image: nats:latest
+    container_name: lucid-nats
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - lucid_nats_data:/data
+      - ./nats/nats-server.conf:/etc/nats/nats-server.conf:ro
+    networks:
+      - lucid-infra-network
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/varz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Gateway (Infrastructure)
+  lucid-api:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api:${LUCID_TAG:-latest}
+    container_name: lucid-api
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb:27017/lucid?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis:6379
+      - LUCID_POSTGRES_URL=postgresql://lucid:lucid_password@lucid-postgres:5432/lucid_postgres
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch:9200
+      - LUCID_JAEGER_URL=http://lucid-jaeger:14268/api/traces
+      - LUCID_MINIO_URL=http://lucid-minio:9000
+      - LUCID_VAULT_URL=http://lucid-vault:8200
+      - LUCID_CONSUL_URL=http://lucid-consul:8500
+      - LUCID_NATS_URL=nats://lucid-nats:4222
+    volumes:
+      - lucid_api_logs:/app/logs
+    networks:
+      - lucid-infra-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-postgres:
+        condition: service_healthy
+
+  # Session Management Service (Infrastructure)
+  lucid-sessions:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/sessions:${LUCID_TAG:-latest}
+    container_name: lucid-sessions
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb:27017/lucid?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis:6379
+      - LUCID_API_URL=http://lucid-api:8000
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch:9200
+      - LUCID_MINIO_URL=http://lucid-minio:9000
+      - LUCID_NATS_URL=nats://lucid-nats:4222
+    volumes:
+      - lucid_sessions_data:/app/data
+      - lucid_sessions_logs:/app/logs
+    networks:
+      - lucid-infra-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-api:
+        condition: service_started
+
+  # Storage Service (Infrastructure)
+  lucid-storage:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage:${LUCID_TAG:-latest}
+    container_name: lucid-storage
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb:27017/lucid?authSource=admin
+      - LUCID_STORAGE_ROOT=/app/storage
+      - LUCID_MINIO_URL=http://lucid-minio:9000
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch:9200
+    volumes:
+      - lucid_storage_data:/app/storage
+      - lucid_storage_logs:/app/logs
+    networks:
+      - lucid-infra-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-minio:
+        condition: service_healthy
+
+  # Backup Service
+  lucid-backup:
+    image: postgres:15-alpine
+    container_name: lucid-backup
+    restart: "no"
+    environment:
+      PGPASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_backup_data:/backups
+      - ./backup/scripts:/scripts:ro
+    networks:
+      - lucid-infra-network
+    command: ["sh", "-c", "while true; do sleep 86400; done"]  # Sleep for 24 hours
+    depends_on:
+      - lucid-mongodb
+      - lucid-postgres
+
+  # Log Aggregator
+  lucid-log-aggregator:
+    image: fluent/fluent-bit:latest
+    container_name: lucid-log-aggregator
+    restart: unless-stopped
+    volumes:
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - lucid_logs:/var/log
+    networks:
+      - lucid-infra-network
+    depends_on:
+      - lucid-elasticsearch
+
+# Networks
+networks:
+  lucid-infra-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+
+# Volumes
+volumes:
+  # Database volumes
+  lucid_mongodb_data:
+    driver: local
+  lucid_mongodb_config:
+    driver: local
+  lucid_redis_data:
+    driver: local
+  lucid_postgres_data:
+    driver: local
+  
+  # Search and logging volumes
+  lucid_elasticsearch_data:
+    driver: local
+  
+  # Monitoring volumes
+  lucid_prometheus_data:
+    driver: local
+  lucid_grafana_data:
+    driver: local
+  
+  # Storage volumes
+  lucid_minio_data:
+    driver: local
+  
+  # Infrastructure volumes
+  lucid_vault_data:
+    driver: local
+  lucid_consul_data:
+    driver: local
+  lucid_nats_data:
+    driver: local
+  
+  # Application volumes
+  lucid_api_logs:
+    driver: local
+  lucid_sessions_data:
+    driver: local
+  lucid_sessions_logs:
+    driver: local
+  lucid_storage_data:
+    driver: local
+  lucid_storage_logs:
+    driver: local
+  lucid_backup_data:
+    driver: local
+  lucid_logs:
+    driver: local
+  lucid_nginx_logs:
+    driver: local

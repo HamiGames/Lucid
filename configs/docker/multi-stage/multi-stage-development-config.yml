@@ -1,0 +1,161 @@
+# Multi-Stage Development Configuration for Lucid Project
+# Development-friendly configuration for multi-stage containers
+
+version: '3.8'
+
+services:
+  # Multi-stage development environment
+  dev-multi-stage:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - HOT_RELOAD=true
+      - BUILD_STAGE=development
+      - DEV_TOOLS=true
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - ./src:/app/src:rw
+      - ./logs:/app/logs:rw
+      - ./cache:/app/cache:rw
+      - ./temp:/app/temp:rw
+      - ./configs:/app/configs:rw
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE  # For debugging
+      - SYS_ADMIN   # For development tools
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["python", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    command: >
+      sh -c "
+        echo 'Starting multi-stage development environment...' &&
+        python /app/src/main.py
+      "
+
+  # Multi-stage builder for development
+  dev-builder:
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - BUILD_STAGE=builder
+      - DEV_BUILD=true
+      - FAST_BUILD=true
+      - DEBUG_BUILD=true
+    networks:
+      - lucid-dev
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - ./src:/app/src:rw
+      - ./build-cache:/cache:rw
+      - ./build-artifacts:/artifacts:rw
+      - ./build-logs:/logs:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Multi-stage development builder ready' &&
+        tail -f /dev/null
+      "
+
+  # Development tools and utilities
+  dev-tools:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - DEV_TOOLS_MODE=true
+      - DEBUG_TOOLS=true
+    networks:
+      - lucid-dev
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - ./src:/app/src:ro
+      - ./logs:/app/logs:rw
+      - ./tools:/app/tools:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE
+      - NET_ADMIN
+      - SYS_ADMIN
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Development tools container ready' &&
+        tail -f /dev/null
+      "
+
+  # Development database for testing
+  dev-database:
+    image: mongo:7.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USER:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=${DB_NAME:-lucid_dev}
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    volumes:
+      - ./dev-data:/data/db:rw
+      - ./dev-scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  lucid-dev:
+    driver: bridge
+    name: lucid-multi-stage-dev
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1
+
+volumes:
+  lucid-dev-data:
+    name: lucid-multi-stage-dev-data
+  lucid-dev-logs:
+    name: lucid-multi-stage-dev-logs
+  lucid-dev-cache:
+    name: lucid-multi-stage-dev-cache
+  build-cache:
+    name: lucid-multi-stage-dev-build-cache
+  build-artifacts:
+    name: lucid-multi-stage-dev-build-artifacts
+  build-logs:
+    name: lucid-multi-stage-dev-build-logs
+  dev-data:
+    name: lucid-multi-stage-dev-db-data

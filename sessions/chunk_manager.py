@@ -73,13 +73,13 @@ class ChunkManager:
         self,
         db: AsyncIOMotorDatabase,
         chunk_dir: Optional[str] = None,
-        max_chunk_size: int = 16 * 1024 * 1024,  # 16MB
-        compression_level: int = 3  # Zstandard level 3
+        max_chunk_size: Optional[int] = None,
+        compression_level: Optional[int] = None
     ):
         self.db = db
-        self.chunk_dir = Path(chunk_dir or "./data/chunks")
-        self.max_chunk_size = max_chunk_size
-        self.compression_level = compression_level
+        self.chunk_dir = Path(chunk_dir or os.getenv("LUCID_CHUNK_MANAGER_DIR", "./data/chunks"))
+        self.max_chunk_size = max_chunk_size or int(os.getenv("LUCID_MAX_CHUNK_SIZE", "16777216"))  # 16MB
+        self.compression_level = compression_level or int(os.getenv("LUCID_CHUNK_COMPRESSION_LEVEL", "3"))  # Zstandard level 3
         
         # Create chunk directory
         self.chunk_dir.mkdir(parents=True, exist_ok=True)
