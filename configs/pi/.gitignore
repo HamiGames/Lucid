@@ -1,0 +1,24 @@
+# Lucid Pi Configuration - Sensitive Files
+# Never commit these files to the repository
+
+# SSH Keys
+ssh/*.pem
+ssh/*_key
+ssh/*_key.pub
+ssh/id_*
+
+# Environment files with secrets
+.env
+.env.local
+.env.production
+
+# Generated configuration files
+*.env
+lucid-pi.env
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

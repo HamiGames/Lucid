@@ -1,9 +1,9 @@
 # LUCID RDP - CONFIG-CONTEXT SPECIFICATIONS FOR MISSING MODULES
 
-**Generated:** 2025-10-05T06:31:54Z  
-**Mode:** LUCID-STRICT Genius Configuration  
-**Purpose:** Define configuration requirements, environment variables, and Docker contexts  
-**Scope:** All missing modules and scripts identified in FUTURE_COMPONENTS_ANALYSIS.md  
+**Generated:** 2025-10-05T06:31:54Z
+**Mode:** LUCID-STRICT Genius Configuration
+**Purpose:** Define configuration requirements, environment variables, and Docker contexts
+**Scope:** All missing modules and scripts identified in FUTURE_COMPONENTS_ANALYSIS.md
 
 ---
 
@@ -13,16 +13,18 @@ This specification defines the **complete configuration context** required for i
 
 ### **CONFIG-CONTEXT ARCHITECTURE**
 
-```
+```python
+
 Config Context Layers:
 ├── Environment Variables (.env files)
-├── Docker Build Context (Dockerfiles)  
+├── Docker Build Context (Dockerfiles)
 ├── Runtime Configuration (YAML/JSON configs)
 ├── Volume Mount Requirements (Data persistence)
 ├── Network Integration (Tor proxy, service mesh)
 ├── Security Context (Keys, permissions, policies)
 └── Pi Hardware Context (ARM64, GPU, storage)
-```
+
+```ini
 
 ---
 
@@ -33,10 +35,13 @@ Config Context Layers:
 #### **Environment Variables Required:**
 
 ```bash
+
 # sessions/core/.env.chunker
+
 # Session Chunker Configuration
+
 CHUNK_SIZE_MIN=8388608                    # 8MB minimum chunk size
-CHUNK_SIZE_MAX=16777216                   # 16MB maximum chunk size  
+CHUNK_SIZE_MAX=16777216                   # 16MB maximum chunk size
 COMPRESSION_LEVEL=3                       # Zstd compression level 3
 COMPRESSION_ALGORITHM=zstd                # Compression algorithm
 CHUNK_VALIDATION_ENABLED=true            # Enable chunk validation
@@ -46,15 +51,19 @@ CHUNK_RETENTION_DAYS=30                  # Chunk retention period
 BLAKE3_HASH_ENABLED=true                 # Enable BLAKE3 hashing
 PERFORMANCE_MONITORING=true              # Enable performance metrics
 PI_OPTIMIZATION_ENABLED=true             # Pi 5 hardware optimization
-```
+
+```python
 
 #### **Dockerfile Context:**
 
 ```dockerfile
+
 # sessions/core/Dockerfile.chunker
+
 FROM --platform=$TARGETPLATFORM python:3.11-slim as base
 
 # Install system dependencies for chunking and compression
+
 RUN apt-get update && apt-get install -y \
     libzstd-dev \
     libbz2-dev \
@@ -63,10 +72,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+
 COPY sessions/core/requirements.chunker.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.chunker.txt
 
 # Copy chunker module
+
 COPY sessions/core/chunker.py /app/
 COPY sessions/core/__init__.py /app/
 COPY sessions/core/chunker_config.py /app/
@@ -74,20 +85,25 @@ COPY sessions/core/chunker_config.py /app/
 WORKDIR /app
 
 # Create chunk storage directory
+
 RUN mkdir -p /data/chunks && chmod 755 /data/chunks
 
 # Health check
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import chunker; print('Chunker service healthy')"
 
 EXPOSE 8081
 CMD ["python", "chunker.py", "--mode=service"]
-```
+
+```yaml
 
 #### **Runtime Configuration:**
 
 ```yaml
+
 # sessions/core/chunker_config.yaml
+
 chunker:
   algorithms:
     compression: "zstd"
@@ -104,16 +120,22 @@ chunker:
     metrics_enabled: true
     metrics_port: 9091
     log_level: "INFO"
-```
+
+```yaml
 
 #### **Volume Mount Requirements:**
 
 ```yaml
+
 volumes:
+
   - session_chunks_data:/data/chunks          # Persistent chunk storage
+
   - chunker_temp:/tmp/chunker                 # Temporary processing space
+
   - chunker_config:/app/config                # Configuration files
-```
+
+```javascript
 
 ---
 
@@ -122,8 +144,11 @@ volumes:
 #### **Environment Variables Required:**
 
 ```bash
+
 # sessions/encryption/.env.encryptor
+
 # Session Encryptor Configuration
+
 CIPHER_ALGORITHM=XChaCha20-Poly1305       # Encryption algorithm
 KEY_DERIVATION=HKDF-BLAKE2b               # Key derivation function
 KEY_SIZE_BITS=256                         # Key size in bits
@@ -136,15 +161,19 @@ ENCRYPTION_THREADS=2                      # Encryption thread count
 MEMORY_LIMIT_MB=256                       # Memory usage limit
 HSM_ENABLED=false                         # Hardware Security Module
 KEY_ESCROW_ENABLED=false                  # Key escrow for recovery
-```
+
+```python
 
 #### **Dockerfile Context:**
 
 ```dockerfile
+
 # sessions/encryption/Dockerfile.encryptor
+
 FROM --platform=$TARGETPLATFORM python:3.11-slim as base
 
 # Install cryptographic dependencies
+
 RUN apt-get update && apt-get install -y \
     libssl-dev \
     libffi-dev \
@@ -152,48 +181,57 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python cryptographic libraries
+
 COPY sessions/encryption/requirements.encryptor.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.encryptor.txt
 
 # Copy encryptor module
+
 COPY sessions/encryption/ /app/sessions/encryption/
 COPY sessions/core/__init__.py /app/sessions/
 
 WORKDIR /app
 
 # Create secure directories
+
 RUN mkdir -p /secrets /tmp/encryption && \
     chmod 700 /secrets && \
     chmod 755 /tmp/encryption
 
 # Security: Run as non-root user
+
 RUN adduser --disabled-password --gecos '' encryptor && \
     chown -R encryptor:encryptor /app /tmp/encryption
 USER encryptor
 
 # Health check
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "from sessions.encryption.encryptor import SessionEncryptor; print('Encryptor healthy')"
 
 EXPOSE 8082
 CMD ["python", "-m", "sessions.encryption.encryptor", "--mode=service"]
-```
+
+```yaml
 
 #### **Secret Management Context:**
 
 ```yaml
+
 # sessions/encryption/secrets.yaml
+
 secrets:
   master_encryption_key:
     external: true
     name: lucid_master_encryption_key
   key_derivation_salt:
-    external: true  
+    external: true
     name: lucid_key_derivation_salt
   hsm_config:
     external: true
     name: lucid_hsm_configuration
-```
+
+```ini
 
 ---
 
@@ -202,8 +240,11 @@ secrets:
 #### **Environment Variables Required:**
 
 ```bash
+
 # sessions/core/.env.merkle_builder
+
 # Merkle Tree Builder Configuration
+
 HASH_ALGORITHM=BLAKE3                     # Hash algorithm for Merkle tree
 TREE_MAX_DEPTH=20                        # Maximum tree depth
 PROOF_CACHE_SIZE=10000                   # Proof cache size
@@ -214,24 +255,30 @@ CONCURRENT_TREE_BUILDS=2                 # Concurrent tree building
 MEMORY_EFFICIENT_MODE=true               # Memory efficient for Pi
 TREE_SERIALIZATION_FORMAT=binary        # Tree serialization format
 INTEGRITY_CHECK_ENABLED=true             # Enable integrity checking
-```
+
+```python
 
 #### **Dockerfile Context:**
 
 ```dockerfile
+
 # sessions/core/Dockerfile.merkle_builder
+
 FROM --platform=$TARGETPLATFORM python:3.11-slim as base
 
 # Install dependencies for cryptographic operations
+
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+
 COPY sessions/core/requirements.merkle.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.merkle.txt
 
 # Copy Merkle builder module
+
 COPY sessions/core/merkle_builder.py /app/
 COPY sessions/core/merkle_config.py /app/
 COPY sessions/core/__init__.py /app/
@@ -239,16 +286,19 @@ COPY sessions/core/__init__.py /app/
 WORKDIR /app
 
 # Create working directories
+
 RUN mkdir -p /data/merkle_trees /tmp/merkle_build && \
     chmod 755 /data/merkle_trees /tmp/merkle_build
 
 # Health check
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import merkle_builder; print('Merkle builder healthy')"
 
 EXPOSE 8083
 CMD ["python", "merkle_builder.py", "--mode=service"]
-```
+
+```ini
 
 ---
 
@@ -257,8 +307,11 @@ CMD ["python", "merkle_builder.py", "--mode=service"]
 #### **Environment Variables Required:**
 
 ```bash
+
 # sessions/core/.env.orchestrator
+
 # Session Orchestrator Configuration
+
 PIPELINE_TIMEOUT_SECONDS=3600            # Pipeline timeout (1 hour)
 MAX_CONCURRENT_PIPELINES=5               # Max concurrent sessions
 RETRY_ATTEMPTS=3                         # Failed stage retry attempts
@@ -270,25 +323,40 @@ ERROR_RECOVERY_MODE=automatic            # automatic|manual
 PERFORMANCE_PROFILING=false              # Enable performance profiling
 CIRCUIT_BREAKER_ENABLED=true             # Enable circuit breaker
 HEALTH_CHECK_INTERVAL=60                 # Health check interval
-```
+
+```yaml
 
 #### **Service Dependencies:**
 
 ```yaml
+
 # sessions/core/dependencies.yaml
+
 depends_on:
+
   - session-chunker
-  - session-encryptor  
+
+  - session-encryptor
+
   - merkle-builder
+
   - mongodb
+
   - blockchain-core
+
 environment_dependencies:
+
   - CHUNKER_SERVICE_URL=http://session-chunker:8081
+
   - ENCRYPTOR_SERVICE_URL=http://session-encryptor:8082
+
   - MERKLE_SERVICE_URL=http://merkle-builder:8083
+
   - BLOCKCHAIN_SERVICE_URL=http://blockchain-core:8080
+
   - MONGODB_URL=mongodb://mongodb:27017/lucid
-```
+
+```javascript
 
 ---
 
@@ -299,8 +367,11 @@ environment_dependencies:
 #### **Environment Variables Required:**
 
 ```bash
+
 # auth/.env.authentication
+
 # Authentication Service Configuration
+
 JWT_SECRET_KEY=<GENERATE_SECURE_256_BIT_KEY>
 JWT_ALGORITHM=HS256                       # JWT signing algorithm
 JWT_EXPIRY_HOURS=24                       # Token expiry time
@@ -320,12 +391,15 @@ SESSION_STORAGE=redis                     # Session storage backend
 RATE_LIMITING_ENABLED=true                # Enable rate limiting
 MAX_LOGIN_ATTEMPTS=5                      # Max failed login attempts
 LOCKOUT_DURATION_MINUTES=15               # Account lockout duration
-```
+
+```yaml
 
 #### **Security Context:**
 
 ```yaml
-# auth/security_context.yaml  
+
+# auth/security_context.yaml
+
 security:
   jwt:
     signing_key_rotation_days: 30
@@ -343,7 +417,8 @@ security:
     secure_cookies: true
     csrf_protection: true
     same_site_policy: strict
-```
+
+```ini
 
 ---
 
@@ -354,8 +429,11 @@ security:
 #### **Environment Variables Required:**
 
 ```bash
+
 # RDP/server/.env.rdp_server
+
 # RDP Server Configuration
+
 XRDP_PORT=3389                           # RDP listening port
 XRDP_CONFIG_PATH=/etc/xrdp                # xrdp configuration directory
 XRDP_LOG_LEVEL=INFO                       # xrdp log level
@@ -377,15 +455,19 @@ RECORDING_ENABLED=true                    # Enable session recording
 RECORDING_PATH=/data/recordings           # Recording storage path
 SECURITY_LAYER=rdp                        # rdp|tls|negotiate
 ENCRYPTION_LEVEL=high                     # low|medium|high|fips
-```
+
+```dockerfile
 
 #### **Dockerfile Context:**
 
 ```dockerfile
+
 # RDP/server/Dockerfile.rdp_server
+
 FROM --platform=$TARGETPLATFORM ubuntu:22.04 as base
 
 # Install xrdp and dependencies
+
 RUN apt-get update && apt-get install -y \
     xrdp \
     xorgxrdp \
@@ -401,52 +483,71 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies for RDP server
+
 COPY RDP/server/requirements.rdp.txt /tmp/
 RUN pip3 install --no-cache-dir -r /tmp/requirements.rdp.txt
 
 # Copy RDP server components
+
 COPY RDP/server/ /app/rdp_server/
 COPY RDP/common/ /app/rdp_common/
 
 # Configure xrdp
+
 COPY RDP/server/config/xrdp.ini /etc/xrdp/
 COPY RDP/server/config/sesman.ini /etc/xrdp/
 
 # Create directories
+
 RUN mkdir -p /data/recordings /var/log/rdp_server && \
     chmod 755 /data/recordings /var/log/rdp_server
 
 # Expose RDP port
+
 EXPOSE 3389
 
 WORKDIR /app
 
 # Health check
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD nc -z localhost 3389 || exit 1
 
 # Start script
+
 COPY RDP/server/scripts/start_rdp_server.sh /start.sh
 RUN chmod +x /start.sh
 
 CMD ["/start.sh"]
-```
+
+```yaml
 
 #### **Hardware Access Context:**
 
 ```yaml
+
 # RDP/server/hardware_context.yaml
+
 privileged: true                          # Required for hardware access
 devices:
+
   - /dev/dri:/dev/dri                     # GPU device access
+
   - /dev/video0:/dev/video0               # Video capture device
+
   - /dev/snd:/dev/snd                     # Audio devices
+
 volumes:
+
   - /dev:/dev                             # Device access
+
   - rdp_recordings:/data/recordings       # Recording storage
+
   - rdp_config:/etc/xrdp                  # xrdp configuration
+
   - rdp_sessions:/var/lib/xrdp-sessions   # Session data
-```
+
+```xml
 
 ---
 
@@ -457,8 +558,11 @@ volumes:
 #### **Environment Variables Required:**
 
 ```bash
+
 # frontend/.env.local
-# Frontend Application Configuration  
+
+# Frontend Application Configuration
+
 NEXT_PUBLIC_API_BASE=http://api-gateway:8080
 NEXT_PUBLIC_WS_BASE=ws://api-gateway:8080
 NEXT_PUBLIC_TRON_NETWORK=mainnet
@@ -469,6 +573,7 @@ NEXT_PUBLIC_DEBUG_MODE=false
 NEXT_PUBLIC_ANALYTICS_ENABLED=false
 
 # Build-time variables
+
 API_BASE_URL=http://api-gateway:8080
 WEBSOCKET_BASE_URL=ws://api-gateway:8080
 TRON_WALLET_CONNECT_ENABLED=true
@@ -476,11 +581,13 @@ SESSION_MANAGEMENT_ENABLED=true
 ADMIN_PANEL_ENABLED=true
 MONITORING_ENABLED=true
 PWA_ENABLED=false
-```
+
+```json
 
 #### **Package.json Context:**
 
 ```json
+
 {
   "name": "lucid-rdp-frontend",
   "version": "1.0.0",
@@ -488,7 +595,7 @@ PWA_ENABLED=false
   "main": "next.config.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next build", 
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -497,7 +604,7 @@ PWA_ENABLED=false
   },
   "dependencies": {
     "next": "^14.0.0",
-    "react": "^18.2.0", 
+    "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -522,19 +629,22 @@ PWA_ENABLED=false
     "postcss": "^8.4.31"
   }
 }
-```
+
+```dockerfile
 
 #### **Docker Context:**
 
 ```dockerfile
+
 # frontend/Dockerfile
+
 FROM --platform=$TARGETPLATFORM node:18-alpine as dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --only=production
 
 FROM --platform=$TARGETPLATFORM node:18-alpine as builder
-WORKDIR /app  
+WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
@@ -545,7 +655,8 @@ COPY --from=builder /app/out /usr/share/nginx/html
 COPY frontend/nginx.conf /etc/nginx/nginx.conf
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
-```
+
+```xml
 
 ---
 
@@ -556,8 +667,11 @@ CMD ["nginx", "-g", "daemon off;"]
 #### **Environment Variables Required:**
 
 ```bash
+
 # database/.env.mongodb
+
 # MongoDB Configuration
+
 MONGO_INITDB_ROOT_USERNAME=lucid_admin
 MONGO_INITDB_ROOT_PASSWORD=<SECURE_PASSWORD>
 MONGO_INITDB_DATABASE=lucid
@@ -574,11 +688,13 @@ MONGODB_SLOW_QUERY_THRESHOLD=100
 MONGODB_PROFILING_LEVEL=1
 MONGODB_AUTH_SOURCE=admin
 MONGODB_SSL_MODE=disabled
-```
+
+```ini
 
 #### **Initialization Script Context:**
 
 ```javascript
+
 // database/init_collections.js
 // MongoDB Collection Initialization
 db = db.getSiblingDB('lucid');
@@ -603,7 +719,8 @@ db.createCollection("sessions", {
 sh.enableSharding("lucid");
 sh.shardCollection("lucid.sessions", {"_id": 1});
 db.sessions.createIndex({"owner_address": 1, "started_at": -1});
-```
+
+```xml
 
 ---
 
@@ -614,8 +731,11 @@ db.sessions.createIndex({"owner_address": 1, "started_at": -1});
 #### **Environment Variables Required:**
 
 ```bash
+
 # network/.env.tor
+
 # Tor Proxy Configuration
+
 TOR_SOCKS_PORT=9050
 TOR_CONTROL_PORT=9051
 TOR_CONTROL_PASSWORD=<SECURE_PASSWORD>
@@ -632,12 +752,15 @@ TOR_BANDWIDTH_RATE=1MB
 TOR_BANDWIDTH_BURST=2MB
 MAX_CIRCUIT_DIRTINESS=600
 NEW_CIRCUIT_PERIOD=30
-```
+
+```xml
 
 #### **Torrc Configuration Context:**
 
 ```bash
+
 # network/torrc.template
+
 SocksPort 9050
 ControlPort 9051
 HashedControlPassword <HASHED_PASSWORD>
@@ -645,12 +768,14 @@ DataDirectory /var/lib/tor
 Log notice file /var/log/tor/notices.log
 
 # Hidden Services
+
 HiddenServiceDir /var/lib/tor/hidden_service/
 HiddenServicePort 3389 rdp-server:3389
-HiddenServicePort 3000 frontend-gui:3000  
+HiddenServicePort 3000 frontend-gui:3000
 HiddenServicePort 8080 api-gateway:8080
 HiddenServiceVersion 3
-```
+
+```xml
 
 ---
 
@@ -661,8 +786,11 @@ HiddenServiceVersion 3
 #### **Environment Variables Required:**
 
 ```bash
+
 # blockchain/.env.contracts
+
 # Smart Contract Configuration
+
 TRON_NETWORK=mainnet                      # mainnet|shasta|nile
 TRON_NODE_URL=https://api.trongrid.io
 TRON_GRID_API_KEY=<TRON_GRID_API_KEY>
@@ -675,17 +803,20 @@ CONTRACT_VERIFICATION_ENABLED=true
 CONTRACT_SOURCE_VERIFICATION_URL=https://tronscan.org
 
 # Contract Addresses (Set after deployment)
+
 LUCID_ANCHORS_ADDRESS=
 PAYOUT_ROUTER_V0_ADDRESS=
 PAYOUT_ROUTER_KYC_ADDRESS=
 USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
 
 # On-System Chain Configuration
+
 ON_SYSTEM_CHAIN_RPC=http://localhost:8545
 ON_SYSTEM_PRIVATE_KEY=<ON_SYSTEM_PRIVATE_KEY>
 ON_SYSTEM_GAS_LIMIT=8000000
 ON_SYSTEM_GAS_PRICE=20000000000         # 20 Gwei
-```
+
+```ini
 
 ---
 
@@ -696,8 +827,11 @@ ON_SYSTEM_GAS_PRICE=20000000000         # 20 Gwei
 #### **Environment Variables Required:**
 
 ```bash
+
 # pi/.env.hardware
+
 # Pi 5 Hardware Configuration
+
 ARM64_OPTIMIZATION=true
 GPU_MEMORY_SPLIT=128                     # GPU memory in MB
 H264_HARDWARE_ACCELERATION=true
@@ -712,30 +846,40 @@ MEMORY_OVERCOMMIT=1
 SWAP_SIZE_MB=2048
 DISK_CACHE_SIZE_MB=256
 NETWORK_BUFFER_SIZE_KB=256
-```
+
+```bash
 
 #### **Hardware Configuration Script:**
 
 ```bash
+
 # pi/scripts/configure_pi5_hardware.sh
+
 #!/bin/bash
+
 # Pi 5 Hardware Optimization
 
 # Enable GPU memory split
+
 echo "gpu_mem=128" >> /boot/config.txt
 
 # Enable hardware acceleration
+
 echo "dtoverlay=vc4-kms-v3d" >> /boot/config.txt
 
 # Configure V4L2 devices
+
 modprobe v4l2_mem2mem
 
 # Set CPU governor
+
 echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
 # Configure memory
+
 echo 1 > /proc/sys/vm/overcommit_memory
-```
+
+```yaml
 
 ---
 
@@ -744,19 +888,28 @@ echo 1 > /proc/sys/vm/overcommit_memory
 ### **Docker Compose Service Integration:**
 
 ```yaml
+
 # Complete service configuration example
+
 version: '3.8'
 
 services:
   session-chunker:
     image: pickme/lucid:session-chunker
-    env_file: 
+    env_file:
+
       - sessions/core/.env.chunker
+
     volumes:
+
       - session_chunks:/data/chunks
+
       - chunker_temp:/tmp/chunker
+
     networks:
+
       - lucid_core_net
+
     deploy:
       resources:
         limits:
@@ -767,13 +920,21 @@ services:
   session-encryptor:
     image: pickme/lucid:session-encryptor
     env_file:
+
       - sessions/encryption/.env.encryptor
+
     secrets:
+
       - master_encryption_key
+
     volumes:
+
       - encryptor_temp:/tmp/encryption
+
     networks:
+
       - lucid_core_net
+
     deploy:
       resources:
         limits:
@@ -782,17 +943,28 @@ services:
   rdp-server:
     image: pickme/lucid:rdp-server
     env_file:
+
       - RDP/server/.env.rdp_server
+
     privileged: true
     devices:
+
       - /dev/dri:/dev/dri
+
       - /dev/video0:/dev/video0
+
     volumes:
+
       - /dev:/dev
+
       - rdp_recordings:/data/recordings
+
     networks:
+
       - lucid_core_net
+
     ports:
+
       - "3389:3389"
 
 volumes:
@@ -807,17 +979,23 @@ networks:
 secrets:
   master_encryption_key:
     external: true
-```
+
+```xml
 
 ### **Environment File Templates:**
 
 ```bash
+
 # .env.template - Complete environment template
+
 # Copy this to .env and fill in the values
 
 # =====================
+
 # SESSION PIPELINE
+
 # =====================
+
 CHUNK_SIZE_MIN=8388608
 CHUNK_SIZE_MAX=16777216
 COMPRESSION_LEVEL=3
@@ -825,52 +1003,74 @@ CIPHER_ALGORITHM=XChaCha20-Poly1305
 MERKLE_HASH_ALGORITHM=BLAKE3
 
 # =====================
+
 # AUTHENTICATION
+
 # =====================
+
 JWT_SECRET_KEY=<GENERATE_SECURE_256_BIT_KEY>
 TRON_NETWORK=mainnet
 HARDWARE_WALLET_SUPPORT=true
 
 # =====================
+
 # RDP SERVER
+
 # =====================
+
 XRDP_PORT=3389
 DISPLAY_SERVER=wayland
 HARDWARE_ACCELERATION=true
 VIDEO_ENCODER=h264_v4l2m2m
 
 # =====================
+
 # DATABASE
+
 # =====================
+
 MONGODB_URL=mongodb://mongodb:27017/lucid
 MONGODB_USERNAME=lucid_admin
 MONGODB_PASSWORD=<SECURE_PASSWORD>
 
 # =====================
+
 # BLOCKCHAIN
+
 # =====================
+
 TRON_NODE_URL=https://api.trongrid.io
 TRON_GRID_API_KEY=<TRON_GRID_API_KEY>
 LUCID_ANCHORS_ADDRESS=<DEPLOY_FIRST>
 
 # =====================
+
 # NETWORK
+
 # =====================
+
 TOR_SOCKS_PORT=9050
 ONION_SERVICE_PORTS=3389,3000,8080
 
 # =====================
+
 # FRONTEND
+
 # =====================
+
 NEXT_PUBLIC_API_BASE=http://api-gateway:8080
 NEXT_PUBLIC_TRON_NETWORK=mainnet
 
 # =====================
+
 # HARDWARE (Pi 5)
+
 # =====================
+
 ARM64_OPTIMIZATION=true
 GPU_MEMORY_SPLIT=128
 THERMAL_THROTTLING_TEMP=80
+
 ```
 
 ---
@@ -880,26 +1080,39 @@ THERMAL_THROTTLING_TEMP=80
 ### **Pre-Development Setup:**
 
 - [ ] All environment templates created
+
 - [ ] Dockerfiles written for each component
+
 - [ ] Volume mount requirements defined
+
 - [ ] Network integration planned
+
 - [ ] Security contexts specified
+
 - [ ] Hardware requirements documented
 
 ### **Development Phase Validation:**
 
 - [ ] Environment variables properly referenced in code
+
 - [ ] Docker builds succeed for all platforms
+
 - [ ] Configuration files validate against schemas
+
 - [ ] Secret management properly implemented
+
 - [ ] Resource limits appropriate for Pi 5
 
 ### **Integration Testing:**
 
 - [ ] All services start with proper configuration
+
 - [ ] Inter-service communication functional
+
 - [ ] Database connections established
+
 - [ ] Hardware access working on Pi 5
+
 - [ ] Tor network integration functional
 
 ---

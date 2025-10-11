@@ -1,26 +1,41 @@
 # Lucid Project - Optimal File Tree Structure for Distroless Builds
 
 ## Project Overview
+
 **Lucid** is a custom blockchain-integrated remote desktop access application with enhanced controllers and logging, targeting hybrid Windows 11 development → Raspberry Pi production deployment using distroless container builds.
 
 ## Current Analysis
+
 Based on the existing project structure, the following modules have been identified:
+
 - **GUI Modules**: Admin interface with bootstrap wizard, Node management with metrics dashboard, User interfaces with session management, Shared components with encryption and consent management, Build system with PyInstaller and signing, Comprehensive testing suite, Documentation and resources
+
 - **Core Modules**: Networking (Tor/Onion), Security, Configuration, Telemetry
+
 - **Blockchain Integration**: TRON (Shasta testnet + Mainnet), Payment systems
+
 - **RDP Protocol**: Client, Server, Security, Recording, Audit Trail, Resource Monitoring, Hardware Integration, Configuration, Testing, Documentation, Build System
+
 - **Infrastructure**: Docker containers, Compose configurations
+
 - **Node Management**: Consensus, DHT/CRDT, Economy, Governance
+
 - **User Management**: Authentication, Profile Management, Permissions, Role-based Access Control, Session Ownership, Activity Logging, Hardware Wallet Integration
+
 - **User Content**: Client Components, GUI Components, Wallet Management, API Client, Configuration Management, Notifications, Backup, Security Management
+
 - **Session Management**: Core, Encryption, Pipeline, Recording, Management Layer, Storage Management
+
 - **Storage Management**: MongoDB Sharding, Collections Management, Consensus Collections, Database Adapter, Session Storage, Chunk Storage, Backup/Recovery, Data Persistence, Monitoring, Security, Utilities, Testing, Configuration
+
 - **Database Services**: Comprehensive MongoDB Integration, Sharding Services, Collections Management, Consensus Collections, Database Adapters, Models, Utilities, Scripts, Configuration, Documentation
+
 - **VM Management**: Orchestration, Scheduling, Monitoring, Configuration, Blockchain Integration, Lifecycle Management, Resource Management, Security, Networking, Storage, Performance Monitoring, Testing, Integration
 
 ## Optimal File Tree Structure
 
-```
+```javascript
+
 Lucid/
 ├── 📁 .github/                          # GitHub workflows and templates
 │   ├── workflows/
@@ -223,22 +238,75 @@ Lucid/
 │   │   ├── __init__.py
 │   │   ├── core/                       # Core blockchain functionality
 │   │   │   ├── __init__.py
-│   │   │   ├── tron_client.py          # TRON blockchain client
-│   │   │   ├── wallet_manager.py       # Wallet management
-│   │   │   └── transaction_handler.py  # Transaction processing
+│   │   │   ├── blockchain_engine.py    # Main blockchain engine (rebuild per Spec-1a/1b/1c)
+│   │   │   ├── on_system_chain_client.py # On-System Chain client (EVM-compatible)
+│   │   │   ├── poot_consensus_engine.py # PoOT consensus engine
+│   │   │   ├── session_anchor.py       # Session anchoring dataclass
+│   │   │   ├── tron_payout.py          # TRON payment dataclass (payment layer only)
+│   │   │   ├── work_credits_proof.py   # Work credits proof submission
+│   │   │   ├── work_credits_tally.py   # Epoch work tally
+│   │   │   └── leader_schedule.py      # Block leader schedule
+│   │   ├── on_system_chain/            # On-System Data Chain integration
+│   │   │   ├── __init__.py
+│   │   │   ├── chain_client.py         # EVM-compatible chain client
+│   │   │   ├── lucid_anchors.py        # LucidAnchors contract integration
+│   │   │   ├── lucid_chunk_store.py    # LucidChunkStore contract integration
+│   │   │   ├── gas_estimator.py        # Gas estimation and circuit breakers
+│   │   │   └── merkle_utils.py         # Merkle root computation utilities
+│   │   ├── tron_payment/               # TRON payment service (isolated)
+│   │   │   ├── __init__.py
+│   │   │   ├── tron_node_system.py     # TRON node system (payment service only)
+│   │   │   ├── payout_router_v0.py     # Non-KYC payout router
+│   │   │   ├── payout_router_kyc.py    # KYC-gated payout router
+│   │   │   ├── usdt_trc20_handler.py   # USDT-TRC20 payment processing
+│   │   │   └── energy_manager.py       # TRX energy/bandwidth management
+│   │   ├── consensus/                  # PoOT consensus mechanisms
+│   │   │   ├── __init__.py
+│   │   │   ├── work_credits.py         # Work credits calculation
+│   │   │   ├── leader_selection.py     # Leader selection with cooldown
+│   │   │   ├── slot_timer.py           # 120s slot timing (immutable)
+│   │   │   ├── task_proofs.py          # Task proof submission and validation
+│   │   │   └── consensus_params.py     # Immutable consensus parameters
 │   │   ├── api/                        # Blockchain API
 │   │   │   ├── __init__.py
 │   │   │   ├── routes/                 # API routes
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── on_chain.py         # On-System Chain routes
+│   │   │   │   ├── consensus.py        # PoOT consensus routes
+│   │   │   │   └── tron_payment.py     # TRON payment routes
 │   │   │   ├── schemas/                # API schemas
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── session_anchor.py   # Session anchor schemas
+│   │   │   │   ├── work_proof.py       # Work proof schemas
+│   │   │   │   └── payout.py           # Payout schemas
 │   │   │   └── services/               # API services
-│   │   ├── governance/                 # Governance mechanisms
-│   │   │   ├── __init__.py
-│   │   │   ├── voting.py               # Voting system
-│   │   │   └── consensus.py            # Consensus mechanisms
-│   │   └── payment_systems/            # Payment processing
+│   │   │       ├── __init__.py
+│   │   │       ├── blockchain_service.py # Blockchain service
+│   │   │       ├── consensus_service.py # Consensus service
+│   │   │       └── payment_service.py   # Payment service
+│   │   └── tests/                      # Blockchain tests
 │   │       ├── __init__.py
-│   │       ├── tron_payments.py        # TRON payment processing
-│   │       └── payment_validator.py    # Payment validation
+│   │       ├── test_core/              # Core blockchain tests
+│   │       │   ├── __init__.py
+│   │       │   ├── test_blockchain_engine.py # Blockchain engine tests
+│   │       │   ├── test_on_chain_client.py # On-System Chain client tests
+│   │       │   ├── test_poot_consensus.py # PoOT consensus tests
+│   │       │   └── test_session_anchor.py # Session anchoring tests
+│   │       ├── test_consensus/         # Consensus tests
+│   │       │   ├── __init__.py
+│   │       │   ├── test_work_credits.py # Work credits tests
+│   │       │   ├── test_leader_selection.py # Leader selection tests
+│   │       │   └── test_slot_timer.py  # Slot timing tests
+│   │       ├── test_payment/           # Payment tests
+│   │       │   ├── __init__.py
+│   │       │   ├── test_tron_payment.py # TRON payment tests
+│   │       │   ├── test_payout_routers.py # Payout router tests
+│   │       │   └── test_usdt_handler.py # USDT handler tests
+│   │       └── integration/            # Integration tests
+│   │           ├── __init__.py
+│   │           ├── test_blockchain_flow.py # End-to-end blockchain flow
+│   │           ├── test_consensus_flow.py # Consensus flow tests
+│   │           └── test_payment_flow.py # Payment flow tests
 │   │
 │   ├── 📁 rdp/                         # Remote Desktop Protocol
 │   │   ├── __init__.py
@@ -931,117 +999,185 @@ Lucid/
 ├── 📁 README.md                        # Project README
 ├── 📁 LICENSE                          # Project license
 └── 📁 CHANGELOG.md                     # Change log
+
 ```
 
 ## GUI Architecture Overview
 
 ### Comprehensive GUI Structure
+
 The GUI system is designed as a modular, multi-interface application with the following key components:
 
 #### Entry Points and Launchers
+
 - **main.py**: Platform-aware launcher with automatic interface detection
+
 - **user_main.py**: User interface entry point with session management
+
 - **admin_main.py**: Administrative interface with full system control
+
 - **node_main.py**: Node worker interface for distributed operations
 
 #### Interface Modules
+
 - **Admin Interface**: Bootstrap wizard, backup/restore, diagnostics, key management, payouts
+
 - **Node Interface**: Metrics dashboard, wallet monitoring, payout batches, alerts management
+
 - **User Interface**: Session management and user-specific operations
+
 - **Shared Components**: Connection parameters, consent management, QR scanning, file pickers, notifications, encryption
 
 #### Configuration and Resources
+
 - **Configuration**: Default settings, Tor templates, theme definitions
+
 - **Resources**: Icons, fonts, terms of service documents
+
 - **Build System**: PyInstaller specs, Tor vendor management, code signing, installer creation
 
 #### Testing and Documentation
+
 - **Testing**: Comprehensive test suite for core, user, admin, node, and integration testing
+
 - **Documentation**: User guides, admin guides, node guides, development guidelines
 
 ### Key Features
+
 1. **Modular Design**: Each interface can be built and deployed independently
-2. **Shared Components**: Common functionality centralized for consistency
-3. **Security Integration**: Local encryption, consent management, secure file operations
-4. **Build Automation**: Complete build pipeline with signing and installer creation
-5. **Comprehensive Testing**: Full test coverage across all GUI components
-6. **Resource Management**: Centralized icons, fonts, and documentation
+
+1. **Shared Components**: Common functionality centralized for consistency
+
+1. **Security Integration**: Local encryption, consent management, secure file operations
+
+1. **Build Automation**: Complete build pipeline with signing and installer creation
+
+1. **Comprehensive Testing**: Full test coverage across all GUI components
+
+1. **Resource Management**: Centralized icons, fonts, and documentation
 
 ## Distroless Build Strategy
 
 ### Multi-Stage Build Approach
+
 1. **Base Stage**: Common dependencies and utilities
-2. **Build Stage**: Application compilation and packaging
-3. **Runtime Stage**: Minimal distroless runtime environment
+
+1. **Build Stage**: Application compilation and packaging
+
+1. **Runtime Stage**: Minimal distroless runtime environment
 
 ### Service-Specific Distroless Images
+
 - **GUI Service**: Tkinter-based admin, user, and node interfaces with comprehensive shared components, build system, and testing framework
+
 - **User Management Service**: Authentication, profile management, permissions, role-based access control, session ownership, activity logging, and hardware wallet integration
+
 - **User Content Service**: Client components, GUI components, wallet management, API client, configuration management, notifications, backup, and security management
+
 - **Session Management Service**: Core session functionality, encryption, pipeline processing, recording, management layer, and storage management
+
 - **Storage Service**: MongoDB sharding, collections management, consensus collections, database adapter, session storage, chunk storage, backup/recovery, data persistence, monitoring, security, utilities, and testing
+
 - **Database Service**: Comprehensive MongoDB integration, sharding services, collections management, consensus collections, database adapters, models, utilities, scripts, configuration, and documentation
+
 - **VM Management Service**: Orchestration, scheduling, monitoring, configuration, blockchain integration, lifecycle management, resource management, security, networking, storage, performance monitoring, testing, and integration
+
 - **Blockchain Service**: TRON integration and payment processing
+
 - **RDP Service**: Remote desktop protocol implementation with comprehensive audit trail, resource monitoring, hardware acceleration, and security controls
+
 - **Node Service**: Distributed node management and consensus
 
 ### Build Optimization
+
 - **Layer Caching**: Optimized layer ordering for maximum cache hits
+
 - **Multi-Architecture**: ARM64 support for Raspberry Pi deployment
+
 - **Security Scanning**: Automated vulnerability scanning
+
 - **Size Optimization**: Minimal attack surface and image size
 
 ## Deployment Strategy
 
 ### Development Environment
+
 - **Windows 11**: Primary development platform
+
 - **Docker Desktop**: Container runtime
+
 - **VS Code**: Development environment with dev containers
 
 ### Production Environment
+
 - **Raspberry Pi**: Target deployment platform
+
 - **SSH Deployment**: Automated deployment via SSH
+
 - **Health Monitoring**: Continuous health checks and monitoring
 
 ### CI/CD Pipeline
+
 - **GitHub Actions**: Automated builds and testing
+
 - **Multi-Stage Builds**: Optimized distroless image creation
+
 - **Automated Deployment**: Push-to-deploy for Raspberry Pi
 
 ## Key Benefits of This Structure
 
 1. **Modularity**: Clear separation of concerns with dedicated modules
-2. **Scalability**: Easy to add new services and components
-3. **Maintainability**: Well-organized code structure for easy maintenance
-4. **Security**: Distroless builds minimize attack surface
-5. **Performance**: Optimized builds and deployment strategies
-6. **Cross-Platform**: Support for Windows development and Pi production
-7. **Automation**: Comprehensive build and deployment automation
-8. **Documentation**: Extensive documentation for all components
-9. **Testing**: Comprehensive test coverage at all levels
-10. **Compliance**: Built-in compliance and security scanning
+
+1. **Scalability**: Easy to add new services and components
+
+1. **Maintainability**: Well-organized code structure for easy maintenance
+
+1. **Security**: Distroless builds minimize attack surface
+
+1. **Performance**: Optimized builds and deployment strategies
+
+1. **Cross-Platform**: Support for Windows development and Pi production
+
+1. **Automation**: Comprehensive build and deployment automation
+
+1. **Documentation**: Extensive documentation for all components
+
+1. **Testing**: Comprehensive test coverage at all levels
+
+1. **Compliance**: Built-in compliance and security scanning
 
 ## Migration Strategy
 
 ### Phase 1: Core Restructuring
+
 - Reorganize existing modules into new structure
+
 - Update import paths and dependencies
+
 - Implement new build system
 
 ### Phase 2: Distroless Implementation
+
 - Create distroless base images
+
 - Implement multi-stage builds
+
 - Optimize layer caching
 
 ### Phase 3: Deployment Automation
+
 - Implement CI/CD pipeline
+
 - Create deployment scripts
+
 - Set up monitoring and health checks
 
 ### Phase 4: Testing and Validation
+
 - Comprehensive testing suite
+
 - Performance benchmarking
+
 - Security validation
 
 This structure provides a solid foundation for the Lucid project's continued development and deployment, with particular emphasis on distroless builds for enhanced security and minimal resource usage on Raspberry Pi deployments.
