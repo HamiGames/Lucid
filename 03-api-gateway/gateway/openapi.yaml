@@ -849,6 +849,276 @@ components:
           minimum: 1
           maximum: 200
 
+    # --------- Session Management Schemas ----------
+    SessionCreate:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: User identifier
+          example: "user-123"
+        owner_address:
+          type: string
+          description: TRON wallet address of session owner
+          pattern: "^T[a-zA-Z0-9]{33}$"
+          example: "TTest123456789012345678901234567890"
+        node_id:
+          type: string
+          description: Node identifier for session hosting
+          example: "node-001"
+        policy_hash:
+          type: string
+          description: Hash of trust policy (optional)
+          example: "sha256-policy-hash"
+      required:
+        - user_id
+        - owner_address
+        - node_id
+
+    SessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Unique session identifier
+          example: "session-abc123"
+        user_id:
+          type: string
+          description: User identifier
+          example: "user-123"
+        owner_address:
+          type: string
+          description: TRON wallet address
+          example: "TTest123456789012345678901234567890"
+        node_id:
+          type: string
+          description: Node identifier
+          example: "node-001"
+        state:
+          type: string
+          enum: [initializing, recording, finalizing, anchoring, completed, failed]
+          description: Current session state
+          example: "initializing"
+        created_at:
+          type: string
+          format: date-time
+          description: Session creation timestamp
+          example: "2024-01-01T00:00:00Z"
+        started_at:
+          type: string
+          format: date-time
+          description: Session start timestamp
+          example: "2024-01-01T00:05:00Z"
+        ended_at:
+          type: string
+          format: date-time
+          description: Session end timestamp
+          example: "2024-01-01T01:00:00Z"
+        policy_hash:
+          type: string
+          description: Trust policy hash
+          example: "sha256-policy-hash"
+      required:
+        - session_id
+        - user_id
+        - owner_address
+        - node_id
+        - state
+        - created_at
+
+    SessionDetail:
+      allOf:
+        - $ref: '#/components/schemas/SessionResponse'
+        - type: object
+          properties:
+            manifest_hash:
+              type: string
+              description: BLAKE3 hash of session manifest
+              example: "blake3-manifest-hash"
+            merkle_root:
+              type: string
+              description: Merkle tree root hash
+              example: "blake3-merkle-root"
+            anchor_txid:
+              type: string
+              description: Blockchain anchor transaction ID
+              example: "0x1234567890abcdef"
+            total_chunks:
+              type: integer
+              description: Total number of session chunks
+              example: 15
+            total_size:
+              type: integer
+              description: Total session size in bytes
+              example: 45678901
+
+    SessionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionResponse'
+          description: List of sessions
+        total:
+          type: integer
+          description: Total number of sessions
+          example: 1
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        page_size:
+          type: integer
+          description: Items per page
+          example: 20
+        has_next:
+          type: boolean
+          description: Whether there are more pages
+          example: false
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - has_next
+
+    ManifestResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Session identifier
+          example: "session-abc123"
+        manifest_hash:
+          type: string
+          description: BLAKE3 hash of manifest
+          example: "blake3-manifest-hash"
+        merkle_root:
+          type: string
+          description: Merkle tree root
+          example: "blake3-merkle-root"
+        chunk_count:
+          type: integer
+          description: Total number of chunks
+          example: 15
+        total_size:
+          type: integer
+          description: Total session size in bytes
+          example: 45678901
+        created_at:
+          type: string
+          format: date-time
+          description: Manifest creation timestamp
+          example: "2024-01-01T01:00:00Z"
+        anchor_txid:
+          type: string
+          description: Blockchain transaction ID
+          example: "0x1234567890abcdef"
+      required:
+        - session_id
+        - manifest_hash
+        - merkle_root
+        - chunk_count
+        - total_size
+        - created_at
+
+    TrustPolicy:
+      type: object
+      properties:
+        policy_id:
+          type: string
+          description: Unique policy identifier
+          example: "policy-123"
+        session_id:
+          type: string
+          description: Associated session identifier
+          example: "session-abc123"
+        input_controls:
+          type: object
+          properties:
+            mouse_enabled:
+              type: boolean
+              example: true
+            keyboard_enabled:
+              type: boolean
+              example: true
+            mouse_blocklist:
+              type: array
+              items:
+                type: string
+              example: []
+            keyboard_blocklist:
+              type: array
+              items:
+                type: string
+              example: ["Ctrl+Alt+Del"]
+        clipboard_controls:
+          type: object
+          properties:
+            host_to_remote:
+              type: boolean
+              example: true
+            remote_to_host:
+              type: boolean
+              example: true
+            max_bytes:
+              type: integer
+              example: 1048576
+        file_transfer_controls:
+          type: object
+          properties:
+            upload_enabled:
+              type: boolean
+              example: true
+            download_enabled:
+              type: boolean
+              example: true
+            allowed_dirs:
+              type: array
+              items:
+                type: string
+              example: ["/tmp", "/home/user/documents"]
+            blocked_extensions:
+              type: array
+              items:
+                type: string
+              example: [".exe", ".bat", ".sh"]
+            max_file_size:
+              type: integer
+              example: 104857600
+        system_controls:
+          type: object
+          properties:
+            screenshare_enabled:
+              type: boolean
+              example: true
+            audio_enabled:
+              type: boolean
+              example: false
+            camera_enabled:
+              type: boolean
+              example: false
+            shell_channels:
+              type: boolean
+              example: false
+        policy_hash:
+          type: string
+          description: SHA256 hash of policy
+          example: "sha256-policy-hash"
+        signature:
+          type: string
+          description: Ed25519 signature of policy
+          example: "ed25519-signature"
+      required:
+        - policy_id
+        - session_id
+        - input_controls
+        - clipboard_controls
+        - file_transfer_controls
+        - system_controls
+        - policy_hash
+
 security:
 - bearerAuth: []
 - apiKeyAuth: []
@@ -860,6 +1130,12 @@ tags:
   description: Authentication & token lifecycle
 - name: users
   description: User management
+- name: sessions
+  description: Session lifecycle management
+- name: manifests
+  description: Session manifest and proof retrieval
+- name: policy
+  description: Trust policy enforcement
 - name: chain
   description: Blockchain insights (proxied)
 - name: wallets

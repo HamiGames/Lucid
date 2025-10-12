@@ -18,6 +18,11 @@ from app.routes.users import router as users_router
 from app.routes.chain_proxy import router as chain_proxy_router
 from app.routes.wallets_proxy import router as wallets_proxy_router
 
+# Session Management routers
+from app.routes.sessions import router as sessions_router
+from app.routes.manifests import router as manifests_router
+from app.routes.trust_policy import router as trust_policy_router
+
 # Optional: Mongo health probe (kept non-fatal)
 try:
     from app.db.connection import ping as mongo_ping  # type: ignore
@@ -78,6 +83,11 @@ def create_app() -> FastAPI:
     app.include_router(meta_router)
     app.include_router(auth_router, prefix="/auth")
     app.include_router(users_router, prefix="/users")
+
+    # Session Management endpoints
+    app.include_router(sessions_router, prefix="/sessions", tags=["sessions"])
+    app.include_router(manifests_router, prefix="/sessions", tags=["manifests"])  # nested under /sessions
+    app.include_router(trust_policy_router, prefix="/sessions", tags=["policy"])
 
     # Proxied Cluster B endpoints (Blockchain Core)
     # These appear in the gateway OpenAPI as /chain/* and /wallets/*

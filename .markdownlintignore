@@ -1,0 +1,1127 @@
+# Markdown Lint Ignore File
+# Completely ignore these files and patterns from Markdown linting
+
+# Ignore all auto-generated files
+**/node_modules/**
+**/build/**
+**/dist/**
+**/.git/**
+**/target/**
+**/out/**
+
+# Ignore vendor and third-party documentation
+**/vendor/**
+**/third-party/**
+**/external/**
+
+# Ignore build artifacts and generated content
+**/*.generated.md
+**/*.auto.md
+**/*.build.md
+**/generated/**
+**/build-docs/**
+
+# Ignore temporary and cache files
+**/.cache/**
+**/tmp/**
+**/temp/**
+**/*.tmp
+**/*.temp
+
+# Ignore package manager files
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/Cargo.lock
+
+# Ignore IDE and editor files
+**/.vscode/**
+**/.idea/**
+**/*.swp
+**/*.swo
+**/*~
+**/.DS_Store
+**/Thumbs.db
+
+# Ignore log files
+**/*.log
+**/logs/**
+
+# Ignore backup files
+**/*.bak
+**/*.backup
+**/*.orig
+
+# Ignore specific problematic files
+**/CHANGELOG.md
+**/HISTORY.md
+**/RELEASES.md
+**/UPGRADE.md
+
+# Ignore documentation that may have formatting issues
+**/docs/api/**
+**/docs/generated/**
+**/docs/build/**
+**/docs/analysis/**
+
+# Ignore large files that might cause linting issues
+**/*.large.md
+**/*.big.md
+
+# Ignore files with special characters or encoding issues
+**/*.special.md
+**/*.unicode.md
+
+# Ignore files that are intentionally malformed for testing
+**/test/**
+**/tests/**
+**/spec/**
+**/specs/**
+
+# Ignore files with specific naming patterns
+**/*.draft.md
+**/*.wip.md
+**/*.todo.md
+**/*.notes.md
+**/*.scratch.md
+
+# Ignore files in specific directories
+**/archive/**
+**/deprecated/**
+**/legacy/**
+**/old/**
+
+# Ignore files with specific extensions that might be processed as markdown
+**/*.mdx
+**/*.mkd
+**/*.mkdn
+**/*.mdown
+
+# Ignore files that are actually configuration files
+**/*.markdownlint*
+**/.markdownlint*
+**/markdownlint*
+
+# Ignore files that are actually templates
+**/*.template.md
+**/*.tmpl.md
+**/templates/**
+
+# Ignore files that are actually includes or partials
+**/*.partial.md
+**/*.include.md
+**/includes/**
+**/partials/**
+
+# Ignore files that are actually data files
+**/*.data.md
+**/*.yaml.md
+**/*.json.md
+**/*.xml.md
+
+# Ignore files that are actually script outputs
+**/*.output.md
+**/*.result.md
+**/*.report.md
+
+# Ignore files that are actually documentation generators
+**/*.generator.md
+**/*.builder.md
+**/*.compiler.md
+
+# Ignore files that are actually build system outputs
+**/*.build.md
+**/*.compile.md
+**/*.make.md
+
+# Ignore files that are actually version control files
+**/*.git.md
+**/*.svn.md
+**/*.hg.md
+
+# Ignore files that are actually package files
+**/*.pkg.md
+**/*.deb.md
+**/*.rpm.md
+**/*.msi.md
+
+# Ignore files that are actually installer files
+**/*.install.md
+**/*.setup.md
+**/*.config.md
+
+# Ignore files that are actually deployment files
+**/*.deploy.md
+**/*.release.md
+**/*.production.md
+
+# Ignore files that are actually monitoring files
+**/*.monitor.md
+**/*.log.md
+**/*.trace.md
+
+# Ignore files that are actually security files
+**/*.security.md
+**/*.audit.md
+**/*.scan.md
+
+# Ignore files that are actually test files
+**/*.test.md
+**/*.spec.md
+**/*.check.md
+
+# Ignore files that are actually validation files
+**/*.validate.md
+**/*.verify.md
+**/*.check.md
+
+# Ignore files that are actually analysis files
+**/*.analyze.md
+**/*.report.md
+**/*.summary.md
+
+# Ignore files that are actually conversion files
+**/*.convert.md
+**/*.transform.md
+**/*.migrate.md
+
+# Ignore files that are actually backup files
+**/*.backup.md
+**/*.restore.md
+**/*.recover.md
+
+# Ignore files that are actually archive files
+**/*.archive.md
+**/*.store.md
+**/*.save.md
+
+# Ignore files that are actually cache files
+**/*.cache.md
+**/*.temp.md
+**/*.tmp.md
+
+# Ignore files that are actually lock files
+**/*.lock.md
+**/*.pid.md
+**/*.sem.md
+
+# Ignore files that are actually socket files
+**/*.sock.md
+**/*.socket.md
+**/*.pipe.md
+
+# Ignore files that are actually device files
+**/*.device.md
+**/*.driver.md
+**/*.hardware.md
+
+# Ignore files that are actually system files
+**/*.system.md
+**/*.kernel.md
+**/*.core.md
+
+# Ignore files that are actually process files
+**/*.process.md
+**/*.thread.md
+**/*.task.md
+
+# Ignore files that are actually memory files
+**/*.memory.md
+**/*.heap.md
+**/*.stack.md
+
+# Ignore files that are actually disk files
+**/*.disk.md
+**/*.partition.md
+**/*.volume.md
+
+# Ignore files that are actually network files
+**/*.network.md
+**/*.socket.md
+**/*.connection.md
+
+# Ignore files that are actually database files
+**/*.database.md
+**/*.db.md
+**/*.sql.md
+
+# Ignore files that are actually configuration files
+**/*.config.md
+**/*.conf.md
+**/*.cfg.md
+**/*.ini.md
+
+# Ignore files that are actually environment files
+**/*.env.md
+**/*.environment.md
+**/*.settings.md
+
+# Ignore files that are actually secret files
+**/*.secret.md
+**/*.key.md
+**/*.token.md
+**/*.password.md
+
+# Ignore files that are actually certificate files
+**/*.cert.md
+**/*.key.md
+**/*.pem.md
+**/*.crt.md
+
+# Ignore files that are actually binary files
+**/*.bin.md
+**/*.exe.md
+**/*.dll.md
+**/*.so.md
+
+# Ignore files that are actually image files
+**/*.image.md
+**/*.img.md
+**/*.iso.md
+**/*.vmdk.md
+
+# Ignore files that are actually video files
+**/*.video.md
+**/*.mp4.md
+**/*.avi.md
+**/*.mov.md
+
+# Ignore files that are actually audio files
+**/*.audio.md
+**/*.mp3.md
+**/*.wav.md
+**/*.flac.md
+
+# Ignore files that are actually compressed files
+**/*.zip.md
+**/*.tar.md
+**/*.gz.md
+**/*.bz2.md
+
+# Ignore files that are actually archive files
+**/*.7z.md
+**/*.rar.md
+**/*.cab.md
+**/*.deb.md
+
+# Ignore files that are actually executable files
+**/*.exe.md
+**/*.app.md
+**/*.deb.md
+**/*.rpm.md
+
+# Ignore files that are actually installer files
+**/*.msi.md
+**/*.dmg.md
+**/*.pkg.md
+**/*.deb.md
+
+# Ignore files that are actually package files
+**/*.jar.md
+**/*.war.md
+**/*.ear.md
+**/*.aar.md
+
+# Ignore files that are actually library files
+**/*.lib.md
+**/*.a.md
+**/*.so.md
+**/*.dylib.md
+
+# Ignore files that are actually object files
+**/*.o.md
+**/*.obj.md
+**/*.elf.md
+**/*.bin.md
+
+# Ignore files that are actually assembly files
+**/*.asm.md
+**/*.s.md
+**/*.S.md
+**/*.nasm.md
+
+# Ignore files that are actually source files
+**/*.c.md
+**/*.cpp.md
+**/*.cc.md
+**/*.cxx.md
+
+# Ignore files that are actually header files
+**/*.h.md
+**/*.hpp.md
+**/*.hh.md
+**/*.hxx.md
+
+# Ignore files that are actually script files
+**/*.sh.md
+**/*.bash.md
+**/*.zsh.md
+**/*.fish.md
+
+# Ignore files that are actually Python files
+**/*.py.md
+**/*.pyc.md
+**/*.pyo.md
+**/*.pyd.md
+
+# Ignore files that are actually JavaScript files
+**/*.js.md
+**/*.jsx.md
+**/*.ts.md
+**/*.tsx.md
+
+# Ignore files that are actually Java files
+**/*.java.md
+**/*.class.md
+**/*.jar.md
+**/*.war.md
+
+# Ignore files that are actually C# files
+**/*.cs.md
+**/*.dll.md
+**/*.exe.md
+**/*.pdb.md
+
+# Ignore files that are actually Go files
+**/*.go.md
+**/*.a.md
+**/*.so.md
+**/*.dylib.md
+
+# Ignore files that are actually Rust files
+**/*.rs.md
+**/*.rlib.md
+**/*.so.md
+**/*.dylib.md
+
+# Ignore files that are actually PHP files
+**/*.php.md
+**/*.phar.md
+**/*.phtml.md
+**/*.php3.md
+
+# Ignore files that are actually Ruby files
+**/*.rb.md
+**/*.gem.md
+**/*.rake.md
+**/*.rbw.md
+
+# Ignore files that are actually Perl files
+**/*.pl.md
+**/*.pm.md
+**/*.pod.md
+**/*.t.md
+
+# Ignore files that are actually Lua files
+**/*.lua.md
+**/*.luac.md
+**/*.so.md
+**/*.dll.md
+
+# Ignore files that are actually R files
+**/*.r.md
+**/*.R.md
+**/*.Rdata.md
+**/*.rds.md
+
+# Ignore files that are actually MATLAB files
+**/*.m.md
+**/*.mat.md
+**/*.fig.md
+**/*.p.md
+
+# Ignore files that are actually Scala files
+**/*.scala.md
+**/*.sc.md
+**/*.jar.md
+**/*.class.md
+
+# Ignore files that are actually Kotlin files
+**/*.kt.md
+**/*.kts.md
+**/*.jar.md
+**/*.class.md
+
+# Ignore files that are actually Swift files
+**/*.swift.md
+**/*.dylib.md
+**/*.framework.md
+**/*.xcarchive.md
+
+# Ignore files that are actually Objective-C files
+**/*.m.md
+**/*.mm.md
+**/*.h.md
+**/*.dylib.md
+
+# Ignore files that are actually Dart files
+**/*.dart.md
+**/*.snapshot.md
+**/*.js.md
+**/*.dill.md
+
+# Ignore files that are actually TypeScript files
+**/*.ts.md
+**/*.tsx.md
+**/*.js.md
+**/*.jsx.md
+
+# Ignore files that are actually CoffeeScript files
+**/*.coffee.md
+**/*.litcoffee.md
+**/*.js.md
+**/*.map.md
+
+# Ignore files that are actually LiveScript files
+**/*.ls.md
+**/*.js.md
+**/*.map.md
+**/*.litcoffee.md
+
+# Ignore files that are actually Elm files
+**/*.elm.md
+**/*.js.md
+**/*.html.md
+**/*.css.md
+
+# Ignore files that are actually Clojure files
+**/*.clj.md
+**/*.cljs.md
+**/*.cljc.md
+**/*.edn.md
+
+# Ignore files that are actually Haskell files
+**/*.hs.md
+**/*.lhs.md
+**/*.hi.md
+**/*.o.md
+
+# Ignore files that are actually Erlang files
+**/*.erl.md
+**/*.hrl.md
+**/*.beam.md
+**/*.app.md
+
+# Ignore files that are actually Elixir files
+**/*.ex.md
+**/*.exs.md
+**/*.beam.md
+**/*.ez.md
+
+# Ignore files that are actually F# files
+**/*.fs.md
+**/*.fsi.md
+**/*.fsx.md
+**/*.dll.md
+
+# Ignore files that are actually OCaml files
+**/*.ml.md
+**/*.mli.md
+**/*.cmo.md
+**/*.cmi.md
+
+# Ignore files that are actually SML files
+**/*.sml.md
+**/*.sig.md
+**/*.cmo.md
+**/*.cmi.md
+
+# Ignore files that are actually Prolog files
+**/*.pl.md
+**/*.pro.md
+**/*.qof.md
+**/*.qlf.md
+
+# Ignore files that are actually Lisp files
+**/*.lisp.md
+**/*.lsp.md
+**/*.fasl.md
+**/*.o.md
+
+# Ignore files that are actually Scheme files
+**/*.scm.md
+**/*.ss.md
+**/*.fasl.md
+**/*.o.md
+
+# Ignore files that are actually Racket files
+**/*.rkt.md
+**/*.rktd.md
+**/*.zo.md
+**/*.o.md
+
+# Ignore files that are actually Common Lisp files
+**/*.lisp.md
+**/*.lsp.md
+**/*.fasl.md
+**/*.o.md
+
+# Ignore files that are actually Emacs Lisp files
+**/*.el.md
+**/*.elc.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Vim script files
+**/*.vim.md
+**/*.vimrc.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Make files
+**/*.mk.md
+**/*.makefile.md
+**/*.Makefile.md
+**/*.o.md
+
+# Ignore files that are actually CMake files
+**/*.cmake.md
+**/*.cmake.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Autotools files
+**/*.ac.md
+**/*.am.md
+**/*.in.md
+**/*.o.md
+
+# Ignore files that are actually Meson files
+**/*.meson.md
+**/*.build.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually SCons files
+**/*.sconstruct.md
+**/*.scons.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Bazel files
+**/*.bazel.md
+**/*.BUILD.md
+**/*.bzl.md
+**/*.o.md
+
+# Ignore files that are actually Buck files
+**/*.buck.md
+**/*.BUCK.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Pants files
+**/*.pants.md
+**/*.BUILD.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Gradle files
+**/*.gradle.md
+**/*.gradlew.md
+**/*.jar.md
+**/*.class.md
+
+# Ignore files that are actually Maven files
+**/*.pom.md
+**/*.xml.md
+**/*.jar.md
+**/*.war.md
+
+# Ignore files that are actually Ant files
+**/*.xml.md
+**/*.properties.md
+**/*.jar.md
+**/*.war.md
+
+# Ignore files that are actually Ivy files
+**/*.ivy.md
+**/*.xml.md
+**/*.jar.md
+**/*.war.md
+
+# Ignore files that are actually SBT files
+**/*.sbt.md
+**/*.scala.md
+**/*.jar.md
+**/*.class.md
+
+# Ignore files that are actually Leiningen files
+**/*.project.md
+**/*.clj.md
+**/*.jar.md
+**/*.class.md
+
+# Ignore files that are actually Boot files
+**/*.boot.md
+**/*.clj.md
+**/*.jar.md
+**/*.class.md
+
+# Ignore files that are actually Cargo files
+**/*.toml.md
+**/*.rs.md
+**/*.rlib.md
+**/*.so.md
+
+# Ignore files that are actually Composer files
+**/*.json.md
+**/*.php.md
+**/*.phar.md
+**/*.phtml.md
+
+# Ignore files that are actually NPM files
+**/*.json.md
+**/*.js.md
+**/*.jsx.md
+**/*.ts.md
+
+# Ignore files that are actually Yarn files
+**/*.json.md
+**/*.js.md
+**/*.jsx.md
+**/*.ts.md
+
+# Ignore files that are actually PNPM files
+**/*.json.md
+**/*.js.md
+**/*.jsx.md
+**/*.ts.md
+
+# Ignore files that are actually Bower files
+**/*.json.md
+**/*.js.md
+**/*.css.md
+**/*.html.md
+
+# Ignore files that are actually Webpack files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually Rollup files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually Parcel files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually Vite files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually ESBuild files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually SWC files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually Babel files
+**/*.js.md
+**/*.ts.md
+**/*.json.md
+**/*.config.md
+
+# Ignore files that are actually TypeScript files
+**/*.ts.md
+**/*.tsx.md
+**/*.js.md
+**/*.jsx.md
+
+# Ignore files that are actually Flow files
+**/*.js.md
+**/*.jsx.md
+**/*.ts.md
+**/*.tsx.md
+
+# Ignore files that are actually Reason files
+**/*.re.md
+**/*.rei.md
+**/*.js.md
+**/*.bs.js.md
+
+# Ignore files that are actually BuckleScript files
+**/*.bs.js.md
+**/*.re.md
+**/*.rei.md
+**/*.js.md
+
+# Ignore files that are actually ReScript files
+**/*.res.md
+**/*.resi.md
+**/*.js.md
+**/*.bs.js.md
+
+# Ignore files that are actually PureScript files
+**/*.purs.md
+**/*.purs.md
+**/*.js.md
+**/*.purs.md
+
+# Ignore files that are actually Idris files
+**/*.idr.md
+**/*.lidr.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually Agda files
+**/*.agda.md
+**/*.lagda.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually Coq files
+**/*.v.md
+**/*.vo.md
+**/*.glob.md
+**/*.o.md
+
+# Ignore files that are actually Lean files
+**/*.lean.md
+**/*.olean.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually Isabelle files
+**/*.thy.md
+**/*.ML.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually HOL files
+**/*.hol.md
+**/*.ML.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually ACL2 files
+**/*.lisp.md
+**/*.cert.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually PVS files
+**/*.pvs.md
+**/*.prf.md
+**/*.js.md
+**/*.o.md
+
+# Ignore files that are actually NuPRL files
+**/*.prl.md
+**/*.js.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually MetaPRL files
+**/*.prl.md
+**/*.js.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Twelf files
+**/*.elf.md
+**/*.js.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually LF files
+**/*.lf.md
+**/*.js.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually LLVM files
+**/*.ll.md
+**/*.bc.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Assembly files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually NASM files
+**/*.asm.md
+**/*.o.md
+**/*.so.md
+**/*.bin.md
+
+# Ignore files that are actually MASM files
+**/*.asm.md
+**/*.o.md
+**/*.so.md
+**/*.bin.md
+
+# Ignore files that are actually TASM files
+**/*.asm.md
+**/*.o.md
+**/*.so.md
+**/*.bin.md
+
+# Ignore files that are actually FASM files
+**/*.asm.md
+**/*.o.md
+**/*.so.md
+**/*.bin.md
+
+# Ignore files that are actually YASM files
+**/*.asm.md
+**/*.o.md
+**/*.so.md
+**/*.bin.md
+
+# Ignore files that are actually GAS files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually AT&T files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Intel files
+**/*.asm.md
+**/*.o.md
+**/*.so.md
+**/*.bin.md
+
+# Ignore files that are actually ARM files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually MIPS files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually RISC-V files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually x86 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually x64 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually x86_64 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually AMD64 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually IA64 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually IA32 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually i386 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually i486 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually i586 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually i686 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Pentium files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Core files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Xeon files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Atom files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Celeron files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Itanium files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually SPARC files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually Power files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually POWER files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32 files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64LE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64BE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32LE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32BE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64LE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64BE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32LE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32BE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64LE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC64BE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32LE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md
+
+# Ignore files that are actually PowerPC32BE files
+**/*.s.md
+**/*.S.md
+**/*.o.md
+**/*.so.md

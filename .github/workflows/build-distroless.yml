@@ -39,12 +39,12 @@ jobs:
           # Check if any core files changed that require full rebuild
           if git diff --name-only HEAD~1 HEAD | grep -E '^(src/|infrastructure/docker/|build/|requirements.*\.txt|pyproject\.toml)' > /dev/null; then
             echo "build-all=true" >> $GITHUB_OUTPUT
-            echo "services=gui,blockchain,rdp,node,storage,database,vm" >> $GITHUB_OUTPUT
+            echo "services=user-gui,admin-gui,node-gui,blockchain,rdp,node,storage,database,vm" >> $GITHUB_OUTPUT
           else
             # Check for specific service changes
             services=""
-            if git diff --name-only HEAD~1 HEAD | grep -E '^(gui/|src/gui/)' > /dev/null; then
-              services="$services,gui"
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(gui/|src/gui/|apps/gui-)' > /dev/null; then
+              services="$services,user-gui,admin-gui,node-gui"
             fi
             if git diff --name-only HEAD~1 HEAD | grep -E '^(blockchain/|src/blockchain/)' > /dev/null; then
               services="$services,blockchain"
@@ -68,7 +68,7 @@ jobs:
             # If no specific services changed, build all
             if [ -z "$services" ]; then
               echo "build-all=true" >> $GITHUB_OUTPUT
-              echo "services=gui,blockchain,rdp,node,storage,database,vm" >> $GITHUB_OUTPUT
+              echo "services=user-gui,admin-gui,node-gui,blockchain,rdp,node,storage,database,vm" >> $GITHUB_OUTPUT
             else
               echo "build-all=false" >> $GITHUB_OUTPUT
               echo "services=${services:1}" >> $GITHUB_OUTPUT
@@ -91,7 +91,7 @@ jobs:
   build-base-images:
     needs: [detect-changes, setup-buildx]
     runs-on: ubuntu-latest
-    if: needs.detect-changes.outputs.build-all == 'true' || contains(needs.detect-changes.outputs.services, 'gui') || contains(needs.detect-changes.outputs.services, 'blockchain') || contains(needs.detect-changes.outputs.services, 'rdp') || contains(needs.detect-changes.outputs.services, 'node')
+    if: needs.detect-changes.outputs.build-all == 'true' || contains(needs.detect-changes.outputs.services, 'user-gui') || contains(needs.detect-changes.outputs.services, 'admin-gui') || contains(needs.detect-changes.outputs.services, 'node-gui') || contains(needs.detect-changes.outputs.services, 'blockchain') || contains(needs.detect-changes.outputs.services, 'rdp') || contains(needs.detect-changes.outputs.services, 'node')
     strategy:
       matrix:
         platform: ${{ fromJSON(format('[{0}]', github.event.inputs.target_platform || '["linux/amd64", "linux/arm64"]')) }}

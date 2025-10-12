@@ -38,6 +38,8 @@ def main() -> None:
 
     users = db["users"]
     sessions = db["sessions"]
+    chunks = db["chunks"]
+    control_policies = db["control_policies"]
 
     # Unique email on users
     print(
@@ -56,6 +58,73 @@ def main() -> None:
             (("expiresAt", ASCENDING),),
             name="sessions_expiresAt_ttl",
             expireAfterSeconds=0,
+        )
+    )
+
+    # Session pipeline indexes
+    print(
+        _ensure_index(
+            sessions,
+            (("user_id", ASCENDING), ("started_at", ASCENDING)),
+            name="sessions_user_id_started_at",
+        )
+    )
+    
+    print(
+        _ensure_index(
+            sessions,
+            (("owner_address", ASCENDING), ("started_at", ASCENDING)),
+            name="sessions_owner_address_started_at",
+        )
+    )
+    
+    print(
+        _ensure_index(
+            sessions,
+            (("node_id", ASCENDING), ("state", ASCENDING)),
+            name="sessions_node_id_state",
+        )
+    )
+    
+    print(
+        _ensure_index(
+            sessions,
+            (("state", ASCENDING), ("started_at", ASCENDING)),
+            name="sessions_state_started_at",
+        )
+    )
+
+    # Chunk indexes
+    print(
+        _ensure_index(
+            chunks,
+            (("session_id", ASCENDING), ("sequence", ASCENDING)),
+            name="chunks_session_id_sequence",
+        )
+    )
+    
+    print(
+        _ensure_index(
+            chunks,
+            (("state", ASCENDING),),
+            name="chunks_state",
+        )
+    )
+
+    # Control policy indexes
+    print(
+        _ensure_index(
+            control_policies,
+            (("session_id", ASCENDING),),
+            name="control_policies_session_id",
+        )
+    )
+    
+    print(
+        _ensure_index(
+            control_policies,
+            (("policy_hash", ASCENDING),),
+            name="control_policies_policy_hash",
         )
     )
 
