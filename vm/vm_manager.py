@@ -1,4 +1,4 @@
-﻿# Path: vm/vm_manager.py
+# Path: vm/vm_manager.py
 
 import asyncio
 import logging

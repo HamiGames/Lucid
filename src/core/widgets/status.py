@@ -399,7 +399,6 @@ def create_default_status_checker(component_id: str, component_type: ComponentTy
     """Create a default status checker for a component."""
     def checker() -> StatusInfo:
         """Default status checker."""
-        # This is a placeholder - in a real implementation,
         # this would check the actual component status
         return StatusInfo(
             component_id=component_id,

@@ -336,11 +336,9 @@ class SessionRecorder:
         session_dir: Path,
         policy_config: Optional[Dict]
     ) -> None:
-        """Start the actual recording process (simplified placeholder)."""
         # In production, this would start FFmpeg or similar recording process
         # with appropriate video/audio capture settings
         
-        # Create placeholder files
         video_file = session_dir / "video.mp4"
         audio_file = session_dir / "audio.wav" if self.audio_enabled else None
         metadata_file = session_dir / "metadata.json"

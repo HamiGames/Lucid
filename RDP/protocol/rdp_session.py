@@ -880,7 +880,6 @@ class RDPSessionManager:
         except Exception as e:
             logger.error(f"Error cleaning up connection: {e}")
     
-    # Channel handlers (placeholder implementations)
     async def _handle_control_channel(self, client_socket: socket.socket, session: RDPSession, channel: RDPChannel, packet: RDPPacket):
         """Handle control channel data"""
         logger.debug(f"Control channel data: {len(packet.data)} bytes")

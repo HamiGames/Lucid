@@ -1,4 +1,4 @@
-﻿# Path: session/manifest_anchor.py
+# Path: session/manifest_anchor.py
 
 from __future__ import annotations
 import asyncio

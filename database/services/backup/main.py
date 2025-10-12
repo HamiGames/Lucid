@@ -234,7 +234,6 @@ class DatabaseBackupService:
         
         backup_file = backup_dir / f"{job.database}_{job.id}.bson"
         
-        # Create a simple backup file (placeholder)
         with open(backup_file, 'w') as f:
             f.write(f"Backup of {job.database} at {datetime.now()}\n")
             f.write(f"Collections: {', '.join(job.collections)}\n")

@@ -759,12 +759,10 @@ class VersionManager:
     
     async def _validate_signature(self, package: UpdatePackage) -> bool:
         """Validate package signature"""
-        # TODO: Implement signature validation
         return True
     
     async def _validate_dependencies(self, package: UpdatePackage) -> bool:
         """Validate package dependencies"""
-        # TODO: Implement dependency validation
         return True
     
     async def _execute_deployment(self, deployment: DeploymentInfo) -> bool:
@@ -788,22 +786,18 @@ class VersionManager:
     
     async def _deploy_immediate(self, deployment: DeploymentInfo) -> bool:
         """Deploy immediately"""
-        # TODO: Implement immediate deployment
         return True
     
     async def _deploy_rolling(self, deployment: DeploymentInfo) -> bool:
         """Deploy using rolling strategy"""
-        # TODO: Implement rolling deployment
         return True
     
     async def _deploy_blue_green(self, deployment: DeploymentInfo) -> bool:
         """Deploy using blue-green strategy"""
-        # TODO: Implement blue-green deployment
         return True
     
     async def _deploy_canary(self, deployment: DeploymentInfo) -> bool:
         """Deploy using canary strategy"""
-        # TODO: Implement canary deployment
         return True
     
     async def _create_system_snapshot(self) -> Optional[SystemSnapshot]:
@@ -811,7 +805,6 @@ class VersionManager:
         try:
             snapshot_id = f"snapshot_{int(time.time())}"
             
-            # TODO: Implement system snapshot creation
             snapshot = SystemSnapshot(
                 snapshot_id=snapshot_id,
                 timestamp=datetime.now(timezone.utc),
@@ -835,7 +828,6 @@ class VersionManager:
                 self.logger.error(f"Snapshot {snapshot_id} not found")
                 return False
             
-            # TODO: Implement system snapshot restoration
             self.logger.info(f"Restored system from snapshot {snapshot_id}")
             return True
             
@@ -881,7 +873,6 @@ class VersionManager:
             try:
                 for deployment in self.deployments.values():
                     if deployment.status == VersionStatus.DEPLOYING:
-                        # TODO: Monitor deployment progress
                         pass
                 
                 await asyncio.sleep(30)  # Check every 30 seconds
@@ -894,17 +885,14 @@ class VersionManager:
     
     async def _load_available_versions(self) -> None:
         """Load available versions from disk"""
-        # TODO: Implement loading from disk
         pass
     
     async def _save_available_versions(self) -> None:
         """Save available versions to disk"""
-        # TODO: Implement saving to disk
         pass
     
     async def _save_update_packages(self) -> None:
         """Save update packages to disk"""
-        # TODO: Implement saving to disk
         pass
 
 

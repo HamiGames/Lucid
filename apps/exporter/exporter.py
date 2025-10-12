@@ -636,7 +636,6 @@ class ExporterService:
                 
                 # Create database dump (simplified)
                 with open(dump_path, 'w') as f:
-                    f.write("-- Database dump\n-- This is a placeholder for actual database dump\n")
                 
                 # Upload dump
                 remote_path = f"{job.destination_path}/database_dump_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.sql"

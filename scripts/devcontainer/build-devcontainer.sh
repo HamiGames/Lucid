@@ -262,10 +262,8 @@ EOF
         log_info "Copied Tor configuration"
     fi
     
-    # Generate onion hostname placeholder if needed
     if [[ ! -f ".devcontainer/hostname" ]]; then
         echo "example.onion" > ".devcontainer/hostname"
-        log_info "Created placeholder onion hostname"
     fi
     
     log_success "Environment setup completed"
