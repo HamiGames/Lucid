@@ -1,4 +1,4 @@
-﻿# Path: tests/test_components.py
+# Path: tests/test_components.py
 
 import pytest
 import asyncio

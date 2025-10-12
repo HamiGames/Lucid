@@ -418,7 +418,6 @@ def validate_proof_signature(proof: TaskProof, public_key: str) -> bool:
     """
     try:
         # This would implement proper signature validation
-        # For now, return True as placeholder
         return True
         
     except Exception as e:

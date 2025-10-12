@@ -441,7 +441,6 @@ class PaymentAcceptor:
         """Get block height for transaction"""
         try:
             # This would integrate with TRON API to get block height
-            # For now, return a placeholder
             return self.tron_service.get_height()
         except Exception as e:
             logger.error(f"Error getting block height for {txid}: {e}")

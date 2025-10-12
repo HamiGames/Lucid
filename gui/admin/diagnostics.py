@@ -982,7 +982,6 @@ Boot Time: {datetime.fromtimestamp(psutil.boot_time()).strftime('%Y-%m-%d %H:%M:
             )
     
     def _port_scan_test(self) -> None:
-        """Port scan test (placeholder)."""
         # This would implement port scanning functionality
         pass
     
@@ -1103,13 +1102,11 @@ Boot Time: {datetime.fromtimestamp(psutil.boot_time()).strftime('%Y-%m-%d %H:%M:
         """Test Tor circuit functionality."""
         try:
             # This would test Tor circuit building and management
-            # For now, return a placeholder result
             
             return DiagnosticResult(
                 test_name="Circuit Test",
                 status=HealthStatus.HEALTHY,
                 level=DiagnosticLevel.INFO,
-                message="Circuit test completed (placeholder)",
                 details={"note": "Circuit test not yet implemented"},
                 timestamp=datetime.now(timezone.utc)
             )

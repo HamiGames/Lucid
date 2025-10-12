@@ -136,8 +136,8 @@ class WorkCreditsCalculator:
             key_file = self.data_dir / "node_key.pem"
             
             if key_file.exists():
-                async with aiofiles.open(key_file, "rb") as f:
-                    key_data = await f.read()
+                with open(key_file, "rb") as f:
+                    key_data = f.read()
                 return serialization.load_pem_private_key(key_data, password=None)
             else:
                 # Generate new key
@@ -150,8 +150,8 @@ class WorkCreditsCalculator:
                     encryption_algorithm=serialization.NoEncryption()
                 )
                 
-                async with aiofiles.open(key_file, "wb") as f:
-                    await f.write(key_data)
+                with open(key_file, "wb") as f:
+                    f.write(key_data)
                 
                 logger.info("Generated new node private key")
                 return private_key
@@ -166,8 +166,8 @@ class WorkCreditsCalculator:
         try:
             credits_file = self.data_dir / "work_credits.json"
             if credits_file.exists():
-                async with aiofiles.open(credits_file, "r") as f:
-                    data = await f.read()
+                with open(credits_file, "r") as f:
+                    data = f.read()
                     credits_data = json.loads(data)
                     
                     for credit_id, credit_data in credits_data.items():
@@ -184,8 +184,8 @@ class WorkCreditsCalculator:
             credits_data = {k: asdict(v) for k, v in self.credit_cache.items()}
             
             credits_file = self.data_dir / "work_credits.json"
-            async with aiofiles.open(credits_file, "w") as f:
-                await f.write(json.dumps(credits_data, indent=2, default=str))
+            with open(credits_file, "w") as f:
+                f.write(json.dumps(credits_data, indent=2, default=str))
                 
         except Exception as e:
             logger.error(f"Error saving work credits: {e}")
@@ -541,8 +541,8 @@ class WorkCreditsCalculator:
             }
             
             log_file = self.logs_dir / f"work_credits_{datetime.now().strftime('%Y%m%d')}.log"
-            async with aiofiles.open(log_file, "a") as f:
-                await f.write(json.dumps(log_entry) + "\n")
+            with open(log_file, "a") as f:
+                f.write(json.dumps(log_entry) + "\n")
                 
         except Exception as e:
             logger.error(f"Error logging work credit event: {e}")

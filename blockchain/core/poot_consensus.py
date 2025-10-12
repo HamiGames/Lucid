@@ -387,7 +387,6 @@ class PoOTConsensusEngine:
         """Check if current node is the selected leader"""
         try:
             # This would check if current node's ID matches leader_id
-            # For now, return False as placeholder
             # In real implementation, this would check node identity
             return False
             

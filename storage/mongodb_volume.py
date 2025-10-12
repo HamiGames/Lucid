@@ -1,4 +1,4 @@
-﻿# Path: storage/mongodb_volume.py
+# Path: storage/mongodb_volume.py
 
 import asyncio
 import logging

@@ -273,7 +273,6 @@ setup_pi_networking() {
     ssh "$PI_HOST" "docker network create lucid_core_net --driver bridge --subnet 172.21.0.0/16 --attachable 2>/dev/null || echo 'Network already exists'"
     
     log "Creating external devcontainer network reference"
-    ssh "$PI_HOST" "docker network create lucid-dev_lucid_net --driver bridge --attachable 2>/dev/null || echo 'External network placeholder created'"
     
     success "✅ Pi networking configured"
 }

@@ -1,4 +1,4 @@
-﻿# Path: user/user_manager.py
+# Path: user/user_manager.py
 
 from __future__ import annotations
 import asyncio

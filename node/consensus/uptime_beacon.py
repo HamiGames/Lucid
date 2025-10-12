@@ -127,8 +127,8 @@ class UptimeBeaconSystem:
             key_file = self.data_dir / "beacon_key.pem"
             
             if key_file.exists():
-                async with aiofiles.open(key_file, "rb") as f:
-                    key_data = await f.read()
+                with open(key_file, "rb") as f:
+                    key_data = f.read()
                 return serialization.load_pem_private_key(key_data, password=None)
             else:
                 # Generate new key
@@ -141,8 +141,8 @@ class UptimeBeaconSystem:
                     encryption_algorithm=serialization.NoEncryption()
                 )
                 
-                async with aiofiles.open(key_file, "wb") as f:
-                    await f.write(key_data)
+                with open(key_file, "wb") as f:
+                    f.write(key_data)
                 
                 logger.info("Generated new beacon private key")
                 return private_key
@@ -158,8 +158,8 @@ class UptimeBeaconSystem:
             # Load beacons
             beacons_file = self.data_dir / "beacons.json"
             if beacons_file.exists():
-                async with aiofiles.open(beacons_file, "r") as f:
-                    data = await f.read()
+                with open(beacons_file, "r") as f:
+                    data = f.read()
                     beacons_data = json.loads(data)
                     
                     for beacon_id, beacon_data in beacons_data.items():
@@ -171,8 +171,8 @@ class UptimeBeaconSystem:
             # Load metrics
             metrics_file = self.data_dir / "uptime_metrics.json"
             if metrics_file.exists():
-                async with aiofiles.open(metrics_file, "r") as f:
-                    data = await f.read()
+                with open(metrics_file, "r") as f:
+                    data = f.read()
                     metrics_data = json.loads(data)
                     
                     for node_id, metric_data in metrics_data.items():
@@ -190,14 +190,14 @@ class UptimeBeaconSystem:
             # Save beacons
             beacons_data = {k: asdict(v) for k, v in self.beacon_cache.items()}
             beacons_file = self.data_dir / "beacons.json"
-            async with aiofiles.open(beacons_file, "w") as f:
-                await f.write(json.dumps(beacons_data, indent=2, default=str))
+            with open(beacons_file, "w") as f:
+                f.write(json.dumps(beacons_data, indent=2, default=str))
             
             # Save metrics
             metrics_data = {k: asdict(v) for k, v in self.uptime_metrics.items()}
             metrics_file = self.data_dir / "uptime_metrics.json"
-            async with aiofiles.open(metrics_file, "w") as f:
-                await f.write(json.dumps(metrics_data, indent=2, default=str))
+            with open(metrics_file, "w") as f:
+                f.write(json.dumps(metrics_data, indent=2, default=str))
                 
         except Exception as e:
             logger.error(f"Error saving beacon data: {e}")
@@ -513,8 +513,8 @@ class UptimeBeaconSystem:
                 }
                 
                 log_file = self.logs_dir / f"uptime_metrics_{datetime.now().strftime('%Y%m%d')}.log"
-                async with aiofiles.open(log_file, "a") as f:
-                    await f.write(json.dumps(log_entry) + "\n")
+                with open(log_file, "a") as f:
+                    f.write(json.dumps(log_entry) + "\n")
                     
         except Exception as e:
             logger.error(f"Error logging uptime metrics: {e}")
@@ -579,8 +579,8 @@ class UptimeBeaconSystem:
             }
             
             log_file = self.logs_dir / f"beacon_events_{datetime.now().strftime('%Y%m%d')}.log"
-            async with aiofiles.open(log_file, "a") as f:
-                await f.write(json.dumps(log_entry) + "\n")
+            with open(log_file, "a") as f:
+                f.write(json.dumps(log_entry) + "\n")
                 
         except Exception as e:
             logger.error(f"Error logging beacon event: {e}")

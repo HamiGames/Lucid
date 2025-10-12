@@ -1,4 +1,4 @@
-﻿# Path: api/routes/node_routes.py
+# Path: api/routes/node_routes.py
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any

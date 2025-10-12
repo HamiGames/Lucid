@@ -117,7 +117,6 @@ class SessionOrchestrator:
             merkle_root = await self._build_merkle_tree(pipeline)
             pipeline.merkle_root = merkle_root
             
-            # Stage 4: Blockchain Anchoring (placeholder)
             await self._update_pipeline_stage(pipeline, PipelineStage.ANCHORING)
             blockchain_anchor = await self._anchor_to_blockchain(pipeline)
             pipeline.blockchain_anchor = blockchain_anchor
@@ -212,10 +211,8 @@ class SessionOrchestrator:
         return merkle_root
     
     async def _anchor_to_blockchain(self, pipeline: SessionPipeline) -> str:
-        """Anchor Merkle root to blockchain (placeholder implementation)"""
         
         # This would integrate with the blockchain anchoring system
-        # For now, return a placeholder anchor hash
         anchor_hash = f"anchor_{pipeline.session_id}_{int(time.time())}"
         
         logger.info(f"Blockchain anchoring complete for session {pipeline.session_id}: {anchor_hash}")

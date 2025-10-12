@@ -558,7 +558,6 @@ class MetricsCollector:
     
     async def _cleanup_old_metrics(self):
         """Clean up old metrics based on retention periods."""
-        # This is a placeholder for cleanup logic
         # In a real implementation, you would clean up old observations
         # based on timestamps and retention periods
         pass

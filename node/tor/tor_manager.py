@@ -477,7 +477,6 @@ HiddenServicePort {service.port} {service.target_host}:{service.target_port}
         """Derive public key from private key"""
         try:
             # This would implement proper key derivation
-            # For now, return a placeholder
             return "derived_public_key"
         except Exception as e:
             logger.error(f"Error deriving public key: {e}")

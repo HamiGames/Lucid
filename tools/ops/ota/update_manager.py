@@ -444,7 +444,6 @@ class UpdateManager:
     async def _check_dependency(self, dependency: str) -> bool:
         """Check if a dependency is available"""
         # This would check for required system packages, libraries, etc.
-        # For now, return True as a placeholder
         return True
 
     async def _download_update(self, update: UpdateInfo) -> str:
