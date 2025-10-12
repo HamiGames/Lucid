@@ -118,7 +118,9 @@ class WorkCreditsCalculator:
         self.verification_threshold = 0.6  # 60% of nodes must verify
         
         # Node key pair for signing
-        self.node_private_key = self._load_or_generate_key()
+        # Initialize node key asynchronously
+        self.node_private_key = None
+        asyncio.create_task(self._initialize_node_key())
         self.node_public_key = self.node_private_key.public_key()
         
         # Work credit cache
@@ -128,7 +130,7 @@ class WorkCreditsCalculator:
         # Load existing credits
         asyncio.create_task(self._load_work_credits())
     
-    def _load_or_generate_key(self) -> ed25519.Ed25519PrivateKey:
+    async def _load_or_generate_key(self) -> ed25519.Ed25519PrivateKey:
         """Load or generate node private key"""
         try:
             key_file = self.data_dir / "node_key.pem"
