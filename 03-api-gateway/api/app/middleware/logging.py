@@ -1,31 +1,49 @@
-# Path: 03-api-gateway/api/app/middleware/logging.py
-# Request logging middleware with timing; aligns with FastAPI middleware pattern. :contentReference[oaicite:4]{index=4}
+"""
+Logging Middleware
 
+File: 03-api-gateway/api/app/middleware/logging.py
+Purpose: Request/response logging with correlation IDs
+"""
+
+import logging
 import time
-from starlette.middleware.base import BaseHTTPMiddleware
-from ..utils.logger import get_logger
+import uuid
+from fastapi import Request
 
-log = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        start = time.perf_counter()
-        path = request.url.path
-        method = request.method
-        client = request.client.host if request.client else "unknown"
-
-        response = await call_next(request)
-
-        elapsed_ms = round((time.perf_counter() - start) * 1000.0, 2)
-        log.info(
-            "http_request",
-            extra={
-                "method": method,
-                "path": path,
-                "status_code": response.status_code,
-                "client": client,
-                "elapsed_ms": elapsed_ms,
-            },
-        )
-        return response
+class LoggingMiddleware:
+    """Logging middleware for request/response tracking"""
+    
+    def __init__(self, app):
+        self.app = app
+        logger.info("LoggingMiddleware initialized")
+    
+    async def __call__(self, scope, receive, send):
+        """Process request through logging middleware"""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        
+        request = Request(scope, receive)
+        request_id = str(uuid.uuid4())
+        start_time = time.time()
+        
+        # Add request ID to request state
+        request.state.request_id = request_id
+        
+        logger.info(f"Request started: {request.method} {request.url.path}", extra={
+            "request_id": request_id,
+            "method": request.method,
+            "path": request.url.path,
+            "client_ip": request.client.host
+        })
+        
+        await self.app(scope, receive, send)
+        
+        duration = time.time() - start_time
+        logger.info(f"Request completed: {request.method} {request.url.path}", extra={
+            "request_id": request_id,
+            "duration_ms": duration * 1000
+        })
