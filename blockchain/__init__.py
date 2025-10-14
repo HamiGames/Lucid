@@ -12,7 +12,7 @@ Based on Spec-1a, Spec-1b, and Spec-1c requirements.
 from .core import (
     get_blockchain_engine,
     get_poot_consensus_engine,
-    get_tron_node_system
+    # get_tron_node_system
 )
 
 # Create aliases for backward compatibility (lazy loading)
@@ -22,8 +22,8 @@ def get_BlockchainEngine():
 def get_PoOTConsensusEngine():
     return get_poot_consensus_engine()
 
-def get_TronNodeSystem():
-    return get_tron_node_system()
+# def get_TronNodeSystem():
+#     return get_tron_node_system()
 
 # Data models
 from .core.models import (
@@ -41,7 +41,7 @@ from .core.models import (
     TaskProof, WorkCredit, WorkCreditsTally, LeaderSchedule,
     
     # TRON Payment Models
-    TronPayout, TronTransaction, USDTBalance, TronNetwork,
+    # TronPayout, TronTransaction, USDTBalance, TronNetwork,
     
     # Payout Models
     PayoutRequest, PayoutResult,
@@ -50,7 +50,7 @@ from .core.models import (
     TransactionStatus,
     
     # Utility Functions
-    generate_session_id, validate_ethereum_address, validate_tron_address,
+    generate_session_id, validate_ethereum_address, # validate_tron_address,
     calculate_work_credits_formula
 )
 
@@ -91,7 +91,7 @@ __all__ = [
     # Core blockchain engine and consensus (On-System Chain primary)
     'get_BlockchainEngine',
     'get_PoOTConsensusEngine', 
-    'get_TronNodeSystem',
+    # 'get_TronNodeSystem',
     
     # Data models
     'ChainType', 'ConsensusState', 'PayoutRouter', 'TaskProofType',
@@ -99,9 +99,9 @@ __all__ = [
     'ChunkMetadata', 'SessionManifest', 'SessionAnchor',
     'AnchorTransaction', 'ChunkStoreEntry',
     'TaskProof', 'WorkCredit', 'WorkCreditsTally', 'LeaderSchedule',
-    'TronPayout', 'TronTransaction', 'USDTBalance', 'TronNetwork',
+    # 'TronPayout', 'TronTransaction', 'USDTBalance', 'TronNetwork',
     'PayoutRequest', 'PayoutResult', 'TransactionStatus',
-    'generate_session_id', 'validate_ethereum_address', 'validate_tron_address',
+    'generate_session_id', 'validate_ethereum_address', # 'validate_tron_address',
     'calculate_work_credits_formula',
     
     # On-System Chain (primary blockchain)
@@ -112,5 +112,5 @@ __all__ = [
     'get_manifest_manager', 'create_manifest_manager', 'cleanup_manifest_manager',
     
     # Legacy TRON client (backward compatibility)
-    'TronNodeClient', 'PayoutRecord'
+    # 'TronNodeClient', 'PayoutRecord'
 ]

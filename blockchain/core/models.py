@@ -28,7 +28,7 @@ import uuid
 class ChainType(Enum):
     """Blockchain types in dual-chain architecture"""
     ON_SYSTEM_DATA = "on_system_data_chain"  # Primary blockchain
-    TRON_PAYOUTS = "tron_payouts"            # Payment layer only
+    # TRON_PAYOUTS = "tron_payouts"            # Payment layer only
 
 
 class ConsensusState(Enum):
@@ -40,10 +40,10 @@ class ConsensusState(Enum):
     SLOT_MISSED = "slot_missed"
 
 
-class PayoutRouter(Enum):
-    """TRON payout router types (R-MUST-018)"""
-    PR0 = "PayoutRouterV0"      # Non-KYC for end-users
-    PRKYC = "PayoutRouterKYC"   # KYC-gated for node-workers
+# class PayoutRouter(Enum):
+#     """TRON payout router types (R-MUST-018)"""
+#     PR0 = "PayoutRouterV0"      # Non-KYC for end-users
+#     PRKYC = "PayoutRouterKYC"   # KYC-gated for node-workers
 
 
 class TaskProofType(Enum):
@@ -406,91 +406,6 @@ class LeaderSchedule:
 
 
 # =============================================================================
-# TRON PAYMENT MODELS (ISOLATED)
-# =============================================================================
-
-@dataclass
-class TronPayout:
-    """
-    TRON USDT payout transaction (Payment layer only).
-    
-    REBUILT: Marked as payment-layer only, not blockchain core.
-    Monthly payout distribution via PayoutRouterV0/PRKYC.
-    """
-    session_id: str
-    recipient_address: str
-    amount_usdt: float
-    router_type: PayoutRouter
-    reason: str
-    kyc_hash: Optional[str] = None
-    compliance_signature: Optional[Dict[str, Any]] = None
-    txid: Optional[str] = None
-    status: str = "pending"  # pending, confirmed, failed
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": f"{self.session_id}_{self.recipient_address}",
-            "session_id": self.session_id,
-            "to_addr": self.recipient_address,
-            "usdt_amount": self.amount_usdt,
-            "router": self.router_type.value,
-            "reason": self.reason,
-            "txid": self.txid,    # TRON txid
-            "status": self.status,
-            "created_at": self.created_at,
-            "kyc_hash": self.kyc_hash,
-            "compliance_sig": self.compliance_signature
-        }
-
-
-@dataclass
-class TronTransaction:
-    """TRON transaction details"""
-    txid: str
-    block_number: int
-    timestamp: datetime
-    from_address: str
-    to_address: str
-    amount: int  # in SUN
-    fee: int
-    status: str  # pending, confirmed, failed
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "txid": self.txid,
-            "block_number": self.block_number,
-            "timestamp": self.timestamp,
-            "from_address": self.from_address,
-            "to_address": self.to_address,
-            "amount": self.amount,
-            "fee": self.fee,
-            "status": self.status
-        }
-
-
-@dataclass
-class USDTBalance:
-    """USDT-TRC20 balance information"""
-    address: str
-    balance: float  # in USDT
-    last_updated: datetime
-    network: str  # mainnet, shasta
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": self.address,
-            "address": self.address,
-            "balance": self.balance,
-            "last_updated": self.last_updated,
-            "network": self.network
-        }
-
-
-# =============================================================================
 # PAYOUT MODELS
 # =============================================================================
 
@@ -552,22 +467,6 @@ class PayoutResult:
 # =============================================================================
 
 @dataclass
-class TronNetwork:
-    """TRON network configuration"""
-    name: str  # mainnet, shasta
-    rpc_url: str
-    api_key: Optional[str] = None
-    usdt_contract: str = ""
-    
-    def __post_init__(self):
-        """Set USDT contract address based on network"""
-        if self.name == "mainnet":
-            self.usdt_contract = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
-        elif self.name == "shasta":
-            self.usdt_contract = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
-
-
-@dataclass
 class TransactionStatus:
     """Generic transaction status"""
     txid: str
@@ -609,14 +508,14 @@ def validate_ethereum_address(address: str) -> bool:
         return False
 
 
-def validate_tron_address(address: str) -> bool:
-    """Validate TRON address format"""
-    if not address.startswith("T"):
-        return False
-    if len(address) != 34:
-        return False
-    # Additional validation could be added here
-    return True
+# def validate_tron_address(address: str) -> bool:
+#     """Validate TRON address format"""
+#     if not address.startswith("T"):
+#         return False
+#     if len(address) != 34:
+#         return False
+#     # Additional validation could be added here
+#     return True
 
 
 def calculate_work_credits_formula(storage_sessions: int, bandwidth_mb: int, base_mb_per_session: int = 5) -> int:
@@ -640,7 +539,7 @@ def calculate_work_credits_formula(storage_sessions: int, bandwidth_mb: int, bas
 
 __all__ = [
     # Enums
-    "ChainType", "ConsensusState", "PayoutRouter", "TaskProofType",
+    "ChainType", "ConsensusState", "TaskProofType",
     "SessionStatus", "PayoutStatus",
     
     # Session and Chunk Models
@@ -653,7 +552,7 @@ __all__ = [
     "TaskProof", "WorkCredit", "WorkCreditsTally", "LeaderSchedule",
     
     # TRON Payment Models
-    "TronPayout", "TronTransaction", "USDTBalance", "TronNetwork",
+    # "TronPayout", "TronTransaction", "USDTBalance", "TronNetwork",
     
     # Payout Models
     "PayoutRequest", "PayoutResult",
@@ -662,6 +561,6 @@ __all__ = [
     "TransactionStatus",
     
     # Utility Functions
-    "generate_session_id", "validate_ethereum_address", "validate_tron_address",
+    "generate_session_id", "validate_ethereum_address",
     "calculate_work_credits_formula"
 ]

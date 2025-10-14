@@ -76,17 +76,17 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["meta"])
     def health():
-        from app.services.tron_client import TronService
+        # from app.services.tron_client import TronService
 
-        info = TronService().get_chain_info()
+        # info = TronService().get_chain_info()
         return {
             "status": "ok",
             "service": settings.SERVICE_NAME,
             "time": datetime.now(timezone.utc).isoformat(),
             "block_onion": settings.BLOCK_ONION or "",
-            "block_rpc_url": settings.BLOCK_RPC_URL or info.node,
-            "network": info.network,
-            "height": info.latest_block,
+            # "block_rpc_url": settings.BLOCK_RPC_URL or info.node,
+            # "network": info.network,
+            # "height": info.latest_block,
         }
 
     return app

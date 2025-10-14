@@ -24,8 +24,6 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import blake3
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from tronpy import Tron
-from tronpy.keys import PrivateKey as TronPrivateKey
 import httpx
 
 # Import from updated models and components
@@ -61,11 +59,11 @@ LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
 # TRON PAYMENT LAYER CONFIGURATION (R-MUST-015, R-MUST-018)
 # =============================================================================
 
-TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")  # shasta/mainnet
-USDT_TRC20_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
-USDT_TRC20_SHASTA = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
-PAYOUT_ROUTER_V0_ADDRESS = os.getenv("PAYOUT_ROUTER_V0_ADDRESS", "")
-PAYOUT_ROUTER_KYC_ADDRESS = os.getenv("PAYOUT_ROUTER_KYC_ADDRESS", "")
+# TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")  # shasta/mainnet
+# USDT_TRC20_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+# USDT_TRC20_SHASTA = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
+# PAYOUT_ROUTER_V0_ADDRESS = os.getenv("PAYOUT_ROUTER_V0_ADDRESS", "")
+# PAYOUT_ROUTER_KYC_ADDRESS = os.getenv("PAYOUT_ROUTER_KYC_ADDRESS", "")
 
 # =============================================================================
 # MONGODB CONFIGURATION (R-MUST-019)
@@ -222,154 +220,6 @@ class EnhancedOnSystemChainClient:
         except Exception as e:
             logger.error(f"Failed to store chunk metadata: {e}")
             raise
-
-# =============================================================================
-# ISOLATED TRON NODE SYSTEM (PAYMENT SERVICE ONLY)
-# =============================================================================
-
-class TronNodeSystem:
-    """
-    Isolated TRON blockchain client for payouts (R-MUST-015).
-    
-    REBUILT: Extract from core blockchain engine, mark as payment service only.
-    No other services may call TRON directly - all TRON interactions
-    must go through this isolated service for security.
-    
-    Handles:
-    - USDT-TRC20 payouts via PayoutRouterV0 (non-KYC) or PayoutRouterKYC
-    - Monthly payout distribution (R-MUST-018)
-    - Energy/bandwidth management via TRX staking
-    - Circuit breakers and daily limits
-    """
-    
-    def __init__(self, network: str = TRON_NETWORK):
-        self.network = network
-        self.tron = Tron() if network == "mainnet" else Tron(network="shasta")
-        
-        # USDT contract address
-        self.usdt_address = USDT_TRC20_MAINNET if network == "mainnet" else USDT_TRC20_SHASTA
-        
-        # Payout router addresses
-        self.router_addresses = {
-            PayoutRouter.PR0: PAYOUT_ROUTER_V0_ADDRESS,
-            PayoutRouter.PRKYC: PAYOUT_ROUTER_KYC_ADDRESS
-        }
-        
-        logger.info(f"TRON node system initialized (payment service only): {network}")
-    
-    async def create_usdt_payout(self, payout: TronPayout, private_key: str) -> str:
-        """
-        Create USDT-TRC20 payout via specified router.
-        
-        Router selection per Spec-1c:
-        - PayoutRouterV0 (PR0): Non-KYC for end-users
-        - PayoutRouterKYC (PRKYC): KYC-gated for node-workers with compliance signatures
-        """
-        try:
-            # Validate router address
-            router_address = self.router_addresses.get(payout.router_type)
-            if not router_address:
-                raise ValueError(f"Router address not configured: {payout.router_type}")
-            
-            # Initialize private key
-            payout_key = TronPrivateKey(bytes.fromhex(private_key))
-            from_address = payout_key.public_key.to_base58check_address()
-            
-            # USDT has 6 decimals
-            amount_sun = int(payout.amount_usdt * 1_000_000)
-            
-            # Build transaction based on router type
-            if payout.router_type == PayoutRouter.PR0:
-                # Non-KYC payout via PayoutRouterV0
-                contract = self.tron.get_contract(router_address)
-                
-                txn = contract.functions.disburse(
-                    bytes.fromhex(payout.session_id.replace("-", "")),
-                    payout.recipient_address,
-                    amount_sun,
-                    payout.reason
-                )
-                
-            elif payout.router_type == PayoutRouter.PRKYC:
-                # KYC-gated payout via PayoutRouterKYC
-                if not payout.kyc_hash or not payout.compliance_signature:
-                    raise ValueError("KYC hash and compliance signature required for PRKYC router")
-                
-                contract = self.tron.get_contract(router_address)
-                
-                sig = payout.compliance_signature
-                txn = contract.functions.disburseKYC(
-                    bytes.fromhex(payout.session_id.replace("-", "")),
-                    payout.recipient_address,
-                    amount_sun,
-                    payout.reason,
-                    bytes.fromhex(payout.kyc_hash),
-                    sig["expiry"],
-                    sig["v"],
-                    bytes.fromhex(sig["r"]),
-                    bytes.fromhex(sig["s"])
-                )
-            
-            # Set transaction parameters
-            txn = txn.with_owner(from_address)
-            txn = txn.fee_limit(100_000_000)  # 100 TRX fee limit
-            
-            # Build, sign and broadcast
-            txn = txn.build()
-            txn = txn.sign(payout_key)
-            result = txn.broadcast()
-            
-            if result.get("txid"):
-                payout.txid = result["txid"]
-                payout.status = "pending"
-                
-                logger.info(f"USDT payout created: {payout.txid} ({payout.amount_usdt} USDT to {payout.recipient_address})")
-                return payout.txid
-            else:
-                raise Exception(f"TRON broadcast failed: {result}")
-                
-        except Exception as e:
-            logger.error(f"USDT payout failed: {e}")
-            payout.status = "failed"
-            raise
-    
-    async def get_transaction_status(self, txid: str) -> str:
-        """Get TRON transaction confirmation status"""
-        try:
-            info = self.tron.get_transaction_info(txid)
-            
-            if info:
-                if info.get("result") == "SUCCESS":
-                    return "confirmed"
-                else:
-                    return "failed"
-            else:
-                return "pending"
-                
-        except Exception as e:
-            logger.error(f"Failed to get TRON tx status: {e}")
-            return "unknown"
-    
-    def get_energy_bandwidth_info(self, address: str) -> Dict[str, Any]:
-        """Get account energy and bandwidth for TRX staking optimization"""
-        try:
-            account = self.tron.get_account(address)
-            resources = self.tron.get_account_resource(address)
-            
-            return {
-                "balance_trx": account.get("balance", 0) / 1_000_000,  # Convert from sun
-                "energy_limit": resources.get("EnergyLimit", 0),
-                "energy_used": resources.get("EnergyUsed", 0),
-                "net_limit": resources.get("NetLimit", 0),
-                "net_used": resources.get("NetUsed", 0),
-                "frozen_energy": account.get("account_resource", {}).get("frozen_balance_for_energy", 0),
-                "frozen_bandwidth": account.get("frozen", [{}])[0].get("frozen_balance", 0) if account.get("frozen") else 0
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to get account resources: {e}")
-            return {}
-
 
 # =============================================================================
 # POOT CONSENSUS ENGINE (REBUILT)
@@ -644,7 +494,7 @@ class BlockchainEngine:
             }
         )
         
-        self.tron_client = TronNodeSystem(TRON_NETWORK)  # Payment service only
+        # self.tron_client = TronNodeSystem(TRON_NETWORK)  # Payment service only
         self.consensus_engine = PoOTConsensusEngine(self.db)
         
         # State tracking
@@ -668,7 +518,7 @@ class BlockchainEngine:
             asyncio.create_task(self._monitor_anchors())
             
             # Start payout status monitoring
-            asyncio.create_task(self._monitor_payouts())
+            # asyncio.create_task(self._monitor_payouts())
             
             logger.info("Blockchain engine started")
             
@@ -752,38 +602,38 @@ class BlockchainEngine:
                 logger.error(f"Anchor monitoring error: {e}")
                 await asyncio.sleep(60)
     
-    async def _monitor_payouts(self):
-        """Monitor TRON payout status"""
-        while self.running:
-            try:
-                # Get pending payouts
-                pending_cursor = self.db["payouts"].find({"status": "pending"})
-                
-                async for payout_doc in pending_cursor:
-                    txid = payout_doc.get("txid")
-                    if txid:
-                        # Check TRON transaction status
-                        status = await self.tron_client.get_transaction_status(txid)
-                        
-                        if status == "confirmed":
-                            await self.db["payouts"].update_one(
-                                {"_id": payout_doc["_id"]},
-                                {"$set": {"status": "confirmed"}}
-                            )
-                            logger.info(f"Payout confirmed: {payout_doc['_id']}")
-                            
-                        elif status == "failed":
-                            await self.db["payouts"].update_one(
-                                {"_id": payout_doc["_id"]},
-                                {"$set": {"status": "failed"}}
-                            )
-                            logger.warning(f"Payout failed: {payout_doc['_id']}")
-                
-                await asyncio.sleep(60)  # Check every minute
-                
-            except Exception as e:
-                logger.error(f"Payout monitoring error: {e}")
-                await asyncio.sleep(120)
+    # async def _monitor_payouts(self):
+    #     """Monitor TRON payout status"""
+    #     while self.running:
+    #         try:
+    #             # Get pending payouts
+    #             pending_cursor = self.db["payouts"].find({"status": "pending"})
+    #             
+    #             async for payout_doc in pending_cursor:
+    #                 txid = payout_doc.get("txid")
+    #                 if txid:
+    #                     # Check TRON transaction status
+    #                     status = await self.tron_client.get_transaction_status(txid)
+    #                     
+    #                     if status == "confirmed":
+    #                         await self.db["payouts"].update_one(
+    #                             {"_id": payout_doc["_id"]},
+    #                             {"$set": {"status": "confirmed"}}
+    #                         )
+    #                         logger.info(f"Payout confirmed: {payout_doc['_id']}")
+    #                         
+    #                     elif status == "failed":
+    #                         await self.db["payouts"].update_one(
+    #                             {"_id": payout_doc["_id"]},
+    #                             {"$set": {"status": "failed"}}
+    #                         )
+    #                         logger.warning(f"Payout failed: {payout_doc['_id']}")
+    #             
+    #             await asyncio.sleep(60)  # Check every minute
+    #             
+    #         except Exception as e:
+    #             logger.error(f"Payout monitoring error: {e}")
+    #             await asyncio.sleep(120)
     
     async def anchor_session(self, session_id: str, manifest_hash: str, 
                            merkle_root: str, owner_address: str, chunk_count: int) -> str:
@@ -816,40 +666,40 @@ class BlockchainEngine:
             logger.error(f"Failed to anchor session: {e}")
             raise
     
-    async def create_payout(self, session_id: str, recipient_address: str,
-                          amount_usdt: float, router_type: PayoutRouter,
-                          reason: str, private_key: str,
-                          kyc_hash: Optional[str] = None,
-                          compliance_signature: Optional[Dict[str, Any]] = None) -> str:
-        """
-        Create TRON USDT payout via isolated payment service.
-        
-        REBUILT: TRON isolated for payments only (not blockchain core).
-        """
-        try:
-            # Create payout
-            payout = TronPayout(
-                session_id=session_id,
-                recipient_address=recipient_address,
-                amount_usdt=amount_usdt,
-                router_type=router_type,
-                reason=reason,
-                kyc_hash=kyc_hash,
-                compliance_signature=compliance_signature
-            )
-            
-            # Create TRON transaction
-            txid = await self.tron_client.create_usdt_payout(payout, private_key)
-            
-            # Store in MongoDB
-            await self.db["payouts"].insert_one(payout.to_dict())
-            
-            logger.info(f"Payout created via TRON: {session_id} -> {txid}")
-            return txid
-            
-        except Exception as e:
-            logger.error(f"Failed to create payout: {e}")
-            raise
+    # async def create_payout(self, session_id: str, recipient_address: str,
+    #                       amount_usdt: float, router_type: PayoutRouter,
+    #                       reason: str, private_key: str,
+    #                       kyc_hash: Optional[str] = None,
+    #                       compliance_signature: Optional[Dict[str, Any]] = None) -> str:
+    #     """
+    #     Create TRON USDT payout via isolated payment service.
+    #     
+    #     REBUILT: TRON isolated for payments only (not blockchain core).
+    #     """
+    #     try:
+    #         # Create payout
+    #         payout = TronPayout(
+    #             session_id=session_id,
+    #             recipient_address=recipient_address,
+    #             amount_usdt=amount_usdt,
+    #             router_type=router_type,
+    #             reason=reason,
+    #             kyc_hash=kyc_hash,
+    #             compliance_signature=compliance_signature
+    #         )
+    #         
+    #         # Create TRON transaction
+    #         txid = await self.tron_client.create_usdt_payout(payout, private_key)
+    #         
+    #         # Store in MongoDB
+    #         await self.db["payouts"].insert_one(payout.to_dict())
+    #         
+    #         logger.info(f"Payout created via TRON: {session_id} -> {txid}")
+    #         return txid
+    #         
+    #     except Exception as e:
+    #         logger.error(f"Failed to create payout: {e}")
+    #         raise
     
     async def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Get session anchoring status"""
@@ -861,17 +711,17 @@ class BlockchainEngine:
             logger.error(f"Failed to get session status: {e}")
             return None
     
-    async def get_payout_status(self, session_id: str, recipient_address: str) -> Optional[Dict[str, Any]]:
-        """Get payout status"""
-        try:
-            payout_doc = await self.db["payouts"].find_one({
-                "_id": f"{session_id}_{recipient_address}"
-            })
-            return payout_doc
-            
-        except Exception as e:
-            logger.error(f"Failed to get payout status: {e}")
-            return None
+    # async def get_payout_status(self, session_id: str, recipient_address: str) -> Optional[Dict[str, Any]]:
+    #     """Get payout status"""
+    #     try:
+    #         payout_doc = await self.db["payouts"].find_one({
+    #             "_id": f"{session_id}_{recipient_address}"
+    #         })
+    #         return payout_doc
+    #         
+    #     except Exception as e:
+    #         logger.error(f"Failed to get payout status: {e}")
+    #         return None
 
 
 # =============================================================================

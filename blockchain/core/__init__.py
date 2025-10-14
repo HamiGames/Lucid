@@ -21,9 +21,6 @@ from .models import (
     # PoOT Consensus Models
     TaskProof, WorkCredit, WorkCreditsTally, LeaderSchedule,
     
-    # TRON Payment Models
-    TronPayout, TronTransaction, USDTBalance, TronNetwork,
-    
     # Payout Models
     PayoutRequest, PayoutResult,
     
@@ -31,7 +28,7 @@ from .models import (
     TransactionStatus,
     
     # Utility Functions
-    generate_session_id, validate_ethereum_address, validate_tron_address,
+    generate_session_id, validate_ethereum_address,
     calculate_work_credits_formula
 )
 
@@ -67,11 +64,6 @@ def get_work_credits_engine():
     from .work_credits import WorkCreditsEngine
     return WorkCreditsEngine
 
-def get_tron_node_system():
-    """Get TronNodeSystem (imports on demand)"""
-    from .tron_node_system import TronNodeSystem, create_tron_node_system
-    return TronNodeSystem, create_tron_node_system
-
 __all__ = [
     # Data models
     "ChainType", "ConsensusState", "PayoutRouter", "TaskProofType",
@@ -79,9 +71,8 @@ __all__ = [
     "ChunkMetadata", "SessionManifest", "SessionAnchor",
     "AnchorTransaction", "ChunkStoreEntry",
     "TaskProof", "WorkCredit", "WorkCreditsTally", "LeaderSchedule",
-    "TronPayout", "TronTransaction", "USDTBalance", "TronNetwork",
     "PayoutRequest", "PayoutResult", "TransactionStatus",
-    "generate_session_id", "validate_ethereum_address", "validate_tron_address",
+    "generate_session_id", "validate_ethereum_address",
     "calculate_work_credits_formula",
     
     # Factory functions for core blockchain components

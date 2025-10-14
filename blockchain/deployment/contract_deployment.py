@@ -42,8 +42,8 @@ logger = logging.getLogger(__name__)
 
 # Configuration from environment
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
-TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")
-TRON_RPC_URL = os.getenv("TRON_RPC_URL", "https://api.shasta.trongrid.io")
+# TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")
+# TRON_RPC_URL = os.getenv("TRON_RPC_URL", "https://api.shasta.trongrid.io")
 CONTRACT_ARTIFACTS_PATH = Path(os.getenv("CONTRACT_ARTIFACTS_PATH", "/data/contracts"))
 DEPLOYMENT_LOG_PATH = Path(os.getenv("DEPLOYMENT_LOG_PATH", "/data/logs"))
 
@@ -125,8 +125,8 @@ class ContractDeploymentService:
                 "status": "healthy",
                 "service": "contract-deployment",
                 "active_deployments": len(self.active_deployments),
-                "tron_network": TRON_NETWORK,
-                "tron_connected": self.tron_client is not None
+                # "tron_network": TRON_NETWORK,
+                # "tron_connected": self.tron_client is not None
             }
         
         @self.app.post("/deployments/create")
@@ -203,22 +203,22 @@ class ContractDeploymentService:
             self.db_client = None
             self.db = None
     
-    async def _setup_tron_client(self) -> None:
-        """Setup TRON client connection"""
-        if not HAS_TRONPY:
-            logger.warning("TronPy not available, TRON operations disabled")
-            return
-        
-        try:
-            self.tron_client = Tron(network=TRON_NETWORK)
-            
-            # Test connection
-            latest_block = self.tron_client.get_latest_block_number()
-            logger.info(f"TRON client connected to {TRON_NETWORK}, latest block: {latest_block}")
-            
-        except Exception as e:
-            logger.error(f"TRON client setup failed: {e}")
-            self.tron_client = None
+    # async def _setup_tron_client(self) -> None:
+    #     """Setup TRON client connection"""
+    #     if not HAS_TRONPY:
+    #         logger.warning("TronPy not available, TRON operations disabled")
+    #         return
+    #     
+    #     try:
+    #         self.tron_client = Tron(network=TRON_NETWORK)
+    #         
+    #         # Test connection
+    #         latest_block = self.tron_client.get_latest_block_number()
+    #         logger.info(f"TRON client connected to {TRON_NETWORK}, latest block: {latest_block}")
+    #         
+    #     except Exception as e:
+    #         logger.error(f"TRON client setup failed: {e}")
+    #         self.tron_client = None
     
     async def _create_database_indexes(self) -> None:
         """Create database indexes for contract deployments"""
@@ -360,24 +360,24 @@ class ContractDeploymentService:
             logger.error(f"Contract deployment error: {e}")
             deployment.status = DeploymentStatus.FAILED
     
-    async def get_contract_info(self, contract_address: str) -> Dict[str, Any]:
-        """Get deployed contract information"""
-        try:
-            if not self.tron_client:
-                raise HTTPException(503, "TRON client not available")
-            
-            # Get contract information from TRON network
-            contract_info = self.tron_client.get_contract(contract_address)
-            
-            return {
-                "contract_address": contract_address,
-                "contract_info": contract_info,
-                "network": TRON_NETWORK
-            }
-            
-        except Exception as e:
-            logger.error(f"Contract info retrieval failed: {e}")
-            raise HTTPException(500, f"Contract info retrieval failed: {str(e)}")
+    # async def get_contract_info(self, contract_address: str) -> Dict[str, Any]:
+    #     """Get deployed contract information"""
+    #     try:
+    #         if not self.tron_client:
+    #             raise HTTPException(503, "TRON client not available")
+    #         
+    #         # Get contract information from TRON network
+    #         contract_info = self.tron_client.get_contract(contract_address)
+    #         
+    #         return {
+    #             "contract_address": contract_address,
+    #             "contract_info": contract_info,
+    #             "network": TRON_NETWORK
+    #         }
+    #         
+    #     except Exception as e:
+    #         logger.error(f"Contract info retrieval failed: {e}")
+    #         raise HTTPException(500, f"Contract info retrieval failed: {str(e)}")
 
 
 # Pydantic models
@@ -400,7 +400,7 @@ async def startup_event():
     """Application startup"""
     logger.info("Starting Contract Deployment Service...")
     await deployment_service._setup_database()
-    await deployment_service._setup_tron_client()
+    # await deployment_service._setup_tron_client()
     logger.info("Contract Deployment Service started")
 
 @app.on_event("shutdown")
