@@ -1,0 +1,272 @@
+# Lucid API - SBOM Generation Configuration
+# Version: 1.0.0
+# Description: Configuration for Software Bill of Materials generation
+
+# SBOM Generation Settings
+sbom:
+  # Output formats
+  formats:
+    - spdx-json
+    - cyclonedx-json
+    - syft-json
+  
+  # Primary format (used for vulnerability scanning)
+  primary_format: spdx-json
+  
+  # Output directory
+  output_dir: build/sbom
+  
+  # Archive old SBOMs
+  archive_enabled: true
+  archive_retention_days: 90
+
+# Container Registry Settings
+registry:
+  default: lucid
+  docker_hub: pickme/lucid
+  github_container_registry: ghcr.io/hamigames/lucid
+
+# Container Definitions by Phase
+containers:
+  # Phase 1: Foundation (Weeks 1-2)
+  phase1:
+    - name: lucid-mongodb
+      version: latest
+      base_image: mongo:7.0
+      criticality: high
+      
+    - name: lucid-redis
+      version: latest
+      base_image: redis:7.0
+      criticality: high
+      
+    - name: lucid-elasticsearch
+      version: latest
+      base_image: elasticsearch:8.11.0
+      criticality: medium
+      
+    - name: lucid-auth-service
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+  
+  # Phase 2: Core Services (Weeks 3-4)
+  phase2:
+    - name: lucid-api-gateway
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+      
+    - name: lucid-blockchain-engine
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+      
+    - name: lucid-session-anchoring
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-block-manager
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-data-chain
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-service-mesh-controller
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+  
+  # Phase 3: Application Services (Weeks 5-7)
+  phase3:
+    - name: lucid-session-pipeline
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-session-recorder
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-chunk-processor
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-session-storage
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: medium
+      
+    - name: lucid-session-api
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-rdp-server-manager
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-xrdp-integration
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: medium
+      
+    - name: lucid-session-controller
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-resource-monitor
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: medium
+      
+    - name: lucid-node-management
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+  
+  # Phase 4: Support Services (Weeks 8-9)
+  phase4:
+    - name: lucid-admin-interface
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-tron-client
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+      
+    - name: lucid-payout-router
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+      
+    - name: lucid-wallet-manager
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+      
+    - name: lucid-usdt-manager
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+      
+    - name: lucid-trx-staking
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: high
+      
+    - name: lucid-payment-gateway
+      version: latest
+      base_image: gcr.io/distroless/python3-debian12
+      criticality: critical
+
+# Vulnerability Scanning Configuration
+vulnerability_scanning:
+  # Tools
+  tools:
+    trivy:
+      enabled: true
+      severity_levels:
+        - CRITICAL
+        - HIGH
+        - MEDIUM
+      timeout: 10m
+      
+    grype:
+      enabled: true
+      fail_on_severity: high
+      
+  # Thresholds
+  thresholds:
+    critical_cvss: 7.0
+    fail_on_critical: true
+    fail_on_high: false
+    max_critical_allowed: 0
+    max_high_allowed: 5
+
+# Supply Chain Security
+supply_chain:
+  # Image signing
+  signing:
+    enabled: false  # Enable in production
+    tool: cosign
+    key_path: /secrets/cosign.key
+    
+  # SLSA Provenance
+  slsa:
+    enabled: false  # Enable in production
+    level: 2
+    builder: github-actions
+    
+  # Attestation
+  attestation:
+    enabled: false  # Enable in production
+    type: cosign
+
+# Compliance Requirements
+compliance:
+  # Required checks
+  required_checks:
+    - sbom_generation
+    - vulnerability_scan
+    - tron_isolation
+    - distroless_images
+    - non_root_user
+    
+  # Optional checks
+  optional_checks:
+    - image_signing
+    - slsa_provenance
+    - runtime_analysis
+    
+  # Reporting
+  reporting:
+    format: markdown
+    include_summary: true
+    include_details: true
+    output_dir: build/compliance/reports
+
+# CI/CD Integration
+ci_cd:
+  # GitHub Actions
+  github_actions:
+    enabled: true
+    trigger_on:
+      - push
+      - pull_request
+    scan_on_build: true
+    
+  # Build pipeline
+  build:
+    generate_sbom_on_build: true
+    scan_on_build: true
+    fail_on_critical: true
+    upload_artifacts: true
+
+# Notification Settings
+notifications:
+  enabled: false  # Enable when notification system is ready
+  channels:
+    - slack
+    - email
+  severity_threshold: critical
+
+# Metadata
+metadata:
+  project_name: Lucid API
+  project_url: https://github.com/HamiGames/Lucid
+  security_contact: security@lucid.io
+  sbom_author: Lucid Development Team
+  license: Proprietary
+

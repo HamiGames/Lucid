@@ -1,57 +1,70 @@
-from __future__ import annotations
+"""
+Configuration Module
+
+This module contains configuration settings for the Blockchain API.
+Includes database connections, Redis settings, and other configuration options.
+"""
 
 import os
-from functools import lru_cache
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from typing import Optional
+from pydantic import BaseSettings
 
 class Settings(BaseSettings):
-    # Service
-    SERVICE_NAME: str = Field(default="blockchain-core")
-    VERSION: str = Field(default=os.getenv("SERVICE_VERSION", "0.1.0"))
+    """Application settings."""
+    
+    # API Settings
+    API_TITLE: str = "Lucid Blockchain API"
+    API_VERSION: str = "1.0.0"
+    API_DESCRIPTION: str = "API for the lucid_blocks blockchain system with PoOT consensus"
+    
+    # Server Settings
+    HOST: str = "0.0.0.0"
+    PORT: int = 8084
+    DEBUG: bool = False
+    
+    # Database Settings
+    DATABASE_URL: str = "mongodb://localhost:27017/lucid_blockchain"
+    DATABASE_NAME: str = "lucid_blockchain"
+    
+    # Redis Settings
+    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    
+    # Security Settings
+    SECRET_KEY: str = "your-secret-key-here"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ALGORITHM: str = "HS256"
+    
+    # Rate Limiting Settings
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE: str = "redis"  # "memory" or "redis"
+    
+    # Logging Settings
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+    # Blockchain Settings
+    BLOCKCHAIN_NETWORK: str = "lucid_blocks_mainnet"
+    CONSENSUS_ALGORITHM: str = "PoOT"
+    BLOCK_TIME: int = 10  # seconds
+    MAX_TRANSACTIONS_PER_BLOCK: int = 1000
+    
+    # CORS Settings
+    CORS_ORIGINS: list = ["*"]
+    CORS_CREDENTIALS: bool = True
+    CORS_METHODS: list = ["*"]
+    CORS_HEADERS: list = ["*"]
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
 
-    # HTTP
-    API_HOST: str = Field(default=os.getenv("API_HOST", "0.0.0.0"))
-    API_PORT: int = Field(default=int(os.getenv("API_PORT", "8084")))
-    LOG_LEVEL: str = Field(default=os.getenv("LOG_LEVEL", "INFO"))
+# Global settings instance
+settings = Settings()
 
-    # MongoDB
-    MONGO_URI: str = Field(
-        default=os.getenv(
-            "MONGO_URI",
-            "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true",
-        )
-    )
-    MONGO_DB: str = Field(default=os.getenv("MONGO_DB", "lucid"))
-
-    # Key encryption (Fernet requires 32-byte urlsafe base64 key)
-    KEY_ENC_SECRET: str = Field(
-        default=os.getenv("KEY_ENC_SECRET", "")
-    )  # prefer supplying; otherwise an ephemeral will be used
-
-    # Tron / Chain
-    TRON_NETWORK: str = Field(
-        default=os.getenv("TRON_NETWORK", "mainnet")
-    )  # mainnet | shasta
-    TRONGRID_API_KEY: str = Field(
-        default=os.getenv("TRONGRID_API_KEY", "")
-    )  # optional but recommended
-    TRON_HTTP_ENDPOINT: str = Field(
-        default=os.getenv("TRON_HTTP_ENDPOINT", "")
-    )  # override; else derived by network
-
-    # Optional metadata (kept consistent with earlier naming)
-    BLOCK_ONION: str = Field(
-        default=os.getenv("BLOCK_ONION", "")
-    )  # e.g., 56-char .onion for the block node
-    BLOCK_RPC_URL: str = Field(default=os.getenv("BLOCK_RPC_URL", ""))
-
-    model_config = SettingsConfigDict(
-        env_prefix="BLOCKCHAIN_", env_file=".env.api", extra="ignore"
-    )
-
-
-@lru_cache(maxsize=1)
+# Environment-specific overrides
 def get_settings() -> Settings:
-    return Settings()
+    """Get application settings with environment-specific overrides."""
+    return settings

@@ -196,24 +196,54 @@ infrastructure/containers/auth/.dockerignore
 
 ---
 
-### Step 7: Foundation Integration Testing
-**Directory**: `tests/integration/`  
+### Step 7: Foundation Integration Testing & Security Compliance
+**Directory**: `tests/integration/` and `scripts/security/`  
 **New Files Required**:
 ```
 tests/integration/phase1/__init__.py
 tests/integration/phase1/test_auth_database.py
 tests/integration/phase1/test_hardware_wallet.py
 tests/integration/phase1/test_jwt_flow.py
+tests/integration/phase1/test_rbac_permissions.py
+tests/integration/phase1/test_container_security.py
 tests/integration/phase1/conftest.py
+scripts/security/generate-sbom.sh
+scripts/security/verify-sbom.sh
+scripts/security/scan-vulnerabilities.sh
+scripts/security/security-compliance-check.sh
+configs/security/sbom-config.yml
+docs/security/sbom-generation-guide.md
 ```
 
 **Actions**:
 - Test user registration → MongoDB storage
 - Test JWT generation → Redis caching
 - Test hardware wallet connection (mocked)
-- Verify RBAC permissions
+- Verify RBAC permissions enforcement
+- Generate Software Bill of Materials (SBOM) for all Phase 1 containers
+- Scan SBOM for CVE vulnerabilities using Trivy
+- Verify container signature and provenance
+- Generate security compliance report
 
-**Validation**: All Phase 1 integration tests pass (>95% coverage)
+**SBOM Generation**:
+- Use Syft to generate SPDX-JSON format SBOM
+- Generate SBOM for: `lucid-mongodb`, `lucid-redis`, `lucid-elasticsearch`, `lucid-auth-service`
+- Store SBOMs in `build/sbom/` directory
+- Scan SBOMs with Grype for known vulnerabilities
+- Fail build on critical CVEs (CVSS >= 7.0)
+
+**Security Compliance**:
+- CVE scanning with zero critical vulnerabilities
+- Container image signing with Cosign
+- Supply chain security verification
+- SLSA provenance generation (Level 2)
+
+**Validation**: 
+- All Phase 1 integration tests pass (>95% coverage)
+- All SBOMs generated successfully (4 containers)
+- Zero critical CVE vulnerabilities detected
+- All containers signed and verified
+- Security compliance report generated
 
 ---
 

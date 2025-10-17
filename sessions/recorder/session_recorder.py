@@ -1,6 +1,7 @@
 # LUCID Session Recorder - SPEC-1B Session Recording
 # Professional session recording with hardware acceleration for Pi 5
 # Multi-platform support for ARM64 Pi and AMD64 development
+# Enhanced with chunk generation for pipeline processing
 
 from __future__ import annotations
 
@@ -18,6 +19,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import uuid
+import hashlib
+import gzip
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks
@@ -35,6 +38,11 @@ AUDIO_CODEC = os.getenv("LUCID_AUDIO_CODEC", "opus")
 BITRATE = os.getenv("LUCID_BITRATE", "2000k")
 FPS = int(os.getenv("LUCID_FPS", "30"))
 
+# Chunk generation configuration
+CHUNK_SIZE_MB = int(os.getenv("LUCID_CHUNK_SIZE_MB", "10"))
+COMPRESSION_LEVEL = int(os.getenv("LUCID_COMPRESSION_LEVEL", "6"))
+CHUNK_OUTPUT_PATH = Path(os.getenv("LUCID_CHUNK_OUTPUT_PATH", "/data/chunks"))
+
 
 class RecordingStatus(Enum):
     """Session recording status states"""
@@ -47,6 +55,19 @@ class RecordingStatus(Enum):
 
 
 @dataclass
+class ChunkMetadata:
+    """Chunk metadata for pipeline processing"""
+    chunk_id: str
+    session_id: str
+    chunk_index: int
+    size_bytes: int
+    hash_sha256: str
+    timestamp: datetime
+    compressed: bool
+    compression_ratio: float
+    quality_score: float
+
+@dataclass
 class RecordingSession:
     """Recording session metadata"""
     session_id: str
@@ -57,6 +78,11 @@ class RecordingSession:
     output_path: Optional[Path] = None
     ffmpeg_process: Optional[subprocess.Popen] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    # Chunk generation tracking
+    chunk_generator: Optional['ChunkGenerator'] = None
+    chunks_created: int = 0
+    total_chunk_size: int = 0
 
 
 class SessionRecorder:
@@ -65,6 +91,7 @@ class SessionRecorder:
     
     Records RDP sessions with hardware acceleration support for Pi 5.
     Implements SPEC-1B session recording requirements.
+    Integrates with pipeline state machine for Step 15 requirements.
     """
     
     def __init__(self):
