@@ -65,7 +65,7 @@ class KeyType(Enum):
     ED25519_SIGNING = "ed25519_signing"
     RSA_ENCRYPTION = "rsa_encryption"
     CHACHA_SYMMETRIC = "chacha_symmetric"
-    TRON_WALLET = "tron_wallet"
+    # TRON_WALLET removed for TRON isolation compliance
     ONION_SERVICE = "onion_service"
 
 

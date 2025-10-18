@@ -1,6 +1,14 @@
 """
 Lucid API - Phase 1 Integration Test: Auth & Database
 Tests integration between Authentication service and MongoDB/Redis
+
+This test suite verifies:
+- User registration → MongoDB storage
+- JWT generation → Redis caching  
+- Database connection pooling
+- Transaction rollback capabilities
+- Cache invalidation
+- Concurrent operations
 """
 
 import pytest

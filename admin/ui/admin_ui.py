@@ -30,7 +30,7 @@ ADMIN_PORT = int(os.getenv("ADMIN_PORT", "8096"))
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
 SESSION_RECORDER_URL = os.getenv("SESSION_RECORDER_URL", "http://session-recorder:8093")
 CHAIN_CLIENT_URL = os.getenv("CHAIN_CLIENT_URL", "http://on-system-chain-client:8094")
-TRON_CLIENT_URL = os.getenv("TRON_CLIENT_URL", "http://tron-node-client:8095")
+# TRON_CLIENT_URL removed for TRON isolation compliance
 TOR_SOCKS_PORT = os.getenv("TOR_SOCKS_PORT", "9050")
 
 
@@ -244,8 +244,8 @@ class AdminUI:
                     {{ system_info.chain_client_status }}
                 </div>
                 <div class="info-item">
-                    <strong>TRON Client:</strong><br>
-                    {{ system_info.tron_client_status }}
+                    <strong>Payment System:</strong><br>
+                    {{ system_info.payment_system_status }}
                 </div>
             </div>
         </div>
@@ -467,8 +467,8 @@ class AdminUI:
         session = self.active_sessions[session_id]
         
         try:
-            # Request payout via TRON client
-            await self._request_payout_via_tron(
+            # Request payout via payment system
+            await self._request_payout_via_payment_system(
                 session_id, to_address, amount_usdt, router_type, reason_code
             )
             
@@ -506,11 +506,11 @@ class AdminUI:
         # This would make HTTP request to chain client service
         logger.info(f"Registering session on chain: {session.session_id}")
     
-    async def _request_payout_via_tron(self, session_id: str, to_address: str, 
+    async def _request_payout_via_payment_system(self, session_id: str, to_address: str, 
                                      amount_usdt: float, router_type: str, reason_code: str) -> None:
-        """Request payout via TRON"""
-        # This would make HTTP request to TRON client service
-        logger.info(f"Requesting payout via TRON: {session_id}")
+        """Request payout via payment system"""
+        # This would make HTTP request to payment system service
+        logger.info(f"Requesting payout via payment system: {session_id}")
     
     async def _get_system_info(self) -> Dict[str, Any]:
         """Get system information"""
@@ -518,7 +518,7 @@ class AdminUI:
             "active_sessions": len(self.active_sessions),
             "mongodb_status": await self._check_mongodb_connection(),
             "chain_client_status": "connected",
-            "tron_client_status": "connected"
+            "payment_system_status": "connected"
         }
     
     async def _check_mongodb_connection(self) -> str:

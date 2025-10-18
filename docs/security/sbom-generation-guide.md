@@ -1,541 +1,296 @@
 # Lucid API - SBOM Generation Guide
 
-## Document Control
-
-| Attribute | Value |
-|-----------|-------|
-| Document ID | LUCID-SEC-SBOM-001 |
-| Version | 1.0.0 |
-| Status | ACTIVE |
-| Last Updated | 2025-10-14 |
-| Owner | Security Team |
-
----
-
 ## Overview
 
-This guide provides comprehensive instructions for generating, verifying, and managing Software Bill of Materials (SBOM) for all Lucid API containers. SBOM generation is a critical component of our supply chain security and compliance strategy.
-
-### What is an SBOM?
-
-A Software Bill of Materials (SBOM) is a formal, machine-readable inventory of all components, libraries, and dependencies used in a software application. It provides transparency into the software supply chain and enables vulnerability tracking and compliance verification.
-
-### Why SBOMs are Critical
-
-1. **Vulnerability Management**: Quickly identify which containers are affected by newly discovered CVEs
-2. **License Compliance**: Track all software licenses used in production
-3. **Supply Chain Security**: Understand and verify all dependencies
-4. **Incident Response**: Rapidly assess impact of security incidents
-5. **Regulatory Compliance**: Meet requirements for NTIA, CISA, and other regulatory frameworks
-
----
-
-## SBOM Standards
-
-### Supported Formats
-
-Lucid API generates SBOMs in multiple industry-standard formats:
-
-#### 1. SPDX-JSON (Primary Format)
-- **Standard**: Software Package Data Exchange (SPDX) 2.3
-- **Format**: JSON
-- **Use Case**: Vulnerability scanning, compliance
-- **Specification**: https://spdx.github.io/spdx-spec/
-
-#### 2. CycloneDX-JSON
-- **Standard**: CycloneDX 1.4
-- **Format**: JSON
-- **Use Case**: OWASP dependency tracking, security analysis
-- **Specification**: https://cyclonedx.org/
-
-#### 3. Syft-JSON (Internal)
-- **Standard**: Anchore Syft native format
-- **Format**: JSON
-- **Use Case**: Detailed analysis, debugging
-
----
+This guide explains how to generate, verify, and manage Software Bills of Materials (SBOMs) for the Lucid API project. SBOMs are critical for supply chain security and compliance.
 
 ## Prerequisites
 
 ### Required Tools
 
-Install the following tools before generating SBOMs:
+1. **Syft** - For SBOM generation
+   ```bash
+   curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+   ```
 
-#### 1. Syft (SBOM Generator)
-```bash
-# Install Syft
-curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+2. **jq** - For JSON processing
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install jq
+   
+   # macOS
+   brew install jq
+   
+   # CentOS/RHEL
+   sudo yum install jq
+   ```
 
-# Verify installation
-syft version
-```
-
-#### 2. Grype (Vulnerability Scanner)
-```bash
-# Install Grype
-curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-
-# Verify installation
-grype version
-```
-
-#### 3. Trivy (Container Scanner)
-```bash
-# Install Trivy
-curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-
-# Verify installation
-trivy version
-```
-
-#### 4. jq (JSON Processor)
-```bash
-# On Ubuntu/Debian
-sudo apt-get install jq
-
-# On macOS
-brew install jq
-
-# Verify installation
-jq --version
-```
-
-### Required Permissions
-
-- Docker access to pull and inspect images
-- Write access to `build/sbom/` directory
-- Network access to pull container images
-
----
+3. **Docker** - For container operations
+   ```bash
+   # Install Docker Desktop or Docker Engine
+   ```
 
 ## SBOM Generation
 
-### Quick Start
+### Basic Usage
 
-Generate SBOMs for Phase 1 (Foundation) containers:
-
-```bash
-# Navigate to project root
-cd /path/to/Lucid
-
-# Generate Phase 1 SBOMs (default)
-./scripts/security/generate-sbom.sh
-
-# Or explicitly specify Phase 1
-./scripts/security/generate-sbom.sh --phase 1
-```
-
-### Generate SBOMs for All Phases
+Generate SBOMs for Phase 1 containers:
 
 ```bash
-# Generate SBOMs for all containers across all phases
-./scripts/security/generate-sbom.sh --all
-```
-
-### Generate SBOM for Single Container
-
-```bash
-# Generate SBOM for specific container
-./scripts/security/generate-sbom.sh lucid-auth-service latest
-
-# With custom format
-./scripts/security/generate-sbom.sh --format cyclonedx-json lucid-api-gateway latest
-```
-
-### Phase-Specific Generation
-
-```bash
-# Phase 1: Foundation (MongoDB, Redis, Elasticsearch, Auth)
+# Generate SBOMs for all Phase 1 containers
 ./scripts/security/generate-sbom.sh --phase 1
 
-# Phase 2: Core Services (API Gateway, Blockchain)
-./scripts/security/generate-sbom.sh --phase 2
-
-# Phase 3: Application Services (Sessions, RDP, Nodes)
-./scripts/security/generate-sbom.sh --phase 3
-
-# Phase 4: Support Services (Admin, TRON Payment)
-./scripts/security/generate-sbom.sh --phase 4
+# Archive old SBOMs before generating new ones
+./scripts/security/generate-sbom.sh --phase 1 --archive
 ```
 
----
+### Supported Formats
 
-## SBOM Directory Structure
+The script generates SBOMs in multiple formats:
 
-Generated SBOMs are organized by phase:
+- **SPDX JSON** (`.spdx-json`) - Industry standard format
+- **CycloneDX JSON** (`.cyclonedx.json`) - OWASP standard format  
+- **Syft JSON** (`.syft.json`) - Syft native format
+
+### Output Structure
 
 ```
 build/sbom/
 ├── phase1/
-│   ├── lucid-mongodb-latest-sbom.spdx-json
-│   ├── lucid-mongodb-latest-sbom.cyclonedx.json
-│   ├── lucid-mongodb-latest-sbom.syft.json
-│   ├── lucid-mongodb-summary.txt
-│   ├── lucid-redis-latest-sbom.spdx-json
-│   ├── lucid-elasticsearch-latest-sbom.spdx-json
-│   └── lucid-auth-service-latest-sbom.spdx-json
-├── phase2/
-│   ├── lucid-api-gateway-latest-sbom.spdx-json
-│   ├── lucid-blockchain-engine-latest-sbom.spdx-json
-│   └── ...
-├── phase3/
-│   ├── lucid-session-pipeline-latest-sbom.spdx-json
-│   └── ...
-├── phase4/
-│   ├── lucid-admin-interface-latest-sbom.spdx-json
-│   ├── lucid-tron-client-latest-sbom.spdx-json
-│   └── ...
-├── reports/
-│   └── sbom-generation-report-20251014_143025.txt
+│   ├── mongodb-sbom.spdx-json
+│   ├── mongodb-sbom.cyclonedx.json
+│   ├── mongodb-sbom.syft.json
+│   ├── redis-sbom.spdx-json
+│   ├── redis-sbom.cyclonedx.json
+│   ├── redis-sbom.syft.json
+│   ├── elasticsearch-sbom.spdx-json
+│   ├── elasticsearch-sbom.cyclonedx.json
+│   ├── elasticsearch-sbom.syft.json
+│   ├── auth-service-sbom.spdx-json
+│   ├── auth-service-sbom.cyclonedx.json
+│   ├── auth-service-sbom.syft.json
+│   └── sbom_summary.json
 └── archive/
-    └── 20251014_143025/
-        └── ...
+    └── phase1_20250114_143022/
+        └── [archived SBOMs]
 ```
-
----
 
 ## SBOM Verification
 
-### Verify All SBOMs
+### Verify Generated SBOMs
 
 ```bash
-# Verify all generated SBOMs
+# Verify all SBOMs in Phase 1 directory
 ./scripts/security/verify-sbom.sh --all
-```
 
-### Verify Single SBOM
-
-```bash
-# Verify specific SBOM file
-./scripts/security/verify-sbom.sh build/sbom/phase1/lucid-auth-service-latest-sbom.spdx-json
+# Verify SBOMs in specific directory
+./scripts/security/verify-sbom.sh --directory build/sbom/phase1
 ```
 
 ### Verification Checks
 
-The verification script checks:
+The verification script performs:
 
-1. **Valid JSON Format**: Ensures SBOM is well-formed JSON
-2. **Package Count**: Verifies SBOM contains packages
-3. **File Size**: Checks for suspiciously small files
-4. **Structure Validation**: Confirms required SBOM fields exist
-
----
+1. **JSON Validation** - Ensures valid JSON format
+2. **Required Fields** - Checks for mandatory SBOM fields
+3. **Package Count** - Verifies packages are listed
+4. **Critical Packages** - Checks for essential components
+5. **Format Compliance** - Validates format-specific requirements
 
 ## Vulnerability Scanning
 
-### Scan Containers with Trivy
+### Scan Containers
 
 ```bash
-# Scan specific container
-./scripts/security/scan-vulnerabilities.sh --container lucid-auth-service
-
 # Scan all Phase 1 containers
-./scripts/security/scan-vulnerabilities.sh --phase 1
+./scripts/security/scan-vulnerabilities.sh --analyze
 
-# Scan all containers
-./scripts/security/scan-vulnerabilities.sh --all
+# Scan specific container
+./scripts/security/scan-vulnerabilities.sh --container lucid-auth-service:latest
+
+# Clean old scans before scanning
+./scripts/security/scan-vulnerabilities.sh --clean --analyze
 ```
 
-### Scan SBOMs with Grype
+### Scan Results
 
-```bash
-# Scan all generated SBOMs
-./scripts/security/scan-vulnerabilities.sh --sboms
-```
-
-### Vulnerability Scan Output
-
-Scans generate detailed reports:
+Scan results are stored in:
 
 ```
 build/security-scans/
 ├── trivy/
-│   ├── lucid-auth-service-trivy-20251014_143025.json
-│   └── ...
-├── grype/
-│   ├── lucid-auth-service-grype-20251014_143025.json
+│   ├── mongodb-scan.json
+│   ├── mongodb-scan.table
+│   ├── mongodb-scan.sarif
+│   ├── redis-scan.json
+│   ├── redis-scan.table
+│   ├── redis-scan.sarif
 │   └── ...
 └── reports/
-    └── vulnerability-report-20251014_143025.md
+    ├── vulnerability_summary.json
+    └── security_compliance_report.json
 ```
 
----
+## Security Compliance
 
-## Security Compliance Check
-
-### Run Full Compliance Check
+### Run Compliance Check
 
 ```bash
-# Run comprehensive security compliance verification
+# Run comprehensive security compliance check
 ./scripts/security/security-compliance-check.sh
 ```
 
-### Compliance Checks Performed
+### Compliance Scoring
 
-1. **SBOM Generation**: Verifies all required SBOMs exist
-2. **CVE Vulnerability Scanning**: Checks for critical vulnerabilities
-3. **Container Security**: Validates distroless images, non-root users
-4. **TRON Isolation**: Ensures TRON code is properly isolated
-5. **Authentication Security**: Verifies JWT, hardware wallet, RBAC
-6. **Documentation**: Checks for required security documentation
-7. **CI/CD Integration**: Validates security scanning in pipelines
-8. **Secrets Management**: Verifies proper secrets handling
+The compliance check evaluates:
 
-### Compliance Report
+1. **SBOM Generation** (25 points)
+   - SBOM files present
+   - Multiple formats generated
+   - Proper structure
 
-```
-build/compliance/reports/
-└── security-compliance-20251014_143025.md
-```
+2. **Vulnerability Scanning** (30 points)
+   - Scan results available
+   - Critical vulnerabilities = 0
+   - High vulnerabilities ≤ 10
 
----
+3. **Container Security** (25 points)
+   - Distroless base images
+   - Multi-stage builds
+   - Security best practices
 
-## CI/CD Integration
+4. **Security Configuration** (20 points)
+   - Security scripts present
+   - Documentation available
+   - Proper configuration
 
-### GitHub Actions Workflow
+### Compliance Levels
 
-Add SBOM generation to your GitHub Actions workflow:
+- **EXCELLENT**: 90-100%
+- **GOOD**: 80-89%
+- **ACCEPTABLE**: 70-79%
+- **NEEDS IMPROVEMENT**: 60-69%
+- **FAILED**: 0-59%
+
+## Integration with CI/CD
+
+### GitHub Actions Integration
+
+Add to your workflow:
 
 ```yaml
-name: Build and Generate SBOM
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+name: Security Compliance
+on: [push, pull_request]
 
 jobs:
-  build-and-sbom:
+  security-compliance:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Build container
-        run: |
-          docker build -t lucid-auth-service:latest -f auth/Dockerfile .
-      
-      - name: Install Syft
+      - name: Install dependencies
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          sudo apt-get install jq
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       
-      - name: Generate SBOM
-        run: |
-          ./scripts/security/generate-sbom.sh lucid-auth-service latest
+      - name: Build containers
+        run: docker-compose build
       
-      - name: Install Grype
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+      - name: Generate SBOMs
+        run: ./scripts/security/generate-sbom.sh --phase 1
       
-      - name: Scan for vulnerabilities
-        run: |
-          grype sbom:build/sbom/phase1/lucid-auth-service-latest-sbom.spdx-json
+      - name: Scan vulnerabilities
+        run: ./scripts/security/scan-vulnerabilities.sh --analyze
       
-      - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: sboms
-          path: build/sbom/
+      - name: Check compliance
+        run: ./scripts/security/security-compliance-check.sh
 ```
-
----
-
-## SBOM Best Practices
-
-### 1. Generate SBOMs on Every Build
-
-Always generate SBOMs as part of your container build process:
-
-```bash
-# Build container
-docker build -t lucid-auth-service:latest .
-
-# Generate SBOM immediately
-./scripts/security/generate-sbom.sh lucid-auth-service latest
-
-# Scan for vulnerabilities
-./scripts/security/scan-vulnerabilities.sh --container lucid-auth-service
-```
-
-### 2. Version Your SBOMs
-
-Include version tags in SBOM filenames:
-
-```bash
-# Generate SBOM with version
-./scripts/security/generate-sbom.sh lucid-auth-service v1.2.3
-```
-
-### 3. Archive Historical SBOMs
-
-Keep historical SBOMs for compliance and forensics:
-
-- SBOMs are automatically archived in `build/sbom/archive/`
-- Configure retention period in `configs/security/sbom-config.yml`
-
-### 4. Automate Vulnerability Scanning
-
-Set up automated daily scans:
-
-```bash
-# Add to crontab for daily scans at 2 AM
-0 2 * * * /path/to/Lucid/scripts/security/scan-vulnerabilities.sh --all
-```
-
-### 5. Fail Builds on Critical CVEs
-
-Configure your CI/CD to fail on critical vulnerabilities:
-
-```yaml
-- name: Scan and fail on critical
-  run: |
-    ./scripts/security/scan-vulnerabilities.sh --container lucid-auth-service
-    # Script exits with non-zero on critical CVEs
-```
-
----
 
 ## Troubleshooting
 
-### Issue: Syft Not Found
+### Common Issues
 
-**Solution**:
+1. **Syft not found**
+   ```bash
+   # Install Syft
+   curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+   ```
+
+2. **jq not found**
+   ```bash
+   # Install jq
+   sudo apt-get install jq
+   ```
+
+3. **Trivy not found**
+   ```bash
+   # Install Trivy
+   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+   ```
+
+4. **Container not found**
+   ```bash
+   # Build containers first
+   docker-compose build
+   ```
+
+### Debug Mode
+
+Enable debug output:
+
 ```bash
-# Install Syft
-curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+# Set debug environment variable
+export DEBUG=1
 
-# Verify
-syft version
-```
-
-### Issue: Container Image Not Found
-
-**Solution**:
-```bash
-# Pull the image first
-docker pull lucid/lucid-auth-service:latest
-
-# Or build it locally
-docker build -t lucid/lucid-auth-service:latest -f auth/Dockerfile .
-
-# Then generate SBOM
-./scripts/security/generate-sbom.sh lucid-auth-service latest
-```
-
-### Issue: SBOM Generation Fails
-
-**Solution**:
-```bash
 # Run with verbose output
-set -x
-./scripts/security/generate-sbom.sh lucid-auth-service latest
-
-# Check Syft directly
-syft lucid/lucid-auth-service:latest -o spdx-json
+./scripts/security/generate-sbom.sh --phase 1
 ```
 
-### Issue: Permission Denied
+## Best Practices
 
-**Solution**:
-```bash
-# Make script executable
-chmod +x scripts/security/generate-sbom.sh
-chmod +x scripts/security/verify-sbom.sh
-chmod +x scripts/security/scan-vulnerabilities.sh
-chmod +x scripts/security/security-compliance-check.sh
+### SBOM Management
 
-# Create SBOM directory
-mkdir -p build/sbom
-```
+1. **Generate regularly** - Create SBOMs for each release
+2. **Verify integrity** - Always verify generated SBOMs
+3. **Archive old versions** - Keep historical SBOMs
+4. **Multiple formats** - Generate in multiple standard formats
 
----
+### Vulnerability Management
 
-## SBOM Maintenance
+1. **Scan frequently** - Run scans on every build
+2. **Address critical issues** - Fix CRITICAL vulnerabilities immediately
+3. **Track trends** - Monitor vulnerability counts over time
+4. **Document exceptions** - Justify any accepted vulnerabilities
 
-### Regular Updates
+### Compliance
 
-1. **Weekly**: Generate fresh SBOMs for all containers
-2. **On Dependency Changes**: Regenerate SBOMs when dependencies update
-3. **Before Releases**: Generate and scan SBOMs before production deployment
-4. **Security Advisories**: Scan SBOMs when new CVEs are published
+1. **Set thresholds** - Define acceptable risk levels
+2. **Monitor scores** - Track compliance over time
+3. **Automate checks** - Integrate with CI/CD pipeline
+4. **Regular reviews** - Review and update policies
 
-### Cleanup Old SBOMs
+## Future Enhancements
 
-```bash
-# Archive is managed automatically
-# Configure retention in configs/security/sbom-config.yml
+### Planned Features
 
-# Manual cleanup (keeps last 90 days)
-find build/sbom/archive -type d -mtime +90 -exec rm -rf {} +
-```
+1. **Container Image Signing** - Using Cosign
+2. **SLSA Provenance** - Supply chain attestations
+3. **Automated Notifications** - Email/Slack alerts
+4. **Trend Analysis** - Historical vulnerability tracking
+5. **Policy Enforcement** - Automated policy checks
 
----
+### Integration Opportunities
 
-## Compliance Requirements
-
-### NTIA Minimum Elements
-
-Our SBOMs include all NTIA-required minimum elements:
-
-1. ✅ **Supplier Name**: Container image provider
-2. ✅ **Component Name**: Package/library names
-3. ✅ **Version**: Package versions
-4. ✅ **Dependencies**: Full dependency tree
-5. ✅ **Author**: SBOM creator information
-6. ✅ **Timestamp**: Generation timestamp
-7. ✅ **SBOM Serial Number**: Unique identifier
-
-### CISA Requirements
-
-Compliant with CISA software supply chain guidance:
-
-- ✅ Machine-readable format (SPDX, CycloneDX)
-- ✅ Automated generation
-- ✅ Vulnerability scanning integration
-- ✅ Version control and archiving
-
----
+1. **Container Registry** - Scan on push
+2. **Security Scanners** - Additional scanning tools
+3. **Compliance Frameworks** - SOC2, ISO27001
+4. **Risk Assessment** - Automated risk scoring
 
 ## References
 
-### Standards Documentation
-
-- [SPDX Specification](https://spdx.github.io/spdx-spec/)
+- [SPDX Specification](https://spdx.dev/)
 - [CycloneDX Specification](https://cyclonedx.org/)
-- [NTIA SBOM Minimum Elements](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom)
-- [CISA Software Supply Chain](https://www.cisa.gov/sbom)
-
-### Tools Documentation
-
 - [Syft Documentation](https://github.com/anchore/syft)
-- [Grype Documentation](https://github.com/anchore/grype)
-- [Trivy Documentation](https://aquasecurity.github.io/trivy/)
-
-### Project Documentation
-
-- [Master Build Plan](../../plan/API_plans/00-master-architecture/01-MASTER_BUILD_PLAN.md)
-- [Build Requirements Guide](../../plan/API_plans/00-master-architecture/13-BUILD_REQUIREMENTS_GUIDE.md)
-- [Security Compliance Guide](./security-compliance-guide.md)
-
----
-
-## Support
-
-For questions or issues related to SBOM generation:
-
-1. Check this guide first
-2. Review error messages in `build/sbom/reports/`
-3. Check tool versions: `syft version`, `grype version`, `trivy version`
-4. Review configuration: `configs/security/sbom-config.yml`
-5. Contact security team: security@lucid.io
-
----
-
-**Document Version**: 1.0.0  
-**Last Updated**: 2025-10-14  
-**Next Review**: 2025-11-14
-
+- [Trivy Documentation](https://github.com/aquasecurity/trivy)
+- [OWASP SBOM](https://owasp.org/www-project-software-bill-of-materials/)

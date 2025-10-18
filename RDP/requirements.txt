@@ -1,40 +1,40 @@
-# Path: RDP/requirements.txt
-# Lucid RDP Module Dependencies
-# Requirements for RDP functionality
-
-# Core dependencies
-fastapi>=0.104.0
-pydantic>=2.5.0
-aiofiles>=23.2.0
-
-# Security and cryptography
-cryptography>=41.0.0
-
-# Platform-specific clipboard handling
-pyperclip>=1.8.2
-
-# Windows-specific dependencies (optional)
-# pywin32>=306; sys_platform == "win32"
-
-# Linux-specific dependencies (optional)
-# python-xlib>=0.33; sys_platform == "linux"
-
-# macOS-specific dependencies (optional)
-# pyobjc>=9.0; sys_platform == "darwin"
-
-# Async and networking
-asyncio-mqtt>=0.13.0
-websockets>=12.0
+# FastAPI Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
 
 # Database
-pymongo>=4.5.0,<5.0.0
-motor>=3.3.0,<4.0.0
+motor==3.3.2
+pymongo==4.6.0
 
-# Testing (optional)
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
+# Redis
+redis==5.0.1
+aioredis==2.0.1
 
-# Development (optional)
-black>=23.0.0
-flake8>=6.0.0
-mypy>=1.7.0
+# Authentication
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
+
+# Monitoring
+prometheus-client==0.19.0
+psutil==5.9.6
+
+# HTTP Client
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Utilities
+python-multipart==0.0.6
+python-json-logger==2.0.7
+structlog==23.2.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Development
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1

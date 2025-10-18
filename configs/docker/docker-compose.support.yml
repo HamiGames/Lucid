@@ -1,0 +1,328 @@
+# Phase 4 Support Services - Docker Compose Configuration
+# Step 45: Docker Compose Configurations - Support Phase
+# Includes: Admin Interface, TRON Payment Services
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # ADMIN INTERFACE SERVICES
+  # ===========================================
+  
+  # Admin Interface
+  admin-interface:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/admin-interface:${LUCID_TAG:-latest}
+    container_name: lucid-admin-interface
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVICE_NAME=lucid-admin-interface
+      - PORT=8083
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - RBAC_ENABLED=true
+      - AUDIT_LOGGING_ENABLED=true
+      - EMERGENCY_CONTROLS_ENABLED=true
+    volumes:
+      - admin_interface_logs:/app/logs
+      - admin_interface_data:/app/data
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=admin-interface"
+      - "com.lucid.cluster=06-admin-interface"
+
+  # ===========================================
+  # TRON PAYMENT SERVICES (6 containers)
+  # ===========================================
+
+  # TRON Client
+  tron-client:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-client:${LUCID_TAG:-latest}
+    container_name: lucid-tron-client
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    environment:
+      - SERVICE_NAME=lucid-tron-client
+      - PORT=8096
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_NETWORK=${TRON_NETWORK:-shasta}
+      - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
+      - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+    volumes:
+      - tron_client_logs:/app/logs
+      - tron_client_data:/app/data
+    networks:
+      - lucid-network-isolated
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-client"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # TRON Payout Router
+  tron-payout-router:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-payout-router:${LUCID_TAG:-latest}
+    container_name: lucid-tron-payout-router
+    restart: unless-stopped
+    ports:
+      - "8097:8097"
+    environment:
+      - SERVICE_NAME=lucid-tron-payout-router
+      - PORT=8097
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - PAYOUT_V0_ENABLED=true
+      - PAYOUT_KYC_ENABLED=true
+    volumes:
+      - tron_payout_router_logs:/app/logs
+      - tron_payout_router_data:/app/data
+    networks:
+      - lucid-network-isolated
+    depends_on:
+      lucid-tron-client:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-payout-router"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # TRON Wallet Manager
+  tron-wallet-manager:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-wallet-manager:${LUCID_TAG:-latest}
+    container_name: lucid-tron-wallet-manager
+    restart: unless-stopped
+    ports:
+      - "8098:8098"
+    environment:
+      - SERVICE_NAME=lucid-tron-wallet-manager
+      - PORT=8098
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - WALLET_ENCRYPTION_ENABLED=true
+    volumes:
+      - tron_wallet_manager_logs:/app/logs
+      - tron_wallet_manager_data:/app/data
+    networks:
+      - lucid-network-isolated
+    depends_on:
+      lucid-tron-client:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-wallet-manager"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # TRON USDT Manager
+  tron-usdt-manager:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-usdt-manager:${LUCID_TAG:-latest}
+    container_name: lucid-tron-usdt-manager
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    environment:
+      - SERVICE_NAME=lucid-tron-usdt-manager
+      - PORT=8099
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - USDT_TRC20_ADDRESS=${USDT_TRC20_ADDRESS:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
+    volumes:
+      - tron_usdt_manager_logs:/app/logs
+      - tron_usdt_manager_data:/app/data
+    networks:
+      - lucid-network-isolated
+    depends_on:
+      lucid-tron-client:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-usdt-manager"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # TRON Staking Service
+  tron-staking:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-staking:${LUCID_TAG:-latest}
+    container_name: lucid-tron-staking
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    environment:
+      - SERVICE_NAME=lucid-tron-staking
+      - PORT=8100
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - STAKING_ENABLED=true
+      - STAKING_REWARDS_ENABLED=true
+    volumes:
+      - tron_staking_logs:/app/logs
+      - tron_staking_data:/app/data
+    networks:
+      - lucid-network-isolated
+    depends_on:
+      lucid-tron-client:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-staking"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # TRON Payment Gateway
+  tron-payment-gateway:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-payment-gateway:${LUCID_TAG:-latest}
+    container_name: lucid-tron-payment-gateway
+    restart: unless-stopped
+    ports:
+      - "8101:8101"
+    environment:
+      - SERVICE_NAME=lucid-tron-payment-gateway
+      - PORT=8101
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - PAYOUT_ROUTER_URL=http://lucid-tron-payout-router:8097
+      - WALLET_MANAGER_URL=http://lucid-tron-wallet-manager:8098
+      - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8099
+      - STAKING_URL=http://lucid-tron-staking:8100
+    volumes:
+      - tron_payment_gateway_logs:/app/logs
+      - tron_payment_gateway_data:/app/data
+    networks:
+      - lucid-network-isolated
+    depends_on:
+      lucid-tron-client:
+        condition: service_healthy
+      lucid-tron-payout-router:
+        condition: service_healthy
+      lucid-tron-wallet-manager:
+        condition: service_healthy
+      lucid-tron-usdt-manager:
+        condition: service_healthy
+      lucid-tron-staking:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8101/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-payment-gateway"
+      - "com.lucid.cluster=07-tron-payment"
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  lucid-dev:
+    name: lucid-dev_lucid_net
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+  
+  # Isolated network for TRON services
+  lucid-network-isolated:
+    name: lucid-network-isolated
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  # Admin Interface volumes
+  admin_interface_logs:
+    driver: local
+  admin_interface_data:
+    driver: local
+  
+  # TRON Payment volumes
+  tron_client_logs:
+    driver: local
+  tron_client_data:
+    driver: local
+  tron_payout_router_logs:
+    driver: local
+  tron_payout_router_data:
+    driver: local
+  tron_wallet_manager_logs:
+    driver: local
+  tron_wallet_manager_data:
+    driver: local
+  tron_usdt_manager_logs:
+    driver: local
+  tron_usdt_manager_data:
+    driver: local
+  tron_staking_logs:
+    driver: local
+  tron_staking_data:
+    driver: local
+  tron_payment_gateway_logs:
+    driver: local
+  tron_payment_gateway_data:
+    driver: local

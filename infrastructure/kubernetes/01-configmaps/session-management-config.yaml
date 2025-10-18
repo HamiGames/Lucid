@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: session-management-config
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: session-management
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: lucid-blockchain
+data:
+  SERVICE_NAME: "session-management"
+  DEBUG: "false"
+  
+  # Port Configuration
+  PIPELINE_PORT: "8083"
+  RECORDER_PORT: "8084"
+  PROCESSOR_PORT: "8085"
+  STORAGE_PORT: "8086"
+  API_PORT: "8087"
+  
+  # Database Configuration
+  MONGODB_URI: "mongodb://mongodb-service:27017/lucid_sessions"
+  REDIS_URL: "redis://redis-service:6379/1"
+  
+  # Pipeline Configuration
+  CHUNK_SIZE_MB: "10"
+  COMPRESSION_LEVEL: "6"
+  ENCRYPTION_ALGORITHM: "AES-256-GCM"
+  
+  # Processing Configuration
+  MAX_WORKERS: "10"
+  BATCH_SIZE: "100"
+  PROCESSING_TIMEOUT: "300"
+  
+  # Storage Configuration
+  CHUNK_STORAGE_PATH: "/data/sessions"
+  METADATA_STORAGE_PATH: "/data/metadata"
+  BACKUP_STORAGE_PATH: "/data/backups"
+  
+  # Blockchain Integration
+  BLOCKCHAIN_ANCHORING_URL: "http://blockchain-core-service:8085"
+  ANCHORING_ENABLED: "true"
+  ANCHORING_BATCH_SIZE: "10"

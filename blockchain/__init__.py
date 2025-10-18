@@ -1,18 +1,17 @@
 """
-LUCID Blockchain Components - Dual-Chain Architecture
-REBUILT: On-System Data Chain (primary) + TRON (payment service only)
+LUCID Blockchain Components - Blockchain Architecture (lucid_blocks)
+REBUILT: On-System Data Chain (primary) + Isolated payment service
 
 Based on Spec-1a, Spec-1b, and Spec-1c requirements.
 - On-System Data Chain: Primary blockchain for session anchoring and consensus
-- TRON: Isolated payment service for USDT-TRC20 payouts only
-- PoOT Consensus: Runs on On-System Chain, not TRON
+- Payment services: Isolated in payment-systems/ directory
+- PoOT Consensus: Runs on On-System Chain
 """
 
 # Core blockchain components (using factory functions to avoid dependency issues)
 from .core import (
     get_blockchain_engine,
-    get_poot_consensus_engine,
-    # get_tron_node_system
+    get_poot_consensus_engine
 )
 
 # Create aliases for backward compatibility (lazy loading)
@@ -22,13 +21,12 @@ def get_BlockchainEngine():
 def get_PoOTConsensusEngine():
     return get_poot_consensus_engine()
 
-# def get_TronNodeSystem():
-#     return get_tron_node_system()
+# Payment service integration is handled by isolated payment-systems service
 
 # Data models
 from .core.models import (
     # Enums
-    ChainType, ConsensusState, PayoutRouter, TaskProofType,
+    ChainType, ConsensusState, TaskProofType,
     SessionStatus, PayoutStatus,
     
     # Session and Chunk Models
@@ -40,17 +38,11 @@ from .core.models import (
     # PoOT Consensus Models
     TaskProof, WorkCredit, WorkCreditsTally, LeaderSchedule,
     
-    # TRON Payment Models
-    # TronPayout, TronTransaction, USDTBalance, TronNetwork,
-    
-    # Payout Models
-    PayoutRequest, PayoutResult,
-    
     # Network Models
     TransactionStatus,
     
     # Utility Functions
-    generate_session_id, validate_ethereum_address, # validate_tron_address,
+    generate_session_id, validate_ethereum_address,
     calculate_work_credits_formula
 )
 
@@ -80,28 +72,21 @@ except ImportError:
     create_manifest_manager = None
     cleanup_manifest_manager = None
 
-# Legacy TRON client (backward compatibility)
-try:
-    from .tron_node import TronNodeClient, PayoutRecord
-except ImportError:
-    TronNodeClient = None
-    PayoutRecord = None
+# Payment service integration is handled by isolated payment-systems service
 
 __all__ = [
     # Core blockchain engine and consensus (On-System Chain primary)
     'get_BlockchainEngine',
-    'get_PoOTConsensusEngine', 
-    # 'get_TronNodeSystem',
+    'get_PoOTConsensusEngine',
     
     # Data models
-    'ChainType', 'ConsensusState', 'PayoutRouter', 'TaskProofType',
+    'ChainType', 'ConsensusState', 'TaskProofType',
     'SessionStatus', 'PayoutStatus',
     'ChunkMetadata', 'SessionManifest', 'SessionAnchor',
     'AnchorTransaction', 'ChunkStoreEntry',
     'TaskProof', 'WorkCredit', 'WorkCreditsTally', 'LeaderSchedule',
-    # 'TronPayout', 'TronTransaction', 'USDTBalance', 'TronNetwork',
-    'PayoutRequest', 'PayoutResult', 'TransactionStatus',
-    'generate_session_id', 'validate_ethereum_address', # 'validate_tron_address',
+    'TransactionStatus',
+    'generate_session_id', 'validate_ethereum_address',
     'calculate_work_credits_formula',
     
     # On-System Chain (primary blockchain)
@@ -111,6 +96,5 @@ __all__ = [
     'ManifestManager', 'ManifestStatus', 'ChunkStatus', 'ChunkInfo',
     'get_manifest_manager', 'create_manifest_manager', 'cleanup_manifest_manager',
     
-    # Legacy TRON client (backward compatibility)
-    # 'TronNodeClient', 'PayoutRecord'
+    # Payment service integration handled by isolated payment-systems service
 ]

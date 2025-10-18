@@ -1,15 +1,16 @@
 """
 LUCID Blockchain Core Components
-Dual-chain architecture with On-System Data Chain and isolated TRON payments
+Blockchain architecture with On-System Data Chain (lucid_blocks)
 
 Based on Spec-1a, Spec-1b, and Spec-1c requirements.
-REBUILT: On-System Chain as primary, TRON isolated for payments only.
+REBUILT: On-System Chain as primary blockchain for session anchoring.
+Payment services are handled by isolated payment-systems service.
 """
 
 # Data models (no dependencies)
 from .models import (
     # Enums
-    ChainType, ConsensusState, PayoutRouter, TaskProofType,
+    ChainType, ConsensusState, TaskProofType,
     SessionStatus, PayoutStatus,
     
     # Session and Chunk Models
@@ -20,9 +21,6 @@ from .models import (
     
     # PoOT Consensus Models
     TaskProof, WorkCredit, WorkCreditsTally, LeaderSchedule,
-    
-    # Payout Models
-    PayoutRequest, PayoutResult,
     
     # Network Models
     TransactionStatus,
@@ -66,12 +64,12 @@ def get_work_credits_engine():
 
 __all__ = [
     # Data models
-    "ChainType", "ConsensusState", "PayoutRouter", "TaskProofType",
+    "ChainType", "ConsensusState", "TaskProofType",
     "SessionStatus", "PayoutStatus",
     "ChunkMetadata", "SessionManifest", "SessionAnchor",
     "AnchorTransaction", "ChunkStoreEntry",
     "TaskProof", "WorkCredit", "WorkCreditsTally", "LeaderSchedule",
-    "PayoutRequest", "PayoutResult", "TransactionStatus",
+    "TransactionStatus",
     "generate_session_id", "validate_ethereum_address",
     "calculate_work_credits_formula",
     

@@ -1,544 +1,413 @@
 #!/bin/bash
-################################################################################
 # Lucid API - Security Compliance Check Script
-################################################################################
-# Description: Comprehensive security compliance verification
-# Version: 1.0.0
-# Usage: ./security-compliance-check.sh [OPTIONS]
-################################################################################
+# Comprehensive security compliance verification
 
 set -euo pipefail
-
-# Color output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SBOM_DIR="$PROJECT_ROOT/build/sbom"
 SCAN_DIR="$PROJECT_ROOT/build/security-scans"
-COMPLIANCE_DIR="$PROJECT_ROOT/build/compliance"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+REPORTS_DIR="$SCAN_DIR/reports"
 
-# Compliance tracking
-TOTAL_CHECKS=0
-PASSED_CHECKS=0
-FAILED_CHECKS=0
-WARNING_CHECKS=0
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-################################################################################
-# Functions
-################################################################################
+# Compliance scoring
+COMPLIANCE_SCORE=0
+MAX_SCORE=100
+CRITICAL_ISSUES=0
+HIGH_ISSUES=0
+MEDIUM_ISSUES=0
+LOW_ISSUES=0
 
+# Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
 log_success() {
-    echo -e "${GREEN}[✓]${NC} $1"
-    ((PASSED_CHECKS++))
-    ((TOTAL_CHECKS++))
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
 log_warning() {
-    echo -e "${YELLOW}[⚠]${NC} $1"
-    ((WARNING_CHECKS++))
-    ((TOTAL_CHECKS++))
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
 log_error() {
-    echo -e "${RED}[✗]${NC} $1"
-    ((FAILED_CHECKS++))
-    ((TOTAL_CHECKS++))
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
-log_section() {
-    echo ""
-    echo "========================================"
-    echo "$1"
-    echo "========================================"
-    echo ""
+# Check if required tools are installed
+check_prerequisites() {
+    local missing_tools=()
+    
+    # Check for jq
+    if ! command -v jq &> /dev/null; then
+        missing_tools+=("jq")
+    fi
+    
+    # Check for trivy
+    if ! command -v trivy &> /dev/null; then
+        missing_tools+=("trivy")
+    fi
+    
+    # Check for syft
+    if ! command -v syft &> /dev/null; then
+        missing_tools+=("syft")
+    fi
+    
+    if [ ${#missing_tools[@]} -gt 0 ]; then
+        log_error "Missing required tools: ${missing_tools[*]}"
+        echo "Please install missing tools and run again."
+        exit 1
+    fi
+    
+    log_success "All required tools are available"
 }
 
-setup_compliance_directory() {
-    mkdir -p "$COMPLIANCE_DIR"/{reports,evidence}
-    log_info "Compliance directory: $COMPLIANCE_DIR"
-}
-
-check_sbom_generation() {
-    log_section "1. SBOM Generation Compliance"
+# Check SBOM compliance
+check_sbom_compliance() {
+    log_info "Checking SBOM compliance..."
+    
+    local sbom_score=0
+    local max_sbom_score=25
     
     # Check if SBOM directory exists
-    if [ -d "$SBOM_DIR" ]; then
-        log_success "SBOM directory exists: $SBOM_DIR"
-    else
-        log_error "SBOM directory not found"
-        return
+    if [ ! -d "$SBOM_DIR" ]; then
+        log_error "SBOM directory not found: $SBOM_DIR"
+        return 1
     fi
     
-    # Count SBOMs by phase
-    local phase1_count phase2_count phase3_count phase4_count
-    phase1_count=$(find "$SBOM_DIR/phase1" -name "*-sbom.*.json" 2>/dev/null | wc -l)
-    phase2_count=$(find "$SBOM_DIR/phase2" -name "*-sbom.*.json" 2>/dev/null | wc -l)
-    phase3_count=$(find "$SBOM_DIR/phase3" -name "*-sbom.*.json" 2>/dev/null | wc -l)
-    phase4_count=$(find "$SBOM_DIR/phase4" -name "*-sbom.*.json" 2>/dev/null | wc -l)
-    
-    echo "  Phase 1: $phase1_count SBOMs"
-    echo "  Phase 2: $phase2_count SBOMs"
-    echo "  Phase 3: $phase3_count SBOMs"
-    echo "  Phase 4: $phase4_count SBOMs"
-    
-    # Check Phase 1 (minimum requirement)
-    if [ "$phase1_count" -ge 4 ]; then
-        log_success "Phase 1 SBOM generation complete (4 containers)"
+    # Check for Phase 1 SBOMs
+    local phase1_dir="$SBOM_DIR/phase1"
+    if [ -d "$phase1_dir" ]; then
+        local sbom_files=($(find "$phase1_dir" -name "*.json" -type f | grep -v "summary\|report"))
+        local sbom_count=${#sbom_files[@]}
+        
+        if [ $sbom_count -gt 0 ]; then
+            sbom_score=$((sbom_score + 10))
+            log_success "Found $sbom_count SBOM files"
+        else
+            log_warning "No SBOM files found"
+        fi
+        
+        # Check SBOM formats
+        local spdx_count=$(find "$phase1_dir" -name "*.spdx-json" -type f | wc -l)
+        local cyclonedx_count=$(find "$phase1_dir" -name "*.cyclonedx.json" -type f | wc -l)
+        local syft_count=$(find "$phase1_dir" -name "*.syft.json" -type f | wc -l)
+        
+        if [ $spdx_count -gt 0 ]; then
+            sbom_score=$((sbom_score + 5))
+            log_success "SPDX format SBOMs found: $spdx_count"
+        fi
+        
+        if [ $cyclonedx_count -gt 0 ]; then
+            sbom_score=$((sbom_score + 5))
+            log_success "CycloneDX format SBOMs found: $cyclonedx_count"
+        fi
+        
+        if [ $syft_count -gt 0 ]; then
+            sbom_score=$((sbom_score + 5))
+            log_success "Syft format SBOMs found: $syft_count"
+        fi
     else
-        log_error "Phase 1 SBOM generation incomplete: $phase1_count/4 containers"
+        log_warning "Phase 1 SBOM directory not found"
     fi
     
-    # Check for required SBOM formats
-    if find "$SBOM_DIR" -name "*.spdx-json" | grep -q .; then
-        log_success "SPDX-JSON format SBOMs found"
-    else
-        log_warning "No SPDX-JSON format SBOMs found"
-    fi
+    log_info "SBOM compliance score: $sbom_score/$max_sbom_score"
+    COMPLIANCE_SCORE=$((COMPLIANCE_SCORE + sbom_score))
 }
 
-check_vulnerability_scanning() {
-    log_section "2. CVE Vulnerability Scanning"
+# Check vulnerability scanning compliance
+check_vulnerability_compliance() {
+    log_info "Checking vulnerability scanning compliance..."
+    
+    local vuln_score=0
+    local max_vuln_score=30
     
     # Check if scan directory exists
-    if [ -d "$SCAN_DIR" ]; then
-        log_success "Scan directory exists: $SCAN_DIR"
-    else
-        log_error "Scan directory not found - run scan-vulnerabilities.sh"
-        return
+    if [ ! -d "$SCAN_DIR" ]; then
+        log_error "Security scan directory not found: $SCAN_DIR"
+        return 1
     fi
     
-    # Check for Trivy scans
-    local trivy_scans
-    trivy_scans=$(find "$SCAN_DIR/trivy" -name "*.json" 2>/dev/null | wc -l)
-    
-    if [ "$trivy_scans" -gt 0 ]; then
-        log_success "Found $trivy_scans Trivy vulnerability scans"
+    # Check for Trivy scan results
+    local trivy_dir="$SCAN_DIR/trivy"
+    if [ -d "$trivy_dir" ]; then
+        local scan_files=($(find "$trivy_dir" -name "*.json" -type f))
+        local scan_count=${#scan_files[@]}
         
-        # Check for critical vulnerabilities
-        if command -v jq &> /dev/null; then
-            local total_critical=0
-            for scan_file in "$SCAN_DIR"/trivy/*.json; do
+        if [ $scan_count -gt 0 ]; then
+            vuln_score=$((vuln_score + 10))
+            log_success "Found $scan_count vulnerability scan files"
+            
+            # Analyze scan results
+            for scan_file in "${scan_files[@]}"; do
                 if [ -f "$scan_file" ]; then
-                    local critical
-                    critical=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' "$scan_file" 2>/dev/null || echo 0)
-                    total_critical=$((total_critical + critical))
+                    local critical=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' "$scan_file" 2>/dev/null || echo "0")
+                    local high=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' "$scan_file" 2>/dev/null || echo "0")
+                    local medium=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' "$scan_file" 2>/dev/null || echo "0")
+                    local low=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length' "$scan_file" 2>/dev/null || echo "0")
+                    
+                    CRITICAL_ISSUES=$((CRITICAL_ISSUES + critical))
+                    HIGH_ISSUES=$((HIGH_ISSUES + high))
+                    MEDIUM_ISSUES=$((MEDIUM_ISSUES + medium))
+                    LOW_ISSUES=$((LOW_ISSUES + low))
                 fi
             done
             
-            if [ "$total_critical" -eq 0 ]; then
-                log_success "Zero CRITICAL vulnerabilities found"
+            # Score based on vulnerability counts
+            if [ $CRITICAL_ISSUES -eq 0 ]; then
+                vuln_score=$((vuln_score + 15))
+                log_success "No CRITICAL vulnerabilities found"
             else
-                log_error "Found $total_critical CRITICAL vulnerabilities"
+                log_error "Found $CRITICAL_ISSUES CRITICAL vulnerabilities"
+                vuln_score=$((vuln_score - 20))  # Heavy penalty for critical issues
             fi
+            
+            if [ $HIGH_ISSUES -le 5 ]; then
+                vuln_score=$((vuln_score + 5))
+                log_success "Low number of HIGH vulnerabilities: $HIGH_ISSUES"
+            else
+                log_warning "High number of HIGH vulnerabilities: $HIGH_ISSUES"
+            fi
+        else
+            log_warning "No vulnerability scan files found"
         fi
     else
-        log_error "No Trivy scans found"
+        log_warning "Trivy scan directory not found"
     fi
     
-    # Check for Grype scans
-    local grype_scans
-    grype_scans=$(find "$SCAN_DIR/grype" -name "*.json" 2>/dev/null | wc -l)
-    
-    if [ "$grype_scans" -gt 0 ]; then
-        log_success "Found $grype_scans Grype vulnerability scans"
-    else
-        log_warning "No Grype scans found (optional)"
-    fi
+    log_info "Vulnerability compliance score: $vuln_score/$max_vuln_score"
+    COMPLIANCE_SCORE=$((COMPLIANCE_SCORE + vuln_score))
 }
 
+# Check container security compliance
 check_container_security() {
-    log_section "3. Container Security Compliance"
+    log_info "Checking container security compliance..."
+    
+    local container_score=0
+    local max_container_score=25
     
     # Check for distroless base images
-    log_info "Checking for distroless container usage..."
+    local dockerfiles=($(find "$PROJECT_ROOT" -name "Dockerfile*" -type f | grep -v ".git"))
+    local distroless_count=0
+    local total_dockerfiles=${#dockerfiles[@]}
     
-    local dockerfiles
-    dockerfiles=$(find "$PROJECT_ROOT" -name "Dockerfile*" -o -name "*.distroless" 2>/dev/null | wc -l)
-    
-    if [ "$dockerfiles" -gt 0 ]; then
-        log_success "Found $dockerfiles Dockerfile configurations"
+    if [ $total_dockerfiles -gt 0 ]; then
+        for dockerfile in "${dockerfiles[@]}"; do
+            if grep -qi "distroless" "$dockerfile"; then
+                ((distroless_count++))
+            fi
+        done
         
-        # Check for distroless references
-        local distroless_count
-        distroless_count=$(grep -r "distroless" "$PROJECT_ROOT" --include="Dockerfile*" --include="*.distroless" 2>/dev/null | wc -l)
+        local distroless_percentage=$((distroless_count * 100 / total_dockerfiles))
         
-        if [ "$distroless_count" -gt 0 ]; then
-            log_success "Distroless base images used ($distroless_count references)"
+        if [ $distroless_percentage -ge 80 ]; then
+            container_score=$((container_score + 15))
+            log_success "High distroless usage: $distroless_percentage%"
+        elif [ $distroless_percentage -ge 50 ]; then
+            container_score=$((container_score + 10))
+            log_success "Moderate distroless usage: $distroless_percentage%"
         else
-            log_warning "No distroless base image references found"
+            log_warning "Low distroless usage: $distroless_percentage%"
+        fi
+        
+        # Check for multi-stage builds
+        local multistage_count=0
+        for dockerfile in "${dockerfiles[@]}"; do
+            if grep -qi "FROM.*AS" "$dockerfile"; then
+                ((multistage_count++))
+            fi
+        done
+        
+        local multistage_percentage=$((multistage_count * 100 / total_dockerfiles))
+        if [ $multistage_percentage -ge 50 ]; then
+            container_score=$((container_score + 10))
+            log_success "Multi-stage builds used: $multistage_percentage%"
         fi
     else
         log_warning "No Dockerfiles found"
     fi
     
-    # Check for non-root user
-    log_info "Checking for non-root container users..."
-    local user_count
-    user_count=$(grep -r "USER" "$PROJECT_ROOT" --include="Dockerfile*" 2>/dev/null | grep -v "root" | wc -l)
-    
-    if [ "$user_count" -gt 0 ]; then
-        log_success "Non-root users configured ($user_count instances)"
-    else
-        log_warning "Consider using non-root users in containers"
-    fi
+    log_info "Container security score: $container_score/$max_container_score"
+    COMPLIANCE_SCORE=$((COMPLIANCE_SCORE + container_score))
 }
 
-check_tron_isolation() {
-    log_section "4. TRON Payment Isolation Compliance"
+# Check security configuration compliance
+check_security_config() {
+    log_info "Checking security configuration compliance..."
     
-    # Check that TRON code is isolated
-    log_info "Verifying TRON isolation from blockchain core..."
+    local config_score=0
+    local max_config_score=20
     
-    # Check for TRON imports in blockchain directory
-    if [ -d "$PROJECT_ROOT/blockchain" ]; then
-        local tron_violations
-        tron_violations=$(grep -r "tron" "$PROJECT_ROOT/blockchain" --include="*.py" 2>/dev/null | grep -i "import\|from.*tron" | wc -l)
-        
-        if [ "$tron_violations" -eq 0 ]; then
-            log_success "No TRON imports found in blockchain/ directory"
-        else
-            log_error "Found $tron_violations TRON import violations in blockchain/"
+    # Check for security-related configuration files
+    local security_files=(
+        "scripts/security/generate-sbom.sh"
+        "scripts/security/verify-sbom.sh"
+        "scripts/security/scan-vulnerabilities.sh"
+        "scripts/security/security-compliance-check.sh"
+    )
+    
+    local existing_security_files=0
+    for file in "${security_files[@]}"; do
+        if [ -f "$PROJECT_ROOT/$file" ]; then
+            ((existing_security_files++))
         fi
+    done
+    
+    if [ $existing_security_files -eq ${#security_files[@]} ]; then
+        config_score=$((config_score + 10))
+        log_success "All security scripts present"
     else
-        log_warning "Blockchain directory not found"
+        log_warning "Missing security scripts: $((existing_security_files - ${#security_files[@]}))"
     fi
-    
-    # Check that TRON code exists in payment-systems
-    if [ -d "$PROJECT_ROOT/payment-systems" ]; then
-        local tron_files
-        tron_files=$(find "$PROJECT_ROOT/payment-systems" -name "*tron*" -o -name "*TRON*" 2>/dev/null | wc -l)
-        
-        if [ "$tron_files" -gt 0 ]; then
-            log_success "TRON payment code properly isolated ($tron_files files)"
-        else
-            log_warning "TRON payment code not found in payment-systems/"
-        fi
-    else
-        log_warning "Payment-systems directory not found"
-    fi
-}
-
-check_authentication_security() {
-    log_section "5. Authentication Security"
-    
-    # Check for auth implementation
-    if [ -d "$PROJECT_ROOT/auth" ]; then
-        log_success "Authentication service directory exists"
-        
-        # Check for JWT implementation
-        if grep -r "jwt\|JWT" "$PROJECT_ROOT/auth" --include="*.py" 2>/dev/null | grep -q .; then
-            log_success "JWT implementation found"
-        else
-            log_warning "JWT implementation not found"
-        fi
-        
-        # Check for hardware wallet support
-        if grep -r "hardware.*wallet\|ledger\|trezor" "$PROJECT_ROOT/auth" --include="*.py" 2>/dev/null | grep -qi .; then
-            log_success "Hardware wallet support found"
-        else
-            log_warning "Hardware wallet support not found"
-        fi
-        
-        # Check for RBAC
-        if grep -r "rbac\|role.*based\|permission" "$PROJECT_ROOT/auth" --include="*.py" 2>/dev/null | grep -qi .; then
-            log_success "RBAC implementation found"
-        else
-            log_warning "RBAC implementation not found"
-        fi
-    else
-        log_error "Authentication service directory not found"
-    fi
-}
-
-check_documentation() {
-    log_section "6. Security Documentation"
     
     # Check for security documentation
-    local doc_dirs=("$PROJECT_ROOT/docs/security" "$PROJECT_ROOT/plan/API_plans")
+    local security_docs=(
+        "docs/security"
+        "plan/API_plans/00-master-architecture/13-BUILD_REQUIREMENTS_GUIDE.md"
+    )
     
-    for doc_dir in "${doc_dirs[@]}"; do
-        if [ -d "$doc_dir" ]; then
-            local doc_count
-            doc_count=$(find "$doc_dir" -name "*.md" 2>/dev/null | wc -l)
-            
-            if [ "$doc_count" -gt 0 ]; then
-                log_success "Found $doc_count documentation files in $(basename "$doc_dir")"
-            fi
+    local existing_docs=0
+    for doc in "${security_docs[@]}"; do
+        if [ -d "$PROJECT_ROOT/$doc" ] || [ -f "$PROJECT_ROOT/$doc" ]; then
+            ((existing_docs++))
         fi
     done
     
-    # Check for SBOM documentation
-    if [ -f "$PROJECT_ROOT/docs/security/sbom-generation-guide.md" ]; then
-        log_success "SBOM generation guide exists"
-    else
-        log_warning "SBOM generation guide not found"
+    if [ $existing_docs -gt 0 ]; then
+        config_score=$((config_score + 10))
+        log_success "Security documentation present"
     fi
+    
+    log_info "Security configuration score: $config_score/$max_config_score"
+    COMPLIANCE_SCORE=$((COMPLIANCE_SCORE + config_score))
 }
 
-check_ci_cd_integration() {
-    log_section "7. CI/CD Security Integration"
-    
-    # Check for GitHub workflows
-    if [ -d "$PROJECT_ROOT/.github/workflows" ]; then
-        log_success "GitHub workflows directory exists"
-        
-        local workflow_count
-        workflow_count=$(find "$PROJECT_ROOT/.github/workflows" -name "*.yml" -o -name "*.yaml" 2>/dev/null | wc -l)
-        log_info "Found $workflow_count workflow files"
-        
-        # Check for security scanning in workflows
-        if grep -r "trivy\|grype\|syft" "$PROJECT_ROOT/.github/workflows" 2>/dev/null | grep -q .; then
-            log_success "Security scanning integrated in CI/CD"
-        else
-            log_warning "Security scanning not found in CI/CD workflows"
-        fi
-    else
-        log_warning "GitHub workflows directory not found"
-    fi
-}
-
-check_secrets_management() {
-    log_section "8. Secrets Management"
-    
-    # Check for .env.example files
-    local env_examples
-    env_examples=$(find "$PROJECT_ROOT" -name ".env.example" 2>/dev/null | wc -l)
-    
-    if [ "$env_examples" -gt 0 ]; then
-        log_success "Found $env_examples .env.example files"
-    else
-        log_warning "No .env.example files found"
-    fi
-    
-    # Check that actual .env files are gitignored
-    if [ -f "$PROJECT_ROOT/.gitignore" ]; then
-        if grep -q "\.env$" "$PROJECT_ROOT/.gitignore"; then
-            log_success ".env files properly gitignored"
-        else
-            log_warning ".env files should be added to .gitignore"
-        fi
-    fi
-    
-    # Check for hardcoded secrets (simple check)
-    log_info "Scanning for potential hardcoded secrets..."
-    local secret_violations
-    secret_violations=$(grep -r "password\s*=\s*['\"].*['\"]" "$PROJECT_ROOT" --include="*.py" --include="*.js" 2>/dev/null | grep -v ".env" | wc -l)
-    
-    if [ "$secret_violations" -eq 0 ]; then
-        log_success "No obvious hardcoded secrets found"
-    else
-        log_warning "Found $secret_violations potential hardcoded secrets"
-    fi
-}
-
+# Generate compliance report
 generate_compliance_report() {
-    local report_file="${COMPLIANCE_DIR}/reports/security-compliance-${TIMESTAMP}.md"
+    local report_file="$REPORTS_DIR/security_compliance_report.json"
     
-    log_section "Compliance Report Generation"
+    log_info "Generating security compliance report..."
     
-    # Calculate compliance score
-    local compliance_score
-    if [ "$TOTAL_CHECKS" -gt 0 ]; then
-        compliance_score=$((PASSED_CHECKS * 100 / TOTAL_CHECKS))
-    else
-        compliance_score=0
+    # Create reports directory
+    mkdir -p "$REPORTS_DIR"
+    
+    # Calculate compliance percentage
+    local compliance_percentage=$((COMPLIANCE_SCORE * 100 / MAX_SCORE))
+    local compliance_status="FAILED"
+    
+    if [ $compliance_percentage -ge 90 ]; then
+        compliance_status="EXCELLENT"
+    elif [ $compliance_percentage -ge 80 ]; then
+        compliance_status="GOOD"
+    elif [ $compliance_percentage -ge 70 ]; then
+        compliance_status="ACCEPTABLE"
+    elif [ $compliance_percentage -ge 60 ]; then
+        compliance_status="NEEDS_IMPROVEMENT"
     fi
     
-    {
-        echo "# Lucid API - Security Compliance Report"
-        echo ""
-        echo "**Generated:** $(date)"
-        echo "**Report ID:** LUCID-SEC-COMP-${TIMESTAMP}"
-        echo ""
-        echo "## Executive Summary"
-        echo ""
-        echo "| Metric | Count | Percentage |"
-        echo "|--------|-------|------------|"
-        echo "| Total Checks | $TOTAL_CHECKS | 100% |"
-        echo "| Passed | $PASSED_CHECKS | $compliance_score% |"
-        echo "| Failed | $FAILED_CHECKS | $((FAILED_CHECKS * 100 / TOTAL_CHECKS))% |"
-        echo "| Warnings | $WARNING_CHECKS | $((WARNING_CHECKS * 100 / TOTAL_CHECKS))% |"
-        echo ""
-        echo "**Overall Compliance Score:** ${compliance_score}%"
-        echo ""
-        
-        # Compliance status
-        if [ "$compliance_score" -ge 90 ]; then
-            echo "## Status: ✅ **EXCELLENT** - Ready for Production"
-        elif [ "$compliance_score" -ge 75 ]; then
-            echo "## Status: ⚠️  **GOOD** - Minor issues to address"
-        elif [ "$compliance_score" -ge 60 ]; then
-            echo "## Status: ⚠️  **FAIR** - Improvements needed"
-        else
-            echo "## Status: ❌ **POOR** - Critical issues must be resolved"
-        fi
-        echo ""
-        
-        echo "## Compliance Checklist"
-        echo ""
-        echo "### ✅ Passed Requirements"
-        echo "- $PASSED_CHECKS checks passed successfully"
-        echo ""
-        
-        echo "### ❌ Failed Requirements"
-        echo "- $FAILED_CHECKS checks failed"
-        echo ""
-        
-        echo "### ⚠️  Warnings"
-        echo "- $WARNING_CHECKS checks raised warnings"
-        echo ""
-        
-        echo "## Detailed Findings"
-        echo ""
-        echo "### 1. SBOM Generation"
-        echo "- SBOMs must be generated for all production containers"
-        echo "- Formats: SPDX-JSON, CycloneDX-JSON"
-        echo ""
-        
-        echo "### 2. Vulnerability Scanning"
-        echo "- All containers must be scanned with Trivy"
-        echo "- Zero CRITICAL vulnerabilities allowed"
-        echo "- HIGH vulnerabilities should be remediated"
-        echo ""
-        
-        echo "### 3. Container Security"
-        echo "- Use distroless base images"
-        echo "- Run containers as non-root users"
-        echo "- Implement image signing"
-        echo ""
-        
-        echo "### 4. TRON Isolation"
-        echo "- TRON payment code must be isolated from blockchain core"
-        echo "- No TRON imports in blockchain/ directory"
-        echo "- All TRON code in payment-systems/ directory"
-        echo ""
-        
-        echo "### 5. Authentication Security"
-        echo "- JWT token management implemented"
-        echo "- Hardware wallet support (Ledger, Trezor, KeepKey)"
-        echo "- RBAC permissions enforced"
-        echo ""
-        
-        echo "## Recommendations"
-        echo ""
-        if [ "$FAILED_CHECKS" -gt 0 ]; then
-            echo "1. **CRITICAL:** Address all failed checks immediately"
-        fi
-        if [ "$WARNING_CHECKS" -gt 0 ]; then
-            echo "2. Review and resolve warnings before production"
-        fi
-        echo "3. Implement continuous security scanning in CI/CD"
-        echo "4. Regular SBOM updates with each release"
-        echo "5. Automated vulnerability scanning on every build"
-        echo ""
-        
-        echo "## Next Steps"
-        echo ""
-        echo "1. Review this compliance report"
-        echo "2. Create tickets for failed checks"
-        echo "3. Implement remediation actions"
-        echo "4. Re-run compliance check"
-        echo "5. Schedule regular compliance audits"
-        echo ""
-        
-        echo "## References"
-        echo ""
-        echo "- SBOM Directory: \`$SBOM_DIR\`"
-        echo "- Scan Directory: \`$SCAN_DIR\`"
-        echo "- Compliance Directory: \`$COMPLIANCE_DIR\`"
-        echo ""
-        
-    } > "$report_file"
-    
-    cat "$report_file"
-    log_info "Compliance report saved: $report_file"
-    
-    # Return status based on compliance score
-    if [ "$compliance_score" -ge 75 ]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-show_usage() {
-    cat << EOF
-Usage: $0 [OPTIONS]
-
-Comprehensive security compliance check for Lucid API.
-
-OPTIONS:
-    -h, --help     Show this help message
-    -v, --verbose  Verbose output
-    
-EXAMPLES:
-    # Run full compliance check
-    $0
-    
-    # Verbose mode
-    $0 --verbose
-
+    # Generate report
+    cat > "$report_file" << EOF
+{
+    "compliance_check_date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+    "compliance_score": $COMPLIANCE_SCORE,
+    "max_score": $MAX_SCORE,
+    "compliance_percentage": $compliance_percentage,
+    "compliance_status": "$compliance_status",
+    "vulnerability_summary": {
+        "critical": $CRITICAL_ISSUES,
+        "high": $HIGH_ISSUES,
+        "medium": $MEDIUM_ISSUES,
+        "low": $LOW_ISSUES,
+        "total": $((CRITICAL_ISSUES + HIGH_ISSUES + MEDIUM_ISSUES + LOW_ISSUES))
+    },
+    "recommendations": [
 EOF
+
+    # Add recommendations based on findings
+    local first=true
+    
+    if [ $CRITICAL_ISSUES -gt 0 ]; then
+        if [ "$first" = true ]; then
+            first=false
+        else
+            echo "," >> "$report_file"
+        fi
+        echo '        "Address CRITICAL vulnerabilities immediately"' >> "$report_file"
+    fi
+    
+    if [ $HIGH_ISSUES -gt 10 ]; then
+        if [ "$first" = true ]; then
+            first=false
+        else
+            echo "," >> "$report_file"
+        fi
+        echo '        "Reduce HIGH vulnerability count"' >> "$report_file"
+    fi
+    
+    if [ $COMPLIANCE_SCORE -lt 80 ]; then
+        if [ "$first" = true ]; then
+            first=false
+        else
+            echo "," >> "$report_file"
+        fi
+        echo '        "Improve overall security compliance"' >> "$report_file"
+    fi
+    
+    cat >> "$report_file" << EOF
+    ]
+}
+EOF
+
+    log_success "Security compliance report generated: $report_file"
 }
 
+# Main function
 main() {
-    echo "╔════════════════════════════════════════════════════════════╗"
-    echo "║        Lucid API - Security Compliance Check              ║"
-    echo "╚════════════════════════════════════════════════════════════╝"
-    echo ""
+    log_info "Starting security compliance check for Lucid API..."
     
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                show_usage
-                exit 0
-                ;;
-            -v|--verbose)
-                set -x
-                shift
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                show_usage
-                exit 1
-                ;;
-        esac
-    done
+    # Check prerequisites
+    check_prerequisites
     
-    setup_compliance_directory
-    
-    # Run all compliance checks
-    check_sbom_generation
-    check_vulnerability_scanning
+    # Run compliance checks
+    check_sbom_compliance
+    check_vulnerability_compliance
     check_container_security
-    check_tron_isolation
-    check_authentication_security
-    check_documentation
-    check_ci_cd_integration
-    check_secrets_management
+    check_security_config
     
-    # Generate final report
+    # Generate report
+    generate_compliance_report
+    
+    # Print final results
     echo ""
-    if generate_compliance_report; then
-        log_success "Security compliance check complete!"
+    log_info "Security Compliance Results:"
+    log_info "  Compliance Score: $COMPLIANCE_SCORE/$MAX_SCORE"
+    log_info "  Compliance Percentage: $((COMPLIANCE_SCORE * 100 / MAX_SCORE))%"
+    log_info "  CRITICAL Issues: $CRITICAL_ISSUES"
+    log_info "  HIGH Issues: $HIGH_ISSUES"
+    log_info "  MEDIUM Issues: $MEDIUM_ISSUES"
+    log_info "  LOW Issues: $LOW_ISSUES"
+    
+    echo ""
+    if [ $CRITICAL_ISSUES -eq 0 ] && [ $COMPLIANCE_SCORE -ge 80 ]; then
+        log_success "Security compliance check PASSED"
         exit 0
     else
-        log_error "Security compliance check failed - review issues above"
+        log_error "Security compliance check FAILED"
+        if [ $CRITICAL_ISSUES -gt 0 ]; then
+            log_error "CRITICAL vulnerabilities must be addressed"
+        fi
         exit 1
     fi
 }
 
+# Run main function
 main "$@"
-

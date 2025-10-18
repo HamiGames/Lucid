@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: lucid-blockchain
+data:
+  SERVICE_NAME: "auth-service"
+  DEBUG: "false"
+  
+  # Port Configuration
+  AUTH_PORT: "8089"
+  
+  # Database Configuration
+  MONGODB_URI: "mongodb://mongodb-service:27017/lucid_auth"
+  REDIS_URL: "redis://redis-service:6379/6"
+  
+  # JWT Configuration
+  JWT_ALGORITHM: "HS256"
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: "7"
+  
+  # Authentication Methods
+  MAGIC_LINK_ENABLED: "true"
+  TOTP_ENABLED: "true"
+  HARDWARE_WALLET_ENABLED: "true"
+  
+  # Hardware Wallet Configuration
+  LEDGER_ENABLED: "true"
+  TREZOR_ENABLED: "true"
+  KEEPKEY_ENABLED: "true"
+  
+  # TRON Signature Verification
+  TRON_SIGNATURE_VERIFICATION_ENABLED: "true"
+  TRON_NETWORK: "mainnet"
+  
+  # RBAC Configuration
+  RBAC_ENABLED: "true"
+  ROLE_HIERARCHY_ENABLED: "true"
+  PERMISSION_CACHING_ENABLED: "true"
+  
+  # Session Management
+  SESSION_TIMEOUT: "3600"
+  MAX_CONCURRENT_SESSIONS: "10"
+  SESSION_CLEANUP_INTERVAL: "300"
+  
+  # Security Configuration
+  PASSWORD_HASHING_ALGORITHM: "bcrypt"
+  PASSWORD_MIN_LENGTH: "8"
+  ACCOUNT_LOCKOUT_ENABLED: "true"
+  MAX_LOGIN_ATTEMPTS: "5"

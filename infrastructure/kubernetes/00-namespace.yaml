@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lucid-system
+  labels:
+    name: lucid-system
+    app.kubernetes.io/name: lucid
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: lucid-blockchain
+  annotations:
+    description: "Lucid Blockchain System Namespace"
+    created-by: "lucid-build-system"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: lucid-resource-quota
+  namespace: lucid-system
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "10"
+    services: "20"
+    secrets: "20"
+    configmaps: "20"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: lucid-limit-range
+  namespace: lucid-system
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "256Mi"
+    type: Container
+  - max:
+      storage: "50Gi"
+    min:
+      storage: "1Gi"
+    type: PersistentVolumeClaim

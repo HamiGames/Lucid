@@ -1,0 +1,218 @@
+# Phase 1 Foundation Services - Docker Compose Configuration
+# Step 45: Docker Compose Configurations - Foundation Phase
+# Includes: Authentication, Database Infrastructure, Storage Services
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # AUTHENTICATION SERVICES
+  # ===========================================
+  
+  # Authentication Service
+  auth-service:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/auth-service:${LUCID_TAG:-latest}
+    container_name: lucid-auth-service
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      - SERVICE_NAME=lucid-auth-service
+      - PORT=8089
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-lucid_jwt_secret_key_change_in_production}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+      - HARDWARE_WALLET_ENABLED=true
+      - RBAC_ENABLED=true
+    volumes:
+      - auth_logs:/app/logs
+      - auth_data:/app/data
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8089/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=auth"
+      - "com.lucid.cluster=09-authentication"
+
+  # ===========================================
+  # DATABASE INFRASTRUCTURE
+  # ===========================================
+
+  # MongoDB Database
+  lucid-mongodb:
+    image: mongo:7.0
+    container_name: lucid-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid
+      - MONGO_INITDB_DATABASE=lucid
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=database"
+      - "com.lucid.cluster=08-storage-database"
+
+  # Redis Cache
+  lucid-redis:
+    image: redis:7-alpine
+    container_name: lucid-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./configs/database/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=cache"
+      - "com.lucid.cluster=08-storage-database"
+
+  # Elasticsearch Search Engine
+  lucid-elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: lucid-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./configs/database/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=search"
+      - "com.lucid.cluster=08-storage-database"
+
+  # ===========================================
+  # STORAGE DATABASE SERVICES
+  # ===========================================
+
+  # Storage Database Service
+  storage-database:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage-database:${LUCID_TAG:-latest}
+    container_name: lucid-storage-database
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SERVICE_NAME=lucid-storage-database
+      - PORT=8082
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - storage_logs:/app/logs
+      - storage_data:/app/data
+      - storage_backups:/app/backups
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=storage"
+      - "com.lucid.cluster=08-storage-database"
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  lucid-dev:
+    name: lucid-dev_lucid_net
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  # Database volumes
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  
+  # Service volumes
+  auth_logs:
+    driver: local
+  auth_data:
+    driver: local
+  storage_logs:
+    driver: local
+  storage_data:
+    driver: local
+  storage_backups:
+    driver: local

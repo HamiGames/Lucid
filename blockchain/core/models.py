@@ -2,9 +2,9 @@
 """
 Lucid Blockchain Core Data Models
 
-Defines all data structures for the dual-chain architecture:
+Defines all data structures for the blockchain architecture:
 - On-System Data Chain (primary blockchain)
-- TRON (isolated payment service only)
+- Payment service integration (handled separately)
 - PoOT consensus engine
 - Session anchoring and chunk metadata
 
@@ -26,9 +26,8 @@ import uuid
 # =============================================================================
 
 class ChainType(Enum):
-    """Blockchain types in dual-chain architecture"""
+    """Blockchain types in architecture"""
     ON_SYSTEM_DATA = "on_system_data_chain"  # Primary blockchain
-    # TRON_PAYOUTS = "tron_payouts"            # Payment layer only
 
 
 class ConsensusState(Enum):
@@ -40,10 +39,7 @@ class ConsensusState(Enum):
     SLOT_MISSED = "slot_missed"
 
 
-# class PayoutRouter(Enum):
-#     """TRON payout router types (R-MUST-018)"""
-#     PR0 = "PayoutRouterV0"      # Non-KYC for end-users
-#     PRKYC = "PayoutRouterKYC"   # KYC-gated for node-workers
+# Payment router types are handled by payment service cluster
 
 
 class TaskProofType(Enum):
@@ -64,7 +60,7 @@ class SessionStatus(Enum):
 
 
 class PayoutStatus(Enum):
-    """TRON payout status"""
+    """Payout status (handled by payment service)"""
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
@@ -203,7 +199,7 @@ class SessionAnchor:
     """
     On-System Chain session anchor (Spec-1b lines 56-59).
     
-    REBUILT: Removed TRON-specific fields, focused on On-System Chain anchoring.
+    REBUILT: Focused on On-System Chain anchoring.
     Uses LucidAnchors contract for session manifest anchoring.
     """
     session_id: str
@@ -409,57 +405,7 @@ class LeaderSchedule:
 # PAYOUT MODELS
 # =============================================================================
 
-@dataclass
-class PayoutRequest:
-    """Payout request for TRON USDT distribution"""
-    session_id: str
-    to_address: str
-    usdt_amount: float
-    router_type: PayoutRouter
-    reason: str
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    kyc_hash: Optional[str] = None
-    compliance_signature: Optional[Dict[str, Any]] = None
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "_id": f"{self.session_id}_{self.to_address}",
-            "session_id": self.session_id,
-            "to_address": self.to_address,
-            "usdt_amount": self.usdt_amount,
-            "router_type": self.router_type.value,
-            "reason": self.reason,
-            "created_at": self.created_at,
-            "kyc_hash": self.kyc_hash,
-            "compliance_signature": self.compliance_signature
-        }
-
-
-@dataclass
-class PayoutResult:
-    """Result of payout execution"""
-    session_id: str
-    usdt_amount: float
-    txid: str
-    status: str
-    router: str
-    error: Optional[str] = None
-    retry_count: int = 0
-    kyc_verified: Optional[bool] = None
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to MongoDB document format"""
-        return {
-            "session_id": self.session_id,
-            "usdt_amount": self.usdt_amount,
-            "txid": self.txid,
-            "status": self.status,
-            "router": self.router,
-            "error": self.error,
-            "retry_count": self.retry_count,
-            "kyc_verified": self.kyc_verified
-        }
+# Payout models are handled by payment service cluster
 
 
 # =============================================================================
@@ -508,14 +454,7 @@ def validate_ethereum_address(address: str) -> bool:
         return False
 
 
-# def validate_tron_address(address: str) -> bool:
-#     """Validate TRON address format"""
-#     if not address.startswith("T"):
-#         return False
-#     if len(address) != 34:
-#         return False
-#     # Additional validation could be added here
-#     return True
+# Address validation is handled by payment service cluster
 
 
 def calculate_work_credits_formula(storage_sessions: int, bandwidth_mb: int, base_mb_per_session: int = 5) -> int:
@@ -551,11 +490,7 @@ __all__ = [
     # PoOT Consensus Models
     "TaskProof", "WorkCredit", "WorkCreditsTally", "LeaderSchedule",
     
-    # TRON Payment Models
-    # "TronPayout", "TronTransaction", "USDTBalance", "TronNetwork",
-    
-    # Payout Models
-    "PayoutRequest", "PayoutResult",
+    # Payment models are handled by payment service cluster
     
     # Network Models
     "TransactionStatus",

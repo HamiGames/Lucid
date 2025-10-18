@@ -65,7 +65,7 @@ class ProvisioningRequest(BaseModel):
     """Pydantic model for provisioning requests"""
     node_id: str = Field(..., description="Unique node identifier")
     node_type: NodeType = Field(..., description="Type of node to provision")
-    network: NetworkType = Field(default=NetworkType.SHASTA, description="TRON network")
+    network: NetworkType = Field(default=NetworkType.MAINNET, description="Blockchain network")
     resources: Dict[str, Any] = Field(default_factory=dict, description="Resource requirements")
     auto_approve: bool = Field(default=False, description="Auto-approve provisioning")
     custom_config: Dict[str, Any] = Field(default_factory=dict, description="Custom configuration")

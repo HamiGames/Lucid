@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-config
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: database
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: lucid-blockchain
+data:
+  # MongoDB Configuration
+  MONGODB_DATABASE: "lucid"
+  MONGODB_REPLICA_SET: "lucid-rs"
+  MONGODB_AUTH_ENABLED: "true"
+  MONGODB_SSL_ENABLED: "true"
+  
+  # Redis Configuration
+  REDIS_DATABASE: "0"
+  REDIS_PASSWORD_REQUIRED: "true"
+  REDIS_SSL_ENABLED: "true"
+  REDIS_CLUSTER_MODE: "false"
+  
+  # Elasticsearch Configuration
+  ELASTICSEARCH_CLUSTER_NAME: "lucid-cluster"
+  ELASTICSEARCH_NODE_NAME: "lucid-node"
+  ELASTICSEARCH_DISCOVERY_ENABLED: "true"
+  ELASTICSEARCH_SSL_ENABLED: "true"
+  
+  # Backup Configuration
+  BACKUP_ENABLED: "true"
+  BACKUP_INTERVAL: "3600"
+  BACKUP_RETENTION_DAYS: "30"
+  BACKUP_STORAGE_PATH: "/data/backups"
+  
+  # Monitoring Configuration
+  MONITORING_ENABLED: "true"
+  METRICS_COLLECTION_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+  
+  # Performance Configuration
+  CONNECTION_POOL_SIZE: "100"
+  QUERY_TIMEOUT: "30"
+  CACHE_TTL: "3600"

@@ -9,32 +9,44 @@ on:
       pi_host:
         description: 'Raspberry Pi hostname or IP'
         required: true
-        default: 'raspberrypi.local'
+        default: 'pickme@192.168.0.75'
       deployment_type:
         description: 'Deployment type'
         required: true
-        default: 'full'
+        default: 'staging'
         type: choice
         options:
-        - full
+        - staging
+        - production
         - update
         - rollback
         - health-check
       target_services:
         description: 'Services to deploy (comma-separated)'
         required: false
-        default: ''
+        default: 'api-gateway,blockchain-core,session-management,rdp-services,node-management,admin-interface,auth-service'
       force_deploy:
         description: 'Force deployment even if no changes'
         required: false
         default: false
         type: boolean
+      staging_environment:
+        description: 'Staging environment configuration'
+        required: false
+        default: 'pi-staging'
+        type: choice
+        options:
+        - pi-staging
+        - pi-production
+        - pi-development
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  PI_HOST: ${{ github.event.inputs.pi_host || 'raspberrypi.local' }}
-  DEPLOYMENT_TYPE: ${{ github.event.inputs.deployment_type || 'full' }}
+  PI_HOST: ${{ github.event.inputs.pi_host || 'pickme@192.168.0.75' }}
+  DEPLOYMENT_TYPE: ${{ github.event.inputs.deployment_type || 'staging' }}
+  STAGING_ENVIRONMENT: ${{ github.event.inputs.staging_environment || 'pi-staging' }}
+  PI_DEPLOY_DIR: /opt/lucid/staging
 
 jobs:
   pre-deployment-checks:

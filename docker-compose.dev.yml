@@ -1,6 +1,7 @@
 # Path: docker-compose.dev.yml
 # Development Docker Compose file for Lucid project
 # Optimized for development with hot reload, debugging, and local volume mounts
+# Enhanced for Step 50: Local Development Deployment requirements
 
 version: '3.8'
 
@@ -260,6 +261,254 @@ services:
       - lucid-mongodb-dev
       - lucid-api-dev
 
+  # Authentication Service (Development)
+  lucid-auth-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/auth:${LUCID_TAG:-latest}
+    container_name: lucid-auth-dev
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_dev:lucid_dev_password@lucid-mongodb-dev:27017/lucid_dev?authSource=admin
+      - LUCID_REDIS_URL=redis://lucid-redis-dev:6379
+      - LUCID_JWT_SECRET=${LUCID_JWT_SECRET:-dev-secret-key}
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./auth:/app:ro
+      - lucid_auth_dev_data:/app/data
+      - lucid_auth_dev_logs:/app/logs
+    networks:
+      - lucid-dev-network
+    depends_on:
+      - lucid-mongodb-dev
+      - lucid-redis-dev
+
+  # Blockchain Engine (Development)
+  lucid-blockchain-engine-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain-engine:${LUCID_TAG:-latest}
+    container_name: lucid-blockchain-engine-dev
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_dev:lucid_dev_password@lucid-mongodb-dev:27017/lucid_dev?authSource=admin
+      - LUCID_BLOCKCHAIN_NETWORK=lucid_blocks
+      - LUCID_CONSENSUS_ALGORITHM=PoOT
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./blockchain:/app:ro
+      - lucid_blockchain_dev_data:/app/data
+      - lucid_blockchain_dev_logs:/app/logs
+    networks:
+      - lucid-dev-network
+    depends_on:
+      - lucid-mongodb-dev
+
+  # Session Anchoring Service (Development)
+  lucid-session-anchoring-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-anchoring:${LUCID_TAG:-latest}
+    container_name: lucid-session-anchoring-dev
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_dev:lucid_dev_password@lucid-mongodb-dev:27017/lucid_dev?authSource=admin
+      - LUCID_BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine-dev:8084
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./blockchain:/app:ro
+      - lucid_anchoring_dev_data:/app/data
+      - lucid_anchoring_dev_logs:/app/logs
+    networks:
+      - lucid-dev-network
+    depends_on:
+      - lucid-mongodb-dev
+      - lucid-blockchain-engine-dev
+
+  # Block Manager Service (Development)
+  lucid-block-manager-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/block-manager:${LUCID_TAG:-latest}
+    container_name: lucid-block-manager-dev
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_dev:lucid_dev_password@lucid-mongodb-dev:27017/lucid_dev?authSource=admin
+      - LUCID_BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine-dev:8084
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./blockchain:/app:ro
+      - lucid_block_manager_dev_data:/app/data
+      - lucid_block_manager_dev_logs:/app/logs
+    networks:
+      - lucid-dev-network
+    depends_on:
+      - lucid-mongodb-dev
+      - lucid-blockchain-engine-dev
+
+  # Data Chain Service (Development)
+  lucid-data-chain-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/data-chain:${LUCID_TAG:-latest}
+    container_name: lucid-data-chain-dev
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid_dev:lucid_dev_password@lucid-mongodb-dev:27017/lucid_dev?authSource=admin
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./blockchain:/app:ro
+      - lucid_data_chain_dev_data:/app/data
+      - lucid_data_chain_dev_logs:/app/logs
+    networks:
+      - lucid-dev-network
+    depends_on:
+      - lucid-mongodb-dev
+
+  # Service Mesh Controller (Development)
+  lucid-service-mesh-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/service-mesh:${LUCID_TAG:-latest}
+    container_name: lucid-service-mesh-dev
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    environment:
+      - LUCID_SERVICE_DISCOVERY_ENABLED=true
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./infrastructure/service-mesh:/app:ro
+      - lucid_mesh_dev_data:/app/data
+      - lucid_mesh_dev_logs:/app/logs
+    networks:
+      - lucid-dev-network
+
+  # TRON Client Service (Development - Isolated)
+  lucid-tron-client-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-client:${LUCID_TAG:-latest}
+    container_name: lucid-tron-client-dev
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      - LUCID_TRON_NETWORK=shasta
+      - LUCID_TRON_API_URL=https://api.shasta.trongrid.io
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./payment-systems/tron:/app:ro
+      - lucid_tron_dev_data:/app/data
+      - lucid_tron_dev_logs:/app/logs
+    networks:
+      - lucid-payment-network
+    isolation: true
+
+  # Payout Router Service (Development - Isolated)
+  lucid-payout-router-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/payout-router:${LUCID_TAG:-latest}
+    container_name: lucid-payout-router-dev
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - LUCID_TRON_CLIENT_URL=http://lucid-tron-client-dev:8085
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./payment-systems/tron:/app:ro
+      - lucid_payout_dev_data:/app/data
+      - lucid_payout_dev_logs:/app/logs
+    networks:
+      - lucid-payment-network
+    depends_on:
+      - lucid-tron-client-dev
+
+  # Wallet Manager Service (Development - Isolated)
+  lucid-wallet-manager-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/wallet-manager:${LUCID_TAG:-latest}
+    container_name: lucid-wallet-manager-dev
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      - LUCID_TRON_CLIENT_URL=http://lucid-tron-client-dev:8085
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./payment-systems/tron:/app:ro
+      - lucid_wallet_dev_data:/app/data
+      - lucid_wallet_dev_logs:/app/logs
+    networks:
+      - lucid-payment-network
+    depends_on:
+      - lucid-tron-client-dev
+
+  # USDT Manager Service (Development - Isolated)
+  lucid-usdt-manager-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/usdt-manager:${LUCID_TAG:-latest}
+    container_name: lucid-usdt-manager-dev
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      - LUCID_TRON_CLIENT_URL=http://lucid-tron-client-dev:8085
+      - LUCID_USDT_TRC20_ADDRESS=TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./payment-systems/tron:/app:ro
+      - lucid_usdt_dev_data:/app/data
+      - lucid_usdt_dev_logs:/app/logs
+    networks:
+      - lucid-payment-network
+    depends_on:
+      - lucid-tron-client-dev
+
+  # TRX Staking Service (Development - Isolated)
+  lucid-trx-staking-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/trx-staking:${LUCID_TAG:-latest}
+    container_name: lucid-trx-staking-dev
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      - LUCID_TRON_CLIENT_URL=http://lucid-tron-client-dev:8085
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./payment-systems/tron:/app:ro
+      - lucid_staking_dev_data:/app/data
+      - lucid_staking_dev_logs:/app/logs
+    networks:
+      - lucid-payment-network
+    depends_on:
+      - lucid-tron-client-dev
+
+  # Payment Gateway Service (Development - Isolated)
+  lucid-payment-gateway-dev:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/payment-gateway:${LUCID_TAG:-latest}
+    container_name: lucid-payment-gateway-dev
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - LUCID_TRON_CLIENT_URL=http://lucid-tron-client-dev:8085
+      - LUCID_DEBUG=true
+      - LUCID_LOG_LEVEL=DEBUG
+    volumes:
+      - ./payment-systems/tron:/app:ro
+      - lucid_payment_gateway_dev_data:/app/data
+      - lucid_payment_gateway_dev_logs:/app/logs
+    networks:
+      - lucid-payment-network
+    depends_on:
+      - lucid-tron-client-dev
+
   # Development Tools
   lucid-dev-tools:
     image: python:3.11-slim
@@ -298,6 +547,13 @@ networks:
     ipam:
       config:
         - subnet: 172.21.0.0/16
+  
+  lucid-payment-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+    internal: true  # Isolated network for TRON payment services
 
 # Volumes (Development)
 volumes:
@@ -351,4 +607,60 @@ volumes:
   
   # Development tools
   lucid_dev_tools_cache:
+    driver: local
+  
+  # Authentication service volumes
+  lucid_auth_dev_data:
+    driver: local
+  lucid_auth_dev_logs:
+    driver: local
+  
+  # Blockchain service volumes
+  lucid_blockchain_dev_data:
+    driver: local
+  lucid_blockchain_dev_logs:
+    driver: local
+  lucid_anchoring_dev_data:
+    driver: local
+  lucid_anchoring_dev_logs:
+    driver: local
+  lucid_block_manager_dev_data:
+    driver: local
+  lucid_block_manager_dev_logs:
+    driver: local
+  lucid_data_chain_dev_data:
+    driver: local
+  lucid_data_chain_dev_logs:
+    driver: local
+  
+  # Service mesh volumes
+  lucid_mesh_dev_data:
+    driver: local
+  lucid_mesh_dev_logs:
+    driver: local
+  
+  # TRON payment service volumes (isolated)
+  lucid_tron_dev_data:
+    driver: local
+  lucid_tron_dev_logs:
+    driver: local
+  lucid_payout_dev_data:
+    driver: local
+  lucid_payout_dev_logs:
+    driver: local
+  lucid_wallet_dev_data:
+    driver: local
+  lucid_wallet_dev_logs:
+    driver: local
+  lucid_usdt_dev_data:
+    driver: local
+  lucid_usdt_dev_logs:
+    driver: local
+  lucid_staking_dev_data:
+    driver: local
+  lucid_staking_dev_logs:
+    driver: local
+  lucid_payment_gateway_dev_data:
+    driver: local
+  lucid_payment_gateway_dev_logs:
     driver: local

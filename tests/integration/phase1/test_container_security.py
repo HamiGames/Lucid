@@ -1,6 +1,14 @@
 """
 Lucid API - Phase 1 Integration Test: Container Security
 Tests container security compliance including SBOM generation and CVE scanning
+
+This test suite verifies:
+- SBOM generation for Phase 1 containers
+- Vulnerability scanning with Trivy
+- Distroless base image compliance
+- Security compliance scoring
+- Container image signing (future)
+- SLSA provenance (future)
 """
 
 import pytest

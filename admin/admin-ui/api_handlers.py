@@ -48,7 +48,7 @@ class SystemStatus(BaseModel):
 class ProvisioningRequest(BaseModel):
     node_id: str
     node_type: str = Field(..., description="worker, validator, or relay")
-    network: str = Field(default="shasta", description="TRON network")
+    network: str = Field(default="mainnet", description="Blockchain network")
     resources: Dict[str, Any] = Field(default_factory=dict)
     auto_approve: bool = Field(default=False)
 

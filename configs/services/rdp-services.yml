@@ -1,0 +1,408 @@
+# RDP Services Configuration
+# Cluster: 04-RDP-SERVICES
+# Service: RDP Server Management and Session Control
+# Ports: 8090-8093
+
+service:
+  name: rdp-services
+  version: "1.0.0"
+  description: "Lucid RDP Services - Remote Desktop Protocol server management"
+  cluster_id: "04-rdp-services-cluster"
+  
+# Port Configuration
+ports:
+  server_manager: 8090
+  xrdp: 8091
+  session_controller: 8092
+  resource_monitor: 8093
+
+# Container Configuration
+containers:
+  server_manager:
+    name: lucid-rdp-server-manager
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  xrdp:
+    name: lucid-xrdp
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  session_controller:
+    name: lucid-rdp-session-controller
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  resource_monitor:
+    name: lucid-rdp-resource-monitor
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+
+# Service Dependencies
+dependencies:
+  internal:
+    - name: "api-gateway"
+      url: "http://api-gateway:8080"
+      required: true
+    - name: "session-management"
+      url: "http://session-management:8087"
+      required: true
+    - name: "auth-service"
+      url: "http://auth-service:8089"
+      required: true
+  external:
+    - name: "mongodb"
+      url: "mongodb://mongodb:27017/lucid_rdp"
+      required: true
+    - name: "redis"
+      url: "redis://redis:6379/3"
+      required: true
+
+# RDP Server Configuration
+rdp_servers:
+  port_range:
+    start: 13389
+    end: 14389
+    max_servers: 1000
+  server_lifecycle:
+    creation_timeout: 30
+    startup_timeout: 60
+    shutdown_timeout: 30
+    cleanup_timeout: 300
+  resource_limits:
+    cpu_limit: "2"
+    memory_limit: "4Gi"
+    disk_limit: "20Gi"
+    network_limit: "100Mbps"
+  security:
+    encryption: true
+    authentication: true
+    access_control: true
+    audit_logging: true
+
+# XRDP Configuration
+xrdp:
+  enabled: true
+  port: 3389
+  ssl:
+    enabled: true
+    cert_path: "/certs/xrdp.crt"
+    key_path: "/certs/xrdp.key"
+  authentication:
+    methods: ["password", "certificate"]
+    timeout: 30
+  session:
+    max_sessions: 1
+    idle_timeout: 3600
+    disconnect_timeout: 300
+  display:
+    resolution: "1920x1080"
+    color_depth: 24
+    refresh_rate: 60
+
+# Session Control Configuration
+session_control:
+  connection_manager:
+    max_connections: 1000
+    connection_timeout: 30
+    keep_alive: true
+    heartbeat_interval: 30
+  session_lifecycle:
+    states:
+      - "connecting"
+      - "connected"
+      - "active"
+      - "idle"
+      - "disconnected"
+      - "terminated"
+    state_timeout: 300
+    auto_cleanup: true
+  user_management:
+    user_isolation: true
+    session_ownership: true
+    concurrent_sessions: 1
+    session_transfer: false
+
+# Resource Monitoring Configuration
+resource_monitoring:
+  metrics_collection:
+    interval: 30
+    retention: 86400  # 24 hours
+    compression: true
+  monitored_resources:
+    cpu:
+      enabled: true
+      threshold_warning: 80
+      threshold_critical: 95
+    memory:
+      enabled: true
+      threshold_warning: 80
+      threshold_critical: 95
+    disk:
+      enabled: true
+      threshold_warning: 80
+      threshold_critical: 95
+    network:
+      enabled: true
+      threshold_warning: 80
+      threshold_critical: 95
+  alerts:
+    enabled: true
+    notification_channels:
+      - "email"
+      - "slack"
+      - "webhook"
+
+# API Configuration
+api:
+  version: "v1"
+  base_path: "/api/v1"
+  endpoints:
+    servers:
+      - "POST /servers"
+      - "GET /servers"
+      - "GET /servers/{server_id}"
+      - "PUT /servers/{server_id}"
+      - "DELETE /servers/{server_id}"
+      - "POST /servers/{server_id}/start"
+      - "POST /servers/{server_id}/stop"
+      - "POST /servers/{server_id}/restart"
+    sessions:
+      - "POST /servers/{server_id}/sessions"
+      - "GET /servers/{server_id}/sessions"
+      - "GET /servers/{server_id}/sessions/{session_id}"
+      - "DELETE /servers/{server_id}/sessions/{session_id}"
+      - "POST /servers/{server_id}/sessions/{session_id}/connect"
+      - "POST /servers/{server_id}/sessions/{session_id}/disconnect"
+    monitoring:
+      - "GET /monitoring/status"
+      - "GET /monitoring/servers/{server_id}/metrics"
+      - "GET /monitoring/servers/{server_id}/resources"
+      - "GET /monitoring/alerts"
+    configuration:
+      - "GET /config/servers"
+      - "PUT /config/servers"
+      - "GET /config/xrdp"
+      - "PUT /config/xrdp"
+
+# Database Configuration
+database:
+  mongodb:
+    uri: "mongodb://mongodb:27017/lucid_rdp"
+    database: "lucid_rdp"
+    collections:
+      - "servers"
+      - "sessions"
+      - "users"
+      - "metrics"
+      - "alerts"
+      - "configurations"
+    indexes:
+      - "server_id"
+      - "user_id"
+      - "session_id"
+      - "created_at"
+      - "status"
+    connection_pool: 20
+    timeout: 30
+  redis:
+    uri: "redis://redis:6379/3"
+    database: 3
+    use_cases:
+      - "server_cache"
+      - "session_state"
+      - "metrics_cache"
+      - "alert_queue"
+    timeout: 30
+
+# Security Configuration
+security:
+  authentication:
+    required: true
+    methods: ["jwt", "certificate"]
+    session_timeout: 3600
+  authorization:
+    rbac_enabled: true
+    roles:
+      - "user"
+      - "admin"
+      - "operator"
+  encryption:
+    data_in_transit: true
+    data_at_rest: true
+    session_encryption: true
+  access_control:
+    ip_whitelist: true
+    user_isolation: true
+    session_isolation: true
+  audit_logging:
+    enabled: true
+    events:
+      - "server_created"
+      - "server_deleted"
+      - "session_started"
+      - "session_ended"
+      - "user_connected"
+      - "user_disconnected"
+      - "resource_alert"
+
+# Performance Configuration
+performance:
+  max_servers: 1000
+  max_sessions_per_server: 1
+  max_users: 10000
+  connection_pool_size: 100
+  request_timeout: 30
+  response_timeout: 60
+  bandwidth_limit: "1Gbps"
+  cpu_usage_limit: "90%"
+  memory_usage_limit: "90%"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  structured: true
+  server_events: true
+  session_events: true
+  resource_events: true
+  error_events: true
+  correlation_id: true
+  user_activity: true
+
+# Health Check Configuration
+health_check:
+  server_manager:
+    endpoint: "/api/v1/servers/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+  xrdp:
+    endpoint: "/api/v1/xrdp/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+  session_controller:
+    endpoint: "/api/v1/sessions/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+  resource_monitor:
+    endpoint: "/api/v1/monitoring/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+
+# Metrics Configuration
+metrics:
+  enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+  custom_metrics:
+    - "active_servers"
+    - "active_sessions"
+    - "server_creation_rate"
+    - "session_connection_rate"
+    - "resource_utilization"
+    - "error_rate"
+    - "response_time"
+    - "user_activity"
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  grafana:
+    enabled: true
+    dashboard_id: "rdp-services"
+  alerts:
+    - name: "server_creation_failure"
+      condition: "server_creation_success_rate < 0.9"
+      severity: "critical"
+    - name: "high_resource_usage"
+      condition: "resource_utilization > 0.9"
+      severity: "warning"
+    - name: "session_connection_failure"
+      condition: "session_connection_success_rate < 0.95"
+      severity: "critical"
+    - name: "server_overload"
+      condition: "active_sessions > 0.8 * max_sessions"
+      severity: "warning"
+
+# Deployment Configuration
+deployment:
+  replicas: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+  strategy:
+    type: "RollingUpdate"
+    rolling_update:
+      max_unavailable: 1
+      max_surge: 1
+  volumes:
+    - name: "rdp_data"
+      path: "/data/rdp"
+      size: "100Gi"
+    - name: "xrdp_config"
+      path: "/etc/xrdp"
+      size: "1Gi"
+    - name: "ssl_certs"
+      path: "/certs"
+      size: "100Mi"
+
+# Environment-specific Overrides
+environments:
+  development:
+    debug: true
+    log_level: "DEBUG"
+    rdp_servers:
+      max_servers: 10
+    performance:
+      max_servers: 10
+      
+  staging:
+    debug: false
+    log_level: "INFO"
+    rdp_servers:
+      max_servers: 100
+    performance:
+      max_servers: 100
+      
+  production:
+    debug: false
+    log_level: "WARN"
+    rdp_servers:
+      max_servers: 1000
+    performance:
+      max_servers: 1000
+    security:
+      enhanced: true
+
+# Validation Rules
+validation:
+  required_fields:
+    - "service.name"
+    - "service.version"
+    - "ports.server_manager"
+    - "containers.server_manager.base_image"
+  port_ranges:
+    server_manager: [8000, 8999]
+    xrdp: [8000, 8999]
+    session_controller: [8000, 8999]
+    resource_monitor: [8000, 8999]
+  resource_limits:
+    cpu_max: "8"
+    memory_max: "16Gi"
+  security_requirements:
+    - "security.authentication.required"
+    - "security.encryption.data_in_transit"
+    - "security.audit_logging.enabled"

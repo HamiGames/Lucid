@@ -1,7 +1,7 @@
 # Path: blockchain/core/blockchain_engine.py  
 # Lucid RDP Blockchain Core Engine - Dual-chain architecture with PoOT consensus
 # Based on Spec-1a, Spec-1b, and Spec-1c requirements
-# REBUILT: On-System Data Chain as primary, TRON isolated for payments only
+# REBUILT: On-System Data Chain as primary blockchain for session anchoring
 
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ import httpx
 
 # Import from updated models and components
 from .models import (
-    ChainType, ConsensusState, PayoutRouter, TaskProofType, SessionStatus, PayoutStatus,
-    SessionAnchor, TronPayout, TaskProof, WorkCreditsTally, LeaderSchedule,
+    ChainType, ConsensusState, TaskProofType, SessionStatus, PayoutStatus,
+    SessionAnchor, TaskProof, WorkCreditsTally, LeaderSchedule,
     ChunkMetadata, SessionManifest, generate_session_id, calculate_work_credits_formula
 )
 from ..on_system_chain.chain_client import OnSystemChainClient
@@ -56,14 +56,9 @@ LUCID_ANCHORS_ADDRESS = os.getenv("LUCID_ANCHORS_ADDRESS", "")
 LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
 
 # =============================================================================
-# TRON PAYMENT LAYER CONFIGURATION (R-MUST-015, R-MUST-018)
+# PAYMENT SERVICE INTEGRATION (R-MUST-015, R-MUST-018)
 # =============================================================================
-
-# TRON_NETWORK = os.getenv("TRON_NETWORK", "shasta")  # shasta/mainnet
-# USDT_TRC20_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
-# USDT_TRC20_SHASTA = "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
-# PAYOUT_ROUTER_V0_ADDRESS = os.getenv("PAYOUT_ROUTER_V0_ADDRESS", "")
-# PAYOUT_ROUTER_KYC_ADDRESS = os.getenv("PAYOUT_ROUTER_KYC_ADDRESS", "")
+# Payment operations are handled by separate payment service cluster
 
 # =============================================================================
 # MONGODB CONFIGURATION (R-MUST-019)
@@ -83,7 +78,7 @@ class EnhancedOnSystemChainClient:
     Handles:
     - LucidAnchors contract interactions for session manifests
     - LucidChunkStore contract integration for chunk metadata
-    - EVM JSON-RPC interface (not TRON API)
+    - EVM JSON-RPC interface for On-System Chain
     - Gas estimation and circuit breakers
     - Enhanced error handling and retry logic
     """
@@ -229,7 +224,7 @@ class PoOTConsensusEngine:
     """
     Proof of Operational Tasks (PoOT) consensus engine (Spec-1b).
     
-    REBUILT: Pure PoOT consensus on On-System Chain (not TRON).
+    REBUILT: Pure PoOT consensus on On-System Chain.
     Implements:
     - Work credits calculation from relay bandwidth, storage proofs, validation signatures, uptime
     - Leader selection based on work credits ranking with cooldown periods
@@ -471,11 +466,11 @@ class BlockchainEngine:
     """
     Main blockchain engine orchestrating dual-chain architecture.
     
-    REBUILT: On-System Chain as primary, TRON isolated for payments only.
+    REBUILT: On-System Chain as primary blockchain for session anchoring.
     
     Manages:
     - On-System Data Chain for session anchoring (R-MUST-016)  
-    - TRON integration for USDT payouts (R-MUST-015, R-MUST-018)
+    - Payment service integration for payouts (R-MUST-015, R-MUST-018)
     - PoOT consensus for block production
     - MongoDB collections for consensus and anchoring data
     - Circuit breakers and rate limiting
@@ -494,7 +489,7 @@ class BlockchainEngine:
             }
         )
         
-        # self.tron_client = TronNodeSystem(TRON_NETWORK)  # Payment service only
+        # Payment service integration is handled separately
         self.consensus_engine = PoOTConsensusEngine(self.db)
         
         # State tracking
@@ -602,45 +597,13 @@ class BlockchainEngine:
                 logger.error(f"Anchor monitoring error: {e}")
                 await asyncio.sleep(60)
     
-    # async def _monitor_payouts(self):
-    #     """Monitor TRON payout status"""
-    #     while self.running:
-    #         try:
-    #             # Get pending payouts
-    #             pending_cursor = self.db["payouts"].find({"status": "pending"})
-    #             
-    #             async for payout_doc in pending_cursor:
-    #                 txid = payout_doc.get("txid")
-    #                 if txid:
-    #                     # Check TRON transaction status
-    #                     status = await self.tron_client.get_transaction_status(txid)
-    #                     
-    #                     if status == "confirmed":
-    #                         await self.db["payouts"].update_one(
-    #                             {"_id": payout_doc["_id"]},
-    #                             {"$set": {"status": "confirmed"}}
-    #                         )
-    #                         logger.info(f"Payout confirmed: {payout_doc['_id']}")
-    #                         
-    #                     elif status == "failed":
-    #                         await self.db["payouts"].update_one(
-    #                             {"_id": payout_doc["_id"]},
-    #                             {"$set": {"status": "failed"}}
-    #                         )
-    #                         logger.warning(f"Payout failed: {payout_doc['_id']}")
-    #             
-    #             await asyncio.sleep(60)  # Check every minute
-    #             
-    #         except Exception as e:
-    #             logger.error(f"Payout monitoring error: {e}")
-    #             await asyncio.sleep(120)
     
     async def anchor_session(self, session_id: str, manifest_hash: str, 
                            merkle_root: str, owner_address: str, chunk_count: int) -> str:
         """
         Anchor session to On-System Chain using LucidAnchors contract.
         
-        REBUILT: Uses On-System Chain as primary (not TRON).
+        REBUILT: Uses On-System Chain as primary blockchain.
         """
         try:
             # Create session anchor
@@ -666,40 +629,6 @@ class BlockchainEngine:
             logger.error(f"Failed to anchor session: {e}")
             raise
     
-    # async def create_payout(self, session_id: str, recipient_address: str,
-    #                       amount_usdt: float, router_type: PayoutRouter,
-    #                       reason: str, private_key: str,
-    #                       kyc_hash: Optional[str] = None,
-    #                       compliance_signature: Optional[Dict[str, Any]] = None) -> str:
-    #     """
-    #     Create TRON USDT payout via isolated payment service.
-    #     
-    #     REBUILT: TRON isolated for payments only (not blockchain core).
-    #     """
-    #     try:
-    #         # Create payout
-    #         payout = TronPayout(
-    #             session_id=session_id,
-    #             recipient_address=recipient_address,
-    #             amount_usdt=amount_usdt,
-    #             router_type=router_type,
-    #             reason=reason,
-    #             kyc_hash=kyc_hash,
-    #             compliance_signature=compliance_signature
-    #         )
-    #         
-    #         # Create TRON transaction
-    #         txid = await self.tron_client.create_usdt_payout(payout, private_key)
-    #         
-    #         # Store in MongoDB
-    #         await self.db["payouts"].insert_one(payout.to_dict())
-    #         
-    #         logger.info(f"Payout created via TRON: {session_id} -> {txid}")
-    #         return txid
-    #         
-    #     except Exception as e:
-    #         logger.error(f"Failed to create payout: {e}")
-    #         raise
     
     async def get_session_status(self, session_id: str) -> Optional[Dict[str, Any]]:
         """Get session anchoring status"""

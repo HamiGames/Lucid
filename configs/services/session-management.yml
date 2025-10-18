@@ -1,0 +1,385 @@
+# Session Management Service Configuration
+# Cluster: 03-SESSION-MANAGEMENT
+# Service: Session Management Pipeline
+# Ports: 8083-8087
+
+service:
+  name: session-management
+  version: "1.0.0"
+  description: "Lucid Session Management - Session recording and processing pipeline"
+  cluster_id: "03-session-management-cluster"
+  
+# Port Configuration
+ports:
+  pipeline_manager: 8083
+  session_recorder: 8084
+  chunk_processor: 8085
+  session_storage: 8086
+  session_api: 8087
+
+# Container Configuration
+containers:
+  pipeline_manager:
+    name: lucid-session-pipeline
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  session_recorder:
+    name: lucid-session-recorder
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  chunk_processor:
+    name: lucid-chunk-processor
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  session_storage:
+    name: lucid-session-storage
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+  session_api:
+    name: lucid-session-api
+    base_image: "gcr.io/distroless/python3-debian12"
+    tag: "latest"
+    multi_stage_build: true
+
+# Service Dependencies
+dependencies:
+  internal:
+    - name: "api-gateway"
+      url: "http://api-gateway:8080"
+      required: true
+    - name: "blockchain-core"
+      url: "http://blockchain-core:8084"
+      required: true
+    - name: "rdp-services"
+      url: "http://rdp-services:8090"
+      required: true
+  external:
+    - name: "mongodb"
+      url: "mongodb://mongodb:27017/lucid_sessions"
+      required: true
+    - name: "redis"
+      url: "redis://redis:6379/2"
+      required: true
+  storage:
+    - name: "file_system"
+      path: "/data/sessions"
+      required: true
+      volumes:
+        - "session_data:/data/sessions"
+        - "chunk_data:/data/chunks"
+        - "processed_data:/data/processed"
+
+# Pipeline Configuration
+pipeline:
+  states:
+    - "created"
+    - "recording"
+    - "processing"
+    - "stored"
+    - "anchored"
+    - "completed"
+  state_machine: true
+  timeout: 3600  # 1 hour
+  retry_attempts: 3
+  retry_delay: 30
+  
+# Session Recording Configuration
+session_recording:
+  chunk_size: "10MB"
+  compression_level: 6
+  encryption:
+    algorithm: "AES-256-GCM"
+    key_rotation: true
+    key_rotation_interval: 86400  # 24 hours
+  quality:
+    video_quality: "high"
+    audio_quality: "high"
+    frame_rate: 30
+    resolution: "1920x1080"
+  storage:
+    local_path: "/data/sessions"
+    max_session_size: "100GB"
+    retention_days: 30
+
+# Chunk Processing Configuration
+chunk_processing:
+  max_chunk_size: "10MB"
+  compression:
+    algorithm: "gzip"
+    level: 6
+    enabled: true
+  encryption:
+    algorithm: "AES-256-GCM"
+    key_derivation: "PBKDF2"
+    iterations: 100000
+  merkle_tree:
+    enabled: true
+    algorithm: "sha256"
+    batch_size: 10
+  workers:
+    count: 10
+    timeout: 300
+    max_retries: 3
+
+# Session Storage Configuration
+session_storage:
+  storage_path: "/data/sessions"
+  chunk_storage_path: "/data/chunks"
+  metadata_storage: "mongodb"
+  indexing:
+    enabled: true
+    elasticsearch_url: "http://elasticsearch:9200"
+    index_name: "lucid_sessions"
+  backup:
+    enabled: true
+    interval: 86400  # 24 hours
+    retention_days: 90
+    compression: true
+
+# API Configuration
+api:
+  version: "v1"
+  base_path: "/api/v1"
+  endpoints:
+    sessions:
+      - "POST /sessions"
+      - "GET /sessions"
+      - "GET /sessions/{session_id}"
+      - "PUT /sessions/{session_id}"
+      - "DELETE /sessions/{session_id}"
+      - "GET /sessions/{session_id}/status"
+      - "POST /sessions/{session_id}/start"
+      - "POST /sessions/{session_id}/stop"
+    chunks:
+      - "POST /sessions/{session_id}/chunks"
+      - "GET /sessions/{session_id}/chunks"
+      - "GET /sessions/{session_id}/chunks/{chunk_id}"
+      - "DELETE /sessions/{session_id}/chunks/{chunk_id}"
+    pipeline:
+      - "GET /pipeline/status"
+      - "POST /pipeline/sessions/{session_id}/process"
+      - "GET /pipeline/sessions/{session_id}/progress"
+    storage:
+      - "GET /storage/status"
+      - "POST /storage/sessions/{session_id}/backup"
+      - "GET /storage/sessions/{session_id}/download"
+
+# Database Configuration
+database:
+  mongodb:
+    uri: "mongodb://mongodb:27017/lucid_sessions"
+    database: "lucid_sessions"
+    collections:
+      - "sessions"
+      - "chunks"
+      - "pipeline_states"
+      - "processing_jobs"
+      - "storage_metadata"
+    indexes:
+      - "session_id"
+      - "user_id"
+      - "created_at"
+      - "status"
+      - "chunk_hash"
+    connection_pool: 20
+    timeout: 30
+  redis:
+    uri: "redis://redis:6379/2"
+    database: 2
+    use_cases:
+      - "session_cache"
+      - "pipeline_state"
+      - "chunk_metadata"
+      - "processing_queue"
+    timeout: 30
+
+# Security Configuration
+security:
+  encryption:
+    session_data: true
+    chunk_data: true
+    metadata: true
+  access_control:
+    user_isolation: true
+    session_ownership: true
+    admin_access: true
+  audit_logging:
+    enabled: true
+    events:
+      - "session_created"
+      - "session_deleted"
+      - "chunk_uploaded"
+      - "chunk_processed"
+      - "session_anchored"
+  data_protection:
+    pii_detection: true
+    sensitive_data_filtering: true
+    retention_policy: true
+
+# Performance Configuration
+performance:
+  max_concurrent_sessions: 100
+  max_chunks_per_session: 10000
+  processing_timeout: 3600
+  storage_quota_per_user: "1TB"
+  bandwidth_limit: "100Mbps"
+  cpu_usage_limit: "80%"
+  memory_usage_limit: "80%"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  structured: true
+  session_events: true
+  chunk_events: true
+  pipeline_events: true
+  error_events: true
+  correlation_id: true
+  user_activity: true
+
+# Health Check Configuration
+health_check:
+  pipeline_manager:
+    endpoint: "/api/v1/pipeline/status"
+    interval: 30
+    timeout: 10
+    retries: 3
+  session_recorder:
+    endpoint: "/api/v1/sessions/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+  chunk_processor:
+    endpoint: "/api/v1/processing/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+  session_storage:
+    endpoint: "/api/v1/storage/status"
+    interval: 30
+    timeout: 10
+    retries: 3
+  session_api:
+    endpoint: "/api/v1/sessions/health"
+    interval: 30
+    timeout: 10
+    retries: 3
+
+# Metrics Configuration
+metrics:
+  enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+  custom_metrics:
+    - "active_sessions"
+    - "chunks_processed"
+    - "processing_time"
+    - "storage_usage"
+    - "pipeline_success_rate"
+    - "session_completion_rate"
+    - "chunk_upload_rate"
+    - "storage_quota_usage"
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  grafana:
+    enabled: true
+    dashboard_id: "session-management"
+  alerts:
+    - name: "pipeline_failure"
+      condition: "pipeline_success_rate < 0.9"
+      severity: "critical"
+    - name: "storage_quota_exceeded"
+      condition: "storage_quota_usage > 0.9"
+      severity: "warning"
+    - name: "processing_delay"
+      condition: "processing_time > 1800"
+      severity: "warning"
+    - name: "session_recording_failure"
+      condition: "recording_success_rate < 0.95"
+      severity: "critical"
+
+# Deployment Configuration
+deployment:
+  replicas: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+  strategy:
+    type: "RollingUpdate"
+    rolling_update:
+      max_unavailable: 1
+      max_surge: 1
+  volumes:
+    - name: "session_data"
+      path: "/data/sessions"
+      size: "1Ti"
+    - name: "chunk_data"
+      path: "/data/chunks"
+      size: "2Ti"
+    - name: "processed_data"
+      path: "/data/processed"
+      size: "500Gi"
+
+# Environment-specific Overrides
+environments:
+  development:
+    debug: true
+    log_level: "DEBUG"
+    performance:
+      max_concurrent_sessions: 10
+    storage:
+      retention_days: 7
+      
+  staging:
+    debug: false
+    log_level: "INFO"
+    performance:
+      max_concurrent_sessions: 50
+    storage:
+      retention_days: 14
+      
+  production:
+    debug: false
+    log_level: "WARN"
+    performance:
+      max_concurrent_sessions: 100
+    storage:
+      retention_days: 30
+    security:
+      enhanced: true
+
+# Validation Rules
+validation:
+  required_fields:
+    - "service.name"
+    - "service.version"
+    - "ports.pipeline_manager"
+    - "containers.pipeline_manager.base_image"
+  port_ranges:
+    pipeline_manager: [8000, 8999]
+    session_recorder: [8000, 8999]
+    chunk_processor: [8000, 8999]
+    session_storage: [8000, 8999]
+    session_api: [8000, 8999]
+  resource_limits:
+    cpu_max: "8"
+    memory_max: "16Gi"
+  security_requirements:
+    - "security.encryption.session_data"
+    - "security.access_control.user_isolation"
+    - "security.audit_logging.enabled"
