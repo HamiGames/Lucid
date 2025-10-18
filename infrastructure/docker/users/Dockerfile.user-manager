@@ -1,0 +1,520 @@
+# LUCID RDP User Manager - User Management and Authentication
+# SPEC-4 Compliant: User lifecycle management, authentication, authorization, profile management
+
+FROM pickme/lucid:devcontainer-dind as base
+
+LABEL org.lucid.plane="ops"
+LABEL org.lucid.service="user-manager"
+LABEL org.lucid.stage="2"
+
+WORKDIR /workspaces/Lucid
+
+# Install user management and authentication tools
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    python3-setuptools \
+    python3-wheel \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    libsasl2-dev \
+    libldap2-dev \
+    libkrb5-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python authentication and user management libraries
+RUN pip install --no-cache-dir \
+    passlib==1.7.4 \
+    python-jose==3.3.0 \
+    python-multipart==0.0.6 \
+    python-ldap==3.4.3 \
+    authlib==1.2.1 \
+    oauthlib==3.2.2 \
+    social-auth-app-fastapi==0.1.0 \
+    fastapi-users==12.1.2 \
+    sqlalchemy==2.0.23 \
+    alembic==1.13.1 \
+    redis==5.0.1 \
+    bcrypt==4.1.2 \
+    argon2-cffi==23.1.0
+
+# Copy user management scripts
+COPY auth/user_manager.py /workspaces/Lucid/auth/
+COPY auth/__init__.py /workspaces/Lucid/auth/
+
+# Install Python dependencies
+COPY auth/requirements.auth.txt /workspaces/Lucid/auth/
+RUN cd auth && pip install -r requirements.auth.txt
+
+# Copy user management API
+COPY <<EOF /workspaces/Lucid/users/user_management_api.py
+#!/usr/bin/env python3
+"""
+LUCID RDP User Management API
+SPEC-4 compliant user management with authentication and authorization
+"""
+
+import os
+import sys
+import json
+import logging
+import asyncio
+import hashlib
+import secrets
+from typing import Dict, List, Optional, Any
+from datetime import datetime, timedelta
+from dataclasses import dataclass, field
+from enum import Enum
+import jwt
+from passlib.context import CryptContext
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import create_engine, Column, String, DateTime, Boolean, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+
+# User management models
+class UserRole(Enum):
+    """User roles in the LUCID system"""
+    ADMIN = "admin"
+    USER = "user"
+    NODE_WORKER = "node_worker"
+    OBSERVER = "observer"
+    SERVER = "server"
+    DEV = "dev"
+
+class UserStatus(Enum):
+    """User account status"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+    PENDING_VERIFICATION = "pending_verification"
+
+class AuthMethod(Enum):
+    """Authentication methods"""
+    PASSWORD = "password"
+    HARDWARE_WALLET = "hardware_wallet"
+    OAUTH = "oauth"
+    SSO = "sso"
+
+# Database models
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    
+    user_id = Column(String(64), primary_key=True)
+    tron_address = Column(String(64), unique=True, nullable=False)
+    username = Column(String(32), unique=True, nullable=False)
+    email = Column(String(255), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=True)
+    role = Column(String(32), default=UserRole.USER.value)
+    status = Column(String(32), default=UserStatus.ACTIVE.value)
+    auth_method = Column(String(32), default=AuthMethod.PASSWORD.value)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+    last_activity = Column(DateTime, nullable=True)
+    failed_login_attempts = Column(String(10), default="0")
+    locked_until = Column(DateTime, nullable=True)
+    metadata = Column(Text, default="{}")
+
+# Pydantic models for API
+class UserCreate(BaseModel):
+    tron_address: str
+    username: str
+    email: EmailStr
+    password: Optional[str] = None
+    auth_method: AuthMethod = AuthMethod.PASSWORD
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[UserRole] = None
+    status: Optional[UserStatus] = None
+
+class UserLogin(BaseModel):
+    identifier: str  # username, email, or tron_address
+    password: Optional[str] = None
+    auth_method: AuthMethod = AuthMethod.PASSWORD
+
+class UserResponse(BaseModel):
+    user_id: str
+    tron_address: str
+    username: str
+    email: str
+    role: UserRole
+    status: UserStatus
+    auth_method: AuthMethod
+    created_at: datetime
+    last_login: Optional[datetime]
+    last_activity: Optional[datetime]
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: int
+    user: UserResponse
+
+# User Management Service
+class UserManagementService:
+    def __init__(self):
+        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        self.secret_key = os.getenv("JWT_SECRET_KEY", "lucid-secret-key-change-in-production")
+        self.algorithm = "HS256"
+        self.access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+        
+        # Database setup
+        database_url = os.getenv("DATABASE_URL", "sqlite:///./lucid_users.db")
+        self.engine = create_engine(database_url)
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+        
+        # Create tables
+        Base.metadata.create_all(bind=self.engine)
+    
+    def get_db(self):
+        """Get database session"""
+        db = self.SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+    
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        """Verify a password against its hash"""
+        return self.pwd_context.verify(plain_password, hashed_password)
+    
+    def get_password_hash(self, password: str) -> str:
+        """Hash a password"""
+        return self.pwd_context.hash(password)
+    
+    def create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None):
+        """Create JWT access token"""
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=self.access_token_expire_minutes)
+        
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return encoded_jwt
+    
+    def verify_token(self, token: str) -> Dict[str, Any]:
+        """Verify and decode JWT token"""
+        try:
+            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token has expired")
+        except jwt.JWTError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    
+    async def create_user(self, db: Session, user_data: UserCreate) -> User:
+        """Create a new user"""
+        # Check if user already exists
+        existing_user = db.query(User).filter(
+            (User.tron_address == user_data.tron_address) |
+            (User.username == user_data.username) |
+            (User.email == user_data.email)
+        ).first()
+        
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User already exists")
+        
+        # Generate user ID
+        user_id = hashlib.sha256(f"{user_data.tron_address}{user_data.username}{datetime.utcnow()}".encode()).hexdigest()[:16]
+        
+        # Create user
+        user = User(
+            user_id=user_id,
+            tron_address=user_data.tron_address,
+            username=user_data.username,
+            email=user_data.email,
+            password_hash=self.get_password_hash(user_data.password) if user_data.password else None,
+            role=user_data.role.value if isinstance(user_data.role, UserRole) else user_data.role,
+            auth_method=user_data.auth_method.value
+        )
+        
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        logging.info(f"Created user: {user.username} ({user.tron_address})")
+        return user
+    
+    async def authenticate_user(self, db: Session, login_data: UserLogin) -> Optional[User]:
+        """Authenticate a user"""
+        # Find user by identifier
+        user = db.query(User).filter(
+            (User.username == login_data.identifier) |
+            (User.email == login_data.identifier) |
+            (User.tron_address == login_data.identifier)
+        ).first()
+        
+        if not user:
+            return None
+        
+        # Check if account is locked
+        if user.locked_until and user.locked_until > datetime.utcnow():
+            raise HTTPException(status_code=423, detail="Account is locked")
+        
+        # Check authentication method
+        if user.auth_method != login_data.auth_method.value:
+            raise HTTPException(status_code=400, detail="Invalid authentication method")
+        
+        # Verify password if using password auth
+        if login_data.auth_method == AuthMethod.PASSWORD:
+            if not user.password_hash or not self.verify_password(login_data.password, user.password_hash):
+                # Increment failed login attempts
+                user.failed_login_attempts = str(int(user.failed_login_attempts or "0") + 1)
+                
+                # Lock account after 5 failed attempts
+                if int(user.failed_login_attempts) >= 5:
+                    user.locked_until = datetime.utcnow() + timedelta(minutes=30)
+                
+                db.commit()
+                return None
+        
+        # Reset failed login attempts on successful login
+        user.failed_login_attempts = "0"
+        user.locked_until = None
+        user.last_login = datetime.utcnow()
+        user.last_activity = datetime.utcnow()
+        
+        db.commit()
+        return user
+    
+    async def get_user_by_id(self, db: Session, user_id: str) -> Optional[User]:
+        """Get user by ID"""
+        return db.query(User).filter(User.user_id == user_id).first()
+    
+    async def update_user(self, db: Session, user_id: str, user_data: UserUpdate) -> Optional[User]:
+        """Update user information"""
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            return None
+        
+        update_data = user_data.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            if hasattr(user, field):
+                if isinstance(value, Enum):
+                    setattr(user, field, value.value)
+                else:
+                    setattr(user, field, value)
+        
+        user.last_activity = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+        
+        logging.info(f"Updated user: {user.username}")
+        return user
+    
+    async def delete_user(self, db: Session, user_id: str) -> bool:
+        """Delete a user"""
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            return False
+        
+        db.delete(user)
+        db.commit()
+        
+        logging.info(f"Deleted user: {user.username}")
+        return True
+
+# FastAPI application
+app = FastAPI(title="LUCID User Management API", version="1.0.0")
+user_service = UserManagementService()
+
+# Security
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current authenticated user"""
+    token = credentials.credentials
+    payload = user_service.verify_token(token)
+    
+    user_id = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    # Get user from database
+    db = next(user_service.get_db())
+    user = await user_service.get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return user
+
+# API endpoints
+@app.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(user_data: UserCreate, db: Session = Depends(user_service.get_db)):
+    """Create a new user"""
+    user = await user_service.create_user(db, user_data)
+    return UserResponse(
+        user_id=user.user_id,
+        tron_address=user.tron_address,
+        username=user.username,
+        email=user.email,
+        role=UserRole(user.role),
+        status=UserStatus(user.status),
+        auth_method=AuthMethod(user.auth_method),
+        created_at=user.created_at,
+        last_login=user.last_login,
+        last_activity=user.last_activity
+    )
+
+@app.post("/auth/login", response_model=TokenResponse)
+async def login(login_data: UserLogin, db: Session = Depends(user_service.get_db)):
+    """Authenticate user and return access token"""
+    user = await user_service.authenticate_user(db, login_data)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    access_token_expires = timedelta(minutes=user_service.access_token_expire_minutes)
+    access_token = user_service.create_access_token(
+        data={"sub": user.user_id, "role": user.role},
+        expires_delta=access_token_expires
+    )
+    
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=user_service.access_token_expire_minutes * 60,
+        user=UserResponse(
+            user_id=user.user_id,
+            tron_address=user.tron_address,
+            username=user.username,
+            email=user.email,
+            role=UserRole(user.role),
+            status=UserStatus(user.status),
+            auth_method=AuthMethod(user.auth_method),
+            created_at=user.created_at,
+            last_login=user.last_login,
+            last_activity=user.last_activity
+        )
+    )
+
+@app.get("/users/me", response_model=UserResponse)
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user information"""
+    return UserResponse(
+        user_id=current_user.user_id,
+        tron_address=current_user.tron_address,
+        username=current_user.username,
+        email=current_user.email,
+        role=UserRole(current_user.role),
+        status=UserStatus(current_user.status),
+        auth_method=AuthMethod(current_user.auth_method),
+        created_at=current_user.created_at,
+        last_login=current_user.last_login,
+        last_activity=current_user.last_activity
+    )
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: str, user_data: UserUpdate, 
+                     current_user: User = Depends(get_current_user),
+                     db: Session = Depends(user_service.get_db)):
+    """Update user information"""
+    # Only allow users to update their own profile or admins to update any profile
+    if current_user.user_id != user_id and current_user.role != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+    
+    user = await user_service.update_user(db, user_id, user_data)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return UserResponse(
+        user_id=user.user_id,
+        tron_address=user.tron_address,
+        username=user.username,
+        email=user.email,
+        role=UserRole(user.role),
+        status=UserStatus(user.status),
+        auth_method=AuthMethod(user.auth_method),
+        created_at=user.created_at,
+        last_login=user.last_login,
+        last_activity=user.last_activity
+    )
+
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: User = Depends(get_current_user),
+                     db: Session = Depends(user_service.get_db)):
+    """Delete a user"""
+    # Only admins can delete users
+    if current_user.role != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Not authorized to delete users")
+    
+    success = await user_service.delete_user(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "User deleted successfully"}
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "user-manager"}
+
+if __name__ == "__main__":
+    import uvicorn
+    logging.basicConfig(level=logging.INFO)
+    uvicorn.run(app, host="0.0.0.0", port=8092)
+EOF
+
+# Make user management API executable
+RUN chmod +x /workspaces/Lucid/users/user_management_api.py
+
+# Create user management configuration
+COPY <<EOF /etc/lucid/user-management.conf
+[database]
+url = sqlite:///./lucid_users.db
+echo = false
+pool_size = 10
+max_overflow = 20
+
+[authentication]
+jwt_secret_key = lucid-secret-key-change-in-production
+jwt_algorithm = HS256
+access_token_expire_minutes = 30
+refresh_token_expire_days = 7
+
+[security]
+password_min_length = 8
+password_require_uppercase = true
+password_require_lowercase = true
+password_require_numbers = true
+password_require_special_chars = true
+max_failed_login_attempts = 5
+account_lockout_duration_minutes = 30
+
+[user_management]
+default_role = user
+auto_activate_users = false
+require_email_verification = true
+allow_self_registration = true
+
+[hardware_wallet]
+supported_types = ledger,trezor,keepkey
+verification_required = true
+backup_key_required = true
+
+[oauth]
+enabled_providers = google,github,linkedin
+client_id = 
+client_secret = 
+redirect_uri = http://localhost:8092/auth/callback
+EOF
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8092/health || exit 1
+
+# Expose user management API
+EXPOSE 8092
+
+# Volume for user data
+VOLUME ["/data/users"]
+
+# Entry point
+CMD ["/workspaces/Lucid/users/user_management_api.py"]

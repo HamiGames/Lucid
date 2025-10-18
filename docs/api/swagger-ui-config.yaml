@@ -1,0 +1,298 @@
+# Swagger UI Configuration for Lucid API Documentation
+# This file configures the Swagger UI interface for all service APIs
+
+swagger_ui:
+  # Global configuration
+  title: "Lucid API Documentation"
+  description: "Comprehensive API documentation for the Lucid blockchain system"
+  version: "1.0.0"
+  
+  # UI Configuration
+  deep_linking: true
+  display_operation_id: false
+  default_models_expand_depth: 1
+  default_model_expand_depth: 1
+  default_model_rendering: "example"
+  display_request_duration: true
+  doc_expansion: "list"
+  filter: true
+  max_displayed_tags: 10
+  show_extensions: true
+  show_common_extensions: true
+  
+  # Layout and styling
+  layout: "StandaloneLayout"
+  presets:
+    - "SwaggerUIBundle.presets.apis"
+    - "SwaggerUIStandalonePreset"
+  
+  # Plugins
+  plugins:
+    - "SwaggerUIBundle.plugins.DownloadUrl"
+    - "SwaggerUIBundle.plugins.Topbar"
+    - "SwaggerUIBundle.plugins.StandaloneLayout"
+  
+  # Security configuration
+  security:
+    - BearerAuth: []
+    - ApiKeyAuth: []
+  
+  # Custom CSS
+  custom_css: |
+    .swagger-ui .topbar {
+      background-color: #1f2937;
+      border-bottom: 3px solid #3b82f6;
+    }
+    
+    .swagger-ui .topbar .download-url-wrapper {
+      display: none;
+    }
+    
+    .swagger-ui .info {
+      margin: 20px 0;
+    }
+    
+    .swagger-ui .info .title {
+      color: #1f2937;
+      font-size: 2.5rem;
+      font-weight: 300;
+    }
+    
+    .swagger-ui .info .description {
+      color: #6b7280;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    
+    .swagger-ui .scheme-container {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .swagger-ui .opblock.opblock-post {
+      border-color: #10b981;
+    }
+    
+    .swagger-ui .opblock.opblock-get {
+      border-color: #3b82f6;
+    }
+    
+    .swagger-ui .opblock.opblock-put {
+      border-color: #f59e0b;
+    }
+    
+    .swagger-ui .opblock.opblock-delete {
+      border-color: #ef4444;
+    }
+    
+    .swagger-ui .opblock.opblock-patch {
+      border-color: #8b5cf6;
+    }
+    
+    .swagger-ui .opblock .opblock-summary-description {
+      color: #6b7280;
+    }
+    
+    .swagger-ui .parameter__name {
+      color: #1f2937;
+      font-weight: 600;
+    }
+    
+    .swagger-ui .parameter__type {
+      color: #3b82f6;
+    }
+    
+    .swagger-ui .response-col_status {
+      font-weight: 600;
+    }
+    
+    .swagger-ui .response-col_status .response-col_status-200 {
+      color: #10b981;
+    }
+    
+    .swagger-ui .response-col_status .response-col_status-400,
+    .swagger-ui .response-col_status .response-col_status-401,
+    .swagger-ui .response-col_status .response-col_status-403,
+    .swagger-ui .response-col_status .response-col_status-404,
+    .swagger-ui .response-col_status .response-col_status-500 {
+      color: #ef4444;
+    }
+    
+    .swagger-ui .model-title {
+      color: #1f2937;
+    }
+    
+    .swagger-ui .model .property {
+      color: #6b7280;
+    }
+    
+    .swagger-ui .model .property.primitive {
+      color: #3b82f6;
+    }
+    
+    .swagger-ui .btn.authorize {
+      background-color: #3b82f6;
+      border-color: #3b82f6;
+    }
+    
+    .swagger-ui .btn.authorize:hover {
+      background-color: #2563eb;
+      border-color: #2563eb;
+    }
+    
+    .swagger-ui .btn.execute {
+      background-color: #10b981;
+      border-color: #10b981;
+    }
+    
+    .swagger-ui .btn.execute:hover {
+      background-color: #059669;
+      border-color: #059669;
+    }
+    
+    .swagger-ui .btn.clear {
+      background-color: #6b7280;
+      border-color: #6b7280;
+    }
+    
+    .swagger-ui .btn.clear:hover {
+      background-color: #4b5563;
+      border-color: #4b5563;
+    }
+    
+    .swagger-ui .highlight-code {
+      background-color: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+    }
+    
+    .swagger-ui .highlight-code .microlight {
+      color: #1f2937;
+    }
+    
+    .swagger-ui .response .microlight {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 8px;
+    }
+    
+    .swagger-ui .response .microlight .response-col_status-200 {
+      color: #10b981;
+    }
+    
+    .swagger-ui .response .microlight .response-col_status-400,
+    .swagger-ui .response .microlight .response-col_status-401,
+    .swagger-ui .response .microlight .response-col_status-403,
+    .swagger-ui .response .microlight .response-col_status-404,
+    .swagger-ui .response .microlight .response-col_status-500 {
+      color: #ef4444;
+    }
+  
+  # Custom JavaScript
+  custom_js: |
+    // Custom JavaScript for Lucid API Documentation
+    window.addEventListener('load', function() {
+      // Add custom event listeners
+      console.log('Lucid API Documentation loaded');
+      
+      // Add custom functionality for authentication
+      if (window.SwaggerUIBundle) {
+        // Custom authentication handler
+        window.authHandler = function(auth) {
+          console.log('Authentication requested:', auth);
+          // Implement custom authentication logic here
+        };
+        
+        // Add custom request interceptor
+        window.requestInterceptor = function(request) {
+          // Add custom headers or modify requests
+          if (request.url.includes('/api/v1/')) {
+            request.headers['X-Client-Version'] = '1.0.0';
+            request.headers['X-Client-Platform'] = 'web';
+          }
+          return request;
+        };
+        
+        // Add custom response interceptor
+        window.responseInterceptor = function(response) {
+          // Handle custom responses
+          if (response.status === 401) {
+            console.warn('Authentication required');
+            // Redirect to login or show auth modal
+          }
+          return response;
+        };
+      }
+    });
+  
+  # Service-specific configurations
+  services:
+    api_gateway:
+      title: "Lucid API Gateway"
+      description: "Primary entry point for all Lucid blockchain system APIs"
+      base_url: "https://api.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/api-gateway.yaml"
+      
+    blockchain_core:
+      title: "Lucid Blockchain Core"
+      description: "Core blockchain operations and consensus mechanisms"
+      base_url: "https://blockchain.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/blockchain-core.yaml"
+      
+    session_management:
+      title: "Lucid Session Management"
+      description: "User session and data storage management"
+      base_url: "https://sessions.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/session-management.yaml"
+      
+    rdp_services:
+      title: "Lucid RDP Services"
+      description: "Remote desktop protocol services"
+      base_url: "https://rdp.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/rdp-services.yaml"
+      
+    node_management:
+      title: "Lucid Node Management"
+      description: "Worker node coordination and management"
+      base_url: "https://nodes.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/node-management.yaml"
+      
+    admin_interface:
+      title: "Lucid Admin Interface"
+      description: "System administration and monitoring"
+      base_url: "https://admin.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/admin-interface.yaml"
+      
+    tron_payment:
+      title: "Lucid TRON Payment"
+      description: "TRON blockchain payment processing"
+      base_url: "https://payment.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/tron-payment.yaml"
+      
+    auth_service:
+      title: "Lucid Auth Service"
+      description: "Authentication and authorization"
+      base_url: "https://auth.lucid-blockchain.org/api/v1"
+      spec_url: "openapi/auth-service.yaml"
+
+# Development configuration
+development:
+  base_url: "http://localhost:8080"
+  debug: true
+  mock_responses: true
+  
+# Production configuration
+production:
+  base_url: "https://api.lucid-blockchain.org"
+  debug: false
+  mock_responses: false
+  
+# Testing configuration
+testing:
+  base_url: "https://api-test.lucid-blockchain.org"
+  debug: true
+  mock_responses: true

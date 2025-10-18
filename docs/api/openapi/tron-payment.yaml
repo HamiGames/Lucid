@@ -1,0 +1,1200 @@
+openapi: 3.0.3
+info:
+  title: Lucid TRON Payment Service
+  description: TRON blockchain payment processing service for Lucid blockchain system
+  version: 1.0.0
+  contact:
+    name: Lucid Development Team
+    email: dev@lucid-blockchain.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://payment.lucid-blockchain.org/api/v1
+    description: Production payment service server
+  - url: https://payment-dev.lucid-blockchain.org/api/v1
+    description: Development payment service server
+  - url: http://localhost:8084/api/v1
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Payment Processing
+  /payments/process:
+    post:
+      tags: [Payments]
+      summary: Process payment
+      description: Processes a payment transaction on the TRON blockchain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentProcessRequest'
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentProcessResponse'
+        '400':
+          description: Invalid payment request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '402':
+          description: Payment failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/status/{payment_id}:
+    get:
+      tags: [Payments]
+      summary: Get payment status
+      description: Returns the current status of a payment transaction
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/history:
+    get:
+      tags: [Payments]
+      summary: Get payment history
+      description: Returns a paginated list of payment transactions for the authenticated user
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed, cancelled]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [subscription, storage, transaction, service]
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, amount, status]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Payment history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentHistoryResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Wallet Management
+  /wallets/balance:
+    get:
+      tags: [Wallets]
+      summary: Get wallet balance
+      description: Returns the TRON balance for the authenticated user's wallet
+      responses:
+        '200':
+          description: Wallet balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletBalanceResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallets/address:
+    get:
+      tags: [Wallets]
+      summary: Get wallet address
+      description: Returns the TRON wallet address for the authenticated user
+      responses:
+        '200':
+          description: Wallet address retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletAddressResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallets/create:
+    post:
+      tags: [Wallets]
+      summary: Create wallet
+      description: Creates a new TRON wallet for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletCreateRequest'
+      responses:
+        '201':
+          description: Wallet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletCreateResponse'
+        '400':
+          description: Invalid wallet creation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Wallet already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallets/import:
+    post:
+      tags: [Wallets]
+      summary: Import wallet
+      description: Imports an existing TRON wallet using private key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletImportRequest'
+      responses:
+        '200':
+          description: Wallet imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletImportResponse'
+        '400':
+          description: Invalid wallet import request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Wallet already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Transaction Management
+  /transactions/send:
+    post:
+      tags: [Transactions]
+      summary: Send transaction
+      description: Sends a TRON transaction to another address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSendRequest'
+      responses:
+        '200':
+          description: Transaction sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSendResponse'
+        '400':
+          description: Invalid transaction request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '402':
+          description: Insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transactions/{transaction_id}:
+    get:
+      tags: [Transactions]
+      summary: Get transaction details
+      description: Returns detailed information about a specific transaction
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionDetailsResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transactions/history:
+    get:
+      tags: [Transactions]
+      summary: Get transaction history
+      description: Returns a paginated list of transactions for the authenticated user
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [sent, received, internal]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, failed]
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, amount, status]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Transaction history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistoryResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Subscription Management
+  /subscriptions/plans:
+    get:
+      tags: [Subscriptions]
+      summary: Get subscription plans
+      description: Returns available subscription plans
+      responses:
+        '200':
+          description: Subscription plans retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionPlansResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscriptions/subscribe:
+    post:
+      tags: [Subscriptions]
+      summary: Subscribe to plan
+      description: Subscribes the user to a subscription plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+      responses:
+        '200':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          description: Invalid subscription request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '402':
+          description: Payment required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscriptions/current:
+    get:
+      tags: [Subscriptions]
+      summary: Get current subscription
+      description: Returns the current subscription for the authenticated user
+      responses:
+        '200':
+          description: Current subscription retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No active subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscriptions/cancel:
+    post:
+      tags: [Subscriptions]
+      summary: Cancel subscription
+      description: Cancels the current subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCancelRequest'
+      responses:
+        '200':
+          description: Subscription cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          description: Invalid cancellation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No active subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Price Management
+  /pricing/current:
+    get:
+      tags: [Pricing]
+      summary: Get current pricing
+      description: Returns current pricing information for services
+      responses:
+        '200':
+          description: Current pricing retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pricing/calculate:
+    post:
+      tags: [Pricing]
+      summary: Calculate price
+      description: Calculates the price for a specific service or storage amount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCalculationRequest'
+      responses:
+        '200':
+          description: Price calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCalculationResponse'
+        '400':
+          description: Invalid calculation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Webhook Management
+  /webhooks/register:
+    post:
+      tags: [Webhooks]
+      summary: Register webhook
+      description: Registers a webhook URL for payment notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRegisterRequest'
+      responses:
+        '201':
+          description: Webhook registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookRegisterResponse'
+        '400':
+          description: Invalid webhook registration request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhooks/list:
+    get:
+      tags: [Webhooks]
+      summary: List webhooks
+      description: Returns a list of registered webhooks for the authenticated user
+      responses:
+        '200':
+          description: Webhooks retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookListResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /webhooks/{webhook_id}/delete:
+    delete:
+      tags: [Webhooks]
+      summary: Delete webhook
+      description: Deletes a registered webhook
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Webhook deleted successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Webhook not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Service Status
+  /status:
+    get:
+      tags: [Status]
+      summary: Get service status
+      description: Returns the current status of the payment service
+      security: []
+      responses:
+        '200':
+          description: Service status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatusResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Payment Schemas
+    PaymentProcessRequest:
+      type: object
+      required: [amount, currency, description]
+      properties:
+        amount:
+          type: number
+          minimum: 0.000001
+        currency:
+          type: string
+          enum: [TRX, USDT, USDC]
+          default: TRX
+        description:
+          type: string
+          maxLength: 500
+        metadata:
+          type: object
+          additionalProperties: true
+        callback_url:
+          type: string
+          format: uri
+
+    PaymentProcessResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+        amount:
+          type: number
+        currency:
+          type: string
+        transaction_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        payment_url:
+          type: string
+          format: uri
+
+    PaymentStatusResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+        amount:
+          type: number
+        currency:
+          type: string
+        transaction_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        failed_reason:
+          type: string
+
+    PaymentHistoryResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentStatusResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Wallet Schemas
+    WalletBalanceResponse:
+      type: object
+      properties:
+        address:
+          type: string
+        balance:
+          type: number
+        currency:
+          type: string
+          default: TRX
+        last_updated:
+          type: string
+          format: date-time
+
+    WalletAddressResponse:
+      type: object
+      properties:
+        address:
+          type: string
+        qr_code:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+
+    WalletCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+
+    WalletCreateResponse:
+      type: object
+      properties:
+        wallet_id:
+          type: string
+          format: uuid
+        address:
+          type: string
+        private_key:
+          type: string
+        mnemonic:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    WalletImportRequest:
+      type: object
+      required: [private_key]
+      properties:
+        private_key:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+
+    WalletImportResponse:
+      type: object
+      properties:
+        wallet_id:
+          type: string
+          format: uuid
+        address:
+          type: string
+        imported_at:
+          type: string
+          format: date-time
+
+    # Transaction Schemas
+    TransactionSendRequest:
+      type: object
+      required: [to_address, amount]
+      properties:
+        to_address:
+          type: string
+        amount:
+          type: number
+          minimum: 0.000001
+        currency:
+          type: string
+          enum: [TRX, USDT, USDC]
+          default: TRX
+        memo:
+          type: string
+          maxLength: 200
+        fee_limit:
+          type: number
+          minimum: 0
+
+    TransactionSendResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+        from_address:
+          type: string
+        to_address:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        fee:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        confirmed_at:
+          type: string
+          format: date-time
+
+    TransactionDetailsResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, failed]
+        from_address:
+          type: string
+        to_address:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        fee:
+          type: number
+        memo:
+          type: string
+        block_height:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        confirmed_at:
+          type: string
+          format: date-time
+        failed_reason:
+          type: string
+
+    TransactionHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionDetailsResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Subscription Schemas
+    SubscriptionPlansResponse:
+      type: object
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionPlan'
+
+    SubscriptionPlan:
+      type: object
+      properties:
+        plan_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        billing_period:
+          type: string
+          enum: [monthly, yearly]
+        features:
+          type: array
+          items:
+            type: string
+        storage_limit:
+          type: integer
+        session_limit:
+          type: integer
+        is_popular:
+          type: boolean
+
+    SubscriptionRequest:
+      type: object
+      required: [plan_id]
+      properties:
+        plan_id:
+          type: string
+        payment_method:
+          type: string
+          enum: [wallet, external]
+        auto_renew:
+          type: boolean
+          default: true
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        subscription_id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+        status:
+          type: string
+          enum: [active, cancelled, expired, pending]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        auto_renew:
+          type: boolean
+        payment_method:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SubscriptionCancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+        immediate:
+          type: boolean
+          default: false
+
+    # Pricing Schemas
+    PricingResponse:
+      type: object
+      properties:
+        storage_price_per_gb:
+          type: number
+        session_price_per_hour:
+          type: number
+        transaction_fee:
+          type: number
+        currency:
+          type: string
+        last_updated:
+          type: string
+          format: date-time
+
+    PriceCalculationRequest:
+      type: object
+      properties:
+        storage_gb:
+          type: number
+          minimum: 0
+        session_hours:
+          type: number
+          minimum: 0
+        transaction_count:
+          type: integer
+          minimum: 0
+
+    PriceCalculationResponse:
+      type: object
+      properties:
+        storage_cost:
+          type: number
+        session_cost:
+          type: number
+        transaction_cost:
+          type: number
+        total_cost:
+          type: number
+        currency:
+          type: string
+        breakdown:
+          type: object
+          additionalProperties: true
+
+    # Webhook Schemas
+    WebhookRegisterRequest:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [payment.completed, payment.failed, subscription.created, subscription.cancelled]
+        secret:
+          type: string
+          maxLength: 100
+
+    WebhookRegisterResponse:
+      type: object
+      properties:
+        webhook_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    WebhookListResponse:
+      type: object
+      properties:
+        webhooks:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookRegisterResponse'
+
+    # Status Schemas
+    ServiceStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, down]
+        version:
+          type: string
+        uptime:
+          type: integer
+        tron_network_status:
+          type: string
+        last_block_height:
+          type: integer
+        response_time:
+          type: number
+
+    # Common Schemas
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "LUCID_ERR_5001"
+            message:
+              type: string
+              example: "Payment processing failed"
+            details:
+              type: object
+              additionalProperties: true
+            request_id:
+              type: string
+              format: uuid
+            timestamp:
+              type: string
+              format: date-time
+            service:
+              type: string
+              example: "tron-payment"
+            version:
+              type: string
+              example: "v1"
+
+tags:
+  - name: Payments
+    description: Payment processing operations
+  - name: Wallets
+    description: Wallet management operations
+  - name: Transactions
+    description: Transaction management and history
+  - name: Subscriptions
+    description: Subscription plan management
+  - name: Pricing
+    description: Pricing and cost calculation
+  - name: Webhooks
+    description: Webhook management for notifications
+  - name: Status
+    description: Service status and health

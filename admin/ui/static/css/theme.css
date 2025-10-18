@@ -1,0 +1,335 @@
+/**
+ * Lucid Admin Theme CSS
+ * Theme-specific styles and dark mode support
+ */
+
+/* Light Theme (Default) */
+:root {
+    /* Light theme colors */
+    --theme-bg-primary: #ffffff;
+    --theme-bg-secondary: #f9fafb;
+    --theme-bg-tertiary: #f3f4f6;
+    --theme-bg-card: #ffffff;
+    --theme-bg-sidebar: #1f2937;
+    --theme-bg-header: #ffffff;
+    
+    --theme-text-primary: #111827;
+    --theme-text-secondary: #6b7280;
+    --theme-text-muted: #9ca3af;
+    --theme-text-inverse: #ffffff;
+    
+    --theme-border-primary: #e5e7eb;
+    --theme-border-secondary: #d1d5db;
+    --theme-border-focus: #3b82f6;
+    
+    --theme-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --theme-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --theme-bg-primary: #111827;
+    --theme-bg-secondary: #1f2937;
+    --theme-bg-tertiary: #374151;
+    --theme-bg-card: #1f2937;
+    --theme-bg-sidebar: #0f172a;
+    --theme-bg-header: #1f2937;
+    
+    --theme-text-primary: #f9fafb;
+    --theme-text-secondary: #d1d5db;
+    --theme-text-muted: #9ca3af;
+    --theme-text-inverse: #111827;
+    
+    --theme-border-primary: #374151;
+    --theme-border-secondary: #4b5563;
+    --theme-border-focus: #60a5fa;
+    
+    --theme-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --theme-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* Auto Theme (System Preference) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --theme-bg-primary: #111827;
+        --theme-bg-secondary: #1f2937;
+        --theme-bg-tertiary: #374151;
+        --theme-bg-card: #1f2937;
+        --theme-bg-sidebar: #0f172a;
+        --theme-bg-header: #1f2937;
+        
+        --theme-text-primary: #f9fafb;
+        --theme-text-secondary: #d1d5db;
+        --theme-text-muted: #9ca3af;
+        --theme-text-inverse: #111827;
+        
+        --theme-border-primary: #374151;
+        --theme-border-secondary: #4b5563;
+        --theme-border-focus: #60a5fa;
+        
+        --theme-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+        --theme-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        --theme-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* Apply theme variables to main variables */
+:root {
+    --bg-primary: var(--theme-bg-primary);
+    --bg-secondary: var(--theme-bg-secondary);
+    --bg-tertiary: var(--theme-bg-tertiary);
+    --bg-card: var(--theme-bg-card);
+    --bg-sidebar: var(--theme-bg-sidebar);
+    --bg-header: var(--theme-bg-header);
+    
+    --text-primary: var(--theme-text-primary);
+    --text-secondary: var(--theme-text-secondary);
+    --text-muted: var(--theme-text-muted);
+    --text-inverse: var(--theme-text-inverse);
+    
+    --border-primary: var(--theme-border-primary);
+    --border-secondary: var(--theme-border-secondary);
+    --border-focus: var(--theme-border-focus);
+    
+    --shadow-sm: var(--theme-shadow-sm);
+    --shadow-md: var(--theme-shadow-md);
+    --shadow-lg: var(--theme-shadow-lg);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: var(--bg-tertiary);
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    overflow: hidden;
+}
+
+.theme-toggle::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--text-inverse);
+    border-radius: 50%;
+    transition: var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle[data-theme="dark"]::before {
+    transform: translateX(20px);
+}
+
+.theme-toggle::after {
+    content: '☀️';
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    transform: translateY(-50%);
+    font-size: 12px;
+    transition: var(--transition-fast);
+    opacity: 1;
+}
+
+.theme-toggle[data-theme="dark"]::after {
+    content: '🌙';
+    left: 26px;
+}
+
+/* Theme-specific component styles */
+[data-theme="dark"] .admin-sidebar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+[data-theme="dark"] .nav-link {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .nav-link:hover,
+[data-theme="dark"] .nav-item.active .nav-link {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .overview-card,
+[data-theme="dark"] .chart-card,
+[data-theme="dark"] .activity-card,
+[data-theme="dark"] .table-section {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+    background-color: #111827;
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+/* Status indicators with theme support */
+[data-theme="dark"] .status-indicator.healthy {
+    background-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .status-indicator.warning {
+    background-color: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="dark"] .status-indicator.critical {
+    background-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Chart theme support */
+[data-theme="dark"] .chart-card canvas {
+    filter: brightness(0.9) contrast(1.1);
+}
+
+/* Table theme support */
+[data-theme="dark"] table th {
+    background-color: #374151;
+    color: #f9fafb;
+}
+
+[data-theme="dark"] table tr:hover {
+    background-color: #374151;
+}
+
+/* Button theme support */
+[data-theme="dark"] .btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .btn:hover {
+    background-color: #4b5563;
+}
+
+[data-theme="dark"] .btn.primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+[data-theme="dark"] .btn.primary:hover {
+    background-color: #2563eb;
+}
+
+/* Loading overlay theme support */
+[data-theme="dark"] .loading-overlay {
+    background-color: rgba(17, 24, 39, 0.9);
+}
+
+[data-theme="dark"] .loading-spinner {
+    border-color: #374151;
+    border-top-color: #3b82f6;
+}
+
+/* Toast theme support */
+[data-theme="dark"] .toast {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Scrollbar theme support */
+[data-theme="dark"] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Focus styles for accessibility */
+[data-theme="dark"] *:focus {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-primary: #000000;
+        --border-secondary: #000000;
+        --text-primary: #000000;
+        --text-secondary: #000000;
+    }
+    
+    [data-theme="dark"] {
+        --border-primary: #ffffff;
+        --border-secondary: #ffffff;
+        --text-primary: #ffffff;
+        --text-secondary: #ffffff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .admin-sidebar,
+    .admin-header,
+    .pagination-section,
+    .modal,
+    .toast-container,
+    .loading-overlay {
+        display: none !important;
+    }
+    
+    .admin-container {
+        grid-template-columns: 1fr;
+        grid-template-areas: "main";
+    }
+    
+    .admin-main {
+        padding: 0;
+    }
+    
+    .overview-card,
+    .chart-card,
+    .activity-card,
+    .table-section {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}

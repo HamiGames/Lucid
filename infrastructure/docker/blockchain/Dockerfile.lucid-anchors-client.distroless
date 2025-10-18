@@ -1,0 +1,153 @@
+# LUCID ANCHORS CLIENT - SPEC-2 LucidAnchors Contract Client (Distroless)
+# Professional LucidAnchors contract client for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS anchors-client-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="LucidAnchors Client for Lucid SPEC-2 Contract Integration (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="lucid-anchors-client" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8105"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and contract tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # Contract interaction dependencies
+        python3-dev \
+        # Cryptographic tools
+        openssl \
+        # Node.js for contract compilation
+        nodejs \
+        npm \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Install Node.js tools for smart contracts
+RUN npm install -g truffle @openzeppelin/contracts hardhat
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies for contract client
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "web3>=6.11.0" \
+        "eth-account>=0.9.0" \
+        "tronpy>=0.4.0" \
+        "base58>=2.1.1" \
+        "cryptography>=41.0.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0"
+
+# Copy application code
+COPY blockchain/ /app/blockchain/
+COPY blockchain/chain-client/ /app/blockchain/chain-client/
+COPY contracts/ /app/contracts/
+COPY wallet/ /app/wallet/
+COPY auth/ /app/auth/
+
+# Create contract client directories
+RUN mkdir -p /opt/lucid/contracts /opt/lucid/abi /opt/lucid/anchors /data/contracts /tmp/anchorsclient \
+    && chown -R lucid:lucid /opt/lucid /data /tmp/anchorsclient
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' anchorsclient_user && \
+    chown -R anchorsclient_user:anchorsclient_user /app /data /tmp/anchorsclient /opt/lucid
+
+# Stage 2: Distroless runtime with Python and contract dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="LucidAnchors Client for Lucid SPEC-2 Contract Integration (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="lucid-anchors-client" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8105"
+
+# Copy Python installation and packages from builder
+COPY --from=anchors-client-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=anchors-client-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=anchors-client-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy Node.js and contract tools
+COPY --from=anchors-client-builder /usr/bin/node /usr/bin/node
+COPY --from=anchors-client-builder /usr/bin/npm /usr/bin/npm
+COPY --from=anchors-client-builder /usr/bin/truffle /usr/bin/truffle
+COPY --from=anchors-client-builder /usr/bin/hardhat /usr/bin/hardhat
+COPY --from=anchors-client-builder /usr/bin/openssl /usr/bin/openssl
+COPY --from=anchors-client-builder /usr/bin/curl /usr/bin/curl
+COPY --from=anchors-client-builder /bin/nc /bin/nc
+COPY --from=anchors-client-builder /usr/bin/jq /usr/bin/jq
+COPY --from=anchors-client-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy Node.js libraries
+COPY --from=anchors-client-builder /usr/lib/node_modules /usr/lib/node_modules
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=anchors-client-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=anchors-client-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=anchors-client-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=anchors-client-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=anchors-client-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=anchors-client-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=anchors-client-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=anchors-client-builder /etc/passwd /etc/passwd
+COPY --from=anchors-client-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=anchors-client-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=anchors-client-builder --chown=anchorsclient_user:anchorsclient_user /app /app
+COPY --from=anchors-client-builder --chown=anchorsclient_user:anchorsclient_user /data /data
+COPY --from=anchors-client-builder --chown=anchorsclient_user:anchorsclient_user /tmp/anchorsclient /tmp/anchorsclient
+COPY --from=anchors-client-builder --chown=anchorsclient_user:anchorsclient_user /opt/lucid /opt/lucid
+
+# Runtime environment for anchors client
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    CONTRACTS_PATH=/opt/lucid/contracts \
+    ABI_PATH=/opt/lucid/abi \
+    ANCHORS_PATH=/opt/lucid/anchors \
+    XDG_RUNTIME_DIR=/tmp/anchorsclient \
+    CONTRACT_ADDRESS=0x0000000000000000000000000000000000000000 \
+    ANCHOR_INTERVAL_SECONDS=300 \
+    BATCH_SIZE=100 \
+    GAS_LIMIT=1000000 \
+    CONFIRMATION_BLOCKS=3
+
+# Security and runtime configuration
+EXPOSE 8105
+USER anchorsclient_user
+WORKDIR /app
+
+# Default command for LucidAnchors client service
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/blockchain/chain-client/lucid_anchors_client.py"]

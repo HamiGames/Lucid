@@ -1,0 +1,138 @@
+# Multi-Stage Docker Configuration for Lucid Project
+# Configuration for building and deploying multi-stage images
+
+version: '3.8'
+
+services:
+  # Multi-stage base configuration
+  multi-stage-base:
+    build:
+      context: ../../infrastructure/docker/multi-stage
+      dockerfile: Dockerfile.base
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      target: runtime
+      args:
+        BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
+        BUILD_TARGET: multi-stage
+        OPTIMIZE_LAYERS: ${OPTIMIZE_LAYERS:-true}
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - BUILD_STAGE=runtime
+    networks:
+      - lucid-multi-stage-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+    healthcheck:
+      test: ["python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Multi-stage development configuration
+  multi-stage-dev:
+    build:
+      context: ../../infrastructure/docker/multi-stage
+      dockerfile: Dockerfile.base
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      target: development
+      args:
+        BUILD_ENVIRONMENT: development
+        BUILD_TARGET: multi-stage-dev
+        INSTALL_DEV_TOOLS: true
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - BUILD_STAGE=development
+    networks:
+      - lucid-multi-stage-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - ./src:/app/src:rw
+      - ./logs:/app/logs:rw
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["python", "-c", "import sys; print('dev stage healthy'); sys.exit(0)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+  # Multi-stage builder configuration
+  multi-stage-builder:
+    build:
+      context: ../../infrastructure/docker/multi-stage
+      dockerfile: Dockerfile.base
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      target: builder
+      args:
+        BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
+        BUILD_TARGET: multi-stage-builder
+        INSTALL_BUILD_TOOLS: true
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - BUILD_STAGE=builder
+      - BUILD_TOOLS=true
+    networks:
+      - lucid-multi-stage-network
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - ./build-cache:/cache
+      - ./build-artifacts:/artifacts
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Multi-stage builder container ready' &&
+        tail -f /dev/null
+      "
+
+networks:
+  lucid-multi-stage-network:
+    driver: bridge
+    name: lucid-multi-stage-network
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1
+
+volumes:
+  lucid-multi-stage-data:
+    name: lucid-multi-stage-data
+  build-cache:
+    name: lucid-multi-stage-build-cache
+  build-artifacts:
+    name: lucid-multi-stage-build-artifacts

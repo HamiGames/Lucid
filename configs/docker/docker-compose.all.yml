@@ -1,0 +1,533 @@
+# Master Docker Compose Configuration - All Services
+# Step 45: Docker Compose Configurations - Master File
+# Combines all phases: Foundation, Core, Application, Support
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # PHASE 1: FOUNDATION SERVICES
+  # ===========================================
+
+  # Authentication Service
+  auth-service:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/auth-service:${LUCID_TAG:-latest}
+    container_name: lucid-auth-service
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      - SERVICE_NAME=lucid-auth-service
+      - PORT=8089
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-lucid_jwt_secret_key_change_in_production}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+      - HARDWARE_WALLET_ENABLED=true
+      - RBAC_ENABLED=true
+    volumes:
+      - auth_logs:/app/logs
+      - auth_data:/app/data
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8089/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=auth"
+      - "com.lucid.cluster=09-authentication"
+
+  # MongoDB Database
+  lucid-mongodb:
+    image: mongo:7.0
+    container_name: lucid-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid
+      - MONGO_INITDB_DATABASE=lucid
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=database"
+      - "com.lucid.cluster=08-storage-database"
+
+  # Redis Cache
+  lucid-redis:
+    image: redis:7-alpine
+    container_name: lucid-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./configs/database/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=cache"
+      - "com.lucid.cluster=08-storage-database"
+
+  # Elasticsearch Search Engine
+  lucid-elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: lucid-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./configs/database/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=search"
+      - "com.lucid.cluster=08-storage-database"
+
+  # Storage Database Service
+  storage-database:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage-database:${LUCID_TAG:-latest}
+    container_name: lucid-storage-database
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SERVICE_NAME=lucid-storage-database
+      - PORT=8082
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - storage_logs:/app/logs
+      - storage_data:/app/data
+      - storage_backups:/app/backups
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=foundation"
+      - "com.lucid.service=storage"
+      - "com.lucid.cluster=08-storage-database"
+
+  # ===========================================
+  # PHASE 2: CORE SERVICES
+  # ===========================================
+
+  # API Gateway
+  api-gateway:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api-gateway:${LUCID_TAG:-latest}
+    container_name: lucid-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - SERVICE_NAME=lucid-api-gateway
+      - PORT=8080
+      - HTTPS_PORT=8081
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=100
+      - CORS_ENABLED=true
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    volumes:
+      - api_gateway_logs:/app/logs
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=core"
+      - "com.lucid.service=api-gateway"
+      - "com.lucid.cluster=01-api-gateway"
+
+  # Blockchain Core Engine
+  blockchain-core:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain-core:${LUCID_TAG:-latest}
+    container_name: lucid-blockchain-core
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      - SERVICE_NAME=lucid-blockchain-core
+      - PORT=8084
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - CONSENSUS_ALGORITHM=PoOT
+      - BLOCK_TIME_SECONDS=10
+      - MAX_TRANSACTIONS_PER_BLOCK=1000
+    volumes:
+      - blockchain_data:/app/data
+      - blockchain_logs:/app/logs
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=core"
+      - "com.lucid.service=blockchain"
+      - "com.lucid.cluster=02-blockchain-core"
+
+  # Service Mesh Controller
+  service-mesh-controller:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/service-mesh-controller:${LUCID_TAG:-latest}
+    container_name: lucid-service-mesh-controller
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+      - "8501:8501"
+      - "8502:8502"
+    environment:
+      - SERVICE_NAME=lucid-service-mesh-controller
+      - PORT=8500
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - CONSUL_DATACENTER=lucid-dc
+      - CONSUL_SERVER=true
+      - CONSUL_BOOTSTRAP_EXPECT=1
+      - CONSUL_BIND_INTERFACE=eth0
+      - CONSUL_CLIENT_INTERFACE=eth0
+    volumes:
+      - consul_data:/consul/data
+      - consul_logs:/app/logs
+    networks:
+      - lucid-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8500/v1/status/leader || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=core"
+      - "com.lucid.service=service-mesh"
+      - "com.lucid.cluster=10-cross-cluster-integration"
+
+  # ===========================================
+  # PHASE 3: APPLICATION SERVICES
+  # ===========================================
+
+  # Session Management Services
+  session-pipeline:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-pipeline:${LUCID_TAG:-latest}
+    container_name: lucid-session-pipeline
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVICE_NAME=lucid-session-pipeline
+      - PORT=8083
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - PIPELINE_STATE_MACHINE_ENABLED=true
+      - CHUNK_SIZE_MB=10
+      - COMPRESSION_LEVEL=6
+    volumes:
+      - session_pipeline_logs:/app/logs
+      - session_pipeline_data:/app/data
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=session-pipeline"
+      - "com.lucid.cluster=03-session-management"
+
+  # Node Management Service
+  node-management:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/node-management:${LUCID_TAG:-latest}
+    container_name: lucid-node-management
+    restart: unless-stopped
+    ports:
+      - "8095:8095"
+    environment:
+      - SERVICE_NAME=lucid-node-management
+      - PORT=8095
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - POOT_ENABLED=true
+      - PAYOUT_PROCESSING_ENABLED=true
+      - TRON_NETWORK=${TRON_NETWORK:-shasta}
+    volumes:
+      - node_management_logs:/app/logs
+      - node_management_data:/app/data
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=node-management"
+      - "com.lucid.cluster=05-node-management"
+
+  # ===========================================
+  # PHASE 4: SUPPORT SERVICES
+  # ===========================================
+
+  # Admin Interface
+  admin-interface:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/admin-interface:${LUCID_TAG:-latest}
+    container_name: lucid-admin-interface
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVICE_NAME=lucid-admin-interface
+      - PORT=8083
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - RBAC_ENABLED=true
+      - AUDIT_LOGGING_ENABLED=true
+      - EMERGENCY_CONTROLS_ENABLED=true
+    volumes:
+      - admin_interface_logs:/app/logs
+      - admin_interface_data:/app/data
+    networks:
+      - lucid-dev
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=admin-interface"
+      - "com.lucid.cluster=06-admin-interface"
+
+  # TRON Payment Services (Isolated Network)
+  tron-client:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-client:${LUCID_TAG:-latest}
+    container_name: lucid-tron-client
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    environment:
+      - SERVICE_NAME=lucid-tron-client
+      - PORT=8096
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - TRON_NETWORK=${TRON_NETWORK:-shasta}
+      - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
+      - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+    volumes:
+      - tron_client_logs:/app/logs
+      - tron_client_data:/app/data
+    networks:
+      - lucid-network-isolated
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=tron-client"
+      - "com.lucid.cluster=07-tron-payment"
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  lucid-dev:
+    name: lucid-dev_lucid_net
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+  
+  # Isolated network for TRON services
+  lucid-network-isolated:
+    name: lucid-network-isolated
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  # Database volumes
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  
+  # Foundation service volumes
+  auth_logs:
+    driver: local
+  auth_data:
+    driver: local
+  storage_logs:
+    driver: local
+  storage_data:
+    driver: local
+  storage_backups:
+    driver: local
+  
+  # Core service volumes
+  api_gateway_logs:
+    driver: local
+  blockchain_data:
+    driver: local
+  blockchain_logs:
+    driver: local
+  consul_data:
+    driver: local
+  consul_logs:
+    driver: local
+  
+  # Application service volumes
+  session_pipeline_logs:
+    driver: local
+  session_pipeline_data:
+    driver: local
+  node_management_logs:
+    driver: local
+  node_management_data:
+    driver: local
+  
+  # Support service volumes
+  admin_interface_logs:
+    driver: local
+  admin_interface_data:
+    driver: local
+  tron_client_logs:
+    driver: local
+  tron_client_data:
+    driver: local

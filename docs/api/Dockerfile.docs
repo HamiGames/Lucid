@@ -1,0 +1,50 @@
+# Dockerfile for Lucid API Documentation Generator
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    git \
+    python3 \
+    py3-pip \
+    make \
+    g++
+
+# Install Node.js dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Install Python dependencies
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Install global tools
+RUN npm install -g \
+    swagger-codegen-cli \
+    redoc-cli \
+    @redocly/cli
+
+# Copy source files
+COPY . .
+
+# Create directories
+RUN mkdir -p /app/generated \
+    /app/swagger-ui \
+    /app/redoc \
+    /app/openapi
+
+# Set permissions
+RUN chmod +x /app/scripts/docs/generate-openapi.sh
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Default command
+CMD ["node", "generate-docs.js"]

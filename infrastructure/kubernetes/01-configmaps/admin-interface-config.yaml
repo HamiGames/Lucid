@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-interface-config
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: admin-interface
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: lucid-blockchain
+data:
+  SERVICE_NAME: "admin-interface"
+  DEBUG: "false"
+  
+  # Port Configuration
+  ADMIN_PORT: "8083"
+  
+  # Database Configuration
+  MONGODB_URI: "mongodb://mongodb-service:27017/lucid_admin"
+  REDIS_URL: "redis://redis-service:6379/4"
+  
+  # Admin Configuration
+  ADMIN_UI_ENABLED: "true"
+  DASHBOARD_REFRESH_INTERVAL: "30"
+  AUDIT_LOGGING_ENABLED: "true"
+  
+  # RBAC Configuration
+  RBAC_ENABLED: "true"
+  ROLE_HIERARCHY_ENABLED: "true"
+  PERMISSION_CACHING_ENABLED: "true"
+  
+  # Emergency Controls
+  EMERGENCY_LOCKDOWN_ENABLED: "true"
+  EMERGENCY_SHUTDOWN_ENABLED: "true"
+  EMERGENCY_NOTIFICATION_ENABLED: "true"
+  
+  # System Management
+  SYSTEM_MONITORING_ENABLED: "true"
+  METRICS_COLLECTION_ENABLED: "true"
+  ALERT_MANAGEMENT_ENABLED: "true"
+  
+  # Backend Service URLs
+  API_GATEWAY_URL: "http://api-gateway-service:8080"
+  BLOCKCHAIN_CORE_URL: "http://blockchain-core-service:8084"
+  SESSION_MANAGEMENT_URL: "http://session-management-service:8087"
+  NODE_MANAGEMENT_URL: "http://node-management-service:8095"
+  TRON_PAYMENT_URL: "http://tron-payment-service:8085"

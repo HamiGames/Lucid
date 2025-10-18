@@ -1,0 +1,71 @@
+# Phase 3 Container Builds - Node Management
+# Step 32: Phase 3 Container Builds
+
+version: '3.8'
+
+services:
+  # Node Management Service
+  node-management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lucid-node-management:latest
+    container_name: lucid-node-management
+    ports:
+      - "8095:8095"
+    environment:
+      - SERVICE_NAME=lucid-node-management
+      - PORT=8095
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # External Dependencies
+  mongodb:
+    image: mongo:7.0
+    container_name: lucid-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid_password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: lucid-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  lucid-dev:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

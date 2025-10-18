@@ -1,0 +1,87 @@
+# GUI Distroless Image for Lucid Project
+# Multi-stage build for GUI services with minimal attack surface
+# Target: ARM64 (Raspberry Pi) and AMD64 (Development)
+
+# Build stage
+FROM python:3.11-slim-bookworm as builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+# Install build dependencies for GUI components
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
+    tk-dev \
+    tcl-dev \
+    libx11-dev \
+    libxext-dev \
+    libxrender-dev \
+    libxtst-dev \
+    libxi-dev \
+    libxrandr-dev \
+    libxss-dev \
+    libgconf-2-4 \
+    libnss3 \
+    libxss1 \
+    libasound2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python build environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Python GUI dependencies
+COPY gui/requirements/requirements.txt /tmp/
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r /tmp/requirements.txt
+
+# Copy GUI source code
+COPY gui/ /app/gui/
+COPY src/gui/ /app/src/gui/
+COPY src/core/ /app/src/core/
+
+# Runtime stage - Distroless base with GUI support
+FROM gcr.io/distroless/python3-debian12
+
+# Set runtime environment
+ENV PYTHONPATH=/app:/app/gui:/app/src \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DISPLAY=:0
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
+# Create non-root user
+USER nonroot:nonroot
+
+# Set working directory
+WORKDIR /app
+
+# Expose GUI service port
+EXPOSE 8083
+
+# Health check for GUI service
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["python", "-c", "import requests; requests.get('http://localhost:8083/health', timeout=5)"]
+
+# Default command - GUI service launcher
+CMD ["python", "-m", "gui.main"]

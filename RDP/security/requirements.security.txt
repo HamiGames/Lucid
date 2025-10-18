@@ -1,0 +1,25 @@
+# LUCID RDP Security Module Requirements
+# Trust-nothing access control and permissions
+
+# Core dependencies
+cryptography>=41.0.0
+PyJWT>=2.8.0
+motor>=3.3.0
+
+# Security and encryption
+argon2-cffi>=21.3.0
+passlib[bcrypt]>=1.7.4
+cryptography[fernet]>=41.0.0
+
+# Database and async
+pymongo>=4.5.0
+asyncio-mqtt>=0.13.0
+
+# Logging and monitoring
+structlog>=23.1.0
+python-json-logger>=2.0.7
+
+# Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0

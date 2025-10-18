@@ -1,0 +1,132 @@
+# LUCID FILE TRANSFER HANDLER - SPEC-1A File Transfer System (Distroless)
+# Professional file transfer toggles for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS file-transfer-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="File Transfer Handler for Lucid SPEC-1A File Transfer (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="file-transfer-handler" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8097"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and file transfer tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # File transfer dependencies
+        rsync \
+        # Python system dependencies
+        python3-dev \
+        python3-paramiko \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies for file transfer handling
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "paramiko>=3.3.0" \
+        "cryptography>=41.0.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0"
+
+# Copy application code
+COPY RDP/recorder/ /app/RDP/recorder/
+COPY RDP/ /app/RDP/
+COPY sessions/ /app/sessions/
+
+# Create file transfer directories
+RUN mkdir -p /opt/lucid/transfer /opt/lucid/uploads /opt/lucid/downloads /data/transfers /tmp/filetransfer \
+    && chown -R lucid:lucid /opt/lucid /data /tmp/filetransfer
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' filetransfer_user && \
+    chown -R filetransfer_user:filetransfer_user /app /data /tmp/filetransfer /opt/lucid
+
+# Stage 2: Distroless runtime with Python and file transfer dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="File Transfer Handler for Lucid SPEC-1A File Transfer (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="file-transfer-handler" \
+      org.lucid.layer="1" \
+      org.lucid.expose="8097"
+
+# Copy Python installation and packages from builder
+COPY --from=file-transfer-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=file-transfer-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=file-transfer-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy rsync and system dependencies
+COPY --from=file-transfer-builder /usr/bin/rsync /usr/bin/rsync
+COPY --from=file-transfer-builder /usr/bin/curl /usr/bin/curl
+COPY --from=file-transfer-builder /bin/nc /bin/nc
+COPY --from=file-transfer-builder /usr/bin/jq /usr/bin/jq
+COPY --from=file-transfer-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=file-transfer-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=file-transfer-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=file-transfer-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=file-transfer-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=file-transfer-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=file-transfer-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=file-transfer-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=file-transfer-builder /etc/passwd /etc/passwd
+COPY --from=file-transfer-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=file-transfer-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=file-transfer-builder --chown=filetransfer_user:filetransfer_user /app /app
+COPY --from=file-transfer-builder --chown=filetransfer_user:filetransfer_user /data /data
+COPY --from=file-transfer-builder --chown=filetransfer_user:filetransfer_user /tmp/filetransfer /tmp/filetransfer
+COPY --from=file-transfer-builder --chown=filetransfer_user:filetransfer_user /opt/lucid /opt/lucid
+
+# Runtime environment for file transfer handler
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    TRANSFER_PATH=/opt/lucid/transfer \
+    UPLOADS_PATH=/opt/lucid/uploads \
+    DOWNLOADS_PATH=/opt/lucid/downloads \
+    MAX_FILE_SIZE=100MB \
+    ALLOWED_EXTENSIONS=txt,pdf,doc,docx,xls,xlsx,png,jpg,jpeg,gif,zip,tar,gz
+
+# Security and runtime configuration
+EXPOSE 8097
+USER filetransfer_user
+WORKDIR /app
+
+# Default command for file transfer handler service
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/RDP/recorder/file_transfer_handler.py"]

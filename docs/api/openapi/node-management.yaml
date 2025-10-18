@@ -1,0 +1,1415 @@
+openapi: 3.0.3
+info:
+  title: Lucid Node Management
+  description: Worker node management, pool operations, and PoOT scoring for Lucid blockchain system
+  version: 1.0.0
+  contact:
+    name: Lucid Development Team
+    email: dev@lucid-blockchain.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://nodes.lucid-blockchain.org/api/v1
+    description: Production node management server
+  - url: https://nodes-dev.lucid-blockchain.org/api/v1
+    description: Development node management server
+  - url: http://localhost:8095/api/v1
+    description: Local development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Node Management
+  /nodes:
+    get:
+      tags: [Nodes]
+      summary: List worker nodes
+      description: Returns a paginated list of worker nodes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, pending, suspended, error]
+        - name: pool_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, poot_score, name]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Worker nodes retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeListResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Nodes]
+      summary: Register worker node
+      description: Registers a new worker node in the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRegistrationRequest'
+      responses:
+        '201':
+          description: Worker node registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResponse'
+        '400':
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Node already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /nodes/{node_id}:
+    get:
+      tags: [Nodes]
+      summary: Get node details
+      description: Returns detailed information about a specific worker node
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Node details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Nodes]
+      summary: Update node
+      description: Updates the configuration or status of a worker node
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeUpdateRequest'
+      responses:
+        '200':
+          description: Node updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Nodes]
+      summary: Deregister node
+      description: Deregisters a worker node from the system
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Node deregistered successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Node Control
+  /nodes/{node_id}/activate:
+    post:
+      tags: [Nodes]
+      summary: Activate node
+      description: Activates a worker node for participation in the network
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Node activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResponse'
+        '400':
+          description: Node already active or invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /nodes/{node_id}/deactivate:
+    post:
+      tags: [Nodes]
+      summary: Deactivate node
+      description: Deactivates a worker node from network participation
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Node deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResponse'
+        '400':
+          description: Node already inactive or invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /nodes/{node_id}/suspend:
+    post:
+      tags: [Nodes]
+      summary: Suspend node
+      description: Suspends a worker node temporarily
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeSuspendRequest'
+      responses:
+        '200':
+          description: Node suspended successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResponse'
+        '400':
+          description: Invalid suspension request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Pool Management
+  /pools:
+    get:
+      tags: [Pools]
+      summary: List pools
+      description: Returns a paginated list of node pools
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, maintenance]
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, name, node_count]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Pools retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolListResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Pools]
+      summary: Create pool
+      description: Creates a new node pool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolCreateRequest'
+      responses:
+        '201':
+          description: Pool created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pools/{pool_id}:
+    get:
+      tags: [Pools]
+      summary: Get pool details
+      description: Returns detailed information about a specific pool
+      parameters:
+        - name: pool_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pool details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Pools]
+      summary: Update pool
+      description: Updates the configuration of a pool
+      parameters:
+        - name: pool_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolUpdateRequest'
+      responses:
+        '200':
+          description: Pool updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Pools]
+      summary: Delete pool
+      description: Deletes a pool and reassigns its nodes
+      parameters:
+        - name: pool_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pool deleted successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # PoOT Operations
+  /poot/calculate:
+    post:
+      tags: [PoOT]
+      summary: Calculate PoOT score
+      description: Calculates the Proof of Observation Time score for a node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoOTCalculateRequest'
+      responses:
+        '200':
+          description: PoOT score calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoOTScoreResponse'
+        '400':
+          description: Invalid calculation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /poot/validate:
+    post:
+      tags: [PoOT]
+      summary: Validate PoOT score
+      description: Validates a PoOT score for a node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoOTValidateRequest'
+      responses:
+        '200':
+          description: PoOT score validated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoOTValidationResponse'
+        '400':
+          description: Invalid validation request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /poot/scores:
+    get:
+      tags: [PoOT]
+      summary: List PoOT scores
+      description: Returns a paginated list of PoOT scores
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: node_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: pool_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [score, calculated_at, node_id]
+            default: score
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: PoOT scores retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoOTScoreListResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Resource Monitoring
+  /resources/nodes/{node_id}:
+    get:
+      tags: [Resources]
+      summary: Get node resources
+      description: Returns resource utilization data for a specific node
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: time_range
+          in: query
+          schema:
+            type: string
+            enum: [1h, 6h, 24h, 7d, 30d]
+            default: 1h
+      responses:
+        '200':
+          description: Node resources retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeResourceResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /resources/summary:
+    get:
+      tags: [Resources]
+      summary: Get resource summary
+      description: Returns a summary of resource utilization across all nodes
+      parameters:
+        - name: time_range
+          in: query
+          schema:
+            type: string
+            enum: [1h, 6h, 24h, 7d, 30d]
+            default: 1h
+      responses:
+        '200':
+          description: Resource summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceSummaryResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Payout Management
+  /payouts:
+    get:
+      tags: [Payouts]
+      summary: List payouts
+      description: Returns a paginated list of payouts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: node_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed, cancelled]
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, amount, status]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Payouts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutListResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payouts/{payout_id}:
+    get:
+      tags: [Payouts]
+      summary: Get payout details
+      description: Returns detailed information about a specific payout
+      parameters:
+        - name: payout_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payout details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Payout not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Node Schemas
+    NodeResponse:
+      type: object
+      properties:
+        node_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, pending, suspended, error]
+        pool_id:
+          type: string
+          format: uuid
+        ip_address:
+          type: string
+        port:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_seen:
+          type: string
+          format: date-time
+        poot_score:
+          type: number
+        total_observation_time:
+          type: integer
+          description: "Total observation time in seconds"
+        resource_usage:
+          $ref: '#/components/schemas/ResourceUsage'
+        configuration:
+          $ref: '#/components/schemas/NodeConfiguration'
+
+    NodeRegistrationRequest:
+      type: object
+      required: [name, ip_address, port]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        ip_address:
+          type: string
+        port:
+          type: integer
+          minimum: 1024
+          maximum: 65535
+        configuration:
+          $ref: '#/components/schemas/NodeConfiguration'
+
+    NodeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        configuration:
+          $ref: '#/components/schemas/NodeConfiguration'
+
+    NodeSuspendRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+        duration_hours:
+          type: integer
+          minimum: 1
+          maximum: 8760
+        notify_user:
+          type: boolean
+          default: true
+
+    NodeConfiguration:
+      type: object
+      properties:
+        max_sessions:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        resource_limits:
+          $ref: '#/components/schemas/ResourceLimits'
+        auto_scaling:
+          type: boolean
+          default: false
+        monitoring_enabled:
+          type: boolean
+          default: true
+
+    NodeListResponse:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Pool Schemas
+    PoolResponse:
+      type: object
+      properties:
+        pool_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, maintenance]
+        node_count:
+          type: integer
+        max_nodes:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        configuration:
+          $ref: '#/components/schemas/PoolConfiguration'
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeResponse'
+
+    PoolCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        max_nodes:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        configuration:
+          $ref: '#/components/schemas/PoolConfiguration'
+
+    PoolUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        max_nodes:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        configuration:
+          $ref: '#/components/schemas/PoolConfiguration'
+
+    PoolConfiguration:
+      type: object
+      properties:
+        auto_assignment:
+          type: boolean
+          default: true
+        load_balancing:
+          type: string
+          enum: [round_robin, least_connections, weighted]
+          default: round_robin
+        health_check_interval:
+          type: integer
+          minimum: 30
+          maximum: 3600
+          default: 300
+        failover_enabled:
+          type: boolean
+          default: true
+
+    PoolListResponse:
+      type: object
+      properties:
+        pools:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoolResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # PoOT Schemas
+    PoOTCalculateRequest:
+      type: object
+      required: [node_id, observation_data]
+      properties:
+        node_id:
+          type: string
+          format: uuid
+        observation_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObservationData'
+        time_period:
+          type: integer
+          minimum: 3600
+          maximum: 86400
+          default: 3600
+
+    PoOTScoreResponse:
+      type: object
+      properties:
+        node_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+        calculated_at:
+          type: string
+          format: date-time
+        observation_count:
+          type: integer
+        total_observation_time:
+          type: integer
+        factors:
+          $ref: '#/components/schemas/PoOTFactors'
+
+    PoOTValidateRequest:
+      type: object
+      required: [node_id, score, timestamp]
+      properties:
+        node_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        signature:
+          type: string
+
+    PoOTValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        score_match:
+          type: boolean
+        timestamp_valid:
+          type: boolean
+        signature_valid:
+          type: boolean
+
+    PoOTFactors:
+      type: object
+      properties:
+        observation_time_weight:
+          type: number
+        session_quality_weight:
+          type: number
+        uptime_weight:
+          type: number
+        resource_efficiency_weight:
+          type: number
+        network_performance_weight:
+          type: number
+
+    ObservationData:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        quality_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        resource_usage:
+          $ref: '#/components/schemas/ResourceUsage'
+
+    PoOTScoreListResponse:
+      type: object
+      properties:
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoOTScoreResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Resource Schemas
+    NodeResourceResponse:
+      type: object
+      properties:
+        node_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        cpu_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+        memory_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+        disk_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+        network_usage:
+          type: object
+          properties:
+            bytes_sent:
+              type: integer
+            bytes_received:
+              type: integer
+            packets_sent:
+              type: integer
+            packets_received:
+              type: integer
+        active_sessions:
+          type: integer
+        uptime:
+          type: integer
+          description: "Node uptime in seconds"
+
+    ResourceSummaryResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        total_nodes:
+          type: integer
+        active_nodes:
+          type: integer
+        average_cpu_usage:
+          type: number
+        average_memory_usage:
+          type: number
+        average_disk_usage:
+          type: number
+        total_network_usage:
+          type: object
+          properties:
+            bytes_sent:
+              type: integer
+            bytes_received:
+              type: integer
+        total_active_sessions:
+          type: integer
+
+    ResourceUsage:
+      type: object
+      properties:
+        cpu_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+        memory_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+        disk_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+        network_usage:
+          type: object
+          properties:
+            bytes_sent:
+              type: integer
+            bytes_received:
+              type: integer
+            packets_sent:
+              type: integer
+            packets_received:
+              type: integer
+
+    ResourceLimits:
+      type: object
+      properties:
+        max_cpu_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 80
+        max_memory_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 80
+        max_disk_usage:
+          type: number
+          minimum: 0
+          maximum: 100
+          default: 90
+        max_network_bandwidth:
+          type: integer
+          minimum: 0
+          default: 1000000000
+
+    # Payout Schemas
+    PayoutResponse:
+      type: object
+      properties:
+        payout_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          enum: [USDT, TRX]
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        processed_at:
+          type: string
+          format: date-time
+        transaction_id:
+          type: string
+        payment_method:
+          type: string
+          enum: [tron_network, bank_transfer, crypto_wallet]
+        poot_score:
+          type: number
+        observation_time:
+          type: integer
+        calculation_period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+
+    PayoutListResponse:
+      type: object
+      properties:
+        payouts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayoutResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Common Schemas
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "LUCID_ERR_4001"
+            message:
+              type: string
+              example: "Node not found"
+            details:
+              type: object
+              additionalProperties: true
+            request_id:
+              type: string
+              format: uuid
+            timestamp:
+              type: string
+              format: date-time
+            service:
+              type: string
+              example: "node-management"
+            version:
+              type: string
+              example: "v1"
+
+tags:
+  - name: Nodes
+    description: Worker node management
+  - name: Pools
+    description: Node pool management
+  - name: PoOT
+    description: Proof of Observation Time operations
+  - name: Resources
+    description: Resource monitoring and management
+  - name: Payouts
+    description: Payout management and processing

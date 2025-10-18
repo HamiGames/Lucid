@@ -1,0 +1,87 @@
+groups:
+  - name: rdp-sessions
+    rules:
+      - alert: RdpSessionHighCpuUsage
+        expr: rdp_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected for RDP session"
+          description: "RDP session {{ $labels.session_id }} has high CPU usage: {{ $value }}%"
+
+      - alert: RdpSessionHighMemoryUsage
+        expr: rdp_memory_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected for RDP session"
+          description: "RDP session {{ $labels.session_id }} has high memory usage: {{ $value }}%"
+
+      - alert: RdpSessionHighDiskUsage
+        expr: rdp_disk_usage_percent > 90
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High disk usage detected for RDP session"
+          description: "RDP session {{ $labels.session_id }} has high disk usage: {{ $value }}%"
+
+      - alert: RdpSessionDown
+        expr: rdp_sessions_active == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No active RDP sessions"
+          description: "No active RDP sessions detected"
+
+      - alert: RdpSessionErrors
+        expr: increase(rdp_errors_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in RDP sessions"
+          description: "RDP session {{ $labels.session_id }} has {{ $value }} errors in the last 5 minutes"
+
+  - name: rdp-connections
+    rules:
+      - alert: RdpConnectionDown
+        expr: rdp_connections_active == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No active RDP connections"
+          description: "No active RDP connections detected"
+
+      - alert: RdpConnectionHighLatency
+        expr: rdp_connection_duration_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High connection latency detected"
+          description: "RDP connection {{ $labels.connection_id }} has high latency: {{ $value }}s"
+
+  - name: rdp-resources
+    rules:
+      - alert: RdpResourceExhaustion
+        expr: rdp_memory_usage_percent > 95 or rdp_disk_usage_percent > 95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Resource exhaustion detected"
+          description: "RDP session {{ $labels.session_id }} is experiencing resource exhaustion"
+
+      - alert: RdpNetworkCongestion
+        expr: rate(rdp_network_bytes_sent_total[5m]) > 1000000
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Network congestion detected"
+          description: "RDP session {{ $labels.session_id }} is experiencing network congestion"

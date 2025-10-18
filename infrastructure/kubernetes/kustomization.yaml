@@ -1,0 +1,210 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: lucid-system
+  labels:
+    app.kubernetes.io/name: lucid-system
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: lucid-blockchain
+
+namespace: lucid-system
+
+resources:
+  # Namespace and basic configuration
+  - 00-namespace.yaml
+  
+  # ConfigMaps
+  - 01-configmaps/api-gateway-config.yaml
+  - 01-configmaps/blockchain-core-config.yaml
+  - 01-configmaps/session-management-config.yaml
+  - 01-configmaps/rdp-services-config.yaml
+  - 01-configmaps/node-management-config.yaml
+  - 01-configmaps/admin-interface-config.yaml
+  - 01-configmaps/tron-payment-config.yaml
+  - 01-configmaps/auth-service-config.yaml
+  - 01-configmaps/database-config.yaml
+  
+  # Secrets
+  - 02-secrets/jwt-secrets.yaml
+  
+  # Databases
+  - 03-databases/mongodb.yaml
+  - 03-databases/redis.yaml
+  - 03-databases/elasticsearch.yaml
+  
+  # Auth service
+  - 04-auth/auth-service.yaml
+  
+  # Core services
+  - 05-core/api-gateway.yaml
+  - 05-core/blockchain-engine.yaml
+  - 05-core/service-mesh.yaml
+  
+  # Application services
+  - 06-application/session-management.yaml
+  - 06-application/rdp-services.yaml
+  - 06-application/node-management.yaml
+  
+  # Support services
+  - 07-support/admin-interface.yaml
+  - 07-support/tron-payment.yaml
+  
+  # Ingress
+  - 08-ingress/lucid-ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: lucid
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/part-of: lucid-blockchain
+
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: api-gateway
+      namespace: lucid-system
+    spec:
+      template:
+        spec:
+          containers:
+          - name: api-gateway
+            resources:
+              requests:
+                cpu: "300m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+
+images:
+  - name: lucid-api-gateway
+    newTag: latest
+  - name: lucid-blockchain-engine
+    newTag: latest
+  - name: lucid-session-management
+    newTag: latest
+  - name: lucid-rdp-services
+    newTag: latest
+  - name: lucid-node-management
+    newTag: latest
+  - name: lucid-admin-interface
+    newTag: latest
+  - name: lucid-tron-payment
+    newTag: latest
+  - name: lucid-auth-service
+    newTag: latest
+  - name: lucid-service-mesh-controller
+    newTag: latest
+
+configMapGenerator:
+  - name: lucid-config
+    literals:
+      - APP_NAME=lucid-blockchain
+      - APP_VERSION=1.0.0
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - METRICS_ENABLED=true
+      - HEALTH_CHECK_ENABLED=true
+
+secretGenerator:
+  - name: lucid-secrets
+    literals:
+      - JWT_SECRET_KEY=change-me-in-production
+      - JWT_REFRESH_SECRET_KEY=change-me-in-production
+      - MONGODB_PASSWORD=change-me-in-production
+      - REDIS_PASSWORD=change-me-in-production
+      - ELASTICSEARCH_PASSWORD=change-me-in-production
+      - TRON_API_KEY=change-me-in-production
+      - TRON_PRIVATE_KEY=change-me-in-production
+      - USDT_PRIVATE_KEY=change-me-in-production
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=change-me-in-production
+      - ADMIN_EMAIL=admin@lucid.com
+    type: Opaque
+
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: api-gateway
+      namespace: lucid-system
+    path: patches/api-gateway-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: blockchain-engine
+      namespace: lucid-system
+    path: patches/blockchain-engine-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: session-management
+      namespace: lucid-system
+    path: patches/session-management-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: rdp-services
+      namespace: lucid-system
+    path: patches/rdp-services-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: node-management
+      namespace: lucid-system
+    path: patches/node-management-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: admin-interface
+      namespace: lucid-system
+    path: patches/admin-interface-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: tron-payment
+      namespace: lucid-system
+    path: patches/tron-payment-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: auth-service
+      namespace: lucid-system
+    path: patches/auth-service-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: service-mesh-controller
+      namespace: lucid-system
+    path: patches/service-mesh-controller-patch.yaml
+
+replicas:
+  - name: api-gateway
+    count: 3
+  - name: blockchain-engine
+    count: 2
+  - name: session-management
+    count: 2
+  - name: rdp-services
+    count: 2
+  - name: node-management
+    count: 2
+  - name: admin-interface
+    count: 2
+  - name: tron-payment
+    count: 2
+  - name: auth-service
+    count: 2
+  - name: service-mesh-controller
+    count: 2

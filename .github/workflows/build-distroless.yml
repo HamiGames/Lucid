@@ -1,0 +1,213 @@
+name: Multi-Stage Distroless Builds
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      target_platform:
+        description: 'Target platform (linux/amd64, linux/arm64)'
+        required: true
+        default: 'linux/amd64,linux/arm64'
+        type: choice
+        options:
+        - linux/amd64
+        - linux/arm64
+        - linux/amd64,linux/arm64
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      build-all: ${{ steps.changes.outputs.build-all }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        id: changes
+        run: |
+          # Check if any core files changed that require full rebuild
+          if git diff --name-only HEAD~1 HEAD | grep -E '^(src/|infrastructure/docker/|build/|requirements.*\.txt|pyproject\.toml)' > /dev/null; then
+            echo "build-all=true" >> $GITHUB_OUTPUT
+            echo "services=user-gui,admin-gui,node-gui,blockchain,rdp,node,storage,database,vm" >> $GITHUB_OUTPUT
+          else
+            # Check for specific service changes
+            services=""
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(gui/|src/gui/|apps/gui-)' > /dev/null; then
+              services="$services,user-gui,admin-gui,node-gui"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(blockchain/|src/blockchain/)' > /dev/null; then
+              services="$services,blockchain"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(RDP/|src/rdp/)' > /dev/null; then
+              services="$services,rdp"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(node/|src/node/)' > /dev/null; then
+              services="$services,node"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(storage/|src/storage/)' > /dev/null; then
+              services="$services,storage"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(database/|src/database/)' > /dev/null; then
+              services="$services,database"
+            fi
+            if git diff --name-only HEAD~1 HEAD | grep -E '^(vm/|src/vm/)' > /dev/null; then
+              services="$services,vm"
+            fi
+            
+            # If no specific services changed, build all
+            if [ -z "$services" ]; then
+              echo "build-all=true" >> $GITHUB_OUTPUT
+              echo "services=user-gui,admin-gui,node-gui,blockchain,rdp,node,storage,database,vm" >> $GITHUB_OUTPUT
+            else
+              echo "build-all=false" >> $GITHUB_OUTPUT
+              echo "services=${services:1}" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  setup-buildx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+  build-base-images:
+    needs: [detect-changes, setup-buildx]
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.build-all == 'true' || contains(needs.detect-changes.outputs.services, 'user-gui') || contains(needs.detect-changes.outputs.services, 'admin-gui') || contains(needs.detect-changes.outputs.services, 'node-gui') || contains(needs.detect-changes.outputs.services, 'blockchain') || contains(needs.detect-changes.outputs.services, 'rdp') || contains(needs.detect-changes.outputs.services, 'node')
+    strategy:
+      matrix:
+        platform: ${{ fromJSON(format('[{0}]', github.event.inputs.target_platform || '["linux/amd64", "linux/arm64"]')) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build base distroless image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./infrastructure/docker/distroless/base
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/base:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/base:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-services:
+    needs: [detect-changes, setup-buildx, build-base-images]
+    runs-on: ubuntu-latest
+    if: always() && (needs.build-base-images.result == 'success' || needs.build-base-images.result == 'skipped')
+    strategy:
+      matrix:
+        service: ${{ fromJSON(format('[{0}]', needs.detect-changes.outputs.services)) }}
+        platform: ${{ fromJSON(format('[{0}]', github.event.inputs.target_platform || '["linux/amd64", "linux/arm64"]')) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install docker-compose
+
+      - name: Build ${{ matrix.service }} service
+        run: |
+          # Build the specific service using multi-stage Dockerfile
+          docker buildx build \
+            --platform ${{ matrix.platform }} \
+            --file infrastructure/docker/multi-stage/Dockerfile.${{ matrix.service }} \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:latest \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }} \
+            --cache-from type=gha,scope=${{ matrix.service }}-${{ matrix.platform }} \
+            --cache-to type=gha,mode=max,scope=${{ matrix.service }}-${{ matrix.platform }} \
+            --push \
+            .
+
+      - name: Verify distroless image
+        run: |
+          # Verify the built image is properly distroless
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }} /bin/sh -c "echo 'Image verification successful'"
+
+  security-scan:
+    needs: [build-services]
+    runs-on: ubuntu-latest
+    if: always()
+    strategy:
+      matrix:
+        service: ${{ fromJSON(format('[{0}]', needs.detect-changes.outputs.services)) }}
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+
+  optimize-layers:
+    needs: [build-services]
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service: ${{ fromJSON(format('[{0}]', needs.detect-changes.outputs.services)) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run layer optimization
+        run: |
+          python build/scripts/optimize-layers.py \
+            --service ${{ matrix.service }} \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }}
+
+  build-summary:
+    needs: [detect-changes, build-services, security-scan]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Services Built:** ${{ needs.detect-changes.outputs.services }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Type:** ${{ needs.detect-changes.outputs.build-all == 'true' && 'Full Rebuild' || 'Incremental Build' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target Platforms:** ${{ github.event.inputs.target_platform || 'linux/amd64, linux/arm64' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Built Images:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/base:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          for service in $(echo "${{ needs.detect-changes.outputs.services }}" | tr ',' ' '); do
+            echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$service:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          done

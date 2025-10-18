@@ -1,0 +1,134 @@
+# Lucid Authentication Service - Docker Compose Configuration
+# Cluster 09: Authentication Service
+
+version: '3.8'
+
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lucid-auth-service:latest
+    container_name: lucid-auth-service
+    ports:
+      - "8089:8089"
+    environment:
+      # Service Configuration
+      - SERVICE_NAME=lucid-auth-service
+      - AUTH_SERVICE_PORT=8089
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      
+      # JWT Configuration
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      
+      # Database Configuration
+      - MONGODB_URI=mongodb://mongodb:27017/lucid_auth
+      - MONGODB_DATABASE=lucid_auth
+      - REDIS_URI=redis://redis:6379/1
+      
+      # Security Configuration
+      - BCRYPT_ROUNDS=12
+      - MAX_LOGIN_ATTEMPTS=5
+      - LOGIN_COOLDOWN_MINUTES=15
+      
+      # Hardware Wallet Configuration
+      - ENABLE_HARDWARE_WALLET=true
+      - LEDGER_SUPPORTED=true
+      - TREZOR_SUPPORTED=true
+      - KEEPKEY_SUPPORTED=true
+      
+      # TRON Configuration
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      
+      # Rate Limiting
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_PUBLIC=100
+      - RATE_LIMIT_AUTHENTICATED=1000
+      - RATE_LIMIT_ADMIN=10000
+      
+      # CORS Configuration
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      
+      # Audit Logging
+      - AUDIT_LOG_ENABLED=true
+      - AUDIT_LOG_RETENTION_DAYS=90
+      
+      # Integration URLs
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - CONSUL_HOST=consul:8500
+    
+    depends_on:
+      - mongodb
+      - redis
+    
+    networks:
+      - lucid-network
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8089/health\").read()' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # MongoDB for user data
+  mongodb:
+    image: mongo:7.0
+    container_name: lucid-auth-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=lucid_auth
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/init-mongodb.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - lucid-network
+    restart: unless-stopped
+
+  # Redis for session storage
+  redis:
+    image: redis:7.0-alpine
+    container_name: lucid-auth-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - lucid-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  lucid-network:
+    name: lucid-network
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    name: lucid-auth-mongodb-data
+  redis_data:
+    name: lucid-auth-redis-data
+

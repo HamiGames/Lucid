@@ -1,0 +1,5 @@
+# Directory for SSL/TLS certificates
+# Add your certificates here:
+# - api-gateway.crt
+# - api-gateway.key
+

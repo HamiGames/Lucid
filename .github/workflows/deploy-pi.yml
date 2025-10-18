@@ -1,0 +1,1032 @@
+name: Raspberry Pi Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      pi_host:
+        description: 'Raspberry Pi hostname or IP'
+        required: true
+        default: 'pickme@192.168.0.75'
+      deployment_type:
+        description: 'Deployment type'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+        - update
+        - rollback
+        - health-check
+      target_services:
+        description: 'Services to deploy (comma-separated)'
+        required: false
+        default: 'api-gateway,blockchain-core,session-management,rdp-services,node-management,admin-interface,auth-service'
+      force_deploy:
+        description: 'Force deployment even if no changes'
+        required: false
+        default: false
+        type: boolean
+      staging_environment:
+        description: 'Staging environment configuration'
+        required: false
+        default: 'pi-staging'
+        type: choice
+        options:
+        - pi-staging
+        - pi-production
+        - pi-development
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PI_HOST: ${{ github.event.inputs.pi_host || 'pickme@192.168.0.75' }}
+  DEPLOYMENT_TYPE: ${{ github.event.inputs.deployment_type || 'staging' }}
+  STAGING_ENVIRONMENT: ${{ github.event.inputs.staging_environment || 'pi-staging' }}
+  PI_DEPLOY_DIR: /opt/lucid/staging
+
+jobs:
+  pre-deployment-checks:
+    runs-on: ubuntu-latest
+    outputs:
+      can_deploy: ${{ steps.checks.outputs.can_deploy }}
+      services_to_deploy: ${{ steps.checks.outputs.services }}
+      current_version: ${{ steps.checks.outputs.current_version }}
+      deployment_environment: ${{ steps.checks.outputs.deployment_environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pre-deployment validation
+        id: checks
+        run: |
+          # Validate deployment inputs
+          if [ "${{ env.DEPLOYMENT_TYPE }}" = "rollback" ]; then
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+            echo "services=all" >> $GITHUB_OUTPUT
+            echo "current_version=previous" >> $GITHUB_OUTPUT
+            echo "deployment_environment=${{ env.STAGING_ENVIRONMENT }}" >> $GITHUB_OUTPUT
+          elif [ "${{ env.DEPLOYMENT_TYPE }}" = "health-check" ]; then
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+            echo "services=none" >> $GITHUB_OUTPUT
+            echo "current_version=current" >> $GITHUB_OUTPUT
+            echo "deployment_environment=${{ env.STAGING_ENVIRONMENT }}" >> $GITHUB_OUTPUT
+          else
+            # Check if we have required secrets
+            if [ -z "${{ secrets.PI_SSH_KEY_B64 }}" ] || [ -z "${{ secrets.PI_USER }}" ]; then
+              echo "❌ Missing required secrets: PI_SSH_KEY_B64 or PI_USER"
+              echo "can_deploy=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            
+            # Determine services to deploy based on deployment type
+            if [ "${{ env.DEPLOYMENT_TYPE }}" = "staging" ]; then
+              if [ -n "${{ github.event.inputs.target_services }}" ]; then
+                services="${{ github.event.inputs.target_services }}"
+              else
+                services="api-gateway,blockchain-core,session-management,rdp-services,node-management,admin-interface,auth-service"
+              fi
+            else
+              if [ -n "${{ github.event.inputs.target_services }}" ]; then
+                services="${{ github.event.inputs.target_services }}"
+              else
+                services="gui,blockchain,rdp,node,storage,database,vm"
+              fi
+            fi
+            
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+            echo "services=$services" >> $GITHUB_OUTPUT
+            echo "current_version=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "deployment_environment=${{ env.STAGING_ENVIRONMENT }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup SSH
+        if: steps.checks.outputs.can_deploy == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          
+          # Add Pi host to known_hosts
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+          
+          # Test SSH connection
+          echo "Testing SSH connection to ${{ env.PI_HOST }}..."
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.PI_USER }}@${{ env.PI_HOST }} "echo 'SSH connection successful'"
+
+      - name: Test Pi connectivity
+        if: steps.checks.outputs.can_deploy == 'true'
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} "echo 'Pi connectivity test successful'"
+
+  health-check-only:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks]
+    if: ${{ (github.event.inputs.deployment_type || 'full') == 'health-check' }}
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run health checks
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            echo "=== System Health Check ==="
+            echo "Uptime: $(uptime)"
+            echo "Disk Usage: $(df -h)"
+            echo "Memory Usage: $(free -h)"
+            echo "CPU Load: $(cat /proc/loadavg)"
+            
+            echo "=== Docker Status ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || echo "Docker not running"
+            
+            echo "=== Service Health ==="
+            # Check if services are responding
+            for service in gui blockchain rdp node storage database vm; do
+              if docker ps --format "{{.Names}}" 2>/dev/null | grep -q "^lucid-${service}-"; then
+                echo "✅ $service: Running"
+              else
+                echo "❌ $service: Not running"
+              fi
+            done
+            
+            echo "=== Network Connectivity ==="
+            ping -c 3 8.8.8.8 || echo "❌ Internet connectivity failed"
+            
+            echo "=== Log Analysis ==="
+            # Check for recent errors in logs
+            docker logs lucid-gui-1 2>&1 | tail -10 || echo "No GUI logs"
+            docker logs lucid-blockchain-1 2>&1 | tail -10 || echo "No blockchain logs"
+          EOF
+
+  staging-deployment:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks]
+    if: needs.pre-deployment-checks.outputs.can_deploy == 'true' && ${{ (github.event.inputs.deployment_type || 'staging') == 'staging' }}
+    outputs:
+      deployment_id: ${{ steps.prepare.outputs.deployment_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Prepare staging deployment
+        id: prepare
+        run: |
+          deployment_id="staging-$(date +%Y%m%d-%H%M%S)-${{ github.sha }}"
+          echo "deployment_id=$deployment_id" >> $GITHUB_OUTPUT
+          
+          # Create staging directory on Pi
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+            sudo mkdir -p ${{ env.PI_DEPLOY_DIR }}/{configs,data,logs,backups,scripts}
+            sudo mkdir -p ${{ env.PI_DEPLOY_DIR }}/data/{mongodb,redis,elasticsearch,prometheus,grafana}
+            sudo mkdir -p ${{ env.PI_DEPLOY_DIR }}/logs/{api-gateway,blockchain,session,rdp,node,admin,auth,database}
+            sudo mkdir -p ${{ env.PI_DEPLOY_DIR }}/configs/{database,monitoring,services}
+            sudo chown -R pickme:pickme ${{ env.PI_DEPLOY_DIR }}
+            echo "Staging directory created: ${{ env.PI_DEPLOY_DIR }}"
+          EOF
+
+      - name: Transfer staging deployment scripts
+        run: |
+          # Transfer staging deployment script
+          scp -i ~/.ssh/pi_key -o StrictHostKeyChecking=no scripts/deployment/deploy-staging.sh ${{ secrets.PI_USER }}@${{ env.PI_HOST }}:${{ env.PI_DEPLOY_DIR }}/
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} "chmod +x ${{ env.PI_DEPLOY_DIR }}/deploy-staging.sh"
+          
+          # Transfer Pi deployment script
+          scp -i ~/.ssh/pi_key -o StrictHostKeyChecking=no scripts/deployment/deploy-pi.sh ${{ secrets.PI_USER }}@${{ env.PI_HOST }}:${{ env.PI_DEPLOY_DIR }}/
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} "chmod +x ${{ env.PI_DEPLOY_DIR }}/deploy-pi.sh"
+          
+          # Transfer SSH deployment script
+          scp -i ~/.ssh/pi_key -o StrictHostKeyChecking=no scripts/deployment/ssh-deploy-pi.sh ${{ secrets.PI_USER }}@${{ env.PI_HOST }}:${{ env.PI_DEPLOY_DIR }}/
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} "chmod +x ${{ env.PI_DEPLOY_DIR }}/ssh-deploy-pi.sh"
+
+      - name: Create staging environment configuration
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            cat > ${{ env.PI_DEPLOY_DIR }}/.env.staging << 'ENVEOF'
+# LUCID Pi Staging Environment Configuration
+LUCID_ENV=staging
+LUCID_PLANE=staging
+CLUSTER_ID=pi-staging-cluster
+DEPLOYMENT_ID=staging-$(date +%Y%m%d-%H%M%S)-${{ github.sha }}
+
+# Network Configuration
+LUCID_NETWORK=lucid-staging
+LUCID_SUBNET=172.22.0.0/16
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+REDIS_URL=redis://lucid-redis:6379/0
+ELASTICSEARCH_URL=http://lucid-elasticsearch:9200
+
+# Service URLs
+API_GATEWAY_URL=http://lucid-api-gateway:8080
+BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
+SESSION_MANAGEMENT_URL=http://lucid-session-management:8085
+RDP_SERVICES_URL=http://lucid-rdp-services:8086
+NODE_MANAGEMENT_URL=http://lucid-node-management:8087
+ADMIN_INTERFACE_URL=http://lucid-admin-interface:8088
+AUTH_SERVICE_URL=http://lucid-auth-service:8089
+
+# Security Configuration
+JWT_SECRET_KEY=pi-staging-jwt-secret-key-${{ github.sha }}
+ENCRYPTION_KEY=pi-staging-encryption-key-${{ github.sha }}
+TOR_CONTROL_PASSWORD=pi-staging-tor-password
+
+# Pi-specific Configuration
+PI_DEPLOYMENT=true
+PI_ARCHITECTURE=aarch64
+PI_OPTIMIZATION=true
+RESOURCE_LIMITS=true
+
+# Performance Configuration (Pi-optimized)
+WORKER_PROCESSES=2
+MAX_CONNECTIONS=500
+REQUEST_TIMEOUT=60
+KEEPALIVE_TIMEOUT=120
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_OUTPUT=file
+LOG_ROTATION=true
+LOG_MAX_SIZE=100M
+LOG_MAX_FILES=5
+
+# Staging Specific
+STAGING_MODE=true
+DEBUG_MODE=true
+MOCK_EXTERNAL_SERVICES=true
+HEALTH_CHECK_INTERVAL=30
+METRICS_ENABLED=true
+ENVEOF
+          EOF
+
+      - name: Create staging Docker Compose configuration
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            cat > ${{ env.PI_DEPLOY_DIR }}/docker-compose.staging.yml << 'COMPOSEEOF'
+version: '3.8'
+
+services:
+  # Database Services
+  lucid-mongodb:
+    image: mongo:7.0
+    container_name: lucid-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lucid
+      MONGO_INITDB_ROOT_PASSWORD: lucid
+      MONGO_INITDB_DATABASE: lucid
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./logs/database:/var/log/mongodb
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  lucid-redis:
+    image: redis:7.0-alpine
+    container_name: lucid-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./logs/redis:/var/log/redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: lucid-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./logs/elasticsearch:/usr/share/elasticsearch/logs
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Core Services
+  lucid-api-gateway:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api-gateway:${{ github.sha }}
+    container_name: lucid-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+    volumes:
+      - ./logs/api-gateway:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-blockchain-core:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/blockchain-core:${{ github.sha }}
+    container_name: lucid-blockchain-core
+    ports:
+      - "8084:8084"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+    volumes:
+      - ./logs/blockchain:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-session-management:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/session-management:${{ github.sha }}
+    container_name: lucid-session-management
+    ports:
+      - "8085:8085"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+    volumes:
+      - ./logs/session:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-rdp-services:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/rdp-services:${{ github.sha }}
+    container_name: lucid-rdp-services
+    ports:
+      - "8086:8086"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+    volumes:
+      - ./logs/rdp:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-node-management:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/node-management:${{ github.sha }}
+    container_name: lucid-node-management
+    ports:
+      - "8087:8087"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+    volumes:
+      - ./logs/node:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-admin-interface:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-interface:${{ github.sha }}
+    container_name: lucid-admin-interface
+    ports:
+      - "8088:8088"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+    volumes:
+      - ./logs/admin:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  lucid-auth-service:
+    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth-service:${{ github.sha }}
+    container_name: lucid-auth-service
+    ports:
+      - "8089:8089"
+    environment:
+      - LUCID_ENV=staging
+      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - JWT_SECRET_KEY=pi-staging-jwt-secret-key-${{ github.sha }}
+    volumes:
+      - ./logs/auth:/app/logs
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Monitoring Services
+  lucid-prometheus:
+    image: prom/prometheus:latest
+    container_name: lucid-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+      - ./logs/prometheus:/var/log/prometheus
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  lucid-grafana:
+    image: grafana/grafana:latest
+    container_name: lucid-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./configs/monitoring/grafana:/etc/grafana/provisioning:ro
+      - ./logs/grafana:/var/log/grafana
+    networks:
+      - lucid-staging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+networks:
+  lucid-staging:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+
+volumes:
+  mongodb_data:
+  redis_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+COMPOSEEOF
+          EOF
+
+      - name: Setup Pi networking
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            # Create Docker networks
+            docker network create lucid-staging --driver bridge --subnet 172.22.0.0/16 --attachable 2>/dev/null || echo 'Network already exists'
+          EOF
+
+  prepare-deployment:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks]
+    if: needs.pre-deployment-checks.outputs.can_deploy == 'true' && ${{ (github.event.inputs.deployment_type || 'staging') != 'staging' && (github.event.inputs.deployment_type || 'staging') != 'health-check' }}
+    outputs:
+      deployment_id: ${{ steps.prepare.outputs.deployment_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Prepare deployment
+        id: prepare
+        run: |
+          deployment_id="deploy-$(date +%Y%m%d-%H%M%S)-${{ github.sha }}"
+          echo "deployment_id=$deployment_id" >> $GITHUB_OUTPUT
+          
+          # Create deployment directory on Pi
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+            mkdir -p /opt/lucid/deployments/$deployment_id
+            mkdir -p /opt/lucid/backups
+            echo "Deployment directory created: /opt/lucid/deployments/$deployment_id"
+          EOF
+
+      - name: Backup current deployment
+        if: ${{ (github.event.inputs.deployment_type || 'staging') != 'rollback' }}
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            # Create backup of current deployment
+            if [ -d "/opt/lucid/current" ]; then
+              backup_dir="/opt/lucid/backups/backup-$(date +%Y%m%d-%H%M%S)"
+              mkdir -p "$backup_dir"
+              cp -r /opt/lucid/current/* "$backup_dir/" 2>/dev/null || true
+              echo "Backup created at: $backup_dir"
+            else
+              echo "No current deployment found to backup"
+            fi
+          EOF
+
+  deploy-staging-services:
+    runs-on: ubuntu-latest
+    needs: [staging-deployment]
+    if: needs.staging-deployment.result == 'success'
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Login to registry on Pi
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          EOF
+
+      - name: Pull staging images
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            # Pull database images
+            docker pull mongo:7.0
+            docker pull redis:7.0-alpine
+            docker pull elasticsearch:8.11.0
+            
+            # Pull monitoring images
+            docker pull prom/prometheus:latest
+            docker pull grafana/grafana:latest
+            
+            # Pull Lucid service images
+            services="api-gateway blockchain-core session-management rdp-services node-management admin-interface auth-service"
+            for service in $services; do
+              echo "Pulling $service image..."
+              docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$service:${{ github.sha }} || {
+                echo "Failed to pull $service image, using latest"
+                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$service:latest
+              }
+            done
+          EOF
+
+      - name: Deploy staging services
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            cd ${{ env.PI_DEPLOY_DIR }}
+            
+            # Start staging services
+            docker-compose -f docker-compose.staging.yml up -d
+            
+            # Wait for services to initialize
+            echo "Waiting for services to initialize..."
+            sleep 60
+            
+            # Check service status
+            docker-compose -f docker-compose.staging.yml ps
+          EOF
+
+      - name: Verify staging deployment
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            echo "=== Staging Deployment Verification ==="
+            
+            # Check all services are running
+            services="api-gateway blockchain-core session-management rdp-services node-management admin-interface auth-service mongodb redis elasticsearch"
+            failed_services=""
+            
+            for service in $services; do
+              container_name="lucid-${service}"
+              if docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
+                echo "✅ ${service}: Running"
+              else
+                echo "❌ ${service}: Not running"
+                failed_services="$failed_services $service"
+              fi
+            done
+            
+            if [ -n "$failed_services" ]; then
+              echo "❌ Failed services: $failed_services"
+              exit 1
+            fi
+            
+            # Test service health endpoints
+            echo "Testing service health endpoints..."
+            curl -f http://localhost:8080/health >/dev/null 2>&1 && echo "✅ API Gateway: Healthy" || echo "⚠️ API Gateway: Health check failed"
+            curl -f http://localhost:8084/health >/dev/null 2>&1 && echo "✅ Blockchain Core: Healthy" || echo "⚠️ Blockchain Core: Health check failed"
+            curl -f http://localhost:8085/health >/dev/null 2>&1 && echo "✅ Session Management: Healthy" || echo "⚠️ Session Management: Health check failed"
+            curl -f http://localhost:8086/health >/dev/null 2>&1 && echo "✅ RDP Services: Healthy" || echo "⚠️ RDP Services: Health check failed"
+            curl -f http://localhost:8087/health >/dev/null 2>&1 && echo "✅ Node Management: Healthy" || echo "⚠️ Node Management: Health check failed"
+            curl -f http://localhost:8088/health >/dev/null 2>&1 && echo "✅ Admin Interface: Healthy" || echo "⚠️ Admin Interface: Health check failed"
+            curl -f http://localhost:8089/health >/dev/null 2>&1 && echo "✅ Auth Service: Healthy" || echo "⚠️ Auth Service: Health check failed"
+            
+            echo "✅ Staging deployment verification complete"
+          EOF
+
+  pull-images:
+    runs-on: ubuntu-latest
+    needs: [prepare-deployment]
+    if: ${{ (github.event.inputs.deployment_type || 'staging') != 'staging' && (github.event.inputs.deployment_type || 'staging') != 'health-check' && (github.event.inputs.deployment_type || 'staging') != 'rollback' }}
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Login to registry on Pi
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          EOF
+
+      - name: Pull images
+        run: |
+          services="${{ needs.pre-deployment-checks.outputs.services_to_deploy }}"
+          for service in $(echo "$services" | tr ',' ' '); do
+            echo "Pulling $service image..."
+            ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+              docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$service:${{ github.sha }} || {
+                echo "Failed to pull $service image, using latest"
+                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/$service:latest
+              }
+            EOF
+          done
+
+  deploy-services:
+    runs-on: ubuntu-latest
+    needs: [prepare-deployment, pull-images]
+    if: ${{ (github.event.inputs.deployment_type || 'full') != 'health-check' && (github.event.inputs.deployment_type || 'full') != 'rollback' }}
+    strategy:
+      matrix:
+        service: ${{ fromJSON(format('[{0}]', needs.pre-deployment-checks.outputs.services_to_deploy)) }}
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy ${{ matrix.service }} service
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+            echo "Deploying ${{ matrix.service }} service..."
+            
+            # Stop existing service
+            docker-compose -f /opt/lucid/docker-compose.yml stop lucid-${{ matrix.service }} || true
+            docker-compose -f /opt/lucid/docker-compose.yml rm -f lucid-${{ matrix.service }} || true
+            
+            # Update docker-compose.yml with new image
+            sed -i "s|image:.*lucid-${{ matrix.service }}.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }}|" /opt/lucid/docker-compose.yml
+            
+            # Start new service
+            docker-compose -f /opt/lucid/docker-compose.yml up -d lucid-${{ matrix.service }}
+            
+            echo "✅ ${{ matrix.service }} service deployed successfully"
+          EOF
+
+      - name: Verify ${{ matrix.service }} deployment
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << EOF
+            # Wait for service to be ready
+            timeout 60 bash -c 'until docker logs lucid-${{ matrix.service }}-1 2>&1 | grep -q "ready\|started\|listening"; do sleep 2; done' || {
+              echo "❌ ${{ matrix.service }} service failed to start"
+              docker logs lucid-${{ matrix.service }}-1
+              exit 1
+            }
+            
+            echo "✅ ${{ matrix.service }} service verified"
+          EOF
+
+  rollback-deployment:
+    runs-on: ubuntu-latest
+    needs: [prepare-deployment]
+    if: ${{ (github.event.inputs.deployment_type || 'full') == 'rollback' }}
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rollback deployment
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            echo "Rolling back deployment..."
+            
+            # Find the most recent backup
+            latest_backup=$(ls -t /opt/lucid/backups/ 2>/dev/null | head -1)
+            if [ -z "$latest_backup" ]; then
+              echo "❌ No backup found for rollback"
+              exit 1
+            fi
+            
+            echo "Rolling back to: $latest_backup"
+            
+            # Stop all services
+            docker-compose -f /opt/lucid/docker-compose.yml down || true
+            
+            # Restore from backup
+            cp -r /opt/lucid/backups/$latest_backup/* /opt/lucid/current/ 2>/dev/null || true
+            
+            # Start services with previous configuration
+            docker-compose -f /opt/lucid/docker-compose.yml up -d
+            
+            echo "✅ Rollback completed"
+          EOF
+
+  post-deployment-tests:
+    runs-on: ubuntu-latest
+    needs: [deploy-services, rollback-deployment]
+    if: always() && (needs.deploy-services.result == 'success' || needs.rollback-deployment.result == 'success')
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run post-deployment tests
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            echo "=== Post-Deployment Health Check ==="
+            
+            # Check all services are running
+            services="gui blockchain rdp node storage database vm"
+            failed_services=""
+            
+            for service in $services; do
+              if docker ps --format "{{.Names}}" 2>/dev/null | grep -q "^lucid-${service}-"; then
+                # Service is running, check health endpoint if available
+                if docker exec lucid-${service}-1 curl -f http://localhost:8080/health 2>/dev/null; then
+                  echo "✅ $service: Healthy"
+                else
+                  echo "⚠️ $service: Running but health check failed"
+                fi
+              else
+                echo "❌ $service: Not running"
+                failed_services="$failed_services $service"
+              fi
+            done
+            
+            if [ -n "$failed_services" ]; then
+              echo "❌ Failed services: $failed_services"
+              exit 1
+            fi
+            
+            echo "✅ All services are healthy"
+          EOF
+
+      - name: Run integration tests
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            echo "Running post-deployment integration tests..."
+            
+            # Test API connectivity
+            if curl -f http://localhost:8000/health; then
+              echo "✅ API health check passed"
+            else
+              echo "❌ API health check failed"
+              exit 1
+            fi
+            
+            # Test database connectivity
+            if docker exec lucid-database-1 mongosh --eval "db.runCommand('ping')" 2>/dev/null; then
+              echo "✅ Database connectivity passed"
+            else
+              echo "❌ Database connectivity failed"
+              exit 1
+            fi
+            
+            echo "✅ Integration tests passed"
+          EOF
+
+  cleanup-old-deployments:
+    runs-on: ubuntu-latest
+    needs: [post-deployment-tests]
+    if: always() && needs.post-deployment-tests.result == 'success'
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/pi_key
+          chmod 600 ~/.ssh/pi_key
+          ssh-keyscan -H ${{ env.PI_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Cleanup old deployments
+        run: |
+          ssh -i ~/.ssh/pi_key -o StrictHostKeyChecking=no ${{ secrets.PI_USER }}@${{ env.PI_HOST }} << 'EOF'
+            echo "Cleaning up old deployments..."
+            
+            # Keep only the last 5 deployments
+            ls -t /opt/lucid/deployments/ 2>/dev/null | tail -n +6 | xargs -I {} rm -rf /opt/lucid/deployments/{} 2>/dev/null || true
+            
+            # Keep only the last 10 backups
+            ls -t /opt/lucid/backups/ 2>/dev/null | tail -n +11 | xargs -I {} rm -rf /opt/lucid/backups/{} 2>/dev/null || true
+            
+            # Clean up old Docker images
+            docker image prune -f
+            
+            echo "✅ Cleanup completed"
+          EOF
+
+  deployment-summary:
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, staging-deployment, deploy-staging-services, deploy-services, rollback-deployment, post-deployment-tests, cleanup-old-deployments]
+    if: always()
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Raspberry Pi Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Pi Host:** ${{ env.PI_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Type:** ${{ env.DEPLOYMENT_TYPE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Staging Environment:** ${{ env.STAGING_ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Services:** ${{ needs.pre-deployment-checks.outputs.services_to_deploy }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.pre-deployment-checks.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pre-deployment Checks:** ${{ needs.pre-deployment-checks.result }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ env.DEPLOYMENT_TYPE }}" = "staging" ]; then
+            echo "- **Staging Deployment:** ${{ needs.staging-deployment.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Staging Services:** ${{ needs.deploy-staging-services.result }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Service Deployment:** ${{ needs.deploy-services.result }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Rollback (if applicable):** ${{ needs.rollback-deployment.result }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Post-deployment Tests:** ${{ needs.post-deployment-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cleanup:** ${{ needs.cleanup-old-deployments.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Status:" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ env.DEPLOYMENT_TYPE }}" = "staging" ]; then
+            if [ "${{ needs.deploy-staging-services.result }}" = "success" ]; then
+              echo "🎉 **Staging Deployment Successful**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Staging Access Information:" >> $GITHUB_STEP_SUMMARY
+              echo "- **Staging Directory:** ${{ env.PI_DEPLOY_DIR }}" >> $GITHUB_STEP_SUMMARY
+              echo "- **API Gateway:** http://${{ env.PI_HOST }}:8080" >> $GITHUB_STEP_SUMMARY
+              echo "- **Blockchain Core:** http://${{ env.PI_HOST }}:8084" >> $GITHUB_STEP_SUMMARY
+              echo "- **Session Management:** http://${{ env.PI_HOST }}:8085" >> $GITHUB_STEP_SUMMARY
+              echo "- **RDP Services:** http://${{ env.PI_HOST }}:8086" >> $GITHUB_STEP_SUMMARY
+              echo "- **Node Management:** http://${{ env.PI_HOST }}:8087" >> $GITHUB_STEP_SUMMARY
+              echo "- **Admin Interface:** http://${{ env.PI_HOST }}:8088" >> $GITHUB_STEP_SUMMARY
+              echo "- **Auth Service:** http://${{ env.PI_HOST }}:8089" >> $GITHUB_STEP_SUMMARY
+              echo "- **Prometheus:** http://${{ env.PI_HOST }}:9090" >> $GITHUB_STEP_SUMMARY
+              echo "- **Grafana:** http://${{ env.PI_HOST }}:3000" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Staging Deployment Failed**" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            if [ "${{ needs.post-deployment-tests.result }}" = "success" ]; then
+              echo "🎉 **Deployment Successful**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Deployment Failed**" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

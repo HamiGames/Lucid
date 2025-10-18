@@ -1,0 +1,149 @@
+# LUCID SIGNATURE VERIFIER - SPEC-4 Release Signature Verification (Distroless)
+# Professional release signature verification for Pi deployment
+# Multi-platform build for ARM64 Pi and AMD64 development
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS signature-verifier-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Signature Verifier for SPEC-4 Release Signature Verification (Distroless)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="signature-verifier" \
+      org.lucid.layer="4" \
+      org.lucid.expose="8113"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and signature verification tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        # Signature verification dependencies
+        python3-dev \
+        # Cryptographic tools
+        openssl \
+        gpg \
+        # Hash tools
+        sha256sum \
+        sha512sum \
+        md5sum \
+        # Archive tools
+        tar \
+        gzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R lucid:lucid /app
+
+# Install Python dependencies for signature verification
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "requests>=2.31.0" \
+        "cryptography>=41.0.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0"
+
+# Copy application code
+COPY tools/ /app/tools/
+COPY tools/ops/ota/ /app/tools/ops/ota/
+COPY wallet/ /app/wallet/
+COPY auth/ /app/auth/
+
+# Create signature verification directories
+RUN mkdir -p /opt/lucid/signatures /opt/lucid/keys /data/signatures /tmp/signatureverifier \
+    && chown -R lucid:lucid /opt/lucid /data /tmp/signatureverifier
+
+# Create non-root user for runtime
+RUN adduser --disabled-password --gecos '' signatureverifier_user && \
+    chown -R signatureverifier_user:signatureverifier_user /app /data /tmp/signatureverifier /opt/lucid
+
+# Stage 2: Distroless runtime with Python and signature verification dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Signature Verifier for SPEC-4 Release Signature Verification (Distroless Runtime)" \
+      org.lucid.plane="ops" \
+      org.lucid.service="signature-verifier" \
+      org.lucid.layer="4" \
+      org.lucid.expose="8113"
+
+# Copy Python installation and packages from builder
+COPY --from=signature-verifier-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=signature-verifier-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=signature-verifier-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy signature verification and system tools
+COPY --from=signature-verifier-builder /usr/bin/openssl /usr/bin/openssl
+COPY --from=signature-verifier-builder /usr/bin/gpg /usr/bin/gpg
+COPY --from=signature-verifier-builder /usr/bin/sha256sum /usr/bin/sha256sum
+COPY --from=signature-verifier-builder /usr/bin/sha512sum /usr/bin/sha512sum
+COPY --from=signature-verifier-builder /usr/bin/md5sum /usr/bin/md5sum
+COPY --from=signature-verifier-builder /bin/tar /bin/tar
+COPY --from=signature-verifier-builder /bin/gzip /bin/gzip
+COPY --from=signature-verifier-builder /usr/bin/curl /usr/bin/curl
+COPY --from=signature-verifier-builder /bin/nc /bin/nc
+COPY --from=signature-verifier-builder /usr/bin/jq /usr/bin/jq
+COPY --from=signature-verifier-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=signature-verifier-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=signature-verifier-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=signature-verifier-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=signature-verifier-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=signature-verifier-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=signature-verifier-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=signature-verifier-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=signature-verifier-builder /etc/passwd /etc/passwd
+COPY --from=signature-verifier-builder /etc/group /etc/group
+
+# Copy CA certificates
+COPY --from=signature-verifier-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=signature-verifier-builder --chown=signatureverifier_user:signatureverifier_user /app /app
+COPY --from=signature-verifier-builder --chown=signatureverifier_user:signatureverifier_user /data /data
+COPY --from=signature-verifier-builder --chown=signatureverifier_user:signatureverifier_user /tmp/signatureverifier /tmp/signatureverifier
+COPY --from=signature-verifier-builder --chown=signatureverifier_user:signatureverifier_user /opt/lucid /opt/lucid
+
+# Runtime environment for signature verifier
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    SIGNATURES_PATH=/opt/lucid/signatures \
+    KEYS_PATH=/opt/lucid/keys \
+    XDG_RUNTIME_DIR=/tmp/signatureverifier \
+    VERIFICATION_TIMEOUT_SECONDS=30 \
+    KEY_ROTATION_INTERVAL_DAYS=90 \
+    SIGNATURE_ALGORITHMS=RSA,ECDSA,Ed25519 \
+    HASH_ALGORITHMS=SHA256,SHA512 \
+    MAX_FILE_SIZE_MB=1000
+
+# Security and runtime configuration
+EXPOSE 8113
+USER signatureverifier_user
+WORKDIR /app
+
+# Default command for signature verifier service
+ENTRYPOINT ["/usr/local/bin/python3.11", "/app/tools/ops/ota/signature_verifier.py"]

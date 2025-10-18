@@ -1,0 +1,217 @@
+# Elasticsearch 8.11.0 Configuration for Lucid Blockchain System
+# Database Cluster 08: Storage Database
+# Step 3: Redis & Elasticsearch Setup
+
+# ======================== Elasticsearch Configuration =========================
+
+# ---------------------------------- Cluster -----------------------------------
+
+# Cluster name identifies your cluster for auto-discovery
+cluster.name: lucid-elasticsearch
+
+# Node name (unique identifier for this node)
+node.name: lucid-es-node-1
+
+# ----------------------------------- Paths ------------------------------------
+
+# Path to directory where to store the data
+path.data: /usr/share/elasticsearch/data
+
+# Path to log files
+path.logs: /usr/share/elasticsearch/logs
+
+# ----------------------------------- Memory -----------------------------------
+
+# Lock the memory on startup to prevent swapping
+bootstrap.memory_lock: false
+
+# ---------------------------------- Network -----------------------------------
+
+# Bind to all interfaces for Docker network
+network.host: 0.0.0.0
+
+# HTTP port
+http.port: 9200
+
+# Transport port for node-to-node communication
+transport.port: 9300
+
+# --------------------------------- Discovery ----------------------------------
+
+# Single-node discovery for development/testing
+discovery.type: single-node
+
+# For production cluster mode (comment out single-node above):
+# discovery.seed_hosts: ["es-node-1", "es-node-2", "es-node-3"]
+# cluster.initial_master_nodes: ["lucid-es-node-1"]
+
+# ---------------------------------- Gateway -----------------------------------
+
+# Block initial recovery after a full cluster restart until N nodes are started
+gateway.recover_after_nodes: 1
+
+# ---------------------------------- Various -----------------------------------
+
+# Require explicit names when deleting indices
+action.destructive_requires_name: true
+
+# ---------------------------------- Security ----------------------------------
+
+# Disable X-Pack security for development (enable in production)
+xpack.security.enabled: false
+
+# For production with security enabled:
+# xpack.security.enabled: true
+# xpack.security.enrollment.enabled: true
+# xpack.security.http.ssl.enabled: true
+# xpack.security.transport.ssl.enabled: true
+
+# ---------------------------------- Monitoring --------------------------------
+
+# Enable monitoring
+xpack.monitoring.collection.enabled: true
+
+# ---------------------------------- Indexing ----------------------------------
+
+# Refresh interval for indices
+indices.memory.index_buffer_size: 10%
+
+# Number of shards per index
+index.number_of_shards: 1
+
+# Number of replicas per index
+index.number_of_replicas: 0
+
+# ----------------------------------- HTTP -------------------------------------
+
+# Enable CORS for development
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-headers: "X-Requested-With,Content-Type,Content-Length,Authorization"
+
+# Max content length
+http.max_content_length: 100mb
+
+# Compression
+http.compression: true
+
+# ----------------------------------- Search -----------------------------------
+
+# Max result window
+index.max_result_window: 10000
+
+# Search thread pool
+thread_pool.search.size: 4
+thread_pool.search.queue_size: 1000
+
+# Write thread pool
+thread_pool.write.size: 4
+thread_pool.write.queue_size: 1000
+
+# ---------------------------------- Lucid Custom ------------------------------
+
+# Lucid-specific index templates and settings
+
+# Index lifecycle management
+# xpack.ilm.enabled: true
+
+# Lucid Index Templates (applied via API after startup):
+
+# 1. Sessions Index Template
+# - index.number_of_shards: 1
+# - index.number_of_replicas: 0
+# - index.refresh_interval: "5s"
+# Mappings:
+#   - session_id: keyword
+#   - user_id: keyword
+#   - status: keyword
+#   - merkle_root: keyword
+#   - created_at: date
+#   - completed_at: date
+#   - metadata: object
+
+# 2. Blocks Index Template
+# - index.number_of_shards: 1
+# - index.number_of_replicas: 0
+# - index.refresh_interval: "10s"
+# Mappings:
+#   - block_id: keyword
+#   - block_height: long
+#   - block_hash: keyword
+#   - previous_hash: keyword
+#   - merkle_root: keyword
+#   - timestamp: date
+#   - transactions: nested
+
+# 3. Users Index Template
+# - index.number_of_shards: 1
+# - index.number_of_replicas: 0
+# - index.refresh_interval: "30s"
+# Mappings:
+#   - user_id: keyword
+#   - email: text (with keyword field)
+#   - tron_address: keyword
+#   - roles: keyword
+#   - status: keyword
+#   - created_at: date
+#   - last_activity: date
+
+# Index retention policies:
+# - Sessions: 90 days
+# - Blocks: permanent
+# - Users: permanent
+# - Logs: 30 days
+
+# ---------------------------------- Performance -------------------------------
+
+# Circuit breaker settings
+indices.breaker.total.limit: 70%
+indices.breaker.request.limit: 40%
+indices.breaker.fielddata.limit: 40%
+
+# Query cache
+indices.queries.cache.size: 10%
+
+# Field data cache
+indices.fielddata.cache.size: 20%
+
+# Bulk thread pool
+thread_pool.bulk.size: 4
+thread_pool.bulk.queue_size: 1000
+
+# ---------------------------------- Logging -----------------------------------
+
+# Log level: trace, debug, info, warn, error
+logger.level: info
+
+# Slow log settings
+index.search.slowlog.threshold.query.warn: 10s
+index.search.slowlog.threshold.query.info: 5s
+index.search.slowlog.threshold.fetch.warn: 1s
+index.search.slowlog.threshold.fetch.info: 500ms
+
+index.indexing.slowlog.threshold.index.warn: 10s
+index.indexing.slowlog.threshold.index.info: 5s
+
+# ---------------------------------- Snapshots ---------------------------------
+
+# Snapshot repository path (configure via API)
+# path.repo: ["/usr/share/elasticsearch/backups"]
+
+# ---------------------------------- Lucid Integration -------------------------
+
+# These indices will be created via API after ES startup:
+# - lucid_sessions
+# - lucid_blocks
+# - lucid_users
+
+# Search optimization for Lucid use cases:
+# - Session search by user_id, status, date range
+# - Block search by height, hash, date range
+# - User search by email, tron_address, status
+
+# Performance targets:
+# - Search query latency: <100ms p95
+# - Index throughput: >1000 docs/sec
+# - Storage efficiency: compression enabled
+

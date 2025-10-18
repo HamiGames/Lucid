@@ -1,0 +1,148 @@
+# LUCID BLOCKCHAIN SERVICE - Distroless Build Configuration
+# Professional blockchain service for Pi deployment with distroless security
+# Multi-platform build for ARM64 Pi and AMD64 development
+# LUCID-STRICT Mode: Enhanced security with minimal attack surface
+
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim AS blockchain-builder
+
+# Metadata for professional container management
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Blockchain service for Lucid (Distroless Build)" \
+      org.lucid.plane="chain" \
+      org.lucid.service="blockchain" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8080"
+
+# Build-time environment for dependency installation
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies and create service user
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        ca-certificates \
+        netcat-traditional \
+        jq \
+        gosu \
+        git \
+        pkg-config \
+        libffi-dev \
+        libssl-dev \
+        libgmp-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && groupadd --gid 1000 blockchain \
+    && useradd --uid 1000 --gid blockchain --shell /bin/bash --create-home blockchain
+
+# Set up application directory
+WORKDIR /app
+RUN chown -R blockchain:blockchain /app
+
+# Install blockchain-specific Python dependencies
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir \
+        "fastapi>=0.104.0" \
+        "uvicorn[standard]>=0.24.0" \
+        "pydantic>=2.0.0" \
+        "pydantic-settings>=2.0.0" \
+        "httpx>=0.25.0" \
+        "aiofiles>=23.0.0" \
+        "python-multipart>=0.0.6" \
+        "cryptography>=41.0.0" \
+        "web3>=6.11.0" \
+        "eth-account>=0.9.0" \
+        "tronpy>=1.4.0" \
+        "requests>=2.31.0" \
+        "pymongo>=4.6.0" \
+        "redis>=5.0.0" \
+        "python-dotenv>=1.0.0" \
+        "structlog>=23.0.0" \
+        "prometheus-client>=0.19.0"
+
+# Copy requirements if it exists and install additional dependencies
+COPY requirements.txt* /app/
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# Copy blockchain service source code
+COPY --chown=blockchain:blockchain src/blockchain/ /app/src/blockchain/
+COPY --chown=blockchain:blockchain src/common/ /app/src/common/
+
+# Create blockchain service directories
+RUN mkdir -p /var/lib/blockchain /var/log/lucid/blockchain \
+    && chown -R blockchain:blockchain /var/lib/blockchain /var/log/lucid/blockchain
+
+# Stage 2: Distroless runtime with Python and blockchain dependencies
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+# Metadata for runtime container
+LABEL maintainer="Lucid Development Team" \
+      version="1.0.0-distroless" \
+      description="Blockchain service for Lucid (Distroless Runtime)" \
+      org.lucid.plane="chain" \
+      org.lucid.service="blockchain" \
+      org.lucid.layer="2" \
+      org.lucid.expose="8080"
+
+# Copy Python installation and packages from builder
+COPY --from=blockchain-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=blockchain-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
+COPY --from=blockchain-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
+
+# Copy system dependencies for blockchain operations
+COPY --from=blockchain-builder /usr/bin/curl /usr/bin/curl
+COPY --from=blockchain-builder /bin/nc /bin/nc
+COPY --from=blockchain-builder /usr/bin/jq /usr/bin/jq
+COPY --from=blockchain-builder /usr/sbin/gosu /usr/sbin/gosu
+
+# Copy required dynamic libraries (architecture-specific)
+COPY --from=blockchain-builder /lib/*-linux-*/libc.so.6 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/libssl.so.3 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/libcrypto.so.3 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/libz.so.1 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/liblzma.so.5 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/libzstd.so.1 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/libffi.so.8 /lib/
+COPY --from=blockchain-builder /lib/*-linux-*/libgmp.so.10 /lib/
+COPY --from=blockchain-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy user and group information
+COPY --from=blockchain-builder /etc/passwd /etc/passwd
+COPY --from=blockchain-builder /etc/group /etc/group
+
+# Copy CA certificates for blockchain network communication
+COPY --from=blockchain-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy application with proper ownership
+COPY --from=blockchain-builder --chown=nonroot:nonroot /app /app
+COPY --from=blockchain-builder --chown=nonroot:nonroot /var/lib/blockchain /var/lib/blockchain
+COPY --from=blockchain-builder --chown=nonroot:nonroot /var/log/lucid/blockchain /var/log/lucid/blockchain
+
+# Runtime environment for blockchain service
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    SERVICE_PORT=8080 \
+    BLOCKCHAIN_DATA_DIR=/var/lib/blockchain \
+    LOG_DIR=/var/log/lucid/blockchain \
+    MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin \
+    REDIS_URL=redis://lucid_redis:6379/0 \
+    TRON_NETWORK=shasta \
+    ETH_RPC_URL=http://localhost:8545
+
+# Security and runtime configuration
+EXPOSE 8080
+USER nonroot
+WORKDIR /app
+
+# Health check for blockchain service
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import requests; requests.get('http://localhost:8080/health', timeout=5)"]
+
+# Default command for blockchain service
+ENTRYPOINT ["/usr/local/bin/python3.11", "-m", "uvicorn", "src.blockchain.main:app"]
+CMD ["--host", "0.0.0.0", "--port", "8080", "--workers", "1"]

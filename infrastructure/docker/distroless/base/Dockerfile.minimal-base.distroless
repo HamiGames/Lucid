@@ -1,0 +1,62 @@
+# Minimal Base Distroless Image for Lucid Project
+# Ultra-minimal image for maximum security and performance
+# Optimized for embedded systems and resource-constrained environments
+
+# Build stage
+FROM python:3.11-slim-bookworm as builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+# Install minimal build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install only essential packages
+RUN pip install --upgrade pip && \
+    pip install \
+    cryptography \
+    pynacl \
+    requests \
+    psutil
+
+# Runtime stage - Minimal distroless
+FROM gcr.io/distroless/python3-debian12
+
+# Set runtime environment
+ENV PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Create application directory
+WORKDIR /app
+
+# Set user to nonroot for security
+USER nonroot:nonroot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["python", "-c", "import sys; print('Minimal runtime healthy'); sys.exit(0)"]
+
+# Default command
+CMD ["python", "-c", "import sys; print(f'Lucid Minimal Base Ready - Python {sys.version}'); sys.exit(0)"]

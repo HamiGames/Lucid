@@ -1,0 +1,275 @@
+# LUCID PAYMENT SYSTEMS - Distroless Deployment
+# Phase 5: Payment Systems (TRON Integration, Payment Governance, Distribution)
+# Aligned with LUCID_DISTROLESS_BUILD_GUIDE.md - Separate from node/lucid_blockchain operations
+
+
+
+services:
+  # TRON Node Client - Main TRON integration service
+  tron-node-client:
+    image: pickme/lucid:tron-node-client:latest
+    container_name: tron_node_client
+    pull_policy: always
+    environment:
+      TRON_NODE_PORT: "8095"
+      TRON_NETWORK: "shasta"
+      TRON_RPC_URL: "https://api.shasta.trongrid.io"
+      TRON_PRIVATE_KEY: ${TRON_PRIVATE_KEY:-}
+      USDT_TRC20_CONTRACT: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    volumes:
+      - tron_data:/data/tron
+      - payment_keys:/data/keys
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+    ports:
+      - "8095:8095"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Payment Governance - Manages payment policies and rules
+  payment-governance:
+    image: pickme/lucid:payment-governance:latest
+    container_name: payment_governance
+    pull_policy: always
+    environment:
+      GOVERNANCE_PORT: "8096"
+      TRON_NETWORK: "shasta"
+      TRON_RPC_URL: "https://api.shasta.trongrid.io"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+      PAYOUT_ROUTER_V0: "TYourPayoutRouterV0Address"
+      PAYOUT_ROUTER_KYC: "TYourPayoutRouterKYCAddress"
+    volumes:
+      - payment_data:/data/governance
+      - payment_keys:/data/keys:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - tron-node-client
+    ports:
+      - "8096:8096"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Payment Distribution - Handles payout processing and distribution
+  payment-distribution:
+    image: pickme/lucid:payment-distribution:latest
+    container_name: payment_distribution
+    pull_policy: always
+    environment:
+      DISTRIBUTION_PORT: "8097"
+      TRON_NETWORK: "shasta"
+      TRON_RPC_URL: "https://api.shasta.trongrid.io"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+      USDT_TRC20_CONTRACT: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+      MIN_PAYOUT_THRESHOLD: "10.00"
+      PLATFORM_FEE_PERCENT: "2.0"
+    volumes:
+      - payment_data:/data/distribution
+      - payment_keys:/data/keys:ro
+      - payout_batches:/data/batches
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - tron-node-client
+      - payment-governance
+    ports:
+      - "8097:8097"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8097/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # USDT TRC20 Integration - Direct USDT operations
+  usdt-trc20:
+    image: pickme/lucid:usdt-trc20:latest
+    container_name: usdt_trc20
+    pull_policy: always
+    environment:
+      USDT_PORT: "8098"
+      TRON_NETWORK: "shasta"
+      TRON_RPC_URL: "https://api.shasta.trongrid.io"
+      USDT_CONTRACT: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - payment_data:/data/usdt
+      - payment_keys:/data/keys:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - tron-node-client
+    ports:
+      - "8098:8098"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8098/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Payout Router V0 - No-KYC payout processing
+  payout-router-v0:
+    image: pickme/lucid:payout-router-v0:latest
+    container_name: payout_router_v0
+    pull_policy: always
+    environment:
+      ROUTER_V0_PORT: "8099"
+      TRON_NETWORK: "shasta"
+      TRON_RPC_URL: "https://api.shasta.trongrid.io"
+      ROUTER_CONTRACT: "TYourPayoutRouterV0Address"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+    volumes:
+      - payment_data:/data/router-v0
+      - payment_keys:/data/keys:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - tron-node-client
+      - usdt-trc20
+    ports:
+      - "8099:8099"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8099/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Payout Router KYC - KYC-gated payout processing
+  payout-router-kyc:
+    image: pickme/lucid:payout-router-kyc:latest
+    container_name: payout_router_kyc
+    pull_policy: always
+    environment:
+      ROUTER_KYC_PORT: "8100"
+      TRON_NETWORK: "shasta"
+      TRON_RPC_URL: "https://api.shasta.trongrid.io"
+      ROUTER_CONTRACT: "TYourPayoutRouterKYCAddress"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+      KYC_VERIFICATION_URL: "https://your-kyc-provider.com"
+    volumes:
+      - payment_data:/data/router-kyc
+      - payment_keys:/data/keys:ro
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - tron-node-client
+      - usdt-trc20
+    ports:
+      - "8100:8100"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8100/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Payment Analytics - Tracks payment metrics and reporting
+  payment-analytics:
+    image: pickme/lucid:payment-analytics:latest
+    container_name: payment_analytics
+    pull_policy: always
+    environment:
+      ANALYTICS_PORT: "8101"
+      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
+      TRON_NETWORK: "shasta"
+      USDT_CONTRACT: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    volumes:
+      - payment_data:/data/analytics
+      - analytics_reports:/data/reports
+    networks:
+      - lucid_core_net
+    depends_on:
+      - lucid_mongo
+      - payment-distribution
+    ports:
+      - "8101:8101"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8101/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+networks:
+  lucid_core_net:
+    external: true
+
+volumes:
+  tron_data:
+  payment_data:
+  payment_keys:
+  payout_batches:
+  analytics_reports:

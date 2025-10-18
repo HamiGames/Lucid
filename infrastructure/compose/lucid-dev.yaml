@@ -1,0 +1,475 @@
+# LUCID CORE SUPPORT SERVICES - Distroless Development Infrastructure
+# Professional Docker Compose for Core Support Services ONLY with Pre-built Distroless Images
+# SPEC-4 compliant: Stage 0 Common & Base with plane isolation
+# Dual-network architecture: core services isolated, external connectivity maintained
+
+# SPEC-4 Stage 0 Environment Template (ops plane)
+x-lucid-env: &lucid-env
+  # Core identification
+  LUCID_ENV: dev
+  LUCID_PLANE: ops
+  LUCID_CLUSTER_ID: ${CLUSTER_ID:-dev-core}
+  BETA_PLANES: "ops"
+  
+  # Build system configuration
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+  
+  # Database connectivity (internal core network)
+  MONGO_URL: ${MONGO_URL:-mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false}
+  MONGO_RS: "rs0"
+  
+  # Tor/Network configuration (beta sidecar pattern)
+  TOR_SOCKS: "tor-proxy:9050"
+  TOR_CONTROL_PORT: "tor-proxy:9051"
+  TOR_CONTROL_PASSWORD: ${TOR_CONTROL_PASSWORD:-}
+  
+  # Multi-onion environment variables (static core services)
+  ONION_API_GATEWAY: ${ONION_API_GATEWAY:-}
+  ONION_API_SERVER: ${ONION_API_SERVER:-}
+  ONION_TUNNEL: ${ONION_TUNNEL:-}
+  ONION_MONGO: ${ONION_MONGO:-}
+  ONION_TOR_CONTROL: ${ONION_TOR_CONTROL:-}
+  
+  # Dynamic onion support (for wallet and runtime services)
+  ONION_DIR: "/run/lucid/onion"
+  DYNAMIC_ONION_SUPPORT: "enabled"
+  WALLET_ONION_SUPPORT: "enabled"
+  
+  # Security environment
+  AGE_PRIVATE_KEY: ${AGE_PRIVATE_KEY:-}
+
+# SPEC-4 Pi-compatible common configuration with plane isolation
+x-lucid-common: &lucid-common
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+    - seccomp:unconfined  # Required for Pi compatibility
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  labels:
+    - "org.lucid.plane=ops"
+    - "org.lucid.stage=0"
+    - "org.lucid.cluster=${CLUSTER_ID:-dev-core}"
+    - "org.lucid.tor.multi-onion=enabled"
+    - "org.lucid.tor.cookie-auth=ed25519-v3"
+    - "org.lucid.distroless=true"
+    - "org.lucid.prebuilt=true"
+  # Dual network membership: internal core + external devcontainer
+  networks:
+    - lucid_core_net
+    - lucid-dev_lucid_net
+
+# SPEC-4 Stage 0 Network Topology with Plane Isolation
+networks:
+  # Internal core services network (ops plane isolation)
+  lucid_core_net:
+    name: lucid_core_net
+    driver: bridge
+    internal: false  # Allow external access for Pi deployment
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.network=core"
+      - "org.lucid.isolation=true"
+      - "org.lucid.tor.multi-onion=subnet"
+  
+  # External devcontainer connectivity (existing network)
+  lucid_dev_net:
+    name: lucid-dev_lucid_net
+    external: true
+    labels:
+      - "org.lucid.plane=external"
+      - "org.lucid.network=devcontainer"
+
+# SPEC-4 Stage 0 Persistent Volumes with Professional Management
+volumes:
+  # Beta sidecar - Tor multi-onion service state (ops plane)
+  tor_data:
+    name: lucid-core_tor_data
+    driver: local
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.service=tor-proxy"
+      - "org.lucid.stage=0"
+      - "org.lucid.tor.type=data"
+      - "org.lucid.tor.multi-onion=persistent"
+      - "org.lucid.tor.cookie-auth=enabled"
+  
+  # Tor configuration volume (multi-onion + cookie auth)
+  tor_config:
+    name: lucid-core_tor_config
+    driver: local
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.service=tor-proxy"
+      - "org.lucid.stage=0"
+      - "org.lucid.tor.type=config"
+      - "org.lucid.tor.multi-onion=config"
+      - "org.lucid.tor.cookie-auth=ed25519-v3"
+  
+  # MongoDB 7 replica set data (ops plane database)
+  mongo_data:
+    name: lucid-core_mongo_data
+    driver: local
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.service=mongo"
+      - "org.lucid.stage=0"
+  
+  # Multi-onion service state sharing (beta sidecar pattern)
+  onion_state:
+    name: lucid-core_onion_state
+    driver: local
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.service=beta"
+      - "org.lucid.stage=0"
+      - "org.lucid.tor.multi-onion=state-sharing"
+      - "org.lucid.tor.ephemeral=enabled"
+  
+  # Network security - tunnel tools with onion support
+  tunnel_data:
+    name: lucid-core_tunnel_data
+    driver: local
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.service=tunnel-tools"
+      - "org.lucid.stage=0"
+      - "org.lucid.tor.integration=tunnel"
+  
+  # MongoDB configuration and logs
+  mongo_config:
+    name: lucid-core_mongo_config
+    driver: local
+    labels:
+      - "org.lucid.plane=ops"
+      - "org.lucid.service=mongo"
+      - "org.lucid.stage=0"
+
+services:
+  # =============================================================================
+  # CORE SUPPORT SERVICE 1: MongoDB 7 Replica Set (SPEC-4 Stage 0)
+  # Beta Sidecar Pattern: Database for ops plane
+  # =============================================================================
+  lucid_mongo:
+    <<: *lucid-common
+    container_name: lucid_mongo
+    image: mongo:7
+    platform: linux/amd64  # Pi compatible ARM64/AMD64 multi-arch
+    command: [
+      "mongod",
+      "--auth",
+      "--bind_ip_all", 
+      "--replSet", "rs0",
+      "--oplogSize", "128",
+      "--wiredTigerCacheSizeGB", "0.5"  # Pi memory optimization
+    ]
+    ports:
+      - "27017:27017"  # External devcontainer access
+    environment:
+      <<: *lucid-env
+      MONGO_INITDB_ROOT_USERNAME: lucid
+      MONGO_INITDB_ROOT_PASSWORD: lucid
+      MONGO_INITDB_DATABASE: lucid
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    networks:
+      lucid_core_net:
+        aliases: [mongo, lucid_mongo, mongodb]
+        ipv4_address: 172.21.0.10
+      lucid-dev_lucid_net: {}  # External connectivity
+    healthcheck:
+      test: [
+        "CMD-SHELL", 
+        "mongosh --quiet -u lucid -p lucid --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    labels:
+      - "org.lucid.service=mongo"
+      - "org.lucid.expose=27017"
+      - "org.lucid.tor.accessible=internal"
+
+  # =============================================================================
+  # CORE SUPPORT SERVICE 2: TOR Proxy (SPEC-4 Stage 0) - DISTROLESS
+  # Multi-Onion + Dynamic Onion Support with Cookie Auth
+  # Pre-built distroless image: pickme/lucid:tor-proxy:latest
+  # =============================================================================
+  tor-proxy:
+    <<: *lucid-common
+    container_name: tor-proxy
+    image: pickme/lucid:tor-proxy:latest
+    pull_policy: always
+    environment:
+      <<: *lucid-env
+      TOR_SOCKS_PORT: "9050"
+      TOR_CONTROL_PORT: "9051"
+      TOR_DATA_DIR: "/var/lib/tor"
+      ONION_COUNT: "5"
+      CREATE_ONION: "1"
+      UPSTREAM_SERVICE: "lucid_api"
+      UPSTREAM_PORT: "8081"
+    ports:
+      - "8888:8888"   # HTTP proxy port
+      - "9050:9050"   # SOCKS5 proxy port
+      - "9051:9051"   # Control port
+    volumes:
+      - tor_data:/var/lib/tor
+      - tor_config:/etc/tor
+      - onion_state:/run/lucid/onion
+      # Mount the multi-onion scripts from Pi mount path
+      - /mnt/myssd/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
+    networks:
+      lucid_core_net:
+        aliases: [tor, tor-proxy, torproxy]
+        ipv4_address: 172.21.0.11
+      lucid-dev_lucid_net: {}  # External connectivity
+    expose: ["8888", "9050", "9051"]
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/local/bin/tor-health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "org.lucid.service=tor-proxy"
+      - "org.lucid.expose=8888,9050,9051"
+      - "org.lucid.tor.multi-onion=controller"
+      - "org.lucid.tor.cookie-auth=ed25519-v3"
+      - "org.lucid.tor.ephemeral=creator"
+      - "org.lucid.tor.static-onions=5"
+      - "org.lucid.tor.dynamic-onions=unlimited"
+      - "org.lucid.tor.wallet-support=enabled"
+      - "org.lucid.tor.onion-rotation=supported"
+      - "org.lucid.distroless=true"
+
+  # =============================================================================
+  # CORE SUPPORT SERVICE 3: API Server (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:api-server:latest
+  # =============================================================================
+  lucid_api:
+    <<: *lucid-common
+    container_name: lucid_api
+    image: pickme/lucid:api-server:latest
+    pull_policy: always
+    environment:
+      <<: *lucid-env
+      PYTHONPATH: /app
+      API_HOST: "0.0.0.0"
+      API_PORT: "8081"
+      UVICORN_WORKERS: "1"  # Single worker for Pi resource constraints
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+      # Development bind mount for Pi mount path
+      - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
+    ports:
+      - "8081:8081"  # External devcontainer access
+    networks:
+      lucid_core_net:
+        aliases: [api, lucid_api, api-server]
+        ipv4_address: 172.21.0.12
+      lucid-dev_lucid_net: {}  # External connectivity
+    depends_on:
+      lucid_mongo:
+        condition: service_healthy
+      tor-proxy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    labels:
+      - "org.lucid.service=api-server"
+      - "org.lucid.expose=8081"
+      - "org.lucid.tor.onion-target=primary"
+      - "org.lucid.distroless=true"
+    working_dir: /app
+
+  # =============================================================================
+  # CORE SUPPORT SERVICE 4: API Gateway (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:api-gateway:latest
+  # =============================================================================
+  lucid_api_gateway:
+    <<: *lucid-common
+    container_name: lucid_api_gateway
+    image: pickme/lucid:api-gateway:latest
+    pull_policy: always
+    environment:
+      <<: *lucid-env
+      API_UPSTREAM: "lucid_api:8081"
+      GATEWAY_PORT: "8080"
+      NGINX_WORKER_PROCESSES: "1"  # Single worker for Pi
+      NGINX_WORKER_CONNECTIONS: "1024"
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+    ports:
+      - "8080:8080"  # External devcontainer access
+    networks:
+      lucid_core_net:
+        aliases: [gateway, lucid_gateway, api-gateway]
+        ipv4_address: 172.21.0.13
+      lucid-dev_lucid_net: {}  # External connectivity
+    depends_on:
+      lucid_api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    labels:
+      - "org.lucid.service=api-gateway"
+      - "org.lucid.expose=8080"
+      - "org.lucid.distroless=true"
+
+  # =============================================================================
+  # CORE SUPPORT SERVICE 5: Tunnel Tools (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:tunnel-tools:latest
+  # =============================================================================
+  tunnel-tools:
+    <<: *lucid-common
+    container_name: lucid_tunnel_tools
+    image: pickme/lucid:tunnel-tools:latest
+    pull_policy: always
+    environment:
+      <<: *lucid-env
+      TUNNEL_PORT: "7000"
+      TUNNEL_MODE: "client"
+    expose: ["7000"]  # Internal ops plane only
+    volumes:
+      - onion_state:/run/lucid/onion
+      - tunnel_data:/var/lib/tunnel
+    networks:
+      lucid_core_net:
+        aliases: [tunnel, tunnel-tools, tunnels]
+        ipv4_address: 172.21.0.14
+      lucid-dev_lucid_net: {}  # External connectivity
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid_api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 7000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    labels:
+      - "org.lucid.service=tunnel-tools"
+      - "org.lucid.expose=7000"
+      - "org.lucid.distroless=true"
+
+  # =============================================================================
+  # CORE SUPPORT SERVICE 6: Server Tools (SPEC-4 Stage 0) - DISTROLESS
+  # Pre-built distroless image: pickme/lucid:server-tools:latest
+  # =============================================================================
+  server-tools:
+    <<: *lucid-common
+    container_name: lucid_server_tools
+    image: pickme/lucid:server-tools:latest
+    pull_policy: always
+    environment:
+      <<: *lucid-env
+    networks:
+      lucid_core_net:
+        aliases: [server-tools, utils, lucid-utils]
+        ipv4_address: 172.21.0.15
+      lucid-dev_lucid_net: {}  # External connectivity
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid_mongo:
+        condition: service_healthy
+      lucid_api:
+        condition: service_healthy
+    volumes:
+      - onion_state:/run/lucid/onion:ro
+      - tunnel_data:/var/lib/tunnel:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "[server-tools] Core support utilities ready - SPEC-4 compliant"
+        echo "[server-tools] Network: lucid_core_net (ops plane isolation)"
+        echo "[server-tools] Tor proxy: http://tor-proxy:8888 (socks5://tor-proxy:9050)"
+        echo "[server-tools] MongoDB: $MONGO_URL"
+        echo "[server-tools] API Gateway: http://gateway:8080"
+        echo "[server-tools] API Server: http://api:8081"
+        echo "[server-tools] Tunnel Tools: tcp://tunnel:7000"
+        echo "[server-tools] Multi-onion support: Static(5) + Dynamic(unlimited)"
+        echo "[server-tools] Distroless: All services running on pre-built distroless images"
+        exec tail -f /dev/null
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/lucid/scripts/health-check.sh || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 32M
+          cpus: '0.05'
+    labels:
+      - "org.lucid.service=server-tools"
+      - "org.lucid.expose=none"
+      - "org.lucid.distroless=true"

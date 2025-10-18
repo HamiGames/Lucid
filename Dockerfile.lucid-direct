@@ -1,0 +1,93 @@
+# LUCID DEVCONTAINER - DIRECT BUILD (OPTIMIZED)
+# Fixes massive context size issue by selective copying
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DOCKER_BUILDKIT=1
+ENV DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+# Essential environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV MAVEN_HOME=/usr/share/maven
+ENV NODE_ENV=development
+ENV LUCID_ENV=dev
+
+# Install essential packages in optimized layers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Core system tools
+    curl wget git vim nano sudo \
+    # Build essentials
+    build-essential pkg-config \
+    # Python ecosystem
+    python3 python3-pip python3-venv python3-dev \
+    # Java development
+    openjdk-17-jdk maven \
+    # Node.js (via NodeSource)
+    ca-certificates gnupg \
+    # Docker prerequisites
+    apt-transport-https software-properties-common \
+    # Network tools
+    openssh-client netcat iputils-ping \
+    # Development utilities
+    jq tree htop procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18.x
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI and Docker Compose
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y docker-ce-cli docker-compose-plugin \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker Buildx
+RUN mkdir -p ~/.docker/cli-plugins \
+    && curl -SL https://github.com/docker/buildx/releases/latest/download/buildx-v0.12.1.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx \
+    && chmod +x ~/.docker/cli-plugins/docker-buildx
+
+# Python packages (essential only)
+RUN pip3 install --no-cache-dir \
+    requests \
+    pyyaml \
+    cryptography \
+    pytest \
+    black \
+    ruff
+
+# Create workspace directory
+RUN mkdir -p /workspaces/Lucid
+
+# Set working directory
+WORKDIR /workspaces/Lucid
+
+# Copy ONLY essential configuration files (NOT the entire project)
+COPY .env* ./
+COPY requirements*.txt ./
+COPY package.json* ./
+COPY pom.xml* ./
+
+# Install dependencies if files exist
+RUN if [ -f requirements.txt ]; then pip3 install --no-cache-dir -r requirements.txt; fi
+RUN if [ -f package.json ]; then npm install; fi
+
+# Configure Git (essential for development)
+RUN git config --global user.name "Lucid Developer" \
+    && git config --global user.email "dev@lucid.local" \
+    && git config --global init.defaultBranch main
+
+# Set proper permissions
+RUN chown -R root:root /workspaces/Lucid
+
+# Default command
+CMD ["/bin/bash"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD echo "Lucid DevContainer Health Check" || exit 1
