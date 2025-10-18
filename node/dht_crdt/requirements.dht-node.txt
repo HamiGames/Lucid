@@ -1,5 +1,0 @@
-# LUCID DHT/CRDT Node Requirements
-# Distributed hash table and conflict-free replicated data
-
-aiohttp>=3.8.0
-aiofiles>=23.2.1
