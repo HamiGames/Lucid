@@ -1,0 +1,88 @@
+# Lucid Base Images Build Configuration
+# YAML configuration for distroless base image builds
+
+build:
+  registry: "ghcr.io/hamigames/lucid"
+  platforms: ["linux/amd64", "linux/arm64"]
+  version: "latest"
+  
+  python:
+    image: "python-base"
+    dockerfile: "Dockerfile.python-base"
+    requirements: "requirements.txt"
+    ports: [8000, 8080, 8443]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      LANG: "C.UTF-8"
+      LC_ALL: "C.UTF-8"
+    
+  java:
+    image: "java-base"
+    dockerfile: "Dockerfile.java-base"
+    maven: "pom.xml"
+    gradle: "build.gradle"
+    gradle_properties: "gradle.properties"
+    ports: [8080, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8443]
+    environment:
+      JAVA_HOME: "/usr/lib/jvm/java-17-openjdk-amd64"
+      LANG: "C.UTF-8"
+      LC_ALL: "C.UTF-8"
+
+docker:
+  buildx:
+    builder_name: "lucid-builder"
+    driver: "docker-container"
+    options: ["--driver-opt", "network=host"]
+  
+  build_args:
+    - "BUILDKIT_INLINE_CACHE=1"
+    - "BUILDKIT_PROGRESS=plain"
+
+security:
+  nonroot_user: "nonroot:nonroot"
+  security_scan: true
+  vulnerability_scan: true
+  
+  labels:
+    maintainer: "Lucid Development Team"
+    plane: "infrastructure"
+    stage: "runtime"
+
+healthcheck:
+  interval: "30s"
+  timeout: "10s"
+  start_period: "5s"
+  retries: 3
+  
+  python:
+    test: ["python", "-c", "import sys; sys.exit(0)"]
+  
+  java:
+    test: ["java", "-version"]
+
+optimization:
+  cache: true
+  parallel: true
+  optimization: true
+  
+  image_sizes:
+    python_target: "150MB"
+    java_target: "200MB"
+
+validation:
+  test_images: true
+  verify_sizes: true
+  security_scan: true
+  
+  tests:
+    python: "python -c \"print('Python base image test successful')\""
+    java: "java -version"
+
+output:
+  format: "table"
+  log_level: "info"
+  verbose: false
+  
+  summary: true
+  next_steps: true

@@ -4,26 +4,151 @@
 
 set -e
 
-echo "Starting Docker Hub registry cleanup..."
+echo "Starting Docker Hub registry cleanup for pickme/lucid..."
 
-# Authenticate to Docker Hub
-echo "Authenticating to Docker Hub..."
-docker login --username pickme
+# Check if required tools are available
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed or not in PATH"
+    exit 1
+fi
 
-# List current repositories
-echo "Current repositories under pickme/lucid:"
-docker search pickme/lucid
+if ! command -v curl &> /dev/null; then
+    echo "Error: curl is not installed or not in PATH"
+    exit 1
+fi
 
-# Clean local Docker cache
-echo "Cleaning local Docker cache..."
-docker system prune -a --volumes -f
-docker builder prune -a -f
+# Configuration
+DOCKER_HUB_USERNAME="pickme"
+REPOSITORY_NAME="lucid"
+DOCKER_HUB_API_URL="https://hub.docker.com/v2"
 
-# Note: Manual deletion of Docker Hub images requires web interface
-# or Docker Hub API calls as docker CLI cannot delete remote images
-echo "Manual cleanup required:"
-echo "1. Visit https://hub.docker.com/r/pickme/lucid"
-echo "2. Delete all tagged images manually"
-echo "3. Or use Docker Hub API to delete images programmatically"
+# Function to get Docker Hub token
+get_docker_hub_token() {
+    echo "Authenticating to Docker Hub..."
+    read -s -p "Enter Docker Hub password for $DOCKER_HUB_USERNAME: " DOCKER_HUB_PASSWORD
+    echo
+    
+    TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
+        -d "{\"username\": \"$DOCKER_HUB_USERNAME\", \"password\": \"$DOCKER_HUB_PASSWORD\"}" \
+        https://hub.docker.com/v2/users/login/ | jq -r .token)
+    
+    if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+        echo "Error: Failed to authenticate to Docker Hub"
+        exit 1
+    fi
+    
+    echo "Successfully authenticated to Docker Hub"
+}
 
-echo "Docker Hub cleanup completed."
+# Function to list all tags for the repository
+list_repository_tags() {
+    echo "Listing all tags for $DOCKER_HUB_USERNAME/$REPOSITORY_NAME..."
+    
+    local page=1
+    local all_tags=""
+    
+    while true; do
+        local response=$(curl -s -H "Authorization: JWT $TOKEN" \
+            "$DOCKER_HUB_API_URL/repositories/$DOCKER_HUB_USERNAME/$REPOSITORY_NAME/tags/?page=$page&page_size=100")
+        
+        local tags=$(echo "$response" | jq -r '.results[]?.name // empty')
+        
+        if [ -z "$tags" ]; then
+            break
+        fi
+        
+        all_tags="$all_tags$tags"$'\n'
+        page=$((page + 1))
+    done
+    
+    echo "$all_tags" | grep -v '^$'
+}
+
+# Function to delete a specific tag
+delete_tag() {
+    local tag=$1
+    echo "Deleting tag: $tag"
+    
+    local response=$(curl -s -w "%{http_code}" -o /dev/null \
+        -X DELETE \
+        -H "Authorization: JWT $TOKEN" \
+        "$DOCKER_HUB_API_URL/repositories/$DOCKER_HUB_USERNAME/$REPOSITORY_NAME/tags/$tag/")
+    
+    if [ "$response" = "204" ]; then
+        echo "Successfully deleted tag: $tag"
+    else
+        echo "Failed to delete tag: $tag (HTTP: $response)"
+    fi
+}
+
+# Function to clean local Docker cache
+clean_local_cache() {
+    echo "Cleaning local Docker cache on Windows 11..."
+    docker system prune -a --volumes -f
+    docker builder prune -a -f
+    
+    # Remove any local images for this repository
+    echo "Removing local images for $DOCKER_HUB_USERNAME/$REPOSITORY_NAME..."
+    docker images "$DOCKER_HUB_USERNAME/$REPOSITORY_NAME" --format "table {{.Repository}}:{{.Tag}}" | tail -n +2 | while read image; do
+        if [ ! -z "$image" ]; then
+            echo "Removing local image: $image"
+            docker rmi "$image" 2>/dev/null || true
+        fi
+    done
+}
+
+# Main execution
+main() {
+    echo "=== Docker Hub Registry Cleanup ==="
+    echo "Repository: $DOCKER_HUB_USERNAME/$REPOSITORY_NAME"
+    echo
+    
+    # Get authentication token
+    get_docker_hub_token
+    
+    # List current tags
+    echo
+    TAGS=$(list_repository_tags)
+    
+    if [ -z "$TAGS" ]; then
+        echo "No tags found for $DOCKER_HUB_USERNAME/$REPOSITORY_NAME"
+    else
+        echo "Found the following tags:"
+        echo "$TAGS"
+        echo
+        
+        # Confirm deletion
+        read -p "Do you want to delete all these tags? (y/N): " confirm
+        if [[ $confirm =~ ^[Yy]$ ]]; then
+            echo "Deleting all tags..."
+            echo "$TAGS" | while read tag; do
+                if [ ! -z "$tag" ]; then
+                    delete_tag "$tag"
+                fi
+            done
+        else
+            echo "Deletion cancelled"
+        fi
+    fi
+    
+    # Clean local cache
+    echo
+    clean_local_cache
+    
+    # Verify cleanup
+    echo
+    echo "Verifying cleanup..."
+    docker search "$DOCKER_HUB_USERNAME/$REPOSITORY_NAME" 2>/dev/null || echo "No results found (cleanup successful)"
+    
+    echo
+    echo "Docker Hub cleanup completed successfully!"
+}
+
+# Check if jq is available
+if ! command -v jq &> /dev/null; then
+    echo "Error: jq is required but not installed. Please install jq first."
+    exit 1
+fi
+
+# Run main function
+main "$@"

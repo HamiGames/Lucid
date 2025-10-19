@@ -38,8 +38,8 @@ TRON_ISOLATED_NETWORK=lucid-tron-isolated
 TRON_SUBNET=172.21.0.0/16
 
 # Docker Registry
-DOCKER_REGISTRY=pickme/lucid
-DOCKER_TAG=latest-arm64
+DOCKER_REGISTRY=ghcr.io/hamigames/lucid
+DOCKER_TAG=latest
 EOF
 
 # Generate .env.foundation

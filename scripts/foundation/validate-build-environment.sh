@@ -194,14 +194,14 @@ echo "=== Base Images Check ==="
 
 # Check distroless base images
 echo "Checking distroless base images..."
-if docker pull gcr.io/distroless/python3-debian12:arm64 &> /dev/null; then
+if docker pull gcr.io/distroless/python3-debian12:latest &> /dev/null; then
     print_status 0 "Python distroless base image available"
 else
     print_status 1 "Python distroless base image not available"
     exit 1
 fi
 
-if docker pull gcr.io/distroless/base-debian12:arm64 &> /dev/null; then
+if docker pull gcr.io/distroless/base-debian12:latest &> /dev/null; then
     print_status 0 "Base distroless image available"
 else
     print_status 1 "Base distroless image not available"

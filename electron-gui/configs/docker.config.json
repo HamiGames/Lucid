@@ -1,0 +1,224 @@
+{
+  "enabled": true,
+  "host": "unix:///var/run/docker.sock",
+  "apiVersion": "1.40",
+  "timeout": 60000,
+  "retryAttempts": 3,
+  "retryDelay": 2000,
+  "containers": {
+    "lucid-gateway": {
+      "image": "lucid/gateway:latest",
+      "name": "lucid-gateway",
+      "ports": ["8080:8080", "8443:8443"],
+      "environment": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      },
+      "volumes": [
+        "./data/gateway:/app/data",
+        "./logs:/app/logs"
+      ],
+      "restart": "unless-stopped",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 10000,
+        "retries": 3,
+        "startPeriod": 60000,
+        "test": ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      }
+    },
+    "lucid-blockchain": {
+      "image": "lucid/blockchain:latest",
+      "name": "lucid-blockchain",
+      "ports": ["8545:8545", "30303:30303"],
+      "environment": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "NETWORK_ID": "1337",
+        "MINER_ENABLED": "true"
+      },
+      "volumes": [
+        "./data/blockchain:/app/data",
+        "./logs:/app/logs"
+      ],
+      "restart": "unless-stopped",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 10000,
+        "retries": 3,
+        "startPeriod": 120000,
+        "test": ["CMD", "curl", "-f", "http://localhost:8545"]
+      }
+    },
+    "lucid-session": {
+      "image": "lucid/session:latest",
+      "name": "lucid-session",
+      "ports": ["8081:8081"],
+      "environment": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "DATABASE_URL": "postgresql://lucid:password@localhost:5432/lucid"
+      },
+      "volumes": [
+        "./data/sessions:/app/data",
+        "./logs:/app/logs"
+      ],
+      "restart": "unless-stopped",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 10000,
+        "retries": 3,
+        "startPeriod": 60000,
+        "test": ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      }
+    },
+    "lucid-node": {
+      "image": "lucid/node:latest",
+      "name": "lucid-node",
+      "ports": ["8082:8082"],
+      "environment": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "POOL_ID": "default"
+      },
+      "volumes": [
+        "./data/nodes:/app/data",
+        "./logs:/app/logs"
+      ],
+      "restart": "unless-stopped",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 10000,
+        "retries": 3,
+        "startPeriod": 60000,
+        "test": ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      }
+    },
+    "lucid-auth": {
+      "image": "lucid/auth:latest",
+      "name": "lucid-auth",
+      "ports": ["8083:8083"],
+      "environment": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "JWT_SECRET": "CHANGE_ME_IN_PRODUCTION",
+        "DATABASE_URL": "postgresql://lucid:password@localhost:5432/lucid"
+      },
+      "volumes": [
+        "./data/auth:/app/data",
+        "./logs:/app/logs"
+      ],
+      "restart": "unless-stopped",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 10000,
+        "retries": 3,
+        "startPeriod": 60000,
+        "test": ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      }
+    },
+    "lucid-payment": {
+      "image": "lucid/payment:latest",
+      "name": "lucid-payment",
+      "ports": ["8084:8084"],
+      "environment": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "TRON_RPC_URL": "https://api.trongrid.io",
+        "TRON_PRIVATE_KEY": "CHANGE_ME_IN_PRODUCTION"
+      },
+      "volumes": [
+        "./data/payments:/app/data",
+        "./logs:/app/logs"
+      ],
+      "restart": "unless-stopped",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 10000,
+        "retries": 3,
+        "startPeriod": 60000,
+        "test": ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      }
+    }
+  },
+  "networks": {
+    "lucid-network": {
+      "driver": "bridge",
+      "subnet": "172.20.0.0/16",
+      "gateway": "172.20.0.1"
+    }
+  },
+  "volumes": {
+    "lucid-data": {
+      "driver": "local"
+    },
+    "lucid-logs": {
+      "driver": "local"
+    }
+  },
+  "compose": {
+    "version": "3.8",
+    "services": {
+      "lucid-gateway": {
+        "image": "lucid/gateway:latest",
+        "container_name": "lucid-gateway",
+        "ports": ["8080:8080", "8443:8443"],
+        "environment": {
+          "NODE_ENV": "production",
+          "LOG_LEVEL": "info"
+        },
+        "volumes": [
+          "./data/gateway:/app/data",
+          "./logs:/app/logs"
+        ],
+        "networks": ["lucid-network"],
+        "restart": "unless-stopped",
+        "depends_on": ["lucid-blockchain", "lucid-session"]
+      }
+    },
+    "networks": {
+      "lucid-network": {
+        "driver": "bridge"
+      }
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval": 30000,
+    "metrics": {
+      "cpu": true,
+      "memory": true,
+      "disk": true,
+      "network": true,
+      "containers": true
+    },
+    "alerts": {
+      "enabled": true,
+      "cpuThreshold": 80,
+      "memoryThreshold": 80,
+      "diskThreshold": 90
+    }
+  },
+  "backup": {
+    "enabled": true,
+    "schedule": "0 2 * * *",
+    "retention": 7,
+    "destination": "./backups",
+    "compress": true
+  },
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "driver": "json-file",
+    "options": {
+      "max-size": "10m",
+      "max-file": "3"
+    }
+  }
+}
