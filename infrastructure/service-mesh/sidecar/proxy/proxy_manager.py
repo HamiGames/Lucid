@@ -11,13 +11,22 @@ Dependencies: asyncio, subprocess, yaml
 import asyncio
 import logging
 import subprocess
-import yaml
 import os
 import signal
 import json
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
+
+# Optional import for yaml
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
+# Import Enum for ProxyStatus
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 

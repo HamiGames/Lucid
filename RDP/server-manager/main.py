@@ -19,9 +19,9 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
 # Import server manager components
-from .server_manager import RDPServerManager
-from .port_manager import PortManager
-from .config_manager import ConfigManager
+from server_manager import RDPServerManager
+from port_manager import PortManager
+from config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 

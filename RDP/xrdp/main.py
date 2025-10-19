@@ -19,8 +19,8 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
 # Import XRDP service components
-from .xrdp_service import XRDPServiceManager
-from .xrdp_config import XRDPConfigManager
+from xrdp_service import XRDPServiceManager
+from xrdp_config import XRDPConfigManager
 
 logger = logging.getLogger(__name__)
 

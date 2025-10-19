@@ -17,9 +17,9 @@ from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 
-from .session_controller import SessionController
-from .connection_manager import ConnectionManager
-from ..common.models import RdpSession, SessionStatus, SessionMetrics
+from session_controller import SessionController
+from connection_manager import ConnectionManager
+from common.models import RdpSession, SessionStatus, SessionMetrics
 
 # Configure logging
 logging.basicConfig(

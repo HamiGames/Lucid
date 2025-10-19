@@ -13,8 +13,14 @@ import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from concurrent import futures
-import grpc
-from grpc import aio
+
+# Optional import for grpc
+try:
+    import grpc
+    from grpc import aio
+    GRPC_AVAILABLE = True
+except ImportError:
+    GRPC_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +49,11 @@ class GRPCServer:
         """Initialize gRPC server."""
         try:
             logger.info(f"Initializing gRPC Server on port {self.port}...")
+            
+            if not GRPC_AVAILABLE:
+                logger.warning("gRPC library not available, using mock mode")
+                self.server = None
+                return
             
             # Create server
             self.server = aio.server(

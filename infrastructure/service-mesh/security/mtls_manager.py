@@ -13,11 +13,17 @@ import logging
 import ssl
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
-from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
 import os
+
+# Optional import for cryptography
+try:
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 

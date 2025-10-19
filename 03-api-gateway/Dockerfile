@@ -33,7 +33,6 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 COPY api/ ./api/
 COPY gateway/ ./gateway/
 COPY scripts/ ./scripts/
-COPY config/ ./config/
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app
@@ -57,7 +56,6 @@ COPY --from=builder /root/.local /home/app/.local
 COPY --from=builder /app/api /app/api
 COPY --from=builder /app/gateway /app/gateway
 COPY --from=builder /app/scripts /app/scripts
-COPY --from=builder /app/config /app/config
 
 # Set working directory
 WORKDIR /app

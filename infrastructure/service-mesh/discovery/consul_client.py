@@ -12,7 +12,13 @@ import asyncio
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-import consul.aio
+
+# Optional import for consul
+try:
+    import consul.aio
+    CONSUL_AVAILABLE = True
+except ImportError:
+    CONSUL_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +44,11 @@ class ConsulClient:
         """Initialize Consul client."""
         try:
             logger.info(f"Initializing Consul client: {self.host}:{self.port}")
+            
+            if not CONSUL_AVAILABLE:
+                logger.warning("Consul library not available, using mock mode")
+                self.consul = None
+                return
             
             # Create Consul client
             self.consul = consul.aio.Consul(host=self.host, port=self.port)

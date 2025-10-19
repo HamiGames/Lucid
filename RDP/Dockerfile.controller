@@ -23,15 +23,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY RDP/session-controller/requirements.txt ./requirements.txt
+COPY session-controller/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy source code
-COPY RDP/session-controller/ ./session-controller/
-COPY RDP/protocol/ ./protocol/
-COPY RDP/__init__.py ./__init__.py
+COPY session-controller/ ./session-controller/
+COPY protocol/ ./protocol/
+COPY __init__.py ./__init__.py
 
 # Stage 2: Runtime (Distroless)
 FROM gcr.io/distroless/python3-debian12
