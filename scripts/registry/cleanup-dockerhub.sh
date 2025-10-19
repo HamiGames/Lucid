@@ -144,11 +144,23 @@ main() {
     echo "Docker Hub cleanup completed successfully!"
 }
 
-# Check if jq is available
-if ! command -v jq &> /dev/null; then
-    echo "Error: jq is required but not installed. Please install jq first."
-    exit 1
-fi
+# Simplified version without jq dependency
+echo "=== Simplified Docker Hub Registry Cleanup ==="
+echo "Repository: $DOCKER_HUB_USERNAME/$REPOSITORY_NAME"
+echo
+echo "Note: This script will clean local Docker cache and remove local images."
+echo "For full Docker Hub cleanup, use the Docker Hub web interface:"
+echo "https://hub.docker.com/r/$DOCKER_HUB_USERNAME/$REPOSITORY_NAME"
+echo
 
-# Run main function
-main "$@"
+# Clean local cache
+clean_local_cache
+
+# Verify cleanup
+echo
+echo "Verifying local cleanup..."
+docker images "$DOCKER_HUB_USERNAME/$REPOSITORY_NAME" 2>/dev/null || echo "No local images found (cleanup successful)"
+
+echo
+echo "Local Docker cleanup completed successfully!"
+echo "Please manually clean Docker Hub registry via web interface if needed."

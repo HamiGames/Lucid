@@ -1,0 +1,277 @@
+# GUI API Bridge Service Configuration
+# Bridges Electron GUI with backend API services
+# Implements service discovery and API routing
+
+service:
+  name: gui-api-bridge
+  version: "1.0.0"
+  description: "API bridge service for Electron GUI integration"
+  cluster: gui-integration
+  phase: gui
+
+# API Configuration
+api:
+  version: "v1"
+  base_path: "/api/v1"
+  timeout: 30000
+  retry_attempts: 3
+  retry_delay: 1000
+
+# Service Discovery
+discovery:
+  enabled: true
+  method: "consul"
+  consul:
+    host: "lucid-service-mesh-controller"
+    port: 8500
+    datacenter: "lucid-dc"
+    service_name: "gui-api-bridge"
+    health_check_interval: "30s"
+    health_check_timeout: "10s"
+
+# Backend Service Endpoints
+backend_services:
+  api_gateway:
+    name: "lucid-api-gateway"
+    url: "http://lucid-api-gateway:8080"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+  blockchain_core:
+    name: "lucid-blockchain-core"
+    url: "http://lucid-blockchain-core:8084"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+  auth_service:
+    name: "lucid-auth-service"
+    url: "http://lucid-auth-service:8089"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+  session_api:
+    name: "lucid-session-api"
+    url: "http://lucid-session-api:8087"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+  node_management:
+    name: "lucid-node-management"
+    url: "http://lucid-node-management:8095"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+  admin_interface:
+    name: "lucid-admin-interface"
+    url: "http://lucid-admin-interface:8083"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+  tron_payment:
+    name: "lucid-tron-client"
+    url: "http://lucid-tron-client:8096"
+    health_check: "/health"
+    timeout: 30000
+    retry_attempts: 3
+
+# API Routing Configuration
+routing:
+  # User API Routes
+  user:
+    prefix: "/api/v1/user"
+    allowed_methods: ["GET", "POST"]
+    rate_limit: 100  # requests per minute
+    services:
+      - auth_service
+      - session_api
+      - api_gateway
+
+  # Developer API Routes
+  developer:
+    prefix: "/api/v1/developer"
+    allowed_methods: ["GET", "POST", "PUT", "DELETE"]
+    rate_limit: 500  # requests per minute
+    services:
+      - auth_service
+      - session_api
+      - blockchain_core
+      - api_gateway
+
+  # Node Operator API Routes
+  node:
+    prefix: "/api/v1/node"
+    allowed_methods: ["GET", "POST", "PUT"]
+    rate_limit: 200  # requests per minute
+    services:
+      - auth_service
+      - node_management
+      - api_gateway
+
+  # Admin API Routes
+  admin:
+    prefix: "/api/v1/admin"
+    allowed_methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    rate_limit: 1000  # requests per minute
+    services:
+      - auth_service
+      - admin_interface
+      - blockchain_core
+      - node_management
+      - api_gateway
+
+# Authentication Configuration
+authentication:
+  enabled: true
+  method: "jwt"
+  jwt:
+    secret_key_env: "JWT_SECRET_KEY"
+    access_token_expiry: 900  # 15 minutes
+    refresh_token_expiry: 604800  # 7 days
+    issuer: "lucid-gui-api-bridge"
+    audience: "lucid-gui"
+
+# Authorization Configuration
+authorization:
+  enabled: true
+  rbac:
+    enabled: true
+    roles:
+      user:
+        permissions: ["read:own_sessions", "create:session", "read:own_profile"]
+      developer:
+        permissions: ["read:all_sessions", "create:session", "update:session", "read:blockchain"]
+      node_operator:
+        permissions: ["read:node_status", "update:node_config", "read:earnings"]
+      admin:
+        permissions: ["*"]
+
+# Rate Limiting Configuration
+rate_limiting:
+  enabled: true
+  redis_url: "redis://lucid-redis:6379/1"
+  default_limit: 100  # requests per minute
+  burst_limit: 20
+  window_size: 60  # seconds
+
+# CORS Configuration
+cors:
+  enabled: true
+  allowed_origins:
+    - "http://localhost:*"
+    - "https://localhost:*"
+    - "file://*"  # For Electron apps
+  allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allowed_headers: ["Content-Type", "Authorization", "X-Requested-With"]
+  allow_credentials: true
+
+# Logging Configuration
+logging:
+  level: "info"
+  format: "json"
+  file: "/app/logs/gui-api-bridge.log"
+  max_size: "10MB"
+  max_files: 5
+  fields:
+    service: "gui-api-bridge"
+    version: "1.0.0"
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+    interval: "30s"
+  
+  health_checks:
+    enabled: true
+    interval: "30s"
+    timeout: "10s"
+    retries: 3
+
+  tracing:
+    enabled: true
+    jaeger_endpoint: "http://jaeger:14268/api/traces"
+    sample_rate: 0.1
+
+# Security Configuration
+security:
+  ssl:
+    enabled: false  # Handled by reverse proxy
+    cert_file: "/app/certs/server.crt"
+    key_file: "/app/certs/server.key"
+
+  headers:
+    enabled: true
+    content_security_policy: "default-src 'self'"
+    x_frame_options: "DENY"
+    x_content_type_options: "nosniff"
+    x_xss_protection: "1; mode=block"
+
+# Performance Configuration
+performance:
+  compression:
+    enabled: true
+    level: 6
+    threshold: 1024  # bytes
+
+  caching:
+    enabled: true
+    redis_url: "redis://lucid-redis:6379/2"
+    default_ttl: 300  # seconds
+    max_ttl: 3600  # seconds
+
+  connection_pooling:
+    enabled: true
+    max_connections: 100
+    max_idle_connections: 10
+    connection_timeout: 30000
+    idle_timeout: 60000
+
+# Error Handling Configuration
+error_handling:
+  enabled: true
+  log_errors: true
+  error_format: "json"
+  include_stack_trace: false
+  
+  custom_errors:
+    - code: "LUCID_ERR_5001"
+      message: "GUI API Bridge internal error"
+      status: 500
+    - code: "LUCID_ERR_5002"
+      message: "Backend service unavailable"
+      status: 503
+    - code: "LUCID_ERR_5003"
+      message: "Service discovery failed"
+      status: 503
+
+# WebSocket Configuration
+websocket:
+  enabled: true
+  path: "/ws"
+  ping_interval: 30  # seconds
+  pong_timeout: 10  # seconds
+  max_connections: 1000
+
+# File Upload Configuration
+file_upload:
+  enabled: true
+  max_file_size: "100MB"
+  allowed_types: ["application/octet-stream", "text/plain"]
+  upload_path: "/tmp/uploads"
+  cleanup_interval: "1h"
+
+# Configuration Validation
+validation:
+  enabled: true
+  strict_mode: true
+  validate_requests: true
+  validate_responses: false  # Backend handles response validation

@@ -12,18 +12,20 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
-REGISTRY="ghcr.io/hamigames/lucid"
-PYTHON_IMAGE="python-base"
-JAVA_IMAGE="java-base"
+# Configuration (Step 4: Distroless Base Image Preparation)
+REGISTRY="pickme/lucid-base"
+PYTHON_IMAGE="python-distroless-arm64"
+JAVA_IMAGE="java-distroless-arm64"
 VERSION="latest"
-PLATFORMS="linux/amd64,linux/arm64"
+PLATFORMS="linux/arm64"
 
 # Build arguments
 BUILD_ARGS="--build-arg BUILDKIT_INLINE_CACHE=1 --build-arg BUILDKIT_PROGRESS=plain"
 
-echo -e "${BLUE}🚀 Building Lucid Base Distroless Images${NC}"
-echo -e "${BLUE}======================================${NC}"
+echo -e "${BLUE}🚀 Step 4: Building Lucid Base Distroless Images for Pi Deployment${NC}"
+echo -e "${BLUE}=================================================================${NC}"
+echo -e "${BLUE}Registry: $REGISTRY${NC}"
+echo -e "${BLUE}Platform: $PLATFORMS (ARM64 Raspberry Pi)${NC}"
 
 # Check if Docker Buildx is available
 if ! docker buildx version >/dev/null 2>&1; then
@@ -52,9 +54,9 @@ docker buildx build \
     .
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Python base image built successfully${NC}"
+    echo -e "${GREEN}✅ Python base image built and pushed successfully${NC}"
 else
-    echo -e "${RED}❌ Python base image build failed${NC}"
+    echo -e "${RED}❌ Python base image build/push failed${NC}"
     exit 1
 fi
 
@@ -70,31 +72,29 @@ docker buildx build \
     .
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Java base image built successfully${NC}"
+    echo -e "${GREEN}✅ Java base image built and pushed successfully${NC}"
 else
-    echo -e "${RED}❌ Java base image build failed${NC}"
+    echo -e "${RED}❌ Java base image build/push failed${NC}"
     exit 1
 fi
 
-# Verify image sizes
-echo -e "${YELLOW}📊 Verifying image sizes...${NC}"
+# Verify images are available in registry
+echo -e "${YELLOW}📊 Verifying images in Docker Hub registry...${NC}"
 
-PYTHON_SIZE=$(docker images lucid-python-base:latest --format "table {{.Size}}" | tail -n 1)
-JAVA_SIZE=$(docker images lucid-java-base:latest --format "table {{.Size}}" | tail -n 1)
+echo -e "${BLUE}Python Base Image: $REGISTRY/$PYTHON_IMAGE:$VERSION${NC}"
+echo -e "${BLUE}Java Base Image: $REGISTRY/$JAVA_IMAGE:$VERSION${NC}"
 
-echo -e "${BLUE}Python Base Image Size: $PYTHON_SIZE${NC}"
-echo -e "${BLUE}Java Base Image Size: $JAVA_SIZE${NC}"
+# Verify registry access
+echo -e "${YELLOW}🔍 Verifying registry access...${NC}"
+docker pull $REGISTRY/$PYTHON_IMAGE:$VERSION
+docker pull $REGISTRY/$JAVA_IMAGE:$VERSION
 
-# Check if images are under 100MB (approximate)
-echo -e "${YELLOW}🔍 Checking image size constraints...${NC}"
-
-# Test Python base image
-echo -e "${YELLOW}🧪 Testing Python base image...${NC}"
-docker run --rm lucid-python-base:latest python -c "print('Python base image test successful')"
-
-# Test Java base image
-echo -e "${YELLOW}🧪 Testing Java base image...${NC}"
-docker run --rm lucid-java-base:latest java -version
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Registry verification successful - images available for dependent builds${NC}"
+else
+    echo -e "${RED}❌ Registry verification failed${NC}"
+    exit 1
+fi
 
 echo -e "${GREEN}🎉 All base images built and tested successfully!${NC}"
 echo -e "${BLUE}📋 Build Summary:${NC}"

@@ -1,0 +1,51 @@
+# LUCID MongoDB Container - SPEC-1B Implementation
+# Distroless container for MongoDB database
+
+# syntax=docker/dockerfile:1.7
+
+# Stage 1: Builder
+FROM mongo:7.0 AS builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+# Install additional tools for customization
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create custom MongoDB configuration
+RUN echo "storage:\n  dbPath: /data/db\n  journal:\n    enabled: true\n  wiredTiger:\n    engineConfig:\n      cacheSizeGB: 0.5\nnet:\n  port: 27017\n  bindIpAll: true\nsecurity:\n  authorization: enabled\n  javascriptEnabled: false\noperationProfiling:\n  slowOpThresholdMs: 100\n  mode: slowOp\nreplication:\n  replSetName: lucid-replica-set" > /etc/mongod.conf
+
+# Stage 2: Runtime (Distroless)
+FROM gcr.io/distroless/base-debian12:nonroot
+
+# Copy MongoDB binary and configuration
+COPY --from=builder /usr/bin/mongod /usr/bin/mongod
+COPY --from=builder /usr/bin/mongo /usr/bin/mongo
+COPY --from=builder /etc/mongod.conf /etc/mongod.conf
+
+# Create data directory
+RUN mkdir -p /data/db /data/logs
+
+# Set environment variables
+ENV MONGO_INITDB_ROOT_USERNAME=lucid_admin
+ENV MONGO_INITDB_ROOT_PASSWORD=lucid_secure_password
+ENV MONGO_INITDB_DATABASE=lucid_rdp
+
+# Set working directory
+WORKDIR /data
+
+# Create non-root user
+USER nonroot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["/usr/bin/mongo", "--eval", "db.adminCommand('ping')"]
+
+# Expose port
+EXPOSE 27017
+
+# Run MongoDB
+ENTRYPOINT ["/usr/bin/mongod", "--config", "/etc/mongod.conf"]

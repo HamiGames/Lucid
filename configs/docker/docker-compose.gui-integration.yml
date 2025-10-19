@@ -1,0 +1,195 @@
+# GUI-Docker Integration Configuration
+# Integrates Electron GUI with Docker backend services
+# Step 33: GUI Environment Configuration from lucid-container-build-plan.plan.md
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # GUI BACKEND SERVICES
+  # ===========================================
+
+  # GUI API Bridge Service
+  gui-api-bridge:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-api-bridge:${LUCID_TAG:-latest}
+    container_name: lucid-gui-api-bridge
+    restart: unless-stopped
+    ports:
+      - "8097:8097"
+    environment:
+      - SERVICE_NAME=lucid-gui-api-bridge
+      - PORT=8097
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - GUI_INTEGRATION_ENABLED=true
+      - TOR_PROXY_ENABLED=true
+      - TOR_SOCKS_PORT=9050
+      - TOR_CONTROL_PORT=9051
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - SESSION_API_URL=http://lucid-session-api:8087
+      - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
+      - ADMIN_INTERFACE_URL=http://lucid-admin-interface:8083
+      - TRON_PAYMENT_URL=http://lucid-tron-client:8096
+    volumes:
+      - gui_bridge_logs:/app/logs
+      - gui_bridge_data:/app/data
+    networks:
+      - lucid-dev
+      - lucid-gui-network
+    depends_on:
+      lucid-api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=gui-api-bridge"
+      - "com.lucid.cluster=gui-integration"
+
+  # GUI Docker Manager Service
+  gui-docker-manager:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-docker-manager:${LUCID_TAG:-latest}
+    container_name: lucid-gui-docker-manager
+    restart: unless-stopped
+    ports:
+      - "8098:8098"
+    environment:
+      - SERVICE_NAME=lucid-gui-docker-manager
+      - PORT=8098
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_API_VERSION=1.40
+      - GUI_ACCESS_LEVELS_ENABLED=true
+      - USER_SERVICES=foundation,core
+      - DEVELOPER_SERVICES=foundation,core,application
+      - ADMIN_SERVICES=foundation,core,application,support
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - gui_docker_logs:/app/logs
+      - gui_docker_data:/app/data
+    networks:
+      - lucid-dev
+      - lucid-gui-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=gui-docker-manager"
+      - "com.lucid.cluster=gui-integration"
+
+  # GUI Tor Manager Service
+  gui-tor-manager:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-tor-manager:${LUCID_TAG:-latest}
+    container_name: lucid-gui-tor-manager
+    restart: unless-stopped
+    ports:
+      - "9050:9050"  # SOCKS5 proxy
+      - "9051:9051"  # Control port
+    environment:
+      - SERVICE_NAME=lucid-gui-tor-manager
+      - TOR_SOCKS_PORT=9050
+      - TOR_CONTROL_PORT=9051
+      - TOR_DATA_DIR=/app/tor-data
+      - TOR_LOG_LEVEL=notice
+      - GUI_TOR_INTEGRATION=true
+      - ONION_ADDRESS_MASKING=true
+    volumes:
+      - tor_data:/app/tor-data
+      - gui_tor_logs:/app/logs
+    networks:
+      - lucid-gui-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f --socks5-hostname localhost:9050 http://check.torproject.org/api/ip || exit 1"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=gui-tor-manager"
+      - "com.lucid.cluster=gui-integration"
+
+  # GUI Hardware Wallet Service
+  gui-hardware-wallet:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-hardware-wallet:${LUCID_TAG:-latest}
+    container_name: lucid-gui-hardware-wallet
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    environment:
+      - SERVICE_NAME=lucid-gui-hardware-wallet
+      - PORT=8099
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - HARDWARE_WALLET_ENABLED=true
+      - LEDGER_ENABLED=true
+      - TREZOR_ENABLED=true
+      - KEEPKEY_ENABLED=true
+      - TRON_WALLET_SUPPORT=true
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb:ro
+      - gui_hardware_logs:/app/logs
+      - gui_hardware_data:/app/data
+    networks:
+      - lucid-gui-network
+    privileged: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=gui-hardware-wallet"
+      - "com.lucid.cluster=gui-integration"
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  # GUI-specific network for secure communication
+  lucid-gui-network:
+    name: lucid-gui-network
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  # GUI service volumes
+  gui_bridge_logs:
+    driver: local
+  gui_bridge_data:
+    driver: local
+  gui_docker_logs:
+    driver: local
+  gui_docker_data:
+    driver: local
+  gui_tor_logs:
+    driver: local
+  tor_data:
+    driver: local
+  gui_hardware_logs:
+    driver: local
+  gui_hardware_data:
+    driver: local

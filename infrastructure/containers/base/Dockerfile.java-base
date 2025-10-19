@@ -4,7 +4,7 @@
 # LUCID-STRICT Mode: Enhanced security with minimal attack surface
 
 # syntax=docker/dockerfile:1.7
-FROM openjdk:17-jdk-slim-bookworm AS java-builder
+FROM openjdk:17-jdk-slim AS java-builder
 
 # Build arguments for multi-platform support
 ARG BUILDPLATFORM
@@ -56,16 +56,17 @@ COPY ./gradle.properties /app/
 RUN if [ -f pom.xml ]; then mvn dependency:go-offline -B; fi
 RUN if [ -f build.gradle ]; then gradle dependencies --no-daemon; fi
 
-# Stage 2: Distroless runtime
+# Stage 2: Distroless runtime (ARM64 optimized for Pi deployment)
 FROM gcr.io/distroless/java17-debian12:latest
 
 # Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Java base distroless runtime for Lucid services" \
+      version="1.0.0-distroless-arm64" \
+      description="Java base distroless runtime for Lucid services (ARM64 Pi optimized)" \
       org.lucid.plane="infrastructure" \
       org.lucid.service="java-base" \
-      org.lucid.stage="runtime"
+      org.lucid.stage="runtime" \
+      org.lucid.target="raspberry-pi"
 
 # Set runtime environment
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \

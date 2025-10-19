@@ -45,16 +45,17 @@ RUN pip install --no-cache-dir \
     python-dateutil \
     orjson
 
-# Stage 2: Distroless runtime
+# Stage 2: Distroless runtime (ARM64 optimized for Pi deployment)
 FROM gcr.io/distroless/python3-debian12:latest
 
 # Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Python base distroless runtime for Lucid services" \
+      version="1.0.0-distroless-arm64" \
+      description="Python base distroless runtime for Lucid services (ARM64 Pi optimized)" \
       org.lucid.plane="infrastructure" \
       org.lucid.service="python-base" \
-      org.lucid.stage="runtime"
+      org.lucid.stage="runtime" \
+      org.lucid.target="raspberry-pi"
 
 # Set runtime environment
 ENV PYTHONDONTWRITEBYTECODE=1 \

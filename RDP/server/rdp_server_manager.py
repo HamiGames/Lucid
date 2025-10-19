@@ -1,429 +1,657 @@
-# LUCID RDP Server Manager - Main RDP server coordination
-# LUCID-STRICT Layer 2 Service Integration
-# Multi-platform support for Pi 5 ARM64
-
-from __future__ import annotations
+#!/usr/bin/env python3
+"""
+LUCID RDP Server Manager - SPEC-1B Implementation
+Manages RDP server instances and session hosting
+"""
 
 import asyncio
 import logging
-import os
-import signal
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field
+import time
+import subprocess
+import psutil
+import socket
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta
 from enum import Enum
+import json
+import threading
+import os
 
-import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-import httpx
-
-# Database integration
-try:
-    from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-    HAS_MOTOR = True
-except ImportError:
-    HAS_MOTOR = False
-    AsyncIOMotorClient = None
-    AsyncIOMotorDatabase = None
-
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
-RDP_SESSIONS_PATH = Path(os.getenv("RDP_SESSIONS_PATH", "/data/sessions"))
-RDP_RECORDINGS_PATH = Path(os.getenv("RDP_RECORDINGS_PATH", "/data/recordings"))
-RDP_DISPLAY_PATH = Path(os.getenv("RDP_DISPLAY_PATH", "/data/display"))
-XRDP_PORT = int(os.getenv("XRDP_PORT", "3389"))
-MAX_CONCURRENT_SESSIONS = int(os.getenv("MAX_CONCURRENT_SESSIONS", "5"))
-
-
-class SessionStatus(Enum):
-    """RDP session status states"""
-    CREATING = "creating"
-    ACTIVE = "active"
-    RECORDING = "recording"
-    PAUSED = "paused"
+class RDPStatus(Enum):
+    """RDP server status"""
+    STOPPED = "stopped"
+    STARTING = "starting"
+    RUNNING = "running"
     STOPPING = "stopping"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    ERROR = "error"
 
+class SessionType(Enum):
+    """RDP session type"""
+    USER_SESSION = "user_session"
+    ADMIN_SESSION = "admin_session"
+    GUEST_SESSION = "guest_session"
 
 @dataclass
-class RDPSession:
-    """RDP session metadata"""
-    session_id: str
-    owner_address: str
-    node_id: str
-    status: SessionStatus
-    created_at: datetime
-    started_at: Optional[datetime] = None
-    ended_at: Optional[datetime] = None
-    recording_path: Optional[Path] = None
-    display_config: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+class RDPConfig:
+    """RDP server configuration"""
+    base_port: int = 3389
+    max_servers: int = 10
+    session_timeout_minutes: int = 480  # 8 hours
+    server_startup_timeout: int = 30
+    xrdp_config_path: str = "/etc/xrdp"
+    xrdp_log_path: str = "/var/log/xrdp"
+    desktop_environment: str = "xfce4"
+    resolution: str = "1920x1080"
+    color_depth: int = 16
+    encryption_level: str = "high"
 
+@dataclass
+class RDPServer:
+    """RDP server instance"""
+    server_id: str
+    port: int
+    session_id: str
+    user_id: str
+    status: RDPStatus
+    config: Dict[str, Any]
+    process_id: Optional[int] = None
+    start_time: Optional[datetime] = None
+    last_activity: Optional[datetime] = None
+    connection_count: int = 0
+    error_message: Optional[str] = None
+
+@dataclass
+class RDPConnection:
+    """RDP connection information"""
+    connection_id: str
+    server_id: str
+    client_ip: str
+    client_port: int
+    connected_at: datetime
+    last_activity: datetime
+    session_type: SessionType
+    is_active: bool = True
 
 class RDPServerManager:
     """
-    Main RDP server manager for Lucid RDP system.
+    LUCID RDP Server Manager
     
-    Coordinates RDP session hosting, xrdp integration, and session recording.
-    Implements LUCID-STRICT Layer 2 Service Integration requirements.
+    Manages RDP server instances with:
+    1. Dynamic server creation and destruction
+    2. Port management and allocation
+    3. Session monitoring and cleanup
+    4. Resource usage tracking
+    5. XRDP integration
     """
     
-    def __init__(self):
-        """Initialize RDP server manager"""
-        self.app = FastAPI(
-            title="Lucid RDP Server Manager",
-            description="RDP server coordination for Lucid RDP system",
-            version="1.0.0"
-        )
+    def __init__(self, config: RDPConfig):
+        self.config = config
+        self.servers: Dict[str, RDPServer] = {}
+        self.connections: Dict[str, RDPConnection] = {}
+        self.available_ports: List[int] = []
+        self.used_ports: set = set()
+        self.monitoring_active = False
+        self.cleanup_task: Optional[asyncio.Task] = None
         
-        # Database connection
-        self.db_client: Optional[AsyncIOMotorClient] = None
-        self.db: Optional[AsyncIOMotorDatabase] = None
+        # Initialize available ports
+        self._initialize_ports()
         
-        # Session tracking
-        self.active_sessions: Dict[str, RDPSession] = {}
-        self.session_tasks: Dict[str, asyncio.Task] = {}
+    def _initialize_ports(self):
+        """Initialize available port pool"""
+        self.available_ports = list(range(
+            self.config.base_port,
+            self.config.base_port + self.config.max_servers
+        ))
         
-        # Service URLs
-        self.session_orchestrator_url = os.getenv(
-            "SESSION_ORCHESTRATOR_URL", 
-            "http://session-orchestrator:8084"
-        )
+    async def initialize(self) -> bool:
+        """
+        Initialize RDP server manager
         
-        # Setup routes
-        self._setup_routes()
-        
-        # Create directories
-        self._create_directories()
+        Returns:
+            success: True if initialization successful
+        """
+        try:
+            logger.info("Initializing RDP server manager")
+            
+            # Check XRDP installation
+            if not await self._check_xrdp_installation():
+                logger.error("XRDP not installed or not accessible")
+                return False
+            
+            # Start monitoring
+            self.monitoring_active = True
+            self.cleanup_task = asyncio.create_task(self._cleanup_monitor())
+            
+            logger.info("RDP server manager initialized successfully")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize RDP server manager: {e}")
+            return False
     
-    def _create_directories(self) -> None:
-        """Create required directories"""
-        for path in [RDP_SESSIONS_PATH, RDP_RECORDINGS_PATH, RDP_DISPLAY_PATH]:
-            path.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Created directory: {path}")
-    
-    def _setup_routes(self) -> None:
-        """Setup FastAPI routes"""
-        
-        @self.app.get("/health")
-        async def health_check():
-            """Health check endpoint"""
-            return {
-                "status": "healthy",
-                "service": "rdp-server-manager",
-                "active_sessions": len(self.active_sessions),
-                "max_sessions": MAX_CONCURRENT_SESSIONS
-            }
-        
-        @self.app.post("/sessions/create")
-        async def create_rdp_session(request: CreateSessionRequest):
-            """Create new RDP session"""
-            return await self.create_session(
-                owner_address=request.owner_address,
-                node_id=request.node_id,
-                metadata=request.metadata
+    async def _check_xrdp_installation(self) -> bool:
+        """Check if XRDP is installed and accessible"""
+        try:
+            # Check if xrdp service exists
+            result = subprocess.run(
+                ["systemctl", "is-active", "xrdp"],
+                capture_output=True,
+                text=True,
+                timeout=10
             )
-        
-        @self.app.get("/sessions/{session_id}")
-        async def get_session(session_id: str):
-            """Get session information"""
-            if session_id not in self.active_sessions:
-                raise HTTPException(404, "Session not found")
             
-            session = self.active_sessions[session_id]
-            return {
-                "session_id": session.session_id,
-                "status": session.status.value,
-                "created_at": session.created_at.isoformat(),
-                "started_at": session.started_at.isoformat() if session.started_at else None,
-                "recording_path": str(session.recording_path) if session.recording_path else None
-            }
-        
-        @self.app.post("/sessions/{session_id}/start")
-        async def start_session(session_id: str):
-            """Start RDP session"""
-            return await self.start_rdp_session(session_id)
-        
-        @self.app.post("/sessions/{session_id}/stop")
-        async def stop_session(session_id: str):
-            """Stop RDP session"""
-            return await self.stop_rdp_session(session_id)
-        
-        @self.app.get("/sessions")
-        async def list_sessions():
-            """List all active sessions"""
-            return {
-                "sessions": [
-                    {
-                        "session_id": session.session_id,
-                        "owner_address": session.owner_address,
-                        "status": session.status.value,
-                        "created_at": session.created_at.isoformat()
-                    }
-                    for session in self.active_sessions.values()
-                ]
-            }
-    
-    async def _setup_database(self) -> None:
-        """Setup database connection"""
-        if not HAS_MOTOR:
-            logger.warning("Motor not available, database operations disabled")
-            return
-        
-        try:
-            self.db_client = AsyncIOMotorClient(MONGODB_URL)
-            self.db = self.db_client.lucid
-            
-            # Test connection
-            await self.db_client.admin.command('ping')
-            logger.info("Database connection established")
-            
-            # Create indexes
-            await self._create_database_indexes()
-            
+            if result.returncode == 0:
+                logger.info("XRDP service is active")
+                return True
+            else:
+                logger.warning("XRDP service is not active")
+                
+                # Try to start XRDP service
+                start_result = subprocess.run(
+                    ["sudo", "systemctl", "start", "xrdp"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if start_result.returncode == 0:
+                    logger.info("XRDP service started successfully")
+                    return True
+                else:
+                    logger.error(f"Failed to start XRDP service: {start_result.stderr}")
+                    return False
+                    
         except Exception as e:
-            logger.error(f"Database setup failed: {e}")
-            self.db_client = None
-            self.db = None
+            logger.error(f"Failed to check XRDP installation: {e}")
+            return False
     
-    async def _create_database_indexes(self) -> None:
-        """Create database indexes for RDP sessions"""
-        if not self.db:
-            return
+    async def create_server(self, session_id: str, user_id: str, session_config: Dict[str, Any]) -> Optional[str]:
+        """
+        Create new RDP server instance
         
+        Args:
+            session_id: Session identifier
+            user_id: User identifier
+            session_config: Session configuration
+            
+        Returns:
+            server_id: Created server identifier or None if failed
+        """
         try:
-            # RDP sessions collection
-            await self.db.rdp_sessions.create_index("session_id", unique=True)
-            await self.db.rdp_sessions.create_index("owner_address")
-            await self.db.rdp_sessions.create_index("status")
-            await self.db.rdp_sessions.create_index("created_at")
+            # Check server limit
+            if len(self.servers) >= self.config.max_servers:
+                logger.warning(f"Maximum server limit reached: {self.config.max_servers}")
+                return None
             
-            logger.info("Database indexes created")
+            # Get available port
+            if not self.available_ports:
+                logger.warning("No available ports for new RDP server")
+                return None
             
-        except Exception as e:
-            logger.error(f"Database index creation failed: {e}")
-    
-    async def create_session(self, 
-                           owner_address: str, 
-                           node_id: str,
-                           metadata: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Create new RDP session"""
-        try:
-            # Check session limits
-            if len(self.active_sessions) >= MAX_CONCURRENT_SESSIONS:
-                raise HTTPException(429, "Maximum concurrent sessions reached")
+            port = self.available_ports.pop(0)
+            self.used_ports.add(port)
             
-            # Generate session ID
-            session_id = f"rdp_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{os.urandom(4).hex()}"
+            # Generate server ID
+            server_id = f"rdp_server_{session_id}_{int(time.time())}"
             
-            # Create session object
-            session = RDPSession(
+            # Create server configuration
+            server_config = {
+                "session_id": session_id,
+                "user_id": user_id,
+                "port": port,
+                "desktop_environment": session_config.get("desktop_environment", self.config.desktop_environment),
+                "resolution": session_config.get("resolution", self.config.resolution),
+                "color_depth": session_config.get("color_depth", self.config.color_depth),
+                "encryption_level": session_config.get("encryption_level", self.config.encryption_level)
+            }
+            
+            # Create server instance
+            server = RDPServer(
+                server_id=server_id,
+                port=port,
                 session_id=session_id,
-                owner_address=owner_address,
-                node_id=node_id,
-                status=SessionStatus.CREATING,
-                created_at=datetime.now(timezone.utc),
-                metadata=metadata or {}
+                user_id=user_id,
+                status=RDPStatus.STARTING,
+                config=server_config
             )
             
-            # Store in memory
-            self.active_sessions[session_id] = session
+            self.servers[server_id] = server
             
-            # Store in database
-            if self.db:
-                await self.db.rdp_sessions.insert_one(session.__dict__)
+            # Start RDP server
+            success = await self._start_rdp_server(server)
             
-            logger.info(f"Created RDP session: {session_id}")
+            if success:
+                server.status = RDPStatus.RUNNING
+                server.start_time = datetime.utcnow()
+                server.last_activity = datetime.utcnow()
+                
+                logger.info(f"RDP server {server_id} created on port {port}")
+                return server_id
+            else:
+                # Cleanup failed server
+                del self.servers[server_id]
+                self.available_ports.append(port)
+                self.used_ports.discard(port)
+                
+                logger.error(f"Failed to start RDP server {server_id}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to create RDP server: {e}")
+            return None
+    
+    async def _start_rdp_server(self, server: RDPServer) -> bool:
+        """Start RDP server process"""
+        try:
+            # Create XRDP session configuration
+            session_config_path = f"/etc/xrdp/sesman.ini"
             
-            return {
-                "session_id": session_id,
-                "status": session.status.value,
-                "created_at": session.created_at.isoformat(),
-                "rdp_port": XRDP_PORT,
-                "connection_info": {
-                    "host": "localhost",
-                    "port": XRDP_PORT,
-                    "username": f"lucid_{session_id[:8]}",
-                    "password": f"lucid_{session_id[-8:]}"
+            # Start XRDP session
+            cmd = [
+                "xrdp-sesman",
+                "--config", session_config_path,
+                "--port", str(server.port),
+                "--desktop", server.config["desktop_environment"],
+                "--geometry", server.config["resolution"],
+                "--depth", str(server.config["color_depth"])
+            ]
+            
+            # Start process
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            server.process_id = process.pid
+            
+            # Wait for server to start
+            await asyncio.sleep(2)
+            
+            # Check if process is running
+            if process.poll() is None:
+                logger.info(f"RDP server {server.server_id} started with PID {process.pid}")
+                return True
+            else:
+                stdout, stderr = process.communicate()
+                logger.error(f"RDP server failed to start: {stderr}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to start RDP server process: {e}")
+            return False
+    
+    async def stop_server(self, server_id: str) -> bool:
+        """
+        Stop RDP server instance
+        
+        Args:
+            server_id: Server identifier
+            
+        Returns:
+            success: True if stopped successfully
+        """
+        try:
+            if server_id not in self.servers:
+                logger.warning(f"Server {server_id} not found")
+                return False
+            
+            server = self.servers[server_id]
+            
+            if server.status == RDPStatus.STOPPED:
+                logger.info(f"Server {server_id} already stopped")
+                return True
+            
+            server.status = RDPStatus.STOPPING
+            
+            # Stop server process
+            if server.process_id:
+                try:
+                    process = psutil.Process(server.process_id)
+                    process.terminate()
+                    
+                    # Wait for graceful shutdown
+                    try:
+                        process.wait(timeout=10)
+                    except psutil.TimeoutExpired:
+                        # Force kill if needed
+                        process.kill()
+                        process.wait()
+                    
+                    logger.info(f"RDP server {server_id} process stopped")
+                    
+                except psutil.NoSuchProcess:
+                    logger.warning(f"Process {server.process_id} not found")
+                except Exception as e:
+                    logger.error(f"Failed to stop process {server.process_id}: {e}")
+            
+            # Cleanup connections
+            await self._cleanup_server_connections(server_id)
+            
+            # Release port
+            if server.port in self.used_ports:
+                self.used_ports.discard(server.port)
+                self.available_ports.append(server.port)
+            
+            # Update server status
+            server.status = RDPStatus.STOPPED
+            server.process_id = None
+            
+            logger.info(f"RDP server {server_id} stopped successfully")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to stop RDP server {server_id}: {e}")
+            return False
+    
+    async def get_server_info(self, server_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get RDP server information
+        
+        Args:
+            server_id: Server identifier
+            
+        Returns:
+            server_info: Server information or None if not found
+        """
+        if server_id not in self.servers:
+            return None
+        
+        server = self.servers[server_id]
+        
+        # Get process info
+        process_info = None
+        if server.process_id:
+            try:
+                process = psutil.Process(server.process_id)
+                process_info = {
+                    "pid": process.pid,
+                    "cpu_percent": process.cpu_percent(),
+                    "memory_mb": process.memory_info().rss / 1024 / 1024,
+                    "status": process.status(),
+                    "create_time": datetime.fromtimestamp(process.create_time())
                 }
-            }
-            
-        except Exception as e:
-            logger.error(f"Session creation failed: {e}")
-            raise HTTPException(500, f"Session creation failed: {str(e)}")
+            except psutil.NoSuchProcess:
+                process_info = {"error": "Process not found"}
+        
+        # Get connection info
+        server_connections = [
+            conn for conn in self.connections.values()
+            if conn.server_id == server_id and conn.is_active
+        ]
+        
+        return {
+            "server_id": server.server_id,
+            "session_id": server.session_id,
+            "user_id": server.user_id,
+            "port": server.port,
+            "status": server.status.value,
+            "config": server.config,
+            "process_info": process_info,
+            "start_time": server.start_time.isoformat() if server.start_time else None,
+            "last_activity": server.last_activity.isoformat() if server.last_activity else None,
+            "connection_count": len(server_connections),
+            "connections": [
+                {
+                    "connection_id": conn.connection_id,
+                    "client_ip": conn.client_ip,
+                    "connected_at": conn.connected_at.isoformat(),
+                    "session_type": conn.session_type.value
+                }
+                for conn in server_connections
+            ],
+            "error_message": server.error_message
+        }
     
-    async def start_rdp_session(self, session_id: str) -> Dict[str, Any]:
-        """Start RDP session"""
-        if session_id not in self.active_sessions:
-            raise HTTPException(404, "Session not found")
+    async def get_all_servers(self) -> List[Dict[str, Any]]:
+        """Get information for all RDP servers"""
+        server_infos = []
+        for server_id in self.servers:
+            server_info = await self.get_server_info(server_id)
+            if server_info:
+                server_infos.append(server_info)
+        return server_infos
+    
+    async def add_connection(self, server_id: str, client_ip: str, client_port: int, session_type: SessionType) -> Optional[str]:
+        """
+        Add new connection to server
         
-        session = self.active_sessions[session_id]
-        
+        Args:
+            server_id: Server identifier
+            client_ip: Client IP address
+            client_port: Client port
+            session_type: Type of session
+            
+        Returns:
+            connection_id: Connection identifier or None if failed
+        """
         try:
-            # Update status
-            session.status = SessionStatus.ACTIVE
-            session.started_at = datetime.now(timezone.utc)
+            if server_id not in self.servers:
+                logger.warning(f"Server {server_id} not found")
+                return None
             
-            # Setup recording path
-            session.recording_path = RDP_RECORDINGS_PATH / session_id
-            session.recording_path.mkdir(parents=True, exist_ok=True)
+            server = self.servers[server_id]
             
-            # Start session task
-            task = asyncio.create_task(self._run_rdp_session(session))
-            self.session_tasks[session_id] = task
+            if server.status != RDPStatus.RUNNING:
+                logger.warning(f"Server {server_id} is not running")
+                return None
             
-            # Update database
-            if self.db:
-                await self.db.rdp_sessions.update_one(
-                    {"session_id": session_id},
-                    {"$set": {
-                        "status": session.status.value,
-                        "started_at": session.started_at,
-                        "recording_path": str(session.recording_path)
-                    }}
-                )
+            # Create connection
+            connection_id = f"conn_{server_id}_{int(time.time())}"
+            connection = RDPConnection(
+                connection_id=connection_id,
+                server_id=server_id,
+                client_ip=client_ip,
+                client_port=client_port,
+                connected_at=datetime.utcnow(),
+                last_activity=datetime.utcnow(),
+                session_type=session_type
+            )
             
-            logger.info(f"Started RDP session: {session_id}")
+            self.connections[connection_id] = connection
             
-            return {
-                "session_id": session_id,
-                "status": session.status.value,
-                "started_at": session.started_at.isoformat(),
-                "recording_path": str(session.recording_path)
-            }
+            # Update server connection count
+            server.connection_count += 1
+            server.last_activity = datetime.utcnow()
+            
+            logger.info(f"Connection {connection_id} added to server {server_id}")
+            
+            return connection_id
             
         except Exception as e:
-            logger.error(f"Session start failed: {e}")
-            session.status = SessionStatus.FAILED
-            raise HTTPException(500, f"Session start failed: {str(e)}")
+            logger.error(f"Failed to add connection: {e}")
+            return None
     
-    async def stop_rdp_session(self, session_id: str) -> Dict[str, Any]:
-        """Stop RDP session"""
-        if session_id not in self.active_sessions:
-            raise HTTPException(404, "Session not found")
+    async def remove_connection(self, connection_id: str) -> bool:
+        """
+        Remove connection
         
-        session = self.active_sessions[session_id]
+        Args:
+            connection_id: Connection identifier
+            
+        Returns:
+            success: True if removed successfully
+        """
+        try:
+            if connection_id not in self.connections:
+                logger.warning(f"Connection {connection_id} not found")
+                return False
+            
+            connection = self.connections[connection_id]
+            
+            # Update server connection count
+            if connection.server_id in self.servers:
+                server = self.servers[connection.server_id]
+                server.connection_count = max(0, server.connection_count - 1)
+            
+            # Remove connection
+            del self.connections[connection_id]
+            
+            logger.info(f"Connection {connection_id} removed")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to remove connection: {e}")
+            return False
+    
+    async def _cleanup_server_connections(self, server_id: str):
+        """Cleanup all connections for a server"""
+        connections_to_remove = [
+            conn_id for conn_id, conn in self.connections.items()
+            if conn.server_id == server_id
+        ]
         
+        for conn_id in connections_to_remove:
+            await self.remove_connection(conn_id)
+    
+    async def _cleanup_monitor(self):
+        """Monitor and cleanup inactive servers and connections"""
+        while self.monitoring_active:
+            try:
+                await self._cleanup_inactive_sessions()
+                await asyncio.sleep(60)  # Check every minute
+                
+            except Exception as e:
+                logger.error(f"Cleanup monitor error: {e}")
+                await asyncio.sleep(60)
+    
+    async def _cleanup_inactive_sessions(self):
+        """Cleanup inactive sessions"""
         try:
-            # Update status
-            session.status = SessionStatus.STOPPING
-            session.ended_at = datetime.now(timezone.utc)
+            current_time = datetime.utcnow()
+            timeout_delta = timedelta(minutes=self.config.session_timeout_minutes)
             
-            # Cancel session task
-            if session_id in self.session_tasks:
-                self.session_tasks[session_id].cancel()
-                del self.session_tasks[session_id]
+            # Find inactive servers
+            inactive_servers = []
+            for server_id, server in self.servers.items():
+                if (server.last_activity and 
+                    current_time - server.last_activity > timeout_delta):
+                    inactive_servers.append(server_id)
             
-            # Update database
-            if self.db:
-                await self.db.rdp_sessions.update_one(
-                    {"session_id": session_id},
-                    {"$set": {
-                        "status": session.status.value,
-                        "ended_at": session.ended_at
-                    }}
-                )
+            # Stop inactive servers
+            for server_id in inactive_servers:
+                logger.info(f"Stopping inactive server {server_id}")
+                await self.stop_server(server_id)
             
-            # Cleanup
-            del self.active_sessions[session_id]
+            # Find inactive connections
+            inactive_connections = []
+            for conn_id, connection in self.connections.items():
+                if (current_time - connection.last_activity > timedelta(minutes=30)):
+                    inactive_connections.append(conn_id)
             
-            logger.info(f"Stopped RDP session: {session_id}")
+            # Remove inactive connections
+            for conn_id in inactive_connections:
+                logger.info(f"Removing inactive connection {conn_id}")
+                await self.remove_connection(conn_id)
             
-            return {
-                "session_id": session_id,
-                "status": "stopped",
-                "ended_at": session.ended_at.isoformat()
-            }
+            if inactive_servers or inactive_connections:
+                logger.info(f"Cleanup completed: {len(inactive_servers)} servers, {len(inactive_connections)} connections")
+                
+        except Exception as e:
+            logger.error(f"Failed to cleanup inactive sessions: {e}")
+    
+    def get_manager_status(self) -> Dict[str, Any]:
+        """Get RDP manager status"""
+        active_servers = sum(1 for server in self.servers.values() if server.status == RDPStatus.RUNNING)
+        active_connections = sum(1 for conn in self.connections.values() if conn.is_active)
+        
+        return {
+            "total_servers": len(self.servers),
+            "active_servers": active_servers,
+            "total_connections": len(self.connections),
+            "active_connections": active_connections,
+            "available_ports": len(self.available_ports),
+            "used_ports": len(self.used_ports),
+            "max_servers": self.config.max_servers,
+            "monitoring_active": self.monitoring_active,
+            "config": asdict(self.config)
+        }
+    
+    async def shutdown(self):
+        """Shutdown RDP server manager"""
+        try:
+            logger.info("Shutting down RDP server manager")
+            
+            self.monitoring_active = False
+            
+            # Stop cleanup task
+            if self.cleanup_task:
+                self.cleanup_task.cancel()
+                try:
+                    await self.cleanup_task
+                except asyncio.CancelledError:
+                    pass
+            
+            # Stop all servers
+            for server_id in list(self.servers.keys()):
+                await self.stop_server(server_id)
+            
+            logger.info("RDP server manager shutdown completed")
             
         except Exception as e:
-            logger.error(f"Session stop failed: {e}")
-            raise HTTPException(500, f"Session stop failed: {str(e)}")
-    
-    async def _run_rdp_session(self, session: RDPSession) -> None:
-        """Run RDP session (simulated)"""
-        try:
-            logger.info(f"Running RDP session: {session.session_id}")
-            
-            # Simulate RDP session running
-            # In real implementation, this would coordinate with xrdp
-            session.status = SessionStatus.ACTIVE
-            
-            # Simulate session duration
-            await asyncio.sleep(60)  # 1 minute simulation
-            
-            # Mark as completed
-            session.status = SessionStatus.COMPLETED
-            session.ended_at = datetime.now(timezone.utc)
-            
-            logger.info(f"RDP session completed: {session.session_id}")
-            
-        except asyncio.CancelledError:
-            logger.info(f"RDP session cancelled: {session.session_id}")
-            session.status = SessionStatus.STOPPING
-        except Exception as e:
-            logger.error(f"RDP session error: {e}")
-            session.status = SessionStatus.FAILED
+            logger.error(f"Failed to shutdown RDP server manager: {e}")
 
-
-# Pydantic models
-class CreateSessionRequest(BaseModel):
-    owner_address: str
-    node_id: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
-# Global manager instance
-rdp_manager = RDPServerManager()
-
-# FastAPI app instance
-app = rdp_manager.app
-
-# Startup and shutdown events
-@app.on_event("startup")
-async def startup_event():
-    """Application startup"""
-    logger.info("Starting RDP Server Manager...")
-    await rdp_manager._setup_database()
-    logger.info("RDP Server Manager started")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown"""
-    logger.info("Shutting down RDP Server Manager...")
-    
-    # Stop all active sessions
-    for session_id in list(rdp_manager.active_sessions.keys()):
-        await rdp_manager.stop_rdp_session(session_id)
-    
-    # Close database connection
-    if rdp_manager.db_client:
-        rdp_manager.db_client.close()
-    
-    logger.info("RDP Server Manager stopped")
-
-
-def main():
-    """Main entry point"""
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[rdp-server-manager] %(asctime)s - %(levelname)s - %(message)s'
-    )
-    
-    # Run server
-    uvicorn.run(
-        "rdp_server_manager:app",
-        host="0.0.0.0",
-        port=8087,
-        log_level="info"
-    )
-
-
+# Example usage
 if __name__ == "__main__":
-    main()
+    async def main():
+        # Initialize RDP server manager
+        config = RDPConfig(
+            base_port=3389,
+            max_servers=5,
+            session_timeout_minutes=480,
+            desktop_environment="xfce4"
+        )
+        
+        manager = RDPServerManager(config)
+        
+        # Initialize
+        success = await manager.initialize()
+        print(f"RDP manager initialized: {success}")
+        
+        if success:
+            # Create a test server
+            session_config = {
+                "desktop_environment": "xfce4",
+                "resolution": "1920x1080",
+                "color_depth": 16
+            }
+            
+            server_id = await manager.create_server("session_123", "user_456", session_config)
+            print(f"Server created: {server_id}")
+            
+            if server_id:
+                # Get server info
+                server_info = await manager.get_server_info(server_id)
+                print(f"Server info: {json.dumps(server_info, indent=2, default=str)}")
+                
+                # Add a connection
+                connection_id = await manager.add_connection(
+                    server_id, "192.168.1.100", 12345, SessionType.USER_SESSION
+                )
+                print(f"Connection added: {connection_id}")
+                
+                # Wait a bit
+                await asyncio.sleep(5)
+                
+                # Get manager status
+                status = manager.get_manager_status()
+                print(f"Manager status: {json.dumps(status, indent=2, default=str)}")
+                
+                # Stop server
+                stopped = await manager.stop_server(server_id)
+                print(f"Server stopped: {stopped}")
+            
+            # Shutdown
+            await manager.shutdown()
+            print("Manager shutdown completed")
+    
+    asyncio.run(main())

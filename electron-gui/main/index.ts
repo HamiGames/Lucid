@@ -1,120 +1,150 @@
-// main/index.ts - Main entry point with window initialization
-// Based on the electron-multi-gui-development.plan.md specifications
+#!/usr/bin/env node
+/**
+ * LUCID Electron GUI Main Process - SPEC-1B Implementation
+ * Multi-window Electron application with 4 distinct GUI frames
+ */
 
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
-import { join } from 'path';
-import { WindowManager } from './window-manager';
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
+import * as path from 'path';
+import * as fs from 'fs';
 import { TorManager } from './tor-manager';
+import { WindowManager } from './window-manager';
 import { DockerService } from './docker-service';
-import { setupIpcHandlers } from './ipc-handlers';
-import { TOR_CONFIG, WINDOW_CONFIGS } from '../shared/constants';
-import { isDevelopment } from '../shared/utils';
+import { IPCChannels } from '../shared/ipc-channels';
+
+// Configure logging
+const isDev = process.env.NODE_ENV === 'development';
 
 class LucidElectronApp {
-  private windowManager: WindowManager;
+  private mainWindow: BrowserWindow | null = null;
+  private windows: Map<string, BrowserWindow> = new Map();
   private torManager: TorManager;
+  private windowManager: WindowManager;
   private dockerService: DockerService;
-  private isQuitting: boolean = false;
+  private isQuitting = false;
 
   constructor() {
-    this.windowManager = new WindowManager();
     this.torManager = new TorManager();
+    this.windowManager = new WindowManager();
     this.dockerService = new DockerService();
   }
 
   async initialize(): Promise<void> {
     try {
-      console.log('Initializing Lucid Electron Application...');
+      console.log('Initializing Lucid Electron App...');
+
+      // Initialize Tor manager
+      await this.torManager.initialize();
+
+      // Initialize Docker service
+      await this.dockerService.initialize();
 
       // Setup IPC handlers
-      setupIpcHandlers(this.windowManager, this.torManager, this.dockerService);
-
-      // Initialize Tor connection
-      await this.initializeTor();
-
-      // Initialize Docker services
-      await this.initializeDocker();
-
-      // Create windows
-      await this.createWindows();
+      this.setupIpcHandlers();
 
       // Setup app event handlers
       this.setupAppEventHandlers();
 
-      console.log('Lucid Electron Application initialized successfully');
+      console.log('Lucid Electron App initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize Lucid Electron Application:', error);
-      app.quit();
-    }
-  }
-
-  private async initializeTor(): Promise<void> {
-    try {
-      console.log('Initializing Tor connection...');
-      await this.torManager.start();
-      console.log('Tor connection initialized');
-    } catch (error) {
-      console.error('Failed to initialize Tor:', error);
-      // Continue without Tor for development
-      if (isDevelopment()) {
-        console.warn('Continuing without Tor in development mode');
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  private async initializeDocker(): Promise<void> {
-    try {
-      console.log('Initializing Docker services...');
-      await this.dockerService.initialize();
-      console.log('Docker services initialized');
-    } catch (error) {
-      console.error('Failed to initialize Docker services:', error);
-      // Continue without Docker for development
-      if (isDevelopment()) {
-        console.warn('Continuing without Docker in development mode');
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  private async createWindows(): Promise<void> {
-    try {
-      console.log('Creating application windows...');
-
-      // Create all windows based on configuration
-      for (const [windowName, config] of Object.entries(WINDOW_CONFIGS)) {
-        await this.windowManager.createWindow(windowName as keyof typeof WINDOW_CONFIGS);
-      }
-
-      console.log('All windows created successfully');
-    } catch (error) {
-      console.error('Failed to create windows:', error);
+      console.error('Failed to initialize Lucid Electron App:', error);
       throw error;
     }
   }
 
+  private setupIpcHandlers(): void {
+    // Tor status handlers
+    ipcMain.handle(IPCChannels.TOR_GET_STATUS, () => {
+      return this.torManager.getStatus();
+    });
+
+    ipcMain.handle(IPCChannels.TOR_START, async () => {
+      return await this.torManager.start();
+    });
+
+    ipcMain.handle(IPCChannels.TOR_STOP, async () => {
+      return await this.torManager.stop();
+    });
+
+    // Window management handlers
+    ipcMain.handle(IPCChannels.WINDOW_CREATE, async (event, windowType: string, options: any) => {
+      return await this.windowManager.createWindow(windowType, options);
+    });
+
+    ipcMain.handle(IPCChannels.WINDOW_CLOSE, async (event, windowId: string) => {
+      return await this.windowManager.closeWindow(windowId);
+    });
+
+    ipcMain.handle(IPCChannels.WINDOW_MINIMIZE, async (event, windowId: string) => {
+      return await this.windowManager.minimizeWindow(windowId);
+    });
+
+    ipcMain.handle(IPCChannels.WINDOW_MAXIMIZE, async (event, windowId: string) => {
+      return await this.windowManager.maximizeWindow(windowId);
+    });
+
+    // Docker service handlers
+    ipcMain.handle(IPCChannels.DOCKER_GET_CONTAINERS, async () => {
+      return await this.dockerService.getContainers();
+    });
+
+    ipcMain.handle(IPCChannels.DOCKER_START_CONTAINER, async (event, containerId: string) => {
+      return await this.dockerService.startContainer(containerId);
+    });
+
+    ipcMain.handle(IPCChannels.DOCKER_STOP_CONTAINER, async (event, containerId: string) => {
+      return await this.dockerService.stopContainer(containerId);
+    });
+
+    ipcMain.handle(IPCChannels.DOCKER_GET_LOGS, async (event, containerId: string, lines: number = 100) => {
+      return await this.dockerService.getContainerLogs(containerId, lines);
+    });
+
+    // API proxy handlers
+    ipcMain.handle(IPCChannels.API_REQUEST, async (event, request: any) => {
+      return await this.handleApiRequest(request);
+    });
+
+    // Hardware wallet handlers
+    ipcMain.handle(IPCChannels.HARDWARE_WALLET_CONNECT, async (event, walletType: string) => {
+      return await this.connectHardwareWallet(walletType);
+    });
+
+    ipcMain.handle(IPCChannels.HARDWARE_WALLET_SIGN, async (event, data: any) => {
+      return await this.signWithHardwareWallet(data);
+    });
+  }
+
   private setupAppEventHandlers(): void {
-    // Handle window-all-closed
-    app.on('window-all-closed', () => {
-      // On macOS, keep app running even when all windows are closed
-      if (process.platform !== 'darwin') {
+    // App ready event
+    app.whenReady().then(async () => {
+      try {
+        await this.initialize();
+        await this.createMainWindow();
+        await this.torManager.start();
+      } catch (error) {
+        console.error('Failed to start application:', error);
         app.quit();
       }
     });
 
-    // Handle activate (macOS)
-    app.on('activate', async () => {
-      // Recreate windows if none exist (macOS)
-      const windows = BrowserWindow.getAllWindows();
-      if (windows.length === 0) {
-        await this.createWindows();
+    // App window-all-closed event
+    app.on('window-all-closed', () => {
+      if (process.platform !== 'darwin') {
+        this.isQuitting = true;
+        app.quit();
       }
     });
 
-    // Handle before-quit
+    // App activate event (macOS)
+    app.on('activate', async () => {
+      if (this.windows.size === 0) {
+        await this.createMainWindow();
+      }
+    });
+
+    // App before-quit event
     app.on('before-quit', async (event) => {
       if (!this.isQuitting) {
         event.preventDefault();
@@ -123,118 +153,243 @@ class LucidElectronApp {
         app.quit();
       }
     });
+  }
 
-    // Handle second-instance
-    app.on('second-instance', async () => {
-      // Focus existing windows when trying to open second instance
-      const windows = BrowserWindow.getAllWindows();
-      windows.forEach(window => {
-        if (window.isMinimized()) window.restore();
-        window.focus();
+  private async createMainWindow(): Promise<void> {
+    try {
+      const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
+      this.mainWindow = new BrowserWindow({
+        width: Math.min(1200, width),
+        height: Math.min(800, height),
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          enableRemoteModule: false,
+          preload: path.join(__dirname, 'preload.js'),
+          webSecurity: true,
+          allowRunningInsecureContent: false
+        },
+        icon: path.join(__dirname, '../assets/icons/lucid-icon.png'),
+        title: 'Lucid - Multi-GUI Launcher',
+        show: false,
+        frame: true,
+        resizable: true,
+        minimizable: true,
+        maximizable: true,
+        closable: true
       });
-    });
 
-    // Handle certificate errors (for development)
-    app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-      if (isDevelopment()) {
-        // Ignore certificate errors in development
-        event.preventDefault();
-        callback(true);
+      // Load main window content
+      if (isDev) {
+        await this.mainWindow.loadURL('http://localhost:3000/main.html');
+        this.mainWindow.webContents.openDevTools();
       } else {
-        callback(false);
+        await this.mainWindow.loadFile(path.join(__dirname, '../renderer/main/main.html'));
       }
-    });
 
-    // Handle protocol handlers
-    app.setAsDefaultProtocolClient('lucid');
-    app.on('open-url', (event, url) => {
-      event.preventDefault();
-      this.handleProtocolUrl(url);
-    });
+      // Show window when ready
+      this.mainWindow.once('ready-to-show', () => {
+        if (this.mainWindow) {
+          this.mainWindow.show();
+        }
+      });
 
-    // Handle file associations
-    app.on('open-file', (event, path) => {
-      event.preventDefault();
-      this.handleFileOpen(path);
-    });
+      // Handle window closed
+      this.mainWindow.on('closed', () => {
+        this.mainWindow = null;
+      });
+
+      // Handle external links
+      this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
+      });
+
+      console.log('Main window created successfully');
+
+    } catch (error) {
+      console.error('Failed to create main window:', error);
+      throw error;
+    }
+  }
+
+  private async handleApiRequest(request: any): Promise<any> {
+    try {
+      // Proxy API requests through Tor if available
+      const torStatus = this.torManager.getStatus();
+      
+      if (torStatus.connected) {
+        // Route through Tor SOCKS proxy
+        return await this.makeTorRequest(request);
+      } else {
+        // Direct request (development only)
+        if (isDev) {
+          return await this.makeDirectRequest(request);
+        } else {
+          throw new Error('Tor connection required for API requests');
+        }
+      }
+
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
+
+  private async makeTorRequest(request: any): Promise<any> {
+    // Implement Tor SOCKS proxy request
+    // This would use a SOCKS proxy library to route requests through Tor
+    console.log('Making Tor request:', request.url);
+    
+    // Placeholder implementation
+    return {
+      success: true,
+      data: { message: 'Tor request placeholder' },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  private async makeDirectRequest(request: any): Promise<any> {
+    // Implement direct HTTP request for development
+    console.log('Making direct request:', request.url);
+    
+    // Placeholder implementation
+    return {
+      success: true,
+      data: { message: 'Direct request placeholder' },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  private async connectHardwareWallet(walletType: string): Promise<any> {
+    try {
+      console.log(`Connecting to ${walletType} hardware wallet...`);
+      
+      // Implement hardware wallet connection based on type
+      switch (walletType.toLowerCase()) {
+        case 'ledger':
+          return await this.connectLedgerWallet();
+        case 'trezor':
+          return await this.connectTrezorWallet();
+        case 'keepkey':
+          return await this.connectKeepKeyWallet();
+        default:
+          throw new Error(`Unsupported wallet type: ${walletType}`);
+      }
+
+    } catch (error) {
+      console.error('Hardware wallet connection failed:', error);
+      throw error;
+    }
+  }
+
+  private async connectLedgerWallet(): Promise<any> {
+    // Implement Ledger wallet connection
+    return {
+      success: true,
+      walletType: 'ledger',
+      address: 'ledger_address_placeholder',
+      connected: true
+    };
+  }
+
+  private async connectTrezorWallet(): Promise<any> {
+    // Implement Trezor wallet connection
+    return {
+      success: true,
+      walletType: 'trezor',
+      address: 'trezor_address_placeholder',
+      connected: true
+    };
+  }
+
+  private async connectKeepKeyWallet(): Promise<any> {
+    // Implement KeepKey wallet connection
+    return {
+      success: true,
+      walletType: 'keepkey',
+      address: 'keepkey_address_placeholder',
+      connected: true
+    };
+  }
+
+  private async signWithHardwareWallet(data: any): Promise<any> {
+    try {
+      console.log('Signing data with hardware wallet...');
+      
+      // Implement hardware wallet signing
+      return {
+        success: true,
+        signature: 'hardware_wallet_signature_placeholder',
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('Hardware wallet signing failed:', error);
+      throw error;
+    }
   }
 
   private async cleanup(): Promise<void> {
     try {
-      console.log('Cleaning up application resources...');
+      console.log('Cleaning up Lucid Electron App...');
 
-      // Stop Tor
+      // Stop Tor manager
       await this.torManager.stop();
 
-      // Stop Docker services
-      await this.dockerService.stop();
-
       // Close all windows
-      this.windowManager.closeAllWindows();
+      this.windows.forEach((window, windowId) => {
+        if (!window.isDestroyed()) {
+          window.close();
+        }
+      });
+      this.windows.clear();
 
-      console.log('Application cleanup completed');
+      // Close main window
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.close();
+        this.mainWindow = null;
+      }
+
+      // Cleanup Docker service
+      await this.dockerService.cleanup();
+
+      console.log('Lucid Electron App cleanup completed');
+
     } catch (error) {
-      console.error('Error during cleanup:', error);
+      console.error('Failed to cleanup Lucid Electron App:', error);
     }
   }
 
-  private handleProtocolUrl(url: string): void {
-    console.log('Handling protocol URL:', url);
-    // Parse URL and route to appropriate window
-    // Implementation depends on specific protocol requirements
+  // Public methods for window management
+  async createGUIWindow(guiType: 'user' | 'developer' | 'node' | 'admin', options: any = {}): Promise<string> {
+    return await this.windowManager.createWindow(guiType, options);
   }
 
-  private handleFileOpen(path: string): void {
-    console.log('Handling file open:', path);
-    // Handle file opening logic
-    // Implementation depends on file type requirements
+  async closeGUIWindow(windowId: string): Promise<void> {
+    await this.windowManager.closeWindow(windowId);
+  }
+
+  getTorStatus(): any {
+    return this.torManager.getStatus();
+  }
+
+  getDockerStatus(): any {
+    return this.dockerService.getStatus();
   }
 }
 
-// Initialize the application
+// Create and export app instance
 const lucidApp = new LucidElectronApp();
 
-// Handle app ready
-app.whenReady().then(async () => {
-  try {
-    await lucidApp.initialize();
-  } catch (error) {
-    console.error('Application initialization failed:', error);
-    app.quit();
-  }
-});
+// Export for testing
+export { LucidElectronApp };
 
-// Handle app window-all-closed
-app.on('window-all-closed', () => {
-  // On macOS, keep app running even when all windows are closed
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-// Handle app activate (macOS)
-app.on('activate', async () => {
-  // Recreate windows if none exist (macOS)
-  const windows = BrowserWindow.getAllWindows();
-  if (windows.length === 0) {
-    try {
-      await lucidApp.initialize();
-    } catch (error) {
-      console.error('Failed to recreate windows:', error);
-    }
-  }
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  app.quit();
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  app.quit();
-});
-
-export default lucidApp;
+// Start the application
+if (require.main === module) {
+  lucidApp.initialize().catch((error) => {
+    console.error('Failed to start Lucid Electron App:', error);
+    process.exit(1);
+  });
+}
