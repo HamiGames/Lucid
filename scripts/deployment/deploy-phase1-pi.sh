@@ -63,7 +63,7 @@ log_step() {
 test_ssh_connection() {
     echo -e "${BLUE}=== Testing SSH Connection ===${NC}"
     
-    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "echo 'SSH connection successful'" >/dev/null 2>&1; then
+    if ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "echo 'SSH connection successful'" >/dev/null 2>&1; then
         log_step "ssh-connection" "SUCCESS" "SSH connection to Pi established"
         return 0
     else
@@ -76,7 +76,7 @@ test_ssh_connection() {
 create_deploy_directory() {
     echo -e "${BLUE}=== Creating Deployment Directory ===${NC}"
     
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         sudo mkdir -p $PI_DEPLOY_DIR
         sudo chown $PI_USER:$PI_USER $PI_DEPLOY_DIR
         sudo chmod 755 $PI_DEPLOY_DIR
@@ -94,7 +94,7 @@ create_deploy_directory() {
 create_data_directories() {
     echo -e "${BLUE}=== Creating Data Storage Directories ===${NC}"
     
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         # Create main data directory structure for all phases
         sudo mkdir -p /mnt/myssd/Lucid/data/mongodb
         sudo mkdir -p /mnt/myssd/Lucid/data/mongodb-config
@@ -219,7 +219,7 @@ copy_environment_config() {
 pull_arm64_images() {
     echo -e "${BLUE}=== Pulling ARM64 Images ===${NC}"
     
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
         docker-compose -f docker-compose.foundation.yml pull
     " >/dev/null 2>&1
@@ -236,7 +236,7 @@ pull_arm64_images() {
 deploy_phase1_services() {
     echo -e "${BLUE}=== Deploying Phase 1 Services ===${NC}"
     
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
         docker-compose -f docker-compose.foundation.yml up -d
     " >/dev/null 2>&1
@@ -261,7 +261,7 @@ wait_for_health_checks() {
         local all_healthy=true
         
         for service in "${SERVICES[@]}"; do
-            local health_status=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+            local health_status=$(ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
                 docker inspect --format='{{.State.Health.Status}}' $service 2>/dev/null || echo 'unhealthy'
             " 2>/dev/null)
             
@@ -292,7 +292,7 @@ verify_services_running() {
     local all_running=true
     
     for service in "${SERVICES[@]}"; do
-        local status=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        local status=$(ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
             docker inspect --format='{{.State.Status}}' $service 2>/dev/null || echo 'not-found'
         " 2>/dev/null)
         
@@ -318,7 +318,7 @@ initialize_databases() {
     echo -e "${BLUE}=== Initializing Databases ===${NC}"
     
     # Initialize MongoDB replica set
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         docker exec lucid-mongodb mongosh --eval '
             rs.initiate({
                 _id: \"rs0\",
@@ -335,7 +335,7 @@ initialize_databases() {
     fi
     
     # Initialize MongoDB collections
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         docker exec lucid-mongodb mongosh --eval '
             use lucid;
             db.createCollection(\"authentication\");
@@ -354,7 +354,7 @@ initialize_databases() {
     fi
     
     # Test Redis connection
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         docker exec lucid-redis redis-cli -a lucid ping
     " >/dev/null 2>&1
     
@@ -366,7 +366,7 @@ initialize_databases() {
     fi
     
     # Test Elasticsearch connection
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         docker exec lucid-elasticsearch curl -f http://localhost:9200/_cluster/health
     " >/dev/null 2>&1
     
@@ -378,7 +378,7 @@ initialize_databases() {
     fi
     
     # Test Authentication service
-    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         docker exec lucid-auth-service curl -f http://localhost:8089/health
     " >/dev/null 2>&1
     
