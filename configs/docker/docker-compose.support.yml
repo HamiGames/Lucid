@@ -62,14 +62,14 @@ services:
 
   # TRON Client
   tron-client:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-client:${LUCID_TAG:-latest}
+    image: pickme/lucid-tron-client:latest-arm64
     container_name: lucid-tron-client
     restart: unless-stopped
     ports:
-      - "8096:8096"
+      - "8091:8091"
     environment:
       - SERVICE_NAME=lucid-tron-client
-      - PORT=8096
+      - PORT=8091
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -81,9 +81,9 @@ services:
       - /mnt/myssd/Lucid/logs/tron-client:/app/logs
       - /mnt/myssd/Lucid/data/tron-client:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -95,30 +95,30 @@ services:
 
   # TRON Payout Router
   tron-payout-router:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-payout-router:${LUCID_TAG:-latest}
+    image: pickme/lucid-payout-router:latest-arm64
     container_name: lucid-tron-payout-router
     restart: unless-stopped
     ports:
-      - "8097:8097"
+      - "8092:8092"
     environment:
       - SERVICE_NAME=lucid-tron-payout-router
-      - PORT=8097
+      - PORT=8092
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - PAYOUT_V0_ENABLED=true
       - PAYOUT_KYC_ENABLED=true
     volumes:
       - /mnt/myssd/Lucid/logs/tron-payout-router:/app/logs
       - /mnt/myssd/Lucid/data/tron-payout-router:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     depends_on:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -130,29 +130,29 @@ services:
 
   # TRON Wallet Manager
   tron-wallet-manager:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-wallet-manager:${LUCID_TAG:-latest}
+    image: pickme/lucid-wallet-manager:latest-arm64
     container_name: lucid-tron-wallet-manager
     restart: unless-stopped
     ports:
-      - "8098:8098"
+      - "8093:8093"
     environment:
       - SERVICE_NAME=lucid-tron-wallet-manager
-      - PORT=8098
+      - PORT=8093
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - WALLET_ENCRYPTION_ENABLED=true
     volumes:
       - /mnt/myssd/Lucid/logs/tron-wallet-manager:/app/logs
       - /mnt/myssd/Lucid/data/tron-wallet-manager:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     depends_on:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -164,29 +164,29 @@ services:
 
   # TRON USDT Manager
   tron-usdt-manager:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-usdt-manager:${LUCID_TAG:-latest}
+    image: pickme/lucid-usdt-manager:latest-arm64
     container_name: lucid-tron-usdt-manager
     restart: unless-stopped
     ports:
-      - "8099:8099"
+      - "8094:8094"
     environment:
       - SERVICE_NAME=lucid-tron-usdt-manager
-      - PORT=8099
+      - PORT=8094
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - USDT_TRC20_ADDRESS=${USDT_TRC20_ADDRESS:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
     volumes:
       - /mnt/myssd/Lucid/logs/tron-usdt-manager:/app/logs
       - /mnt/myssd/Lucid/data/tron-usdt-manager:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     depends_on:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8094/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -198,30 +198,30 @@ services:
 
   # TRON Staking Service
   tron-staking:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-staking:${LUCID_TAG:-latest}
+    image: pickme/lucid-trx-staking:latest-arm64
     container_name: lucid-tron-staking
     restart: unless-stopped
     ports:
-      - "8100:8100"
+      - "8095:8095"
     environment:
       - SERVICE_NAME=lucid-tron-staking
-      - PORT=8100
+      - PORT=8095
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8096
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - STAKING_ENABLED=true
       - STAKING_REWARDS_ENABLED=true
     volumes:
       - /mnt/myssd/Lucid/logs/tron-staking:/app/logs
       - /mnt/myssd/Lucid/data/tron-staking:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     depends_on:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -233,27 +233,27 @@ services:
 
   # TRON Payment Gateway
   tron-payment-gateway:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-payment-gateway:${LUCID_TAG:-latest}
+    image: pickme/lucid-payment-gateway:latest-arm64
     container_name: lucid-tron-payment-gateway
     restart: unless-stopped
     ports:
-      - "8101:8101"
+      - "8096:8096"
     environment:
       - SERVICE_NAME=lucid-tron-payment-gateway
-      - PORT=8101
+      - PORT=8096
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8096
-      - PAYOUT_ROUTER_URL=http://lucid-tron-payout-router:8097
-      - WALLET_MANAGER_URL=http://lucid-tron-wallet-manager:8098
-      - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8099
-      - STAKING_URL=http://lucid-tron-staking:8100
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - PAYOUT_ROUTER_URL=http://lucid-tron-payout-router:8092
+      - WALLET_MANAGER_URL=http://lucid-tron-wallet-manager:8093
+      - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8094
+      - STAKING_URL=http://lucid-tron-staking:8095
     volumes:
       - /mnt/myssd/Lucid/logs/tron-payment-gateway:/app/logs
       - /mnt/myssd/Lucid/data/tron-payment-gateway:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     depends_on:
       lucid-tron-client:
         condition: service_healthy
@@ -266,7 +266,7 @@ services:
       lucid-tron-staking:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8101/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -290,8 +290,8 @@ networks:
           gateway: 172.20.0.1
   
   # Isolated network for TRON services
-  lucid-network-isolated:
-    name: lucid-network-isolated
+  lucid-tron-isolated:
+    name: lucid-tron-isolated
     driver: bridge
     attachable: true
     ipam:

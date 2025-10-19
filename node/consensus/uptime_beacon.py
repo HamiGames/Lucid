@@ -115,11 +115,8 @@ class UptimeBeaconSystem:
         self.uptime_metrics: Dict[str, UptimeMetrics] = {}
         self.beacon_tasks: Dict[str, asyncio.Task] = {}
         
-        # Load existing beacons and metrics
-        asyncio.create_task(self._load_beacon_data())
-        
-        # Start beacon system
-        asyncio.create_task(self._start_beacon_system())
+        # Note: Async tasks will be started when the service is properly initialized
+        # This prevents RuntimeError when creating tasks outside of an event loop
     
     def _load_or_generate_key(self) -> ed25519.Ed25519PrivateKey:
         """Load or generate node private key"""
@@ -127,8 +124,8 @@ class UptimeBeaconSystem:
             key_file = self.data_dir / "beacon_key.pem"
             
             if key_file.exists():
-                async with aiofiles.open(key_file, "rb") as f:
-                    key_data = await f.read()
+                with open(key_file, "rb") as f:
+                    key_data = f.read()
                 return serialization.load_pem_private_key(key_data, password=None)
             else:
                 # Generate new key
@@ -141,8 +138,8 @@ class UptimeBeaconSystem:
                     encryption_algorithm=serialization.NoEncryption()
                 )
                 
-                async with aiofiles.open(key_file, "wb") as f:
-                    await f.write(key_data)
+                with open(key_file, "wb") as f:
+                    f.write(key_data)
                 
                 logger.info("Generated new beacon private key")
                 return private_key

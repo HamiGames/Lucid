@@ -234,7 +234,7 @@ class ChunkEncryptor:
             "salt_size": self.SALT_SIZE
         }
     
-    def validate_encryption(self, plaintext: bytes) -> bool:
+    async def validate_encryption(self, plaintext: bytes) -> bool:
         """
         Validate encryption/decryption round trip.
         

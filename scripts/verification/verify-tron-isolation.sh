@@ -1,8 +1,17 @@
 #!/bin/bash
 
-# TRON Isolation Verification Script
+# TRON Isolation Verification Script (Simplified)
 # Verifies that TRON payment system is completely isolated from blockchain core
-# Part of Step 28: TRON Isolation Verification
+# Part of Step 16: TRON Isolation Security Scan from docker-build-process-plan.md
+#
+# Requirements (exact from build plan):
+# - No "tron" references in blockchain/
+# - No "TronWeb" references
+# - No "payment" in blockchain/core/
+# - No "USDT" or "TRX" references
+# - Verify payment-systems/tron/ exists and isolated
+# - Verify no blockchain references in payment-systems/tron/
+# - Exit 1 if any violations found
 
 set -euo pipefail
 
@@ -43,57 +52,17 @@ log_error() {
 }
 
 # Initialize verification report
-REPORT_FILE="$REPORTS_DIR/tron-isolation-report-$(date +%Y%m%d-%H%M%S).json"
-cat > "$REPORT_FILE" << EOF
-{
-  "verification_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "project_root": "$PROJECT_ROOT",
-  "verification_results": {
-    "blockchain_core_scan": {
-      "status": "pending",
-      "violations": [],
-      "files_scanned": 0
-    },
-    "payment_systems_scan": {
-      "status": "pending", 
-      "tron_files_found": 0,
-      "files_scanned": 0
-    },
-    "network_isolation": {
-      "status": "pending",
-      "network_checks": []
-    },
-    "directory_structure": {
-      "status": "pending",
-      "compliance_checks": []
-    }
-  },
-  "summary": {
-    "total_violations": 0,
-    "isolation_verified": false,
-    "compliance_score": 0
-  }
-}
-EOF
+REPORT_FILE="$REPORTS_DIR/tron-isolation-report-$(date +%Y%m%d-%H%M%S).txt"
 
 log "Starting TRON Isolation Verification"
 log "Project Root: $PROJECT_ROOT"
 log "Report File: $REPORT_FILE"
 
-# Function to update JSON report
-update_report() {
-    local key="$1"
-    local value="$2"
-    local temp_file=$(mktemp)
-    
-    jq ".verification_results.$key = $value" "$REPORT_FILE" > "$temp_file" && mv "$temp_file" "$REPORT_FILE"
-}
-
 # Function to scan for TRON references in blockchain core
 scan_blockchain_core() {
     log "Scanning blockchain core directory for TRON references..."
     
-    local violations=()
+    local violations=0
     local files_scanned=0
     
     # Check if blockchain directory exists
@@ -102,8 +71,8 @@ scan_blockchain_core() {
         return 1
     fi
     
-    # Scan for TRON-related keywords in blockchain core
-    local tron_keywords=("tron" "TRON" "TronNode" "TronClient" "tron_client" "tron-node" "tron-client" "usdt" "USDT" "TRX" "trx")
+    # Scan for TRON-related keywords in blockchain core (exact requirements from build plan)
+    local tron_keywords=("tron" "TRON" "TronWeb" "payment" "USDT" "TRX")
     
     for keyword in "${tron_keywords[@]}"; do
         log "Scanning for keyword: $keyword"
@@ -113,9 +82,9 @@ scan_blockchain_core() {
             files_scanned=$((files_scanned + 1))
             
             if grep -q -i "$keyword" "$file"; then
-                local line_numbers=$(grep -n -i "$keyword" "$file" | cut -d: -f1)
-                violations+=("$file:$line_numbers:$keyword")
+                violations=$((violations + 1))
                 log_warning "TRON reference found in blockchain core: $file"
+                echo "VIOLATION: $file contains '$keyword'" >> "$REPORT_FILE"
             fi
         done < <(find "$BLOCKCHAIN_DIR" -name "*.py" -type f -print0)
         
@@ -124,31 +93,30 @@ scan_blockchain_core() {
             files_scanned=$((files_scanned + 1))
             
             if grep -q -i "$keyword" "$file"; then
-                local line_numbers=$(grep -n -i "$keyword" "$file" | cut -d: -f1)
-                violations+=("$file:$line_numbers:$keyword")
+                violations=$((violations + 1))
                 log_warning "TRON reference found in blockchain config: $file"
+                echo "VIOLATION: $file contains '$keyword'" >> "$REPORT_FILE"
             fi
         done < <(find "$BLOCKCHAIN_DIR" -name "*.yml" -o -name "*.yaml" -o -name "*.json" -o -name "*.toml" -type f -print0)
     done
     
-    # Update report
-    local violations_json=$(printf '%s\n' "${violations[@]}" | jq -R . | jq -s .)
-    update_report "blockchain_core_scan" "{\"status\": \"completed\", \"violations\": $violations_json, \"files_scanned\": $files_scanned}"
+    echo "Blockchain core scan: $violations violations found in $files_scanned files" >> "$REPORT_FILE"
     
-    if [[ ${#violations[@]} -eq 0 ]]; then
+    if [[ $violations -eq 0 ]]; then
         log_success "No TRON references found in blockchain core"
         return 0
     else
-        log_error "Found ${#violations[@]} TRON violations in blockchain core"
+        log_error "Found $violations TRON violations in blockchain core"
         return 1
     fi
 }
 
-# Function to verify payment systems directory structure
+# Function to verify payment systems directory structure and isolation
 scan_payment_systems() {
-    log "Scanning payment systems directory for TRON files..."
+    log "Scanning payment systems directory for TRON files and isolation..."
     
-    local tron_files=()
+    local tron_files=0
+    local blockchain_references=0
     local files_scanned=0
     
     # Check if payment-systems directory exists
@@ -157,182 +125,146 @@ scan_payment_systems() {
         return 1
     fi
     
+    # Check if payment-systems/tron directory exists (required by build plan)
+    local tron_dir="$PAYMENT_SYSTEMS_DIR/tron"
+    if [[ ! -d "$tron_dir" ]]; then
+        log_error "Required payment-systems/tron directory not found: $tron_dir"
+        return 1
+    fi
+    log_success "payment-systems/tron directory exists and is isolated"
+    
     # Find all TRON-related files
     while IFS= read -r -d '' file; do
         files_scanned=$((files_scanned + 1))
-        tron_files+=("$file")
+        tron_files=$((tron_files + 1))
         log "Found TRON file: $file"
-    done < <(find "$PAYMENT_SYSTEMS_DIR" -type f \( -name "*tron*" -o -name "*TRON*" -o -name "*Tron*" \) -print0)
+    done < <(find "$PAYMENT_SYSTEMS_DIR" -type f \( -name "*tron*" -o -name "*TRON*" -o -name "*Tron*" \) -print0 2>/dev/null)
     
-    # Update report
-    local tron_files_json=$(printf '%s\n' "${tron_files[@]}" | jq -R . | jq -s .)
-    update_report "payment_systems_scan" "{\"status\": \"completed\", \"tron_files_found\": ${#tron_files[@]}, \"files_scanned\": $files_scanned, \"files\": $tron_files_json}"
+    # Check for blockchain references in payment-systems/tron (should be isolated)
+    log "Checking for blockchain references in payment-systems/tron..."
+    local blockchain_keywords=("blockchain" "consensus" "block" "mining" "node" "peer")
     
-    if [[ ${#tron_files[@]} -gt 0 ]]; then
-        log_success "Found ${#tron_files[@]} TRON files in payment systems directory"
-        return 0
+    for keyword in "${blockchain_keywords[@]}"; do
+        while IFS= read -r -d '' file; do
+            if grep -q -i "$keyword" "$file"; then
+                blockchain_references=$((blockchain_references + 1))
+                log_warning "Blockchain reference found in TRON payment system: $file"
+                echo "VIOLATION: $file contains blockchain reference '$keyword'" >> "$REPORT_FILE"
+            fi
+        done < <(find "$tron_dir" -name "*.py" -type f -print0 2>/dev/null)
+    done
+    
+    echo "Payment systems scan: $tron_files TRON files found, $blockchain_references blockchain references" >> "$REPORT_FILE"
+    
+    if [[ $tron_files -gt 0 ]]; then
+        log_success "Found $tron_files TRON files in payment systems directory"
+        if [[ $blockchain_references -eq 0 ]]; then
+            log_success "No blockchain references found in payment-systems/tron (properly isolated)"
+            return 0
+        else
+            log_error "Found $blockchain_references blockchain references in payment-systems/tron"
+            return 1
+        fi
     else
         log_warning "No TRON files found in payment systems directory"
         return 1
     fi
 }
 
-# Function to verify network isolation
-verify_network_isolation() {
-    log "Verifying network isolation..."
-    
-    local network_checks=()
-    
-    # Check Docker networks
-    if command -v docker &> /dev/null; then
-        log "Checking Docker networks..."
-        
-        # Check for lucid-dev network (main network)
-        if docker network ls | grep -q "lucid-dev"; then
-            network_checks+=("lucid-dev network exists")
-            log_success "lucid-dev network found"
-        else
-            network_checks+=("lucid-dev network missing")
-            log_warning "lucid-dev network not found"
-        fi
-        
-        # Check for lucid-network-isolated network (TRON isolation)
-        if docker network ls | grep -q "lucid-network-isolated"; then
-            network_checks+=("lucid-network-isolated network exists")
-            log_success "lucid-network-isolated network found"
-        else
-            network_checks+=("lucid-network-isolated network missing")
-            log_warning "lucid-network-isolated network not found"
-        fi
-    else
-        network_checks+=("Docker not available for network verification")
-        log_warning "Docker not available"
-    fi
-    
-    # Update report
-    local network_checks_json=$(printf '%s\n' "${network_checks[@]}" | jq -R . | jq -s .)
-    update_report "network_isolation" "{\"status\": \"completed\", \"network_checks\": $network_checks_json}"
-}
-
 # Function to verify directory structure compliance
 verify_directory_structure() {
     log "Verifying directory structure compliance..."
     
-    local compliance_checks=()
+    local compliance_checks=0
+    local total_checks=0
     
     # Check required directories exist
     local required_dirs=(
         "blockchain/core"
         "blockchain/api" 
         "payment-systems/tron"
-        "payment-systems/tron/services"
-        "payment-systems/tron/api"
-        "payment-systems/tron/models"
     )
     
     for dir in "${required_dirs[@]}"; do
+        total_checks=$((total_checks + 1))
         local full_path="$PROJECT_ROOT/$dir"
         if [[ -d "$full_path" ]]; then
-            compliance_checks+=("✓ $dir exists")
+            compliance_checks=$((compliance_checks + 1))
             log_success "Directory exists: $dir"
+            echo "✓ $dir exists" >> "$REPORT_FILE"
         else
-            compliance_checks+=("✗ $dir missing")
             log_error "Directory missing: $dir"
+            echo "✗ $dir missing" >> "$REPORT_FILE"
         fi
     done
     
-    # Check for forbidden TRON files in blockchain directory
-    local forbidden_patterns=(
-        "blockchain/**/*tron*"
-        "blockchain/**/*TRON*"
-        "blockchain/**/*Tron*"
-    )
+    # Check for forbidden TRON files in blockchain directory (exact requirements)
+    total_checks=$((total_checks + 1))
+    if find "$BLOCKCHAIN_DIR" -name "*tron*" -o -name "*TRON*" -o -name "*Tron*" -o -name "*payment*" -o -name "*USDT*" -o -name "*TRX*" 2>/dev/null | grep -q .; then
+        log_error "TRON/payment files found in blockchain directory"
+        echo "✗ TRON/payment files found in blockchain directory" >> "$REPORT_FILE"
+    else
+        compliance_checks=$((compliance_checks + 1))
+        log_success "No TRON/payment files in blockchain directory"
+        echo "✓ No TRON/payment files in blockchain directory" >> "$REPORT_FILE"
+    fi
     
-    for pattern in "${forbidden_patterns[@]}"; do
-        if find "$BLOCKCHAIN_DIR" -name "*tron*" -o -name "*TRON*" -o -name "*Tron*" 2>/dev/null | grep -q .; then
-            compliance_checks+=("✗ TRON files found in blockchain directory")
-            log_error "TRON files found in blockchain directory"
-        else
-            compliance_checks+=("✓ No TRON files in blockchain directory")
-            log_success "No TRON files in blockchain directory"
-        fi
-    done
-    
-    # Update report
-    local compliance_checks_json=$(printf '%s\n' "${compliance_checks[@]}" | jq -R . | jq -s .)
-    update_report "directory_structure" "{\"status\": \"completed\", \"compliance_checks\": $compliance_checks_json}"
+    echo "Directory structure: $compliance_checks/$total_checks checks passed" >> "$REPORT_FILE"
+    return $((total_checks - compliance_checks))
 }
 
 # Function to generate final summary
 generate_summary() {
     log "Generating verification summary..."
     
-    # Count violations
-    local blockchain_violations=$(jq '.verification_results.blockchain_core_scan.violations | length' "$REPORT_FILE")
-    local total_violations=$blockchain_violations
-    
-    # Calculate compliance score
-    local total_checks=4  # blockchain_scan, payment_scan, network, directory
-    local passed_checks=0
-    
-    if [[ $(jq '.verification_results.blockchain_core_scan.violations | length' "$REPORT_FILE") -eq 0 ]]; then
-        passed_checks=$((passed_checks + 1))
-    fi
-    
-    if [[ $(jq '.verification_results.payment_systems_scan.tron_files_found' "$REPORT_FILE") -gt 0 ]]; then
-        passed_checks=$((passed_checks + 1))
-    fi
-    
-    if [[ $(jq '.verification_results.network_isolation.network_checks | length' "$REPORT_FILE") -gt 0 ]]; then
-        passed_checks=$((passed_checks + 1))
-    fi
-    
-    if [[ $(jq '.verification_results.directory_structure.compliance_checks | length' "$REPORT_FILE") -gt 0 ]]; then
-        passed_checks=$((passed_checks + 1))
-    fi
-    
-    local compliance_score=$((passed_checks * 100 / total_checks))
-    local isolation_verified=$([[ $total_violations -eq 0 && $compliance_score -ge 75 ]] && echo "true" || echo "false")
-    
-    # Update final summary
-    jq ".summary = {
-        \"total_violations\": $total_violations,
-        \"isolation_verified\": $isolation_verified,
-        \"compliance_score\": $compliance_score,
-        \"passed_checks\": $passed_checks,
-        \"total_checks\": $total_checks
-    }" "$REPORT_FILE" > "${REPORT_FILE}.tmp" && mv "${REPORT_FILE}.tmp" "$REPORT_FILE"
+    # Read violations from report file
+    local blockchain_violations=$(grep -c "VIOLATION.*blockchain core" "$REPORT_FILE" 2>/dev/null || echo "0")
+    local tron_violations=$(grep -c "VIOLATION.*TRON payment system" "$REPORT_FILE" 2>/dev/null || echo "0")
+    local total_violations=$((blockchain_violations + tron_violations))
     
     # Print summary
     log "=== TRON ISOLATION VERIFICATION SUMMARY ==="
+    log "Blockchain Core Violations: $blockchain_violations"
+    log "Blockchain References in TRON: $tron_violations"
     log "Total Violations: $total_violations"
-    log "Compliance Score: $compliance_score%"
-    log "Isolation Verified: $isolation_verified"
-    log "Passed Checks: $passed_checks/$total_checks"
     
-    if [[ "$isolation_verified" == "true" ]]; then
-        log_success "TRON isolation verification PASSED"
-        return 0
-    else
-        log_error "TRON isolation verification FAILED"
+    echo "=== TRON ISOLATION VERIFICATION SUMMARY ===" >> "$REPORT_FILE"
+    echo "Blockchain Core Violations: $blockchain_violations" >> "$REPORT_FILE"
+    echo "Blockchain References in TRON: $tron_violations" >> "$REPORT_FILE"
+    echo "Total Violations: $total_violations" >> "$REPORT_FILE"
+    
+    # Exit with code 1 if any violations found (exact requirement from build plan)
+    if [[ $total_violations -gt 0 ]]; then
+        log_error "TRON isolation verification FAILED - Found $total_violations violations"
+        log_error "Exit 1 if any violations found (as required by docker-build-process-plan.md)"
+        echo "RESULT: FAILED - $total_violations violations found" >> "$REPORT_FILE"
         return 1
+    else
+        log_success "TRON isolation verification PASSED"
+        echo "RESULT: PASSED - No violations found" >> "$REPORT_FILE"
+        return 0
     fi
 }
 
 # Main execution
 main() {
     log "=== TRON ISOLATION VERIFICATION ==="
-    log "Step 28: TRON Isolation Verification"
+    log "Step 16: TRON Isolation Security Scan"
     log "====================================="
     
-    # Run all verification steps
-    scan_blockchain_core
-    scan_payment_systems  
-    verify_network_isolation
-    verify_directory_structure
-    generate_summary
+    # Initialize report file
+    echo "TRON Isolation Verification Report" > "$REPORT_FILE"
+    echo "Generated: $(date)" >> "$REPORT_FILE"
+    echo "Project Root: $PROJECT_ROOT" >> "$REPORT_FILE"
+    echo "" >> "$REPORT_FILE"
     
-    local exit_code=$?
+    # Run all verification steps
+    local exit_code=0
+    
+    scan_blockchain_core || exit_code=1
+    scan_payment_systems || exit_code=1
+    verify_directory_structure || exit_code=1
+    generate_summary || exit_code=1
     
     log "Verification completed. Report saved to: $REPORT_FILE"
     log "Log file: $LOG_FILE"

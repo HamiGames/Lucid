@@ -131,11 +131,8 @@ class TorManager:
         self.onion_services: Dict[str, OnionService] = {}
         self.tor_connections: Dict[str, TorConnection] = {}
         
-        # Load existing configuration
-        asyncio.create_task(self._load_tor_config())
-        
-        # Start Tor service
-        asyncio.create_task(self._start_tor_service())
+        # Note: Async tasks will be started when the service is properly initialized
+        # This prevents RuntimeError when creating tasks outside of an event loop
     
     async def _load_tor_config(self):
         """Load existing Tor configuration"""

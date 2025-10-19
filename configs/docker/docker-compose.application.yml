@@ -1,6 +1,7 @@
 # Phase 3 Application Services - Docker Compose Configuration
-# Step 45: Docker Compose Configurations - Application Phase
+# Step 24: Phase 3 Docker Compose
 # Includes: Session Management, RDP Services, Node Management
+# Target: Raspberry Pi ARM64 deployment
 
 version: '3.8'
 
@@ -10,8 +11,8 @@ services:
   # ===========================================
   
   # Session Pipeline Manager
-  session-pipeline:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-pipeline:${LUCID_TAG:-latest}
+  lucid-session-pipeline:
+    image: pickme/lucid-session-pipeline:latest-arm64
     container_name: lucid-session-pipeline
     restart: unless-stopped
     ports:
@@ -24,22 +25,18 @@ services:
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - PIPELINE_STATE_MACHINE_ENABLED=true
-      - CHUNK_SIZE_MB=10
-      - COMPRESSION_LEVEL=6
+      - PIPELINE_MAX_CONCURRENT_SESSIONS=10
+      - PIPELINE_CHUNK_SIZE_MB=1
+      - PIPELINE_COMPRESSION_LEVEL=6
     volumes:
       - /mnt/myssd/Lucid/logs/session-pipeline:/app/logs
       - /mnt/myssd/Lucid/data/session-pipeline:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
@@ -53,8 +50,8 @@ services:
       - "com.lucid.cluster=03-session-management"
 
   # Session Recorder
-  session-recorder:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-recorder:${LUCID_TAG:-latest}
+  lucid-session-recorder:
+    image: pickme/lucid-session-recorder:latest-arm64
     container_name: lucid-session-recorder
     restart: unless-stopped
     ports:
@@ -68,20 +65,18 @@ services:
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
       - RECORDING_QUALITY=high
-      - CHUNK_DURATION_SECONDS=30
+      - RECORDING_FPS=30
+      - RECORDING_BITRATE=2000k
     volumes:
       - /mnt/myssd/Lucid/logs/session-recorder:/app/logs
       - /mnt/myssd/Lucid/data/session-recorder:/app/data
+      - /mnt/myssd/Lucid/recordings:/app/recordings
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
@@ -94,36 +89,33 @@ services:
       - "com.lucid.service=session-recorder"
       - "com.lucid.cluster=03-session-management"
 
-  # Session Processor
-  session-processor:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-processor:${LUCID_TAG:-latest}
-    container_name: lucid-session-processor
+  # Chunk Processor
+  lucid-chunk-processor:
+    image: pickme/lucid-chunk-processor:latest-arm64
+    container_name: lucid-chunk-processor
     restart: unless-stopped
     ports:
       - "8085:8085"
     environment:
-      - SERVICE_NAME=lucid-session-processor
+      - SERVICE_NAME=lucid-chunk-processor
       - PORT=8085
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - ENCRYPTION_ALGORITHM=AES-256-GCM
-      - WORKER_COUNT=10
+      - PROCESSOR_CHUNK_SIZE_MB=1
+      - PROCESSOR_ENCRYPTION_ENABLED=true
+      - PROCESSOR_COMPRESSION_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/session-processor:/app/logs
-      - /mnt/myssd/Lucid/data/session-processor:/app/data
+      - /mnt/myssd/Lucid/logs/chunk-processor:/app/logs
+      - /mnt/myssd/Lucid/data/chunk-processor:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
@@ -133,12 +125,12 @@ services:
       start_period: 60s
     labels:
       - "com.lucid.phase=application"
-      - "com.lucid.service=session-processor"
+      - "com.lucid.service=chunk-processor"
       - "com.lucid.cluster=03-session-management"
 
   # Session Storage
-  session-storage:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-storage:${LUCID_TAG:-latest}
+  lucid-session-storage:
+    image: pickme/lucid-session-storage:latest-arm64
     container_name: lucid-session-storage
     restart: unless-stopped
     ports:
@@ -151,21 +143,19 @@ services:
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - STORAGE_ROOT_PATH=/app/storage
-      - MAX_STORAGE_SIZE_GB=1000
+      - STORAGE_MAX_SIZE_GB=100
+      - STORAGE_RETENTION_DAYS=30
+      - STORAGE_ENCRYPTION_ENABLED=true
     volumes:
       - /mnt/myssd/Lucid/logs/session-storage:/app/logs
-      - /mnt/myssd/Lucid/data/session-storage:/app/storage
+      - /mnt/myssd/Lucid/data/session-storage:/app/data
+      - /mnt/myssd/Lucid/sessions:/app/sessions
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
@@ -179,8 +169,8 @@ services:
       - "com.lucid.cluster=03-session-management"
 
   # Session API Gateway
-  session-api:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-api:${LUCID_TAG:-latest}
+  lucid-session-api:
+    image: pickme/lucid-session-api:latest-arm64
     container_name: lucid-session-api
     restart: unless-stopped
     ports:
@@ -193,28 +183,24 @@ services:
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - PIPELINE_URL=http://lucid-session-pipeline:8083
-      - RECORDER_URL=http://lucid-session-recorder:8084
-      - PROCESSOR_URL=http://lucid-session-processor:8085
-      - STORAGE_URL=http://lucid-session-storage:8086
+      - API_RATE_LIMIT=1000
+      - API_TIMEOUT=30
+      - API_CORS_ENABLED=true
     volumes:
       - /mnt/myssd/Lucid/logs/session-api:/app/logs
+      - /mnt/myssd/Lucid/data/session-api:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
-        condition: service_healthy
       lucid-session-pipeline:
         condition: service_healthy
       lucid-session-recorder:
         condition: service_healthy
-      lucid-session-processor:
+      lucid-chunk-processor:
         condition: service_healthy
       lucid-session-storage:
         condition: service_healthy
@@ -234,39 +220,35 @@ services:
   # ===========================================
 
   # RDP Server Manager
-  rdp-server-manager:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/rdp-server-manager:${LUCID_TAG:-latest}
+  lucid-rdp-server-manager:
+    image: pickme/lucid-rdp-server-manager:latest-arm64
     container_name: lucid-rdp-server-manager
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "8081:8081"
     environment:
       - SERVICE_NAME=lucid-rdp-server-manager
-      - PORT=8090
+      - PORT=8081
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - PORT_RANGE_START=13389
-      - PORT_RANGE_END=14389
-      - MAX_CONCURRENT_SESSIONS=100
+      - XRDP_PORT=3389
+      - MAX_CONCURRENT_SESSIONS=5
+      - SESSION_TIMEOUT_MINUTES=60
     volumes:
       - /mnt/myssd/Lucid/logs/rdp-server-manager:/app/logs
       - /mnt/myssd/Lucid/data/rdp-server-manager:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -277,141 +259,136 @@ services:
       - "com.lucid.cluster=04-rdp-services"
 
   # XRDP Integration
-  rdp-xrdp:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/rdp-xrdp:${LUCID_TAG:-latest}
-    container_name: lucid-rdp-xrdp
+  lucid-xrdp-integration:
+    image: pickme/lucid-xrdp-integration:latest-arm64
+    container_name: lucid-xrdp-integration
     restart: unless-stopped
     ports:
-      - "8091:8091"
+      - "3389:3389"
     environment:
-      - SERVICE_NAME=lucid-rdp-xrdp
-      - PORT=8091
+      - SERVICE_NAME=lucid-xrdp-integration
+      - PORT=3389
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - XRDP_LOG_LEVEL=INFO
+      - XRDP_ENABLE_SYSLOG=false
+      - XRDP_CHANNEL_RDPDR=true
+      - XRDP_CHANNEL_RDPSND=true
+      - XRDP_CHANNEL_DRDYNVC=true
+      - XRDP_CHANNEL_CLIPRDR=true
+    volumes:
+      - /mnt/myssd/Lucid/logs/xrdp-integration:/app/logs
+      - /mnt/myssd/Lucid/data/xrdp-integration:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-rdp-server-manager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -tuln | grep :3389 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=xrdp-integration"
+      - "com.lucid.cluster=04-rdp-services"
+
+  # Session Controller
+  lucid-session-controller:
+    image: pickme/lucid-session-controller:latest-arm64
+    container_name: lucid-session-controller
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SERVICE_NAME=lucid-session-controller
+      - PORT=8082
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - XRDP_DISPLAY=:10
-      - XRDP_PORT=3389
+      - SESSION_RECORDING_PATH=/data/recordings
+      - SESSION_RECORDING_FORMAT=mp4
+      - SESSION_RECORDING_QUALITY=high
+      - SESSION_RECORDING_BITRATE=2000k
+      - SESSION_RECORDING_FPS=30
     volumes:
-      - /mnt/myssd/Lucid/logs/rdp-xrdp:/app/logs
-      - /mnt/myssd/Lucid/data/rdp-xrdp:/app/data
+      - /mnt/myssd/Lucid/logs/session-controller:/app/logs
+      - /mnt/myssd/Lucid/data/session-controller:/app/data
+      - /mnt/myssd/Lucid/recordings:/app/recordings
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
         condition: service_healthy
       lucid-rdp-server-manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
       - "com.lucid.phase=application"
-      - "com.lucid.service=rdp-xrdp"
+      - "com.lucid.service=session-controller"
       - "com.lucid.cluster=04-rdp-services"
 
-  # RDP Session Controller
-  rdp-controller:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/rdp-controller:${LUCID_TAG:-latest}
-    container_name: lucid-rdp-controller
+  # Resource Monitor
+  lucid-resource-monitor:
+    image: pickme/lucid-resource-monitor:latest-arm64
+    container_name: lucid-resource-monitor
     restart: unless-stopped
     ports:
-      - "8092:8092"
+      - "8090:8090"
     environment:
-      - SERVICE_NAME=lucid-rdp-controller
-      - PORT=8092
+      - SERVICE_NAME=lucid-resource-monitor
+      - PORT=8090
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8090
+      - MONITOR_CPU_THRESHOLD=80
+      - MONITOR_MEMORY_THRESHOLD=80
+      - MONITOR_DISK_THRESHOLD=90
+      - MONITOR_INTERVAL_SECONDS=30
     volumes:
-      - /mnt/myssd/Lucid/logs/rdp-controller:/app/logs
-      - /mnt/myssd/Lucid/data/rdp-controller:/app/data
+      - /mnt/myssd/Lucid/logs/resource-monitor:/app/logs
+      - /mnt/myssd/Lucid/data/resource-monitor:/app/data
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
-        condition: service_healthy
-      lucid-rdp-server-manager:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
       - "com.lucid.phase=application"
-      - "com.lucid.service=rdp-controller"
-      - "com.lucid.cluster=04-rdp-services"
-
-  # RDP Resource Monitor
-  rdp-monitor:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/rdp-monitor:${LUCID_TAG:-latest}
-    container_name: lucid-rdp-monitor
-    restart: unless-stopped
-    ports:
-      - "8093:8093"
-    environment:
-      - SERVICE_NAME=lucid-rdp-monitor
-      - PORT=8093
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
-      - MONITORING_INTERVAL_SECONDS=30
-      - METRICS_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/logs/rdp-monitor:/app/logs
-      - /mnt/myssd/Lucid/data/rdp-monitor:/app/data
-    networks:
-      - lucid-dev
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=rdp-monitor"
+      - "com.lucid.service=resource-monitor"
       - "com.lucid.cluster=04-rdp-services"
 
   # ===========================================
   # NODE MANAGEMENT (1 container)
   # ===========================================
 
-  # Node Management Service
-  node-management:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/node-management:${LUCID_TAG:-latest}
+  # Node Management
+  lucid-node-management:
+    image: pickme/lucid-node-management:latest-arm64
     container_name: lucid-node-management
     restart: unless-stopped
     ports:
@@ -424,22 +401,19 @@ services:
       - DEBUG=false
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://lucid-redis:6379/0
-      - POOT_ENABLED=true
-      - PAYOUT_PROCESSING_ENABLED=true
-      - TRON_NETWORK=${TRON_NETWORK:-shasta}
+      - NODE_POOL_MAX_NODES=100
+      - PAYOUT_THRESHOLD_USDT=10
+      - POOT_CALCULATION_ENABLED=true
+      - NODE_REGISTRATION_ENABLED=true
     volumes:
       - /mnt/myssd/Lucid/logs/node-management:/app/logs
       - /mnt/myssd/Lucid/data/node-management:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blocks:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
@@ -456,10 +430,11 @@ services:
 # NETWORKS
 # ===========================================
 networks:
-  lucid-dev:
-    name: lucid-dev_lucid_net
+  lucid-pi-network:
+    name: lucid-pi-network
     driver: bridge
     attachable: true
+    external: true
     ipam:
       config:
         - subnet: 172.20.0.0/16
@@ -468,8 +443,5 @@ networks:
 # ===========================================
 # VOLUMES
 # ===========================================
-# =============================================================================
-# VOLUMES - Using Direct Host Paths on Pi
-# =============================================================================
 # All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
 # No named volumes needed - using host path mounts for better performance

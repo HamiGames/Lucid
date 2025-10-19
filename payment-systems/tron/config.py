@@ -6,7 +6,8 @@ Configuration management for TRON payment services
 import os
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from pydantic import BaseSettings, Field
+from pydantic_settings import BaseSettings
+from pydantic import Field
 from enum import Enum
 
 class NetworkType(str, Enum):

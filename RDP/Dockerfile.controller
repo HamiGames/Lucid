@@ -31,6 +31,7 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # Copy source code
 COPY session-controller/ ./session-controller/
 COPY protocol/ ./protocol/
+COPY common/ ./common/
 COPY __init__.py ./__init__.py
 
 # Stage 2: Runtime (Distroless)
@@ -42,26 +43,27 @@ COPY --from=builder /root/.local /root/.local
 # Copy application code
 COPY --from=builder /build/session-controller /app/session-controller
 COPY --from=builder /build/protocol /app/protocol
+COPY --from=builder /build/common /app/common
 COPY --from=builder /build/__init__.py /app/__init__.py
 
 # Set working directory
 WORKDIR /app
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/session-controller
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-rdp-controller
-ENV PORT=8092
+ENV PORT=8082
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8092/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health')"]
 
 # Expose port
-EXPOSE 8092
+EXPOSE 8082
 
 # Set entrypoint
 ENTRYPOINT ["python", "-m", "session-controller.main"]

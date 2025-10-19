@@ -1,312 +1,443 @@
-# Path: node/database_adapter.py
-# Database abstraction layer for handling motor/pymongo compatibility issues
+#!/usr/bin/env python3
+"""
+Lucid Node Management - Database Adapter
+Database interface for node management service
+"""
 
-from __future__ import annotations
-
+import asyncio
 import logging
-from typing import Dict, List, Optional, Any, Union
-from abc import ABC, abstractmethod
+import os
+from typing import Dict, List, Optional, Any
+from datetime import datetime, timezone
+import json
 
 logger = logging.getLogger(__name__)
 
-# Try to import database dependencies
-DATABASE_AVAILABLE = False
-AsyncIOMotorDatabase = None
-AsyncIOMotorCollection = None
+# Database Configuration
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "lucid_node_management")
+REDIS_URI = os.getenv("REDIS_URI", "redis://localhost:6379")
 
-try:
-    from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
-    DATABASE_AVAILABLE = True
-    # logger.info("Motor database driver available")
-except ImportError:
-    try:
-        import pymongo
-        # logger.warning("Motor not available, pymongo present but not async")
-    except ImportError:
-        # logger.warning("No database drivers available - using mock database")
-        pass
-
-
-class DatabaseAdapter(ABC):
-    """Abstract database adapter interface"""
+class DatabaseAdapter:
+    """
+    Database adapter for node management service
     
-    @abstractmethod
-    def __getitem__(self, collection_name: str):
-        pass
-
-
-class CollectionAdapter(ABC):
-    """Abstract collection adapter interface"""
+    Handles:
+    - MongoDB operations for persistent data
+    - Redis operations for caching
+    - Connection management
+    - Error handling and retries
+    """
     
-    @abstractmethod
-    async def find(self, filter_dict: Dict[str, Any] = None, **kwargs):
-        pass
-    
-    @abstractmethod
-    async def find_one(self, filter_dict: Dict[str, Any] = None, **kwargs):
-        pass
-    
-    @abstractmethod
-    async def insert_one(self, document: Dict[str, Any], **kwargs):
-        pass
-    
-    @abstractmethod
-    async def update_one(self, filter_dict: Dict[str, Any], update_dict: Dict[str, Any], **kwargs):
-        pass
-    
-    @abstractmethod
-    async def replace_one(self, filter_dict: Dict[str, Any], replacement: Dict[str, Any], **kwargs):
-        pass
-    
-    @abstractmethod
-    async def delete_one(self, filter_dict: Dict[str, Any], **kwargs):
-        pass
-    
-    @abstractmethod
-    async def delete_many(self, filter_dict: Dict[str, Any], **kwargs):
-        pass
-    
-    @abstractmethod
-    async def count_documents(self, filter_dict: Dict[str, Any] = None, **kwargs):
-        pass
-    
-    @abstractmethod
-    async def create_index(self, keys: Any, **kwargs):
-        pass
-    
-    @abstractmethod
-    def aggregate(self, pipeline: List[Dict[str, Any]], **kwargs):
-        pass
-    
-    @abstractmethod
-    async def distinct(self, key: str, filter_dict: Dict[str, Any] = None, **kwargs):
-        pass
-
-
-class MockCursor:
-    """Mock cursor for testing without database"""
-    
-    def __init__(self, data: List[Dict[str, Any]] = None):
-        self.data = data or []
-        self._index = 0
-    
-    def __aiter__(self):
-        return self
-    
-    async def __anext__(self):
-        if self._index >= len(self.data):
-            raise StopAsyncIteration
-        result = self.data[self._index]
-        self._index += 1
-        return result
-    
-    def sort(self, *args, **kwargs):
-        return self
-    
-    def limit(self, limit: int):
-        self.data = self.data[:limit]
-        return self
-
-
-class MockResult:
-    """Mock result for database operations"""
-    
-    def __init__(self, modified_count: int = 1, inserted_id: str = None):
-        self.modified_count = modified_count
-        self.inserted_id = inserted_id or "mock_id"
-        self.acknowledged = True
-
-
-class MockCollection(CollectionAdapter):
-    """Mock collection for testing without database"""
-    
-    def __init__(self, name: str):
-        self.name = name
-        self._data: Dict[str, Dict[str, Any]] = {}
-    
-    def find(self, filter_dict: Dict[str, Any] = None, **kwargs):
-        """Mock find operation - returns cursor directly (not async)"""
-        if filter_dict is None:
-            return MockCursor(list(self._data.values()))
+    def __init__(self, mongodb_uri: str = MONGODB_URI, redis_uri: str = REDIS_URI):
+        self.mongodb_uri = mongodb_uri
+        self.redis_uri = redis_uri
+        self.mongodb_client = None
+        self.redis_client = None
+        self.database = None
+        self.connected = False
         
-        # Simple mock filtering
-        results = []
-        for doc in self._data.values():
-            if self._matches_filter(doc, filter_dict):
-                results.append(doc)
+        logger.info("Database adapter initialized")
+    
+    async def connect(self) -> bool:
+        """
+        Connect to databases
         
-        return MockCursor(results)
-    
-    async def find_one(self, filter_dict: Dict[str, Any] = None, **kwargs):
-        """Mock find_one operation"""
-        if filter_dict is None and self._data:
-            return list(self._data.values())[0]
-        
-        if filter_dict:
-            for doc in self._data.values():
-                if self._matches_filter(doc, filter_dict):
-                    return doc
-        
-        return None
-    
-    async def insert_one(self, document: Dict[str, Any], **kwargs):
-        """Mock insert_one operation"""
-        doc_id = document.get("_id", f"mock_id_{len(self._data)}")
-        document["_id"] = doc_id
-        self._data[str(doc_id)] = document.copy()
-        return MockResult(inserted_id=doc_id)
-    
-    async def update_one(self, filter_dict: Dict[str, Any], update_dict: Dict[str, Any], **kwargs):
-        """Mock update_one operation"""
-        for doc in self._data.values():
-            if self._matches_filter(doc, filter_dict):
-                if "$set" in update_dict:
-                    doc.update(update_dict["$set"])
-                return MockResult(modified_count=1)
-        return MockResult(modified_count=0)
-    
-    async def replace_one(self, filter_dict: Dict[str, Any], replacement: Dict[str, Any], **kwargs):
-        """Mock replace_one operation"""
-        for doc_id, doc in self._data.items():
-            if self._matches_filter(doc, filter_dict):
-                self._data[doc_id] = replacement.copy()
-                return MockResult(modified_count=1)
-        
-        # Handle upsert
-        if kwargs.get("upsert", False):
-            doc_id = replacement.get("_id", f"mock_id_{len(self._data)}")
-            replacement["_id"] = doc_id
-            self._data[str(doc_id)] = replacement.copy()
-            return MockResult(modified_count=1)
-        
-        return MockResult(modified_count=0)
-    
-    async def delete_one(self, filter_dict: Dict[str, Any], **kwargs):
-        """Mock delete_one operation"""
-        for doc_id, doc in list(self._data.items()):
-            if self._matches_filter(doc, filter_dict):
-                del self._data[doc_id]
-                return MockResult(modified_count=1)
-        return MockResult(modified_count=0)
-    
-    async def delete_many(self, filter_dict: Dict[str, Any], **kwargs):
-        """Mock delete_many operation"""
-        deleted_count = 0
-        for doc_id, doc in list(self._data.items()):
-            if self._matches_filter(doc, filter_dict):
-                del self._data[doc_id]
-                deleted_count += 1
-        return MockResult(modified_count=deleted_count)
-    
-    async def count_documents(self, filter_dict: Dict[str, Any] = None, **kwargs):
-        """Mock count_documents operation"""
-        if filter_dict is None:
-            return len(self._data)
-        
-        count = 0
-        for doc in self._data.values():
-            if self._matches_filter(doc, filter_dict):
-                count += 1
-        return count
-    
-    async def create_index(self, keys: Any, **kwargs):
-        """Mock create_index operation"""
-        pass  # No-op for mock
-    
-    def aggregate(self, pipeline: List[Dict[str, Any]], **kwargs):
-        """Mock aggregate operation"""
-        return MockCursor([])  # Simplified mock
-    
-    async def distinct(self, key: str, filter_dict: Dict[str, Any] = None, **kwargs):
-        """Mock distinct operation"""
-        values = set()
-        for doc in self._data.values():
-            if filter_dict is None or self._matches_filter(doc, filter_dict):
-                if key in doc:
-                    values.add(doc[key])
-        return list(values)
-    
-    def _matches_filter(self, document: Dict[str, Any], filter_dict: Dict[str, Any]) -> bool:
-        """Simple filter matching for mock database"""
-        if not filter_dict:
-            return True
-        
-        for key, value in filter_dict.items():
-            if key == "$or":
-                # Handle $or operator
-                if not any(self._matches_filter(document, condition) for condition in value):
-                    return False
-            elif key == "$in":
-                # This shouldn't happen at top level, but handle gracefully
-                continue
-            elif isinstance(value, dict):
-                # Handle operators like $gte, $lt, $in, etc.
-                doc_value = document.get(key)
-                if doc_value is None:
-                    return False
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Connect to MongoDB
+            try:
+                import motor.motor_asyncio
+                self.mongodb_client = motor.motor_asyncio.AsyncIOMotorClient(self.mongodb_uri)
+                self.database = self.mongodb_client[MONGODB_DATABASE]
                 
-                for op, op_value in value.items():
-                    if op == "$gte" and doc_value < op_value:
-                        return False
-                    elif op == "$gt" and doc_value <= op_value:
-                        return False
-                    elif op == "$lte" and doc_value > op_value:
-                        return False
-                    elif op == "$lt" and doc_value >= op_value:
-                        return False
-                    elif op == "$ne" and doc_value == op_value:
-                        return False
-                    elif op == "$in" and doc_value not in op_value:
-                        return False
-                    elif op == "$nin" and doc_value in op_value:
-                        return False
+                # Test connection
+                await self.mongodb_client.admin.command('ping')
+                logger.info("Connected to MongoDB")
+            except ImportError:
+                logger.warning("Motor not available - MongoDB operations disabled")
+                self.mongodb_client = None
+            except Exception as e:
+                logger.warning(f"Failed to connect to MongoDB: {e}")
+                self.mongodb_client = None
+            
+            # Connect to Redis
+            try:
+                import redis.asyncio as redis
+                self.redis_client = redis.from_url(self.redis_uri)
+                
+                # Test connection
+                await self.redis_client.ping()
+                logger.info("Connected to Redis")
+            except ImportError:
+                logger.warning("Redis not available - Redis operations disabled")
+                self.redis_client = None
+            except Exception as e:
+                logger.warning(f"Failed to connect to Redis: {e}")
+                self.redis_client = None
+            
+            self.connected = True
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error connecting to databases: {e}")
+            return False
+    
+    async def disconnect(self):
+        """Disconnect from databases"""
+        try:
+            if self.mongodb_client:
+                self.mongodb_client.close()
+                logger.info("Disconnected from MongoDB")
+            
+            if self.redis_client:
+                await self.redis_client.close()
+                logger.info("Disconnected from Redis")
+            
+            self.connected = False
+            
+        except Exception as e:
+            logger.error(f"Error disconnecting from databases: {e}")
+    
+    async def store_node(self, node_data: Dict[str, Any]) -> bool:
+        """
+        Store node data
+        
+        Args:
+            node_data: Node data dictionary
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - storing node data in memory")
+                return True
+            
+            collection = self.database.nodes
+            result = await collection.insert_one(node_data)
+            
+            if result.inserted_id:
+                logger.info(f"Node stored with ID: {result.inserted_id}")
+                return True
             else:
-                # Simple equality check
-                if document.get(key) != value:
-                    return False
+                logger.error("Failed to store node")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error storing node: {e}")
+            return False
+    
+    async def get_node(self, node_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get node data
         
-        return True
-
-
-class MockDatabase(DatabaseAdapter):
-    """Mock database for testing without database"""
+        Args:
+            node_id: Node identifier
+            
+        Returns:
+            Node data dictionary if found, None otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - returning None for node")
+                return None
+            
+            collection = self.database.nodes
+            node = await collection.find_one({"node_id": node_id})
+            
+            if node:
+                # Convert ObjectId to string
+                node["_id"] = str(node["_id"])
+                return node
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting node {node_id}: {e}")
+            return None
     
-    def __init__(self):
-        self.collections: Dict[str, MockCollection] = {}
+    async def update_node(self, node_id: str, update_data: Dict[str, Any]) -> bool:
+        """
+        Update node data
+        
+        Args:
+            node_id: Node identifier
+            update_data: Update data dictionary
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - update not persisted")
+                return True
+            
+            collection = self.database.nodes
+            result = await collection.update_one(
+                {"node_id": node_id},
+                {"$set": update_data}
+            )
+            
+            if result.modified_count > 0:
+                logger.info(f"Node {node_id} updated")
+                return True
+            else:
+                logger.warning(f"Node {node_id} not found for update")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error updating node {node_id}: {e}")
+            return False
     
-    def __getitem__(self, collection_name: str) -> MockCollection:
-        if collection_name not in self.collections:
-            self.collections[collection_name] = MockCollection(collection_name)
-        return self.collections[collection_name]
-
-
-class RealDatabaseAdapter(DatabaseAdapter):
-    """Real database adapter using motor"""
+    async def list_nodes(self, filter_dict: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """
+        List nodes with optional filtering
+        
+        Args:
+            filter_dict: Optional filter dictionary
+            
+        Returns:
+            List of node data dictionaries
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - returning empty list")
+                return []
+            
+            collection = self.database.nodes
+            cursor = collection.find(filter_dict or {})
+            nodes = await cursor.to_list(length=None)
+            
+            # Convert ObjectIds to strings
+            for node in nodes:
+                node["_id"] = str(node["_id"])
+            
+            return nodes
+            
+        except Exception as e:
+            logger.error(f"Error listing nodes: {e}")
+            return []
     
-    def __init__(self, motor_db: AsyncIOMotorDatabase):
-        self.db = motor_db
+    async def store_pool(self, pool_data: Dict[str, Any]) -> bool:
+        """
+        Store pool data
+        
+        Args:
+            pool_data: Pool data dictionary
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - storing pool data in memory")
+                return True
+            
+            collection = self.database.pools
+            result = await collection.insert_one(pool_data)
+            
+            if result.inserted_id:
+                logger.info(f"Pool stored with ID: {result.inserted_id}")
+                return True
+            else:
+                logger.error("Failed to store pool")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error storing pool: {e}")
+            return False
     
-    def __getitem__(self, collection_name: str):
-        return self.db[collection_name]
+    async def get_pool(self, pool_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get pool data
+        
+        Args:
+            pool_id: Pool identifier
+            
+        Returns:
+            Pool data dictionary if found, None otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - returning None for pool")
+                return None
+            
+            collection = self.database.pools
+            pool = await collection.find_one({"pool_id": pool_id})
+            
+            if pool:
+                pool["_id"] = str(pool["_id"])
+                return pool
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting pool {pool_id}: {e}")
+            return None
+    
+    async def store_payout(self, payout_data: Dict[str, Any]) -> bool:
+        """
+        Store payout data
+        
+        Args:
+            payout_data: Payout data dictionary
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - storing payout data in memory")
+                return True
+            
+            collection = self.database.payouts
+            result = await collection.insert_one(payout_data)
+            
+            if result.inserted_id:
+                logger.info(f"Payout stored with ID: {result.inserted_id}")
+                return True
+            else:
+                logger.error("Failed to store payout")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error storing payout: {e}")
+            return False
+    
+    async def get_payout(self, payout_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get payout data
+        
+        Args:
+            payout_id: Payout identifier
+            
+        Returns:
+            Payout data dictionary if found, None otherwise
+        """
+        try:
+            if not self.mongodb_client:
+                logger.warning("MongoDB not available - returning None for payout")
+                return None
+            
+            collection = self.database.payouts
+            payout = await collection.find_one({"payout_id": payout_id})
+            
+            if payout:
+                payout["_id"] = str(payout["_id"])
+                return payout
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error getting payout {payout_id}: {e}")
+            return None
+    
+    async def cache_set(self, key: str, value: Any, ttl: int = 3600) -> bool:
+        """
+        Set cache value
+        
+        Args:
+            key: Cache key
+            value: Cache value
+            ttl: Time to live in seconds
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.redis_client:
+                logger.warning("Redis not available - cache not set")
+                return True
+            
+            # Serialize value
+            if isinstance(value, (dict, list)):
+                value = json.dumps(value)
+            
+            await self.redis_client.set(key, value, ex=ttl)
+            logger.debug(f"Cache set: {key}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error setting cache {key}: {e}")
+            return False
+    
+    async def cache_get(self, key: str) -> Optional[Any]:
+        """
+        Get cache value
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            Cache value if found, None otherwise
+        """
+        try:
+            if not self.redis_client:
+                logger.warning("Redis not available - cache not available")
+                return None
+            
+            value = await self.redis_client.get(key)
+            if value:
+                # Try to deserialize JSON
+                try:
+                    return json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    return value.decode() if isinstance(value, bytes) else value
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting cache {key}: {e}")
+            return None
+    
+    async def cache_delete(self, key: str) -> bool:
+        """
+        Delete cache value
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.redis_client:
+                logger.warning("Redis not available - cache not deleted")
+                return True
+            
+            result = await self.redis_client.delete(key)
+            logger.debug(f"Cache deleted: {key}")
+            return result > 0
+            
+        except Exception as e:
+            logger.error(f"Error deleting cache {key}: {e}")
+            return False
 
+# Global database adapter instance
+_db_adapter: Optional[DatabaseAdapter] = None
 
-def get_database_adapter(motor_db=None) -> DatabaseAdapter:
+async def get_database_adapter() -> DatabaseAdapter:
     """
-    Get appropriate database adapter based on what's available.
+    Get global database adapter instance
     
-    Args:
-        motor_db: Optional motor database instance
-        
     Returns:
-        Database adapter (real or mock)
+        DatabaseAdapter instance
     """
-    if motor_db is not None and DATABASE_AVAILABLE:
-        # logger.info("Using real database adapter")
-        return RealDatabaseAdapter(motor_db)
-    else:
-        # logger.info("Using mock database adapter")
-        return MockDatabase()
+    global _db_adapter
+    
+    if _db_adapter is None:
+        _db_adapter = DatabaseAdapter()
+        await _db_adapter.connect()
+    
+    return _db_adapter
 
-
-# For backward compatibility, export the mock database class
-MockAsyncIOMotorDatabase = MockDatabase
+async def close_database_adapter():
+    """Close global database adapter"""
+    global _db_adapter
+    
+    if _db_adapter:
+        await _db_adapter.disconnect()
+        _db_adapter = None

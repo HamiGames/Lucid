@@ -1,0 +1,194 @@
+# Docker Compose for Lucid Session Images
+# ARM64 compatible session management services
+
+version: '3.8'
+
+services:
+  # Session Pipeline Service
+  session-pipeline:
+    image: pickme/lucid-session-pipeline:latest-arm64
+    container_name: lucid-session-pipeline
+    platform: linux/arm64
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVICE_NAME=lucid-session-pipeline
+      - PORT=8083
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - session_data:/data/sessions
+      - pipeline_logs:/app/logs
+    networks:
+      - lucid-session-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8083/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Session Recorder Service
+  session-recorder:
+    image: pickme/lucid-session-recorder:latest-arm64
+    container_name: lucid-session-recorder
+    platform: linux/arm64
+    ports:
+      - "8084:8084"
+    environment:
+      - SERVICE_NAME=lucid-session-recorder
+      - PORT=8084
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - LUCID_RECORDING_PATH=/data/recordings
+      - LUCID_CHUNK_OUTPUT_PATH=/data/chunks
+      - LUCID_HARDWARE_ACCELERATION=true
+      - LUCID_VIDEO_CODEC=h264_v4l2m2m
+      - LUCID_AUDIO_CODEC=opus
+      - LUCID_BITRATE=2000k
+      - LUCID_FPS=30
+    volumes:
+      - recording_data:/data/recordings
+      - chunk_data:/data/chunks
+      - recorder_logs:/app/logs
+    networks:
+      - lucid-session-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Chunk Processor Service
+  chunk-processor:
+    image: pickme/lucid-chunk-processor:latest-arm64
+    container_name: lucid-chunk-processor
+    platform: linux/arm64
+    ports:
+      - "8085:8085"
+    environment:
+      - SERVICE_NAME=lucid-session-processor
+      - PORT=8085
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - chunk_data:/data/chunks
+      - processed_data:/data/processed
+      - processor_logs:/app/logs
+    networks:
+      - lucid-session-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8085/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Session Storage Service
+  session-storage:
+    image: pickme/lucid-session-storage:latest-arm64
+    container_name: lucid-session-storage
+    platform: linux/arm64
+    ports:
+      - "8086:8086"
+    environment:
+      - SERVICE_NAME=lucid-session-storage
+      - PORT=8086
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - session_data:/data/sessions
+      - storage_data:/data/storage
+      - storage_logs:/app/logs
+    networks:
+      - lucid-session-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Session API Service
+  session-api:
+    image: pickme/lucid-session-api:latest-arm64
+    container_name: lucid-session-api
+    platform: linux/arm64
+    ports:
+      - "8087:8087"
+    environment:
+      - SERVICE_NAME=lucid-session-api
+      - PORT=8087
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - session_data:/data/sessions
+      - api_logs:/app/logs
+    networks:
+      - lucid-session-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+# Networks
+networks:
+  lucid-session-network:
+    driver: bridge
+    name: lucid-session-network
+
+# Volumes
+volumes:
+  session_data:
+    driver: local
+    name: lucid-session-data
+  recording_data:
+    driver: local
+    name: lucid-recording-data
+  chunk_data:
+    driver: local
+    name: lucid-chunk-data
+  processed_data:
+    driver: local
+    name: lucid-processed-data
+  storage_data:
+    driver: local
+    name: lucid-storage-data
+  pipeline_logs:
+    driver: local
+    name: lucid-pipeline-logs
+  recorder_logs:
+    driver: local
+    name: lucid-recorder-logs
+  processor_logs:
+    driver: local
+    name: lucid-processor-logs
+  storage_logs:
+    driver: local
+    name: lucid-storage-logs
+  api_logs:
+    driver: local
+    name: lucid-api-logs

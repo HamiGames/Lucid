@@ -16,6 +16,9 @@ from ..database_adapter import DatabaseAdapter
 
 logger = logging.getLogger(__name__)
 
+# Maximum nodes per pool (Step 23 specification requirement)
+MAX_NODES_PER_POOL = 100
+
 
 class PoolStatus(Enum):
     """Pool status states"""
@@ -115,6 +118,16 @@ class PoolInfo:
                 return member
         return None
     
+    @property
+    def capacity_remaining(self) -> int:
+        """Get remaining capacity in pool"""
+        return MAX_NODES_PER_POOL - self.member_count
+    
+    @property
+    def is_at_capacity(self) -> bool:
+        """Check if pool is at maximum capacity"""
+        return self.member_count >= MAX_NODES_PER_POOL
+    
     def to_dict(self) -> Dict[str, Any]:
         return {
             "_id": self.pool_id,
@@ -127,7 +140,11 @@ class PoolInfo:
             "total_work_credits": self.total_work_credits,
             "total_rewards_usdt": self.total_rewards_usdt,
             "pending_rewards_usdt": self.pending_rewards_usdt,
-            "last_reward_distribution": self.last_reward_distribution
+            "last_reward_distribution": self.last_reward_distribution,
+            "member_count": self.member_count,
+            "capacity_remaining": self.capacity_remaining,
+            "is_at_capacity": self.is_at_capacity,
+            "max_capacity": MAX_NODES_PER_POOL
         }
     
     @classmethod
@@ -317,6 +334,10 @@ class PoolService:
             if self.node_id in pool.members:
                 raise ValueError(f"Node already in pool: {pool_id}")
             
+            # Check pool capacity (Step 23 specification: max 100 nodes)
+            if pool.member_count >= MAX_NODES_PER_POOL:
+                raise ValueError(f"Pool {pool_id} has reached maximum capacity ({MAX_NODES_PER_POOL} nodes)")
+            
             # Add member to pool
             new_member = PoolMember(
                 node_id=self.node_id,
@@ -392,6 +413,39 @@ class PoolService:
             logger.error(f"Failed to leave pool: {e}")
             return False
     
+    async def check_pool_capacity(self, pool_id: str) -> Dict[str, Any]:
+        """
+        Check pool capacity and return capacity information.
+        
+        Args:
+            pool_id: Pool to check
+            
+        Returns:
+            Capacity information dictionary
+        """
+        try:
+            pool = self.active_pools.get(pool_id)
+            if not pool:
+                # Try loading from database
+                pool_doc = await self.db["pools"].find_one({"_id": pool_id})
+                if not pool_doc:
+                    return {"error": f"Pool not found: {pool_id}"}
+                pool = PoolInfo.from_dict(pool_doc)
+                self.active_pools[pool_id] = pool
+            
+            return {
+                "pool_id": pool_id,
+                "member_count": pool.member_count,
+                "capacity_remaining": pool.capacity_remaining,
+                "is_at_capacity": pool.is_at_capacity,
+                "max_capacity": MAX_NODES_PER_POOL,
+                "can_join": not pool.is_at_capacity
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to check pool capacity: {e}")
+            return {"error": str(e)}
+    
     async def get_pool_info(self, pool_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed pool information"""
         try:
@@ -411,6 +465,9 @@ class PoolService:
                 "status": pool.status.value,
                 "created_at": pool.created_at,
                 "member_count": pool.member_count,
+                "capacity_remaining": pool.capacity_remaining,
+                "is_at_capacity": pool.is_at_capacity,
+                "max_capacity": MAX_NODES_PER_POOL,
                 "total_work_credits": pool.total_work_credits,
                 "total_rewards_usdt": pool.total_rewards_usdt,
                 "pending_rewards_usdt": pool.pending_rewards_usdt,

@@ -37,7 +37,7 @@ FROM gcr.io/distroless/python3-debian12
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=xrdp-service
-ENV SERVICE_PORT=8091
+ENV SERVICE_PORT=3389
 
 # Set working directory
 WORKDIR /app
@@ -46,22 +46,12 @@ WORKDIR /app
 COPY --from=builder /root/.local /root/.local
 COPY . .
 
-# Create required directories
-USER root
-RUN mkdir -p /etc/xrdp /var/log/xrdp /data/sessions /etc/ssl/xrdp
-
-# Set permissions
-RUN chmod -R 755 /app
-
-# Switch to non-root user
-USER 1001
-
 # Expose port
-EXPOSE 8091
+EXPOSE 3389
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import requests; requests.get('http://localhost:8091/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3389/health')"]
 
 # Run application
 CMD ["python", "main.py"]

@@ -22,9 +22,15 @@ from ..database_adapter import DatabaseAdapter, get_database_adapter
 # Import existing components using relative imports
 from ..peer_discovery import PeerDiscovery
 from ..work_credits import WorkCreditsCalculator
-from blockchain.core.blockchain_engine import get_blockchain_engine
 
 logger = logging.getLogger(__name__)
+
+# Optional blockchain integration
+try:
+    from blockchain.core.blockchain_engine import get_blockchain_engine
+except ImportError:
+    get_blockchain_engine = None
+    logger.warning("Blockchain engine not available - blockchain integration disabled")
 
 # Pool System Constants
 MIN_POOL_SIZE = int(os.getenv("LUCID_MIN_POOL_SIZE", "3"))  # Minimum 3 nodes per pool

@@ -23,7 +23,7 @@ motor==3.3.2
 redis==5.0.1
 
 # Security and cryptography
-cryptography==41.0.8
+cryptography>=41.0.0
 pyjwt==2.8.0
 
 # Logging and monitoring

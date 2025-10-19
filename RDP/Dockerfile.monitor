@@ -46,20 +46,20 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 WORKDIR /app
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/resource-monitor
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-rdp-monitor
-ENV PORT=8093
+ENV PORT=8090
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8093/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
 
 # Expose port
-EXPOSE 8093
+EXPOSE 8090
 
 # Set entrypoint
 ENTRYPOINT ["python", "-m", "resource-monitor.main"]

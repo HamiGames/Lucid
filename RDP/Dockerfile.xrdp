@@ -46,20 +46,20 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 WORKDIR /app
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/xrdp
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-xrdp
-ENV PORT=8091
+ENV PORT=3389
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3389/health')"]
 
 # Expose port
-EXPOSE 8091
+EXPOSE 3389
 
 # Set entrypoint
 ENTRYPOINT ["python", "-m", "xrdp.main"]

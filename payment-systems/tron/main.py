@@ -23,7 +23,7 @@ from contextlib import asynccontextmanager
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.config import get_settings
+# Removed app.config import - using local config module
 from .config import config, get_service_config, get_api_endpoints, validate_config
 from .services.tron_client import tron_client_service
 from .services.wallet_manager import wallet_manager_service

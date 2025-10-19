@@ -12,7 +12,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from ..database_adapter import DatabaseAdapter
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from database_adapter import DatabaseAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +369,7 @@ class PoOTCalculator:
     async def _get_all_node_ids(self) -> List[str]:
         """Get all node IDs from database"""
         try:
-            cursor = self.db["nodes"].find({}, {"_id": 1})
+            cursor = self.db["nodes"].find({}, projection={"_id": 1})
             node_ids = []
             
             async for doc in cursor:

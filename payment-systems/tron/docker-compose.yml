@@ -28,7 +28,7 @@ services:
       - tron_data:/data
       - tron_logs:/app/logs
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8091/health')"]
@@ -64,7 +64,7 @@ services:
       - tron_data:/data
       - tron_logs:/app/logs
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8092/health')"]
@@ -100,7 +100,7 @@ services:
       - tron_data:/data
       - tron_logs:/app/logs
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8093/health')"]
@@ -136,7 +136,7 @@ services:
       - tron_data:/data
       - tron_logs:/app/logs
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8094/health')"]
@@ -172,7 +172,7 @@ services:
       - tron_data:/data
       - tron_logs:/app/logs
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8095/health')"]
@@ -208,7 +208,7 @@ services:
       - tron_data:/data
       - tron_logs:/app/logs
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8096/health')"]
@@ -228,14 +228,14 @@ services:
     image: tronprotocol/tron:latest
     container_name: lucid-tron-node
     ports:
-      - "8090:8090"
-      - "8091:8091"
+      - "8097:8090"
+      - "8098:8091"
     environment:
       - NET_TYPE=shasta
     volumes:
       - tron_node_data:/tron
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     restart: unless-stopped
     profiles:
       - development
@@ -249,13 +249,13 @@ volumes:
     driver: local
 
 networks:
-  lucid-network-isolated:
+  lucid-tron-isolated:
     driver: bridge
     ipam:
       config:
         - subnet: 172.21.0.0/16
     labels:
-      - "lucid.network=payment-isolated"
+      - "lucid.network=tron-payment-isolated"
       - "lucid.phase=phase4"
       - "lucid.cluster=tron-payment"
-      - "lucid.isolation=wallet-plane"
+      - "lucid.isolation=payment-only"

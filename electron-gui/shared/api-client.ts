@@ -14,6 +14,36 @@ import {
   LUCID_ERROR_CODES
 } from './types';
 
+// Service discovery helper function
+export function getServiceEndpoint(serviceName: string): string {
+  const endpoints = {
+    auth: API_ENDPOINTS.AUTH,
+    gateway: API_ENDPOINTS.API_GATEWAY,
+    admin: API_ENDPOINTS.ADMIN,
+    blockchain: API_ENDPOINTS.BLOCKCHAIN_ENGINE,
+    session: API_ENDPOINTS.SESSION_API,
+    node: API_ENDPOINTS.NODE_MANAGEMENT,
+    mongodb: API_ENDPOINTS.MONGODB,
+    redis: API_ENDPOINTS.REDIS,
+    elasticsearch: API_ENDPOINTS.ELASTICSEARCH,
+    serviceMesh: API_ENDPOINTS.SERVICE_MESH,
+    sessionAnchoring: API_ENDPOINTS.SESSION_ANCHORING,
+    blockManager: API_ENDPOINTS.BLOCK_MANAGER,
+    dataChain: API_ENDPOINTS.DATA_CHAIN,
+    rdpServer: API_ENDPOINTS.RDP_SERVER,
+    sessionController: API_ENDPOINTS.SESSION_CONTROLLER,
+    resourceMonitor: API_ENDPOINTS.RESOURCE_MONITOR,
+    tronClient: API_ENDPOINTS.TRON_CLIENT,
+    payoutRouter: API_ENDPOINTS.PAYOUT_ROUTER,
+    walletManager: API_ENDPOINTS.WALLET_MANAGER,
+    usdtManager: API_ENDPOINTS.USDT_MANAGER,
+    trxStaking: API_ENDPOINTS.TRX_STAKING,
+    paymentGateway: API_ENDPOINTS.PAYMENT_GATEWAY,
+  };
+  
+  return endpoints[serviceName] || API_ENDPOINTS.API_GATEWAY;
+}
+
 export class LucidAPIClient {
   private client: AxiosInstance;
   private torProxy: string = 'socks5://127.0.0.1:9050';

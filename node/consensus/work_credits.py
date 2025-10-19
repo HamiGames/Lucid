@@ -118,9 +118,8 @@ class WorkCreditsCalculator:
         self.verification_threshold = 0.6  # 60% of nodes must verify
         
         # Node key pair for signing
-        # Initialize node key asynchronously
-        self.node_private_key = None
-        asyncio.create_task(self._initialize_node_key())
+        # Initialize node key synchronously
+        self.node_private_key = self._initialize_node_key_sync()
         self.node_public_key = self.node_private_key.public_key()
         
         # Work credit cache
@@ -128,7 +127,39 @@ class WorkCreditsCalculator:
         self.verification_cache: Dict[str, List[str]] = {}
         
         # Load existing credits
-        asyncio.create_task(self._load_work_credits())
+        # Note: Async tasks will be started when the service is properly initialized
+        # This prevents RuntimeError when creating tasks outside of an event loop
+    
+    def _initialize_node_key_sync(self) -> ed25519.Ed25519PrivateKey:
+        """Initialize node key synchronously"""
+        try:
+            key_file = self.data_dir / "node_key.pem"
+            
+            if key_file.exists():
+                with open(key_file, "rb") as f:
+                    key_data = f.read()
+                return serialization.load_pem_private_key(key_data, password=None)
+            else:
+                # Generate new key
+                private_key = ed25519.Ed25519PrivateKey.generate()
+                
+                # Save key
+                key_data = private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                )
+                
+                with open(key_file, "wb") as f:
+                    f.write(key_data)
+                
+                logger.info("Generated new node private key")
+                return private_key
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize node key: {e}")
+            # Generate a temporary key if file operations fail
+            return ed25519.Ed25519PrivateKey.generate()
     
     async def _load_or_generate_key(self) -> ed25519.Ed25519PrivateKey:
         """Load or generate node private key"""

@@ -47,7 +47,7 @@ class NodeConfig:
     
     # Payout configuration
     payout_processing_interval: int = 3600  # seconds
-    payout_minimum_amount: float = 1.0  # USDT
+    payout_minimum_amount: float = 10.0  # USDT
     payout_batch_size: int = 10
     
     # Database configuration
@@ -154,7 +154,7 @@ class NodeConfig:
             pool_health_check_interval=data.get("pool_health_check_interval", 120),
             pool_sync_interval=data.get("pool_sync_interval", 30),
             payout_processing_interval=data.get("payout_processing_interval", 3600),
-            payout_minimum_amount=data.get("payout_minimum_amount", 1.0),
+            payout_minimum_amount=data.get("payout_minimum_amount", 10.0),
             payout_batch_size=data.get("payout_batch_size", 10),
             database_url=data.get("database_url", "mongodb://localhost:27017/lucid"),
             database_name=data.get("database_name", "lucid_nodes"),

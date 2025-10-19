@@ -12,7 +12,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from ..database_adapter import DatabaseAdapter
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from database_adapter import DatabaseAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +54,8 @@ class NodeInfo:
         return {
             "_id": self.node_id,
             "node_address": self.node_address,
-            "status": self.status.value,
-            "role": self.role.value,
+            "status": self.status.value if hasattr(self.status, 'value') else self.status,
+            "role": self.role.value if hasattr(self.role, 'value') else self.role,
             "created_at": self.created_at,
             "last_seen": self.last_seen,
             "capabilities": self.capabilities,
@@ -189,8 +192,8 @@ class NodeService:
             return {
                 "node_id": self.node_id,
                 "node_address": self.node_address,
-                "status": self.node_info.status.value,
-                "role": self.node_info.role.value,
+                "status": self.node_info.status.value if hasattr(self.node_info.status, 'value') else self.node_info.status,
+                "role": self.node_info.role.value if hasattr(self.node_info.role, 'value') else self.node_info.role,
                 "capabilities": self.node_info.capabilities,
                 "created_at": self.node_info.created_at,
                 "last_seen": self.node_info.last_seen,
@@ -206,7 +209,7 @@ class NodeService:
         """Update node status"""
         try:
             await self._update_node_status(status)
-            logger.info(f"Node status updated: {status.value}")
+            logger.info(f"Node status updated: {status.value if hasattr(status, 'value') else status}")
             
         except Exception as e:
             logger.error(f"Failed to update node status: {e}")

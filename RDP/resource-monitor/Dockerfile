@@ -34,14 +34,11 @@ ENV PATH=/home/nonroot/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
 
 # Expose service port
-EXPOSE 8093
-
-# Run as non-root user
-USER nonroot
+EXPOSE 8090
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import requests; requests.get('http://localhost:8093/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
 
 # Run the application
 ENTRYPOINT ["python", "-m", "resource_monitor.main"]

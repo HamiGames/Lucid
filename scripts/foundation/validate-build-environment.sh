@@ -1,413 +1,396 @@
 #!/bin/bash
 # Build Environment Validation Script
-# Validates Windows 11 build host and Raspberry Pi target before starting builds
-# Based on lucid-container-build-plan.plan.md Step 3
+# Implements Step 3 from docker-build-process-plan.md
 
-set -euo pipefail
+set -e
 
-# Color codes for output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Script configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-VALIDATION_LOG="$PROJECT_ROOT/build-environment-validation.log"
-VALIDATION_RESULTS=()
-
-# Pi connection configuration
+# Configuration
 PI_HOST="192.168.0.75"
 PI_USER="pickme"
-PI_SSH_PORT="22"
-PI_SSH_KEY_PATH="$HOME/.ssh/id_rsa"
+BUILD_PLATFORM="linux/arm64"
 
-# Initialize validation
-init_validation() {
-    echo -e "${BLUE}=== Build Environment Validation ===${NC}"
-    echo "Project Root: $PROJECT_ROOT"
-    echo "Validation Log: $VALIDATION_LOG"
-    echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    echo ""
-    
-    # Clear previous validation log
-    > "$VALIDATION_LOG"
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-# Log validation result
-log_result() {
-    local check="$1"
-    local status="$2"
-    local message="$3"
-    local details="$4"
-    
-    VALIDATION_RESULTS+=("{\"check\":\"$check\",\"status\":\"$status\",\"message\":\"$message\",\"details\":\"$details\",\"timestamp\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}")
-    
-    if [ "$status" = "PASS" ]; then
-        echo -e "${GREEN}✓${NC} $check: $message"
-    elif [ "$status" = "FAIL" ]; then
-        echo -e "${RED}✗${NC} $check: $message"
-    else
-        echo -e "${YELLOW}⚠${NC} $check: $message"
-    fi
-    
-    # Log to file
-    echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") - $check - $status - $message" >> "$VALIDATION_LOG"
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-# Check Docker Desktop on Windows 11
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to check Docker Desktop on Windows 11
 check_docker_desktop() {
-    echo -e "${BLUE}=== Docker Desktop Validation ===${NC}"
+    log_info "Checking Docker Desktop on Windows 11..."
     
-    # Check if Docker is running
-    if docker info >/dev/null 2>&1; then
-        log_result "docker-running" "PASS" "Docker daemon is running"
-        
-        # Check Docker version
-        local docker_version=$(docker --version 2>/dev/null | cut -d' ' -f3 | cut -d',' -f1)
-        if [ -n "$docker_version" ]; then
-            log_result "docker-version" "PASS" "Docker version: $docker_version"
-        else
-            log_result "docker-version" "FAIL" "Unable to determine Docker version"
-        fi
-        
-        # Check Docker Compose version
-        if docker compose version >/dev/null 2>&1; then
-            local compose_version=$(docker compose version --short 2>/dev/null)
-            log_result "docker-compose-version" "PASS" "Docker Compose version: $compose_version"
-        else
-            log_result "docker-compose-version" "FAIL" "Docker Compose not available"
-        fi
-        
-        # Check BuildKit support
-        if docker buildx version >/dev/null 2>&1; then
-            log_result "docker-buildkit" "PASS" "Docker BuildKit is available"
-        else
-            log_result "docker-buildkit" "FAIL" "Docker BuildKit not available"
-        fi
-        
-        # Check if running on Windows
-        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
-            log_result "docker-windows" "PASS" "Running on Windows platform"
-        else
-            log_result "docker-windows" "WARN" "Not running on Windows platform (OSTYPE: $OSTYPE)"
-        fi
-        
-    else
-        log_result "docker-running" "FAIL" "Docker daemon is not running"
-        log_result "docker-version" "FAIL" "Cannot check Docker version - daemon not running"
-        log_result "docker-compose-version" "FAIL" "Cannot check Docker Compose - daemon not running"
-        log_result "docker-buildkit" "FAIL" "Cannot check BuildKit - daemon not running"
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker is not installed or not in PATH"
+        return 1
     fi
     
-    echo ""
+    if ! docker info &> /dev/null; then
+        log_error "Docker daemon is not running"
+        return 1
+    fi
+    
+    # Check if running on Windows
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WINDIR" ]]; then
+        log_success "Running on Windows - Docker Desktop detected"
+    else
+        log_warning "Not running on Windows - ensure Docker Desktop is installed"
+    fi
+    
+    # Check Docker version
+    local docker_version=$(docker --version)
+    log_info "Docker version: $docker_version"
+    
+    log_success "Docker Desktop validation passed"
+    return 0
 }
 
-# Check SSH connection to Pi
-check_pi_ssh_connection() {
-    echo -e "${BLUE}=== Raspberry Pi SSH Connection Validation ===${NC}"
+# Function to check Docker Compose v2
+check_docker_compose() {
+    log_info "Checking Docker Compose v2..."
     
-    # Check if SSH key exists
-    if [ -f "$PI_SSH_KEY_PATH" ]; then
-        log_result "ssh-key-exists" "PASS" "SSH key found at $PI_SSH_KEY_PATH"
-        
-        # Set correct permissions on SSH key
-        chmod 600 "$PI_SSH_KEY_PATH" 2>/dev/null || true
-        
+    if command -v docker-compose &> /dev/null; then
+        local compose_version=$(docker-compose --version)
+        log_info "Docker Compose version: $compose_version"
+        log_success "Docker Compose v2 available"
+    elif docker compose version &> /dev/null; then
+        local compose_version=$(docker compose version)
+        log_info "Docker Compose version: $compose_version"
+        log_success "Docker Compose v2 available"
     else
-        log_result "ssh-key-exists" "FAIL" "SSH key not found at $PI_SSH_KEY_PATH"
+        log_error "Docker Compose v2 not found"
+        return 1
     fi
     
-    # Test SSH connection to Pi
-    echo "Testing SSH connection to $PI_USER@$PI_HOST..."
-    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "echo 'SSH connection successful'" >/dev/null 2>&1; then
-        log_result "ssh-connection" "PASS" "SSH connection to Pi successful"
-        
-        # Check Pi system information
-        local pi_info=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "uname -a" 2>/dev/null)
-        if [ -n "$pi_info" ]; then
-            log_result "pi-system-info" "PASS" "Pi system: $pi_info"
-        else
-            log_result "pi-system-info" "FAIL" "Unable to get Pi system information"
-        fi
-        
-    else
-        log_result "ssh-connection" "FAIL" "SSH connection to Pi failed"
-        log_result "pi-system-info" "FAIL" "Cannot get Pi system information - SSH failed"
-    fi
-    
-    echo ""
+    return 0
 }
 
-# Check Pi disk space
+# Function to check Docker BuildKit
+check_docker_buildkit() {
+    log_info "Checking Docker BuildKit..."
+    
+    if ! docker buildx version &> /dev/null; then
+        log_error "Docker BuildKit is not available"
+        return 1
+    fi
+    
+    local buildx_version=$(docker buildx version)
+    log_info "Docker BuildKit version: $buildx_version"
+    
+    # Check if buildx is enabled
+    if docker info | grep -q "BuildKit"; then
+        log_success "Docker BuildKit is enabled"
+    else
+        log_warning "Docker BuildKit may not be enabled"
+    fi
+    
+    return 0
+}
+
+# Function to check SSH connection to Pi
+check_ssh_connection() {
+    log_info "Checking SSH connection to Raspberry Pi..."
+    log_info "Pi Host: $PI_HOST"
+    log_info "Pi User: $PI_USER"
+    
+    if ! command -v ssh &> /dev/null; then
+        log_error "SSH client is not installed"
+        return 1
+    fi
+    
+    # Test SSH connection
+    if ssh -o ConnectTimeout=10 -o BatchMode=yes "$PI_USER@$PI_HOST" "echo 'SSH connection successful'" 2>/dev/null; then
+        log_success "SSH connection to Pi successful"
+    else
+        log_error "SSH connection to Pi failed"
+        log_info "Please ensure:"
+        log_info "  • Pi is accessible at $PI_HOST"
+        log_info "  • SSH keys are configured"
+        log_info "  • SSH service is running on Pi"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Function to check Pi disk space
 check_pi_disk_space() {
-    echo -e "${BLUE}=== Raspberry Pi Disk Space Validation ===${NC}"
+    log_info "Checking Pi disk space..."
     
-    echo "Checking Pi disk space..."
-    local disk_info=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "df -h /" 2>/dev/null)
+    local disk_info=$(ssh "$PI_USER@$PI_HOST" "df -h /" 2>/dev/null | tail -1)
+    local available_space=$(echo "$disk_info" | awk '{print $4}')
+    local available_bytes=$(echo "$disk_info" | awk '{print $4}' | sed 's/G/000000000/' | sed 's/M/000000/' | sed 's/K/000/')
     
-    if [ -n "$disk_info" ]; then
-        log_result "pi-disk-info" "PASS" "Pi disk information retrieved"
-        
-        # Extract available space (in GB)
-        local available_space=$(echo "$disk_info" | tail -1 | awk '{print $4}' | sed 's/G//')
-        if [ -n "$available_space" ] && [ "$available_space" -gt 20 ]; then
-            log_result "pi-disk-space" "PASS" "Pi has $available_space GB free space (minimum 20GB required)"
-        else
-            log_result "pi-disk-space" "FAIL" "Pi has insufficient free space: $available_space GB (minimum 20GB required)"
-        fi
-        
+    log_info "Pi disk space: $available_space available"
+    
+    # Check if at least 20GB is available
+    if [[ $available_bytes -gt 20000000000 ]]; then
+        log_success "Pi has sufficient disk space (>20GB)"
     else
-        log_result "pi-disk-info" "FAIL" "Unable to get Pi disk information"
-        log_result "pi-disk-space" "FAIL" "Cannot check Pi disk space"
+        log_error "Pi has insufficient disk space (<20GB)"
+        return 1
     fi
     
-    echo ""
+    return 0
 }
 
-# Check Pi architecture
+# Function to check Pi architecture
 check_pi_architecture() {
-    echo -e "${BLUE}=== Raspberry Pi Architecture Validation ===${NC}"
+    log_info "Checking Pi architecture..."
     
-    echo "Checking Pi architecture..."
-    local arch_info=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "uname -m" 2>/dev/null)
+    local pi_arch=$(ssh "$PI_USER@$PI_HOST" "uname -m" 2>/dev/null)
+    log_info "Pi architecture: $pi_arch"
     
-    if [ -n "$arch_info" ]; then
-        if [[ "$arch_info" == "aarch64" || "$arch_info" == "arm64" ]]; then
-            log_result "pi-architecture" "PASS" "Pi architecture: $arch_info (ARM64 compatible)"
-        else
-            log_result "pi-architecture" "FAIL" "Pi architecture: $arch_info (ARM64 required)"
-        fi
-        
-        # Check if it's a Raspberry Pi
-        local pi_model=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "cat /proc/device-tree/model 2>/dev/null || echo 'Unknown'" 2>/dev/null)
-        if [ -n "$pi_model" ] && [[ "$pi_model" == *"Raspberry Pi"* ]]; then
-            log_result "pi-model" "PASS" "Pi model: $pi_model"
-        else
-            log_result "pi-model" "WARN" "Pi model: $pi_model (not confirmed as Raspberry Pi)"
-        fi
-        
+    if [[ "$pi_arch" == "aarch64" ]]; then
+        log_success "Pi architecture is aarch64 (ARM64)"
     else
-        log_result "pi-architecture" "FAIL" "Unable to get Pi architecture information"
-        log_result "pi-model" "FAIL" "Cannot check Pi model"
+        log_error "Pi architecture is not aarch64 (ARM64)"
+        return 1
     fi
     
-    echo ""
+    return 0
 }
 
-# Check network connectivity
+# Function to check Docker daemon on Pi
+check_pi_docker_daemon() {
+    log_info "Checking Docker daemon on Pi..."
+    
+    if ssh "$PI_USER@$PI_HOST" "docker info" &> /dev/null; then
+        log_success "Docker daemon is running on Pi"
+    else
+        log_error "Docker daemon is not running on Pi"
+        return 1
+    fi
+    
+    # Check Docker version on Pi
+    local pi_docker_version=$(ssh "$PI_USER@$PI_HOST" "docker --version" 2>/dev/null)
+    log_info "Pi Docker version: $pi_docker_version"
+    
+    return 0
+}
+
+# Function to check network connectivity
 check_network_connectivity() {
-    echo -e "${BLUE}=== Network Connectivity Validation ===${NC}"
+    log_info "Checking network connectivity..."
     
-    # Check if Pi is reachable via ping
-    if ping -c 1 -W 5 "$PI_HOST" >/dev/null 2>&1; then
-        log_result "pi-ping" "PASS" "Pi is reachable via ping"
+    # Check Pi connectivity
+    if ping -c 1 -W 5 "$PI_HOST" &> /dev/null; then
+        log_success "Network connectivity to Pi successful"
     else
-        log_result "pi-ping" "FAIL" "Pi is not reachable via ping"
+        log_error "Network connectivity to Pi failed"
+        return 1
     fi
     
-    # Check if SSH port is open
-    if nc -z -w 5 "$PI_HOST" "$PI_SSH_PORT" 2>/dev/null; then
-        log_result "pi-ssh-port" "PASS" "SSH port $PI_SSH_PORT is open on Pi"
+    # Check internet connectivity
+    if ping -c 1 -W 5 8.8.8.8 &> /dev/null; then
+        log_success "Internet connectivity successful"
     else
-        log_result "pi-ssh-port" "FAIL" "SSH port $PI_SSH_PORT is not open on Pi"
+        log_warning "Internet connectivity failed"
     fi
     
-    # Check internet connectivity from build host
-    if ping -c 1 -W 5 "8.8.8.8" >/dev/null 2>&1; then
-        log_result "build-host-internet" "PASS" "Build host has internet connectivity"
-    else
-        log_result "build-host-internet" "FAIL" "Build host has no internet connectivity"
-    fi
-    
-    # Check internet connectivity from Pi
-    local pi_internet=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "ping -c 1 -W 5 8.8.8.8 >/dev/null 2>&1 && echo 'OK' || echo 'FAIL'" 2>/dev/null)
-    if [ "$pi_internet" = "OK" ]; then
-        log_result "pi-internet" "PASS" "Pi has internet connectivity"
-    else
-        log_result "pi-internet" "FAIL" "Pi has no internet connectivity"
-    fi
-    
-    echo ""
+    return 0
 }
 
-# Check Docker daemon on Pi
-check_pi_docker() {
-    echo -e "${BLUE}=== Raspberry Pi Docker Validation ===${NC}"
+# Function to check base images accessibility
+check_base_images_accessibility() {
+    log_info "Checking base images accessibility..."
     
-    echo "Checking Docker on Pi..."
+    local base_images=(
+        "python:3.11-slim"
+        "gcr.io/distroless/python3-debian12:arm64"
+        "openjdk:17-jdk-slim"
+        "gcr.io/distroless/java17-debian12:arm64"
+        "mongo:7.0"
+        "redis:7.2-alpine"
+        "elasticsearch:8.11.0"
+    )
     
-    # Check if Docker is installed on Pi
-    local docker_installed=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "which docker >/dev/null 2>&1 && echo 'OK' || echo 'FAIL'" 2>/dev/null)
-    if [ "$docker_installed" = "OK" ]; then
-        log_result "pi-docker-installed" "PASS" "Docker is installed on Pi"
+    for image in "${base_images[@]}"; do
+        log_info "Checking base image: $image"
         
-        # Check if Docker daemon is running
-        local docker_running=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "docker info >/dev/null 2>&1 && echo 'OK' || echo 'FAIL'" 2>/dev/null)
-        if [ "$docker_running" = "OK" ]; then
-            log_result "pi-docker-running" "PASS" "Docker daemon is running on Pi"
-            
-            # Check Docker version on Pi
-            local pi_docker_version=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "docker --version 2>/dev/null | cut -d' ' -f3 | cut -d',' -f1" 2>/dev/null)
-            if [ -n "$pi_docker_version" ]; then
-                log_result "pi-docker-version" "PASS" "Pi Docker version: $pi_docker_version"
-            else
-                log_result "pi-docker-version" "FAIL" "Unable to determine Pi Docker version"
-            fi
-            
-            # Check Docker Compose on Pi
-            local pi_compose=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "docker compose version >/dev/null 2>&1 && echo 'OK' || echo 'FAIL'" 2>/dev/null)
-            if [ "$pi_compose" = "OK" ]; then
-                log_result "pi-docker-compose" "PASS" "Docker Compose is available on Pi"
-            else
-                log_result "pi-docker-compose" "FAIL" "Docker Compose not available on Pi"
-            fi
-            
+        if docker manifest inspect "$image" &> /dev/null; then
+            log_success "Base image accessible: $image"
         else
-            log_result "pi-docker-running" "FAIL" "Docker daemon is not running on Pi"
-            log_result "pi-docker-version" "FAIL" "Cannot check Pi Docker version - daemon not running"
-            log_result "pi-docker-compose" "FAIL" "Cannot check Pi Docker Compose - daemon not running"
+            log_warning "Base image may not be accessible: $image"
         fi
-        
-    else
-        log_result "pi-docker-installed" "FAIL" "Docker is not installed on Pi"
-        log_result "pi-docker-running" "FAIL" "Cannot check Docker daemon - Docker not installed"
-        log_result "pi-docker-version" "FAIL" "Cannot check Pi Docker version - Docker not installed"
-        log_result "pi-docker-compose" "FAIL" "Cannot check Pi Docker Compose - Docker not installed"
-    fi
+    done
     
-    echo ""
+    return 0
 }
 
-# Check required base images
-check_base_images() {
-    echo -e "${BLUE}=== Base Images Validation ===${NC}"
+# Function to check required tools
+check_required_tools() {
+    log_info "Checking required tools..."
     
-    # Check if distroless base images are available
-    local distroless_python=$(docker image inspect gcr.io/distroless/python3-debian12:latest >/dev/null 2>&1 && echo "OK" || echo "FAIL")
-    if [ "$distroless_python" = "OK" ]; then
-        log_result "base-image-python" "PASS" "Distroless Python base image available"
-    else
-        log_result "base-image-python" "FAIL" "Distroless Python base image not available"
-    fi
+    local required_tools=("docker" "docker-compose" "ssh" "ping" "openssl")
     
-    local distroless_java=$(docker image inspect gcr.io/distroless/java17-debian12:latest >/dev/null 2>&1 && echo "OK" || echo "FAIL")
-    if [ "$distroless_java" = "OK" ]; then
-        log_result "base-image-java" "PASS" "Distroless Java base image available"
-    else
-        log_result "base-image-java" "FAIL" "Distroless Java base image not available"
-    fi
+    for tool in "${required_tools[@]}"; do
+        if command -v "$tool" &> /dev/null; then
+            log_success "Tool available: $tool"
+        else
+            log_error "Tool not found: $tool"
+            return 1
+        fi
+    done
     
-    local distroless_base=$(docker image inspect gcr.io/distroless/base-debian12:latest >/dev/null 2>&1 && [[ "$distroless_base" == *"gcr.io/distroless/base-debian12:latest"* ]] && echo "OK" || echo "FAIL")
-    if [ "$distroless_base" = "OK" ]; then
-        log_result "base-image-base" "PASS" "Distroless base image available"
-    else
-        log_result "base-image-base" "FAIL" "Distroless base image not available"
-    fi
+    # Check optional tools
+    local optional_tools=("jq" "yq" "curl" "git")
     
-    echo ""
+    for tool in "${optional_tools[@]}"; do
+        if command -v "$tool" &> /dev/null; then
+            log_success "Optional tool available: $tool"
+        else
+            log_warning "Optional tool not found: $tool"
+        fi
+    done
+    
+    return 0
 }
 
-# Check project structure
+# Function to check build environment variables
+check_build_environment_variables() {
+    log_info "Checking build environment variables..."
+    
+    local required_vars=(
+        "BUILD_PLATFORM"
+        "PI_HOST"
+        "PI_USER"
+    )
+    
+    for var in "${required_vars[@]}"; do
+        if [[ -n "${!var:-}" ]]; then
+            log_success "Environment variable set: $var=${!var}"
+        else
+            log_warning "Environment variable not set: $var"
+        fi
+    done
+    
+    return 0
+}
+
+# Function to check project structure
 check_project_structure() {
-    echo -e "${BLUE}=== Project Structure Validation ===${NC}"
+    log_info "Checking project structure..."
     
-    # Check required directories
     local required_dirs=(
         "infrastructure/containers/base"
-        "infrastructure/containers/database"
-        "infrastructure/containers/auth"
-        "configs/environment"
-        "scripts/validation"
-        "scripts/config"
-        "scripts/deployment"
         "auth"
         "database"
+        "configs"
+        "scripts"
     )
     
     for dir in "${required_dirs[@]}"; do
-        if [ -d "$PROJECT_ROOT/$dir" ]; then
-            log_result "project-dir-$dir" "PASS" "Directory exists: $dir"
+        if [[ -d "$dir" ]]; then
+            log_success "Directory exists: $dir"
         else
-            log_result "project-dir-$dir" "FAIL" "Directory missing: $dir"
+            log_error "Directory not found: $dir"
+            return 1
         fi
     done
     
-    # Check required files
-    local required_files=(
-        "infrastructure/containers/base/Dockerfile.python-base"
-        "infrastructure/containers/base/Dockerfile.java-base"
-        "infrastructure/containers/database/Dockerfile.mongodb"
-        "infrastructure/containers/database/Dockerfile.redis"
-        "infrastructure/containers/auth/Dockerfile.auth-service"
-        "auth/main.py"
-        "database/init_collections.js"
-    )
-    
-    for file in "${required_files[@]}"; do
-        if [ -f "$PROJECT_ROOT/$file" ]; then
-            log_result "project-file-$file" "PASS" "File exists: $file"
-        else
-            log_result "project-file-$file" "FAIL" "File missing: $file"
-        fi
-    done
-    
-    echo ""
+    return 0
 }
 
-# Generate validation report
-generate_report() {
-    echo -e "${BLUE}=== Generating Validation Report ===${NC}"
+# Function to check Dockerfile existence
+check_dockerfile_existence() {
+    log_info "Checking Dockerfile existence..."
     
-    local total_checks=${#VALIDATION_RESULTS[@]}
-    local passed_checks=0
-    local failed_checks=0
-    local warning_checks=0
+    local required_dockerfiles=(
+        "infrastructure/containers/base/Dockerfile.python-base"
+        "infrastructure/containers/base/Dockerfile.java-base"
+        "auth/Dockerfile"
+        "database/Dockerfile"
+    )
     
-    for result in "${VALIDATION_RESULTS[@]}"; do
-        local status=$(echo "$result" | jq -r '.status')
-        case "$status" in
-            "PASS") ((passed_checks++)) ;;
-            "FAIL") ((failed_checks++)) ;;
-            "WARN") ((warning_checks++)) ;;
-        esac
+    for dockerfile in "${required_dockerfiles[@]}"; do
+        if [[ -f "$dockerfile" ]]; then
+            log_success "Dockerfile exists: $dockerfile"
+        else
+            log_error "Dockerfile not found: $dockerfile"
+            return 1
+        fi
     done
     
+    return 0
+}
+
+# Function to display validation summary
+display_validation_summary() {
+    log_info "Build Environment Validation Summary:"
     echo ""
-    echo -e "${BLUE}=== Validation Summary ===${NC}"
-    echo "Total Checks: $total_checks"
-    echo -e "Passed: ${GREEN}$passed_checks${NC}"
-    echo -e "Failed: ${RED}$failed_checks${NC}"
-    echo -e "Warnings: ${YELLOW}$warning_checks${NC}"
-    echo -e "Success Rate: $(( (passed_checks * 100) / total_checks ))%"
-    
-    if [ $failed_checks -eq 0 ]; then
-        echo -e "${GREEN}✓ Build environment validation completed successfully!${NC}"
-        echo -e "${GREEN}✓ Ready to proceed with Phase 1 Foundation Services Build${NC}"
-        return 0
-    else
-        echo -e "${RED}✗ Build environment validation failed with $failed_checks errors${NC}"
-        echo -e "${RED}✗ Please fix the issues before proceeding with Phase 1 build${NC}"
-        return 1
-    fi
+    echo "Validation Results:"
+    echo "  • Docker Desktop: $(check_docker_desktop && echo "PASS" || echo "FAIL")"
+    echo "  • Docker Compose v2: $(check_docker_compose && echo "PASS" || echo "FAIL")"
+    echo "  • Docker BuildKit: $(check_docker_buildkit && echo "PASS" || echo "FAIL")"
+    echo "  • SSH Connection: $(check_ssh_connection && echo "PASS" || echo "FAIL")"
+    echo "  • Pi Disk Space: $(check_pi_disk_space && echo "PASS" || echo "FAIL")"
+    echo "  • Pi Architecture: $(check_pi_architecture && echo "PASS" || echo "FAIL")"
+    echo "  • Pi Docker Daemon: $(check_pi_docker_daemon && echo "PASS" || echo "FAIL")"
+    echo "  • Network Connectivity: $(check_network_connectivity && echo "PASS" || echo "FAIL")"
+    echo "  • Base Images: $(check_base_images_accessibility && echo "PASS" || echo "FAIL")"
+    echo "  • Required Tools: $(check_required_tools && echo "PASS" || echo "FAIL")"
+    echo "  • Environment Variables: $(check_build_environment_variables && echo "PASS" || echo "FAIL")"
+    echo "  • Project Structure: $(check_project_structure && echo "PASS" || echo "FAIL")"
+    echo "  • Dockerfile Existence: $(check_dockerfile_existence && echo "PASS" || echo "FAIL")"
+    echo ""
 }
 
 # Main execution
 main() {
-    init_validation
+    log_info "=== Build Environment Validation ==="
+    log_info "Build Host: Windows 11 console"
+    log_info "Target Host: Raspberry Pi 5 ($PI_HOST)"
+    log_info "Platform: $BUILD_PLATFORM (aarch64)"
+    echo ""
     
-    check_docker_desktop
-    check_pi_ssh_connection
-    check_pi_disk_space
-    check_pi_architecture
-    check_network_connectivity
-    check_pi_docker
-    check_base_images
-    check_project_structure
+    local validation_passed=true
     
-    generate_report
+    # Run all validation checks
+    check_docker_desktop || validation_passed=false
+    check_docker_compose || validation_passed=false
+    check_docker_buildkit || validation_passed=false
+    check_ssh_connection || validation_passed=false
+    check_pi_disk_space || validation_passed=false
+    check_pi_architecture || validation_passed=false
+    check_pi_docker_daemon || validation_passed=false
+    check_network_connectivity || validation_passed=false
+    check_base_images_accessibility || validation_passed=false
+    check_required_tools || validation_passed=false
+    check_build_environment_variables || validation_passed=false
+    check_project_structure || validation_passed=false
+    check_dockerfile_existence || validation_passed=false
+    
+    # Display summary
+    echo ""
+    display_validation_summary
+    
+    if [[ "$validation_passed" == "true" ]]; then
+        log_success "Build environment validation completed successfully!"
+        log_info "All prerequisites are met for building Docker images"
+        return 0
+    else
+        log_error "Build environment validation failed!"
+        log_info "Please fix the issues above before proceeding with the build"
+        return 1
+    fi
 }
 
 # Run main function

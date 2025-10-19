@@ -124,7 +124,7 @@ class TronClient:
         # Account cache
         self.account_cache: Dict[str, TronAccount] = {}
         
-        logger.info(f"TRON client initialized: {network.value}")
+        logger.info(f"TRON client initialized: {network.value if hasattr(network, 'value') else network}")
     
     async def connect(self) -> bool:
         """

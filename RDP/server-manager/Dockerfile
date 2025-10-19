@@ -61,28 +61,14 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=rdp-server-manager
-ENV SERVICE_PORT=8090
-
-# Create required directories
-USER root
-RUN mkdir -p /etc/lucid/rdp/templates \
-    && mkdir -p /etc/xrdp/servers \
-    && mkdir -p /var/log/xrdp/servers \
-    && mkdir -p /data/sessions \
-    && chmod 755 /etc/lucid/rdp/templates \
-    && chmod 755 /etc/xrdp/servers \
-    && chmod 755 /var/log/xrdp/servers \
-    && chmod 755 /data/sessions
-
-# Switch to non-root user
-USER 65532:65532
+ENV SERVICE_PORT=8081
 
 # Expose port
-EXPOSE 8090
+EXPOSE 8081
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import requests; requests.get('http://localhost:8090/health', timeout=5)"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/health')"]
 
 # Run application
 CMD ["python", "main.py"]

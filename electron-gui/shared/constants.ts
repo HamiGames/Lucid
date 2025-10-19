@@ -1,12 +1,34 @@
-// API Endpoints Configuration (from 00-master-api-architecture.md)
+// API Endpoints Configuration - Aligned with Docker Build Process
 export const API_ENDPOINTS = {
-  GATEWAY: 'http://localhost:8080',  // Proxied through Tor
-  BLOCKCHAIN: 'http://localhost:8084',
-  AUTH: 'http://localhost:8089',
-  SESSIONS: 'http://localhost:8087',
-  NODES: 'http://localhost:8095',
-  ADMIN: 'http://localhost:8083',
-  TRON_PAYMENT: 'http://localhost:8085',
+  // Phase 1 - Foundation Services
+  AUTH: 'http://192.168.0.75:8089',
+  MONGODB: 'mongodb://192.168.0.75:27017',
+  REDIS: 'redis://192.168.0.75:6379',
+  ELASTICSEARCH: 'http://192.168.0.75:9200',
+
+  // Phase 2 - Core Services
+  API_GATEWAY: 'http://192.168.0.75:8080',
+  SERVICE_MESH: 'http://192.168.0.75:8086',
+  BLOCKCHAIN_ENGINE: 'http://192.168.0.75:8084',
+  SESSION_ANCHORING: 'http://192.168.0.75:8085',
+  BLOCK_MANAGER: 'http://192.168.0.75:8086',
+  DATA_CHAIN: 'http://192.168.0.75:8087',
+
+  // Phase 3 - Application Services
+  SESSION_API: 'http://192.168.0.75:8087',
+  RDP_SERVER: 'http://192.168.0.75:8081',
+  SESSION_CONTROLLER: 'http://192.168.0.75:8082',
+  RESOURCE_MONITOR: 'http://192.168.0.75:8090',
+  NODE_MANAGEMENT: 'http://192.168.0.75:8095',
+
+  // Phase 4 - Support Services
+  ADMIN: 'http://192.168.0.75:8083',
+  TRON_CLIENT: 'http://192.168.0.75:8091',
+  PAYOUT_ROUTER: 'http://192.168.0.75:8092',
+  WALLET_MANAGER: 'http://192.168.0.75:8093',
+  USDT_MANAGER: 'http://192.168.0.75:8094',
+  TRX_STAKING: 'http://192.168.0.75:8096',
+  PAYMENT_GATEWAY: 'http://192.168.0.75:8097',
 } as const;
 
 // Service ports mapping
@@ -35,6 +57,14 @@ export const TOR_CONFIG = {
   CONFIG_FILE: 'torrc',
   BOOTSTRAP_TIMEOUT: 60000, // 60 seconds
   CIRCUIT_BUILD_TIMEOUT: 60000, // 60 seconds
+} as const;
+
+// Docker configuration
+export const DOCKER_CONFIG = {
+  PI_HOST: '192.168.0.75',
+  SSH_USER: 'pickme',
+  SSH_PORT: 22,
+  DEPLOY_DIR: '/opt/lucid/production',
 } as const;
 
 // Docker compose files for different service levels
