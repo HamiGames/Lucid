@@ -101,7 +101,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read()"]
 
 # Run the authentication service
-ENTRYPOINT ["python", "-m", "auth.main"]
+ENTRYPOINT ["python", "main.py"]
 
 # ============================================================================
 # Build Instructions:

@@ -17,15 +17,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from datetime import datetime
 
-from .config import settings
-from .middleware.auth_middleware import AuthMiddleware
-from .middleware.rate_limit import RateLimitMiddleware
-from .middleware.audit_log import AuditLogMiddleware
-from .authentication_service import AuthenticationService
-from .user_manager import UserManager
-from .hardware_wallet import HardwareWalletService
-from .session_manager import SessionManager
-from .permissions import RBACManager
+from config import settings
+from middleware import AuthMiddleware, RateLimitMiddleware, AuditLogMiddleware
+from authentication_service import AuthenticationService
+from user_manager import UserManager
+from hardware_wallet import HardwareWalletService
+from session_manager import SessionManager
+from permissions import RBACManager
 
 # Configure logging
 logging.basicConfig(
@@ -139,7 +137,7 @@ async def service_info():
 
 
 # Import and include routers
-from .api import auth_router, users_router, sessions_router, hardware_wallet_router
+from api import auth_router, users_router, sessions_router, hardware_wallet_router
 
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(users_router, prefix="/users", tags=["Users"])

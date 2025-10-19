@@ -11,7 +11,7 @@ import redis.asyncio as redis
 from typing import Optional
 import logging
 
-from ..config import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 
