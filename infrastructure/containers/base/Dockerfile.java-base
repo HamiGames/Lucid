@@ -22,13 +22,13 @@ LABEL maintainer="Lucid Development Team" \
 
 # Set build environment
 ENV DEBIAN_FRONTEND=noninteractive \
-    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+    JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-arm64 \
     MAVEN_HOME=/usr/share/maven \
     GRADLE_HOME=/usr/share/gradle \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# Install build dependencies
+# Install build dependencies and set JAVA_HOME correctly
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
@@ -52,9 +52,8 @@ COPY ./pom.xml /app/
 COPY ./build.gradle /app/
 COPY ./gradle.properties /app/
 
-# Download dependencies (if Maven/Gradle files exist)
+# Download dependencies (if Maven files exist)
 RUN if [ -f pom.xml ]; then mvn dependency:go-offline -B; fi
-RUN if [ -f build.gradle ]; then gradle dependencies --no-daemon; fi
 
 # Stage 2: Distroless runtime (ARM64 optimized for Pi deployment)
 FROM gcr.io/distroless/java17-debian12:latest
@@ -69,7 +68,7 @@ LABEL maintainer="Lucid Development Team" \
       org.lucid.target="raspberry-pi"
 
 # Set runtime environment
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-arm64 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 

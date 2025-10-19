@@ -28,14 +28,22 @@ services:
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
     volumes:
-      - admin_interface_logs:/app/logs
-      - admin_interface_data:/app/data
+      - /mnt/myssd/Lucid/logs/admin-interface:/app/logs
+      - /mnt/myssd/Lucid/data/admin-interface:/app/data
     networks:
       - lucid-dev
     depends_on:
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
+        condition: service_healthy
+      lucid-api-gateway:
+        condition: service_healthy
+      lucid-blocks:
+        condition: service_healthy
+      lucid-session-api:
+        condition: service_healthy
+      lucid-node-management:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
@@ -70,8 +78,8 @@ services:
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
     volumes:
-      - tron_client_logs:/app/logs
-      - tron_client_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-client:/app/logs
+      - /mnt/myssd/Lucid/data/tron-client:/app/data
     networks:
       - lucid-network-isolated
     healthcheck:
@@ -102,8 +110,8 @@ services:
       - PAYOUT_V0_ENABLED=true
       - PAYOUT_KYC_ENABLED=true
     volumes:
-      - tron_payout_router_logs:/app/logs
-      - tron_payout_router_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-payout-router:/app/logs
+      - /mnt/myssd/Lucid/data/tron-payout-router:/app/data
     networks:
       - lucid-network-isolated
     depends_on:
@@ -136,8 +144,8 @@ services:
       - TRON_CLIENT_URL=http://lucid-tron-client:8096
       - WALLET_ENCRYPTION_ENABLED=true
     volumes:
-      - tron_wallet_manager_logs:/app/logs
-      - tron_wallet_manager_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-wallet-manager:/app/logs
+      - /mnt/myssd/Lucid/data/tron-wallet-manager:/app/data
     networks:
       - lucid-network-isolated
     depends_on:
@@ -170,8 +178,8 @@ services:
       - TRON_CLIENT_URL=http://lucid-tron-client:8096
       - USDT_TRC20_ADDRESS=${USDT_TRC20_ADDRESS:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
     volumes:
-      - tron_usdt_manager_logs:/app/logs
-      - tron_usdt_manager_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-usdt-manager:/app/logs
+      - /mnt/myssd/Lucid/data/tron-usdt-manager:/app/data
     networks:
       - lucid-network-isolated
     depends_on:
@@ -205,8 +213,8 @@ services:
       - STAKING_ENABLED=true
       - STAKING_REWARDS_ENABLED=true
     volumes:
-      - tron_staking_logs:/app/logs
-      - tron_staking_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-staking:/app/logs
+      - /mnt/myssd/Lucid/data/tron-staking:/app/data
     networks:
       - lucid-network-isolated
     depends_on:
@@ -242,8 +250,8 @@ services:
       - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8099
       - STAKING_URL=http://lucid-tron-staking:8100
     volumes:
-      - tron_payment_gateway_logs:/app/logs
-      - tron_payment_gateway_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-payment-gateway:/app/logs
+      - /mnt/myssd/Lucid/data/tron-payment-gateway:/app/data
     networks:
       - lucid-network-isolated
     depends_on:
@@ -294,35 +302,8 @@ networks:
 # ===========================================
 # VOLUMES
 # ===========================================
-volumes:
-  # Admin Interface volumes
-  admin_interface_logs:
-    driver: local
-  admin_interface_data:
-    driver: local
-  
-  # TRON Payment volumes
-  tron_client_logs:
-    driver: local
-  tron_client_data:
-    driver: local
-  tron_payout_router_logs:
-    driver: local
-  tron_payout_router_data:
-    driver: local
-  tron_wallet_manager_logs:
-    driver: local
-  tron_wallet_manager_data:
-    driver: local
-  tron_usdt_manager_logs:
-    driver: local
-  tron_usdt_manager_data:
-    driver: local
-  tron_staking_logs:
-    driver: local
-  tron_staking_data:
-    driver: local
-  tron_payment_gateway_logs:
-    driver: local
-  tron_payment_gateway_data:
-    driver: local
+# =============================================================================
+# VOLUMES - Using Direct Host Paths on Pi
+# =============================================================================
+# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
+# No named volumes needed - using host path mounts for better performance

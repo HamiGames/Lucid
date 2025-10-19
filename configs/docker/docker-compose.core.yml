@@ -32,7 +32,7 @@ services:
       - CORS_ENABLED=true
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
     volumes:
-      - api_gateway_logs:/app/logs
+      - /mnt/myssd/Lucid/logs/api-gateway:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -58,14 +58,14 @@ services:
   # ===========================================
 
   # Blockchain Core Engine
-  blockchain-core:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain-core:${LUCID_TAG:-latest}
-    container_name: lucid-blockchain-core
+  lucid-blocks:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/lucid-blocks:${LUCID_TAG:-latest}
+    container_name: lucid-blocks
     restart: unless-stopped
     ports:
       - "8084:8084"
     environment:
-      - SERVICE_NAME=lucid-blockchain-core
+      - SERVICE_NAME=lucid-blocks
       - PORT=8084
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
@@ -76,8 +76,8 @@ services:
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
     volumes:
-      - blockchain_data:/app/data
-      - blockchain_logs:/app/logs
+      - /mnt/myssd/Lucid/data/blockchain:/app/data
+      - /mnt/myssd/Lucid/logs/blockchain:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -99,7 +99,7 @@ services:
   # Blockchain Engine
   blockchain-engine:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain-engine:${LUCID_TAG:-latest}
-    container_name: lucid-blockchain-engine
+    container_name: lucid-blocks-engine
     restart: unless-stopped
     ports:
       - "8085:8085"
@@ -113,8 +113,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - blockchain_engine_data:/app/data
-      - blockchain_engine_logs:/app/logs
+      - /mnt/myssd/Lucid/data/blockchain-engine:/app/data
+      - /mnt/myssd/Lucid/logs/blockchain-engine:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -134,7 +134,7 @@ services:
   # Session Anchoring Service
   session-anchoring:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-anchoring:${LUCID_TAG:-latest}
-    container_name: lucid-session-anchoring
+    container_name: lucid-blocks-anchoring
     restart: unless-stopped
     ports:
       - "8086:8086"
@@ -148,8 +148,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - anchoring_data:/app/data
-      - anchoring_logs:/app/logs
+      - /mnt/myssd/Lucid/data/anchoring:/app/data
+      - /mnt/myssd/Lucid/logs/anchoring:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -169,7 +169,7 @@ services:
   # Block Manager
   block-manager:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/block-manager:${LUCID_TAG:-latest}
-    container_name: lucid-block-manager
+    container_name: lucid-blocks-manager
     restart: unless-stopped
     ports:
       - "8087:8087"
@@ -183,8 +183,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - block_manager_data:/app/data
-      - block_manager_logs:/app/logs
+      - /mnt/myssd/Lucid/data/block-manager:/app/data
+      - /mnt/myssd/Lucid/logs/block-manager:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -204,7 +204,7 @@ services:
   # Data Chain Service
   data-chain:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/data-chain:${LUCID_TAG:-latest}
-    container_name: lucid-data-chain
+    container_name: lucid-blocks-data
     restart: unless-stopped
     ports:
       - "8088:8088"
@@ -218,8 +218,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - data_chain_data:/app/data
-      - data_chain_logs:/app/logs
+      - /mnt/myssd/Lucid/data/data-chain:/app/data
+      - /mnt/myssd/Lucid/logs/data-chain:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -261,8 +261,8 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     volumes:
-      - consul_data:/consul/data
-      - consul_logs:/app/logs
+      - /mnt/myssd/Lucid/data/consul:/consul/data
+      - /mnt/myssd/Lucid/logs/consul:/app/logs
     networks:
       - lucid-dev
     healthcheck:
@@ -292,35 +292,8 @@ networks:
 # ===========================================
 # VOLUMES
 # ===========================================
-volumes:
-  # API Gateway volumes
-  api_gateway_logs:
-    driver: local
-  
-  # Blockchain volumes
-  blockchain_data:
-    driver: local
-  blockchain_logs:
-    driver: local
-  blockchain_engine_data:
-    driver: local
-  blockchain_engine_logs:
-    driver: local
-  anchoring_data:
-    driver: local
-  anchoring_logs:
-    driver: local
-  block_manager_data:
-    driver: local
-  block_manager_logs:
-    driver: local
-  data_chain_data:
-    driver: local
-  data_chain_logs:
-    driver: local
-  
-  # Service Mesh volumes
-  consul_data:
-    driver: local
-  consul_logs:
-    driver: local
+# =============================================================================
+# VOLUMES - Using Direct Host Paths on Pi
+# =============================================================================
+# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
+# No named volumes needed - using host path mounts for better performance

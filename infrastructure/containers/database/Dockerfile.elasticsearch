@@ -1,0 +1,67 @@
+# LUCID Elasticsearch Container - SPEC-1B Implementation
+# Distroless container for Elasticsearch search engine
+
+# syntax=docker/dockerfile:1.7
+
+# Stage 1: Builder
+FROM elasticsearch:8.11.0 AS builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+# Switch to root for package installation
+USER root
+
+# Install additional tools for customization
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to elasticsearch user
+USER elasticsearch
+
+# Create custom Elasticsearch configuration
+RUN echo "cluster.name: lucid-cluster\n\
+node.name: lucid-node\n\
+discovery.type: single-node\n\
+xpack.security.enabled: false\n\
+xpack.security.enrollment.enabled: false\n\
+xpack.security.http.ssl.enabled: false\n\
+xpack.security.transport.ssl.enabled: false\n\
+bootstrap.memory_lock: true\n\
+ES_JAVA_OPTS: \"-Xms512m -Xmx512m\"\n\
+network.host: 0.0.0.0\n\
+http.port: 9200\n\
+transport.port: 9300" > /usr/share/elasticsearch/config/elasticsearch.yml
+
+# Stage 2: Runtime (Distroless)
+FROM gcr.io/distroless/base-debian12:nonroot
+
+# Copy Elasticsearch binary and configuration
+COPY --from=builder /usr/share/elasticsearch /usr/share/elasticsearch
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Set environment variables
+ENV ES_HOME=/usr/share/elasticsearch
+ENV ES_JAVA_OPTS="-Xms512m -Xmx512m"
+ENV CLUSTER_NAME=lucid-cluster
+ENV NODE_NAME=lucid-node
+ENV DISCOVERY_TYPE=single-node
+ENV XPACK_SECURITY_ENABLED=false
+
+# Set working directory
+WORKDIR /usr/share/elasticsearch
+
+# Create non-root user
+USER nonroot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["/usr/local/bin/curl", "-f", "http://localhost:9200/_cluster/health"]
+
+# Expose ports
+EXPOSE 9200 9300
+
+# Run Elasticsearch
+ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch"]

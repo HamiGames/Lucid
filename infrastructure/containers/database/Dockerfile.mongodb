@@ -23,11 +23,8 @@ FROM gcr.io/distroless/base-debian12:nonroot
 
 # Copy MongoDB binary and configuration
 COPY --from=builder /usr/bin/mongod /usr/bin/mongod
-COPY --from=builder /usr/bin/mongo /usr/bin/mongo
+COPY --from=builder /usr/bin/mongosh /usr/bin/mongosh
 COPY --from=builder /etc/mongod.conf /etc/mongod.conf
-
-# Create data directory
-RUN mkdir -p /data/db /data/logs
 
 # Set environment variables
 ENV MONGO_INITDB_ROOT_USERNAME=lucid_admin
@@ -42,7 +39,7 @@ USER nonroot
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/usr/bin/mongo", "--eval", "db.adminCommand('ping')"]
+    CMD ["/usr/bin/mongosh", "--eval", "db.adminCommand('ping')"]
 
 # Expose port
 EXPOSE 27017

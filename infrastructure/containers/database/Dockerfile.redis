@@ -26,9 +26,6 @@ COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/redis-server
 COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli
 COPY --from=builder /etc/redis.conf /etc/redis.conf
 
-# Create data directory
-RUN mkdir -p /data
-
 # Set environment variables
 ENV REDIS_PASSWORD=lucid_redis_password
 

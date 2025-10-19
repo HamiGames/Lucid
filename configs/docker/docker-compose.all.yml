@@ -30,8 +30,8 @@ services:
       - HARDWARE_WALLET_ENABLED=true
       - RBAC_ENABLED=true
     volumes:
-      - auth_logs:/app/logs
-      - auth_data:/app/data
+      - /mnt/myssd/Lucid/logs/auth:/app/logs
+      - /mnt/myssd/Lucid/data/auth:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -62,8 +62,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=lucid
       - MONGO_INITDB_DATABASE=lucid
     volumes:
-      - mongodb_data:/data/db
-      - mongodb_config:/data/configdb
+      - /mnt/myssd/Lucid/data/mongodb:/data/db
+      - /mnt/myssd/Lucid/data/mongodb-config:/data/configdb
       - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
     networks:
       - lucid-dev
@@ -86,7 +86,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - /mnt/myssd/Lucid/data/redis:/data
       - ./configs/database/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - lucid-dev
@@ -113,7 +113,7 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
+      - /mnt/myssd/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
       - ./configs/database/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
       - lucid-dev
@@ -147,9 +147,9 @@ services:
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
     volumes:
-      - storage_logs:/app/logs
-      - storage_data:/app/data
-      - storage_backups:/app/backups
+      - /mnt/myssd/Lucid/logs/storage:/app/logs
+      - /mnt/myssd/Lucid/data/storage:/app/data
+      - /mnt/myssd/Lucid/backups:/app/backups
     networks:
       - lucid-dev
     depends_on:
@@ -197,7 +197,7 @@ services:
       - CORS_ENABLED=true
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
     volumes:
-      - api_gateway_logs:/app/logs
+      - /mnt/myssd/Lucid/logs/api-gateway:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -219,14 +219,14 @@ services:
       - "com.lucid.cluster=01-api-gateway"
 
   # Blockchain Core Engine
-  blockchain-core:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain-core:${LUCID_TAG:-latest}
-    container_name: lucid-blockchain-core
+  lucid-blocks:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/lucid-blocks:${LUCID_TAG:-latest}
+    container_name: lucid-blocks
     restart: unless-stopped
     ports:
       - "8084:8084"
     environment:
-      - SERVICE_NAME=lucid-blockchain-core
+      - SERVICE_NAME=lucid-blocks
       - PORT=8084
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
@@ -237,8 +237,8 @@ services:
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
     volumes:
-      - blockchain_data:/app/data
-      - blockchain_logs:/app/logs
+      - /mnt/myssd/Lucid/data/blockchain:/app/data
+      - /mnt/myssd/Lucid/logs/blockchain:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -278,8 +278,8 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     volumes:
-      - consul_data:/consul/data
-      - consul_logs:/app/logs
+      - /mnt/myssd/Lucid/data/consul:/consul/data
+      - /mnt/myssd/Lucid/logs/consul:/app/logs
     networks:
       - lucid-dev
     healthcheck:
@@ -316,8 +316,8 @@ services:
       - CHUNK_SIZE_MB=10
       - COMPRESSION_LEVEL=6
     volumes:
-      - session_pipeline_logs:/app/logs
-      - session_pipeline_data:/app/data
+      - /mnt/myssd/Lucid/logs/session-pipeline:/app/logs
+      - /mnt/myssd/Lucid/data/session-pipeline:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -355,8 +355,8 @@ services:
       - PAYOUT_PROCESSING_ENABLED=true
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
     volumes:
-      - node_management_logs:/app/logs
-      - node_management_data:/app/data
+      - /mnt/myssd/Lucid/logs/node-management:/app/logs
+      - /mnt/myssd/Lucid/data/node-management:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -385,10 +385,10 @@ services:
     container_name: lucid-admin-interface
     restart: unless-stopped
     ports:
-      - "8083:8083"
+      - "8090:8090"
     environment:
       - SERVICE_NAME=lucid-admin-interface
-      - PORT=8083
+      - PORT=8090
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -398,8 +398,8 @@ services:
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
     volumes:
-      - admin_interface_logs:/app/logs
-      - admin_interface_data:/app/data
+      - /mnt/myssd/Lucid/logs/admin-interface:/app/logs
+      - /mnt/myssd/Lucid/data/admin-interface:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -436,8 +436,8 @@ services:
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
     volumes:
-      - tron_client_logs:/app/logs
-      - tron_client_data:/app/data
+      - /mnt/myssd/Lucid/logs/tron-client:/app/logs
+      - /mnt/myssd/Lucid/data/tron-client:/app/data
     networks:
       - lucid-network-isolated
     healthcheck:
@@ -477,57 +477,8 @@ networks:
 # ===========================================
 # VOLUMES
 # ===========================================
-volumes:
-  # Database volumes
-  mongodb_data:
-    driver: local
-  mongodb_config:
-    driver: local
-  redis_data:
-    driver: local
-  elasticsearch_data:
-    driver: local
-  
-  # Foundation service volumes
-  auth_logs:
-    driver: local
-  auth_data:
-    driver: local
-  storage_logs:
-    driver: local
-  storage_data:
-    driver: local
-  storage_backups:
-    driver: local
-  
-  # Core service volumes
-  api_gateway_logs:
-    driver: local
-  blockchain_data:
-    driver: local
-  blockchain_logs:
-    driver: local
-  consul_data:
-    driver: local
-  consul_logs:
-    driver: local
-  
-  # Application service volumes
-  session_pipeline_logs:
-    driver: local
-  session_pipeline_data:
-    driver: local
-  node_management_logs:
-    driver: local
-  node_management_data:
-    driver: local
-  
-  # Support service volumes
-  admin_interface_logs:
-    driver: local
-  admin_interface_data:
-    driver: local
-  tron_client_logs:
-    driver: local
-  tron_client_data:
-    driver: local
+# =============================================================================
+# VOLUMES - Using Direct Host Paths on Pi
+# =============================================================================
+# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
+# No named volumes needed - using host path mounts for better performance
