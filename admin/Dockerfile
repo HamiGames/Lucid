@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY requirements.txt requirements-prod.txt ./
+COPY admin/requirements.txt ./
 
 # Create virtual environment
 RUN python -m venv /opt/venv
@@ -57,11 +57,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r requirements-prod.txt
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
 COPY admin/ ./
+
+# Create necessary directories for runtime
+RUN mkdir -p /app/logs /app/tmp /app/data /app/config && \
+    chmod 755 /app/logs /app/tmp /app/data && \
+    chmod 700 /app/config
 
 # ==============================================================================
 # Stage 2: Runtime - Distroless container with application
@@ -102,11 +106,6 @@ COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
 
 # Copy application source with proper ownership
 COPY --from=builder --chown=nonroot:nonroot /app /app
-
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/logs /app/tmp /app/data /app/config && \
-    chmod 755 /app/logs /app/tmp /app/data && \
-    chmod 700 /app/config
 
 # Set Python path to use virtual environment
 ENV PATH="/opt/venv/bin:$PATH"

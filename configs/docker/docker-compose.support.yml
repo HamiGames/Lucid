@@ -28,8 +28,8 @@ services:
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/admin-interface:/app/logs
-      - /mnt/myssd/Lucid/data/admin-interface:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -78,8 +78,8 @@ services:
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-client:/app/logs
-      - /mnt/myssd/Lucid/data/tron-client:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data
     networks:
       - lucid-tron-isolated
     healthcheck:
@@ -110,8 +110,8 @@ services:
       - PAYOUT_V0_ENABLED=true
       - PAYOUT_KYC_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-payout-router:/app/logs
-      - /mnt/myssd/Lucid/data/tron-payout-router:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-payout-router:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-payout-router:/app/data
     networks:
       - lucid-tron-isolated
     depends_on:
@@ -144,8 +144,8 @@ services:
       - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - WALLET_ENCRYPTION_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-wallet-manager:/app/logs
-      - /mnt/myssd/Lucid/data/tron-wallet-manager:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-wallet-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-wallet-manager:/app/data
     networks:
       - lucid-tron-isolated
     depends_on:
@@ -178,8 +178,8 @@ services:
       - TRON_CLIENT_URL=http://lucid-tron-client:8091
       - USDT_TRC20_ADDRESS=${USDT_TRC20_ADDRESS:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-usdt-manager:/app/logs
-      - /mnt/myssd/Lucid/data/tron-usdt-manager:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-usdt-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-usdt-manager:/app/data
     networks:
       - lucid-tron-isolated
     depends_on:
@@ -213,8 +213,8 @@ services:
       - STAKING_ENABLED=true
       - STAKING_REWARDS_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-staking:/app/logs
-      - /mnt/myssd/Lucid/data/tron-staking:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-staking:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-staking:/app/data
     networks:
       - lucid-tron-isolated
     depends_on:
@@ -250,8 +250,8 @@ services:
       - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8094
       - STAKING_URL=http://lucid-tron-staking:8095
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-payment-gateway:/app/logs
-      - /mnt/myssd/Lucid/data/tron-payment-gateway:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-payment-gateway:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-payment-gateway:/app/data
     networks:
       - lucid-tron-isolated
     depends_on:

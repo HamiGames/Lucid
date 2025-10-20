@@ -48,7 +48,6 @@ docker buildx build \
     --file Dockerfile.python-base \
     --tag $REGISTRY/$PYTHON_IMAGE:$VERSION \
     --tag $REGISTRY/$PYTHON_IMAGE:$(git rev-parse --short HEAD) \
-    --tag lucid-python-base:latest \
     $BUILD_ARGS \
     --push \
     .
@@ -66,7 +65,6 @@ docker buildx build \
     --file Dockerfile.java-base \
     --tag $REGISTRY/$JAVA_IMAGE:$VERSION \
     --tag $REGISTRY/$JAVA_IMAGE:$(git rev-parse --short HEAD) \
-    --tag lucid-java-base:latest \
     $BUILD_ARGS \
     --push \
     .

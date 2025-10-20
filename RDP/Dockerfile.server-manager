@@ -22,16 +22,16 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /build
 
-# Copy requirements first for better layer caching
-COPY server-manager/requirements.txt ./requirements.txt
+# Copy requirements first for better layer caching (from RDP directory)
+COPY RDP/server-manager/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copy source code
-COPY server-manager/ ./server-manager/
-COPY server/ ./server/
-COPY __init__.py ./__init__.py
+# Copy source code (from RDP directory)
+COPY RDP/server-manager/ ./server-manager/
+COPY RDP/server/ ./server/
+COPY RDP/__init__.py ./__init__.py
 
 # Stage 2: Runtime (Distroless)
 FROM gcr.io/distroless/python3-debian12

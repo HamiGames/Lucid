@@ -17,7 +17,7 @@ PI_HOST="192.168.0.75"
 PI_USER="pickme"
 PI_SSH_PORT="22"
 PI_SSH_KEY_PATH="$HOME/.ssh/id_rsa"
-PI_DEPLOY_DIR="/opt/lucid/production"
+PI_DEPLOY_DIR="/mnt/myssd/Lucid/Lucid"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Service configuration
@@ -99,47 +99,38 @@ create_tron_network() {
     fi
 }
 
-# Copy Phase 4 compose file to Pi
-copy_compose_file() {
-    echo -e "${BLUE}=== Copying Docker Compose File ===${NC}"
+# Verify Phase 4 compose file exists on Pi
+verify_compose_file() {
+    echo -e "${BLUE}=== Verifying Docker Compose File ===${NC}"
     
-    local compose_file="$PROJECT_ROOT/configs/docker/docker-compose.support.yml"
-    local pi_compose_file="$PI_DEPLOY_DIR/docker-compose.support.yml"
+    local pi_compose_file="$PI_DEPLOY_DIR/configs/docker/docker-compose.support.yml"
     
-    if [ -f "$compose_file" ]; then
-        scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$compose_file" "$PI_USER@$PI_HOST:$pi_compose_file" >/dev/null 2>&1
-        
-        if [ $? -eq 0 ]; then
-            log_step "compose-file-copy" "SUCCESS" "Docker compose file copied to Pi"
-        else
-            log_step "compose-file-copy" "FAILURE" "Failed to copy Docker compose file to Pi"
-            return 1
-        fi
+    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "test -f $pi_compose_file" >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "compose-file-verify" "SUCCESS" "Docker compose file exists on Pi at $pi_compose_file"
+        return 0
     else
-        log_step "compose-file-copy" "FAILURE" "Docker compose file not found: $compose_file"
+        log_step "compose-file-verify" "FAILURE" "Docker compose file not found on Pi at $pi_compose_file"
+        echo "Please ensure the Lucid project is synced to $PI_DEPLOY_DIR on the Pi"
         return 1
     fi
 }
 
-# Copy environment configuration to Pi
-copy_environment_config() {
-    echo -e "${BLUE}=== Copying Environment Configuration ===${NC}"
+# Verify environment configuration exists on Pi
+verify_environment_config() {
+    echo -e "${BLUE}=== Verifying Environment Configuration ===${NC}"
     
-    local env_file="$PROJECT_ROOT/configs/environment/.env.support"
-    local pi_env_file="$PI_DEPLOY_DIR/.env.support"
+    local pi_env_file="$PI_DEPLOY_DIR/configs/environment/.env.support"
     
-    if [ -f "$env_file" ]; then
-        scp -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$env_file" "$PI_USER@$PI_HOST:$pi_env_file" >/dev/null 2>&1
-        
-        if [ $? -eq 0 ]; then
-            log_step "env-file-copy" "SUCCESS" "Environment configuration copied to Pi"
-        else
-            log_step "env-file-copy" "FAILURE" "Failed to copy environment configuration to Pi"
-            return 1
-        fi
+    ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "test -f $pi_env_file" >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "env-file-verify" "SUCCESS" "Environment configuration exists on Pi"
+        return 0
     else
-        log_step "env-file-copy" "FAILURE" "Environment configuration file not found: $env_file"
-        return 1
+        log_step "env-file-verify" "WARNING" "Environment file not found, will use defaults from compose file"
+        return 0
     fi
 }
 
@@ -149,7 +140,7 @@ pull_arm64_images() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose -f docker-compose.foundation.yml -f docker-compose.core.yml -f docker-compose.application.yml -f docker-compose.support.yml pull
+        docker-compose -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml -f configs/docker/docker-compose.application.yml -f configs/docker/docker-compose.support.yml pull
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -166,7 +157,7 @@ deploy_phase4_services() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose -f docker-compose.foundation.yml -f docker-compose.core.yml -f docker-compose.application.yml -f docker-compose.support.yml up -d
+        docker-compose -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml -f configs/docker/docker-compose.application.yml -f configs/docker/docker-compose.support.yml up -d
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -387,8 +378,8 @@ main() {
     # Execute deployment steps
     test_ssh_connection || exit 1
     create_tron_network || exit 1
-    copy_compose_file || exit 1
-    copy_environment_config || exit 1
+    verify_compose_file || exit 1
+    verify_environment_config || exit 1
     pull_arm64_images || exit 1
     deploy_phase4_services || exit 1
     wait_for_health_checks || exit 1

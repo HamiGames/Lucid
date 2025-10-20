@@ -6,7 +6,7 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # Cryptography and encryption
-cryptography==41.0.8
+cryptography==41.0.7
 pycryptodome==3.19.0
 
 # Database and caching
@@ -15,7 +15,6 @@ redis==5.0.1
 pymongo==4.6.0
 
 # Async and concurrency
-asyncio==3.4.3
 aiofiles==23.2.1
 aiohttp==3.9.1
 

@@ -80,13 +80,12 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-lucid}
       MONGO_INITDB_DATABASE: lucid
     volumes:
-      - /mnt/myssd/Lucid/data/mongodb:/data/db
-      - /mnt/myssd/Lucid/data/mongodb-config:/data/configdb
-      - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
+      - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db
+      - /mnt/myssd/Lucid/Lucid/data/mongodb-config:/data/configdb
     networks:
       lucid-pi-network:
         aliases: [mongo, lucid_mongo, mongodb]
-        ipv4_address: 172.20.0.10
+        ipv4_address: 172.22.0.10
     healthcheck:
       test: [
         "CMD-SHELL", 
@@ -134,11 +133,11 @@ services:
       <<: *lucid-env
       REDIS_PASSWORD: ${REDIS_PASSWORD:-lucid}
     volumes:
-      - /mnt/myssd/Lucid/data/redis:/data
+      - /mnt/myssd/Lucid/Lucid/data/redis:/data
     networks:
       lucid-pi-network:
         aliases: [redis, lucid_redis]
-        ipv4_address: 172.20.0.11
+        ipv4_address: 172.22.0.11
     healthcheck:
       test: [
         "CMD-SHELL",
@@ -185,16 +184,16 @@ services:
       <<: *lucid-env
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
       discovery.type: single-node
-      xpack.security.enabled: false
+      xpack.security.enabled: "false"
       cluster.name: lucid-cluster
       node.name: lucid-node
-      bootstrap.memory_lock: true
+      bootstrap.memory_lock: "true"
     volumes:
-      - /mnt/myssd/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
+      - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
     networks:
       lucid-pi-network:
         aliases: [elasticsearch, lucid_elasticsearch]
-        ipv4_address: 172.20.0.12
+        ipv4_address: 172.22.0.12
     healthcheck:
       test: [
         "CMD-SHELL",
@@ -223,12 +222,8 @@ services:
   lucid-auth-service:
     <<: *lucid-common
     container_name: lucid-auth-service
-    build:
-      context: ../../
-      dockerfile: infrastructure/containers/auth/Dockerfile.auth-service
-      target: production
-      platforms:
-        - linux/arm64
+    image: pickme/lucid-auth-service:latest-arm64
+    platform: linux/arm64
     ports:
       - "8089:8089"
     environment:
@@ -240,24 +235,24 @@ services:
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 7
-      TRON_SIGNATURE_VERIFICATION_ENABLED: true
+      TRON_SIGNATURE_VERIFICATION_ENABLED: "true"
       TRON_NETWORK: mainnet
-      ENABLE_HARDWARE_WALLET: true
-      LEDGER_SUPPORTED: true
-      TREZOR_SUPPORTED: true
-      KEEPKEY_SUPPORTED: true
-      RBAC_ENABLED: true
+      ENABLE_HARDWARE_WALLET: "true"
+      LEDGER_SUPPORTED: "true"
+      TREZOR_SUPPORTED: "true"
+      KEEPKEY_SUPPORTED: "true"
+      RBAC_ENABLED: "true"
       DEFAULT_USER_ROLE: user
       BCRYPT_ROUNDS: 12
       MAX_LOGIN_ATTEMPTS: 5
       LOGIN_COOLDOWN_MINUTES: 15
     volumes:
-      - /mnt/myssd/Lucid/logs/auth:/app/logs
-      - /mnt/myssd/Lucid/data/auth:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/auth:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/auth:/app/data
     networks:
       lucid-pi-network:
         aliases: [auth-service, lucid_auth]
-        ipv4_address: 172.20.0.13
+        ipv4_address: 172.22.0.13
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -291,15 +286,7 @@ services:
 # =============================================================================
 networks:
   lucid-pi-network:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
-    labels:
-      - "org.lucid.network=foundation"
-      - "org.lucid.plane=ops"
+    external: true
 
 # =============================================================================
 # VOLUMES - Using Direct Host Paths on Pi

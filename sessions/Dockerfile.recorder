@@ -38,7 +38,7 @@ COPY sessions/core/ ./core/
 COPY sessions/__init__.py ./__init__.py
 
 # Stage 2: Runtime (Distroless)
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12:latest
 
 # Copy Python dependencies from builder
 COPY --from=builder /root/.local /root/.local
@@ -52,7 +52,7 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 WORKDIR /app
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-session-recorder
 ENV PORT=8084
@@ -60,12 +60,12 @@ ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
-# Health check
+# Health check (distroless compatible - no shell)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health')"]
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health')"]
 
 # Expose port
 EXPOSE 8084
 
 # Set entrypoint
-ENTRYPOINT ["python", "-m", "recorder.main"]
+ENTRYPOINT ["python3", "-m", "recorder.main"]

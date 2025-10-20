@@ -10,8 +10,8 @@
 
 **Registry:** Docker Hub (pickme/lucid namespace)
 
-**Timeline:** ~7 weeks total
-
+**Timeline:** ~7 Days total
+**Pi Project File Path:**  /mnt/mysdd/Lucid/Lucid/
 ## Critical Success Factors
 
 - **No Placeholders**: All configurations with real generated values
@@ -108,7 +108,7 @@ Validation: `docker manifest inspect` confirms ARM64 images exist
 
 ---
 
-## Phase 1: Foundation Services (~1 week)
+## Phase 1: Foundation Services (~1 days)
 
 **Dependencies:** Pre-Build Phase completed
 
@@ -337,7 +337,7 @@ Benchmark:
 
 ---
 
-## Phase 3: Application Services (~2 weeks)
+## Phase 3: Application Services (~2 days)
 
 **Dependencies:** Phase 2 completed
 
@@ -391,7 +391,7 @@ Test chunk processing throughput, RDP connection latency, node pool management.
 
 ---
 
-## Phase 4: Support Services (~1 week)
+## Phase 4: Support Services (~1 days)
 
 **Dependencies:** Phase 3 completed
 

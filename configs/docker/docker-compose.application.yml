@@ -29,8 +29,8 @@ services:
       - PIPELINE_CHUNK_SIZE_MB=1
       - PIPELINE_COMPRESSION_LEVEL=6
     volumes:
-      - /mnt/myssd/Lucid/logs/session-pipeline:/app/logs
-      - /mnt/myssd/Lucid/data/session-pipeline:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -68,9 +68,9 @@ services:
       - RECORDING_FPS=30
       - RECORDING_BITRATE=2000k
     volumes:
-      - /mnt/myssd/Lucid/logs/session-recorder:/app/logs
-      - /mnt/myssd/Lucid/data/session-recorder:/app/data
-      - /mnt/myssd/Lucid/recordings:/app/recordings
+      - /mnt/myssd/Lucid/Lucid/logs/session-recorder:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-recorder:/app/data
+      - /mnt/myssd/Lucid/Lucid/recordings:/app/recordings
     networks:
       - lucid-pi-network
     depends_on:
@@ -108,8 +108,8 @@ services:
       - PROCESSOR_ENCRYPTION_ENABLED=true
       - PROCESSOR_COMPRESSION_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/chunk-processor:/app/logs
-      - /mnt/myssd/Lucid/data/chunk-processor:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/chunk-processor:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/chunk-processor:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -147,9 +147,9 @@ services:
       - STORAGE_RETENTION_DAYS=30
       - STORAGE_ENCRYPTION_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/session-storage:/app/logs
-      - /mnt/myssd/Lucid/data/session-storage:/app/data
-      - /mnt/myssd/Lucid/sessions:/app/sessions
+      - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-storage:/app/data
+      - /mnt/myssd/Lucid/Lucid/sessions:/app/sessions
     networks:
       - lucid-pi-network
     depends_on:
@@ -187,8 +187,8 @@ services:
       - API_TIMEOUT=30
       - API_CORS_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/session-api:/app/logs
-      - /mnt/myssd/Lucid/data/session-api:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-api:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -238,8 +238,8 @@ services:
       - MAX_CONCURRENT_SESSIONS=5
       - SESSION_TIMEOUT_MINUTES=60
     volumes:
-      - /mnt/myssd/Lucid/logs/rdp-server-manager:/app/logs
-      - /mnt/myssd/Lucid/data/rdp-server-manager:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -278,8 +278,8 @@ services:
       - XRDP_CHANNEL_DRDYNVC=true
       - XRDP_CHANNEL_CLIPRDR=true
     volumes:
-      - /mnt/myssd/Lucid/logs/xrdp-integration:/app/logs
-      - /mnt/myssd/Lucid/data/xrdp-integration:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/xrdp-integration:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/xrdp-integration:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -317,9 +317,9 @@ services:
       - SESSION_RECORDING_BITRATE=2000k
       - SESSION_RECORDING_FPS=30
     volumes:
-      - /mnt/myssd/Lucid/logs/session-controller:/app/logs
-      - /mnt/myssd/Lucid/data/session-controller:/app/data
-      - /mnt/myssd/Lucid/recordings:/app/recordings
+      - /mnt/myssd/Lucid/Lucid/logs/session-controller:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-controller:/app/data
+      - /mnt/myssd/Lucid/Lucid/recordings:/app/recordings
     networks:
       - lucid-pi-network
     depends_on:
@@ -360,8 +360,8 @@ services:
       - MONITOR_DISK_THRESHOLD=90
       - MONITOR_INTERVAL_SECONDS=30
     volumes:
-      - /mnt/myssd/Lucid/logs/resource-monitor:/app/logs
-      - /mnt/myssd/Lucid/data/resource-monitor:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/resource-monitor:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/resource-monitor:/app/data
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
     networks:
@@ -406,8 +406,8 @@ services:
       - POOT_CALCULATION_ENABLED=true
       - NODE_REGISTRATION_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/node-management:/app/logs
-      - /mnt/myssd/Lucid/data/node-management:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data
     networks:
       - lucid-pi-network
     depends_on:

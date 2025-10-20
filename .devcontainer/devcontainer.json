@@ -2,7 +2,7 @@
   "name": "Lucid Build Factory - Complete Docker-in-Docker Environment",
   "dockerComposeFile": "docker-compose.dev.yml",
   "service": "devcontainer",
-  "workspaceFolder": "/mnt/myssd/Lucid",
+  "workspaceFolder": "/mnt/myssd/Lucid/Lucid",
   "remoteUser": "root",
   
   "initializeCommand": [
@@ -14,7 +14,7 @@
   "postCreateCommand": [
     "bash",
     "-c",
-    "echo 'Configuring Lucid build factory...' && if [ -f /mnt/myssd/Lucid/scripts/devcontainer/setup-build-factory.sh ]; then /mnt/myssd/Lucid/scripts/devcontainer/setup-build-factory.sh; else echo 'Setup script not found, continuing...'; fi"
+    "echo 'Configuring Lucid build factory...' && if [ -f /mnt/myssd/Lucid/Lucid/scripts/devcontainer/setup-build-factory.sh ]; then /mnt/myssd/Lucid/Lucid/scripts/devcontainer/setup-build-factory.sh; else echo 'Setup script not found, continuing...'; fi"
   ],
   
   "containerEnv": {
@@ -116,7 +116,7 @@
         "python.formatting.provider": "black",
         "python.testing.pytestEnabled": true,
         "python.testing.pytestArgs": ["tests"],
-        "python.testing.cwd": "/mnt/myssd/Lucid",
+        "python.testing.cwd": "/mnt/myssd/Lucid/Lucid",
         "java.home": "/usr/lib/jvm/java-17-openjdk-amd64",
         "java.configuration.runtimes": [
           {
@@ -130,7 +130,7 @@
         "docker.dockerPath": "/usr/bin/docker",
         "docker.composeCommand": "docker-compose",
         "terminal.integrated.defaultProfile.linux": "bash",
-        "terminal.integrated.cwd": "/mnt/myssd/Lucid",
+        "terminal.integrated.cwd": "/mnt/myssd/Lucid/Lucid",
         "files.associations": {
           "*.env*": "dotenv",
           "docker-compose*.yml": "yaml",
@@ -186,7 +186,7 @@
         "docker.defaultRegistryPath": "pickme/lucid",
         "powershell.promptToUpdatePowerShell": false,
         "terminal.integrated.env.linux": {
-          "PYTHONPATH": "/mnt/myssd/Lucid",
+          "PYTHONPATH": "/mnt/myssd/Lucid/Lucid",
           "DOCKER_BUILDKIT": "1",
           "LUCID_ENV": "dev"
         }
@@ -212,7 +212,7 @@
   },
   
   "mounts": [
-    "source=${localWorkspaceFolder},target=/mnt/myssd/Lucid,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder},target=/mnt/myssd/Lucid/Lucid,type=bind,consistency=cached",
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
     "source=lucid-devcontainer_docker_data,target=/var/lib/docker,type=volume",
     "source=lucid-devcontainer_buildx_data,target=/root/.docker/buildx,type=volume"

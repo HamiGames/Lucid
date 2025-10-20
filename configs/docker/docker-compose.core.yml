@@ -32,7 +32,7 @@ services:
       - CORS_ENABLED=true
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
     volumes:
-      - /mnt/myssd/Lucid/logs/api-gateway:/app/logs
+      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -76,8 +76,8 @@ services:
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
     volumes:
-      - /mnt/myssd/Lucid/data/blockchain:/app/data
-      - /mnt/myssd/Lucid/logs/blockchain:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -113,8 +113,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - /mnt/myssd/Lucid/data/blockchain-engine:/app/data
-      - /mnt/myssd/Lucid/logs/blockchain-engine:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/blockchain-engine:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -148,8 +148,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - /mnt/myssd/Lucid/data/anchoring:/app/data
-      - /mnt/myssd/Lucid/logs/anchoring:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/anchoring:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/anchoring:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -183,8 +183,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - /mnt/myssd/Lucid/data/block-manager:/app/data
-      - /mnt/myssd/Lucid/logs/block-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -218,8 +218,8 @@ services:
       - REDIS_URI=redis://lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - /mnt/myssd/Lucid/data/data-chain:/app/data
-      - /mnt/myssd/Lucid/logs/data-chain:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -261,8 +261,8 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     volumes:
-      - /mnt/myssd/Lucid/data/consul:/consul/data
-      - /mnt/myssd/Lucid/logs/consul:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/consul:/consul/data
+      - /mnt/myssd/Lucid/Lucid/logs/consul:/app/logs
     networks:
       - lucid-dev
     healthcheck:

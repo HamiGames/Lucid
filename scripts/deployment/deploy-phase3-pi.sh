@@ -38,8 +38,8 @@ print_phase() {
 # Configuration
 PI_HOST="192.168.0.75"
 PI_USER="pickme"
-PI_DEPLOY_PATH="/opt/lucid/production"
-PI_DATA_PATH="/mnt/myssd/Lucid"
+PI_DEPLOY_PATH="/mnt/myssd/Lucid/Lucid"
+PI_DATA_PATH="/mnt/myssd/Lucid/Lucid"
 COMPOSE_FILE="docker-compose.application.yml"
 ENV_FILE=".env.application"
 
@@ -86,20 +86,28 @@ create_pi_directories() {
 }
 
 # Function to copy files to Pi
-copy_files_to_pi() {
-    print_status "Copying files to Pi..."
+verify_files_on_pi() {
+    print_status "Verifying project files on Pi..."
     
-    # Copy compose file
-    scp "configs/docker/$COMPOSE_FILE" "$PI_USER@$PI_HOST:$PI_DEPLOY_PATH/"
-    
-    # Copy environment file if it exists
-    if [[ -f "configs/environment/$ENV_FILE" ]]; then
-        scp "configs/environment/$ENV_FILE" "$PI_USER@$PI_HOST:$PI_DEPLOY_PATH/"
+    # Verify compose file exists
+    if ssh "$PI_USER@$PI_HOST" "test -f $PI_DEPLOY_PATH/configs/docker/$COMPOSE_FILE"; then
+        print_success "Compose file exists on Pi"
     else
-        print_warning "Environment file $ENV_FILE not found, using defaults"
+        print_error "Compose file not found on Pi at $PI_DEPLOY_PATH/configs/docker/$COMPOSE_FILE"
+        print_error "Please ensure the Lucid project is synced to $PI_DEPLOY_PATH on the Pi"
+        return 1
     fi
     
-    print_success "Files copied to Pi successfully"
+    # Verify environment file if it exists locally
+    if [[ -f "configs/environment/$ENV_FILE" ]]; then
+        if ssh "$PI_USER@$PI_HOST" "test -f $PI_DEPLOY_PATH/configs/environment/$ENV_FILE"; then
+            print_success "Environment file exists on Pi"
+        else
+            print_warning "Environment file not synced to Pi, will use defaults"
+        fi
+    fi
+    
+    print_success "Project files verified on Pi"
 }
 
 # Function to pull images on Pi
@@ -140,10 +148,10 @@ deploy_services_on_pi() {
         cd $PI_DEPLOY_PATH
         
         # Stop any existing Phase 3 services
-        docker-compose -f $COMPOSE_FILE down || true
+        docker-compose -f configs/docker/$COMPOSE_FILE down || true
         
         # Start Phase 3 services
-        docker-compose -f $COMPOSE_FILE up -d
+        docker-compose -f configs/docker/$COMPOSE_FILE up -d
         
         # Wait for services to start
         echo 'Waiting for services to start...'
@@ -262,7 +270,7 @@ main() {
     # Deployment steps
     print_status "Starting Phase 3 deployment..."
     create_pi_directories
-    copy_files_to_pi
+    verify_files_on_pi
     pull_images_on_pi
     deploy_services_on_pi
     verify_deployment

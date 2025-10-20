@@ -25,7 +25,7 @@ print_status() {
 # Pi connection details
 PI_USER="pickme"
 PI_HOST="192.168.0.75"
-PI_PATH="/mnt/myssd/Lucid"
+PI_PATH="/mnt/myssd/Lucid/Lucid"
 
 echo "=== Fixing Permissions on Raspberry Pi ==="
 

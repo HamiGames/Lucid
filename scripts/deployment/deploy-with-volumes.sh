@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 PI_USER="${PI_USER:-pickme}"
 PI_HOST="${PI_HOST:-192.168.0.75}"
 PI_SSH_KEY_PATH="${PI_SSH_KEY_PATH:-~/.ssh/id_rsa}"
-LUCID_ROOT="/mnt/myssd/Lucid"
+LUCID_ROOT="/mnt/myssd/Lucid/Lucid"
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

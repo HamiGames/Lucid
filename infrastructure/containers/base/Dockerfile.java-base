@@ -22,13 +22,10 @@ LABEL maintainer="Lucid Development Team" \
 
 # Set build environment
 ENV DEBIAN_FRONTEND=noninteractive \
-    JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-arm64 \
-    MAVEN_HOME=/usr/share/maven \
-    GRADLE_HOME=/usr/share/gradle \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# Install build dependencies and set JAVA_HOME correctly
+# Install build dependencies and Maven
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
@@ -40,17 +37,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     maven \
-    gradle \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# Set JAVA_HOME after Java is installed
+ENV JAVA_HOME=/usr/local/openjdk-17 \
+    MAVEN_HOME=/usr/share/maven \
+    PATH=/usr/local/openjdk-17/bin:$PATH
 
 # Create application directory
 WORKDIR /app
 
-# Copy Maven/Gradle files for dependency resolution
-COPY ./pom.xml /app/
-COPY ./build.gradle /app/
-COPY ./gradle.properties /app/
+# Copy Maven/Gradle files for dependency resolution (from base directory)
+COPY infrastructure/containers/base/pom.xml /app/
+COPY infrastructure/containers/base/build.gradle /app/
+COPY infrastructure/containers/base/gradle.properties /app/
 
 # Download dependencies (if Maven files exist)
 RUN if [ -f pom.xml ]; then mvn dependency:go-offline -B; fi
@@ -68,8 +69,7 @@ LABEL maintainer="Lucid Development Team" \
       org.lucid.target="raspberry-pi"
 
 # Set runtime environment
-ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-arm64 \
-    LANG=C.UTF-8 \
+ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
 # Copy essential system libraries (architecture-specific)

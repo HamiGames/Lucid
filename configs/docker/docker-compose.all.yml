@@ -30,8 +30,8 @@ services:
       - HARDWARE_WALLET_ENABLED=true
       - RBAC_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/auth:/app/logs
-      - /mnt/myssd/Lucid/data/auth:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/auth:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/auth:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -62,8 +62,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=lucid
       - MONGO_INITDB_DATABASE=lucid
     volumes:
-      - /mnt/myssd/Lucid/data/mongodb:/data/db
-      - /mnt/myssd/Lucid/data/mongodb-config:/data/configdb
+      - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db
+      - /mnt/myssd/Lucid/Lucid/data/mongodb-config:/data/configdb
       - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
     networks:
       - lucid-dev
@@ -86,7 +86,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - /mnt/myssd/Lucid/data/redis:/data
+      - /mnt/myssd/Lucid/Lucid/data/redis:/data
       - ./configs/database/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - lucid-dev
@@ -113,7 +113,7 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
-      - /mnt/myssd/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
+      - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
       - ./configs/database/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
       - lucid-dev
@@ -147,9 +147,9 @@ services:
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
     volumes:
-      - /mnt/myssd/Lucid/logs/storage:/app/logs
-      - /mnt/myssd/Lucid/data/storage:/app/data
-      - /mnt/myssd/Lucid/backups:/app/backups
+      - /mnt/myssd/Lucid/Lucid/logs/storage:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/storage:/app/data
+      - /mnt/myssd/Lucid/Lucid/backups:/app/backups
     networks:
       - lucid-dev
     depends_on:
@@ -197,7 +197,7 @@ services:
       - CORS_ENABLED=true
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
     volumes:
-      - /mnt/myssd/Lucid/logs/api-gateway:/app/logs
+      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -237,8 +237,8 @@ services:
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
     volumes:
-      - /mnt/myssd/Lucid/data/blockchain:/app/data
-      - /mnt/myssd/Lucid/logs/blockchain:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain:/app/logs
     networks:
       - lucid-dev
     depends_on:
@@ -278,8 +278,8 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     volumes:
-      - /mnt/myssd/Lucid/data/consul:/consul/data
-      - /mnt/myssd/Lucid/logs/consul:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/consul:/consul/data
+      - /mnt/myssd/Lucid/Lucid/logs/consul:/app/logs
     networks:
       - lucid-dev
     healthcheck:
@@ -316,8 +316,8 @@ services:
       - CHUNK_SIZE_MB=10
       - COMPRESSION_LEVEL=6
     volumes:
-      - /mnt/myssd/Lucid/logs/session-pipeline:/app/logs
-      - /mnt/myssd/Lucid/data/session-pipeline:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -355,8 +355,8 @@ services:
       - PAYOUT_PROCESSING_ENABLED=true
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
     volumes:
-      - /mnt/myssd/Lucid/logs/node-management:/app/logs
-      - /mnt/myssd/Lucid/data/node-management:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -398,8 +398,8 @@ services:
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/logs/admin-interface:/app/logs
-      - /mnt/myssd/Lucid/data/admin-interface:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
     networks:
       - lucid-dev
     depends_on:
@@ -436,8 +436,8 @@ services:
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
     volumes:
-      - /mnt/myssd/Lucid/logs/tron-client:/app/logs
-      - /mnt/myssd/Lucid/data/tron-client:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data
     networks:
       - lucid-network-isolated
     healthcheck:

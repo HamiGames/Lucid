@@ -17,7 +17,7 @@ lz4>=4.3.2
 zstandard>=0.21.0
 
 # Video processing (if needed for advanced features)
-opencv-python>=4.8.1.78
+opencv-python-headless>=4.8.1.78
 Pillow>=10.1.0
 
 # Utilities
