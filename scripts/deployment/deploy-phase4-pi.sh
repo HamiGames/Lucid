@@ -140,7 +140,7 @@ pull_arm64_images() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml -f configs/docker/docker-compose.application.yml -f configs/docker/docker-compose.support.yml pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core --env-file configs/environment/.env.application --env-file configs/environment/.env.support -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml -f configs/docker/docker-compose.application.yml -f configs/docker/docker-compose.support.yml pull
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then
@@ -157,7 +157,7 @@ deploy_phase4_services() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         cd $PI_DEPLOY_DIR
-        docker-compose -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml -f configs/docker/docker-compose.application.yml -f configs/docker/docker-compose.support.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core --env-file configs/environment/.env.application --env-file configs/environment/.env.support -f configs/docker/docker-compose.foundation.yml -f configs/docker/docker-compose.core.yml -f configs/docker/docker-compose.application.yml -f configs/docker/docker-compose.support.yml up -d
     " >/dev/null 2>&1
     
     if [ $? -eq 0 ]; then

@@ -37,7 +37,7 @@ services:
       - gui_bridge_logs:/app/logs
       - gui_bridge_data:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
       - lucid-gui-network
     depends_on:
       lucid-api-gateway:
@@ -77,7 +77,7 @@ services:
       - gui_docker_logs:/app/logs
       - gui_docker_data:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
       - lucid-gui-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]

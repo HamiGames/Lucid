@@ -11,19 +11,19 @@ services:
   
   # Admin Interface
   admin-interface:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/admin-interface:${LUCID_TAG:-latest}
+    image: pickme/lucid-admin-interface:latest-arm64
     container_name: lucid-admin-interface
     restart: unless-stopped
     ports:
-      - "8083:8083"
+      - "8120:8120"
     environment:
       - SERVICE_NAME=lucid-admin-interface
-      - PORT=8083
+      - PORT=8120
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.support}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.support}@lucid-redis:6379/0
       - RBAC_ENABLED=true
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
@@ -31,7 +31,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -76,7 +76,7 @@ services:
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
       - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:?ERROR - TRON_PRIVATE_KEY must be set in .env.support}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data
@@ -202,10 +202,10 @@ services:
     container_name: lucid-tron-staking
     restart: unless-stopped
     ports:
-      - "8095:8095"
+      - "8097:8097"
     environment:
       - SERVICE_NAME=lucid-tron-staking
-      - PORT=8095
+      - PORT=8097
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -237,10 +237,10 @@ services:
     container_name: lucid-tron-payment-gateway
     restart: unless-stopped
     ports:
-      - "8096:8096"
+      - "8098:8098"
     environment:
       - SERVICE_NAME=lucid-tron-payment-gateway
-      - PORT=8096
+      - PORT=8098
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -248,7 +248,7 @@ services:
       - PAYOUT_ROUTER_URL=http://lucid-tron-payout-router:8092
       - WALLET_MANAGER_URL=http://lucid-tron-wallet-manager:8093
       - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8094
-      - STAKING_URL=http://lucid-tron-staking:8095
+      - STAKING_URL=http://lucid-tron-staking:8097
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/tron-payment-gateway:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/tron-payment-gateway:/app/data
@@ -280,8 +280,8 @@ services:
 # NETWORKS
 # ===========================================
 networks:
-  lucid-dev:
-    name: lucid-dev_lucid_net
+  lucid-pi-network:
+    name: lucid-pi-network
     driver: bridge
     attachable: true
     ipam:

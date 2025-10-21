@@ -11,7 +11,7 @@ services:
 
   # Authentication Service
   auth-service:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/auth-service:${LUCID_TAG:-latest}
+    image: pickme/lucid-auth-service:latest-arm64
     container_name: lucid-auth-service
     restart: unless-stopped
     ports:
@@ -22,9 +22,9 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-lucid_jwt_secret_key_change_in_production}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET:?ERROR - JWT_SECRET must be set}
       - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
       - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
       - HARDWARE_WALLET_ENABLED=true
@@ -33,7 +33,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/auth:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/auth:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -59,14 +59,14 @@ services:
       - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=lucid
-      - MONGO_INITDB_ROOT_PASSWORD=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}
       - MONGO_INITDB_DATABASE=lucid
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db
       - /mnt/myssd/Lucid/Lucid/data/mongodb-config:/data/configdb
       - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
     networks:
-      - lucid-dev
+      - lucid-pi-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
       interval: 30s
@@ -89,7 +89,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/redis:/data
       - ./configs/database/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
-      - lucid-dev
+      - lucid-pi-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -116,7 +116,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
       - ./configs/database/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
-      - lucid-dev
+      - lucid-pi-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
@@ -130,7 +130,7 @@ services:
 
   # Storage Database Service
   storage-database:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage-database:${LUCID_TAG:-latest}
+    image: pickme/lucid-storage-database:latest-arm64
     container_name: lucid-storage-database
     restart: unless-stopped
     ports:
@@ -141,8 +141,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
       - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
@@ -151,7 +151,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/storage:/app/data
       - /mnt/myssd/Lucid/Lucid/backups:/app/backups
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -176,7 +176,7 @@ services:
 
   # API Gateway
   api-gateway:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api-gateway:${LUCID_TAG:-latest}
+    image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid-api-gateway
     restart: unless-stopped
     ports:
@@ -190,8 +190,8 @@ services:
       - LOG_LEVEL=INFO
       - DEBUG=false
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
       - RATE_LIMIT_ENABLED=true
       - RATE_LIMIT_REQUESTS_PER_MINUTE=100
       - CORS_ENABLED=true
@@ -199,7 +199,7 @@ services:
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-auth-service:
         condition: service_healthy
@@ -220,7 +220,7 @@ services:
 
   # Blockchain Core Engine
   lucid-blocks:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/lucid-blocks:${LUCID_TAG:-latest}
+    image: pickme/lucid-blockchain-engine:latest-arm64
     container_name: lucid-blocks
     restart: unless-stopped
     ports:
@@ -231,8 +231,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
       - CONSENSUS_ALGORITHM=PoOT
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
@@ -240,7 +240,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data
       - /mnt/myssd/Lucid/Lucid/logs/blockchain:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -259,7 +259,7 @@ services:
 
   # Service Mesh Controller
   service-mesh-controller:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/service-mesh-controller:${LUCID_TAG:-latest}
+    image: pickme/lucid-service-mesh-controller:latest-arm64
     container_name: lucid-service-mesh-controller
     restart: unless-stopped
     ports:
@@ -281,7 +281,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/consul:/consul/data
       - /mnt/myssd/Lucid/Lucid/logs/consul:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8500/v1/status/leader || exit 1"]
       interval: 30s
@@ -299,7 +299,7 @@ services:
 
   # Session Management Services
   session-pipeline:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-pipeline:${LUCID_TAG:-latest}
+    image: pickme/lucid-session-pipeline:latest-arm64
     container_name: lucid-session-pipeline
     restart: unless-stopped
     ports:
@@ -310,8 +310,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
       - PIPELINE_STATE_MACHINE_ENABLED=true
       - CHUNK_SIZE_MB=10
       - COMPRESSION_LEVEL=6
@@ -319,7 +319,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -338,7 +338,7 @@ services:
 
   # Node Management Service
   node-management:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/node-management:${LUCID_TAG:-latest}
+    image: pickme/lucid-node-management:latest-arm64
     container_name: lucid-node-management
     restart: unless-stopped
     ports:
@@ -349,8 +349,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
       - POOT_ENABLED=true
       - PAYOUT_PROCESSING_ENABLED=true
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
@@ -358,7 +358,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -381,19 +381,19 @@ services:
 
   # Admin Interface
   admin-interface:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/admin-interface:${LUCID_TAG:-latest}
+    image: pickme/lucid-admin-interface:latest-arm64
     container_name: lucid-admin-interface
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "8120:8120"
     environment:
       - SERVICE_NAME=lucid-admin-interface
-      - PORT=8090
+      - PORT=8120
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
       - RBAC_ENABLED=true
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
@@ -401,7 +401,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -420,26 +420,26 @@ services:
 
   # TRON Payment Services (Isolated Network)
   tron-client:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/tron-client:${LUCID_TAG:-latest}
+    image: pickme/lucid-tron-client:latest-arm64
     container_name: lucid-tron-client
     restart: unless-stopped
     ports:
-      - "8096:8096"
+      - "8091:8091"
     environment:
       - SERVICE_NAME=lucid-tron-client
-      - PORT=8096
+      - PORT=8091
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
       - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:?ERROR - TRON_PRIVATE_KEY must be set}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data
     networks:
-      - lucid-network-isolated
+      - lucid-tron-isolated
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s
@@ -455,8 +455,8 @@ services:
 # NETWORKS
 # ===========================================
 networks:
-  lucid-dev:
-    name: lucid-dev_lucid_net
+  lucid-pi-network:
+    name: lucid-pi-network
     driver: bridge
     attachable: true
     ipam:
@@ -465,8 +465,8 @@ networks:
           gateway: 172.20.0.1
   
   # Isolated network for TRON services
-  lucid-network-isolated:
-    name: lucid-network-isolated
+  lucid-tron-isolated:
+    name: lucid-tron-isolated
     driver: bridge
     attachable: true
     ipam:

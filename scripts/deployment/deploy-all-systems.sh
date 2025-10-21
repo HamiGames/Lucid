@@ -130,15 +130,15 @@ deploy_phase1_foundation() {
         cd $PI_DEPLOY_DIR
         
         # Deploy foundation services
-        docker-compose -f configs/docker/docker-compose.foundation.yml pull
-        docker-compose -f configs/docker/docker-compose.foundation.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml pull
+        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml up -d
         
         # Wait for services to be healthy
         echo "Waiting for foundation services to be healthy..."
-        timeout 300 bash -c 'until docker-compose -f configs/docker/docker-compose.foundation.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify foundation services
-        docker-compose -f configs/docker/docker-compose.foundation.yml ps
+        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml ps
 EOF
     
     log_success "Phase 1: Foundation Services deployed"
@@ -152,15 +152,15 @@ deploy_phase2_core() {
         cd $PI_DEPLOY_DIR
         
         # Deploy core services
-        docker-compose -f configs/docker/docker-compose.core.yml pull
-        docker-compose -f configs/docker/docker-compose.core.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml up -d
         
         # Wait for services to be healthy
         echo "Waiting for core services to be healthy..."
-        timeout 300 bash -c 'until docker-compose -f configs/docker/docker-compose.core.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify core services
-        docker-compose -f configs/docker/docker-compose.core.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core -f configs/docker/docker-compose.core.yml ps
 EOF
     
     log_success "Phase 2: Core Services deployed"
@@ -174,15 +174,15 @@ deploy_phase3_application() {
         cd $PI_DEPLOY_DIR
         
         # Deploy application services
-        docker-compose -f configs/docker/docker-compose.application.yml pull
-        docker-compose -f configs/docker/docker-compose.application.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml up -d
         
         # Wait for services to be healthy
         echo "Waiting for application services to be healthy..."
-        timeout 300 bash -c 'until docker-compose -f configs/docker/docker-compose.application.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify application services
-        docker-compose -f configs/docker/docker-compose.application.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.application -f configs/docker/docker-compose.application.yml ps
 EOF
     
     log_success "Phase 3: Application Services deployed"
@@ -196,15 +196,15 @@ deploy_phase4_support() {
         cd $PI_DEPLOY_DIR
         
         # Deploy support services
-        docker-compose -f configs/docker/docker-compose.support.yml pull
-        docker-compose -f configs/docker/docker-compose.support.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml up -d
         
         # Wait for services to be healthy
         echo "Waiting for support services to be healthy..."
-        timeout 300 bash -c 'until docker-compose -f configs/docker/docker-compose.support.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify support services
-        docker-compose -f configs/docker/docker-compose.support.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.support -f configs/docker/docker-compose.support.yml ps
 EOF
     
     log_success "Phase 4: Support Services deployed"
@@ -218,15 +218,15 @@ deploy_gui_integration() {
         cd $PI_DEPLOY_DIR
         
         # Deploy GUI integration services
-        docker-compose -f configs/docker/docker-compose.gui-integration.yml pull
-        docker-compose -f configs/docker/docker-compose.gui-integration.yml up -d
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml pull
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml up -d
         
         # Wait for services to be healthy
         echo "Waiting for GUI integration services to be healthy..."
-        timeout 300 bash -c 'until docker-compose -f configs/docker/docker-compose.gui-integration.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
+        timeout 300 bash -c 'until docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml ps | grep -q "healthy\|Up"; do sleep 10; done'
         
         # Verify GUI integration services
-        docker-compose -f configs/docker/docker-compose.gui-integration.yml ps
+        docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.gui -f configs/docker/docker-compose.gui-integration.yml ps
 EOF
     
     log_success "GUI Integration Services deployed"
@@ -292,7 +292,7 @@ generate_deployment_report() {
     local report_file="$PROJECT_ROOT/logs/deployment-report-$(date +%Y%m%d-%H%M%S).json"
     
     # Get service status from Pi
-    local service_status=$(ssh "$PI_USER@$PI_HOST" "cd $PI_DEPLOY_DIR && docker-compose -f configs/docker/docker-compose.all.yml ps --format json" 2>/dev/null || echo "[]")
+    local service_status=$(ssh "$PI_USER@$PI_HOST" "cd $PI_DEPLOY_DIR && docker-compose --env-file configs/environment/.env.foundation --env-file configs/environment/.env.core --env-file configs/environment/.env.application --env-file configs/environment/.env.support -f configs/docker/docker-compose.all.yml ps --format json" 2>/dev/null || echo "[]")
     
     cat > "$report_file" << EOF
 {

@@ -23,8 +23,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - PIPELINE_MAX_CONCURRENT_SESSIONS=10
       - PIPELINE_CHUNK_SIZE_MB=1
       - PIPELINE_COMPRESSION_LEVEL=6
@@ -55,15 +55,15 @@ services:
     container_name: lucid-session-recorder
     restart: unless-stopped
     ports:
-      - "8084:8084"
+      - "8110:8110"
     environment:
       - SERVICE_NAME=lucid-session-recorder
-      - PORT=8084
+      - PORT=8110
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - RECORDING_QUALITY=high
       - RECORDING_FPS=30
       - RECORDING_BITRATE=2000k
@@ -95,15 +95,15 @@ services:
     container_name: lucid-chunk-processor
     restart: unless-stopped
     ports:
-      - "8085:8085"
+      - "8111:8111"
     environment:
       - SERVICE_NAME=lucid-chunk-processor
-      - PORT=8085
+      - PORT=8111
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - PROCESSOR_CHUNK_SIZE_MB=1
       - PROCESSOR_ENCRYPTION_ENABLED=true
       - PROCESSOR_COMPRESSION_ENABLED=true
@@ -134,15 +134,15 @@ services:
     container_name: lucid-session-storage
     restart: unless-stopped
     ports:
-      - "8086:8086"
+      - "8112:8112"
     environment:
       - SERVICE_NAME=lucid-session-storage
-      - PORT=8086
+      - PORT=8112
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - STORAGE_MAX_SIZE_GB=100
       - STORAGE_RETENTION_DAYS=30
       - STORAGE_ENCRYPTION_ENABLED=true
@@ -174,15 +174,15 @@ services:
     container_name: lucid-session-api
     restart: unless-stopped
     ports:
-      - "8087:8087"
+      - "8113:8113"
     environment:
       - SERVICE_NAME=lucid-session-api
-      - PORT=8087
+      - PORT=8113
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - API_RATE_LIMIT=1000
       - API_TIMEOUT=30
       - API_CORS_ENABLED=true
@@ -232,8 +232,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - XRDP_PORT=3389
       - MAX_CONCURRENT_SESSIONS=5
       - SESSION_TIMEOUT_MINUTES=60
@@ -309,8 +309,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - SESSION_RECORDING_PATH=/data/recordings
       - SESSION_RECORDING_FORMAT=mp4
       - SESSION_RECORDING_QUALITY=high
@@ -353,8 +353,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - MONITOR_CPU_THRESHOLD=80
       - MONITOR_MEMORY_THRESHOLD=80
       - MONITOR_DISK_THRESHOLD=90
@@ -399,8 +399,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.application}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.application}@lucid-redis:6379/0
       - NODE_POOL_MAX_NODES=100
       - PAYOUT_THRESHOLD_USDT=10
       - POOT_CALCULATION_ENABLED=true
@@ -434,7 +434,6 @@ networks:
     name: lucid-pi-network
     driver: bridge
     attachable: true
-    external: true
     ipam:
       config:
         - subnet: 172.20.0.0/16

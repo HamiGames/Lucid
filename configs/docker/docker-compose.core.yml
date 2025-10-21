@@ -11,7 +11,7 @@ services:
   
   # API Gateway
   api-gateway:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api-gateway:${LUCID_TAG:-latest}
+    image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid-api-gateway
     restart: unless-stopped
     ports:
@@ -25,8 +25,8 @@ services:
       - LOG_LEVEL=INFO
       - DEBUG=false
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
       - RATE_LIMIT_ENABLED=true
       - RATE_LIMIT_REQUESTS_PER_MINUTE=100
       - CORS_ENABLED=true
@@ -34,7 +34,7 @@ services:
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-auth-service:
         condition: service_healthy
@@ -59,7 +59,7 @@ services:
 
   # Blockchain Core Engine
   lucid-blocks:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/lucid-blocks:${LUCID_TAG:-latest}
+    image: pickme/lucid-blockchain-engine:latest-arm64
     container_name: lucid-blocks
     restart: unless-stopped
     ports:
@@ -70,8 +70,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
       - CONSENSUS_ALGORITHM=PoOT
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
@@ -79,7 +79,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data
       - /mnt/myssd/Lucid/Lucid/logs/blockchain:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -98,7 +98,7 @@ services:
 
   # Blockchain Engine
   blockchain-engine:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/blockchain-engine:${LUCID_TAG:-latest}
+    image: pickme/lucid-session-anchoring:latest-arm64
     container_name: lucid-blocks-engine
     restart: unless-stopped
     ports:
@@ -109,14 +109,14 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/blockchain-engine:/app/data
       - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-blockchain-core:
         condition: service_healthy
@@ -133,7 +133,7 @@ services:
 
   # Session Anchoring Service
   session-anchoring:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/session-anchoring:${LUCID_TAG:-latest}
+    image: pickme/lucid-session-anchoring:latest-arm64
     container_name: lucid-blocks-anchoring
     restart: unless-stopped
     ports:
@@ -144,14 +144,14 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/anchoring:/app/data
       - /mnt/myssd/Lucid/Lucid/logs/anchoring:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-blockchain-core:
         condition: service_healthy
@@ -168,7 +168,7 @@ services:
 
   # Block Manager
   block-manager:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/block-manager:${LUCID_TAG:-latest}
+    image: pickme/lucid-block-manager:latest-arm64
     container_name: lucid-blocks-manager
     restart: unless-stopped
     ports:
@@ -179,14 +179,14 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data
       - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-blockchain-core:
         condition: service_healthy
@@ -203,7 +203,7 @@ services:
 
   # Data Chain Service
   data-chain:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/data-chain:${LUCID_TAG:-latest}
+    image: pickme/lucid-data-chain:latest-arm64
     container_name: lucid-blocks-data
     restart: unless-stopped
     ports:
@@ -214,14 +214,14 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://lucid-redis:6379/0
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data
       - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     depends_on:
       lucid-blockchain-core:
         condition: service_healthy
@@ -242,7 +242,7 @@ services:
 
   # Service Mesh Controller
   service-mesh-controller:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/service-mesh-controller:${LUCID_TAG:-latest}
+    image: pickme/lucid-service-mesh-controller:latest-arm64
     container_name: lucid-service-mesh-controller
     restart: unless-stopped
     ports:
@@ -264,7 +264,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/consul:/consul/data
       - /mnt/myssd/Lucid/Lucid/logs/consul:/app/logs
     networks:
-      - lucid-dev
+      - lucid-pi-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8500/v1/status/leader || exit 1"]
       interval: 30s
@@ -280,8 +280,8 @@ services:
 # NETWORKS
 # ===========================================
 networks:
-  lucid-dev:
-    name: lucid-dev_lucid_net
+  lucid-pi-network:
+    name: lucid-pi-network
     driver: bridge
     attachable: true
     ipam:
