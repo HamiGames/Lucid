@@ -26,16 +26,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install dependencies
-COPY requirements.txt .
+COPY infrastructure/service-mesh/requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy service mesh controller source code
-COPY controller/ ./controller/
-COPY sidecar/ ./sidecar/
-COPY discovery/ ./discovery/
-COPY communication/ ./communication/
-COPY security/ ./security/
-COPY config/ ./config/
+COPY infrastructure/service-mesh/controller/ ./controller/
+COPY infrastructure/service-mesh/sidecar/ ./sidecar/
+COPY infrastructure/service-mesh/discovery/ ./discovery/
+COPY infrastructure/service-mesh/communication/ ./communication/
+COPY infrastructure/service-mesh/security/ ./security/
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app
@@ -62,7 +61,6 @@ COPY --from=builder /app/sidecar /app/sidecar
 COPY --from=builder /app/discovery /app/discovery
 COPY --from=builder /app/communication /app/communication
 COPY --from=builder /app/security /app/security
-COPY --from=builder /app/config /app/config
 
 # Set working directory
 WORKDIR /app
