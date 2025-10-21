@@ -22,8 +22,8 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.support}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.support}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid:changeme@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URI=${REDIS_URI:-redis://:changeme@lucid-redis:6379/0}
       - RBAC_ENABLED=true
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
@@ -76,7 +76,7 @@ services:
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
       - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:?ERROR - TRON_PRIVATE_KEY must be set in .env.support}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data

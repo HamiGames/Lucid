@@ -48,6 +48,38 @@ fi
 log_success "Docker is running"
 echo ""
 
+# Function to remove old lucid networks
+cleanup_old_networks() {
+    log_info "Checking for old Lucid networks to remove..."
+    
+    # Find all lucid-related networks (including old ones)
+    old_networks=$(docker network ls --format '{{.Name}}' | grep -E '^lucid-' || true)
+    
+    if [ -z "$old_networks" ]; then
+        log_info "No old networks found"
+        return 0
+    fi
+    
+    echo ""
+    log_warning "Found existing Lucid networks:"
+    echo "$old_networks" | while read network; do
+        echo "  • $network"
+    done
+    echo ""
+    
+    log_info "Removing old networks (containers must be stopped first)..."
+    echo "$old_networks" | while read network; do
+        if docker network rm "$network" 2>/dev/null; then
+            log_success "Removed: $network"
+        else
+            log_warning "Could not remove: $network (may be in use)"
+            log_info "Run 'docker-compose down' to stop containers first"
+        fi
+    done
+    
+    echo ""
+}
+
 # Function to create network
 create_network() {
     local network_name=$1
@@ -56,30 +88,26 @@ create_network() {
     
     log_info "Creating network: $network_name ($subnet)"
     
-    # Check if network already exists
+    # Check if network already exists with correct config
     if docker network ls --format '{{.Name}}' | grep -q "^${network_name}$"; then
-        log_warning "Network $network_name already exists"
-        read -p "Remove and recreate? (y/n): " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            log_info "Removing existing network..."
-            docker network rm $network_name || {
+        # Check if it has the correct subnet
+        existing_subnet=$(docker network inspect "$network_name" --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || echo "")
+        
+        if [ "$existing_subnet" = "$subnet" ]; then
+            log_success "Network $network_name already exists with correct configuration"
+            return 0
+        else
+            log_warning "Network $network_name exists with wrong subnet ($existing_subnet vs $subnet)"
+            log_info "Removing and recreating..."
+            docker network rm "$network_name" || {
                 log_error "Failed to remove network (containers may be using it)"
-                log_info "Stop all containers first: docker-compose down"
+                log_info "Stop containers first: docker-compose down"
                 return 1
             }
-        else
-            log_info "Keeping existing network"
-            return 0
         fi
     fi
     
     # Create network
-    log_info "Creating network with configuration:"
-    log_info "  Name: $network_name"
-    log_info "  Subnet: $subnet"
-    log_info "  Gateway: $gateway"
-    
     docker network create "$network_name" \
         --driver bridge \
         --subnet "$subnet" \
@@ -92,29 +120,45 @@ create_network() {
     
     if [ $? -eq 0 ]; then
         log_success "Network $network_name created successfully"
-        
-        # Show network details
-        docker network inspect "$network_name" --format '{{range .IPAM.Config}}  Subnet: {{.Subnet}}, Gateway: {{.Gateway}}{{end}}'
+        docker network inspect "$network_name" --format '  Subnet: {{range .IPAM.Config}}{{.Subnet}}{{end}}, Gateway: {{range .IPAM.Config}}{{.Gateway}}{{end}}'
     else
         log_error "Failed to create network $network_name"
+        log_error "Possible causes:"
+        log_error "  - Subnet overlap with existing network"
+        log_error "  - Run 'docker network ls' to see existing networks"
+        log_error "  - Run 'docker network inspect <name>' to see subnet ranges"
         return 1
     fi
 }
 
 # Main execution
-log_info "Network Configuration per docker-build-process-plan.md"
+
+# Step 1: Clean up old networks
+cleanup_old_networks
+
+# Step 2: Create new networks
+log_info "Creating new Lucid networks per docker-build-process-plan.md"
 echo ""
 
 # Create main network
-create_network "$MAIN_NETWORK" "$MAIN_SUBNET" "$MAIN_GATEWAY"
+if ! create_network "$MAIN_NETWORK" "$MAIN_SUBNET" "$MAIN_GATEWAY"; then
+    log_error "Failed to create main network - aborting"
+    exit 1
+fi
 echo ""
 
 # Create TRON isolated network
-create_network "$TRON_NETWORK" "$TRON_SUBNET" "$TRON_GATEWAY"
+if ! create_network "$TRON_NETWORK" "$TRON_SUBNET" "$TRON_GATEWAY"; then
+    log_error "Failed to create TRON network - aborting"
+    exit 1
+fi
 echo ""
 
 # Create GUI network
-create_network "$GUI_NETWORK" "$GUI_SUBNET" "$GUI_GATEWAY"
+if ! create_network "$GUI_NETWORK" "$GUI_SUBNET" "$GUI_GATEWAY"; then
+    log_error "Failed to create GUI network - aborting"
+    exit 1
+fi
 echo ""
 
 # List all Lucid networks

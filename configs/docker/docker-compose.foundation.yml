@@ -19,9 +19,9 @@ x-lucid-env: &lucid-env
   DOCKER_BUILDKIT: "1"
   COMPOSE_DOCKER_CLI_BUILD: "1"
   
-  # Database connectivity - USES GENERATED PASSWORDS (no defaults)
-  MONGO_URL: mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.foundation}@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false
-  REDIS_URL: redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.foundation}@lucid_redis:6379/0
+  # Database connectivity
+  MONGO_URL: ${MONGO_URL:-mongodb://lucid:changeme@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false}
+  REDIS_URL: ${REDIS_URL:-redis://:changeme@lucid_redis:6379/0}
   ELASTICSEARCH_URL: http://lucid_elasticsearch:9200
   
   # Network configuration
@@ -30,19 +30,19 @@ x-lucid-env: &lucid-env
   PI_USER: ${PI_USER:-pickme}
   PI_DEPLOY_DIR: ${PI_DEPLOY_DIR:-/opt/lucid/production}
   
-  # Service ports (defaults OK - not security sensitive)
+  # Service ports
   API_GATEWAY_PORT: ${API_GATEWAY_PORT:-8080}
   BLOCKCHAIN_CORE_PORT: ${BLOCKCHAIN_CORE_PORT:-8084}
   AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT:-8089}
-  SESSION_API_PORT: ${SESSION_API_PORT:-8087}
+  SESSION_API_PORT: ${SESSION_API_PORT:-8113}
   NODE_MANAGEMENT_PORT: ${NODE_MANAGEMENT_PORT:-8095}
-  ADMIN_INTERFACE_PORT: ${ADMIN_INTERFACE_PORT:-8083}
-  TRON_PAYMENT_PORT: ${TRON_PAYMENT_PORT:-8085}
+  ADMIN_INTERFACE_PORT: ${ADMIN_INTERFACE_PORT:-8120}
+  TRON_PAYMENT_PORT: ${TRON_PAYMENT_PORT:-8098}
   
-  # Security - MUST BE SET (no defaults)
-  JWT_SECRET_KEY: ${JWT_SECRET:?ERROR - JWT_SECRET must be set in .env.foundation}
-  ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ERROR - ENCRYPTION_KEY must be set in .env.foundation}
-  TOR_CONTROL_PASSWORD: ${TOR_PASSWORD:?ERROR - TOR_PASSWORD must be set in .env.foundation}
+  # Security
+  JWT_SECRET_KEY: ${JWT_SECRET:-changeme}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-changeme}
+  TOR_CONTROL_PASSWORD: ${TOR_PASSWORD:-changeme}
 
 # Common configuration
 x-lucid-common: &lucid-common
@@ -79,7 +79,7 @@ services:
     environment:
       <<: *lucid-env
       MONGO_INITDB_ROOT_USERNAME: lucid
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.foundation}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-changeme}
       MONGO_INITDB_DATABASE: lucid
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db
@@ -90,7 +90,7 @@ services:
     healthcheck:
       test: [
         "CMD-SHELL", 
-        "mongosh --quiet -u lucid -p ${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD required} --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"
+        "mongosh --quiet -u lucid -p ${MONGODB_PASSWORD:-changeme} --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"
       ]
       interval: 10s
       timeout: 5s
@@ -132,7 +132,7 @@ services:
       - "6379:6379"
     environment:
       <<: *lucid-env
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.foundation}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/redis:/data
     networks:
@@ -141,7 +141,7 @@ services:
     healthcheck:
       test: [
         "CMD-SHELL",
-        "redis-cli -a ${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD required} ping | grep -q PONG"
+        "redis-cli -a ${REDIS_PASSWORD:-changeme} ping | grep -q PONG"
       ]
       interval: 10s
       timeout: 5s

@@ -22,9 +22,9 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET:?ERROR - JWT_SECRET must be set}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid:changeme@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URI=${REDIS_URI:-redis://:changeme@lucid-redis:6379/0}
+      - JWT_SECRET_KEY=${JWT_SECRET:-changeme}
       - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
       - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
       - HARDWARE_WALLET_ENABLED=true

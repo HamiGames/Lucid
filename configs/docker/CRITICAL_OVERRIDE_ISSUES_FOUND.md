@@ -341,23 +341,26 @@ image: ghcr.io/HamiGames/Lucid/auth-service:latest
 # RECOMMENDATION: Use Docker Hub (pickme/lucid) per plan
 ```
 
-### Fix #6: Network Creation Script Needed
+### ✅ Fix #6: Network Creation Script Created
 
-Create network BEFORE first deployment:
+**Script:** `scripts/deployment/create-pi-networks.sh`
+
+**⚠️ MUST RUN ON PI CONSOLE (not from Windows):**
 ```bash
-# On Pi:
-docker network create lucid-pi-network \
-  --driver bridge \
-  --subnet 172.20.0.0/16 \
-  --gateway 172.20.0.1 \
-  --attachable
+# SSH to Pi first:
+ssh pickme@192.168.0.75
 
-docker network create lucid-tron-isolated \
-  --driver bridge \
-  --subnet 172.21.0.0/16 \
-  --gateway 172.21.0.1 \
-  --attachable
+# Navigate to project:
+cd /mnt/myssd/Lucid/Lucid
+
+# Run script:
+bash scripts/deployment/create-pi-networks.sh
 ```
+
+**Creates 3 networks:**
+1. `lucid-pi-network` (172.20.0.0/16) - Main services
+2. `lucid-tron-isolated` (172.21.0.0/16) - TRON isolated services
+3. `lucid-gui-network` (172.22.0.0/16) - GUI integration services
 
 ---
 

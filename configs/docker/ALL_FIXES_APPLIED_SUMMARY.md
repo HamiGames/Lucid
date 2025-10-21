@@ -641,3 +641,142 @@ docker-compose --env-file configs/environment/.env.foundation --env-file configs
 
 **All docker-compose override errors have been resolved!** ✅
 
+---
+
+## 🚀 DEPLOYMENT WORKFLOW (RUN ON PI CONSOLE ONLY!)
+
+### ⚠️ CRITICAL: ALL COMMANDS BELOW MUST RUN ON THE RASPBERRY PI CONSOLE
+
+```bash
+# ============================================
+# STEP 1: SSH TO PI FROM WINDOWS
+# ============================================
+ssh pickme@192.168.0.75
+
+# ============================================
+# STEP 2: NAVIGATE TO PROJECT DIRECTORY
+# ============================================
+cd /mnt/myssd/Lucid/Lucid
+
+# ============================================
+# STEP 3: SET PROJECT ROOT ENVIRONMENT VARIABLE
+# ============================================
+export PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+
+# ============================================
+# STEP 4: CREATE DOCKER NETWORKS (ONE TIME ONLY)
+# ============================================
+bash scripts/deployment/create-pi-networks.sh
+
+# This creates:
+#   • lucid-pi-network (172.20.0.0/16)
+#   • lucid-tron-isolated (172.21.0.0/16)
+#   • lucid-gui-network (172.22.0.0/16)
+
+# ============================================
+# STEP 5: GENERATE ALL .ENV FILES
+# ============================================
+bash scripts/config/generate-all-env-complete.sh
+
+# This generates REAL secure values:
+#   • Passwords (MongoDB, Redis)
+#   • Encryption keys
+#   • JWT secrets
+#   • .onion addresses
+#   • TRON private key
+
+# ============================================
+# STEP 6: DEPLOY PHASE 1 (FOUNDATION SERVICES)
+# ============================================
+docker-compose --env-file configs/environment/.env.foundation \
+               -f configs/docker/docker-compose.foundation.yml up -d
+
+# Wait for services to initialize
+echo "Waiting for foundation services to start..."
+sleep 90
+
+# Verify Phase 1
+docker ps | grep lucid
+
+# ============================================
+# STEP 7: DEPLOY PHASE 2 (CORE SERVICES)
+# ============================================
+docker-compose --env-file configs/environment/.env.foundation \
+               --env-file configs/environment/.env.core \
+               -f configs/docker/docker-compose.core.yml up -d
+
+# Wait for services
+sleep 60
+
+# ============================================
+# STEP 8: DEPLOY PHASE 3 (APPLICATION SERVICES)
+# ============================================
+docker-compose --env-file configs/environment/.env.foundation \
+               --env-file configs/environment/.env.application \
+               -f configs/docker/docker-compose.application.yml up -d
+
+# Wait for services
+sleep 60
+
+# ============================================
+# STEP 9: DEPLOY PHASE 4 (SUPPORT SERVICES)
+# ============================================
+docker-compose --env-file configs/environment/.env.foundation \
+               --env-file configs/environment/.env.support \
+               -f configs/docker/docker-compose.support.yml up -d
+
+# ============================================
+# STEP 10: VERIFY FULL DEPLOYMENT
+# ============================================
+echo ""
+echo "=== All Containers Status ==="
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+echo ""
+echo "=== Networks ==="
+docker network ls | grep lucid
+
+echo ""
+echo "=== Service Health Check ==="
+# Test a few key services
+curl -f http://localhost:8089/health 2>/dev/null && echo "✅ Auth Service: Healthy" || echo "❌ Auth Service: Failed"
+curl -f http://localhost:8080/health 2>/dev/null && echo "✅ API Gateway: Healthy" || echo "❌ API Gateway: Failed"
+curl -f http://localhost:8084/health 2>/dev/null && echo "✅ Blockchain: Healthy" || echo "❌ Blockchain: Failed"
+```
+
+---
+
+## 🛠️ TROUBLESHOOTING
+
+### If networks already exist:
+```bash
+# List networks
+docker network ls | grep lucid
+
+# Remove if needed (stop containers first)
+docker-compose -f configs/docker/docker-compose.all.yml down
+docker network rm lucid-pi-network lucid-tron-isolated lucid-gui-network
+```
+
+### If .env files missing:
+```bash
+# Check if files exist
+ls -la configs/environment/.env.*
+
+# Regenerate if missing
+bash scripts/config/generate-all-env-complete.sh
+```
+
+### If deployment fails with "network not found":
+```bash
+# Recreate networks
+bash scripts/deployment/create-pi-networks.sh
+```
+
+### If deployment fails with "VARIABLE required" error:
+```bash
+# You forgot --env-file parameter!
+# Always use:
+docker-compose --env-file configs/environment/.env.foundation -f configs/docker/docker-compose.foundation.yml up -d
+```
+
