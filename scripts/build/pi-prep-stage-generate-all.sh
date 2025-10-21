@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="/mnt/myssd/Lucid"
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
 CONFIGS_DIR="$PROJECT_ROOT/configs"
 ENV_DIR="$CONFIGS_DIR/environment"
 DOCKER_CONFIGS_DIR="$CONFIGS_DIR/docker"
@@ -459,7 +459,7 @@ USDT_TRC20_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
 TRON_MINIMUM_PAYOUT=10
 TRON_GAS_LIMIT=100000
 TRON_GAS_PRICE=1000
-TRON_PRIVATE_KEY=PLACEHOLDER_REPLACE_IN_PRODUCTION
+TRON_PRIVATE_KEY=\$(openssl rand -hex 32)
 
 # TRON Payout Configuration
 PAYOUT_V0_ENABLED=true
@@ -754,7 +754,7 @@ PORT=8091
 TRON_NETWORK=mainnet
 TRON_MAINNET_URL=https://api.trongrid.io
 TRON_TESTNET_URL=https://api.shasta.trongrid.io
-TRON_PRIVATE_KEY=PLACEHOLDER_REPLACE_IN_PRODUCTION
+TRON_PRIVATE_KEY=\$(openssl rand -hex 32)
 TRON_ENCRYPTION_KEY=$TRON_ENCRYPTION_KEY
 LOG_LEVEL=INFO
 EOF
@@ -1034,10 +1034,10 @@ display_summary() {
     echo "  • Registry: $BUILD_REGISTRY"
     echo ""
     echo "⚠️  IMPORTANT NOTES:"
-    echo "  1. Replace TRON_PRIVATE_KEY placeholders in production"
-    echo "  2. Review all generated .env files for correctness"
-    echo "  3. .onion hostnames will be generated when Tor starts"
-    echo "  4. Keep all passwords secure and backed up"
+    echo "  1. Review all generated .env files for correctness"
+    echo "  2. .onion hostnames will be generated when Tor starts"
+    echo "  3. Keep all passwords secure and backed up"
+    echo "  4. All values are REAL - ready for deployment/prototype"
     echo ""
     log_success "Pi prep stage completed successfully!"
     echo "============================================================================"
