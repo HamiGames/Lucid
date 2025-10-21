@@ -11,7 +11,7 @@
 **Registry:** Docker Hub (pickme/lucid namespace)
 
 **Timeline:** ~7 Days total
-**Pi Project File Path:**  /mnt/mysdd/Lucid/Lucid/
+**Pi Project File Path:**  /mnt/myssd/Lucid/Lucid/
 ## Critical Success Factors
 
 - **No Placeholders**: All configurations with real generated values
@@ -19,6 +19,13 @@
 - **TRON Isolation**: Zero TRON references in blockchain core
 - **Pi Target**: All builds for linux/arm64 platform
 - **SSH Deployment**: All Pi deployments via SSH
+
+## Network configs
+- **lucid-pi-network** :172.20.0.0/16 ← Main network
+- **lucid-tron-isolated** :172.21.0.0/16 ← TRON payments
+- **lucid-gui-network**: 172.22.0.0/16 ← GUI services
+
+
 
 ## Pre-Build Phase (~2 hours)
 
