@@ -346,6 +346,25 @@ log_info "  - encryptor.env"
 log_info "  - merkle-builder.env"
 log_info "  - clipboard-handler.env"
 
+# Also create .env files in sessions/core/ directory for direct service use
+log_info "Creating symlinks in sessions/core/ directory..."
+SESSIONS_CORE_DIR="$PROJECT_ROOT/sessions/core"
+mkdir -p "$SESSIONS_CORE_DIR"
+
+# Create .env.orchestrator
+cp "$ENV_DIR/session-orchestrator.env" "$SESSIONS_CORE_DIR/.env.orchestrator"
+log_info "  - Created $SESSIONS_CORE_DIR/.env.orchestrator"
+
+# Create .env.chunker
+cp "$ENV_DIR/chunker.env" "$SESSIONS_CORE_DIR/.env.chunker"
+log_info "  - Created $SESSIONS_CORE_DIR/.env.chunker"
+
+# Create .env.merkle_builder
+cp "$ENV_DIR/merkle-builder.env" "$SESSIONS_CORE_DIR/.env.merkle_builder"
+log_info "  - Created $SESSIONS_CORE_DIR/.env.merkle_builder"
+
+log_success "Environment files also created in sessions/core/ directory"
+
 echo
 log_info "To use these environment files in Docker builds:"
 log_info "  docker build --env-file $ENV_DIR/session-orchestrator.env -t pickme/lucid:session-orchestrator ."

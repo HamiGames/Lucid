@@ -389,6 +389,17 @@ log_info "  - server-tools.env"
 log_info "  - openapi-gateway.env"
 log_info "  - openapi-server.env"
 
+# Also create .env.api in 03-api-gateway/api/ directory for direct service use
+log_info "Creating .env.api in 03-api-gateway/api/ directory..."
+API_GATEWAY_DIR="$PROJECT_ROOT/03-api-gateway/api"
+mkdir -p "$API_GATEWAY_DIR"
+
+# Create .env.api from api-gateway.env
+cp "$ENV_DIR/api-gateway.env" "$API_GATEWAY_DIR/.env.api"
+log_info "  - Created $API_GATEWAY_DIR/.env.api"
+
+log_success "API Gateway environment file also created in 03-api-gateway/api/ directory"
+
 echo
 log_info "To use these environment files in Docker builds:"
 log_info "  docker build --env-file $ENV_DIR/api-gateway.env -t pickme/lucid:api-gateway ."
