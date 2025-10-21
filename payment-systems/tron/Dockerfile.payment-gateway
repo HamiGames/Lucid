@@ -107,7 +107,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app
 ENV SERVICE_NAME=payment-gateway
-ENV SERVICE_PORT=8096
+ENV SERVICE_PORT=8097
 ENV LUCID_ENV=production
 
 # Create application directory with proper permissions
@@ -125,13 +125,13 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Health check (HTTP-based, no shell required)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8096/health').read()"]
+    CMD ["/opt/venv/bin/python3", "-c", "import urllib.request.urlopen('http://localhost:8097/health').read()"]
 
 # Expose service port
-EXPOSE 8096
+EXPOSE 8097
 
 # Switch to non-root user (redundant but explicit)
 USER 65532:65532
 
 # Default command
-CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8096", "--workers", "1"]
+CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8097", "--workers", "1"]

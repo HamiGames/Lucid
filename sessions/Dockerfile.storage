@@ -51,17 +51,19 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-session-storage
-ENV PORT=8086
+ENV PORT=8089
+ENV LUCID_STORAGE_PORT=8089
+ENV LUCID_STORAGE_HOST=0.0.0.0
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health')"]
 
 # Expose port
-EXPOSE 8086
+EXPOSE 8089
 
 # Set entrypoint
 ENTRYPOINT ["python", "-m", "storage.main"]

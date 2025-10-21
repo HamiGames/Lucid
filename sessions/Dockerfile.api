@@ -51,17 +51,19 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-session-api
-ENV PORT=8087
+ENV PORT=8090
+ENV LUCID_API_PORT=8090
+ENV LUCID_API_HOST=0.0.0.0
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
 
 # Expose port
-EXPOSE 8087
+EXPOSE 8090
 
 # Set entrypoint
 ENTRYPOINT ["python", "-m", "api.main"]
