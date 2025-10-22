@@ -63,6 +63,95 @@ run_script() {
     fi
 }
 
+# Function to check and generate environment files
+ensure_environment_files() {
+    log_info "Ensuring environment files are available..."
+    
+    # Check if generate-all-env-complete.sh exists
+    if [ ! -f "scripts/config/generate-all-env-complete.sh" ]; then
+        log_warning "Main environment generation script not found!"
+        log_warning "Expected: scripts/config/generate-all-env-complete.sh"
+        log_info "Using fallback environment generator..."
+        
+        # Use fallback script
+        if [ ! -f "scripts/deployment/generate-env-fallback.sh" ]; then
+            log_error "Fallback environment generation script not found!"
+            log_error "Expected: scripts/deployment/generate-env-fallback.sh"
+            return 1
+        fi
+        
+        # Make fallback script executable
+        chmod +x scripts/deployment/generate-env-fallback.sh
+        
+        # Run fallback script
+        if ! bash scripts/deployment/generate-env-fallback.sh; then
+            log_error "Fallback environment generation failed"
+            return 1
+        fi
+        
+        log_success "Environment files generated using fallback script"
+        return 0
+    fi
+    
+    # Check if foundation .env exists
+    if [ ! -f "configs/environment/.env.foundation" ]; then
+        log_info "Foundation .env file not found, generating all environment files..."
+        
+        # Set PROJECT_ROOT if not set
+        if [ -z "${PROJECT_ROOT:-}" ]; then
+            export PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+            log_info "Set PROJECT_ROOT to: $PROJECT_ROOT"
+        fi
+        
+        # Generate all .env files
+        if ! bash scripts/config/generate-all-env-complete.sh; then
+            log_error "Failed to generate environment files"
+            return 1
+        fi
+        
+        log_success "Environment files generated successfully"
+    else
+        log_info "Foundation .env file already exists"
+    fi
+    
+    # Verify key environment variables exist
+    if [ -f "configs/environment/.env.foundation" ]; then
+        source configs/environment/.env.foundation
+        
+        # Check for required variables
+        local missing_vars=()
+        if [ -z "${MONGODB_PASSWORD:-}" ]; then
+            missing_vars+=("MONGODB_PASSWORD")
+        fi
+        if [ -z "${REDIS_PASSWORD:-}" ]; then
+            missing_vars+=("REDIS_PASSWORD")
+        fi
+        if [ -z "${JWT_SECRET:-}" ]; then
+            missing_vars+=("JWT_SECRET")
+        fi
+        if [ -z "${ENCRYPTION_KEY:-}" ]; then
+            missing_vars+=("ENCRYPTION_KEY")
+        fi
+        
+        if [ ${#missing_vars[@]} -gt 0 ]; then
+            log_error "Missing required environment variables:"
+            for var in "${missing_vars[@]}"; do
+                log_error "  - $var"
+            done
+            log_error "Please regenerate environment files:"
+            log_error "  bash scripts/config/generate-all-env-complete.sh"
+            return 1
+        fi
+        
+        log_success "All required environment variables found"
+    else
+        log_error "Foundation .env file still not found after generation attempt"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Function to check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
@@ -136,12 +225,9 @@ execute_full_deployment() {
     log_info "Executing Full Distroless Deployment"
     echo ""
     
-    # Step 1: Generate environment files
-    if ! run_script \
-        "Generate Environment Files" \
-        "scripts/config/generate-all-env-complete.sh" \
-        "Generate secure .env files with cryptographic values"; then
-        log_error "Environment file generation failed"
+    # Step 1: Ensure environment files are available
+    if ! ensure_environment_files; then
+        log_error "Environment file setup failed"
         exit 1
     fi
     echo ""
@@ -207,12 +293,9 @@ execute_networks_only() {
     log_info "Executing Networks-Only Deployment"
     echo ""
     
-    # Step 1: Generate environment files
-    if ! run_script \
-        "Generate Environment Files" \
-        "scripts/config/generate-all-env-complete.sh" \
-        "Generate secure .env files with cryptographic values"; then
-        log_error "Environment file generation failed"
+    # Step 1: Ensure environment files are available
+    if ! ensure_environment_files; then
+        log_error "Environment file setup failed"
         exit 1
     fi
     echo ""
