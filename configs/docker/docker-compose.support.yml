@@ -10,7 +10,7 @@ services:
   # ===========================================
   
   # Admin Interface
-  admin-interface:
+  lucid-admin-interface:
     image: pickme/lucid-admin-interface:latest-arm64
     container_name: lucid-admin-interface
     restart: unless-stopped
@@ -41,14 +41,14 @@ services:
         condition: service_healthy
       lucid-api-gateway:
         condition: service_healthy
-      lucid-blocks:
+      lucid-blockchain-core:
         condition: service_healthy
       lucid-session-api:
         condition: service_healthy
       lucid-node-management:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8120/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,7 +63,7 @@ services:
   # ===========================================
 
   # TRON Client
-  tron-client:
+  lucid-tron-client:
     image: pickme/lucid-tron-client:latest-arm64
     container_name: lucid-tron-client
     restart: unless-stopped
@@ -96,7 +96,7 @@ services:
       - "com.lucid.cluster=07-tron-payment"
 
   # TRON Payout Router
-  tron-payout-router:
+  lucid-tron-payout-router:
     image: pickme/lucid-payout-router:latest-arm64
     container_name: lucid-tron-payout-router
     restart: unless-stopped
@@ -131,7 +131,7 @@ services:
       - "com.lucid.cluster=07-tron-payment"
 
   # TRON Wallet Manager
-  tron-wallet-manager:
+  lucid-tron-wallet-manager:
     image: pickme/lucid-wallet-manager:latest-arm64
     container_name: lucid-tron-wallet-manager
     restart: unless-stopped
@@ -165,7 +165,7 @@ services:
       - "com.lucid.cluster=07-tron-payment"
 
   # TRON USDT Manager
-  tron-usdt-manager:
+  lucid-tron-usdt-manager:
     image: pickme/lucid-usdt-manager:latest-arm64
     container_name: lucid-tron-usdt-manager
     restart: unless-stopped
@@ -199,7 +199,7 @@ services:
       - "com.lucid.cluster=07-tron-payment"
 
   # TRON Staking Service
-  tron-staking:
+  lucid-tron-staking:
     image: pickme/lucid-trx-staking:latest-arm64
     container_name: lucid-tron-staking
     restart: unless-stopped
@@ -223,7 +223,7 @@ services:
       lucid-tron-client:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -234,7 +234,7 @@ services:
       - "com.lucid.cluster=07-tron-payment"
 
   # TRON Payment Gateway
-  tron-payment-gateway:
+  lucid-tron-payment-gateway:
     image: pickme/lucid-payment-gateway:latest-arm64
     container_name: lucid-tron-payment-gateway
     restart: unless-stopped
@@ -268,7 +268,7 @@ services:
       lucid-tron-staking:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -284,22 +284,12 @@ services:
 networks:
   lucid-pi-network:
     name: lucid-pi-network
-    driver: bridge
-    attachable: true
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+    external: true
   
   # Isolated network for TRON services
   lucid-tron-isolated:
     name: lucid-tron-isolated
-    driver: bridge
-    attachable: true
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+    external: true
 
 # ===========================================
 # VOLUMES

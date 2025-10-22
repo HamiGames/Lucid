@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # Security-hardened distroless configuration
   secure-distroless:
-    image: lucid/base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -45,7 +45,7 @@ services:
 
   # Minimal security configuration
   minimal-secure:
-    image: lucid/minimal-base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -81,7 +81,7 @@ services:
 
   # Security monitoring for distroless containers
   security-monitor:
-    image: lucid/base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - SECURITY_MONITORING=true
@@ -112,15 +112,8 @@ services:
 
 networks:
   lucid-secure:
-    driver: bridge
-    name: lucid-distroless-secure
-    driver_opts:
-      com.docker.network.bridge.enable_icc: "false"
-      com.docker.network.bridge.enable_ip_masquerade: "true"
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+    name: lucid-pi-network
+    external: true
 
 volumes:
   security-logs:

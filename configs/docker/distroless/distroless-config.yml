@@ -6,16 +6,7 @@ version: '3.8'
 services:
   # Base distroless configurations
   base:
-    build:
-      context: ../../infrastructure/docker/distroless/base
-      dockerfile: Dockerfile.base.distroless
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
-        TARGET_ARCH: ${TARGET_ARCH:-amd64}
-    image: lucid/base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -32,13 +23,7 @@ services:
 
   # Minimal base distroless configuration
   minimal-base:
-    build:
-      context: ../../infrastructure/docker/distroless/base
-      dockerfile: Dockerfile.minimal-base.distroless
-      platforms:
-        - linux/amd64
-        - linux/arm64
-    image: lucid/minimal-base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -52,12 +37,7 @@ services:
 
   # ARM64 base distroless configuration
   arm64-base:
-    build:
-      context: ../../infrastructure/docker/distroless/base
-      dockerfile: Dockerfile.arm64-base.distroless
-      platforms:
-        - linux/arm64
-    image: lucid/arm64-base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -74,11 +54,8 @@ services:
 
 networks:
   lucid-network:
-    driver: bridge
-    name: lucid-distroless-network
-    driver_opts:
-      com.docker.network.bridge.enable_icc: "true"
-      com.docker.network.bridge.enable_ip_masquerade: "true"
+    name: lucid-pi-network
+    external: true
 
 volumes:
   lucid-data:

@@ -69,9 +69,6 @@ services:
   lucid-mongodb:
     <<: *lucid-common
     container_name: lucid-mongodb
-    build:
-      context: ./database/mongodb
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid-mongodb:latest-arm64
     platform: linux/arm64
     command: [
@@ -123,9 +120,6 @@ services:
   lucid-redis:
     <<: *lucid-common
     container_name: lucid-redis
-    build:
-      context: ./database/redis
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid-redis:latest-arm64
     platform: linux/arm64
     command: [
@@ -177,9 +171,6 @@ services:
   lucid-elasticsearch:
     <<: *lucid-common
     container_name: lucid-elasticsearch
-    build:
-      context: ./database/elasticsearch
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid-elasticsearch:latest-arm64
     platform: linux/arm64
     command: [
@@ -235,9 +226,6 @@ services:
   lucid-auth-service:
     <<: *lucid-common
     container_name: lucid-auth-service
-    build:
-      context: ./auth
-      dockerfile: Dockerfile.distroless
     image: pickme/lucid-auth-service:latest-arm64
     platform: linux/arm64
     ports:

@@ -10,7 +10,7 @@ services:
   # ===========================================
   
   # API Gateway
-  api-gateway:
+  lucid-api-gateway:
     image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid-api-gateway
     restart: unless-stopped
@@ -60,14 +60,14 @@ services:
   # ===========================================
 
   # Blockchain Core Engine
-  lucid-blocks:
+  lucid-blockchain-core:
     image: pickme/lucid-blockchain-engine:latest-arm64
-    container_name: lucid-blocks
+    container_name: lucid-blockchain-core
     restart: unless-stopped
     ports:
       - "8084:8084"
     environment:
-      - SERVICE_NAME=lucid-blocks
+      - SERVICE_NAME=lucid-blockchain-core
       - PORT=8084
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
@@ -100,15 +100,15 @@ services:
       - "com.lucid.service=blockchain"
       - "com.lucid.cluster=02-blockchain-core"
 
-  # Blockchain Engine
-  blockchain-engine:
+  # Session Anchoring Service
+  lucid-session-anchoring:
     image: pickme/lucid-session-anchoring:latest-arm64
-    container_name: lucid-blocks-engine
+    container_name: lucid-session-anchoring
     restart: unless-stopped
     ports:
       - "8085:8085"
     environment:
-      - SERVICE_NAME=lucid-blockchain-engine
+      - SERVICE_NAME=lucid-session-anchoring
       - PORT=8085
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
@@ -119,8 +119,8 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/blockchain-engine:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs
     networks:
       - lucid-pi-network
     depends_on:
@@ -134,56 +134,19 @@ services:
       start_period: 60s
     labels:
       - "com.lucid.phase=core"
-      - "com.lucid.service=blockchain-engine"
-      - "com.lucid.cluster=02-blockchain-core"
-
-  # Session Anchoring Service
-  session-anchoring:
-    image: pickme/lucid-session-anchoring:latest-arm64
-    container_name: lucid-blocks-anchoring
-    restart: unless-stopped
-    ports:
-      - "8086:8086"
-    environment:
-      - SERVICE_NAME=lucid-session-anchoring
-      - PORT=8086
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/data/anchoring:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/anchoring:/app/logs
-    networks:
-      - lucid-pi-network
-    depends_on:
-      lucid-blockchain-core:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    labels:
-      - "com.lucid.phase=core"
       - "com.lucid.service=session-anchoring"
       - "com.lucid.cluster=02-blockchain-core"
 
   # Block Manager
-  block-manager:
+  lucid-block-manager:
     image: pickme/lucid-block-manager:latest-arm64
-    container_name: lucid-blocks-manager
+    container_name: lucid-block-manager
     restart: unless-stopped
     ports:
-      - "8087:8087"
+      - "8086:8086"
     environment:
       - SERVICE_NAME=lucid-block-manager
-      - PORT=8087
+      - PORT=8086
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -201,7 +164,7 @@ services:
       lucid-blockchain-core:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -212,15 +175,15 @@ services:
       - "com.lucid.cluster=02-blockchain-core"
 
   # Data Chain Service
-  data-chain:
+  lucid-data-chain:
     image: pickme/lucid-data-chain:latest-arm64
-    container_name: lucid-blocks-data
+    container_name: lucid-data-chain
     restart: unless-stopped
     ports:
-      - "8088:8088"
+      - "8087:8087"
     environment:
       - SERVICE_NAME=lucid-data-chain
-      - PORT=8088
+      - PORT=8087
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -238,7 +201,7 @@ services:
       lucid-blockchain-core:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8088/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -248,12 +211,13 @@ services:
       - "com.lucid.service=data-chain"
       - "com.lucid.cluster=02-blockchain-core"
 
+
   # ===========================================
   # SERVICE MESH SERVICES
   # ===========================================
 
   # Service Mesh Controller
-  service-mesh-controller:
+  lucid-service-mesh-controller:
     image: pickme/lucid-service-mesh-controller:latest-arm64
     container_name: lucid-service-mesh-controller
     restart: unless-stopped
@@ -294,12 +258,7 @@ services:
 networks:
   lucid-pi-network:
     name: lucid-pi-network
-    driver: bridge
-    attachable: true
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+    external: true
 
 # ===========================================
 # VOLUMES

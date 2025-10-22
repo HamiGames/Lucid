@@ -450,12 +450,7 @@ services:
 networks:
   lucid-pi-network:
     name: lucid-pi-network
-    driver: bridge
-    attachable: true
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+    external: true
 
 # ===========================================
 # VOLUMES

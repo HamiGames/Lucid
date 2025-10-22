@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # Development distroless configuration
   dev-distroless:
-    image: lucid/base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app:/app/src
       - PYTHONDONTWRITEBYTECODE=1
@@ -45,7 +45,7 @@ services:
 
   # Development minimal configuration
   dev-minimal:
-    image: lucid/minimal-base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app:/app/src
       - PYTHONDONTWRITEBYTECODE=1
@@ -74,7 +74,7 @@ services:
 
   # Development tools container
   dev-tools:
-    image: lucid/base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - DEBUG_TOOLS=true
@@ -103,15 +103,8 @@ services:
 
 networks:
   lucid-dev:
-    driver: bridge
-    name: lucid-distroless-dev
-    driver_opts:
-      com.docker.network.bridge.enable_icc: "true"
-      com.docker.network.bridge.enable_ip_masquerade: "true"
-    ipam:
-      config:
-        - subnet: 172.22.0.0/16
-          gateway: 172.22.0.1
+    name: lucid-pi-network
+    external: true
 
 volumes:
   lucid-dev-data:

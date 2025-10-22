@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # Runtime environment configuration
   distroless-runtime:
-    image: lucid/base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -38,7 +38,7 @@ services:
 
   # Minimal runtime for resource-constrained environments
   minimal-runtime:
-    image: lucid/minimal-base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -66,7 +66,7 @@ services:
 
   # ARM64 runtime for Raspberry Pi
   arm64-runtime:
-    image: lucid/arm64-base:${VERSION:-latest}
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -98,16 +98,8 @@ services:
 
 networks:
   lucid-production:
-    driver: bridge
-    name: lucid-distroless-production
-    driver_opts:
-      com.docker.network.bridge.enable_icc: "true"
-      com.docker.network.bridge.enable_ip_masquerade: "true"
-      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+    name: lucid-pi-network
+    external: true
 
 volumes:
   lucid-production-data:

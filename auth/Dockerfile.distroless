@@ -20,11 +20,11 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt /tmp/requirements.txt
+COPY auth/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Copy application code
-COPY . /app
+COPY auth/ /app
 WORKDIR /app
 
 # =============================================================================
@@ -47,13 +47,17 @@ USER 65532:65532
 EXPOSE 8089
 
 # Health check script
-COPY --chown=65532:65532 healthcheck.py /app/healthcheck.py
+COPY --chown=65532:65532 auth/healthcheck.py /app/healthcheck.py
 
 # Security labels
 LABEL org.lucid.security="distroless" \
       org.lucid.base="gcr.io/distroless/python3-debian12" \
       org.lucid.user="65532:65532" \
       org.lucid.shell="false"
+
+# Health check for distroless compliance
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["python", "/app/healthcheck.py"]
 
 # Use Python to start the authentication service
 ENTRYPOINT ["python", "-m", "auth.main"]
