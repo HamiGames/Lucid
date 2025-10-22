@@ -29,7 +29,7 @@ services:
       - ALL
     cap_add:
       - SYS_PTRACE  # For debugging
-    user: "1000:1000"
+    user: "65532:65532"
     working_dir: /app
     healthcheck:
       test: ["python", "-c", "import sys; sys.exit(0)"]
@@ -38,9 +38,11 @@ services:
       retries: 5
       start_period: 5s
     command: >
-      sh -c "
-        echo 'Starting development distroless container...' &&
-        python /app/src/main.py
+      python -c "
+        print('Starting development distroless container...');
+        import sys;
+        sys.path.insert(0, '/app/src');
+        exec(open('/app/src/main.py').read())
       "
 
   # Development minimal configuration
@@ -63,7 +65,7 @@ services:
       - ./logs:/app/logs:rw
     cap_drop:
       - ALL
-    user: "1000:1000"
+    user: "65532:65532"
     working_dir: /app
     healthcheck:
       test: ["python", "-c", "import sys; print('dev minimal healthy'); sys.exit(0)"]
@@ -93,12 +95,13 @@ services:
     cap_add:
       - SYS_PTRACE
       - NET_ADMIN
-    user: "1000:1000"
+    user: "65532:65532"
     working_dir: /app
     command: >
-      sh -c "
-        echo 'Development tools container ready' &&
-        tail -f /dev/null
+      python -c "
+        print('Development tools container ready');
+        import time;
+        while True: time.sleep(60)
       "
 
 networks:

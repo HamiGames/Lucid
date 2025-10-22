@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # Simple test runtime
   test-runtime:
-    image: python:3.11-slim
+    image: pickme/lucid-base:latest-arm64
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -15,6 +15,15 @@ services:
     networks:
       - lucid-test
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+    cap_drop:
+      - ALL
+    user: "65532:65532"
+    working_dir: /app
     command: ["python", "-c", "import sys; print('Test runtime healthy'); sys.exit(0)"]
     healthcheck:
       test: ["python", "-c", "import sys; sys.exit(0)"]

@@ -156,6 +156,14 @@ verify_distroless_containers() {
 test_docker_compose_setup() {
     log_info "Testing Docker Compose setup..."
     
+    # Check if required images exist
+    if ! docker image inspect pickme/lucid-base:latest-arm64 > /dev/null 2>&1; then
+        log_error "Required distroless base image not found: pickme/lucid-base:latest-arm64"
+        log_error "Please build the base image first:"
+        log_error "  docker buildx build --platform linux/arm64 -t pickme/lucid-base:latest-arm64 -f infrastructure/docker/distroless/base/Dockerfile.base.distroless --push ."
+        return 1
+    fi
+    
     # Test with a simple configuration
     if docker-compose \
         --env-file configs/environment/.env.distroless \

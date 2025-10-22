@@ -27,7 +27,7 @@ services:
     cap_drop:
       - ALL
     cap_add: []
-    user: "1000:1000"
+    user: "65532:65532"
     working_dir: /app
     healthcheck:
       test: ["python", "-c", "import sys; sys.exit(0)"]
@@ -63,7 +63,7 @@ services:
       - /tmp:noexec,nosuid,size=25m,mode=1777
     cap_drop:
       - ALL
-    user: "1000:1000"
+    user: "65532:65532"
     working_dir: /app
     healthcheck:
       test: ["python", "-c", "import sys; print('minimal secure healthy'); sys.exit(0)"]
@@ -99,15 +99,17 @@ services:
     cap_add:
       - NET_RAW
       - NET_ADMIN
-    user: "1000:1000"
+    user: "65532:65532"
     working_dir: /app
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./security-logs:/logs:ro
     command: >
-      sh -c "
-        echo 'Starting security monitoring...' &&
-        python /app/scripts/security-monitor.py
+      python -c "
+        print('Starting security monitoring...');
+        import sys;
+        sys.path.insert(0, '/app/scripts');
+        exec(open('/app/scripts/security-monitor.py').read())
       "
 
 networks:
