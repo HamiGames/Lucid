@@ -3,8 +3,6 @@
 # Services: MongoDB, Redis, Elasticsearch, Authentication Service
 # Network: lucid-pi-network (bridge, 172.20.0.0/16)
 
-version: '3.8'
-
 # Environment variables - SECURITY ENFORCED (No weak defaults allowed)
 # REQUIRED: Must load with --env-file configs/environment/.env.foundation
 # Example: docker-compose --env-file configs/environment/.env.foundation -f docker-compose.foundation.yml up -d
@@ -19,10 +17,10 @@ x-lucid-env: &lucid-env
   DOCKER_BUILDKIT: "1"
   COMPOSE_DOCKER_CLI_BUILD: "1"
   
-  # Database connectivity
-  MONGO_URL: ${MONGO_URL:-mongodb://lucid:changeme@lucid_mongo:27017/lucid?authSource=admin&retryWrites=false}
-  REDIS_URL: ${REDIS_URL:-redis://:changeme@lucid_redis:6379/0}
-  ELASTICSEARCH_URL: http://lucid_elasticsearch:9200
+  # Database connectivity (loaded from .env.foundation)
+  MONGODB_URI: ${MONGODB_URI}
+  REDIS_URI: ${REDIS_URI}
+  ELASTICSEARCH_URI: ${ELASTICSEARCH_URI}
   
   # Network configuration
   LUCID_NETWORK: lucid-pi-network
@@ -39,10 +37,17 @@ x-lucid-env: &lucid-env
   ADMIN_INTERFACE_PORT: ${ADMIN_INTERFACE_PORT:-8120}
   TRON_PAYMENT_PORT: ${TRON_PAYMENT_PORT:-8098}
   
-  # Security
-  JWT_SECRET_KEY: ${JWT_SECRET:-changeme}
-  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-changeme}
-  TOR_CONTROL_PASSWORD: ${TOR_PASSWORD:-changeme}
+  # Security (loaded from .env.foundation)
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+  
+  # Additional Foundation Configuration
+  LUCID_ENVIRONMENT: ${LUCID_ENVIRONMENT:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  HEALTH_CHECK_INTERVAL: ${HEALTH_CHECK_INTERVAL:-30}
+  HEALTH_CHECK_TIMEOUT: ${HEALTH_CHECK_TIMEOUT:-10}
+  HEALTH_CHECK_RETRIES: ${HEALTH_CHECK_RETRIES:-3}
+  HEALTH_CHECK_START_PERIOD: ${HEALTH_CHECK_START_PERIOD:-40}
 
 # Common configuration
 x-lucid-common: &lucid-common
@@ -230,7 +235,7 @@ services:
       SERVICE_NAME: lucid-auth-service
       AUTH_SERVICE_PORT: 8089
       AUTH_SERVICE_URL: http://192.168.0.75:8089
-      JWT_SECRET_KEY: ${JWT_SECRET:?ERROR - JWT_SECRET must be set in .env.foundation}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 7

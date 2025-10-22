@@ -25,8 +25,10 @@ services:
       - LOG_LEVEL=INFO
       - DEBUG=false
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URI=${REDIS_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - RATE_LIMIT_ENABLED=true
       - RATE_LIMIT_REQUESTS_PER_MINUTE=100
       - CORS_ENABLED=true
@@ -70,8 +72,10 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URI=${REDIS_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - CONSENSUS_ALGORITHM=PoOT
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
@@ -109,8 +113,10 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URI=${REDIS_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/blockchain-engine:/app/data
@@ -144,8 +150,10 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URI=${REDIS_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/anchoring:/app/data
@@ -179,8 +187,10 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URI=${REDIS_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data
@@ -214,8 +224,10 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set in .env.core}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set in .env.core}@lucid-redis:6379/0
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_URI=${REDIS_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data

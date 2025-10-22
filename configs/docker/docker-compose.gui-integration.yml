@@ -34,8 +34,8 @@ services:
       - ADMIN_INTERFACE_URL=http://lucid-admin-interface:8083
       - TRON_PAYMENT_URL=http://lucid-tron-client:8096
     volumes:
-      - gui_bridge_logs:/app/logs
-      - gui_bridge_data:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/gui-api-bridge:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/gui-api-bridge:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network
@@ -74,8 +74,8 @@ services:
       - ADMIN_SERVICES=foundation,core,application,support
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - gui_docker_logs:/app/logs
-      - gui_docker_data:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/gui-docker-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/gui-docker-manager:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network
@@ -107,8 +107,8 @@ services:
       - GUI_TOR_INTEGRATION=true
       - ONION_ADDRESS_MASKING=true
     volumes:
-      - tor_data:/app/tor-data
-      - gui_tor_logs:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tor:/app/tor-data
+      - /mnt/myssd/Lucid/Lucid/logs/gui-tor-manager:/app/logs
     networks:
       - lucid-gui-network
     healthcheck:
@@ -142,8 +142,8 @@ services:
       - TRON_WALLET_SUPPORT=true
     volumes:
       - /dev/bus/usb:/dev/bus/usb:ro
-      - gui_hardware_logs:/app/logs
-      - gui_hardware_data:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/gui-hardware-wallet:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/gui-hardware-wallet:/app/data
     networks:
       - lucid-gui-network
     privileged: true
@@ -162,6 +162,11 @@ services:
 # NETWORKS
 # ===========================================
 networks:
+  # Main Pi network (external)
+  lucid-pi-network:
+    name: lucid-pi-network
+    external: true
+  
   # GUI-specific network for secure communication
   lucid-gui-network:
     name: lucid-gui-network
@@ -175,21 +180,8 @@ networks:
 # ===========================================
 # VOLUMES
 # ===========================================
-volumes:
-  # GUI service volumes
-  gui_bridge_logs:
-    driver: local
-  gui_bridge_data:
-    driver: local
-  gui_docker_logs:
-    driver: local
-  gui_docker_data:
-    driver: local
-  gui_tor_logs:
-    driver: local
-  tor_data:
-    driver: local
-  gui_hardware_logs:
-    driver: local
-  gui_hardware_data:
-    driver: local
+# =============================================================================
+# VOLUMES - Using Direct Host Paths on Pi
+# =============================================================================
+# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
+# No named volumes needed - using host path mounts for better performance

@@ -58,7 +58,7 @@ generate_secure_values() {
     # Generate secure values using openssl rand -base64
     MONGODB_PASSWORD=$(generate_secure_value 32)
     REDIS_PASSWORD=$(generate_secure_value 32)
-    JWT_SECRET=$(generate_secure_value 64)
+    JWT_SECRET_KEY=$(generate_secure_value 64)
     ENCRYPTION_KEY=$(generate_secure_value 32)
     TOR_PASSWORD=$(generate_secure_value 32)
     SESSION_SECRET=$(generate_secure_value 32)
@@ -75,8 +75,8 @@ generate_secure_values() {
     BUILD_TAG="latest"
     
     # Database configuration
-    MONGODB_URI="mongodb://mongo:27017/lucid_production"
-    REDIS_URI="redis://redis:6379"
+    MONGODB_URI="mongodb://lucid:${MONGODB_PASSWORD}@mongodb:27017/lucid?authSource=admin"
+    REDIS_URI="redis://redis:6379/0"
     ELASTICSEARCH_URI="http://elasticsearch:9200"
     
     log_success "Secure values generated"
@@ -148,7 +148,7 @@ ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_HEAP_SIZE=1g
 
 # Authentication Configuration
-JWT_SECRET=$JWT_SECRET
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION=3600
 ENCRYPTION_KEY=$ENCRYPTION_KEY
@@ -195,7 +195,7 @@ REDIS_URI=$REDIS_URI
 ELASTICSEARCH_URI=$ELASTICSEARCH_URI
 
 # Authentication Configuration (inherited from foundation)
-JWT_SECRET=$JWT_SECRET
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 ENCRYPTION_KEY=$ENCRYPTION_KEY
 
 # API Gateway Configuration
@@ -253,7 +253,7 @@ REDIS_PASSWORD=$REDIS_PASSWORD
 REDIS_URI=$REDIS_URI
 
 # Authentication Configuration (inherited from foundation)
-JWT_SECRET=$JWT_SECRET
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 ENCRYPTION_KEY=$ENCRYPTION_KEY
 
 # Session Management Configuration
@@ -315,7 +315,7 @@ REDIS_PASSWORD=$REDIS_PASSWORD
 REDIS_URI=$REDIS_URI
 
 # Authentication Configuration (inherited from foundation)
-JWT_SECRET=$JWT_SECRET
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 ENCRYPTION_KEY=$ENCRYPTION_KEY
 
 # Admin Interface Configuration
@@ -377,7 +377,7 @@ REDIS_PASSWORD=$REDIS_PASSWORD
 REDIS_URI=$REDIS_URI
 
 # Authentication Configuration (inherited from foundation)
-JWT_SECRET=$JWT_SECRET
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 ENCRYPTION_KEY=$ENCRYPTION_KEY
 
 # GUI API Bridge Configuration
@@ -488,7 +488,7 @@ display_summary() {
     echo "Configuration Details:"
     echo "  • MongoDB Password: Generated (32 bytes)"
     echo "  • Redis Password: Generated (32 bytes)"
-    echo "  • JWT Secret: Generated (64 bytes)"
+    echo "  • JWT Secret Key: Generated (64 bytes)"
     echo "  • Encryption Key: Generated (32 bytes)"
     echo "  • Tor Password: Generated (32 bytes)"
     echo "  • Pi Host: $PI_HOST"
