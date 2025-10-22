@@ -6,7 +6,7 @@ version: '3.8'
 services:
   # Runtime environment configuration
   distroless-runtime:
-    image: pickme/lucid-base:latest-arm64
+    image: python:3.11-slim
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -38,7 +38,7 @@ services:
 
   # Minimal runtime for resource-constrained environments
   minimal-runtime:
-    image: pickme/lucid-base:latest-arm64
+    image: python:3.11-slim
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -66,7 +66,7 @@ services:
 
   # ARM64 runtime for Raspberry Pi
   arm64-runtime:
-    image: pickme/lucid-base:latest-arm64
+    image: python:3.11-slim
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
@@ -98,7 +98,7 @@ services:
 
 networks:
   lucid-production:
-    name: lucid-pi-network
+    name: lucid-distroless-production
     external: true
 
 volumes:

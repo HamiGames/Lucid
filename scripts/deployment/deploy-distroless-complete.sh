@@ -53,13 +53,15 @@ run_script() {
     # Make script executable
     chmod +x "$script_path"
     
-    # Run script
-    if bash "$script_path"; then
+    # Run script with better error handling
+    if bash "$script_path" 2>&1; then
         log_success "$script_name completed successfully"
         return 0
     else
-        log_error "$script_name failed"
-        return 1
+        local exit_code=$?
+        log_error "$script_name failed with exit code: $exit_code"
+        log_error "Check the output above for detailed error information"
+        return $exit_code
     fi
 }
 

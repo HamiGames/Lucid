@@ -1,0 +1,29 @@
+# Test Distroless Runtime Configuration for Lucid Project
+# Simplified test configuration to verify Docker Compose setup
+
+version: '3.8'
+
+services:
+  # Simple test runtime
+  test-runtime:
+    image: python:3.11-slim
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    networks:
+      - lucid-test
+    restart: unless-stopped
+    command: ["python", "-c", "import sys; print('Test runtime healthy'); sys.exit(0)"]
+    healthcheck:
+      test: ["python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  lucid-test:
+    name: lucid-distroless-production
+    external: true

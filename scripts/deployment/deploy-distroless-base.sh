@@ -68,13 +68,27 @@ deploy_distroless_config() {
     fi
     
     # Deploy with environment files
-    docker-compose \
+    log_info "Running docker-compose command..."
+    log_info "Config file: $config_file"
+    log_info "Environment files: configs/environment/.env.distroless, configs/docker/distroless/distroless.env"
+    
+    # Check if environment files exist
+    if [ ! -f "configs/environment/.env.distroless" ]; then
+        log_error "Environment file not found: configs/environment/.env.distroless"
+        return 1
+    fi
+    
+    if [ ! -f "configs/docker/distroless/distroless.env" ]; then
+        log_error "Environment file not found: configs/docker/distroless/distroless.env"
+        return 1
+    fi
+    
+    # Run docker-compose with proper error handling
+    if docker-compose \
         --env-file configs/environment/.env.distroless \
         --env-file configs/docker/distroless/distroless.env \
         -f "$config_file" \
-        up -d
-    
-    if [ $? -eq 0 ]; then
+        up -d --remove-orphans; then
         log_success "$config_name deployed successfully"
         
         # Wait for services to start
@@ -101,6 +115,7 @@ deploy_distroless_config() {
         return 0
     else
         log_error "Failed to deploy $config_name"
+        log_error "Docker Compose command failed. Check the logs above for details."
         return 1
     fi
 }
@@ -137,7 +152,46 @@ verify_distroless_containers() {
     return 0
 }
 
+# Function to test Docker Compose setup
+test_docker_compose_setup() {
+    log_info "Testing Docker Compose setup..."
+    
+    # Test with a simple configuration
+    if docker-compose \
+        --env-file configs/environment/.env.distroless \
+        --env-file configs/docker/distroless/distroless.env \
+        -f "configs/docker/distroless/test-runtime-config.yml" \
+        config > /dev/null 2>&1; then
+        log_success "Docker Compose configuration test passed"
+        
+        # Clean up any test containers
+        docker-compose \
+            --env-file configs/environment/.env.distroless \
+            --env-file configs/docker/distroless/distroless.env \
+            -f "configs/docker/distroless/test-runtime-config.yml" \
+            down --remove-orphans > /dev/null 2>&1 || true
+        
+        return 0
+    else
+        log_error "Docker Compose configuration test failed"
+        log_error "This indicates a problem with the configuration files or environment"
+        return 1
+    fi
+}
+
 # Main deployment process
+
+# Step 0: Test Docker Compose setup
+log_info "Step 0: Testing Docker Compose setup"
+echo ""
+
+if ! test_docker_compose_setup; then
+    log_error "Docker Compose setup test failed"
+    log_error "Please check your configuration files and environment"
+    exit 1
+fi
+
+echo ""
 
 # Step 1: Deploy distroless runtime configuration
 log_info "Step 1: Deploying distroless runtime configuration"
