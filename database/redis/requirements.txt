@@ -1,0 +1,26 @@
+# Redis Distroless Requirements
+# Python dependencies for Redis distroless container
+
+# Core dependencies
+redis==5.0.1
+hiredis==2.2.3
+
+# Configuration and utilities
+python-dotenv==1.0.0
+pyyaml==6.0.1
+
+# Health check and monitoring
+requests==2.31.0
+psutil==5.9.6
+
+# Logging and structured output
+structlog==23.2.0
+colorama==0.4.6
+
+# Security and encryption
+cryptography==41.0.8
+bcrypt==4.1.2
+
+# Network and connectivity
+urllib3==2.1.0
+httpx==0.25.2

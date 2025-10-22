@@ -69,7 +69,10 @@ services:
   lucid-mongodb:
     <<: *lucid-common
     container_name: lucid-mongodb
-    image: mongo:7
+    build:
+      context: ./database/mongodb
+      dockerfile: Dockerfile.distroless
+    image: pickme/lucid-mongodb:latest-arm64
     platform: linux/arm64
     command: [
       "mongod",
@@ -93,10 +96,7 @@ services:
       lucid-pi-network:
         aliases: [mongo, lucid_mongo, mongodb]
     healthcheck:
-      test: [
-        "CMD-SHELL", 
-        "mongosh --quiet -u lucid -p ${MONGODB_PASSWORD:-changeme} --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"
-      ]
+      test: ["CMD", "python", "/app/healthcheck.py"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -113,6 +113,9 @@ services:
       - "org.lucid.service=mongodb"
       - "org.lucid.expose=27017"
       - "org.lucid.healthcheck=mongosh"
+      - "org.lucid.security=distroless"
+      - "org.lucid.user=65532:65532"
+      - "org.lucid.shell=false"
 
   # =============================================================================
   # FOUNDATION SERVICE 2: Redis 7 Cache
@@ -120,7 +123,10 @@ services:
   lucid-redis:
     <<: *lucid-common
     container_name: lucid-redis
-    image: redis:7.2
+    build:
+      context: ./database/redis
+      dockerfile: Dockerfile.distroless
+    image: pickme/lucid-redis:latest-arm64
     platform: linux/arm64
     command: [
       "redis-server",
@@ -144,10 +150,7 @@ services:
       lucid-pi-network:
         aliases: [redis, lucid_redis]
     healthcheck:
-      test: [
-        "CMD-SHELL",
-        "redis-cli -a ${REDIS_PASSWORD:-changeme} ping | grep -q PONG"
-      ]
+      test: ["CMD", "python", "/app/healthcheck.py"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -164,6 +167,9 @@ services:
       - "org.lucid.service=redis"
       - "org.lucid.expose=6379"
       - "org.lucid.healthcheck=redis-cli"
+      - "org.lucid.security=distroless"
+      - "org.lucid.user=65532:65532"
+      - "org.lucid.shell=false"
 
   # =============================================================================
   # FOUNDATION SERVICE 3: Elasticsearch 8 Search
@@ -171,7 +177,10 @@ services:
   lucid-elasticsearch:
     <<: *lucid-common
     container_name: lucid-elasticsearch
-    image: elasticsearch:8.11.0
+    build:
+      context: ./database/elasticsearch
+      dockerfile: Dockerfile.distroless
+    image: pickme/lucid-elasticsearch:latest-arm64
     platform: linux/arm64
     command: [
       "elasticsearch",
@@ -199,10 +208,7 @@ services:
       lucid-pi-network:
         aliases: [elasticsearch, lucid_elasticsearch]
     healthcheck:
-      test: [
-        "CMD-SHELL",
-        "curl -f http://localhost:9200/_cluster/health || exit 1"
-      ]
+      test: ["CMD", "python", "/app/healthcheck.py"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -219,6 +225,9 @@ services:
       - "org.lucid.service=elasticsearch"
       - "org.lucid.expose=9200"
       - "org.lucid.healthcheck=curl"
+      - "org.lucid.security=distroless"
+      - "org.lucid.user=65532:65532"
+      - "org.lucid.shell=false"
 
   # =============================================================================
   # FOUNDATION SERVICE 4: Authentication Service
@@ -226,6 +235,9 @@ services:
   lucid-auth-service:
     <<: *lucid-common
     container_name: lucid-auth-service
+    build:
+      context: ./auth
+      dockerfile: Dockerfile.distroless
     image: pickme/lucid-auth-service:latest-arm64
     platform: linux/arm64
     ports:
@@ -262,10 +274,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: [
-        "CMD-SHELL",
-        "curl -f http://localhost:8089/health || exit 1"
-      ]
+      test: ["CMD", "python", "/app/healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -283,6 +292,9 @@ services:
       - "org.lucid.expose=8089"
       - "org.lucid.healthcheck=curl"
       - "org.lucid.depends=mongodb,redis"
+      - "org.lucid.security=distroless"
+      - "org.lucid.user=65532:65532"
+      - "org.lucid.shell=false"
 
 # =============================================================================
 # NETWORKS
