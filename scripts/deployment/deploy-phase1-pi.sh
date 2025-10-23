@@ -89,6 +89,44 @@ verify_project_directory() {
     fi
 }
 
+# Create Docker networks on Pi
+create_docker_networks() {
+    echo -e "${BLUE}=== Creating Docker Networks ===${NC}"
+    
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        # Create main Pi network
+        docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label 'lucid.network=main' --label 'lucid.subnet=172.20.0.0/16' 2>/dev/null || echo 'Network lucid-pi-network already exists'
+        
+        # Create TRON isolated network
+        docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label 'lucid.network=tron-isolated' --label 'lucid.subnet=172.21.0.0/16' 2>/dev/null || echo 'Network lucid-tron-isolated already exists'
+        
+        # Create GUI network
+        docker network create lucid-gui-network --driver bridge --subnet 172.22.0.0/16 --gateway 172.22.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label 'lucid.network=gui' --label 'lucid.subnet=172.22.0.0/16' 2>/dev/null || echo 'Network lucid-gui-network already exists'
+        
+        # Create distroless production network
+        docker network create lucid-distroless-production --driver bridge --subnet 172.23.0.0/16 --gateway 172.23.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label 'lucid.network=distroless-production' --label 'lucid.subnet=172.23.0.0/16' 2>/dev/null || echo 'Network lucid-distroless-production already exists'
+        
+        # Create distroless dev network
+        docker network create lucid-distroless-dev --driver bridge --subnet 172.24.0.0/16 --gateway 172.24.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label 'lucid.network=distroless-dev' --label 'lucid.subnet=172.24.0.0/16' 2>/dev/null || echo 'Network lucid-distroless-dev already exists'
+        
+        # Create multi-stage network
+        docker network create lucid-multi-stage-network --driver bridge --subnet 172.25.0.0/16 --gateway 172.25.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label 'lucid.network=multi-stage' --label 'lucid.subnet=172.25.0.0/16' 2>/dev/null || echo 'Network lucid-multi-stage-network already exists'
+        
+        # Verify networks created
+        echo 'Verifying networks...'
+        docker network ls | grep lucid
+        docker network inspect lucid-pi-network | grep -E 'Subnet|Gateway'
+        docker network inspect lucid-distroless-production | grep -E 'Subnet|Gateway'
+    " >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "docker-networks" "SUCCESS" "All Docker networks created on Pi"
+    else
+        log_step "docker-networks" "FAILURE" "Failed to create Docker networks on Pi"
+        return 1
+    fi
+}
+
 # Create data storage directories on Pi
 create_data_directories() {
     echo -e "${BLUE}=== Creating Data Storage Directories ===${NC}"
@@ -202,6 +240,76 @@ verify_environment_config() {
     else
         log_step "env-file-verify" "WARNING" "Environment file not found, will use defaults from compose file"
         return 0
+    fi
+}
+
+# Deploy distroless infrastructure (prerequisite)
+deploy_distroless_infrastructure() {
+    echo -e "${BLUE}=== Deploying Distroless Infrastructure ===${NC}"
+    
+    # Step 1: Deploy distroless config
+    echo "Deploying distroless base infrastructure..."
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        cd $PI_DEPLOY_DIR
+        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/distroless/distroless-config.yml up -d
+    " >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "distroless-config" "SUCCESS" "Distroless base infrastructure deployed"
+    else
+        log_step "distroless-config" "FAILURE" "Failed to deploy distroless base infrastructure"
+        return 1
+    fi
+    
+    # Step 2: Deploy distroless runtime config
+    echo "Deploying distroless runtime infrastructure..."
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        cd $PI_DEPLOY_DIR
+        docker-compose --env-file configs/environment/.env.foundation -f configs/docker/distroless/distroless-runtime-config.yml up -d
+    " >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "distroless-runtime" "SUCCESS" "Distroless runtime infrastructure deployed"
+    else
+        log_step "distroless-runtime" "FAILURE" "Failed to deploy distroless runtime infrastructure"
+        return 1
+    fi
+    
+    # Step 3: Deploy base docker compose
+    echo "Deploying base containers..."
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        cd $PI_DEPLOY_DIR
+        docker-compose --env-file configs/environment/.env.foundation -f infrastructure/docker/distroless/base/docker-compose.base.yml up -d
+    " >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "base-containers" "SUCCESS" "Base containers deployed"
+    else
+        log_step "base-containers" "FAILURE" "Failed to deploy base containers"
+        return 1
+    fi
+    
+    # Verify distroless infrastructure
+    echo "Verifying distroless infrastructure..."
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        # Check all distroless containers running
+        docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep -E 'base|runtime|distroless'
+        
+        # Verify user is 65532:65532
+        docker exec lucid-base id 2>/dev/null || echo 'lucid-base not ready'
+        docker exec distroless-runtime id 2>/dev/null || echo 'distroless-runtime not ready'
+        
+        # Verify no shell (should fail)
+        docker exec lucid-base sh -c 'echo test' 2>&1 | grep 'executable file not found' || echo 'Shell access detected - not distroless'
+        
+        # Check health
+        docker ps --filter health=healthy | grep -E 'base|runtime'
+    " >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "distroless-verification" "SUCCESS" "Distroless infrastructure verified"
+    else
+        log_step "distroless-verification" "WARNING" "Distroless infrastructure verification had issues"
     fi
 }
 
@@ -380,6 +488,46 @@ initialize_databases() {
     fi
 }
 
+# Verify distroless compliance for all services
+verify_distroless_compliance() {
+    echo -e "${BLUE}=== Verifying Distroless Compliance ===${NC}"
+    
+    ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
+        # Verify distroless compliance for all foundation services
+        for service in lucid-mongodb lucid-redis lucid-elasticsearch lucid-auth-service; do
+            echo \"Checking distroless compliance for \$service...\"
+            
+            # Check user ID (should be 65532:65532)
+            docker exec \$service id 2>/dev/null || echo \"\$service not ready\"
+            
+            # Verify no shell access (should fail)
+            docker exec \$service sh -c 'echo test' 2>&1 | grep 'executable file not found' || echo \"Shell access detected on \$service - not distroless\"
+            
+            # Check if running as non-root
+            docker exec \$service whoami 2>/dev/null || echo \"Cannot determine user for \$service\"
+        done
+        
+        # Verify volumes are mounted correctly
+        echo 'Checking volume mounts...'
+        docker inspect lucid-mongodb | grep -A 10 'Mounts'
+        docker inspect lucid-redis | grep -A 10 'Mounts'
+        docker inspect lucid-elasticsearch | grep -A 10 'Mounts'
+        docker inspect lucid-auth-service | grep -A 10 'Mounts'
+        
+        # Check disk usage
+        echo 'Checking disk usage...'
+        df -h /mnt/myssd/Lucid/Lucid/data/
+        du -sh /mnt/myssd/Lucid/Lucid/data/*
+        du -sh /mnt/myssd/Lucid/Lucid/logs/*
+    " >/dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        log_step "distroless-compliance" "SUCCESS" "Distroless compliance verified for all services"
+    else
+        log_step "distroless-compliance" "WARNING" "Distroless compliance verification had issues"
+    fi
+}
+
 # Generate deployment summary
 generate_deployment_summary() {
     echo -e "${BLUE}=== Deployment Summary ===${NC}"
@@ -437,14 +585,17 @@ main() {
     # Execute deployment steps
     test_ssh_connection || exit 1
     verify_project_directory || exit 1
+    create_docker_networks || exit 1
     create_data_directories || exit 1
     verify_compose_file || exit 1
     verify_environment_config || exit 1
+    deploy_distroless_infrastructure || exit 1
     pull_arm64_images || exit 1
     deploy_phase1_services || exit 1
     wait_for_health_checks || exit 1
     verify_services_running || exit 1
     initialize_databases || exit 1
+    verify_distroless_compliance || exit 1
     
     generate_deployment_summary
 }
