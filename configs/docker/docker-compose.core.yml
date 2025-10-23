@@ -147,6 +147,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - SESSION_ANCHORING_HOST=session-anchoring
+      - SESSION_ANCHORING_PORT=8085
+      - SESSION_ANCHORING_URL=http://session-anchoring:8085
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
@@ -185,6 +188,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - BLOCK_MANAGER_HOST=block-manager
+      - BLOCK_MANAGER_PORT=8086
+      - BLOCK_MANAGER_URL=http://block-manager:8086
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
@@ -223,6 +229,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - DATA_CHAIN_HOST=data-chain
+      - DATA_CHAIN_PORT=8087
+      - DATA_CHAIN_URL=http://data-chain:8087
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}

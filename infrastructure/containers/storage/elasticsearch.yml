@@ -1,0 +1,23 @@
+# Elasticsearch configuration optimized for Pi
+cluster.name: lucid-cluster
+node.name: lucid-node-1
+
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+network.host: 0.0.0.0
+http.port: 9200
+
+# Pi optimization
+bootstrap.memory_lock: true
+discovery.type: single-node
+
+# JVM settings for Pi
+ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+
+# Security
+xpack.security.enabled: true
+xpack.security.authc.anonymous.enabled: false
+
+# Performance
+indices.query.bool.max_clause_count: 4096
