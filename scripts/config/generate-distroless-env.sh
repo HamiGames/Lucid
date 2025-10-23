@@ -58,7 +58,7 @@ ENCRYPTION_KEY=$(generate_encryption_key)
 TOR_CONTROL_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/")
 
 # Create .env.distroless file
-cat > "$ENV_FILE" << EOF
+cat > "$ENV_FILE" << 'EOF'
 # Lucid Distroless Environment Configuration
 # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 # Target: Raspberry Pi 5 (192.168.0.75)
@@ -301,10 +301,7 @@ BUILD_OS=linux
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_VERSION=0.1.0
 BUILD_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-
-# =============================================================================
-# ENVIRONMENT VALIDATION
-# =============================================================================
+EOF
 
 # Validate required environment variables
 validate_env() {

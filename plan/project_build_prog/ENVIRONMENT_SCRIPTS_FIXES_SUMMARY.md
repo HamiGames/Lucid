@@ -15,6 +15,7 @@ Fixed critical syntax errors in all environment generation scripts to ensure pro
 - `scripts/config/generate-core-env.sh` ✅
 - `scripts/config/generate-application-env.sh` ✅
 - `scripts/config/generate-support-env.sh` ✅
+- `scripts/config/generate-distroless-env.sh` ✅
 
 **Changes Made**:
 - Changed `<< EOF` to `<< 'EOF'` to prevent variable expansion
@@ -60,6 +61,7 @@ All environment generation scripts are now functional and properly aligned with 
 2. **`generate-core-env.sh`** - ✅ Fixed and verified  
 3. **`generate-application-env.sh`** - ✅ Fixed and verified
 4. **`generate-support-env.sh`** - ✅ Fixed and verified
+5. **`generate-distroless-env.sh`** - ✅ Fixed and verified
 
 ## Key Features Maintained
 
@@ -80,6 +82,7 @@ bash scripts/config/generate-foundation-env.sh
 bash scripts/config/generate-core-env.sh  
 bash scripts/config/generate-application-env.sh
 bash scripts/config/generate-support-env.sh
+bash scripts/config/generate-distroless-env.sh
 ```
 
 ## Next Steps
@@ -96,5 +99,6 @@ bash scripts/config/generate-support-env.sh
 - `scripts/config/generate-core-env.sh` - Fixed here-document syntax
 - `scripts/config/generate-application-env.sh` - Fixed here-document syntax
 - `scripts/config/generate-support-env.sh` - Fixed here-document syntax
+- `scripts/config/generate-distroless-env.sh` - Fixed here-document syntax
 
 All scripts now properly generate environment files for their respective deployment phases while maintaining full alignment with the deployment plans.
