@@ -1,9 +1,9 @@
 #!/bin/bash
+# Generate .env.application for Phase 3 Application Services
+# Based on: distro-deployment-plan.md Phase 4.3
+# Generated: 2025-01-14
 
-# Generate .env.distroless file for Raspberry Pi deployment
-# This script creates environment variables for distroless deployment
-
-set -e
+set -euo pipefail
 
 # Project root configuration
 PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
@@ -15,13 +15,21 @@ if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
     cd "$PROJECT_ROOT"
 fi
 
-# Configuration
-ENV_FILE="configs/environment/.env.distroless"
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo "Generating .env.distroless for Lucid project..."
+echo -e "${BLUE}🚀 Generating Application Services Environment Configuration${NC}"
+echo "=================================================="
 echo "Project Root: $PROJECT_ROOT"
 echo "Script Directory: $SCRIPT_DIR"
 echo ""
+
+# Configuration
+ENV_FILE="configs/environment/.env.application"
 
 # Create directory if it doesn't exist
 mkdir -p "$(dirname "$ENV_FILE")"
@@ -52,16 +60,25 @@ MONGODB_PASSWORD=$(generate_db_password)
 JWT_SECRET_KEY=$(generate_jwt_secret)
 REDIS_PASSWORD=$(generate_db_password)
 ELASTICSEARCH_PASSWORD=$(generate_db_password)
-USER_ID=$(openssl rand -hex 16)
-SESSION_SECRET=$(generate_secure_string 32)
 ENCRYPTION_KEY=$(generate_encryption_key)
-TOR_CONTROL_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/")
+SESSION_SECRET=$(generate_secure_string 32)
+NODE_MANAGEMENT_SECRET=$(generate_secure_string 32)
 
-# Create .env.distroless file
+echo -e "${YELLOW}📝 Generating secure values for Application Services...${NC}"
+echo "MONGODB_PASSWORD generated: ${MONGODB_PASSWORD:0:8}..."
+echo "JWT_SECRET_KEY generated: ${JWT_SECRET_KEY:0:8}..."
+echo "REDIS_PASSWORD generated: ${REDIS_PASSWORD:0:8}..."
+echo "ELASTICSEARCH_PASSWORD generated: ${ELASTICSEARCH_PASSWORD:0:8}..."
+echo "ENCRYPTION_KEY generated: ${ENCRYPTION_KEY:0:8}..."
+echo "SESSION_SECRET generated: ${SESSION_SECRET:0:8}..."
+echo "NODE_MANAGEMENT_SECRET generated: ${NODE_MANAGEMENT_SECRET:0:8}..."
+
+# Create .env.application file
 cat > "$ENV_FILE" << EOF
-# Lucid Distroless Environment Configuration
-# Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+# Phase 3 Application Services Configuration
+# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Target: Raspberry Pi 5 (192.168.0.75)
+# Services: Session Pipeline, Session Recorder, Chunk Processor, Session Storage, Session API, RDP Services, Node Management
 # Architecture: ARM64
 
 # =============================================================================
@@ -82,38 +99,13 @@ COMPOSE_DOCKER_CLI_BUILD=1
 # NETWORK CONFIGURATION
 # =============================================================================
 
-# Main Network
+# Main Network (Foundation + Core + Application + Blockchain)
 LUCID_MAIN_NETWORK=lucid-pi-network
 LUCID_MAIN_SUBNET=172.20.0.0/16
 LUCID_MAIN_GATEWAY=172.20.0.1
 
-# TRON Isolated Network
-LUCID_TRON_NETWORK=lucid-tron-isolated
-LUCID_TRON_SUBNET=172.21.0.0/16
-LUCID_TRON_GATEWAY=172.21.0.1
-
-# GUI Network
-LUCID_GUI_NETWORK=lucid-gui-network
-LUCID_GUI_SUBNET=172.22.0.0/16
-LUCID_GUI_GATEWAY=172.22.0.1
-
-# Distroless Production Network
-LUCID_DISTROLESS_PROD_NETWORK=lucid-distroless-production
-LUCID_DISTROLESS_PROD_SUBNET=172.23.0.0/16
-LUCID_DISTROLESS_PROD_GATEWAY=172.23.0.1
-
-# Distroless Development Network
-LUCID_DISTROLESS_DEV_NETWORK=lucid-distroless-dev
-LUCID_DISTROLESS_DEV_SUBNET=172.24.0.0/16
-LUCID_DISTROLESS_DEV_GATEWAY=172.24.0.1
-
-# Multi-Stage Build Network
-LUCID_MULTI_STAGE_NETWORK=lucid-multi-stage-network
-LUCID_MULTI_STAGE_SUBNET=172.25.0.0/16
-LUCID_MULTI_STAGE_GATEWAY=172.25.0.1
-
 # =============================================================================
-# DATABASE CONFIGURATION
+# DATABASE CONFIGURATION (Inherited from Foundation)
 # =============================================================================
 
 # MongoDB Configuration
@@ -140,7 +132,7 @@ ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
 ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
 
 # =============================================================================
-# SECURITY CONFIGURATION
+# SECURITY CONFIGURATION (Inherited from Foundation)
 # =============================================================================
 
 # JWT Configuration
@@ -148,66 +140,152 @@ JWT_SECRET_KEY=${JWT_SECRET_KEY}
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION=3600
 
-# Session Configuration
-SESSION_SECRET=${SESSION_SECRET}
-SESSION_TIMEOUT=1800
-
-# User Configuration
-USER_ID=${USER_ID}
-USER_ROLE=admin
-
 # Encryption Configuration
 ENCRYPTION_KEY=${ENCRYPTION_KEY}
 ENCRYPTION_ALGORITHM=AES-256-GCM
 
-# Tor Configuration
-TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}
-TOR_SOCKS_PORT=9050
-TOR_CONTROL_PORT=9051
+# Session Configuration
+SESSION_SECRET=${SESSION_SECRET}
+SESSION_TIMEOUT=1800
 
 # =============================================================================
-# SERVICE CONFIGURATION
+# APPLICATION SERVICES CONFIGURATION
 # =============================================================================
 
-# API Gateway
-API_GATEWAY_HOST=api-gateway
-API_GATEWAY_PORT=8080
-API_GATEWAY_URL=http://api-gateway:8080
+# Session Pipeline
+SESSION_PIPELINE_HOST=session-pipeline
+SESSION_PIPELINE_PORT=8081
+SESSION_PIPELINE_URL=http://session-pipeline:8081
 
-# Auth Service
-AUTH_SERVICE_HOST=lucid-auth-service
-AUTH_SERVICE_PORT=8089
-AUTH_SERVICE_URL=http://lucid-auth-service:8089
+# Session Recorder
+SESSION_RECORDER_HOST=session-recorder
+SESSION_RECORDER_PORT=8082
+SESSION_RECORDER_URL=http://session-recorder:8082
 
-# Blockchain Engine
-BLOCKCHAIN_ENGINE_HOST=blockchain-engine
-BLOCKCHAIN_ENGINE_PORT=8084
-BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+# Session Processor (Chunk Processor)
+SESSION_PROCESSOR_HOST=session-processor
+SESSION_PROCESSOR_PORT=8083
+SESSION_PROCESSOR_URL=http://session-processor:8083
 
-# Service Mesh
-SERVICE_MESH_HOST=service-mesh
-SERVICE_MESH_PORT=8500
-SERVICE_MESH_URL=http://service-mesh:8500
+# Session Storage
+SESSION_STORAGE_HOST=session-storage
+SESSION_STORAGE_PORT=8084
+SESSION_STORAGE_URL=http://session-storage:8084
 
 # Session API
 SESSION_API_HOST=session-api
 SESSION_API_PORT=8087
 SESSION_API_URL=http://session-api:8087
 
-# RDP Services
+# RDP Server Manager
 RDP_SERVER_MANAGER_HOST=rdp-server-manager
 RDP_SERVER_MANAGER_PORT=8095
 RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8095
 
-# Admin Interface
-ADMIN_INTERFACE_HOST=admin-interface
-ADMIN_INTERFACE_PORT=8083
-ADMIN_INTERFACE_URL=http://admin-interface:8083
+# RDP XRDP Integration
+RDP_XRDP_HOST=rdp-xrdp
+RDP_XRDP_PORT=3389
+RDP_XRDP_URL=rdp://rdp-xrdp:3389
 
-# TRON Payment Services
-TRON_CLIENT_HOST=tron-client
-TRON_CLIENT_PORT=8091
-TRON_CLIENT_URL=http://tron-client:8091
+# RDP Controller
+RDP_CONTROLLER_HOST=rdp-controller
+RDP_CONTROLLER_PORT=8096
+RDP_CONTROLLER_URL=http://rdp-controller:8096
+
+# RDP Monitor
+RDP_MONITOR_HOST=rdp-monitor
+RDP_MONITOR_PORT=8097
+RDP_MONITOR_URL=http://rdp-monitor:8097
+
+# Node Management
+NODE_MANAGEMENT_HOST=node-management
+NODE_MANAGEMENT_PORT=8095
+NODE_MANAGEMENT_URL=http://node-management:8095
+
+# =============================================================================
+# SESSION MANAGEMENT CONFIGURATION
+# =============================================================================
+
+# Session Configuration
+SESSION_CHUNK_SIZE=8388608
+SESSION_COMPRESSION_LEVEL=1
+SESSION_ENCRYPTION_ENABLED=true
+SESSION_RETENTION_DAYS=30
+SESSION_MERKLE_TREE_ENABLED=true
+
+# Session Processing
+SESSION_PROCESSING_WORKERS=4
+SESSION_ENCRYPTION_WORKERS=2
+SESSION_COMPRESSION_WORKERS=2
+SESSION_STORAGE_WORKERS=4
+
+# Session Pipeline Configuration
+SESSION_PIPELINE_BATCH_SIZE=100
+SESSION_PIPELINE_TIMEOUT=30
+SESSION_PIPELINE_RETRY_ATTEMPTS=3
+
+# Session Recorder Configuration
+SESSION_RECORDER_BUFFER_SIZE=64MB
+SESSION_RECORDER_FLUSH_INTERVAL=5s
+SESSION_RECORDER_COMPRESSION_ENABLED=true
+
+# Session Storage Configuration
+SESSION_STORAGE_BACKEND=mongodb
+SESSION_STORAGE_INDEXING_ENABLED=true
+SESSION_STORAGE_CACHING_ENABLED=true
+
+# =============================================================================
+# RDP SERVICES CONFIGURATION
+# =============================================================================
+
+# RDP Configuration
+RDP_MAX_SESSIONS=10
+RDP_SESSION_TIMEOUT=3600
+RDP_RESOURCE_LIMIT_CPU=80
+RDP_RESOURCE_LIMIT_MEMORY=2GB
+RDP_RESOURCE_LIMIT_DISK=10GB
+
+# RDP Server Manager Configuration
+RDP_SERVER_MANAGER_POOL_SIZE=5
+RDP_SERVER_MANAGER_TIMEOUT=30
+RDP_SERVER_MANAGER_HEALTH_CHECK_INTERVAL=60s
+
+# RDP XRDP Configuration
+RDP_XRDP_DISPLAY_RESOLUTION=1920x1080
+RDP_XRDP_COLOR_DEPTH=24
+RDP_XRDP_COMPRESSION_ENABLED=true
+
+# RDP Controller Configuration
+RDP_CONTROLLER_SESSION_TIMEOUT=3600
+RDP_CONTROLLER_IDLE_TIMEOUT=1800
+RDP_CONTROLLER_MAX_IDLE_SESSIONS=5
+
+# RDP Monitor Configuration
+RDP_MONITOR_METRICS_ENABLED=true
+RDP_MONITOR_ALERT_THRESHOLD_CPU=80
+RDP_MONITOR_ALERT_THRESHOLD_MEMORY=80
+RDP_MONITOR_ALERT_THRESHOLD_DISK=90
+
+# =============================================================================
+# NODE MANAGEMENT CONFIGURATION
+# =============================================================================
+
+# Node Management Configuration
+NODE_MANAGEMENT_SECRET=${NODE_MANAGEMENT_SECRET}
+NODE_POOL_MAX_SIZE=100
+NODE_PAYOUT_THRESHOLD=10
+NODE_CONSENSUS_WEIGHT=1.0
+
+# Node Pool Configuration
+NODE_POOL_MIN_SIZE=5
+NODE_POOL_SCALE_UP_THRESHOLD=80
+NODE_POOL_SCALE_DOWN_THRESHOLD=20
+NODE_POOL_HEALTH_CHECK_INTERVAL=30s
+
+# Node Performance Configuration
+NODE_PERFORMANCE_MONITORING=true
+NODE_PERFORMANCE_METRICS_ENABLED=true
+NODE_PERFORMANCE_ALERT_THRESHOLD=90
 
 # =============================================================================
 # DISTROLESS RUNTIME CONFIGURATION
@@ -234,6 +312,24 @@ CAP_DROP=ALL
 CAP_ADD=NET_BIND_SERVICE
 
 # =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
+
+# Service Health Endpoints
+SESSION_PIPELINE_HEALTH_URL=http://session-pipeline:8081/health
+SESSION_RECORDER_HEALTH_URL=http://session-recorder:8082/health
+SESSION_PROCESSOR_HEALTH_URL=http://session-processor:8083/health
+SESSION_STORAGE_HEALTH_URL=http://session-storage:8084/health
+SESSION_API_HEALTH_URL=http://session-api:8087/health
+RDP_SERVER_MANAGER_HEALTH_URL=http://rdp-server-manager:8095/health
+NODE_MANAGEMENT_HEALTH_URL=http://node-management:8095/health
+
+# =============================================================================
 # LOGGING CONFIGURATION
 # =============================================================================
 
@@ -249,29 +345,10 @@ LOG_FILE=/dev/stdout
 # MONITORING CONFIGURATION
 # =============================================================================
 
-# Health Check Configuration
-HEALTH_CHECK_INTERVAL=30s
-HEALTH_CHECK_TIMEOUT=10s
-HEALTH_CHECK_RETRIES=3
-
 # Metrics Configuration
 METRICS_ENABLED=true
 METRICS_PORT=9090
 METRICS_PATH=/metrics
-
-# =============================================================================
-# TRON BLOCKCHAIN CONFIGURATION
-# =============================================================================
-
-# TRON Network Configuration
-TRON_NETWORK=shasta
-TRON_NODE_URL=https://api.shasta.trongrid.io
-TRON_PRIVATE_KEY=your_private_key_here
-TRON_ADDRESS=your_address_here
-
-# USDT Configuration
-USDT_CONTRACT_ADDRESS=TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs
-USDT_DECIMALS=6
 
 # =============================================================================
 # DEPLOYMENT CONFIGURATION
@@ -313,8 +390,9 @@ validate_env() {
         "JWT_SECRET_KEY"
         "REDIS_PASSWORD"
         "ELASTICSEARCH_PASSWORD"
-        "USER_ID"
+        "ENCRYPTION_KEY"
         "SESSION_SECRET"
+        "NODE_MANAGEMENT_SECRET"
     )
     
     for var in "${required_vars[@]}"; do
@@ -328,8 +406,8 @@ validate_env() {
 # Validate environment
 validate_env
 
-echo "✅ .env.distroless generated successfully at $ENV_FILE"
-echo "📋 Environment variables configured for distroless deployment"
-echo "🔒 Security keys generated with secure random values"
-echo "🌐 Network configuration set for Raspberry Pi deployment"
-echo "📦 Container configuration optimized for distroless runtime"
+echo -e "${GREEN}✅ .env.application generated successfully at $ENV_FILE${NC}"
+echo -e "${GREEN}📋 Application services environment configured for distroless deployment${NC}"
+echo -e "${GREEN}🔒 Security keys generated with secure random values${NC}"
+echo -e "${GREEN}🌐 Network configuration set for Raspberry Pi deployment${NC}"
+echo -e "${GREEN}📦 Container configuration optimized for distroless runtime${NC}"

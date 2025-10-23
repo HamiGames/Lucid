@@ -23,6 +23,9 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
       - /var/tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/logs/distroless-runtime:/app/logs:rw
+      - distroless-runtime-cache:/tmp/runtime
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
@@ -55,6 +58,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/logs/minimal-runtime:/app/logs:rw
+      - minimal-runtime-cache:/tmp/runtime
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
@@ -90,6 +96,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
+    volumes:
+      - /mnt/myssd/Lucid/logs/arm64-runtime:/app/logs:rw
+      - arm64-runtime-cache:/tmp/runtime
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
@@ -102,6 +111,17 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.mode=arm64"
+
+volumes:
+  distroless-runtime-cache:
+    driver: local
+    name: lucid-distroless-runtime-cache
+  minimal-runtime-cache:
+    driver: local
+    name: lucid-minimal-runtime-cache
+  arm64-runtime-cache:
+    driver: local
+    name: lucid-arm64-runtime-cache
 
 networks:
   lucid-distroless-production:

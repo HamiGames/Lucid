@@ -4,6 +4,16 @@
 
 set -e
 
+# Project root configuration
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Change to project root if not already there
+if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
+    echo "Changing to project root: $PROJECT_ROOT"
+    cd "$PROJECT_ROOT"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,8 +22,6 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONFIGS_DIR="$PROJECT_ROOT/configs"
 ENV_DIR="$CONFIGS_DIR/environment"
 
@@ -32,6 +40,27 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to generate secure random string (aligned with generate-secure-keys.sh)
+generate_secure_string() {
+    local length=${1:-32}
+    openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length
+}
+
+# Function to generate JWT secret (64 characters) - aligned with generate-secure-keys.sh
+generate_jwt_secret() {
+    openssl rand -base64 48 | tr -d "=+/"
+}
+
+# Function to generate encryption key (32 bytes = 256 bits) - aligned with generate-secure-keys.sh
+generate_encryption_key() {
+    openssl rand -hex 32
+}
+
+# Function to generate database passwords - aligned with generate-secure-keys.sh
+generate_db_password() {
+    openssl rand -base64 24 | tr -d "=+/"
 }
 
 # Function to generate secure random values
@@ -55,14 +84,14 @@ create_directory_structure() {
 generate_secure_values() {
     log_info "Generating secure configuration values..."
     
-    # Generate secure values using openssl rand -base64
-    MONGODB_PASSWORD=$(generate_secure_value 32)
-    REDIS_PASSWORD=$(generate_secure_value 32)
-    JWT_SECRET_KEY=$(generate_secure_value 64)
-    ENCRYPTION_KEY=$(generate_secure_value 32)
-    TOR_PASSWORD=$(generate_secure_value 32)
-    SESSION_SECRET=$(generate_secure_value 32)
-    API_SECRET=$(generate_secure_value 32)
+    # Generate secure values using aligned functions
+    MONGODB_PASSWORD=$(generate_db_password)
+    REDIS_PASSWORD=$(generate_db_password)
+    JWT_SECRET_KEY=$(generate_jwt_secret)
+    ENCRYPTION_KEY=$(generate_encryption_key)
+    TOR_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/")
+    SESSION_SECRET=$(generate_secure_string 32)
+    API_SECRET=$(generate_secure_string 32)
     
     # Network configuration
     PI_HOST="192.168.0.75"
@@ -82,283 +111,74 @@ generate_secure_values() {
     log_success "Secure values generated"
 }
 
-# Function to generate .env.pi-build
-generate_pi_build_env() {
-    log_info "Generating .env.pi-build..."
+# Function to generate .env.distroless (Main distroless environment)
+generate_distroless_env() {
+    log_info "Generating .env.distroless..."
     
-    cat > "$ENV_DIR/.env.pi-build" << EOF
-# Raspberry Pi Build Configuration
-# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Target: Raspberry Pi 5 (192.168.0.75)
-
-# Build Configuration
-BUILD_PLATFORM=$BUILD_PLATFORM
-BUILD_REGISTRY=$BUILD_REGISTRY
-BUILD_TAG=$BUILD_TAG
-BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-
-# Pi Deployment Configuration
-PI_HOST=$PI_HOST
-PI_USER=$PI_USER
-PI_DEPLOY_DIR=$PI_DEPLOY_DIR
-PI_SSH_PORT=22
-
-# Network Configuration
-LUCID_NETWORK=lucid-pi-network
-LUCID_SUBNET=172.20.0.0/16
-LUCID_GATEWAY=172.20.0.1
-
-# Docker Configuration
-DOCKER_BUILDKIT=1
-DOCKER_CLI_EXPERIMENTAL=enabled
-COMPOSE_PROJECT_NAME=lucid-pi
-
-# Build Arguments
-BUILDKIT_INLINE_CACHE=1
-BUILDKIT_PROGRESS=plain
-EOF
-
-    log_success ".env.pi-build generated"
+    # Call the existing generate-distroless-env.sh script
+    if [ -f "scripts/config/generate-distroless-env.sh" ]; then
+        bash scripts/config/generate-distroless-env.sh
+        log_success ".env.distroless generated"
+    else
+        log_error "generate-distroless-env.sh not found"
+        exit 1
+    fi
 }
 
 # Function to generate .env.foundation
 generate_foundation_env() {
     log_info "Generating .env.foundation..."
     
-    cat > "$ENV_DIR/.env.foundation" << EOF
-# Phase 1 Foundation Services Configuration
-# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Services: MongoDB, Redis, Elasticsearch, Auth Service
-
-# Database Configuration
-MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_ROOT_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=$MONGODB_URI
-MONGODB_DATABASE=lucid_production
-MONGODB_PORT=27017
-
-REDIS_PASSWORD=$REDIS_PASSWORD
-REDIS_URI=$REDIS_URI
-REDIS_PORT=6379
-REDIS_MAXMEMORY=1gb
-
-ELASTICSEARCH_URI=$ELASTICSEARCH_URI
-ELASTICSEARCH_PORT=9200
-ELASTICSEARCH_HEAP_SIZE=1g
-
-# Authentication Configuration
-JWT_SECRET_KEY=$JWT_SECRET_KEY
-JWT_ALGORITHM=HS256
-JWT_EXPIRATION=3600
-ENCRYPTION_KEY=$ENCRYPTION_KEY
-
-# Security Configuration
-TOR_PASSWORD=$TOR_PASSWORD
-TOR_ENABLED=true
-TOR_SOCKS_PORT=9050
-TOR_CONTROL_PORT=9051
-
-# Service Configuration
-AUTH_SERVICE_PORT=8089
-AUTH_SERVICE_HOST=auth-service
-AUTH_SERVICE_TIMEOUT=30
-
-# Health Check Configuration
-HEALTH_CHECK_INTERVAL=30s
-HEALTH_CHECK_TIMEOUT=10s
-HEALTH_CHECK_RETRIES=3
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-LOG_FILE=/var/log/lucid/foundation.log
-EOF
-
-    log_success ".env.foundation generated"
+    # Call the dedicated generate-foundation-env.sh script
+    if [ -f "scripts/config/generate-foundation-env.sh" ]; then
+        bash scripts/config/generate-foundation-env.sh
+        log_success ".env.foundation generated"
+    else
+        log_error "generate-foundation-env.sh not found"
+        exit 1
+    fi
 }
 
 # Function to generate .env.core
 generate_core_env() {
     log_info "Generating .env.core..."
     
-    cat > "$ENV_DIR/.env.core" << EOF
-# Phase 2 Core Services Configuration
-# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Services: API Gateway, Service Mesh, Blockchain Core
-
-# Database Configuration (inherited from foundation)
-MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=$MONGODB_URI
-REDIS_PASSWORD=$REDIS_PASSWORD
-REDIS_URI=$REDIS_URI
-ELASTICSEARCH_URI=$ELASTICSEARCH_URI
-
-# Authentication Configuration (inherited from foundation)
-JWT_SECRET_KEY=$JWT_SECRET_KEY
-ENCRYPTION_KEY=$ENCRYPTION_KEY
-
-# API Gateway Configuration
-API_GATEWAY_PORT=8080
-API_GATEWAY_HOST=api-gateway
-API_GATEWAY_TIMEOUT=30
-API_GATEWAY_RATE_LIMIT=1000
-API_GATEWAY_CORS_ORIGINS=*
-
-# Service Mesh Configuration
-SERVICE_MESH_CONTROLLER_PORT=8086
-SERVICE_MESH_CONSUL_PORT=8500
-SERVICE_MESH_ENVOY_PORT=8088
-SERVICE_MESH_MTLS_ENABLED=true
-
-# Blockchain Core Configuration
-BLOCKCHAIN_ENGINE_PORT=8084
-BLOCKCHAIN_SESSION_ANCHORING_PORT=8085
-BLOCKCHAIN_BLOCK_MANAGER_PORT=8086
-BLOCKCHAIN_DATA_CHAIN_PORT=8087
-
-# Consensus Configuration
-CONSENSUS_ALGORITHM=PoOT
-BLOCK_INTERVAL=10
-BLOCK_SIZE_LIMIT=1MB
-TRANSACTION_LIMIT=1000
-
-# Network Configuration
-NETWORK_PROTOCOL_VERSION=1.0.0
-NETWORK_PEER_DISCOVERY=true
-NETWORK_PEER_LIMIT=100
-
-# Performance Configuration
-CACHE_SIZE=1GB
-CACHE_TTL=3600
-CONNECTION_POOL_SIZE=100
-EOF
-
-    log_success ".env.core generated"
+    # Call the dedicated generate-core-env.sh script
+    if [ -f "scripts/config/generate-core-env.sh" ]; then
+        bash scripts/config/generate-core-env.sh
+        log_success ".env.core generated"
+    else
+        log_error "generate-core-env.sh not found"
+        exit 1
+    fi
 }
 
 # Function to generate .env.application
 generate_application_env() {
     log_info "Generating .env.application..."
     
-    cat > "$ENV_DIR/.env.application" << EOF
-# Phase 3 Application Services Configuration
-# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Services: Session Management, RDP Services, Node Management
-
-# Database Configuration (inherited from foundation)
-MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=$MONGODB_URI
-REDIS_PASSWORD=$REDIS_PASSWORD
-REDIS_URI=$REDIS_URI
-
-# Authentication Configuration (inherited from foundation)
-JWT_SECRET_KEY=$JWT_SECRET_KEY
-ENCRYPTION_KEY=$ENCRYPTION_KEY
-
-# Session Management Configuration
-SESSION_PIPELINE_PORT=8081
-SESSION_RECORDER_PORT=8082
-SESSION_CHUNK_PROCESSOR_PORT=8083
-SESSION_STORAGE_PORT=8084
-SESSION_API_PORT=8087
-
-# Session Configuration
-SESSION_CHUNK_SIZE=8388608
-SESSION_COMPRESSION_LEVEL=1
-SESSION_ENCRYPTION_ENABLED=true
-SESSION_RETENTION_DAYS=30
-SESSION_MERKLE_TREE_ENABLED=true
-
-# RDP Services Configuration
-RDP_SERVER_MANAGER_PORT=8081
-RDP_XRDP_INTEGRATION_PORT=3389
-RDP_SESSION_CONTROLLER_PORT=8082
-RDP_RESOURCE_MONITOR_PORT=8090
-
-# RDP Configuration
-RDP_MAX_SESSIONS=10
-RDP_SESSION_TIMEOUT=3600
-RDP_RESOURCE_LIMIT_CPU=80
-RDP_RESOURCE_LIMIT_MEMORY=2GB
-RDP_RESOURCE_LIMIT_DISK=10GB
-
-# Node Management Configuration
-NODE_MANAGEMENT_PORT=8095
-NODE_POOL_MAX_SIZE=100
-NODE_PAYOUT_THRESHOLD=10
-NODE_CONSENSUS_WEIGHT=1.0
-
-# Performance Configuration
-CHUNK_PROCESSING_WORKERS=4
-ENCRYPTION_WORKERS=2
-COMPRESSION_WORKERS=2
-STORAGE_WORKERS=4
-EOF
-
-    log_success ".env.application generated"
+    # Call the dedicated generate-application-env.sh script
+    if [ -f "scripts/config/generate-application-env.sh" ]; then
+        bash scripts/config/generate-application-env.sh
+        log_success ".env.application generated"
+    else
+        log_error "generate-application-env.sh not found"
+        exit 1
+    fi
 }
 
 # Function to generate .env.support
 generate_support_env() {
     log_info "Generating .env.support..."
     
-    cat > "$ENV_DIR/.env.support" << EOF
-# Phase 4 Support Services Configuration
-# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# Services: Admin Interface, TRON Payment System (Isolated)
-
-# Database Configuration (inherited from foundation)
-MONGODB_PASSWORD=$MONGODB_PASSWORD
-MONGODB_URI=$MONGODB_URI
-REDIS_PASSWORD=$REDIS_PASSWORD
-REDIS_URI=$REDIS_URI
-
-# Authentication Configuration (inherited from foundation)
-JWT_SECRET_KEY=$JWT_SECRET_KEY
-ENCRYPTION_KEY=$ENCRYPTION_KEY
-
-# Admin Interface Configuration
-ADMIN_INTERFACE_PORT=8083
-ADMIN_INTERFACE_HOST=admin-interface
-ADMIN_INTERFACE_TIMEOUT=30
-ADMIN_INTERFACE_CORS_ENABLED=true
-
-# Admin Configuration
-ADMIN_DASHBOARD_ENABLED=true
-ADMIN_MONITORING_ENABLED=true
-ADMIN_SESSION_ADMIN_ENABLED=true
-ADMIN_BLOCKCHAIN_ADMIN_ENABLED=true
-ADMIN_PAYOUT_TRIGGERS_ENABLED=true
-
-# TRON Payment System Configuration (ISOLATED NETWORK)
-TRON_NETWORK=mainnet
-TRON_API_URL=https://api.trongrid.io
-TRON_CLIENT_PORT=8091
-TRON_PAYOUT_ROUTER_PORT=8092
-TRON_WALLET_MANAGER_PORT=8093
-TRON_USDT_MANAGER_PORT=8094
-TRON_TRX_STAKING_PORT=8096
-TRON_PAYMENT_GATEWAY_PORT=8097
-
-# TRON Configuration
-USDT_TRC20_CONTRACT=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
-TRON_MINIMUM_PAYOUT=10
-TRON_GAS_LIMIT=100000
-TRON_GAS_PRICE=1000
-
-# Network Isolation
-TRON_ISOLATED_NETWORK=lucid-tron-isolated
-TRON_BRIDGE_ENABLED=true
-TRON_BRIDGE_PORT=8098
-
-# Security Configuration
-TRON_PRIVATE_KEY_ENCRYPTED=true
-TRON_WALLET_PASSWORD_ENCRYPTED=true
-TRON_TRANSACTION_SIGNING_ENABLED=true
-EOF
-
-    log_success ".env.support generated"
+    # Call the dedicated generate-support-env.sh script
+    if [ -f "scripts/config/generate-support-env.sh" ]; then
+        bash scripts/config/generate-support-env.sh
+        log_success ".env.support generated"
+    else
+        log_error "generate-support-env.sh not found"
+        exit 1
+    fi
 }
 
 # Function to generate .env.gui
@@ -438,7 +258,7 @@ validate_generated_files() {
     log_info "Validating generated environment files..."
     
     local env_files=(
-        ".env.pi-build"
+        ".env.distroless"
         ".env.foundation"
         ".env.core"
         ".env.application"
@@ -478,7 +298,7 @@ display_summary() {
     log_info "Environment Configuration Generation Summary:"
     echo ""
     echo "Generated Files:"
-    echo "  • $ENV_DIR/.env.pi-build"
+    echo "  • $ENV_DIR/.env.distroless"
     echo "  • $ENV_DIR/.env.foundation"
     echo "  • $ENV_DIR/.env.core"
     echo "  • $ENV_DIR/.env.application"
@@ -510,7 +330,7 @@ main() {
     # Execute generation steps
     create_directory_structure
     generate_secure_values
-    generate_pi_build_env
+    generate_distroless_env
     generate_foundation_env
     generate_core_env
     generate_application_env

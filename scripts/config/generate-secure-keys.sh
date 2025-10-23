@@ -5,6 +5,16 @@
 
 set -euo pipefail
 
+# Project root configuration
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Change to project root if not already there
+if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
+    echo "Changing to project root: $PROJECT_ROOT"
+    cd "$PROJECT_ROOT"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -14,6 +24,9 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🔐 Generating Secure Keys and Passwords for Lucid Project${NC}"
 echo "=================================================="
+echo "Project Root: $PROJECT_ROOT"
+echo "Script Directory: $SCRIPT_DIR"
+echo ""
 
 # Function to generate secure random string
 generate_secure_string() {
@@ -160,14 +173,14 @@ echo -e "${GREEN}✅ Secure environment file created: ${SECURE_ENV_FILE}${NC}"
 # Create .env files for each phase with the generated values
 echo -e "${YELLOW}📄 Updating phase environment files with generated values...${NC}"
 
-# Update foundation.env
-if [ -f "configs/environment/foundation.env" ]; then
-    sed -i "s/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=${JWT_SECRET_KEY}/" configs/environment/foundation.env
-    sed -i "s/ENCRYPTION_KEY=.*/ENCRYPTION_KEY=${ENCRYPTION_KEY}/" configs/environment/foundation.env
-    sed -i "s/TOR_CONTROL_PASSWORD=.*/TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}/" configs/environment/foundation.env
-    sed -i "s/MONGODB_PASSWORD=.*/MONGODB_PASSWORD=${MONGODB_PASSWORD}/" configs/environment/foundation.env
-    sed -i "s/REDIS_PASSWORD=.*/REDIS_PASSWORD=${REDIS_PASSWORD}/" configs/environment/foundation.env
-    echo "✅ Updated foundation.env"
+# Update .env.foundation
+if [ -f "configs/environment/.env.foundation" ]; then
+    sed -i "s/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=${JWT_SECRET_KEY}/" configs/environment/.env.foundation
+    sed -i "s/ENCRYPTION_KEY=.*/ENCRYPTION_KEY=${ENCRYPTION_KEY}/" configs/environment/.env.foundation
+    sed -i "s/TOR_CONTROL_PASSWORD=.*/TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}/" configs/environment/.env.foundation
+    sed -i "s/MONGODB_PASSWORD=.*/MONGODB_PASSWORD=${MONGODB_PASSWORD}/" configs/environment/.env.foundation
+    sed -i "s/REDIS_PASSWORD=.*/REDIS_PASSWORD=${REDIS_PASSWORD}/" configs/environment/.env.foundation
+    echo "✅ Updated .env.foundation"
 fi
 
 # Update core.env

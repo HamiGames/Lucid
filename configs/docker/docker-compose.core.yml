@@ -7,6 +7,12 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - /mnt/myssd/Lucid/logs/api-gateway:/app/logs:rw
+      - /mnt/myssd/Lucid/data/api-gateway/cache:/app/cache:rw
+      - api-gateway-tmp:/tmp/api
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -46,6 +52,12 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    ports:
+      - "8084:8084"
+    volumes:
+      - /mnt/myssd/Lucid/data/blockchain:/app/data:rw
+      - /mnt/myssd/Lucid/logs/blockchain-engine:/app/logs:rw
+      - blockchain-cache:/tmp/blockchain
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -84,6 +96,12 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    ports:
+      - "8500:8500"
+    volumes:
+      - /mnt/myssd/Lucid/logs/service-mesh:/app/logs:rw
+      - /mnt/myssd/Lucid/data/service-mesh/config:/app/config:rw
+      - service-mesh-cache:/tmp/mesh
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -122,6 +140,10 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    volumes:
+      - /mnt/myssd/Lucid/data/session-anchoring:/app/data:rw
+      - /mnt/myssd/Lucid/logs/session-anchoring:/app/logs:rw
+      - session-anchoring-cache:/tmp/anchoring
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -156,6 +178,10 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    volumes:
+      - /mnt/myssd/Lucid/data/block-manager:/app/data:rw
+      - /mnt/myssd/Lucid/logs/block-manager:/app/logs:rw
+      - block-manager-cache:/tmp/blocks
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -190,6 +216,10 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    volumes:
+      - /mnt/myssd/Lucid/data/data-chain:/app/data:rw
+      - /mnt/myssd/Lucid/logs/data-chain:/app/logs:rw
+      - data-chain-cache:/tmp/chain
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -222,3 +252,23 @@ networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
+
+volumes:
+  api-gateway-tmp:
+    driver: local
+    name: lucid-api-gateway-tmp
+  blockchain-cache:
+    driver: local
+    name: lucid-blockchain-cache
+  service-mesh-cache:
+    driver: local
+    name: lucid-service-mesh-cache
+  session-anchoring-cache:
+    driver: local
+    name: lucid-session-anchoring-cache
+  block-manager-cache:
+    driver: local
+    name: lucid-block-manager-cache
+  data-chain-cache:
+    driver: local
+    name: lucid-data-chain-cache
