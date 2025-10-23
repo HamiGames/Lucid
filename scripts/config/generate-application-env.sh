@@ -154,23 +154,23 @@ SESSION_TIMEOUT=1800
 
 # Session Pipeline
 SESSION_PIPELINE_HOST=session-pipeline
-SESSION_PIPELINE_PORT=8081
-SESSION_PIPELINE_URL=http://session-pipeline:8081
+SESSION_PIPELINE_PORT=8083
+SESSION_PIPELINE_URL=http://session-pipeline:8083
 
 # Session Recorder
 SESSION_RECORDER_HOST=session-recorder
-SESSION_RECORDER_PORT=8082
-SESSION_RECORDER_URL=http://session-recorder:8082
+SESSION_RECORDER_PORT=8084
+SESSION_RECORDER_URL=http://session-recorder:8084
 
 # Session Processor (Chunk Processor)
 SESSION_PROCESSOR_HOST=session-processor
-SESSION_PROCESSOR_PORT=8083
-SESSION_PROCESSOR_URL=http://session-processor:8083
+SESSION_PROCESSOR_PORT=8085
+SESSION_PROCESSOR_URL=http://session-processor:8085
 
 # Session Storage
 SESSION_STORAGE_HOST=session-storage
-SESSION_STORAGE_PORT=8084
-SESSION_STORAGE_URL=http://session-storage:8084
+SESSION_STORAGE_PORT=8086
+SESSION_STORAGE_URL=http://session-storage:8086
 
 # Session API
 SESSION_API_HOST=session-api
@@ -179,23 +179,23 @@ SESSION_API_URL=http://session-api:8087
 
 # RDP Server Manager
 RDP_SERVER_MANAGER_HOST=rdp-server-manager
-RDP_SERVER_MANAGER_PORT=8095
-RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8095
+RDP_SERVER_MANAGER_PORT=8090
+RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8090
 
 # RDP XRDP Integration
 RDP_XRDP_HOST=rdp-xrdp
-RDP_XRDP_PORT=3389
-RDP_XRDP_URL=rdp://rdp-xrdp:3389
+RDP_XRDP_PORT=8091
+RDP_XRDP_URL=http://rdp-xrdp:8091
 
 # RDP Controller
 RDP_CONTROLLER_HOST=rdp-controller
-RDP_CONTROLLER_PORT=8096
-RDP_CONTROLLER_URL=http://rdp-controller:8096
+RDP_CONTROLLER_PORT=8092
+RDP_CONTROLLER_URL=http://rdp-controller:8092
 
 # RDP Monitor
 RDP_MONITOR_HOST=rdp-monitor
-RDP_MONITOR_PORT=8097
-RDP_MONITOR_URL=http://rdp-monitor:8097
+RDP_MONITOR_PORT=8093
+RDP_MONITOR_URL=http://rdp-monitor:8093
 
 # Node Management
 NODE_MANAGEMENT_HOST=node-management
@@ -321,12 +321,12 @@ HEALTH_CHECK_TIMEOUT=10s
 HEALTH_CHECK_RETRIES=3
 
 # Service Health Endpoints
-SESSION_PIPELINE_HEALTH_URL=http://session-pipeline:8081/health
-SESSION_RECORDER_HEALTH_URL=http://session-recorder:8082/health
-SESSION_PROCESSOR_HEALTH_URL=http://session-processor:8083/health
-SESSION_STORAGE_HEALTH_URL=http://session-storage:8084/health
+SESSION_PIPELINE_HEALTH_URL=http://session-pipeline:8083/health
+SESSION_RECORDER_HEALTH_URL=http://session-recorder:8084/health
+SESSION_PROCESSOR_HEALTH_URL=http://session-processor:8085/health
+SESSION_STORAGE_HEALTH_URL=http://session-storage:8086/health
 SESSION_API_HEALTH_URL=http://session-api:8087/health
-RDP_SERVER_MANAGER_HEALTH_URL=http://rdp-server-manager:8095/health
+RDP_SERVER_MANAGER_HEALTH_URL=http://rdp-server-manager:8090/health
 NODE_MANAGEMENT_HEALTH_URL=http://node-management:8095/health
 
 # =============================================================================
