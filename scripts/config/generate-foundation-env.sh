@@ -72,7 +72,7 @@ echo "ENCRYPTION_KEY generated: ${ENCRYPTION_KEY:0:8}..."
 echo "TOR_CONTROL_PASSWORD generated: ${TOR_CONTROL_PASSWORD:0:8}..."
 
 # Create .env.foundation file
-cat > "$ENV_FILE" << EOF
+cat > "$ENV_FILE" << 'EOF'
 # Phase 1 Foundation Services Configuration
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Target: Raspberry Pi 5 (192.168.0.75)
@@ -259,10 +259,7 @@ BUILD_OS=linux
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_VERSION=0.1.0
 BUILD_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-
-# =============================================================================
-# ENVIRONMENT VALIDATION
-# =============================================================================
+EOF
 
 # Validate required environment variables
 validate_env() {

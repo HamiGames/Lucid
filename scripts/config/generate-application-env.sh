@@ -74,7 +74,7 @@ echo "SESSION_SECRET generated: ${SESSION_SECRET:0:8}..."
 echo "NODE_MANAGEMENT_SECRET generated: ${NODE_MANAGEMENT_SECRET:0:8}..."
 
 # Create .env.application file
-cat > "$ENV_FILE" << EOF
+cat > "$ENV_FILE" << 'EOF'
 # Phase 3 Application Services Configuration
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Target: Raspberry Pi 5 (192.168.0.75)
@@ -378,10 +378,7 @@ BUILD_OS=linux
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_VERSION=0.1.0
 BUILD_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-
-# =============================================================================
-# ENVIRONMENT VALIDATION
-# =============================================================================
+EOF
 
 # Validate required environment variables
 validate_env() {
