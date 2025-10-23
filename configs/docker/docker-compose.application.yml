@@ -16,6 +16,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - SESSION_PIPELINE_HOST=session-pipeline
+      - SESSION_PIPELINE_PORT=8083
+      - SESSION_PIPELINE_URL=http://session-pipeline:8083
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
@@ -57,6 +60,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - SESSION_RECORDER_HOST=session-recorder
+      - SESSION_RECORDER_PORT=8084
+      - SESSION_RECORDER_URL=http://session-recorder:8084
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
@@ -97,6 +103,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - SESSION_PROCESSOR_HOST=session-processor
+      - SESSION_PROCESSOR_PORT=8085
+      - SESSION_PROCESSOR_URL=http://session-processor:8085
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
@@ -137,6 +146,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - SESSION_STORAGE_HOST=session-storage
+      - SESSION_STORAGE_PORT=8086
+      - SESSION_STORAGE_URL=http://session-storage:8086
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
@@ -270,6 +282,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - RDP_XRDP_HOST=rdp-xrdp
+      - RDP_XRDP_PORT=8091
+      - RDP_XRDP_URL=http://rdp-xrdp:8091
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
@@ -309,6 +324,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - RDP_CONTROLLER_HOST=rdp-controller
+      - RDP_CONTROLLER_PORT=8092
+      - RDP_CONTROLLER_URL=http://rdp-controller:8092
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
@@ -347,6 +365,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - RDP_MONITOR_HOST=rdp-monitor
+      - RDP_MONITOR_PORT=8093
+      - RDP_MONITOR_URL=http://rdp-monitor:8093
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
@@ -386,6 +407,9 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - NODE_MANAGEMENT_HOST=node-management
+      - NODE_MANAGEMENT_PORT=8095
+      - NODE_MANAGEMENT_URL=http://node-management:8095
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - API_GATEWAY_URL=${API_GATEWAY_URL}
