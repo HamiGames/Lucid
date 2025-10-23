@@ -1,118 +1,110 @@
-# Distroless Development Configuration for Lucid Project
-# Development-friendly configuration for distroless containers
-
 version: '3.8'
 
 services:
-  # Development distroless configuration
   dev-distroless:
     image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app:/app/src
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
-      - DEBUG_MODE=true
-      - HOT_RELOAD=true
-    networks:
-      - lucid-dev
+    container_name: dev-distroless
     restart: unless-stopped
+    networks:
+      - lucid-distroless-dev
+    environment:
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=development
+      - DEBUG=true
+    user: "65532:65532"
     security_opt:
       - no-new-privileges:true
-    read_only: false  # Allow writes for development
-    volumes:
-      - ./src:/app/src:rw
-      - ./logs:/app/logs:rw
-      - ./cache:/app/cache:rw
-      - ./temp:/app/temp:rw
+      - seccomp:unconfined
     cap_drop:
       - ALL
     cap_add:
-      - SYS_PTRACE  # For debugging
-    user: "65532:65532"
-    working_dir: /app
+      - NET_BIND_SERVICE
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["python", "-c", "import sys; sys.exit(0)"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 5s
-    command: >
-      python -c "
-        print('Starting development distroless container...');
-        import sys;
-        sys.path.insert(0, '/app/src');
-        exec(open('/app/src/main.py').read())
-      "
-
-  # Development minimal configuration
-  dev-minimal:
-    image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app:/app/src
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
-      - DEBUG_MODE=true
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    read_only: false  # Allow writes for development
-    volumes:
-      - ./src:/app/src:rw
-      - ./logs:/app/logs:rw
-    cap_drop:
-      - ALL
-    user: "65532:65532"
-    working_dir: /app
-    healthcheck:
-      test: ["python", "-c", "import sys; print('dev minimal healthy'); sys.exit(0)"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 40s
+    labels:
+      - "lucid.service=dev-distroless"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=development"
+      - "lucid.mode=development"
 
-  # Development tools container
-  dev-tools:
+  dev-minimal:
     image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app
-      - DEBUG_TOOLS=true
+    container_name: dev-minimal
+    restart: unless-stopped
     networks:
-      - lucid-dev
-    restart: "no"
+      - lucid-distroless-dev
+    environment:
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=minimal-development
+      - DEBUG=true
+    user: "65532:65532"
     security_opt:
       - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
     read_only: false
-    volumes:
-      - ./src:/app/src:ro
-      - ./logs:/app/logs:rw
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=dev-minimal"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=development"
+      - "lucid.mode=minimal"
+
+  dev-tools:
+    image: pickme/lucid-base:latest-arm64
+    container_name: dev-tools
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-dev
+    environment:
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=dev-tools
+      - DEBUG=true
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
     cap_drop:
       - ALL
     cap_add:
-      - SYS_PTRACE
-      - NET_ADMIN
-    user: "65532:65532"
-    working_dir: /app
-    command: >
-      python -c "
-        print('Development tools container ready');
-        import time;
-        while True: time.sleep(60)
-      "
+      - NET_BIND_SERVICE
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=300m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=dev-tools"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=development"
+      - "lucid.mode=tools"
 
 networks:
-  lucid-dev:
-    name: lucid-pi-network
+  lucid-distroless-dev:
     external: true
-
-volumes:
-  lucid-dev-data:
-    name: lucid-distroless-dev-data
-  lucid-dev-logs:
-    name: lucid-distroless-dev-logs
-  lucid-dev-cache:
-    name: lucid-distroless-dev-cache
+    name: lucid-distroless-dev

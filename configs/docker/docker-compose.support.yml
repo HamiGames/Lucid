@@ -1,301 +1,286 @@
-# Phase 4 Support Services - Docker Compose Configuration
-# Step 45: Docker Compose Configurations - Support Phase
-# Includes: Admin Interface, TRON Payment Services
-
 version: '3.8'
 
 services:
-  # ===========================================
-  # ADMIN INTERFACE SERVICES
-  # ===========================================
-  
-  # Admin Interface
-  lucid-admin-interface:
+  admin-interface:
     image: pickme/lucid-admin-interface:latest-arm64
-    container_name: lucid-admin-interface
+    container_name: admin-interface
     restart: unless-stopped
-    ports:
-      - "8120:8120"
-    environment:
-      - SERVICE_NAME=lucid-admin-interface
-      - PORT=8120
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - RBAC_ENABLED=true
-      - AUDIT_LOGGING_ENABLED=true
-      - EMERGENCY_CONTROLS_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-api-gateway:
-        condition: service_healthy
-      lucid-blockchain-core:
-        condition: service_healthy
-      lucid-session-api:
-        condition: service_healthy
-      lucid-node-management:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - ADMIN_INTERFACE_HOST=admin-interface
+      - ADMIN_INTERFACE_PORT=8083
+      - ADMIN_INTERFACE_URL=http://admin-interface:8083
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8120/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=admin-interface"
-      - "com.lucid.cluster=06-admin-interface"
+      - "lucid.service=admin-interface"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
 
-  # ===========================================
-  # TRON PAYMENT SERVICES (6 containers)
-  # ===========================================
-
-  # TRON Client
-  lucid-tron-client:
+  tron-client:
     image: pickme/lucid-tron-client:latest-arm64
-    container_name: lucid-tron-client
+    container_name: tron-client
     restart: unless-stopped
-    ports:
-      - "8091:8091"
-    environment:
-      - SERVICE_NAME=lucid-tron-client
-      - PORT=8091
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - TRON_NETWORK=${TRON_NETWORK:-shasta}
-      - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
-      - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data
     networks:
       - lucid-tron-isolated
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TRON_CLIENT_HOST=tron-client
+      - TRON_CLIENT_PORT=8091
+      - TRON_CLIENT_URL=http://tron-client:8091
+      - TRON_NETWORK=${TRON_NETWORK}
+      - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=tron-client"
-      - "com.lucid.cluster=07-tron-payment"
+      - "lucid.service=tron-client"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
 
-  # TRON Payout Router
-  lucid-tron-payout-router:
-    image: pickme/lucid-payout-router:latest-arm64
-    container_name: lucid-tron-payout-router
+  tron-payout-router:
+    image: pickme/lucid-tron-payout-router:latest-arm64
+    container_name: tron-payout-router
     restart: unless-stopped
-    ports:
-      - "8092:8092"
-    environment:
-      - SERVICE_NAME=lucid-tron-payout-router
-      - PORT=8092
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8091
-      - PAYOUT_V0_ENABLED=true
-      - PAYOUT_KYC_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-payout-router:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-payout-router:/app/data
     networks:
       - lucid-tron-isolated
-    depends_on:
-      lucid-tron-client:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TRON_NETWORK=${TRON_NETWORK}
+      - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=tron-payout-router"
-      - "com.lucid.cluster=07-tron-payment"
+      - "lucid.service=tron-payout-router"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
 
-  # TRON Wallet Manager
-  lucid-tron-wallet-manager:
-    image: pickme/lucid-wallet-manager:latest-arm64
-    container_name: lucid-tron-wallet-manager
+  tron-wallet-manager:
+    image: pickme/lucid-tron-wallet-manager:latest-arm64
+    container_name: tron-wallet-manager
     restart: unless-stopped
-    ports:
-      - "8093:8093"
-    environment:
-      - SERVICE_NAME=lucid-tron-wallet-manager
-      - PORT=8093
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8091
-      - WALLET_ENCRYPTION_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-wallet-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-wallet-manager:/app/data
     networks:
       - lucid-tron-isolated
-    depends_on:
-      lucid-tron-client:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TRON_NETWORK=${TRON_NETWORK}
+      - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=tron-wallet-manager"
-      - "com.lucid.cluster=07-tron-payment"
+      - "lucid.service=tron-wallet-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
 
-  # TRON USDT Manager
-  lucid-tron-usdt-manager:
-    image: pickme/lucid-usdt-manager:latest-arm64
-    container_name: lucid-tron-usdt-manager
+  tron-usdt-manager:
+    image: pickme/lucid-tron-usdt-manager:latest-arm64
+    container_name: tron-usdt-manager
     restart: unless-stopped
-    ports:
-      - "8094:8094"
-    environment:
-      - SERVICE_NAME=lucid-tron-usdt-manager
-      - PORT=8094
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8091
-      - USDT_TRC20_ADDRESS=${USDT_TRC20_ADDRESS:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-usdt-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-usdt-manager:/app/data
     networks:
       - lucid-tron-isolated
-    depends_on:
-      lucid-tron-client:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TRON_NETWORK=${TRON_NETWORK}
+      - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
+      - USDT_DECIMALS=${USDT_DECIMALS}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8094/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=tron-usdt-manager"
-      - "com.lucid.cluster=07-tron-payment"
+      - "lucid.service=tron-usdt-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
 
-  # TRON Staking Service
-  lucid-tron-staking:
-    image: pickme/lucid-trx-staking:latest-arm64
-    container_name: lucid-tron-staking
+  tron-staking:
+    image: pickme/lucid-tron-staking:latest-arm64
+    container_name: tron-staking
     restart: unless-stopped
-    ports:
-      - "8097:8097"
-    environment:
-      - SERVICE_NAME=lucid-tron-staking
-      - PORT=8097
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8091
-      - STAKING_ENABLED=true
-      - STAKING_REWARDS_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-staking:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-staking:/app/data
     networks:
       - lucid-tron-isolated
-    depends_on:
-      lucid-tron-client:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TRON_NETWORK=${TRON_NETWORK}
+      - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=tron-staking"
-      - "com.lucid.cluster=07-tron-payment"
+      - "lucid.service=tron-staking"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
 
-  # TRON Payment Gateway
-  lucid-tron-payment-gateway:
-    image: pickme/lucid-payment-gateway:latest-arm64
-    container_name: lucid-tron-payment-gateway
+  tron-payment-gateway:
+    image: pickme/lucid-tron-payment-gateway:latest-arm64
+    container_name: tron-payment-gateway
     restart: unless-stopped
-    ports:
-      - "8098:8098"
-    environment:
-      - SERVICE_NAME=lucid-tron-payment-gateway
-      - PORT=8098
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - TRON_CLIENT_URL=http://lucid-tron-client:8091
-      - PAYOUT_ROUTER_URL=http://lucid-tron-payout-router:8092
-      - WALLET_MANAGER_URL=http://lucid-tron-wallet-manager:8093
-      - USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8094
-      - STAKING_URL=http://lucid-tron-staking:8097
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-payment-gateway:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-payment-gateway:/app/data
     networks:
       - lucid-tron-isolated
-    depends_on:
-      lucid-tron-client:
-        condition: service_healthy
-      lucid-tron-payout-router:
-        condition: service_healthy
-      lucid-tron-wallet-manager:
-        condition: service_healthy
-      lucid-tron-usdt-manager:
-        condition: service_healthy
-      lucid-tron-staking:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TRON_NETWORK=${TRON_NETWORK}
+      - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
+      - USDT_DECIMALS=${USDT_DECIMALS}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=support"
-      - "com.lucid.service=tron-payment-gateway"
-      - "com.lucid.cluster=07-tron-payment"
+      - "lucid.service=tron-payment-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
 
-# ===========================================
-# NETWORKS
-# ===========================================
 networks:
   lucid-pi-network:
+    external: true
     name: lucid-pi-network
-    external: true
-  
-  # Isolated network for TRON services
   lucid-tron-isolated:
-    name: lucid-tron-isolated
     external: true
-
-# ===========================================
-# VOLUMES
-# ===========================================
-# =============================================================================
-# VOLUMES - Using Direct Host Paths on Pi
-# =============================================================================
-# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
-# No named volumes needed - using host path mounts for better performance
+    name: lucid-tron-isolated

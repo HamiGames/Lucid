@@ -1,105 +1,103 @@
-# Distroless Docker Configuration for Lucid Project
-# Configuration for building and deploying distroless images
-
 version: '3.8'
 
 services:
-  # Base distroless configurations
   base:
     image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    networks:
-      - lucid-distroless-network
+    container_name: lucid-base
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:noexec,nosuid,size=100m
-      - /var/tmp:noexec,nosuid,size=50m
-    cap_drop:
-      - ALL
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
     user: "65532:65532"
-    working_dir: /app
-    healthcheck:
-      test: ["python", "-c", "import sys; sys.exit(0)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # Minimal base distroless configuration
-  minimal-base:
-    image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=WARNING
-    networks:
-      - lucid-distroless-network
-    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:noexec,nosuid,size=50m
-    cap_drop:
-      - ALL
-    user: "65532:65532"
-    working_dir: /app
-    healthcheck:
-      test: ["python", "-c", "import sys; print('minimal base healthy'); sys.exit(0)"]
-      interval: 60s
-      timeout: 5s
-      retries: 2
-      start_period: 5s
-
-  # ARM64 base distroless configuration
-  arm64-base:
-    image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - ARM64_OPTIMIZATIONS=true
-    networks:
-      - lucid-distroless-network
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:noexec,nosuid,size=200m
-      - /var/tmp:noexec,nosuid,size=100m
+      - seccomp:unconfined
     cap_drop:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
-    user: "65532:65532"
-    working_dir: /app
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["python", "-c", "import sys; print('ARM64 base healthy'); sys.exit(0)"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
+    labels:
+      - "lucid.service=base"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+
+  minimal-base:
+    image: pickme/lucid-base:latest-arm64
+    container_name: lucid-minimal-base
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=minimal
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=minimal-base"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+
+  arm64-base:
+    image: pickme/lucid-base:latest-arm64
+    container_name: lucid-arm64-base
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_ARCHITECTURE=linux/arm64
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=arm64-base"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
 
 networks:
-  lucid-distroless-network:
-    name: lucid-distroless-production
+  lucid-distroless-production:
     external: true
-
-volumes:
-  lucid-distroless-data:
-    name: lucid-distroless-production-data
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/lucid/data
+    name: lucid-distroless-production

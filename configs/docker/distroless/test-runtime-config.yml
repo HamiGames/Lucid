@@ -1,38 +1,42 @@
-# Test Distroless Runtime Configuration for Lucid Project
-# Simplified test configuration to verify Docker Compose setup
-
 version: '3.8'
 
 services:
-  # Simple test runtime
   test-runtime:
     image: pickme/lucid-base:latest-arm64
-    environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=INFO
-    networks:
-      - lucid-test
+    container_name: test-runtime
     restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=test
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=test-runtime
+      - TEST_MODE=true
+    user: "65532:65532"
     security_opt:
       - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:noexec,nosuid,size=50m
+      - seccomp:unconfined
     cap_drop:
       - ALL
-    user: "65532:65532"
-    working_dir: /app
-    command: ["python", "-c", "import sys; print('Test runtime healthy'); sys.exit(0)"]
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["python", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "python3", "-c", "print('Test runtime healthy'); import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
+    labels:
+      - "lucid.service=test-runtime"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=test"
 
 networks:
-  lucid-test:
-    name: lucid-distroless-production
+  lucid-distroless-production:
     external: true
+    name: lucid-distroless-production

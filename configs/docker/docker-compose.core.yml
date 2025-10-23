@@ -1,270 +1,224 @@
-# Phase 2 Core Services - Docker Compose Configuration
-# Step 45: Docker Compose Configurations - Core Phase
-# Includes: API Gateway, Blockchain Core, Service Mesh
-
 version: '3.8'
 
 services:
-  # ===========================================
-  # API GATEWAY SERVICES
-  # ===========================================
-  
-  # API Gateway
-  lucid-api-gateway:
+  api-gateway:
     image: pickme/lucid-api-gateway:latest-arm64
-    container_name: lucid-api-gateway
+    container_name: api-gateway
     restart: unless-stopped
-    ports:
-      - "8080:8080"
-      - "8081:8081"
-    environment:
-      - SERVICE_NAME=lucid-api-gateway
-      - PORT=8080
-      - HTTPS_PORT=8081
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - RATE_LIMIT_ENABLED=true
-      - RATE_LIMIT_REQUESTS_PER_MINUTE=100
-      - CORS_ENABLED=true
-      - CORS_ORIGINS=${CORS_ORIGINS:-*}
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-auth-service:
-        condition: service_healthy
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - API_GATEWAY_HOST=api-gateway
+      - API_GATEWAY_PORT=8080
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=core"
-      - "com.lucid.service=api-gateway"
-      - "com.lucid.cluster=01-api-gateway"
+      - "lucid.service=api-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
 
-  # ===========================================
-  # BLOCKCHAIN CORE SERVICES
-  # ===========================================
-
-  # Blockchain Core Engine
-  lucid-blockchain-core:
+  blockchain-engine:
     image: pickme/lucid-blockchain-engine:latest-arm64
-    container_name: lucid-blockchain-core
+    container_name: blockchain-engine
     restart: unless-stopped
-    ports:
-      - "8084:8084"
-    environment:
-      - SERVICE_NAME=lucid-blockchain-core
-      - PORT=8084
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - CONSENSUS_ALGORITHM=PoOT
-      - BLOCK_TIME_SECONDS=10
-      - MAX_TRANSACTIONS_PER_BLOCK=1000
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/blockchain:/app/logs
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - BLOCKCHAIN_ENGINE_HOST=blockchain-engine
+      - BLOCKCHAIN_ENGINE_PORT=8084
+      - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=core"
-      - "com.lucid.service=blockchain"
-      - "com.lucid.cluster=02-blockchain-core"
+      - "lucid.service=blockchain-engine"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
 
-  # Session Anchoring Service
-  lucid-session-anchoring:
+  service-mesh:
+    image: pickme/lucid-service-mesh:latest-arm64
+    container_name: service-mesh
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - SERVICE_MESH_HOST=service-mesh
+      - SERVICE_MESH_PORT=8500
+      - SERVICE_MESH_URL=http://service-mesh:8500
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=service-mesh"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+
+  session-anchoring:
     image: pickme/lucid-session-anchoring:latest-arm64
-    container_name: lucid-session-anchoring
+    container_name: session-anchoring
     restart: unless-stopped
-    ports:
-      - "8085:8085"
-    environment:
-      - SERVICE_NAME=lucid-session-anchoring
-      - PORT=8085
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-blockchain-core:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=core"
-      - "com.lucid.service=session-anchoring"
-      - "com.lucid.cluster=02-blockchain-core"
+      - "lucid.service=session-anchoring"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
 
-  # Block Manager
-  lucid-block-manager:
+  block-manager:
     image: pickme/lucid-block-manager:latest-arm64
-    container_name: lucid-block-manager
+    container_name: block-manager
     restart: unless-stopped
-    ports:
-      - "8086:8086"
-    environment:
-      - SERVICE_NAME=lucid-block-manager
-      - PORT=8086
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-blockchain-core:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=core"
-      - "com.lucid.service=block-manager"
-      - "com.lucid.cluster=02-blockchain-core"
+      - "lucid.service=block-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
 
-  # Data Chain Service
-  lucid-data-chain:
+  data-chain:
     image: pickme/lucid-data-chain:latest-arm64
-    container_name: lucid-data-chain
+    container_name: data-chain
     restart: unless-stopped
-    ports:
-      - "8087:8087"
-    environment:
-      - SERVICE_NAME=lucid-data-chain
-      - PORT=8087
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-blockchain-core:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=core"
-      - "com.lucid.service=data-chain"
-      - "com.lucid.cluster=02-blockchain-core"
+      - "lucid.service=data-chain"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
 
-
-  # ===========================================
-  # SERVICE MESH SERVICES
-  # ===========================================
-
-  # Service Mesh Controller
-  lucid-service-mesh-controller:
-    image: pickme/lucid-service-mesh-controller:latest-arm64
-    container_name: lucid-service-mesh-controller
-    restart: unless-stopped
-    ports:
-      - "8500:8500"  # Consul HTTP
-      - "8501:8501"  # Consul HTTPS
-      - "8502:8502"  # Consul gRPC
-    environment:
-      - SERVICE_NAME=lucid-service-mesh-controller
-      - PORT=8500
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - CONSUL_DATACENTER=lucid-dc
-      - CONSUL_SERVER=true
-      - CONSUL_BOOTSTRAP_EXPECT=1
-      - CONSUL_BIND_INTERFACE=eth0
-      - CONSUL_CLIENT_INTERFACE=eth0
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/data/consul:/consul/data
-      - /mnt/myssd/Lucid/Lucid/logs/consul:/app/logs
-    networks:
-      - lucid-pi-network
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8500/v1/status/leader || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    labels:
-      - "com.lucid.phase=core"
-      - "com.lucid.service=service-mesh"
-      - "com.lucid.cluster=10-cross-cluster-integration"
-
-# ===========================================
-# NETWORKS
-# ===========================================
 networks:
   lucid-pi-network:
-    name: lucid-pi-network
     external: true
-
-# ===========================================
-# VOLUMES
-# ===========================================
-# =============================================================================
-# VOLUMES - Using Direct Host Paths on Pi
-# =============================================================================
-# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
-# No named volumes needed - using host path mounts for better performance
+    name: lucid-pi-network

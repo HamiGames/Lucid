@@ -1,459 +1,352 @@
-# Phase 3 Application Services - Docker Compose Configuration
-# Step 24: Phase 3 Docker Compose
-# Includes: Session Management, RDP Services, Node Management
-# Target: Raspberry Pi ARM64 deployment
-
 version: '3.8'
 
 services:
-  # ===========================================
-  # SESSION MANAGEMENT SERVICES (5 containers)
-  # ===========================================
-  
-  # Session Pipeline Manager
-  lucid-session-pipeline:
+  session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64
-    container_name: lucid-session-pipeline
+    container_name: session-pipeline
     restart: unless-stopped
-    ports:
-      - "8083:8083"
-    environment:
-      - SERVICE_NAME=lucid-session-pipeline
-      - PORT=8083
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - PIPELINE_MAX_CONCURRENT_SESSIONS=10
-      - PIPELINE_CHUNK_SIZE_MB=1
-      - PIPELINE_COMPRESSION_LEVEL=6
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=session-pipeline"
-      - "com.lucid.cluster=03-session-management"
+      - "lucid.service=session-pipeline"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # Session Recorder
-  lucid-session-recorder:
+  session-recorder:
     image: pickme/lucid-session-recorder:latest-arm64
-    container_name: lucid-session-recorder
+    container_name: session-recorder
     restart: unless-stopped
-    ports:
-      - "8110:8110"
-    environment:
-      - SERVICE_NAME=lucid-session-recorder
-      - PORT=8110
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - RECORDING_QUALITY=high
-      - RECORDING_FPS=30
-      - RECORDING_BITRATE=2000k
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-recorder:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-recorder:/app/data
-      - /mnt/myssd/Lucid/Lucid/recordings:/app/recordings
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=session-recorder"
-      - "com.lucid.cluster=03-session-management"
+      - "lucid.service=session-recorder"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # Chunk Processor
-  lucid-chunk-processor:
-    image: pickme/lucid-chunk-processor:latest-arm64
-    container_name: lucid-chunk-processor
+  session-processor:
+    image: pickme/lucid-session-processor:latest-arm64
+    container_name: session-processor
     restart: unless-stopped
-    ports:
-      - "8111:8111"
-    environment:
-      - SERVICE_NAME=lucid-chunk-processor
-      - PORT=8111
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - PROCESSOR_CHUNK_SIZE_MB=1
-      - PROCESSOR_ENCRYPTION_ENABLED=true
-      - PROCESSOR_COMPRESSION_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/chunk-processor:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/chunk-processor:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=chunk-processor"
-      - "com.lucid.cluster=03-session-management"
+      - "lucid.service=session-processor"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # Session Storage
-  lucid-session-storage:
+  session-storage:
     image: pickme/lucid-session-storage:latest-arm64
-    container_name: lucid-session-storage
+    container_name: session-storage
     restart: unless-stopped
-    ports:
-      - "8112:8112"
-    environment:
-      - SERVICE_NAME=lucid-session-storage
-      - PORT=8112
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - STORAGE_MAX_SIZE_GB=100
-      - STORAGE_RETENTION_DAYS=30
-      - STORAGE_ENCRYPTION_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-storage:/app/data
-      - /mnt/myssd/Lucid/Lucid/sessions:/app/sessions
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=session-storage"
-      - "com.lucid.cluster=03-session-management"
+      - "lucid.service=session-storage"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # Session API Gateway
-  lucid-session-api:
+  session-api:
     image: pickme/lucid-session-api:latest-arm64
-    container_name: lucid-session-api
+    container_name: session-api
     restart: unless-stopped
-    ports:
-      - "8113:8113"
-    environment:
-      - SERVICE_NAME=lucid-session-api
-      - PORT=8113
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - API_RATE_LIMIT=1000
-      - API_TIMEOUT=30
-      - API_CORS_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-api:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-session-pipeline:
-        condition: service_healthy
-      lucid-session-recorder:
-        condition: service_healthy
-      lucid-chunk-processor:
-        condition: service_healthy
-      lucid-session-storage:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - SESSION_API_HOST=session-api
+      - SESSION_API_PORT=8087
+      - SESSION_API_URL=http://session-api:8087
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=session-api"
-      - "com.lucid.cluster=03-session-management"
+      - "lucid.service=session-api"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # ===========================================
-  # RDP SERVICES (4 containers)
-  # ===========================================
-
-  # RDP Server Manager
-  lucid-rdp-server-manager:
+  rdp-server-manager:
     image: pickme/lucid-rdp-server-manager:latest-arm64
-    container_name: lucid-rdp-server-manager
+    container_name: rdp-server-manager
     restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      - SERVICE_NAME=lucid-rdp-server-manager
-      - PORT=8081
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - XRDP_PORT=3389
-      - MAX_CONCURRENT_SESSIONS=5
-      - SESSION_TIMEOUT_MINUTES=60
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - RDP_SERVER_MANAGER_HOST=rdp-server-manager
+      - RDP_SERVER_MANAGER_PORT=8095
+      - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8095
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=rdp-server-manager"
-      - "com.lucid.cluster=04-rdp-services"
+      - "lucid.service=rdp-server-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # XRDP Integration
-  lucid-xrdp-integration:
-    image: pickme/lucid-xrdp-integration:latest-arm64
-    container_name: lucid-xrdp-integration
+  rdp-xrdp:
+    image: pickme/lucid-rdp-xrdp:latest-arm64
+    container_name: rdp-xrdp
     restart: unless-stopped
-    ports:
-      - "3389:3389"
-    environment:
-      - SERVICE_NAME=lucid-xrdp-integration
-      - PORT=3389
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - XRDP_LOG_LEVEL=INFO
-      - XRDP_ENABLE_SYSLOG=false
-      - XRDP_CHANNEL_RDPDR=true
-      - XRDP_CHANNEL_RDPSND=true
-      - XRDP_CHANNEL_DRDYNVC=true
-      - XRDP_CHANNEL_CLIPRDR=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/xrdp-integration:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/xrdp-integration:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-rdp-server-manager:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "netstat -tuln | grep :3389 || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=xrdp-integration"
-      - "com.lucid.cluster=04-rdp-services"
+      - "lucid.service=rdp-xrdp"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # Session Controller
-  lucid-session-controller:
-    image: pickme/lucid-session-controller:latest-arm64
-    container_name: lucid-session-controller
+  rdp-controller:
+    image: pickme/lucid-rdp-controller:latest-arm64
+    container_name: rdp-controller
     restart: unless-stopped
-    ports:
-      - "8082:8082"
-    environment:
-      - SERVICE_NAME=lucid-session-controller
-      - PORT=8082
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - SESSION_RECORDING_PATH=/data/recordings
-      - SESSION_RECORDING_FORMAT=mp4
-      - SESSION_RECORDING_QUALITY=high
-      - SESSION_RECORDING_BITRATE=2000k
-      - SESSION_RECORDING_FPS=30
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-controller:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-controller:/app/data
-      - /mnt/myssd/Lucid/Lucid/recordings:/app/recordings
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-rdp-server-manager:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=session-controller"
-      - "com.lucid.cluster=04-rdp-services"
+      - "lucid.service=rdp-controller"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # Resource Monitor
-  lucid-resource-monitor:
-    image: pickme/lucid-resource-monitor:latest-arm64
-    container_name: lucid-resource-monitor
+  rdp-monitor:
+    image: pickme/lucid-rdp-monitor:latest-arm64
+    container_name: rdp-monitor
     restart: unless-stopped
-    ports:
-      - "8090:8090"
-    environment:
-      - SERVICE_NAME=lucid-resource-monitor
-      - PORT=8090
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - MONITOR_CPU_THRESHOLD=80
-      - MONITOR_MEMORY_THRESHOLD=80
-      - MONITOR_DISK_THRESHOLD=90
-      - MONITOR_INTERVAL_SECONDS=30
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/resource-monitor:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/resource-monitor:/app/data
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=resource-monitor"
-      - "com.lucid.cluster=04-rdp-services"
+      - "lucid.service=rdp-monitor"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-  # ===========================================
-  # NODE MANAGEMENT (1 container)
-  # ===========================================
-
-  # Node Management
-  lucid-node-management:
+  node-management:
     image: pickme/lucid-node-management:latest-arm64
-    container_name: lucid-node-management
+    container_name: node-management
     restart: unless-stopped
-    ports:
-      - "8095:8095"
-    environment:
-      - SERVICE_NAME=lucid-node-management
-      - PORT=8095
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=${MONGODB_URI}
-      - REDIS_URI=${REDIS_URI}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - NODE_POOL_MAX_NODES=100
-      - PAYOUT_THRESHOLD_USDT=10
-      - POOT_CALCULATION_ENABLED=true
-      - NODE_REGISTRATION_ENABLED=true
-    volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data
     networks:
       - lucid-pi-network
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 40s
     labels:
-      - "com.lucid.phase=application"
-      - "com.lucid.service=node-management"
-      - "com.lucid.cluster=05-node-management"
+      - "lucid.service=node-management"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
 
-# ===========================================
-# NETWORKS
-# ===========================================
 networks:
   lucid-pi-network:
-    name: lucid-pi-network
     external: true
-
-# ===========================================
-# VOLUMES
-# ===========================================
-# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
-# No named volumes needed - using host path mounts for better performance
+    name: lucid-pi-network

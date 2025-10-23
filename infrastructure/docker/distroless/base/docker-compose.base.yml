@@ -1,89 +1,108 @@
-# Docker Compose for Base Distroless Images
-# Infrastructure configuration for Lucid base images
 version: '3.8'
 
 services:
-  # Base distroless image
-  lucid-base:
-    build:
-      context: .
-      dockerfile: Dockerfile.base.distroless
-      platforms:
-        - linux/amd64
-        - linux/arm64
-    image: lucid/base:latest
+  lucid-base-container:
+    image: pickme/lucid-base:latest-arm64
     container_name: lucid-base-container
     restart: unless-stopped
+    networks:
+      - lucid-distroless-production
     environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=base-container
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["python", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
-    networks:
-      - lucid-network
+      start_period: 40s
+    labels:
+      - "lucid.service=base-container"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=base"
 
-  # Minimal base distroless image
-  lucid-minimal-base:
-    build:
-      context: .
-      dockerfile: Dockerfile.minimal-base.distroless
-      platforms:
-        - linux/amd64
-        - linux/arm64
-    image: lucid/minimal-base:latest
+  lucid-minimal-base-container:
+    image: pickme/lucid-base:latest-arm64
     container_name: lucid-minimal-base-container
     restart: unless-stopped
+    networks:
+      - lucid-distroless-production
     environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=minimal-base-container
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["python", "-c", "import sys; print('Minimal runtime healthy'); sys.exit(0)"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
-    networks:
-      - lucid-network
+      start_period: 40s
+    labels:
+      - "lucid.service=minimal-base-container"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=minimal"
 
-  # ARM64 base distroless image
-  lucid-arm64-base:
-    build:
-      context: .
-      dockerfile: Dockerfile.arm64-base.distroless
-      platforms:
-        - linux/arm64
-    image: lucid/arm64-base:latest
+  lucid-arm64-base-container:
+    image: pickme/lucid-base:latest-arm64
     container_name: lucid-arm64-base-container
     restart: unless-stopped
+    networks:
+      - lucid-distroless-production
     environment:
-      - PYTHONPATH=/app
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-    ports:
-      - "8000:8000"
-      - "8080:8080"
-      - "8443:8443"
-      - "9000:9000"
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_ARCHITECTURE=linux/arm64
+      - LUCID_MODE=arm64-base-container
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["python", "-c", "import sys; print('ARM64 runtime healthy'); sys.exit(0)"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
-    networks:
-      - lucid-network
+      start_period: 40s
+    labels:
+      - "lucid.service=arm64-base-container"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=arm64"
 
 networks:
-  lucid-network:
-    driver: bridge
-    name: lucid-network
-
-volumes:
-  lucid-data:
-    name: lucid-data
+  lucid-distroless-production:
+    external: true
+    name: lucid-distroless-production

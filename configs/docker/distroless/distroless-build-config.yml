@@ -1,87 +1,107 @@
-# Distroless Build Configuration for Lucid Project
-# Configuration for building distroless images with specific optimizations
-
 version: '3.8'
 
 services:
-  # Build environment configuration
   distroless-builder:
-    image: lucid/base:latest
-    build:
-      context: ../../infrastructure/docker/distroless/base
-      dockerfile: Dockerfile.base.distroless
-      platforms:
-        - linux/amd64
-        - linux/arm64
-      args:
-        BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
-        BUILD_TARGET: distroless
-        OPTIMIZE_SIZE: ${OPTIMIZE_SIZE:-true}
-        SECURITY_SCAN: ${SECURITY_SCAN:-true}
-    environment:
-      - BUILD_PLATFORM=${BUILD_PLATFORM:-linux/amd64,linux/arm64}
-      - REGISTRY=${REGISTRY:-ghcr.io}
-      - IMAGE_NAME=${IMAGE_NAME:-lucid}
-      - VERSION=${VERSION:-latest}
-      - PUSH_IMAGES=${PUSH_IMAGES:-false}
-      - NO_CACHE=${NO_CACHE:-false}
-    volumes:
-      - ./build-cache:/cache
-      - ./distroless-logs:/logs
-      - /var/run/docker.sock:/var/run/docker.sock
+    image: pickme/lucid-base:latest-arm64
+    container_name: distroless-builder
+    restart: unless-stopped
     networks:
-      - build-network
-    command: >
-      sh -c "
-        echo 'Starting distroless build process...' &&
-        mkdir -p /cache /logs &&
-        python /app/scripts/build-distroless.py
-      "
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=builder
+      - DOCKER_BUILDKIT=1
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=500m
+      - /var/tmp:noexec,nosuid,size=200m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=distroless-builder"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=builder"
 
-  # Security scanner for distroless images
   security-scanner:
-    image: aquasec/trivy:latest
-    volumes:
-      - ./security-reports:/reports
-      - /var/run/docker.sock:/var/run/docker.sock
+    image: pickme/lucid-base:latest-arm64
+    container_name: security-scanner
+    restart: unless-stopped
     networks:
-      - build-network
-    command: >
-      sh -c "
-        echo 'Starting security scan...' &&
-        mkdir -p /reports &&
-        trivy image --format json --output /reports/security-report.json lucid/base:latest
-      "
-
-  # Layer optimizer for distroless images
-  layer-optimizer:
-    image: lucid/base:latest
-    volumes:
-      - ./optimization-reports:/reports
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - build-network
+      - lucid-distroless-production
     environment:
-      - OPTIMIZATION_TARGET=size
-      - OPTIMIZATION_LEVEL=aggressive
-    command: >
-      sh -c "
-        echo 'Starting layer optimization...' &&
-        mkdir -p /reports &&
-        python /app/scripts/optimize-layers.py --target distroless
-      "
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=security-scanner
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=security-scanner"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=scanner"
+
+  layer-optimizer:
+    image: pickme/lucid-base:latest-arm64
+    container_name: layer-optimizer
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=layer-optimizer
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=300m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=layer-optimizer"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.mode=optimizer"
 
 networks:
-  build-network:
-    driver: bridge
-    name: lucid-distroless-build-network
-
-volumes:
-  build-cache:
-    name: lucid-distroless-build-cache
-  distroless-logs:
-    name: lucid-distroless-logs
-  security-reports:
-    name: lucid-security-reports
-  optimization-reports:
-    name: lucid-optimization-reports
+  lucid-distroless-production:
+    external: true
+    name: lucid-distroless-production
