@@ -332,6 +332,7 @@ generate_phase_configs() {
             
             # FIXED: Post-process phase configs to replace circular references
             fix_phase_configs
+            fix_session_core_files
         else
             log_error "Failed to generate phase-level configs"
             ((FAILED_FILES+=6))
@@ -408,6 +409,57 @@ fix_phase_configs() {
     fi
     
     log_success "Phase configuration files fixed"
+    echo ""
+}
+
+# =============================================================================
+# FIX SESSION CORE FILES
+# =============================================================================
+fix_session_core_files() {
+    log_header "STEP 3.2: FIXING SESSION CORE FILES"
+    
+    local session_core_dir="$PROJECT_ROOT/sessions/core"
+    
+    if [[ ! -d "$session_core_dir" ]]; then
+        log_warning "Session core directory not found, skipping"
+        return 0
+    fi
+    
+    log_info "Fixing session core .env files..."
+    
+    # Fix .env.chunker
+    if [[ -f "$session_core_dir/.env.chunker" ]]; then
+        log_info "  Fixing .env.chunker..."
+        sed -i 's|MONGODB_PASSWORD_PLACEHOLDER|'"${MONGODB_PASSWORD}"'|g' "$session_core_dir/.env.chunker"
+        sed -i 's|REDIS_PASSWORD_PLACEHOLDER|'"${REDIS_PASSWORD}"'|g' "$session_core_dir/.env.chunker"
+        sed -i 's|ENCRYPTION_KEY_PLACEHOLDER|'"${ENCRYPTION_KEY}"'|g' "$session_core_dir/.env.chunker"
+        sed -i 's|JWT_SECRET_PLACEHOLDER|'"${JWT_SECRET}"'|g' "$session_core_dir/.env.chunker"
+        log_success "  .env.chunker fixed"
+    fi
+    
+    # Fix .env.merkle_builder
+    if [[ -f "$session_core_dir/.env.merkle_builder" ]]; then
+        log_info "  Fixing .env.merkle_builder..."
+        sed -i 's|MONGODB_PASSWORD_PLACEHOLDER|'"${MONGODB_PASSWORD}"'|g' "$session_core_dir/.env.merkle_builder"
+        sed -i 's|REDIS_PASSWORD_PLACEHOLDER|'"${REDIS_PASSWORD}"'|g' "$session_core_dir/.env.merkle_builder"
+        sed -i 's|ENCRYPTION_KEY_PLACEHOLDER|'"${ENCRYPTION_KEY}"'|g' "$session_core_dir/.env.merkle_builder"
+        sed -i 's|JWT_SECRET_PLACEHOLDER|'"${JWT_SECRET}"'|g' "$session_core_dir/.env.merkle_builder"
+        sed -i 's|SIGNING_KEY_PLACEHOLDER|'"${SIGNING_KEY}"'|g' "$session_core_dir/.env.merkle_builder"
+        log_success "  .env.merkle_builder fixed"
+    fi
+    
+    # Fix .env.orchestrator
+    if [[ -f "$session_core_dir/.env.orchestrator" ]]; then
+        log_info "  Fixing .env.orchestrator..."
+        sed -i 's|MONGODB_PASSWORD_PLACEHOLDER|'"${MONGODB_PASSWORD}"'|g' "$session_core_dir/.env.orchestrator"
+        sed -i 's|REDIS_PASSWORD_PLACEHOLDER|'"${REDIS_PASSWORD}"'|g' "$session_core_dir/.env.orchestrator"
+        sed -i 's|ENCRYPTION_KEY_PLACEHOLDER|'"${ENCRYPTION_KEY}"'|g' "$session_core_dir/.env.orchestrator"
+        sed -i 's|JWT_SECRET_PLACEHOLDER|'"${JWT_SECRET}"'|g' "$session_core_dir/.env.orchestrator"
+        sed -i 's|SESSION_SECRET_PLACEHOLDER|'"${SESSION_SECRET}"'|g' "$session_core_dir/.env.orchestrator"
+        sed -i 's|HMAC_KEY_PLACEHOLDER|'"${HMAC_KEY}"'|g' "$session_core_dir/.env.orchestrator"
+        log_success "  .env.orchestrator fixed"
+    fi
+    
     echo ""
 }
 
