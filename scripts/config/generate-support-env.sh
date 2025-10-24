@@ -84,6 +84,73 @@ cat > "$ENV_FILE" << 'EOF'
 # Architecture: ARM64
 
 # =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+API_GATEWAY_HOST=172.20.0.10
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+JWT_SECRET=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoOT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
 # DISTROLESS BASE CONFIGURATION
 # =============================================================================
 

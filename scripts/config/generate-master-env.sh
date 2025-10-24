@@ -78,12 +78,11 @@ validate_generated_files() {
     log_info "Validating generated environment files..."
     
     local env_files=(
-        "configs/environment/.env.secure"
         "configs/environment/.env.distroless"
-        "configs/environment/env.foundation"
-        "configs/environment/env.core"
-        "configs/environment/env.application"
-        "configs/environment/env.support"
+        "configs/environment/.env.foundation"
+        "configs/environment/.env.core"
+        "configs/environment/.env.application"
+        "configs/environment/.env.support"
     )
     
     for env_file in "${env_files[@]}"; do
@@ -115,12 +114,11 @@ display_summary() {
     log_info "Environment Generation Summary:"
     echo ""
     echo "Generated Files:"
-    echo "  • configs/environment/.env.secure (Master secure keys)"
     echo "  • configs/environment/.env.distroless (Distroless deployment)"
-    echo "  • configs/environment/env.foundation (Foundation services)"
-    echo "  • configs/environment/env.core (Core services)"
-    echo "  • configs/environment/env.application (Application services)"
-    echo "  • configs/environment/env.support (Support services)"
+    echo "  • configs/environment/.env.foundation (Foundation services)"
+    echo "  • configs/environment/.env.core (Core services)"
+    echo "  • configs/environment/.env.application (Application services)"
+    echo "  • configs/environment/.env.support (Support services)"
     echo ""
     echo "Key Features:"
     echo "  • All scripts use consistent project root: $PROJECT_ROOT"
@@ -141,24 +139,34 @@ main() {
     
     # Check all required scripts exist
     log_info "Checking required scripts..."
-    check_script "$SCRIPT_DIR/generate-secure-keys.sh"
     check_script "$SCRIPT_DIR/generate-distroless-env.sh"
-    check_script "$SCRIPT_DIR/generate-all-env.sh"
+    check_script "$SCRIPT_DIR/generate-foundation-env.sh"
+    check_script "$SCRIPT_DIR/generate-core-env.sh"
+    check_script "$SCRIPT_DIR/generate-application-env.sh"
+    check_script "$SCRIPT_DIR/generate-support-env.sh"
     
     # Run scripts in order
     log_info "Running environment generation scripts..."
     echo ""
     
-    # Step 1: Generate secure keys (master source)
-    run_script "Secure Keys Generation" "$SCRIPT_DIR/generate-secure-keys.sh"
-    echo ""
-    
-    # Step 2: Generate distroless environment
+    # Step 1: Generate distroless environment
     run_script "Distroless Environment Generation" "$SCRIPT_DIR/generate-distroless-env.sh"
     echo ""
     
-    # Step 3: Generate all other environments
-    run_script "All Environment Generation" "$SCRIPT_DIR/generate-all-env.sh"
+    # Step 2: Generate foundation environment
+    run_script "Foundation Environment Generation" "$SCRIPT_DIR/generate-foundation-env.sh"
+    echo ""
+    
+    # Step 3: Generate core environment
+    run_script "Core Environment Generation" "$SCRIPT_DIR/generate-core-env.sh"
+    echo ""
+    
+    # Step 4: Generate application environment
+    run_script "Application Environment Generation" "$SCRIPT_DIR/generate-application-env.sh"
+    echo ""
+    
+    # Step 5: Generate support environment
+    run_script "Support Environment Generation" "$SCRIPT_DIR/generate-support-env.sh"
     echo ""
     
     # Validate all generated files

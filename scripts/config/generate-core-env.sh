@@ -47,7 +47,7 @@ generate_jwt_secret() {
 
 # Function to generate encryption key (32 bytes = 256 bits) - aligned with generate-secure-keys.sh
 generate_encryption_key() {
-    openssl rand -hex 32
+    openssl rand -hex 32 | tr -d '\n\r\t '
 }
 
 # Function to generate database passwords - aligned with generate-secure-keys.sh
@@ -73,13 +73,81 @@ echo "ENCRYPTION_KEY generated: ${ENCRYPTION_KEY:0:8}..."
 echo "SESSION_SECRET generated: ${SESSION_SECRET:0:8}..."
 echo "BLOCKCHAIN_SECRET generated: ${BLOCKCHAIN_SECRET:0:8}..."
 
-# Create .env.core file
-cat > "$ENV_FILE" << 'EOF'
+# Create .env.core file with actual values
+cat > "$ENV_FILE" << EOF
 # Phase 2 Core Services Configuration
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Target: Raspberry Pi 5 (192.168.0.75)
 # Services: API Gateway, Blockchain Engine, Service Mesh, Session Anchoring, Block Manager, Data Chain
 # Architecture: ARM64
+# Design: Distroless + Secure (NO PLACEHOLDERS)
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+API_GATEWAY_HOST=172.20.0.10
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+JWT_SECRET=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoOT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
 
 # =============================================================================
 # DISTROLESS BASE CONFIGURATION
@@ -109,53 +177,49 @@ LUCID_MAIN_GATEWAY=172.20.0.1
 # =============================================================================
 
 # MongoDB Configuration
-MONGODB_HOST=lucid-mongodb
+MONGODB_HOST=172.20.0.11
 MONGODB_PORT=27017
 MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
-MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_PASSWORD=$MONGODB_PASSWORD
 MONGODB_AUTH_SOURCE=admin
 MONGODB_RETRY_WRITES=false
-MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+MONGODB_URL=mongodb://lucid:$MONGODB_PASSWORD@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false
 
 # Redis Configuration
-REDIS_HOST=lucid-redis
+REDIS_HOST=172.20.0.12
 REDIS_PORT=6379
-REDIS_PASSWORD=${REDIS_PASSWORD}
-REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+REDIS_PASSWORD=$REDIS_PASSWORD
+REDIS_URL=redis://:$REDIS_PASSWORD@172.20.0.12:6379
 
 # Elasticsearch Configuration
-ELASTICSEARCH_HOST=lucid-elasticsearch
+ELASTICSEARCH_HOST=172.20.0.13
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
-ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+ELASTICSEARCH_PASSWORD=$ELASTICSEARCH_PASSWORD
+ELASTICSEARCH_URL=http://elastic:$ELASTICSEARCH_PASSWORD@172.20.0.13:9200
 
 # =============================================================================
 # SECURITY CONFIGURATION (Inherited from Foundation)
 # =============================================================================
 
 # JWT Configuration
-JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION=3600
 
 # Encryption Configuration
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
 ENCRYPTION_ALGORITHM=AES-256-GCM
 
 # Session Configuration
-SESSION_SECRET=${SESSION_SECRET}
-SESSION_TIMEOUT=1800
+SESSION_SECRET=$SESSION_SECRET
 
 # =============================================================================
 # CORE SERVICES CONFIGURATION
 # =============================================================================
 
 # API Gateway
-API_GATEWAY_HOST=api-gateway
-API_GATEWAY_PORT=8080
-API_GATEWAY_URL=http://api-gateway:8080
+API_GATEWAY_URL=http://172.20.0.10:8080
 
 # Blockchain Engine
 BLOCKCHAIN_ENGINE_HOST=blockchain-engine
@@ -187,7 +251,7 @@ DATA_CHAIN_URL=http://data-chain:8087
 # =============================================================================
 
 # Blockchain Engine Configuration
-BLOCKCHAIN_SECRET=${BLOCKCHAIN_SECRET}
+BLOCKCHAIN_SECRET=$BLOCKCHAIN_SECRET
 BLOCKCHAIN_ALGORITHM=PoOT
 BLOCK_INTERVAL=10
 BLOCK_SIZE_LIMIT=1MB
@@ -312,6 +376,7 @@ BUILD_OS=linux
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_VERSION=0.1.0
 BUILD_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
 EOF
 
 # Validate required environment variables
