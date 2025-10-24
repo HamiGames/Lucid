@@ -371,7 +371,7 @@ validate_env_file() {
         if [[ "$line" =~ ^[A-Z_]+=.*$ ]] && ! [[ "$line" =~ ^#.*$ ]]; then
             local var_name=$(echo "$line" | cut -d'=' -f1)
             
-            if [[ ! "${REQUIRED_VARS[$var_name]}" ]] && [[ ! "${OPTIONAL_VARS[$var_name]}" ]]; then
+            if [[ -z "${REQUIRED_VARS[$var_name]:-}" ]] && [[ -z "${OPTIONAL_VARS[$var_name]:-}" ]]; then
                 print_warning "Unknown variable: $var_name"
                 ((warnings++))
             fi

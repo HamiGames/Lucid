@@ -134,6 +134,27 @@ generate_all_secure_values() {
     log_success "Generated 5 .onion addresses"
     ((TOTAL_SECRETS+=5))
     
+    # Generate Service URLs (FIXED: No more circular references)
+    export MONGODB_URL="mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false"
+    export REDIS_URL="redis://:${REDIS_PASSWORD}@172.20.0.12:6379"
+    export ELASTICSEARCH_URL="http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200"
+    export API_GATEWAY_URL="http://172.20.0.10:8080"
+    export AUTH_SERVICE_URL="http://172.20.0.14:8089"
+    export BLOCKCHAIN_ENGINE_URL="http://172.20.0.15:8084"
+    export SESSION_API_URL="http://172.20.0.16:8085"
+    export NODE_MANAGEMENT_URL="http://172.20.0.17:8087"
+    export ADMIN_INTERFACE_URL="http://172.20.0.18:8088"
+    export TRON_PAYMENT_URL="http://172.20.0.19:8090"
+    export SERVICE_MESH_URL="http://172.20.0.20:8091"
+    export BLOCKCHAIN_CORE_URL="http://172.20.0.21:8082"
+    
+    # TRON Configuration (FIXED: Generate actual values)
+    export TRON_NETWORK="mainnet"
+    export TRON_NODE_URL="https://api.trongrid.io"
+    export TRON_ADDRESS=$(generate_hex_key 20)  # 20 bytes = 40 hex chars
+    export USDT_CONTRACT_ADDRESS="TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    export USDT_DECIMALS="6"
+    
     # Additional configuration values
     export PI_HOST="${PI_HOST:-192.168.0.75}"
     export PI_USER="${PI_USER:-pickme}"
@@ -240,6 +261,31 @@ ADMIN_INTERFACE_ONION=$ADMIN_INTERFACE_ONION
 SESSION_API_ONION=$SESSION_API_ONION
 
 # =============================================================================
+# SERVICE URLS (FIXED: No circular references)
+# =============================================================================
+MONGODB_URL=$MONGODB_URL
+REDIS_URL=$REDIS_URL
+ELASTICSEARCH_URL=$ELASTICSEARCH_URL
+API_GATEWAY_URL=$API_GATEWAY_URL
+AUTH_SERVICE_URL=$AUTH_SERVICE_URL
+BLOCKCHAIN_ENGINE_URL=$BLOCKCHAIN_ENGINE_URL
+SESSION_API_URL=$SESSION_API_URL
+NODE_MANAGEMENT_URL=$NODE_MANAGEMENT_URL
+ADMIN_INTERFACE_URL=$ADMIN_INTERFACE_URL
+TRON_PAYMENT_URL=$TRON_PAYMENT_URL
+SERVICE_MESH_URL=$SERVICE_MESH_URL
+BLOCKCHAIN_CORE_URL=$BLOCKCHAIN_CORE_URL
+
+# =============================================================================
+# TRON CONFIGURATION (FIXED: Actual values)
+# =============================================================================
+TRON_NETWORK=$TRON_NETWORK
+TRON_NODE_URL=$TRON_NODE_URL
+TRON_ADDRESS=$TRON_ADDRESS
+USDT_CONTRACT_ADDRESS=$USDT_CONTRACT_ADDRESS
+USDT_DECIMALS=$USDT_DECIMALS
+
+# =============================================================================
 # DEPLOYMENT CONFIGURATION
 # =============================================================================
 PI_HOST=$PI_HOST
@@ -283,6 +329,9 @@ generate_phase_configs() {
         if bash "$gen_all_script"; then
             log_success "Phase-level configs generated"
             ((GENERATED_FILES+=6))
+            
+            # FIXED: Post-process phase configs to replace circular references
+            fix_phase_configs
         else
             log_error "Failed to generate phase-level configs"
             ((FAILED_FILES+=6))
@@ -291,6 +340,74 @@ generate_phase_configs() {
         log_warning "generate-all-env.sh not found, skipping phase configs"
     fi
     
+    echo ""
+}
+
+# =============================================================================
+# FIX PHASE CONFIGURATION FILES
+# =============================================================================
+fix_phase_configs() {
+    log_header "STEP 3.1: FIXING PHASE CONFIGURATION FILES"
+    
+    local config_dir="$PROJECT_ROOT/configs/environment"
+    
+    # Fix foundation config
+    if [[ -f "$config_dir/.env.foundation" ]]; then
+        log_info "Fixing .env.foundation..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/.env.foundation"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/.env.foundation"
+        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/.env.foundation"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/.env.foundation"
+    fi
+    
+    # Fix application config
+    if [[ -f "$config_dir/env.application" ]]; then
+        log_info "Fixing env.application..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/env.application"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/env.application"
+        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/env.application"
+        sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$config_dir/env.application"
+        sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/env.application"
+        sed -i "s|SERVICE_MESH_URL=\${SERVICE_MESH_URL}|SERVICE_MESH_URL=${SERVICE_MESH_URL}|g" "$config_dir/env.application"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.application"
+    fi
+    
+    # Fix core config
+    if [[ -f "$config_dir/env.core" ]]; then
+        log_info "Fixing env.core..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/env.core"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/env.core"
+        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/env.core"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.core"
+        sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/env.core"
+    fi
+    
+    # Fix support config
+    if [[ -f "$config_dir/env.support" ]]; then
+        log_info "Fixing env.support..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/env.support"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/env.support"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.support"
+        sed -i "s|TRON_NETWORK=\${TRON_NETWORK}|TRON_NETWORK=${TRON_NETWORK}|g" "$config_dir/env.support"
+        sed -i "s|TRON_NODE_URL=\${TRON_NODE_URL}|TRON_NODE_URL=${TRON_NODE_URL}|g" "$config_dir/env.support"
+        sed -i "s|TRON_ADDRESS=\${TRON_ADDRESS}|TRON_ADDRESS=${TRON_ADDRESS}|g" "$config_dir/env.support"
+        sed -i "s|USDT_CONTRACT_ADDRESS=\${USDT_CONTRACT_ADDRESS}|USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}|g" "$config_dir/env.support"
+        sed -i "s|USDT_DECIMALS=\${USDT_DECIMALS}|USDT_DECIMALS=${USDT_DECIMALS}|g" "$config_dir/env.support"
+    fi
+    
+    # Fix GUI config
+    if [[ -f "$config_dir/env.gui" ]]; then
+        log_info "Fixing env.gui..."
+        sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$config_dir/env.gui"
+        sed -i "s|BLOCKCHAIN_CORE_URL=\${BLOCKCHAIN_CORE_URL}|BLOCKCHAIN_CORE_URL=${BLOCKCHAIN_CORE_URL}|g" "$config_dir/env.gui"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.gui"
+        sed -i "s|SESSION_API_URL=\${SESSION_API_URL}|SESSION_API_URL=${SESSION_API_URL}|g" "$config_dir/env.gui"
+        sed -i "s|NODE_MANAGEMENT_URL=\${NODE_MANAGEMENT_URL}|NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}|g" "$config_dir/env.gui"
+        sed -i "s|ADMIN_INTERFACE_URL=\${ADMIN_INTERFACE_URL}|ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}|g" "$config_dir/env.gui"
+        sed -i "s|TRON_PAYMENT_URL=\${TRON_PAYMENT_URL}|TRON_PAYMENT_URL=${TRON_PAYMENT_URL}|g" "$config_dir/env.gui"
+    fi
+    
+    log_success "Phase configuration files fixed"
     echo ""
 }
 
@@ -313,26 +430,46 @@ inject_blockchain_values() {
         if [[ -f "$env_file" ]]; then
             log_info "  Processing $(basename $env_file)..."
             
+            # FIXED: Replace circular references and empty values with actual generated values
+            sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$env_file"
+            sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$env_file"
+            sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$env_file"
+            sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$env_file"
+            sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$env_file"
+            sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$env_file"
+            sed -i "s|SESSION_API_URL=\${SESSION_API_URL}|SESSION_API_URL=${SESSION_API_URL}|g" "$env_file"
+            sed -i "s|NODE_MANAGEMENT_URL=\${NODE_MANAGEMENT_URL}|NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}|g" "$env_file"
+            sed -i "s|ADMIN_INTERFACE_URL=\${ADMIN_INTERFACE_URL}|ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}|g" "$env_file"
+            sed -i "s|TRON_PAYMENT_URL=\${TRON_PAYMENT_URL}|TRON_PAYMENT_URL=${TRON_PAYMENT_URL}|g" "$env_file"
+            sed -i "s|SERVICE_MESH_URL=\${SERVICE_MESH_URL}|SERVICE_MESH_URL=${SERVICE_MESH_URL}|g" "$env_file"
+            sed -i "s|BLOCKCHAIN_CORE_URL=\${BLOCKCHAIN_CORE_URL}|BLOCKCHAIN_CORE_URL=${BLOCKCHAIN_CORE_URL}|g" "$env_file"
+            
             # Replace empty values with generated ones
-            sed -i 's|MONGODB_URL=mongodb://lucid:lucid@|MONGODB_URL=mongodb://lucid:'"${MONGODB_PASSWORD}"'@|g' "$env_file"
-            sed -i 's|ENCRYPTION_KEY=""|ENCRYPTION_KEY="'"${ENCRYPTION_KEY}"'"|g' "$env_file"
-            sed -i 's|JWT_SECRET_KEY=""|JWT_SECRET_KEY="'"${JWT_SECRET}"'"|g' "$env_file"
-            sed -i 's|PRIVATE_KEY=""|PRIVATE_KEY="'"${PRIVATE_KEY}"'"|g' "$env_file"
-            sed -i 's|DEPLOYMENT_KEY=""|DEPLOYMENT_KEY="'"${DEPLOYMENT_KEY}"'"|g' "$env_file"
-            sed -i 's|CONTRACT_OWNER_KEY=""|CONTRACT_OWNER_KEY="'"${CONTRACT_OWNER_KEY}"'"|g' "$env_file"
-            sed -i 's|COMPILER_KEY=""|COMPILER_KEY="'"${COMPILER_KEY}"'"|g' "$env_file"
-            sed -i 's|VERIFICATION_KEY=""|VERIFICATION_KEY="'"${VERIFICATION_KEY}"'"|g' "$env_file"
-            sed -i 's|ORCHESTRATOR_KEY=""|ORCHESTRATOR_KEY="'"${ORCHESTRATOR_KEY}"'"|g' "$env_file"
-            sed -i 's|GOVERNANCE_KEY=""|GOVERNANCE_KEY="'"${GOVERNANCE_KEY}"'"|g' "$env_file"
-            sed -i 's|ADMIN_KEY=""|ADMIN_KEY="'"${ADMIN_KEY}"'"|g' "$env_file"
-            sed -i 's|COMPLIANCE_SIGNER_KEY=""|COMPLIANCE_SIGNER_KEY="'"${COMPLIANCE_SIGNER_KEY}"'"|g' "$env_file"
-            sed -i 's|VM_ENCRYPTION_KEY=""|VM_ENCRYPTION_KEY="'"${VM_ENCRYPTION_KEY}"'"|g' "$env_file"
-            sed -i 's|VM_ACCESS_KEY=""|VM_ACCESS_KEY="'"${VM_ACCESS_KEY}"'"|g' "$env_file"
-            sed -i 's|LEDGER_ENCRYPTION_KEY=""|LEDGER_ENCRYPTION_KEY="'"${LEDGER_ENCRYPTION_KEY}"'"|g' "$env_file"
-            sed -i 's|SIGNING_KEY=""|SIGNING_KEY="'"${SIGNING_KEY}"'"|g' "$env_file"
-            sed -i 's|TRON_PRIVATE_KEY=""|TRON_PRIVATE_KEY="'"${TRON_PRIVATE_KEY}"'"|g' "$env_file"
-            sed -i 's|KEY_ENC_SECRET=""|KEY_ENC_SECRET="'"${ENCRYPTION_KEY}"'"|g' "$env_file"
-            sed -i 's|AGE_PRIVATE_KEY=""|AGE_PRIVATE_KEY="'"${PRIVATE_KEY}"'"|g' "$env_file"
+            sed -i "s|ENCRYPTION_KEY=\"\"|ENCRYPTION_KEY=\"${ENCRYPTION_KEY}\"|g" "$env_file"
+            sed -i "s|JWT_SECRET_KEY=\"\"|JWT_SECRET_KEY=\"${JWT_SECRET}\"|g" "$env_file"
+            sed -i "s|PRIVATE_KEY=\"\"|PRIVATE_KEY=\"${PRIVATE_KEY}\"|g" "$env_file"
+            sed -i "s|DEPLOYMENT_KEY=\"\"|DEPLOYMENT_KEY=\"${DEPLOYMENT_KEY}\"|g" "$env_file"
+            sed -i "s|CONTRACT_OWNER_KEY=\"\"|CONTRACT_OWNER_KEY=\"${CONTRACT_OWNER_KEY}\"|g" "$env_file"
+            sed -i "s|COMPILER_KEY=\"\"|COMPILER_KEY=\"${COMPILER_KEY}\"|g" "$env_file"
+            sed -i "s|VERIFICATION_KEY=\"\"|VERIFICATION_KEY=\"${VERIFICATION_KEY}\"|g" "$env_file"
+            sed -i "s|ORCHESTRATOR_KEY=\"\"|ORCHESTRATOR_KEY=\"${ORCHESTRATOR_KEY}\"|g" "$env_file"
+            sed -i "s|GOVERNANCE_KEY=\"\"|GOVERNANCE_KEY=\"${GOVERNANCE_KEY}\"|g" "$env_file"
+            sed -i "s|ADMIN_KEY=\"\"|ADMIN_KEY=\"${ADMIN_KEY}\"|g" "$env_file"
+            sed -i "s|COMPLIANCE_SIGNER_KEY=\"\"|COMPLIANCE_SIGNER_KEY=\"${COMPLIANCE_SIGNER_KEY}\"|g" "$env_file"
+            sed -i "s|VM_ENCRYPTION_KEY=\"\"|VM_ENCRYPTION_KEY=\"${VM_ENCRYPTION_KEY}\"|g" "$env_file"
+            sed -i "s|VM_ACCESS_KEY=\"\"|VM_ACCESS_KEY=\"${VM_ACCESS_KEY}\"|g" "$env_file"
+            sed -i "s|LEDGER_ENCRYPTION_KEY=\"\"|LEDGER_ENCRYPTION_KEY=\"${LEDGER_ENCRYPTION_KEY}\"|g" "$env_file"
+            sed -i "s|SIGNING_KEY=\"\"|SIGNING_KEY=\"${SIGNING_KEY}\"|g" "$env_file"
+            sed -i "s|TRON_PRIVATE_KEY=\"\"|TRON_PRIVATE_KEY=\"${TRON_PRIVATE_KEY}\"|g" "$env_file"
+            sed -i "s|KEY_ENC_SECRET=\"\"|KEY_ENC_SECRET=\"${ENCRYPTION_KEY}\"|g" "$env_file"
+            sed -i "s|AGE_PRIVATE_KEY=\"\"|AGE_PRIVATE_KEY=\"${PRIVATE_KEY}\"|g" "$env_file"
+            
+            # FIXED: Replace TRON configuration
+            sed -i "s|TRON_NETWORK=\${TRON_NETWORK}|TRON_NETWORK=${TRON_NETWORK}|g" "$env_file"
+            sed -i "s|TRON_NODE_URL=\${TRON_NODE_URL}|TRON_NODE_URL=${TRON_NODE_URL}|g" "$env_file"
+            sed -i "s|TRON_ADDRESS=\${TRON_ADDRESS}|TRON_ADDRESS=${TRON_ADDRESS}|g" "$env_file"
+            sed -i "s|USDT_CONTRACT_ADDRESS=\${USDT_CONTRACT_ADDRESS}|USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}|g" "$env_file"
+            sed -i "s|USDT_DECIMALS=\${USDT_DECIMALS}|USDT_DECIMALS=${USDT_DECIMALS}|g" "$env_file"
         fi
     done
     
@@ -359,11 +496,18 @@ inject_database_values() {
         if [[ -f "$env_file" ]]; then
             log_info "  Processing $(basename $env_file)..."
             
+            # FIXED: Replace circular references with actual generated values
+            sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$env_file"
+            sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$env_file"
+            sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$env_file"
+            
             # Replace default/empty values with generated ones
-            sed -i 's|MONGO_INITDB_ROOT_PASSWORD=lucid|MONGO_INITDB_ROOT_PASSWORD='"${MONGODB_PASSWORD}"'|g' "$env_file"
-            sed -i 's|MONGODB_URL=mongodb://lucid:lucid@|MONGODB_URL=mongodb://lucid:'"${MONGODB_PASSWORD}"'@|g' "$env_file"
-            sed -i 's|BACKUP_ENCRYPTION_KEY=""|BACKUP_ENCRYPTION_KEY="'"${BACKUP_ENCRYPTION_KEY}"'"|g' "$env_file"
-            sed -i 's|RESTORE_DECRYPTION_KEY=""|RESTORE_DECRYPTION_KEY="'"${RESTORE_DECRYPTION_KEY}"'"|g' "$env_file"
+            sed -i "s|MONGO_INITDB_ROOT_PASSWORD=lucid|MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}|g" "$env_file"
+            sed -i "s|MONGODB_URL=mongodb://lucid:lucid@|MONGODB_URL=${MONGODB_URL}|g" "$env_file"
+            sed -i "s|REDIS_URL=redis://:lucid@|REDIS_URL=${REDIS_URL}|g" "$env_file"
+            sed -i "s|ELASTICSEARCH_URL=http://elastic:lucid@|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$env_file"
+            sed -i "s|BACKUP_ENCRYPTION_KEY=\"\"|BACKUP_ENCRYPTION_KEY=\"${BACKUP_ENCRYPTION_KEY}\"|g" "$env_file"
+            sed -i "s|RESTORE_DECRYPTION_KEY=\"\"|RESTORE_DECRYPTION_KEY=\"${RESTORE_DECRYPTION_KEY}\"|g" "$env_file"
         fi
     done
     
@@ -480,6 +624,12 @@ validate_generated_files() {
             if grep -qE '(MONGODB_PASSWORD|JWT_SECRET|ENCRYPTION_KEY|PRIVATE_KEY)=""' "$file" 2>/dev/null; then
                 log_warning "   ⚠️  Contains empty critical values"
                 ((empty_count++))
+            fi
+            
+            # FIXED: Check for circular references (the main issue)
+            if grep -qE '\$\{[A-Z_]+\}' "$file" 2>/dev/null; then
+                log_error "   ❌ Contains circular variable references"
+                ((validation_errors++))
             fi
             
             # Check for placeholders
@@ -655,6 +805,9 @@ create_summary() {
 # Check for placeholders (should return nothing)
 grep -r "_PLACEHOLDER" configs/environment/ infrastructure/docker/*/env/ 03-api-gateway/api/ sessions/core/ || echo "No placeholders found ✅"
 
+# Check for circular references (should return nothing)
+grep -rE '\$\{[A-Z_]+\}' configs/environment/ infrastructure/docker/*/env/ 03-api-gateway/api/ sessions/core/ || echo "No circular references found ✅"
+
 # Check for empty critical values
 grep -rE '(MONGODB_PASSWORD|JWT_SECRET|ENCRYPTION_KEY)=""' infrastructure/docker/*/env/ || echo "No empty critical values ✅"
 \`\`\`
@@ -761,7 +914,8 @@ display_final_summary() {
     log_info "   2. Backup configs/environment/.env.secure to secure location"
     log_info "   3. Verify .gitignore covers all .env and .secrets files"
     log_info "   4. Run: grep -r '_PLACEHOLDER' to verify no placeholders remain"
-    log_info "   5. Deploy to Pi: cd scripts/deployment && ./deploy-phase1-pi.sh"
+    log_info "   5. Run: grep -rE '\\$\\{[A-Z_]+\\}' to verify no circular references remain"
+    log_info "   6. Deploy to Pi: cd scripts/deployment && ./deploy-phase1-pi.sh"
     echo ""
     
     log_success "✨ Environment generation completed successfully!"
