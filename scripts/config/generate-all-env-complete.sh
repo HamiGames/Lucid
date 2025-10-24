@@ -489,7 +489,7 @@ inject_blockchain_values() {
     
     log_info "Injecting generated secure values into blockchain .env files..."
     
-    for env_file in "$env_dir"/*.env; do
+    for env_file in "$env_dir"/.env.*; do
         if [[ -f "$env_file" ]]; then
             log_info "  Processing $(basename $env_file)..."
             
@@ -555,7 +555,7 @@ inject_database_values() {
     
     log_info "Injecting generated secure values into database .env files..."
     
-    for env_file in "$env_dir"/*.env; do
+    for env_file in "$env_dir"/.env.*; do
         if [[ -f "$env_file" ]]; then
             log_info "  Processing $(basename $env_file)..."
             
@@ -649,24 +649,24 @@ validate_generated_files() {
         "$PROJECT_ROOT/03-api-gateway/api/.env.api"
         
         # Blockchain
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/deployment-orchestrator.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-compiler.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-ledger.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-vm.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-deployment.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-sessions-data.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/on-system-chain-client.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-api.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-governance.env"
-        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/tron-node-client.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.deployment-orchestrator"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.contract-compiler"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-ledger"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-vm"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.contract-deployment"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-sessions-data"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.on-system-chain-client"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-api"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-governance"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.tron-node-client"
         
         # Databases
-        "$PROJECT_ROOT/infrastructure/docker/databases/env/database-monitoring.env"
-        "$PROJECT_ROOT/infrastructure/docker/databases/env/database-migration.env"
-        "$PROJECT_ROOT/infrastructure/docker/databases/env/mongodb-init.env"
-        "$PROJECT_ROOT/infrastructure/docker/databases/env/database-backup.env"
-        "$PROJECT_ROOT/infrastructure/docker/databases/env/mongodb.env"
-        "$PROJECT_ROOT/infrastructure/docker/databases/env/database-restore.env"
+        "$PROJECT_ROOT/infrastructure/docker/databases/env/.env.database-monitoring"
+        "$PROJECT_ROOT/infrastructure/docker/databases/env/.env.database-migration"
+        "$PROJECT_ROOT/infrastructure/docker/databases/env/.env.mongodb-init"
+        "$PROJECT_ROOT/infrastructure/docker/databases/env/.env.database-backup"
+        "$PROJECT_ROOT/infrastructure/docker/databases/env/.env.mongodb"
+        "$PROJECT_ROOT/infrastructure/docker/databases/env/.env.database-restore"
         
         # Sessions
         "$PROJECT_ROOT/sessions/core/.env.orchestrator"
@@ -757,24 +757,24 @@ create_summary() {
 - ✅ \`03-api-gateway/api/.env.api\`
 
 ### Blockchain Services (10 files)
-- ✅ \`infrastructure/docker/blockchain/env/deployment-orchestrator.env\`
-- ✅ \`infrastructure/docker/blockchain/env/contract-compiler.env\`
-- ✅ \`infrastructure/docker/blockchain/env/blockchain-ledger.env\`
-- ✅ \`infrastructure/docker/blockchain/env/blockchain-vm.env\`
-- ✅ \`infrastructure/docker/blockchain/env/contract-deployment.env\`
-- ✅ \`infrastructure/docker/blockchain/env/blockchain-sessions-data.env\`
-- ✅ \`infrastructure/docker/blockchain/env/on-system-chain-client.env\`
-- ✅ \`infrastructure/docker/blockchain/env/blockchain-api.env\`
-- ✅ \`infrastructure/docker/blockchain/env/blockchain-governance.env\`
-- ✅ \`infrastructure/docker/blockchain/env/tron-node-client.env\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.deployment-orchestrator\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.contract-compiler\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.blockchain-ledger\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.blockchain-vm\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.contract-deployment\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.blockchain-sessions-data\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.on-system-chain-client\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.blockchain-api\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.blockchain-governance\`
+- ✅ \`infrastructure/docker/blockchain/env/.env.tron-node-client\`
 
 ### Database Services (6 files)
-- ✅ \`infrastructure/docker/databases/env/database-monitoring.env\`
-- ✅ \`infrastructure/docker/databases/env/database-migration.env\`
-- ✅ \`infrastructure/docker/databases/env/mongodb-init.env\`
-- ✅ \`infrastructure/docker/databases/env/database-backup.env\`
-- ✅ \`infrastructure/docker/databases/env/mongodb.env\`
-- ✅ \`infrastructure/docker/databases/env/database-restore.env\`
+- ✅ \`infrastructure/docker/databases/env/.env.database-monitoring\`
+- ✅ \`infrastructure/docker/databases/env/.env.database-migration\`
+- ✅ \`infrastructure/docker/databases/env/.env.mongodb-init\`
+- ✅ \`infrastructure/docker/databases/env/.env.database-backup\`
+- ✅ \`infrastructure/docker/databases/env/.env.mongodb\`
+- ✅ \`infrastructure/docker/databases/env/.env.database-restore\`
 
 ### Session Services (3 files)
 - ✅ \`sessions/core/.env.orchestrator\`
@@ -909,8 +909,8 @@ cd scripts/deployment
 ## File Locations Reference
 
 **Phase Configs:** \`configs/environment/.env.*\`  
-**Blockchain Configs:** \`infrastructure/docker/blockchain/env/*.env\`  
-**Database Configs:** \`infrastructure/docker/databases/env/*.env\`  
+**Blockchain Configs:** \`infrastructure/docker/blockchain/env/.env.*\`  
+**Database Configs:** \`infrastructure/docker/databases/env/.env.*\`  
 **API Gateway Config:** \`03-api-gateway/api/.env.api\`  
 **Session Configs:** \`sessions/core/.env.*\`  
 **Master Secure File:** \`configs/environment/.env.secure\` 

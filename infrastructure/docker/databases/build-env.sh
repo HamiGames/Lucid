@@ -44,8 +44,8 @@ COMMON_ENV_VARS=(
 )
 
 # MongoDB 7 Environment
-log_info "Creating mongodb.env..."
-cat > "$ENV_DIR/mongodb.env" << EOF
+log_info "Creating .env.mongodb..."
+cat > "$ENV_DIR/.env.mongodb" << EOF
 # Lucid MongoDB 7 Environment
 # Generated: $(date)
 
@@ -107,8 +107,8 @@ METRICS_PATH=/metrics
 EOF
 
 # MongoDB Initialization Environment
-log_info "Creating mongodb-init.env..."
-cat > "$ENV_DIR/mongodb-init.env" << EOF
+log_info "Creating .env.mongodb-init..."
+cat > "$ENV_DIR/.env.mongodb-init" << EOF
 # Lucid MongoDB Initialization Environment
 # Generated: $(date)
 
@@ -151,8 +151,8 @@ PARALLEL_INIT=true
 EOF
 
 # Database Backup Environment
-log_info "Creating database-backup.env..."
-cat > "$ENV_DIR/database-backup.env" << EOF
+log_info "Creating .env.database-backup..."
+cat > "$ENV_DIR/.env.database-backup" << EOF
 # Lucid Database Backup Environment
 # Generated: $(date)
 
@@ -202,8 +202,8 @@ BACKUP_TIMEOUT=3600
 EOF
 
 # Database Restore Environment
-log_info "Creating database-restore.env..."
-cat > "$ENV_DIR/database-restore.env" << EOF
+log_info "Creating .env.database-restore..."
+cat > "$ENV_DIR/.env.database-restore" << EOF
 # Lucid Database Restore Environment
 # Generated: $(date)
 
@@ -246,8 +246,8 @@ RESTORE_BATCH_SIZE=1000
 EOF
 
 # Database Monitoring Environment
-log_info "Creating database-monitoring.env..."
-cat > "$ENV_DIR/database-monitoring.env" << EOF
+log_info "Creating .env.database-monitoring..."
+cat > "$ENV_DIR/.env.database-monitoring" << EOF
 # Lucid Database Monitoring Environment
 # Generated: $(date)
 
@@ -303,8 +303,8 @@ MONITORING_TIMEOUT=30
 EOF
 
 # Database Migration Environment
-log_info "Creating database-migration.env..."
-cat > "$ENV_DIR/database-migration.env" << EOF
+log_info "Creating .env.database-migration..."
+cat > "$ENV_DIR/.env.database-migration" << EOF
 # Lucid Database Migration Environment
 # Generated: $(date)
 
@@ -346,15 +346,15 @@ EOF
 
 log_success "Environment files created successfully in $ENV_DIR"
 log_info "Created environment files for:"
-log_info "  - mongodb.env"
-log_info "  - mongodb-init.env"
-log_info "  - database-backup.env"
-log_info "  - database-restore.env"
-log_info "  - database-monitoring.env"
-log_info "  - database-migration.env"
+log_info "  - .env.mongodb"
+log_info "  - .env.mongodb-init"
+log_info "  - .env.database-backup"
+log_info "  - .env.database-restore"
+log_info "  - .env.database-monitoring"
+log_info "  - .env.database-migration"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/mongodb.env -t pickme/lucid:mongodb ."
-log_info "  docker build --env-file $ENV_DIR/mongodb-init.env -t pickme/lucid:mongodb-init ."
-log_info "  docker build --env-file $ENV_DIR/database-backup.env -t pickme/lucid:database-backup ."
+log_info "  docker build --env-file $ENV_DIR/.env.mongodb -t pickme/lucid:mongodb ."
+log_info "  docker build --env-file $ENV_DIR/.env.mongodb-init -t pickme/lucid:mongodb-init ."
+log_info "  docker build --env-file $ENV_DIR/.env.database-backup -t pickme/lucid:database-backup ."

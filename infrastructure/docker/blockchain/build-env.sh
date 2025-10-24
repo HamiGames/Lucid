@@ -47,8 +47,8 @@ COMMON_ENV_VARS=(
 )
 
 # Blockchain API Environment
-log_info "Creating blockchain-api.env..."
-cat > "$ENV_DIR/blockchain-api.env" << EOF
+log_info "Creating .env.blockchain-api..."
+cat > "$ENV_DIR/.env.blockchain-api" << EOF
 # Lucid Blockchain API Environment
 # Generated: $(date)
 
@@ -97,8 +97,8 @@ HEALTH_CHECK_TIMEOUT=10
 EOF
 
 # Blockchain Governance Environment
-log_info "Creating blockchain-governance.env..."
-cat > "$ENV_DIR/blockchain-governance.env" << EOF
+log_info "Creating .env.blockchain-governance..."
+cat > "$ENV_DIR/.env.blockchain-governance" << EOF
 # Lucid Blockchain Governance Environment
 # Generated: $(date)
 
@@ -139,8 +139,8 @@ MAX_VOTES_PER_PROPOSAL=10000
 EOF
 
 # Blockchain Sessions Data Environment
-log_info "Creating blockchain-sessions-data.env..."
-cat > "$ENV_DIR/blockchain-sessions-data.env" << EOF
+log_info "Creating .env.blockchain-sessions-data..."
+cat > "$ENV_DIR/.env.blockchain-sessions-data" << EOF
 # Lucid Blockchain Sessions Data Environment
 # Generated: $(date)
 
@@ -172,8 +172,8 @@ CONFIRMATION_BLOCKS=3
 EOF
 
 # Blockchain VM Environment
-log_info "Creating blockchain-vm.env..."
-cat > "$ENV_DIR/blockchain-vm.env" << EOF
+log_info "Creating .env.blockchain-vm..."
+cat > "$ENV_DIR/.env.blockchain-vm" << EOF
 # Lucid Blockchain VM Environment
 # Generated: $(date)
 
@@ -207,8 +207,8 @@ VM_SHUTDOWN_TIMEOUT=30
 EOF
 
 # Blockchain Ledger Environment
-log_info "Creating blockchain-ledger.env..."
-cat > "$ENV_DIR/blockchain-ledger.env" << EOF
+log_info "Creating .env.blockchain-ledger..."
+cat > "$ENV_DIR/.env.blockchain-ledger" << EOF
 # Lucid Blockchain Ledger Environment
 # Generated: $(date)
 
@@ -240,8 +240,8 @@ MAX_TRANSACTIONS_PER_BLOCK=1000
 EOF
 
 # TRON Node Client Environment
-log_info "Creating tron-node-client.env..."
-cat > "$ENV_DIR/tron-node-client.env" << EOF
+log_info "Creating .env.tron-node-client..."
+cat > "$ENV_DIR/.env.tron-node-client" << EOF
 # Lucid TRON Node Client Environment
 # Generated: $(date)
 
@@ -276,8 +276,8 @@ CONFIRMATION_BLOCKS=20
 EOF
 
 # Contract Deployment Environment
-log_info "Creating contract-deployment.env..."
-cat > "$ENV_DIR/contract-deployment.env" << EOF
+log_info "Creating .env.contract-deployment..."
+cat > "$ENV_DIR/.env.contract-deployment" << EOF
 # Lucid Contract Deployment Environment
 # Generated: $(date)
 
@@ -307,8 +307,8 @@ VERIFICATION_TIMEOUT=60
 EOF
 
 # Contract Compiler Environment
-log_info "Creating contract-compiler.env..."
-cat > "$ENV_DIR/contract-compiler.env" << EOF
+log_info "Creating .env.contract-compiler..."
+cat > "$ENV_DIR/.env.contract-compiler" << EOF
 # Lucid Contract Compiler Environment
 # Generated: $(date)
 
@@ -336,8 +336,8 @@ OPTIMIZATION_LEVEL=200
 EOF
 
 # On-System Chain Client Environment
-log_info "Creating on-system-chain-client.env..."
-cat > "$ENV_DIR/on-system-chain-client.env" << EOF
+log_info "Creating .env.on-system-chain-client..."
+cat > "$ENV_DIR/.env.on-system-chain-client" << EOF
 # Lucid On-System Chain Client Environment
 # Generated: $(date)
 
@@ -368,8 +368,8 @@ CONFIRMATION_BLOCKS=3
 EOF
 
 # Deployment Orchestrator Environment
-log_info "Creating deployment-orchestrator.env..."
-cat > "$ENV_DIR/deployment-orchestrator.env" << EOF
+log_info "Creating .env.deployment-orchestrator..."
+cat > "$ENV_DIR/.env.deployment-orchestrator" << EOF
 # Lucid Deployment Orchestrator Environment
 # Generated: $(date)
 
@@ -397,17 +397,17 @@ EOF
 
 log_success "Environment files created successfully in $ENV_DIR"
 log_info "Created environment files for:"
-log_info "  - blockchain-api.env"
-log_info "  - blockchain-governance.env"
-log_info "  - blockchain-sessions-data.env"
-log_info "  - blockchain-vm.env"
-log_info "  - blockchain-ledger.env"
-log_info "  - tron-node-client.env"
-log_info "  - contract-deployment.env"
-log_info "  - contract-compiler.env"
-log_info "  - on-system-chain-client.env"
-log_info "  - deployment-orchestrator.env"
+log_info "  - .env.blockchain-api"
+log_info "  - .env.blockchain-governance"
+log_info "  - .env.blockchain-sessions-data"
+log_info "  - .env.blockchain-vm"
+log_info "  - .env.blockchain-ledger"
+log_info "  - .env.tron-node-client"
+log_info "  - .env.contract-deployment"
+log_info "  - .env.contract-compiler"
+log_info "  - .env.on-system-chain-client"
+log_info "  - .env.deployment-orchestrator"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/blockchain-api.env -t pickme/lucid:blockchain-api ."
+log_info "  docker build --env-file $ENV_DIR/.env.blockchain-api -t pickme/lucid:blockchain-api ."
