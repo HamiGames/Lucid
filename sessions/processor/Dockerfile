@@ -39,8 +39,8 @@ WORKDIR /app
 ENV PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 ENV PATH=/root/.local/bin:$PATH
 
-# Create non-root user
-USER 65534:65534
+# Create non-root user (distroless standard)
+USER 65532:65532
 
 # Expose port
 EXPOSE 8085

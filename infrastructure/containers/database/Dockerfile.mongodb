@@ -26,6 +26,12 @@ COPY --from=builder /usr/bin/mongod /usr/bin/mongod
 COPY --from=builder /usr/bin/mongosh /usr/bin/mongosh
 COPY --from=builder /etc/mongod.conf /etc/mongod.conf
 
+# Copy required libraries for MongoDB
+COPY --from=builder /lib/aarch64-linux-gnu/libssl.so.3 /lib/aarch64-linux-gnu/
+COPY --from=builder /lib/aarch64-linux-gnu/libcrypto.so.3 /lib/aarch64-linux-gnu/
+COPY --from=builder /lib/aarch64-linux-gnu/libz.so.1 /lib/aarch64-linux-gnu/
+COPY --from=builder /lib/aarch64-linux-gnu/libsnappy.so.1 /lib/aarch64-linux-gnu/
+
 # Set environment variables
 ENV MONGO_INITDB_ROOT_USERNAME=lucid_admin
 ENV MONGO_INITDB_ROOT_PASSWORD=lucid_secure_password

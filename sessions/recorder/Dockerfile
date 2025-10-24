@@ -9,7 +9,7 @@ ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION=3.11
 
-# Install build dependencies
+# Install minimal build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
@@ -17,20 +17,6 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libssl-dev \
     pkg-config \
-    ffmpeg \
-    libx11-dev \
-    libxext-dev \
-    libxrender-dev \
-    libxtst-dev \
-    libxi-dev \
-    libxrandr-dev \
-    libxss-dev \
-    libxcursor-dev \
-    libxinerama-dev \
-    libxcomposite-dev \
-    libxdamage-dev \
-    libxfixes-dev \
-    pulseaudio \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -73,8 +59,8 @@ WORKDIR /app
 # Create necessary directories
 USER root
 RUN mkdir -p /data/recordings /data/chunks /tmp/sessions && \
-    chown -R 1000:1000 /data /tmp/sessions
-USER 1000
+    chown -R 65532:65532 /data /tmp/sessions
+USER 65532:65532
 
 # Set environment variables
 ENV PYTHONPATH=/app
