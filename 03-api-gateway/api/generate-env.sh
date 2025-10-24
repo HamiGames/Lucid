@@ -28,78 +28,76 @@ GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 log_info "Generating API Gateway environment file: $ENV_FILE"
 
 # =============================================================================
-# GENERATE SECURE VALUES
+# LOAD SECURE VALUES FROM MASTER FILE
 # =============================================================================
-log_info "Generating cryptographically secure values..."
+log_info "Loading secure values from master secure file..."
 
-# Function to generate secure random string
-generate_secure_value() {
-    local length=${1:-32}
-    openssl rand -base64 $length | tr -d '\n'
-}
-
-# Function to generate hex key
-generate_hex_key() {
-    local length=${1:-32}
-    openssl rand -hex $length | tr -d '\n'
-}
-
-# Function to generate .onion address (v3)
-generate_onion_address() {
-    # Generate ed25519 private key
-    local temp_dir=$(mktemp -d)
-    openssl genpkey -algorithm ed25519 -out "$temp_dir/private_key.pem" 2>/dev/null
-    
-    # Extract public key and create .onion address
-    # For v3 onion addresses: first 32 bytes of public key -> base32 -> add .onion
-    local pubkey=$(openssl pkey -in "$temp_dir/private_key.pem" -pubout -outform DER 2>/dev/null | tail -c 32 | base32 | tr -d '=' | tr '[:upper:]' '[:lower:]')
-    
-    # Clean up
-    rm -rf "$temp_dir"
-    
-    # Return .onion address (truncate to 56 chars + .onion)
-    echo "${pubkey:0:56}.onion"
-}
-
-# Generate all required secure values
-MONGODB_PASSWORD=$(generate_secure_value 32)
-REDIS_PASSWORD=$(generate_secure_value 32)
-JWT_SECRET=$(generate_secure_value 64)
-ENCRYPTION_KEY=$(generate_hex_key 32)
-SESSION_SECRET=$(generate_secure_value 32)
-TOR_PASSWORD=$(generate_secure_value 32)
-API_SECRET=$(generate_secure_value 32)
-HMAC_KEY=$(generate_secure_value 32)
-
-log_success "Generated MONGODB_PASSWORD (32 bytes)"
-log_success "Generated REDIS_PASSWORD (32 bytes)"
-log_success "Generated JWT_SECRET (64 bytes)"
-log_success "Generated ENCRYPTION_KEY (256-bit hex)"
-log_success "Generated SESSION_SECRET (32 bytes)"
-log_success "Generated TOR_PASSWORD (32 bytes)"
-log_success "Generated API_SECRET (32 bytes)"
-log_success "Generated HMAC_KEY (32 bytes)"
-
-# Generate .onion addresses for Tor hidden services
-log_info "Generating Tor .onion addresses..."
-API_GATEWAY_ONION=$(generate_onion_address)
-AUTH_SERVICE_ONION=$(generate_onion_address)
-BLOCKCHAIN_API_ONION=$(generate_onion_address)
-
-log_success "Generated API_GATEWAY_ONION: $API_GATEWAY_ONION"
-log_success "Generated AUTH_SERVICE_ONION: $AUTH_SERVICE_ONION"
-log_success "Generated BLOCKCHAIN_API_ONION: $BLOCKCHAIN_API_ONION"
-
-# Load additional values from central config if available (but prefer generated ones)
+# Load from master secure file if available
 SECURE_ENV_FILE="$PROJECT_ROOT/configs/environment/.env.secure"
 if [ -f "$SECURE_ENV_FILE" ]; then
-    log_info "Loading additional values from $SECURE_ENV_FILE"
+    log_info "Loading values from $SECURE_ENV_FILE"
     source "$SECURE_ENV_FILE"
-    # Override with central values if they exist and are not empty
-    MONGODB_PASSWORD="${MONGODB_PASSWORD:-$(generate_secure_value 32)}"
-    REDIS_PASSWORD="${REDIS_PASSWORD:-$(generate_secure_value 32)}"
-    JWT_SECRET="${JWT_SECRET_KEY:-${JWT_SECRET}}"
-    ENCRYPTION_KEY="${ENCRYPTION_KEY:-$(generate_hex_key 32)}"
+    log_success "Loaded secure values from master file"
+else
+    log_warning "Master secure file not found, generating new values..."
+
+    # Function to generate secure random string
+    generate_secure_value() {
+        local length=${1:-32}
+        openssl rand -base64 $length | tr -d '\n'
+    }
+
+    # Function to generate hex key
+    generate_hex_key() {
+        local length=${1:-32}
+        openssl rand -hex $length | tr -d '\n'
+    }
+
+    # Function to generate .onion address (v3)
+    generate_onion_address() {
+        # Generate ed25519 private key
+        local temp_dir=$(mktemp -d)
+        openssl genpkey -algorithm ed25519 -out "$temp_dir/private_key.pem" 2>/dev/null
+        
+        # Extract public key and create .onion address
+        # For v3 onion addresses: first 32 bytes of public key -> base32 -> add .onion
+        local pubkey=$(openssl pkey -in "$temp_dir/private_key.pem" -pubout -outform DER 2>/dev/null | tail -c 32 | base32 | tr -d '=' | tr '[:upper:]' '[:lower:]')
+        
+        # Clean up
+        rm -rf "$temp_dir"
+        
+        # Return .onion address (truncate to 56 chars + .onion)
+        echo "${pubkey:0:56}.onion"
+    }
+
+    # Generate all required secure values
+    MONGODB_PASSWORD=$(generate_secure_value 32)
+    REDIS_PASSWORD=$(generate_secure_value 32)
+    JWT_SECRET=$(generate_secure_value 64)
+    ENCRYPTION_KEY=$(generate_hex_key 32)
+    SESSION_SECRET=$(generate_secure_value 32)
+    TOR_PASSWORD=$(generate_secure_value 32)
+    API_SECRET=$(generate_secure_value 32)
+    HMAC_KEY=$(generate_secure_value 32)
+
+    log_success "Generated MONGODB_PASSWORD (32 bytes)"
+    log_success "Generated REDIS_PASSWORD (32 bytes)"
+    log_success "Generated JWT_SECRET (64 bytes)"
+    log_success "Generated ENCRYPTION_KEY (256-bit hex)"
+    log_success "Generated SESSION_SECRET (32 bytes)"
+    log_success "Generated TOR_PASSWORD (32 bytes)"
+    log_success "Generated API_SECRET (32 bytes)"
+    log_success "Generated HMAC_KEY (32 bytes)"
+
+    # Generate .onion addresses for Tor hidden services
+    log_info "Generating Tor .onion addresses..."
+    API_GATEWAY_ONION=$(generate_onion_address)
+    AUTH_SERVICE_ONION=$(generate_onion_address)
+    BLOCKCHAIN_API_ONION=$(generate_onion_address)
+
+    log_success "Generated API_GATEWAY_ONION: $API_GATEWAY_ONION"
+    log_success "Generated AUTH_SERVICE_ONION: $AUTH_SERVICE_ONION"
+    log_success "Generated BLOCKCHAIN_API_ONION: $BLOCKCHAIN_API_ONION"
 fi
 
 # Load foundation config if available
