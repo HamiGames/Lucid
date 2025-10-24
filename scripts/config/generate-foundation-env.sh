@@ -71,8 +71,8 @@ echo "ELASTICSEARCH_PASSWORD generated: ${ELASTICSEARCH_PASSWORD:0:8}..."
 echo "ENCRYPTION_KEY generated: ${ENCRYPTION_KEY:0:8}..."
 echo "TOR_CONTROL_PASSWORD generated: ${TOR_CONTROL_PASSWORD:0:8}..."
 
-# Create .env.foundation file
-cat > "$ENV_FILE" << 'EOF'
+# Create .env.foundation file with actual values
+cat > "$ENV_FILE" << EOF
 # Phase 1 Foundation Services Configuration
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Target: Raspberry Pi 5 (192.168.0.75)
@@ -111,39 +111,39 @@ MONGODB_HOST=lucid-mongodb
 MONGODB_PORT=27017
 MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
-MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_PASSWORD=$MONGODB_PASSWORD
 MONGODB_AUTH_SOURCE=admin
 MONGODB_RETRY_WRITES=false
-MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+MONGODB_URL=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
 
 # Redis Configuration
 REDIS_HOST=lucid-redis
 REDIS_PORT=6379
-REDIS_PASSWORD=${REDIS_PASSWORD}
-REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+REDIS_PASSWORD=$REDIS_PASSWORD
+REDIS_URL=redis://:$REDIS_PASSWORD@lucid-redis:6379
 
 # Elasticsearch Configuration
 ELASTICSEARCH_HOST=lucid-elasticsearch
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
-ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+ELASTICSEARCH_PASSWORD=$ELASTICSEARCH_PASSWORD
+ELASTICSEARCH_URL=http://elastic:$ELASTICSEARCH_PASSWORD@lucid-elasticsearch:9200
 
 # =============================================================================
 # SECURITY CONFIGURATION
 # =============================================================================
 
 # JWT Configuration
-JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_SECRET_KEY=$JWT_SECRET_KEY
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION=3600
 
 # Encryption Configuration
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ENCRYPTION_KEY=$ENCRYPTION_KEY
 ENCRYPTION_ALGORITHM=AES-256-GCM
 
 # Tor Configuration
-TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}
+TOR_CONTROL_PASSWORD=$TOR_CONTROL_PASSWORD
 TOR_SOCKS_PORT=9050
 TOR_CONTROL_PORT=9051
 
@@ -159,17 +159,17 @@ AUTH_SERVICE_URL=http://lucid-auth-service:8089
 # MongoDB Service
 MONGODB_SERVICE_HOST=lucid-mongodb
 MONGODB_SERVICE_PORT=27017
-MONGODB_SERVICE_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid
+MONGODB_SERVICE_URL=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid
 
 # Redis Service
 REDIS_SERVICE_HOST=lucid-redis
 REDIS_SERVICE_PORT=6379
-REDIS_SERVICE_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+REDIS_SERVICE_URL=redis://:$REDIS_PASSWORD@lucid-redis:6379
 
 # Elasticsearch Service
 ELASTICSEARCH_SERVICE_HOST=lucid-elasticsearch
 ELASTICSEARCH_SERVICE_PORT=9200
-ELASTICSEARCH_SERVICE_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+ELASTICSEARCH_SERVICE_URL=http://elastic:$ELASTICSEARCH_PASSWORD@lucid-elasticsearch:9200
 
 # =============================================================================
 # DISTROLESS RUNTIME CONFIGURATION
@@ -205,9 +205,9 @@ HEALTH_CHECK_TIMEOUT=10s
 HEALTH_CHECK_RETRIES=3
 
 # Service Health Endpoints
-MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-REDIS_HEALTH_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
-ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200/_cluster/health
+MONGODB_HEALTH_URL=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+REDIS_HEALTH_URL=redis://:$REDIS_PASSWORD@lucid-redis:6379
+ELASTICSEARCH_HEALTH_URL=http://elastic:$ELASTICSEARCH_PASSWORD@lucid-elasticsearch:9200/_cluster/health
 AUTH_SERVICE_HEALTH_URL=http://lucid-auth-service:8089/health
 
 # =============================================================================

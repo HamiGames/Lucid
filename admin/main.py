@@ -23,9 +23,9 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
+# Distroless-safe path resolution
+project_root = os.getenv('LUCID_PROJECT_ROOT', str(Path(__file__).parent.parent))
+sys.path.append(project_root)
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware

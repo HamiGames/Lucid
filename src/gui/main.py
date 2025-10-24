@@ -103,31 +103,24 @@ class PlatformDetector:
         }
         
         try:
-            # Check for display environment variables
+            # Check for display environment variables (distroless-safe)
             if os.getenv('DISPLAY'):
                 info['display_type'] = 'X11'
             elif os.getenv('WAYLAND_DISPLAY'):
                 info['display_type'] = 'Wayland'
             
-            # Try to get display resolution
-            if platform.system() == 'Windows':
-                import win32api
-                info['resolution'] = f"{win32api.GetSystemMetrics(0)}x{win32api.GetSystemMetrics(1)}"
-            elif platform.system() == 'Linux':
-                try:
-                    result = subprocess.run(['xrandr'], capture_output=True, text=True, timeout=5)
-                    if result.returncode == 0:
-                        lines = result.stdout.split('\n')
-                        for line in lines:
-                            if '*' in line:
-                                parts = line.split()
-                                for part in parts:
-                                    if 'x' in part and '+' in part:
-                                        info['resolution'] = part.split('+')[0]
-                                        break
-                                break
-                except (subprocess.TimeoutExpired, FileNotFoundError):
-                    pass
+            # Get resolution from environment variables (distroless-safe)
+            resolution = os.getenv('LUCID_DISPLAY_RESOLUTION')
+            if resolution:
+                info['resolution'] = resolution
+            else:
+                # Fallback to default resolution for distroless environments
+                info['resolution'] = os.getenv('DISPLAY_RESOLUTION', '1920x1080')
+            
+            # Check if running in distroless container
+            if os.getenv('DISTROLESS_CONTAINER'):
+                info['display_type'] = 'distroless'
+                info['has_display'] = False  # No display in distroless
             
         except Exception as e:
             logging.warning(f"Could not detect display info: {e}")
@@ -137,6 +130,22 @@ class PlatformDetector:
     @staticmethod
     def get_system_resources() -> Dict[str, Any]:
         """Get system resource information."""
+        # Default values for distroless environments
+        default_resources = {
+            'cpu_count': int(os.getenv('LUCID_CPU_COUNT', '1')),
+            'cpu_percent': float(os.getenv('LUCID_CPU_PERCENT', '0')),
+            'memory_total': int(os.getenv('LUCID_MEMORY_TOTAL', '0')),
+            'memory_available': int(os.getenv('LUCID_MEMORY_AVAILABLE', '0')),
+            'memory_percent': float(os.getenv('LUCID_MEMORY_PERCENT', '0')),
+            'disk_total': int(os.getenv('LUCID_DISK_TOTAL', '0')),
+            'disk_free': int(os.getenv('LUCID_DISK_FREE', '0')),
+            'disk_percent': float(os.getenv('LUCID_DISK_PERCENT', '0'))
+        }
+        
+        # Check if running in distroless container
+        if os.getenv('DISTROLESS_CONTAINER'):
+            return default_resources
+        
         try:
             import psutil
             
@@ -151,16 +160,7 @@ class PlatformDetector:
                 'disk_percent': psutil.disk_usage('/').percent
             }
         except ImportError:
-            return {
-                'cpu_count': 1,
-                'cpu_percent': 0,
-                'memory_total': 0,
-                'memory_available': 0,
-                'memory_percent': 0,
-                'disk_total': 0,
-                'disk_free': 0,
-                'disk_percent': 0
-            }
+            return default_resources
 
 
 class ServiceMonitor:

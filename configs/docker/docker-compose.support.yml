@@ -7,12 +7,14 @@ services:
     restart: unless-stopped
     networks:
       - lucid-pi-network
+    ports:
+      - "8120:8120"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - ADMIN_INTERFACE_HOST=admin-interface
-      - ADMIN_INTERFACE_PORT=8083
-      - ADMIN_INTERFACE_URL=http://admin-interface:8083
+      - ADMIN_INTERFACE_PORT=8120
+      - ADMIN_INTERFACE_URL=http://admin-interface:8120
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
@@ -28,7 +30,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -19,9 +19,9 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-# Add project root to Python path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+# Distroless-safe path resolution
+project_root = os.getenv('LUCID_PROJECT_ROOT', str(Path(__file__).parent.parent.parent.parent))
+sys.path.insert(0, project_root)
 
 # Removed app.config import - using local config module
 from .config import config, get_service_config, get_api_endpoints, validate_config
