@@ -46,7 +46,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python3", "-c", "import requests; requests.get('http://localhost:8080/health', timeout=5)"]
+    CMD ["/usr/bin/python3", "-c", "import requests; requests.get('http://localhost:8080/health', timeout=5)"]
 
 # Run the application
-CMD ["python3", "-m", "api"]
+CMD ["/usr/bin/python3", "-m", "api"]

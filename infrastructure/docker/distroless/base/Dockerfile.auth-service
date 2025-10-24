@@ -43,6 +43,10 @@ RUN pip install --upgrade pip setuptools wheel && \
 COPY . /app/
 WORKDIR /app
 
+# Create necessary directories in builder stage
+RUN mkdir -p /app/logs /app/cache /tmp && \
+    chmod -R 755 /app
+
 # Build the application
 RUN python -m compileall -b .
 
@@ -76,12 +80,6 @@ COPY --from=builder --chown=65532:65532 /app /app
 
 # Create application directory
 WORKDIR /app
-
-# Create necessary directories
-RUN mkdir -p /app/logs /app/cache /tmp
-
-# Set permissions
-RUN chmod -R 755 /app
 
 # Set user to nonroot for security
 USER 65532:65532

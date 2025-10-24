@@ -52,7 +52,7 @@ services:
 
   # MongoDB Database
   lucid-mongodb:
-    image: mongo:7.0
+    image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid-mongodb
     restart: unless-stopped
     ports:
@@ -80,7 +80,7 @@ services:
 
   # Redis Cache
   lucid-redis:
-    image: redis:7-alpine
+    image: pickme/lucid-redis:latest-arm64
     container_name: lucid-redis
     restart: unless-stopped
     ports:
@@ -102,7 +102,7 @@ services:
 
   # Elasticsearch Search Engine
   lucid-elasticsearch:
-    image: elasticsearch:8.11.0
+    image: pickme/lucid-elasticsearch:latest-arm64
     container_name: lucid-elasticsearch
     restart: unless-stopped
     ports:
@@ -173,6 +173,114 @@ services:
   # ===========================================
   # PHASE 2: CORE SERVICES
   # ===========================================
+
+  # Session Anchoring Service
+  session-anchoring:
+    image: pickme/lucid-session-anchoring:latest-arm64
+    container_name: lucid-session-anchoring
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - SERVICE_NAME=lucid-session-anchoring
+      - PORT=8090
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=core"
+      - "com.lucid.service=session-anchoring"
+      - "com.lucid.cluster=02-blockchain-core"
+
+  # Block Manager Service
+  block-manager:
+    image: pickme/lucid-block-manager:latest-arm64
+    container_name: lucid-block-manager
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    environment:
+      - SERVICE_NAME=lucid-block-manager
+      - PORT=8091
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=core"
+      - "com.lucid.service=block-manager"
+      - "com.lucid.cluster=02-blockchain-core"
+
+  # Data Chain Service
+  data-chain:
+    image: pickme/lucid-data-chain:latest-arm64
+    container_name: lucid-data-chain
+    restart: unless-stopped
+    ports:
+      - "8092:8092"
+    environment:
+      - SERVICE_NAME=lucid-data-chain
+      - PORT=8092
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=core"
+      - "com.lucid.service=data-chain"
+      - "com.lucid.cluster=02-blockchain-core"
 
   # API Gateway
   api-gateway:
@@ -297,6 +405,294 @@ services:
   # PHASE 3: APPLICATION SERVICES
   # ===========================================
 
+  # Session Recorder Service
+  session-recorder:
+    image: pickme/lucid-session-recorder:latest-arm64
+    container_name: lucid-session-recorder
+    restart: unless-stopped
+    ports:
+      - "8093:8093"
+    environment:
+      - SERVICE_NAME=lucid-session-recorder
+      - PORT=8093
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/session-recorder:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-recorder:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=session-recorder"
+      - "com.lucid.cluster=03-session-management"
+
+  # Chunk Processor Service
+  chunk-processor:
+    image: pickme/lucid-chunk-processor:latest-arm64
+    container_name: lucid-chunk-processor
+    restart: unless-stopped
+    ports:
+      - "8094:8094"
+    environment:
+      - SERVICE_NAME=lucid-chunk-processor
+      - PORT=8094
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/chunk-processor:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/chunk-processor:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8094/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=chunk-processor"
+      - "com.lucid.cluster=03-session-management"
+
+  # Session Storage Service
+  session-storage:
+    image: pickme/lucid-session-storage:latest-arm64
+    container_name: lucid-session-storage
+    restart: unless-stopped
+    ports:
+      - "8095:8095"
+    environment:
+      - SERVICE_NAME=lucid-session-storage
+      - PORT=8095
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-storage:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=session-storage"
+      - "com.lucid.cluster=03-session-management"
+
+  # Session API Service
+  session-api:
+    image: pickme/lucid-session-api:latest-arm64
+    container_name: lucid-session-api
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    environment:
+      - SERVICE_NAME=lucid-session-api
+      - PORT=8096
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/session-api:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=session-api"
+      - "com.lucid.cluster=03-session-management"
+
+  # RDP Server Manager Service
+  rdp-server-manager:
+    image: pickme/lucid-rdp-server-manager:latest-arm64
+    container_name: lucid-rdp-server-manager
+    restart: unless-stopped
+    ports:
+      - "8097:8097"
+    environment:
+      - SERVICE_NAME=lucid-rdp-server-manager
+      - PORT=8097
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=rdp-server-manager"
+      - "com.lucid.cluster=04-rdp-services"
+
+  # RDP XRDP Service
+  rdp-xrdp:
+    image: pickme/lucid-rdp-xrdp:latest-arm64
+    container_name: lucid-rdp-xrdp
+    restart: unless-stopped
+    ports:
+      - "8098:8098"
+    environment:
+      - SERVICE_NAME=lucid-rdp-xrdp
+      - PORT=8098
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=rdp-xrdp"
+      - "com.lucid.cluster=04-rdp-services"
+
+  # RDP Controller Service
+  rdp-controller:
+    image: pickme/lucid-rdp-controller:latest-arm64
+    container_name: lucid-rdp-controller
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    environment:
+      - SERVICE_NAME=lucid-rdp-controller
+      - PORT=8099
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp-controller:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=rdp-controller"
+      - "com.lucid.cluster=04-rdp-services"
+
+  # RDP Monitor Service
+  rdp-monitor:
+    image: pickme/lucid-rdp-monitor:latest-arm64
+    container_name: lucid-rdp-monitor
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    environment:
+      - SERVICE_NAME=lucid-rdp-monitor
+      - PORT=8100
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-monitor:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp-monitor:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=application"
+      - "com.lucid.service=rdp-monitor"
+      - "com.lucid.cluster=04-rdp-services"
+
   # Session Management Services
   session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64
@@ -418,6 +814,186 @@ services:
       - "com.lucid.service=admin-interface"
       - "com.lucid.cluster=06-admin-interface"
 
+  # Payout Router Service
+  payout-router:
+    image: pickme/lucid-payout-router:latest-arm64
+    container_name: lucid-payout-router
+    restart: unless-stopped
+    ports:
+      - "8101:8101"
+    environment:
+      - SERVICE_NAME=lucid-payout-router
+      - PORT=8101
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/payout-router:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/payout-router:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8101/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=payout-router"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # Wallet Manager Service
+  wallet-manager:
+    image: pickme/lucid-wallet-manager:latest-arm64
+    container_name: lucid-wallet-manager
+    restart: unless-stopped
+    ports:
+      - "8102:8102"
+    environment:
+      - SERVICE_NAME=lucid-wallet-manager
+      - PORT=8102
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/wallet-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/wallet-manager:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8102/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=wallet-manager"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # USDT Manager Service
+  usdt-manager:
+    image: pickme/lucid-usdt-manager:latest-arm64
+    container_name: lucid-usdt-manager
+    restart: unless-stopped
+    ports:
+      - "8103:8103"
+    environment:
+      - SERVICE_NAME=lucid-usdt-manager
+      - PORT=8103
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/usdt-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/usdt-manager:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8103/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=usdt-manager"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # TRX Staking Service
+  trx-staking:
+    image: pickme/lucid-trx-staking:latest-arm64
+    container_name: lucid-trx-staking
+    restart: unless-stopped
+    ports:
+      - "8104:8104"
+    environment:
+      - SERVICE_NAME=lucid-trx-staking
+      - PORT=8104
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/trx-staking:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/trx-staking:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8104/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=trx-staking"
+      - "com.lucid.cluster=07-tron-payment"
+
+  # Payment Gateway Service
+  payment-gateway:
+    image: pickme/lucid-payment-gateway:latest-arm64
+    container_name: lucid-payment-gateway
+    restart: unless-stopped
+    ports:
+      - "8105:8105"
+    environment:
+      - SERVICE_NAME=lucid-payment-gateway
+      - PORT=8105
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/payment-gateway:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/payment-gateway:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8105/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=support"
+      - "com.lucid.service=payment-gateway"
+      - "com.lucid.cluster=07-tron-payment"
+
   # TRON Payment Services (Isolated Network)
   tron-client:
     image: pickme/lucid-tron-client:latest-arm64
@@ -450,6 +1026,190 @@ services:
       - "com.lucid.phase=support"
       - "com.lucid.service=tron-client"
       - "com.lucid.cluster=07-tron-payment"
+
+  # ===========================================
+  # PHASE 6: SPECIALIZED SERVICES
+  # ===========================================
+
+  # GUI Service
+  gui:
+    image: pickme/lucid-gui:latest-arm64
+    container_name: lucid-gui
+    restart: unless-stopped
+    ports:
+      - "8106:8106"
+    environment:
+      - SERVICE_NAME=lucid-gui
+      - PORT=8106
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/gui:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/gui:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8106/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=specialized"
+      - "com.lucid.service=gui"
+      - "com.lucid.cluster=11-gui-services"
+
+  # RDP Service
+  rdp:
+    image: pickme/lucid-rdp:latest-arm64
+    container_name: lucid-rdp
+    restart: unless-stopped
+    ports:
+      - "8107:8107"
+    environment:
+      - SERVICE_NAME=lucid-rdp
+      - PORT=8107
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/rdp:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8107/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=specialized"
+      - "com.lucid.service=rdp"
+      - "com.lucid.cluster=12-rdp-services"
+
+  # VM Service
+  vm:
+    image: pickme/lucid-vm:latest-arm64
+    container_name: lucid-vm
+    restart: unless-stopped
+    ports:
+      - "8108:8108"
+    environment:
+      - SERVICE_NAME=lucid-vm
+      - PORT=8108
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/vm:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/vm:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8108/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=specialized"
+      - "com.lucid.service=vm"
+      - "com.lucid.cluster=13-vm-services"
+
+  # Database Service
+  database:
+    image: pickme/lucid-database:latest-arm64
+    container_name: lucid-database
+    restart: unless-stopped
+    ports:
+      - "8109:8109"
+    environment:
+      - SERVICE_NAME=lucid-database
+      - PORT=8109
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/database:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/database:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8109/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=specialized"
+      - "com.lucid.service=database"
+      - "com.lucid.cluster=14-database-services"
+
+  # Storage Service
+  storage:
+    image: pickme/lucid-storage:latest-arm64
+    container_name: lucid-storage
+    restart: unless-stopped
+    ports:
+      - "8110:8110"
+    environment:
+      - SERVICE_NAME=lucid-storage
+      - PORT=8110
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/storage:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/storage:/app/data
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8110/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.phase=specialized"
+      - "com.lucid.service=storage"
+      - "com.lucid.cluster=15-storage-services"
 
 # ===========================================
 # NETWORKS

@@ -32,8 +32,8 @@ on:
         - hybrid
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: pickme
+  IMAGE_NAME: lucid
   TEST_ENV: ${{ github.event.inputs.test_environment || 'docker' }}
 
 jobs:

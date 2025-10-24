@@ -8,20 +8,17 @@ FROM redis:7.2-alpine as builder
 RUN apk add --no-cache gcc musl-dev
 
 # Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/base-debian12:arm64
+FROM gcr.io/distroless/base-debian12
 
 # Copy Redis binaries from builder
 COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/
 COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/
 
 # Create necessary directories
-RUN mkdir -p /data /var/log/redis
+WORKDIR /data
 
 # Copy configuration
 COPY redis.conf /usr/local/etc/redis.conf
-
-# Set working directory
-WORKDIR /data
 
 # Expose port
 EXPOSE 6379

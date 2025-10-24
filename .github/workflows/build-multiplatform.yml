@@ -30,8 +30,8 @@ on:
         type: boolean
 
 env:
-  REGISTRY: ghcr.io
-  REPOSITORY: hamigames/lucid
+  REGISTRY: pickme
+  REPOSITORY: lucid
   BUILDER_NAME: lucid-multiplatform
 
 jobs:

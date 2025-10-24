@@ -3,7 +3,7 @@
 # Purpose: Distroless container build for Lucid Blockchain Engine
 # Build Host: Windows 11 console
 # Target Host: Raspberry Pi (via SSH)
-# Phase 2: Blockchain Core Cluster - Engine Service
+# Phase 3: Proper distroless implementation
 
 FROM python:3.11-slim as builder
 
@@ -35,24 +35,21 @@ COPY api/ ./api/
 COPY utils/ ./utils/
 COPY config/ ./config/
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash app
-
 # Production stage - Distroless
 FROM gcr.io/distroless/python3-debian12
 
-# Set labels for Phase 2 compliance
+# Set labels for Phase 3 compliance
 LABEL maintainer="Lucid Development Team"
-LABEL description="Lucid Blockchain Engine - Phase 2 Distroless Container"
+LABEL description="Lucid Blockchain Engine - Phase 3 Distroless Container"
 LABEL version="1.0.0"
 LABEL build_date="${BUILD_DATE}"
 LABEL git_commit="${GIT_COMMIT}"
-LABEL phase="2"
+LABEL phase="3"
 LABEL cluster="02-blockchain-core"
 LABEL service="blockchain-engine"
 
-# Copy Python packages from builder
-COPY --from=builder /root/.local /home/app/.local
+# Copy Python packages from builder to distroless location
+COPY --from=builder /root/.local /usr/local
 
 # Copy application code
 COPY --from=builder /app/core /app/core
@@ -65,22 +62,22 @@ WORKDIR /app
 
 # Set Python path and environment
 ENV PYTHONPATH=/app
-ENV PATH=/home/app/.local/bin:$PATH
+ENV PATH=/usr/local/bin:$PATH
 ENV SERVICE_NAME=blockchain-engine
 ENV PORT=8084
 ENV LOG_LEVEL=INFO
 ENV BLOCKCHAIN_NETWORK=lucid_blocks
 ENV CONSENSUS_ALGORITHM=PoOT
 
-# Create app user (distroless has no useradd, using nonroot user)
+# Use nonroot user (distroless default)
 USER 65532:65532
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health')"]
+    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health')"]
 
 # Expose ports
 EXPOSE 8084
 
 # Start application
-CMD ["python", "-m", "api.app.main"]
+CMD ["/usr/bin/python3", "-m", "api.app.main"]

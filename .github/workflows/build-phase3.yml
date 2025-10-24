@@ -39,8 +39,8 @@ on:
         type: boolean
 
 env:
-  REGISTRY: ghcr.io
-  REPOSITORY: hamigames/lucid
+  REGISTRY: pickme
+  REPOSITORY: lucid
   PHASE: phase3
 
 jobs:

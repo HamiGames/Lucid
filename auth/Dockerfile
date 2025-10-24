@@ -98,7 +98,7 @@ EXPOSE 8089
 # - Redis connectivity
 # - Hardware wallet availability (if enabled)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read()"]
+    CMD ["python", "-c", "import requests; requests.get('http://localhost:8089/health')"]
 
 # Run the authentication service
 ENTRYPOINT ["python", "main.py"]

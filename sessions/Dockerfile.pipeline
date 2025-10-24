@@ -23,15 +23,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY sessions/pipeline/requirements.txt ./requirements.txt
+COPY pipeline/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy source code
-COPY sessions/pipeline/ ./pipeline/
-COPY sessions/core/ ./core/
-COPY sessions/__init__.py ./__init__.py
+COPY pipeline/ ./pipeline/
+COPY core/ ./core/
+COPY __init__.py ./__init__.py
 
 # Stage 2: Runtime (Distroless)
 FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12

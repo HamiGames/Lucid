@@ -35,8 +35,8 @@ on:
         type: boolean
 
 env:
-  REGISTRY: ghcr.io
-  REPOSITORY: hamigames/lucid
+  REGISTRY: pickme
+  REPOSITORY: lucid
   PHASE: phase1
 
 jobs:
@@ -122,9 +122,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/auth-service:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/auth-service:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/auth-service:${{ env.PHASE }}-${{ github.sha }}
+            pickme/lucid-auth-service:latest-arm64
+            pickme/lucid-auth-service:${{ github.sha }}
+            pickme/lucid-auth-service:${{ env.PHASE }}-${{ github.sha }}
           cache-from: type=gha,scope=auth-service-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=auth-service-${{ matrix.platform }}
 
@@ -151,9 +151,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/storage-database:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/storage-database:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/storage-database:${{ env.PHASE }}-${{ github.sha }}
+            pickme/lucid-storage:latest-arm64
+            pickme/lucid-storage:${{ github.sha }}
+            pickme/lucid-storage:${{ env.PHASE }}-${{ github.sha }}
           cache-from: type=gha,scope=storage-database-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=storage-database-${{ matrix.platform }}
 
@@ -176,9 +176,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/mongodb:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/mongodb:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/mongodb:${{ env.PHASE }}-${{ github.sha }}
+            pickme/lucid-mongodb:latest-arm64
+            pickme/lucid-mongodb:${{ github.sha }}
+            pickme/lucid-mongodb:${{ env.PHASE }}-${{ github.sha }}
           cache-from: type=gha,scope=mongodb-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=mongodb-${{ matrix.platform }}
 
@@ -201,9 +201,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/redis:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/redis:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/redis:${{ env.PHASE }}-${{ github.sha }}
+            pickme/lucid-redis:latest-arm64
+            pickme/lucid-redis:${{ github.sha }}
+            pickme/lucid-redis:${{ env.PHASE }}-${{ github.sha }}
           cache-from: type=gha,scope=redis-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=redis-${{ matrix.platform }}
 
@@ -226,9 +226,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/elasticsearch:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/elasticsearch:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/elasticsearch:${{ env.PHASE }}-${{ github.sha }}
+            pickme/lucid-elasticsearch:latest-arm64
+            pickme/lucid-elasticsearch:${{ github.sha }}
+            pickme/lucid-elasticsearch:${{ env.PHASE }}-${{ github.sha }}
           cache-from: type=gha,scope=elasticsearch-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=elasticsearch-${{ matrix.platform }}
 

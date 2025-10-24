@@ -41,8 +41,8 @@ on:
         - pi-development
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: pickme
+  IMAGE_NAME: lucid
   PI_HOST: ${{ github.event.inputs.pi_host || 'pickme@192.168.0.75' }}
   DEPLOYMENT_TYPE: ${{ github.event.inputs.deployment_type || 'staging' }}
   STAGING_ENVIRONMENT: ${{ github.event.inputs.staging_environment || 'pi-staging' }}

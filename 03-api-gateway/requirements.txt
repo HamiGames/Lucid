@@ -1,6 +1,7 @@
 # Python Dependencies for Lucid API Gateway
 # File: 03-api-gateway/requirements.txt
 # Purpose: Package dependencies for distroless container build
+# Phase 3: Optimized for production deployment
 
 # FastAPI Framework
 fastapi==0.109.0
@@ -39,15 +40,4 @@ python-json-logger==2.0.7
 # Utilities
 python-dotenv==1.0.0
 typing-extensions==4.9.0
-
-# Testing (optional, but useful)
-pytest==7.4.4
-pytest-asyncio==0.23.3
-pytest-cov==4.1.0
-httpx==0.26.0
-
-# Development Tools (optional)
-black==24.1.1
-flake8==7.0.0
-mypy==1.8.0
 

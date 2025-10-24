@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY admin/requirements.txt ./
+COPY requirements.txt ./
 
 # Create virtual environment
 RUN python -m venv /opt/venv
@@ -60,7 +60,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
-COPY admin/ ./
+COPY . ./
 
 # Create necessary directories for runtime
 RUN mkdir -p /app/logs /app/tmp /app/data /app/config && \
@@ -112,7 +112,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Health check (HTTP-based, no shell required)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8083/admin/health').read()"]
+    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8083/admin/health').read()"]
 
 # Expose service port
 EXPOSE 8083
@@ -121,4 +121,4 @@ EXPOSE 8083
 USER 65532:65532
 
 # Default command
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]
+CMD ["/usr/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]

@@ -18,8 +18,8 @@ on:
         - linux/amd64,linux/arm64
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: pickme
+  IMAGE_NAME: lucid
 
 jobs:
   detect-changes:

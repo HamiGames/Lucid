@@ -23,15 +23,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY sessions/storage/requirements.txt ./requirements.txt
+COPY storage/requirements.txt ./requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy source code
-COPY sessions/storage/ ./storage/
-COPY sessions/core/ ./core/
-COPY sessions/__init__.py ./__init__.py
+COPY storage/ ./storage/
+COPY core/ ./core/
+COPY __init__.py ./__init__.py
 
 # Stage 2: Runtime (Distroless)
 FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
@@ -51,8 +51,8 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-session-storage
-ENV PORT=8089
-ENV LUCID_STORAGE_PORT=8089
+ENV PORT=8086
+ENV LUCID_STORAGE_PORT=8086
 ENV LUCID_STORAGE_HOST=0.0.0.0
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
@@ -60,10 +60,10 @@ ENV DEBUG=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')"]
 
 # Expose port
-EXPOSE 8089
+EXPOSE 8086
 
 # Set entrypoint
 ENTRYPOINT ["python", "-m", "storage.main"]

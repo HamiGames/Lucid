@@ -37,8 +37,8 @@ on:
         type: boolean
 
 env:
-  REGISTRY: ghcr.io
-  REPOSITORY: hamigames/lucid
+  REGISTRY: pickme
+  REPOSITORY: lucid
   PHASE: phase2
 
 jobs:
@@ -127,9 +127,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/api-gateway:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/api-gateway:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/api-gateway:${{ env.PHASE }}-${{ github.sha }}
+            pickme/lucid-api-gateway:latest-arm64
+            pickme/lucid-api-gateway:${{ github.sha }}
+            pickme/lucid-api-gateway:${{ env.PHASE }}-${{ github.sha }}
           cache-from: type=gha,scope=api-gateway-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=api-gateway-${{ matrix.platform }}
 

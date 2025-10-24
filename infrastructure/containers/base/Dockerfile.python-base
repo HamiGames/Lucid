@@ -1,95 +1,38 @@
-# Lucid Python Base Distroless Image
-# Ultra-minimal distroless base image for Lucid services
-# Optimized for size and security
+# True Distroless Python Base - Minimal and Secure
+FROM python:3.11-slim as builder
 
-# syntax=docker/dockerfile:1.7
-FROM python:3.11-slim-bookworm AS python-builder
-
-# Set build environment
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
-
-# Install minimal build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+# Install only essential build tools
+RUN apt-get update && apt-get install -y \
     gcc \
-    libffi-dev \
-    libssl-dev \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && rm -rf /var/lib/apt/lists/*
 
-# Install only the most essential Python packages
-RUN pip install --no-cache-dir \
-    requests \
-    cryptography \
-    fastapi \
-    uvicorn \
-    pydantic \
-    motor \
-    redis \
-    psutil \
-    python-dotenv \
-    pyyaml \
-    structlog \
-    bcrypt \
-    python-jose[cryptography] \
-    passlib[bcrypt] \
-    dnspython \
-    python-multipart \
-    python-dateutil \
-    orjson
+# Copy minimal requirements
+COPY requirements-minimal.txt /tmp/requirements.txt
 
-# Stage 2: Distroless runtime (ARM64 optimized for Pi deployment)
-FROM gcr.io/distroless/python3-debian12:latest
+# Install only essential packages
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Metadata for runtime container
-LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless-arm64" \
-      description="Python base distroless runtime for Lucid services (ARM64 Pi optimized)" \
-      org.lucid.plane="infrastructure" \
-      org.lucid.service="python-base" \
-      org.lucid.stage="runtime" \
-      org.lucid.target="raspberry-pi"
+# Runtime stage - True Distroless
+FROM gcr.io/distroless/python3-debian12
 
-# Set runtime environment
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+# Copy only essential Python packages (minimal approach)
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-# Copy Python packages from builder
-COPY --from=python-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=python-builder /usr/local/bin /usr/local/bin
+# Copy only essential binaries
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy essential system libraries
-COPY --from=python-builder /lib/*-linux-*/libc.so.6 /lib/
-COPY --from=python-builder /lib/*-linux-*/libssl.so.3 /lib/
-COPY --from=python-builder /lib/*-linux-*/libcrypto.so.3 /lib/
-COPY --from=python-builder /lib/*-linux-*/libz.so.1 /lib/
-COPY --from=python-builder /lib/*-linux-*/libffi.so.8 /lib/
-COPY --from=python-builder /lib*/ld-linux-*.so.2 /lib64/
-
-# Copy CA certificates
-COPY --from=python-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Create application directory
+# Set working directory
 WORKDIR /app
 
 # Set user to nonroot for security
-USER nonroot:nonroot
+USER 65532:65532
 
-# Expose common ports for Lucid services
-EXPOSE 8000 8080 8443
+# Expose port
+EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import sys; sys.exit(0)"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["python3", "-c", "import sys; sys.exit(0)"]
 
 # Default command
-CMD ["-c", "print('Lucid Python Base Distroless Container Ready')"]
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

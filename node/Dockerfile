@@ -21,13 +21,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # Copy only requirements first for better caching
-COPY node/requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies to user directory
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy only node source code
-COPY node/ .
+COPY . .
 
 # Stage 2: Distroless runtime - minimal and fast
 FROM gcr.io/distroless/python3-debian12:nonroot

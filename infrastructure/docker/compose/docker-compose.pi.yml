@@ -360,7 +360,7 @@ services:
 
   # API Gateway (Pi Optimized)
   lucid-api-pi:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api:${LUCID_TAG:-latest}
+    image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid-api-pi
     restart: unless-stopped
     platform: linux/arm64
@@ -406,7 +406,7 @@ services:
 
   # Session Management Service (Pi Optimized)
   lucid-sessions-pi:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/sessions:${LUCID_TAG:-latest}
+    image: pickme/lucid-session-pipeline:latest-arm64
     container_name: lucid-sessions-pi
     restart: unless-stopped
     platform: linux/arm64
@@ -446,7 +446,7 @@ services:
 
   # Storage Service (Pi Optimized)
   lucid-storage-pi:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage:${LUCID_TAG:-latest}
+    image: pickme/lucid-storage:latest-arm64
     container_name: lucid-storage-pi
     restart: unless-stopped
     platform: linux/arm64

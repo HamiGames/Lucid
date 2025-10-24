@@ -35,8 +35,8 @@ on:
       - '.github/workflows/deploy-production.yml'
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: pickme
+  IMAGE_NAME: lucid
 
 jobs:
   pre-deployment-checks:
