@@ -355,10 +355,13 @@ fix_phase_configs() {
     # Fix foundation config
     if [[ -f "$config_dir/.env.foundation" ]]; then
         log_info "Fixing .env.foundation..."
+        # Fix all circular references
         sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/.env.foundation"
         sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/.env.foundation"
         sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/.env.foundation"
         sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/.env.foundation"
+        # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/.env.foundation"
     fi
     
     # Fix application config
@@ -371,6 +374,8 @@ fix_phase_configs() {
         sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/env.application"
         sed -i "s|SERVICE_MESH_URL=\${SERVICE_MESH_URL}|SERVICE_MESH_URL=${SERVICE_MESH_URL}|g" "$config_dir/env.application"
         sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.application"
+        # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.application"
     fi
     
     # Fix core config
@@ -381,6 +386,8 @@ fix_phase_configs() {
         sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/env.core"
         sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.core"
         sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/env.core"
+        # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.core"
     fi
     
     # Fix support config
@@ -394,6 +401,8 @@ fix_phase_configs() {
         sed -i "s|TRON_ADDRESS=\${TRON_ADDRESS}|TRON_ADDRESS=${TRON_ADDRESS}|g" "$config_dir/env.support"
         sed -i "s|USDT_CONTRACT_ADDRESS=\${USDT_CONTRACT_ADDRESS}|USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}|g" "$config_dir/env.support"
         sed -i "s|USDT_DECIMALS=\${USDT_DECIMALS}|USDT_DECIMALS=${USDT_DECIMALS}|g" "$config_dir/env.support"
+        # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.support"
     fi
     
     # Fix GUI config
@@ -406,6 +415,8 @@ fix_phase_configs() {
         sed -i "s|NODE_MANAGEMENT_URL=\${NODE_MANAGEMENT_URL}|NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}|g" "$config_dir/env.gui"
         sed -i "s|ADMIN_INTERFACE_URL=\${ADMIN_INTERFACE_URL}|ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}|g" "$config_dir/env.gui"
         sed -i "s|TRON_PAYMENT_URL=\${TRON_PAYMENT_URL}|TRON_PAYMENT_URL=${TRON_PAYMENT_URL}|g" "$config_dir/env.gui"
+        # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.gui"
     fi
     
     log_success "Phase configuration files fixed"
