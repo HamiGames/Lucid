@@ -79,8 +79,8 @@ COPY --from=builder /opt/venv /opt/venv
 # Create application directory
 WORKDIR /app
 
-# Set user to nonroot for security
-USER nonroot:nonroot
+# Set user to distroless standard (65532:65532) for security
+USER 65532:65532
 
 # Expose ports commonly used by Lucid services
 EXPOSE 8000 8080 8443 9000

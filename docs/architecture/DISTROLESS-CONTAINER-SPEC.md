@@ -289,7 +289,7 @@ services:
   blockchain-core:
     build:
       context: ./src/blockchain-core
-      dockerfile: Dockerfile.distroless
+      dockerfile: Dockerfile
       target: production
     
     image: gcr.io/lucid/blockchain-core:latest
@@ -454,7 +454,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: ./src/${{ matrix.service }}
-        file: ./src/${{ matrix.service }}/Dockerfile.distroless
+        file: ./src/${{ matrix.service }}/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
         tags: |
@@ -511,7 +511,7 @@ echo "Building distroless image for $SERVICE_NAME..."
 # Build multi-architecture image
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  --file ./src/$SERVICE_NAME/Dockerfile.distroless \
+  --file ./src/$SERVICE_NAME/Dockerfile \
   --tag ghcr.io/lucid/$SERVICE_NAME:$IMAGE_TAG \
   --tag ghcr.io/lucid/$SERVICE_NAME:latest \
   --push \

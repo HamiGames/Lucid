@@ -45,7 +45,7 @@ lucid-mongodb:
 lucid-mongodb:
   build:
     context: ./database/mongodb
-    dockerfile: Dockerfile.distroless
+    dockerfile: Dockerfile
   image: pickme/lucid-mongodb:latest-arm64
   platform: linux/arm64
   # ... rest of configuration
@@ -53,7 +53,7 @@ lucid-mongodb:
 
 **Required Dockerfile Structure:**
 ```dockerfile
-# database/mongodb/Dockerfile.distroless
+# database/mongodb/Dockerfile
 FROM python:3.11-slim AS builder
 WORKDIR /build
 COPY requirements.txt .
@@ -82,7 +82,7 @@ lucid-redis:
 lucid-redis:
   build:
     context: ./database/redis
-    dockerfile: Dockerfile.distroless
+    dockerfile: Dockerfile
   image: pickme/lucid-redis:latest-arm64
   platform: linux/arm64
   # ... rest of configuration
@@ -103,7 +103,7 @@ lucid-elasticsearch:
 lucid-elasticsearch:
   build:
     context: ./database/elasticsearch
-    dockerfile: Dockerfile.distroless
+    dockerfile: Dockerfile
   image: pickme/lucid-elasticsearch:latest-arm64
   platform: linux/arm64
   # ... rest of configuration
@@ -124,7 +124,7 @@ lucid-auth-service:
 lucid-auth-service:
   build:
     context: ./auth
-    dockerfile: Dockerfile.distroless
+    dockerfile: Dockerfile
   image: pickme/lucid-auth-service:latest-arm64
   platform: linux/arm64
   # ... rest of configuration
@@ -196,7 +196,7 @@ TOR_PASSWORD=changeme
 ### **Primary Causes:**
 
 1. **Incomplete Migration**: Foundation services not migrated to distroless architecture
-2. **Missing Build Contexts**: No Dockerfile.distroless files created
+2. **Missing Build Contexts**: No Dockerfile files created
 3. **Environment Gaps**: Missing critical environment variables
 4. **Security Oversight**: No security compliance validation
 
@@ -214,10 +214,10 @@ TOR_PASSWORD=changeme
 ### **Immediate Actions (Priority 1)**
 
 1. **Create Distroless Dockerfiles**
-   - `database/mongodb/Dockerfile.distroless`
-   - `database/redis/Dockerfile.distroless`
-   - `database/elasticsearch/Dockerfile.distroless`
-   - `auth/Dockerfile.distroless`
+   - `database/mongodb/Dockerfile`
+   - `database/redis/Dockerfile`
+   - `database/elasticsearch/Dockerfile`
+   - `auth/Dockerfile`
 
 2. **Update Environment Variables**
    - Add `ENCRYPTION_KEY` to `.env.foundation`
@@ -250,28 +250,28 @@ TOR_PASSWORD=changeme
 ```bash
 # Create directory structure
 mkdir -p database/mongodb
-touch database/mongodb/Dockerfile.distroless
+touch database/mongodb/Dockerfile
 touch database/mongodb/requirements.txt
 ```
 
 **Day 3-4: Redis Distroless**
 ```bash
 mkdir -p database/redis
-touch database/redis/Dockerfile.distroless
+touch database/redis/Dockerfile
 touch database/redis/requirements.txt
 ```
 
 **Day 5-6: Elasticsearch Distroless**
 ```bash
 mkdir -p database/elasticsearch
-touch database/elasticsearch/Dockerfile.distroless
+touch database/elasticsearch/Dockerfile
 touch database/elasticsearch/requirements.txt
 ```
 
 **Day 7: Auth Service Distroless**
 ```bash
 mkdir -p auth
-touch auth/Dockerfile.distroless
+touch auth/Dockerfile
 touch auth/requirements.txt
 ```
 

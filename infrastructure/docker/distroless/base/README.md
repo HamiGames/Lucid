@@ -16,7 +16,7 @@ The infrastructure base distroless images are designed to:
 
 ## Available Infrastructure Base Images
 
-### 1. `Dockerfile.base.distroless`
+### 1. `Dockerfile.base`
 
 - **Purpose**: Standard infrastructure base with full tooling
 
@@ -26,7 +26,7 @@ The infrastructure base distroless images are designed to:
 
 - **Security**: High (distroless runtime)
 
-### 2. `Dockerfile.minimal-base.distroless`
+### 2. `Dockerfile.minimal-base`
 
 - **Purpose**: Minimal infrastructure base for lightweight operations
 
@@ -36,7 +36,7 @@ The infrastructure base distroless images are designed to:
 
 - **Security**: Very High (minimal attack surface)
 
-### 3. `Dockerfile.arm64-base.distroless`
+### 3. `Dockerfile.arm64-base`
 
 - **Purpose**: ARM64-optimized infrastructure base for Raspberry Pi
 
@@ -222,7 +222,7 @@ services:
   infrastructure-base:
     build:
       context: .
-      dockerfile: Dockerfile.base.distroless
+      dockerfile: Dockerfile.base
     image: lucid/infrastructure-base:latest
     networks:
 
@@ -233,7 +233,7 @@ services:
   infrastructure-minimal:
     build:
       context: .
-      dockerfile: Dockerfile.minimal-base.distroless
+      dockerfile: Dockerfile.minimal-base
     image: lucid/infrastructure-minimal-base:latest
     networks:
 
@@ -244,7 +244,7 @@ services:
   infrastructure-arm64:
     build:
       context: .
-      dockerfile: Dockerfile.arm64-base.distroless
+      dockerfile: Dockerfile.arm64-base
     image: lucid/infrastructure-arm64-base:latest
     ports:
 

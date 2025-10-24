@@ -235,7 +235,7 @@ write_files:
         lucid-user-gui:
           build:
             context: ./apps/gui-user
-            dockerfile: Dockerfile.distroless
+            dockerfile: Dockerfile
             target: production
           image: ghcr.io/hamigames/lucid/user-gui:latest
           container_name: lucid-user-gui
@@ -270,7 +270,7 @@ write_files:
         lucid-admin-gui:
           build:
             context: ./apps/gui-admin
-            dockerfile: Dockerfile.distroless
+            dockerfile: Dockerfile
             target: production
           image: ghcr.io/hamigames/lucid/admin-gui:latest
           container_name: lucid-admin-gui
@@ -305,7 +305,7 @@ write_files:
         lucid-node-gui:
           build:
             context: ./apps/gui-node
-            dockerfile: Dockerfile.distroless
+            dockerfile: Dockerfile
             target: production
           image: ghcr.io/hamigames/lucid/node-gui:latest
           container_name: lucid-node-gui

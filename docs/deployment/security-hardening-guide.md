@@ -54,7 +54,7 @@ This comprehensive security hardening guide provides detailed procedures for sec
 #### API Gateway Distroless Dockerfile
 
 ```dockerfile
-# Dockerfile.api-gateway.distroless
+# Dockerfile.api-gateway
 FROM python:3.11-slim as builder
 
 # Install build dependencies
@@ -106,7 +106,7 @@ ENTRYPOINT ["python", "main.py"]
 #### Blockchain Engine Distroless Dockerfile
 
 ```dockerfile
-# Dockerfile.blockchain.distroless
+# Dockerfile.blockchain
 FROM python:3.11-slim as builder
 
 # Install build dependencies
@@ -236,7 +236,7 @@ services:
   lucid-api-gateway:
     build:
       context: .
-      dockerfile: Dockerfile.api-gateway.distroless
+      dockerfile: Dockerfile.api-gateway
     container_name: lucid-api-gateway
     restart: unless-stopped
     user: "1000:1000"
@@ -277,7 +277,7 @@ services:
   lucid-blockchain-engine:
     build:
       context: .
-      dockerfile: Dockerfile.blockchain.distroless
+      dockerfile: Dockerfile.blockchain
     container_name: lucid-blockchain-engine
     restart: unless-stopped
     user: "1000:1000"

@@ -152,9 +152,9 @@ main() {
     cd "$BUILD_DIR"
     
     # Build infrastructure images
-    build_infrastructure_image "Dockerfile.base.distroless" "infrastructure-base"
-    build_infrastructure_image "Dockerfile.minimal-base.distroless" "infrastructure-minimal-base"
-    build_infrastructure_image "Dockerfile.arm64-base.distroless" "infrastructure-arm64-base"
+    build_infrastructure_image "Dockerfile.base" "infrastructure-base"
+    build_infrastructure_image "Dockerfile.minimal-base" "infrastructure-minimal-base"
+    build_infrastructure_image "Dockerfile.arm64-base" "infrastructure-arm64-base"
     
     echo
     log_test "Testing infrastructure images..."

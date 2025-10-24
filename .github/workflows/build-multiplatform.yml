@@ -126,7 +126,7 @@ jobs:
             "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
-            "build/distroless/${{ matrix.service }}.distroless"
+            "build/distroless/${{ matrix.service }}"
           )
           
           for location in "${locations[@]}"; do
@@ -211,7 +211,7 @@ jobs:
             "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
-            "build/distroless/${{ matrix.service }}.distroless"
+            "build/distroless/${{ matrix.service }}"
           )
           
           for location in "${locations[@]}"; do
@@ -296,7 +296,7 @@ jobs:
             "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
-            "build/distroless/${{ matrix.service }}.distroless"
+            "build/distroless/${{ matrix.service }}"
             "sessions/${{ matrix.service }}/Dockerfile"
             "RDP/${{ matrix.service }}/Dockerfile"
             "node/${{ matrix.service }}/Dockerfile"
@@ -384,7 +384,7 @@ jobs:
             "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile"
             "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
-            "build/distroless/${{ matrix.service }}.distroless"
+            "build/distroless/${{ matrix.service }}"
             "admin/${{ matrix.service }}/Dockerfile"
             "payment-systems/tron/Dockerfile.${{ matrix.service }}"
           )

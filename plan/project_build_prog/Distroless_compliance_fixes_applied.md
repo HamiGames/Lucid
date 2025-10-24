@@ -32,7 +32,7 @@
 ### 1. DISTROLESS DOCKERFILES CREATED
 
 #### **MongoDB Distroless Implementation**
-- **File**: `database/mongodb/Dockerfile.distroless`
+- **File**: `database/mongodb/Dockerfile`
 - **Base Image**: `gcr.io/distroless/python3-debian12`
 - **User**: 65532:65532 (non-root)
 - **Security**: No shell access, minimal attack surface
@@ -40,7 +40,7 @@
 - **Health Check**: `database/mongodb/healthcheck.py`
 
 #### **Redis Distroless Implementation**
-- **File**: `database/redis/Dockerfile.distroless`
+- **File**: `database/redis/Dockerfile`
 - **Base Image**: `gcr.io/distroless/python3-debian12`
 - **User**: 65532:65532 (non-root)
 - **Security**: No shell access, minimal attack surface
@@ -48,7 +48,7 @@
 - **Health Check**: `database/redis/healthcheck.py`
 
 #### **Elasticsearch Distroless Implementation**
-- **File**: `database/elasticsearch/Dockerfile.distroless`
+- **File**: `database/elasticsearch/Dockerfile`
 - **Base Image**: `gcr.io/distroless/python3-debian12`
 - **User**: 65532:65532 (non-root)
 - **Security**: No shell access, minimal attack surface
@@ -56,7 +56,7 @@
 - **Health Check**: `database/elasticsearch/healthcheck.py`
 
 #### **Auth Service Distroless Implementation**
-- **File**: `auth/Dockerfile.distroless`
+- **File**: `auth/Dockerfile`
 - **Base Image**: `gcr.io/distroless/python3-debian12`
 - **User**: 65532:65532 (non-root)
 - **Security**: No shell access, minimal attack surface
@@ -76,7 +76,7 @@ lucid-mongodb:
 lucid-mongodb:
   build:
     context: ./database/mongodb
-    dockerfile: Dockerfile.distroless
+    dockerfile: Dockerfile
   image: pickme/lucid-mongodb:latest-arm64
 ```
 
@@ -173,19 +173,19 @@ Matches exactly with `network-configs.md` requirements.
 ## Files Created/Modified
 
 ### **New Files Created**
-1. `database/mongodb/Dockerfile.distroless`
+1. `database/mongodb/Dockerfile`
 2. `database/mongodb/requirements.txt`
 3. `database/mongodb/start-mongodb.py`
 4. `database/mongodb/healthcheck.py`
-5. `database/redis/Dockerfile.distroless`
+5. `database/redis/Dockerfile`
 6. `database/redis/requirements.txt`
 7. `database/redis/start-redis.py`
 8. `database/redis/healthcheck.py`
-9. `database/elasticsearch/Dockerfile.distroless`
+9. `database/elasticsearch/Dockerfile`
 10. `database/elasticsearch/requirements.txt`
 11. `database/elasticsearch/start-elasticsearch.py`
 12. `database/elasticsearch/healthcheck.py`
-13. `auth/Dockerfile.distroless`
+13. `auth/Dockerfile`
 14. `auth/healthcheck.py`
 
 ### **Files Modified**
