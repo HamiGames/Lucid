@@ -105,17 +105,17 @@ main() {
     # Build API Gateway
     echo -e "${BLUE}🔧 Building API Gateway...${NC}"
     create_requirements "api-gateway" "$PROJECT_ROOT/build/distroless/requirements-api-gateway.txt"
-    build_image "api-gateway" "infrastructure/docker/distroless/base/Dockerfile.api-gateway.distroless" "$PROJECT_ROOT"
+    build_image "api-gateway" "infrastructure/docker/distroless/base/Dockerfile.api-gateway" "$PROJECT_ROOT"
     
     # Build Blockchain Core
     echo -e "${BLUE}🔧 Building Blockchain Core...${NC}"
     create_requirements "blockchain-core" "$PROJECT_ROOT/build/distroless/requirements-blockchain-core.txt"
-    build_image "blockchain-core" "infrastructure/docker/distroless/base/Dockerfile.blockchain-core.distroless" "$PROJECT_ROOT"
+    build_image "blockchain-core" "infrastructure/docker/distroless/base/Dockerfile.blockchain-core" "$PROJECT_ROOT"
     
     # Build Auth Service
     echo -e "${BLUE}🔧 Building Auth Service...${NC}"
     create_requirements "auth-service" "$PROJECT_ROOT/build/distroless/requirements-auth-service.txt"
-    build_image "auth-service" "infrastructure/docker/distroless/base/Dockerfile.auth-service.distroless" "$PROJECT_ROOT"
+    build_image "auth-service" "infrastructure/docker/distroless/base/Dockerfile.auth-service" "$PROJECT_ROOT"
     
     # Build Session Pipeline
     echo -e "${BLUE}🔧 Building Session Pipeline...${NC}"

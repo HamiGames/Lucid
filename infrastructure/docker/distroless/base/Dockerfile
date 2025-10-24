@@ -78,7 +78,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY . .
 
 # Set default command
-CMD ["python3", "-c", "import sys; print('Lucid Base Distroless Container Ready'); sys.exit(0)"]
+CMD ["/usr/bin/python3", "-c", "import sys; print('Lucid Base Distroless Container Ready'); sys.exit(0)"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

@@ -2,6 +2,7 @@
 # Lucid Distroless Deployment Script
 # Deploys Lucid platform with proper order and distroless containers
 # Target: Raspberry Pi 5 (192.168.0.75)
+# MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
 
 set -euo pipefail
 

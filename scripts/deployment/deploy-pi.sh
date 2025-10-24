@@ -2,6 +2,7 @@
 # LUCID RASPBERRY PI DEPLOYMENT SCRIPT
 # Deploys Lucid system to Raspberry Pi with staging environment
 # Path: scripts/deployment/deploy-pi.sh
+# MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
 
 set -euo pipefail
 

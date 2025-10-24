@@ -2,6 +2,7 @@
 # Lucid RDP Raspberry Pi 5 Deployment Script
 # Handles deployment and operations on Raspberry Pi 5 (ARM64)
 # Based on LUCID-STRICT requirements
+# MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
 
 set -euo pipefail
 

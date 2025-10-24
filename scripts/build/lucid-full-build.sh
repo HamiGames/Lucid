@@ -197,7 +197,7 @@ build_base_images() {
     build_image "lucid-base-python" "$PROJECT_ROOT/build/distroless/base/Dockerfile.python-base.distroless" "$PROJECT_ROOT/build/distroless/base"
     
     # Base distroless
-    build_image "lucid-base" "$PROJECT_ROOT/build/distroless/base/Dockerfile.base.distroless" "$PROJECT_ROOT/build/distroless/base"
+    build_image "lucid-base" "$PROJECT_ROOT/build/distroless/base/Dockerfile.base" "$PROJECT_ROOT/build/distroless/base"
 }
 
 # Build Phase 1: Foundation Services
