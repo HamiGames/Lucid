@@ -176,27 +176,27 @@ LUCID_MAIN_GATEWAY=172.20.0.1
 # =============================================================================
 
 # MongoDB Configuration
-MONGODB_HOST=lucid-mongodb
+MONGODB_HOST=172.20.0.11
 MONGODB_PORT=27017
 MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=${MONGODB_PASSWORD}
 MONGODB_AUTH_SOURCE=admin
 MONGODB_RETRY_WRITES=false
-MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false
 
 # Redis Configuration
-REDIS_HOST=lucid-redis
+REDIS_HOST=172.20.0.12
 REDIS_PORT=6379
 REDIS_PASSWORD=${REDIS_PASSWORD}
-REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+REDIS_URL=redis://:${REDIS_PASSWORD}@172.20.0.12:6379
 
 # Elasticsearch Configuration
-ELASTICSEARCH_HOST=lucid-elasticsearch
+ELASTICSEARCH_HOST=172.20.0.13
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
-ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200
 
 # =============================================================================
 # SECURITY CONFIGURATION (Inherited from Foundation)
@@ -220,54 +220,54 @@ SESSION_TIMEOUT=1800
 # =============================================================================
 
 # Session Pipeline
-SESSION_PIPELINE_HOST=session-pipeline
+SESSION_PIPELINE_HOST=172.20.0.20
 SESSION_PIPELINE_PORT=8083
-SESSION_PIPELINE_URL=http://session-pipeline:8083
+SESSION_PIPELINE_URL=http://172.20.0.20:8083
 
 # Session Recorder
-SESSION_RECORDER_HOST=session-recorder
+SESSION_RECORDER_HOST=172.20.0.21
 SESSION_RECORDER_PORT=8084
-SESSION_RECORDER_URL=http://session-recorder:8084
+SESSION_RECORDER_URL=http://172.20.0.21:8084
 
 # Session Processor (Chunk Processor)
-SESSION_PROCESSOR_HOST=session-processor
+SESSION_PROCESSOR_HOST=172.20.0.22
 SESSION_PROCESSOR_PORT=8085
-SESSION_PROCESSOR_URL=http://session-processor:8085
+SESSION_PROCESSOR_URL=http://172.20.0.22:8085
 
 # Session Storage
-SESSION_STORAGE_HOST=session-storage
+SESSION_STORAGE_HOST=172.20.0.23
 SESSION_STORAGE_PORT=8086
-SESSION_STORAGE_URL=http://session-storage:8086
+SESSION_STORAGE_URL=http://172.20.0.23:8086
 
 # Session API
-SESSION_API_HOST=session-api
+SESSION_API_HOST=172.20.0.24
 SESSION_API_PORT=8087
-SESSION_API_URL=http://session-api:8087
+SESSION_API_URL=http://172.20.0.24:8087
 
 # RDP Server Manager
-RDP_SERVER_MANAGER_HOST=rdp-server-manager
+RDP_SERVER_MANAGER_HOST=172.20.0.25
 RDP_SERVER_MANAGER_PORT=8090
-RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8090
+RDP_SERVER_MANAGER_URL=http://172.20.0.25:8090
 
 # RDP XRDP Integration
-RDP_XRDP_HOST=rdp-xrdp
+RDP_XRDP_HOST=172.20.0.26
 RDP_XRDP_PORT=8091
-RDP_XRDP_URL=http://rdp-xrdp:8091
+RDP_XRDP_URL=http://172.20.0.26:8091
 
 # RDP Controller
-RDP_CONTROLLER_HOST=rdp-controller
+RDP_CONTROLLER_HOST=172.20.0.27
 RDP_CONTROLLER_PORT=8092
-RDP_CONTROLLER_URL=http://rdp-controller:8092
+RDP_CONTROLLER_URL=http://172.20.0.27:8092
 
 # RDP Monitor
-RDP_MONITOR_HOST=rdp-monitor
+RDP_MONITOR_HOST=172.20.0.28
 RDP_MONITOR_PORT=8093
-RDP_MONITOR_URL=http://rdp-monitor:8093
+RDP_MONITOR_URL=http://172.20.0.28:8093
 
 # Node Management
-NODE_MANAGEMENT_HOST=node-management
+NODE_MANAGEMENT_HOST=172.20.0.29
 NODE_MANAGEMENT_PORT=8095
-NODE_MANAGEMENT_URL=http://node-management:8095
+NODE_MANAGEMENT_URL=http://172.20.0.29:8095
 
 # =============================================================================
 # SESSION MANAGEMENT CONFIGURATION
@@ -388,13 +388,13 @@ HEALTH_CHECK_TIMEOUT=10s
 HEALTH_CHECK_RETRIES=3
 
 # Service Health Endpoints
-SESSION_PIPELINE_HEALTH_URL=http://session-pipeline:8083/health
-SESSION_RECORDER_HEALTH_URL=http://session-recorder:8084/health
-SESSION_PROCESSOR_HEALTH_URL=http://session-processor:8085/health
-SESSION_STORAGE_HEALTH_URL=http://session-storage:8086/health
-SESSION_API_HEALTH_URL=http://session-api:8087/health
-RDP_SERVER_MANAGER_HEALTH_URL=http://rdp-server-manager:8090/health
-NODE_MANAGEMENT_HEALTH_URL=http://node-management:8095/health
+SESSION_PIPELINE_HEALTH_URL=http://172.20.0.20:8083/health
+SESSION_RECORDER_HEALTH_URL=http://172.20.0.21:8084/health
+SESSION_PROCESSOR_HEALTH_URL=http://172.20.0.22:8085/health
+SESSION_STORAGE_HEALTH_URL=http://172.20.0.23:8086/health
+SESSION_API_HEALTH_URL=http://172.20.0.24:8087/health
+RDP_SERVER_MANAGER_HEALTH_URL=http://172.20.0.25:8090/health
+NODE_MANAGEMENT_HEALTH_URL=http://172.20.0.29:8095/health
 
 # =============================================================================
 # LOGGING CONFIGURATION

@@ -240,27 +240,27 @@ LUCID_MULTI_STAGE_GATEWAY=172.25.0.1
 # =============================================================================
 
 # MongoDB Configuration
-MONGODB_HOST=lucid-mongodb
+MONGODB_HOST=172.20.0.11
 MONGODB_PORT=27017
 MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=${MONGODB_PASSWORD}
 MONGODB_AUTH_SOURCE=admin
 MONGODB_RETRY_WRITES=false
-MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false
 
 # Redis Configuration
-REDIS_HOST=lucid-redis
+REDIS_HOST=172.20.0.12
 REDIS_PORT=6379
 REDIS_PASSWORD=${REDIS_PASSWORD}
-REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+REDIS_URL=redis://:${REDIS_PASSWORD}@172.20.0.12:6379
 
 # Elasticsearch Configuration
-ELASTICSEARCH_HOST=lucid-elasticsearch
+ELASTICSEARCH_HOST=172.20.0.13
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
-ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200
 
 # =============================================================================
 # SECURITY CONFIGURATION
@@ -293,53 +293,53 @@ TOR_CONTROL_PORT=9051
 # =============================================================================
 
 # API Gateway
-API_GATEWAY_HOST=api-gateway
+API_GATEWAY_HOST=172.20.0.10
 API_GATEWAY_PORT=8080
-API_GATEWAY_URL=http://api-gateway:8080
+API_GATEWAY_URL=http://172.20.0.10:8080
 API_GATEWAY_SECRET=${API_GATEWAY_SECRET}
 
 # Auth Service
-AUTH_SERVICE_HOST=lucid-auth-service
+AUTH_SERVICE_HOST=172.20.0.14
 AUTH_SERVICE_PORT=8089
-AUTH_SERVICE_URL=http://lucid-auth-service:8089
+AUTH_SERVICE_URL=http://172.20.0.14:8089
 
 # Blockchain Engine
-BLOCKCHAIN_ENGINE_HOST=blockchain-engine
+BLOCKCHAIN_ENGINE_HOST=172.20.0.15
 BLOCKCHAIN_ENGINE_PORT=8084
-BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+BLOCKCHAIN_ENGINE_URL=http://172.20.0.15:8084
 BLOCKCHAIN_SECRET=${BLOCKCHAIN_SECRET}
 
 # Service Mesh
-SERVICE_MESH_HOST=service-mesh
+SERVICE_MESH_HOST=172.20.0.16
 SERVICE_MESH_PORT=8500
-SERVICE_MESH_URL=http://service-mesh:8500
+SERVICE_MESH_URL=http://172.20.0.16:8500
 
 # Session API
-SESSION_API_HOST=session-api
+SESSION_API_HOST=172.20.0.24
 SESSION_API_PORT=8087
-SESSION_API_URL=http://session-api:8087
+SESSION_API_URL=http://172.20.0.24:8087
 
 # RDP Services
-RDP_SERVER_MANAGER_HOST=rdp-server-manager
+RDP_SERVER_MANAGER_HOST=172.20.0.25
 RDP_SERVER_MANAGER_PORT=8095
-RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8095
+RDP_SERVER_MANAGER_URL=http://172.20.0.25:8095
 
 # Admin Interface
-ADMIN_INTERFACE_HOST=admin-interface
+ADMIN_INTERFACE_HOST=172.20.0.30
 ADMIN_INTERFACE_PORT=8083
-ADMIN_INTERFACE_URL=http://admin-interface:8083
+ADMIN_INTERFACE_URL=http://172.20.0.30:8083
 ADMIN_SECRET=${ADMIN_SECRET}
 
 # Node Management
-NODE_MANAGEMENT_HOST=node-management
+NODE_MANAGEMENT_HOST=172.20.0.29
 NODE_MANAGEMENT_PORT=8095
-NODE_MANAGEMENT_URL=http://node-management:8095
+NODE_MANAGEMENT_URL=http://172.20.0.29:8095
 NODE_MANAGEMENT_SECRET=${NODE_MANAGEMENT_SECRET}
 
 # TRON Payment Services
-TRON_CLIENT_HOST=tron-client
+TRON_CLIENT_HOST=172.21.0.10
 TRON_CLIENT_PORT=8091
-TRON_CLIENT_URL=http://tron-client:8091
+TRON_CLIENT_URL=http://172.21.0.10:8091
 TRON_PAYMENT_SECRET=${TRON_PAYMENT_SECRET}
 
 # =============================================================================
@@ -377,10 +377,10 @@ HEALTH_CHECK_RETRIES=3
 HEALTH_CHECK_START_PERIOD=40s
 
 # Service Health Endpoints
-MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-REDIS_HEALTH_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
-ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200/_cluster/health
-AUTH_SERVICE_HEALTH_URL=http://lucid-auth-service:8089/health
+MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin
+REDIS_HEALTH_URL=redis://:${REDIS_PASSWORD}@172.20.0.12:6379
+ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200/_cluster/health
+AUTH_SERVICE_HEALTH_URL=http://172.20.0.14:8089/health
 
 # =============================================================================
 # LOGGING CONFIGURATION

@@ -183,27 +183,27 @@ LUCID_TRON_GATEWAY=172.21.0.1
 # =============================================================================
 
 # MongoDB Configuration
-MONGODB_HOST=lucid-mongodb
+MONGODB_HOST=172.20.0.11
 MONGODB_PORT=27017
 MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
 MONGODB_PASSWORD=${MONGODB_PASSWORD}
 MONGODB_AUTH_SOURCE=admin
 MONGODB_RETRY_WRITES=false
-MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false
 
 # Redis Configuration
-REDIS_HOST=lucid-redis
+REDIS_HOST=172.20.0.12
 REDIS_PORT=6379
 REDIS_PASSWORD=${REDIS_PASSWORD}
-REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+REDIS_URL=redis://:${REDIS_PASSWORD}@172.20.0.12:6379
 
 # Elasticsearch Configuration
-ELASTICSEARCH_HOST=lucid-elasticsearch
+ELASTICSEARCH_HOST=172.20.0.13
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
-ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200
 
 # =============================================================================
 # SECURITY CONFIGURATION (Inherited from Foundation)
@@ -228,34 +228,34 @@ TOR_CONTROL_PORT=9051
 # =============================================================================
 
 # Admin Interface
-ADMIN_INTERFACE_HOST=admin-interface
+ADMIN_INTERFACE_HOST=172.20.0.30
 ADMIN_INTERFACE_PORT=8083
-ADMIN_INTERFACE_URL=http://admin-interface:8083
+ADMIN_INTERFACE_URL=http://172.20.0.30:8083
 
 # TRON Payment Services (ISOLATED NETWORK)
-TRON_CLIENT_HOST=tron-client
+TRON_CLIENT_HOST=172.21.0.10
 TRON_CLIENT_PORT=8091
-TRON_CLIENT_URL=http://tron-client:8091
+TRON_CLIENT_URL=http://172.21.0.10:8091
 
-TRON_PAYOUT_ROUTER_HOST=tron-payout-router
+TRON_PAYOUT_ROUTER_HOST=172.21.0.11
 TRON_PAYOUT_ROUTER_PORT=8092
-TRON_PAYOUT_ROUTER_URL=http://tron-payout-router:8092
+TRON_PAYOUT_ROUTER_URL=http://172.21.0.11:8092
 
-TRON_WALLET_MANAGER_HOST=tron-wallet-manager
+TRON_WALLET_MANAGER_HOST=172.21.0.12
 TRON_WALLET_MANAGER_PORT=8093
-TRON_WALLET_MANAGER_URL=http://tron-wallet-manager:8093
+TRON_WALLET_MANAGER_URL=http://172.21.0.12:8093
 
-TRON_USDT_MANAGER_HOST=tron-usdt-manager
+TRON_USDT_MANAGER_HOST=172.21.0.13
 TRON_USDT_MANAGER_PORT=8094
-TRON_USDT_MANAGER_URL=http://tron-usdt-manager:8094
+TRON_USDT_MANAGER_URL=http://172.21.0.13:8094
 
-TRON_STAKING_HOST=tron-staking
+TRON_STAKING_HOST=172.21.0.14
 TRON_STAKING_PORT=8096
-TRON_STAKING_URL=http://tron-staking:8096
+TRON_STAKING_URL=http://172.21.0.14:8096
 
-TRON_PAYMENT_GATEWAY_HOST=tron-payment-gateway
+TRON_PAYMENT_GATEWAY_HOST=172.21.0.15
 TRON_PAYMENT_GATEWAY_PORT=8097
-TRON_PAYMENT_GATEWAY_URL=http://tron-payment-gateway:8097
+TRON_PAYMENT_GATEWAY_URL=http://172.21.0.15:8097
 
 # =============================================================================
 # ADMIN INTERFACE CONFIGURATION
@@ -409,13 +409,13 @@ HEALTH_CHECK_TIMEOUT=10s
 HEALTH_CHECK_RETRIES=3
 
 # Service Health Endpoints
-ADMIN_INTERFACE_HEALTH_URL=http://admin-interface:8083/health
-TRON_CLIENT_HEALTH_URL=http://tron-client:8091/health
-TRON_PAYOUT_ROUTER_HEALTH_URL=http://tron-payout-router:8092/health
-TRON_WALLET_MANAGER_HEALTH_URL=http://tron-wallet-manager:8093/health
-TRON_USDT_MANAGER_HEALTH_URL=http://tron-usdt-manager:8094/health
-TRON_STAKING_HEALTH_URL=http://tron-staking:8096/health
-TRON_PAYMENT_GATEWAY_HEALTH_URL=http://tron-payment-gateway:8097/health
+ADMIN_INTERFACE_HEALTH_URL=http://172.20.0.30:8083/health
+TRON_CLIENT_HEALTH_URL=http://172.21.0.10:8091/health
+TRON_PAYOUT_ROUTER_HEALTH_URL=http://172.21.0.11:8092/health
+TRON_WALLET_MANAGER_HEALTH_URL=http://172.21.0.12:8093/health
+TRON_USDT_MANAGER_HEALTH_URL=http://172.21.0.13:8094/health
+TRON_STAKING_HEALTH_URL=http://172.21.0.14:8096/health
+TRON_PAYMENT_GATEWAY_HEALTH_URL=http://172.21.0.15:8097/health
 
 # =============================================================================
 # LOGGING CONFIGURATION
