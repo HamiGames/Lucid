@@ -99,4 +99,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD ["python", "-c", "import socket; s=socket.socket(); s.settimeout(5); s.connect(('localhost', 3389)); s.close()"]
 
 # Default command - RDP service launcher
-CMD ["python", "-m", "RDP.server.rdp_server_manager"]
+CMD ["-m", "RDP.server.rdp_server_manager"]
