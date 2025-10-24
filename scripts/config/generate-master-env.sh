@@ -5,9 +5,9 @@
 
 set -euo pipefail
 
-# Project root configuration
-PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+# Project root configuration - Dynamic detection
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Change to project root if not already there
 if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
