@@ -406,3 +406,78 @@
  .env.application - Loaded with foundation for Phase 3
  .env.support - Loaded with foundation for Phase 4
  .env.secure - Master backup with secure permissions (600)
+
+ *Network Configurations:*
+ **GUI:**
+docker buildx build \
+  --platform linux/arm64 \
+  -t pickme/lucid-gui:latest-arm64 \
+  -f infrastructure/docker/multi-stage/Dockerfile.gui \
+  --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+  --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+  --build-arg VERSION=1.0.0 \
+  --push \
+  .
+
+**RDP:**
+# Build RDP distroless image
+docker buildx build \
+  --platform linux/arm64 \
+  -t pickme/lucid-rdp:latest-arm64 \
+  -f infrastructure/docker/multi-stage/Dockerfile.rdp \
+  --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+  --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+  --build-arg VERSION=1.0.0 \
+  --push \
+  .
+
+**node management:**
+*Complete*
+ # Build Node Management distroless image
+ docker buildx build \
+   --platform linux/arm64 \
+   -t pickme/lucid-node:latest-arm64 \
+   -f infrastructure/docker/multi-stage/Dockerfile.node \
+   --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+   --build-arg VERSION=1.0.0 \
+   --push \
+   .
+
+**Storage Services:**
+*Complete*
+ # Build Storage distroless image
+ docker buildx build \
+   --platform linux/arm64 \
+   -t pickme/lucid-storage:latest-arm64 \
+   -f infrastructure/docker/multi-stage/Dockerfile.storage \
+   --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+   --build-arg VERSION=1.0.0 \
+   --push \
+   .
+
+
+**Database:**
+ # Build Database distroless image
+ docker buildx build \
+   --platform linux/arm64 \
+   -t pickme/lucid-database:latest-arm64 \
+   -f infrastructure/docker/multi-stage/Dockerfile.database \
+   --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+   --build-arg VERSION=1.0.0 \
+   --push \
+   .
+
+**Virtual machine:**
+ # Build VM Management distroless image
+ docker buildx build \
+   --platform linux/arm64 \
+   -t pickme/lucid-vm:latest-arm64 \
+   -f infrastructure/docker/multi-stage/Dockerfile.vm \
+   --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+   --build-arg VERSION=1.0.0 \
+   --push \
+   .
