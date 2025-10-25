@@ -11,6 +11,17 @@
 
 set -euo pipefail
 
+# CRITICAL: Immediate Pi environment check - MUST fail on non-Pi systems
+if [[ ! -d "/mnt/myssd" ]]; then
+    echo "❌ CRITICAL ERROR: This script is designed ONLY for Pi environment deployment"
+    echo "❌ Required Pi mount point not found: /mnt/myssd"
+    echo "❌ Current system: $(uname -a)"
+    echo "❌ This script MUST be run on Raspberry Pi with SSD mounted at /mnt/myssd"
+    echo "❌ Expected Pi environment: /mnt/myssd/Lucid/Lucid/"
+    echo "❌ Please run this script ONLY on the target Raspberry Pi (192.168.0.75)"
+    exit 1
+fi
+
 # Script configuration - Pi Environment Paths from path_plan.md
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
@@ -18,12 +29,67 @@ ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
-# Pi Environment Validation
-if [[ ! -d "/mnt/myssd" ]]; then
-    echo "ERROR: This script is designed for Pi environment with /mnt/myssd mount point"
-    echo "Current system does not have the required Pi mount structure"
-    exit 1
-fi
+# Pi-specific constants from path_plan.md
+PI_USER="pickme"
+PI_HOST="192.168.0.75"
+PROJECT_NAME="Lucid"
+PROJECT_VERSION="0.1.0"
+ENVIRONMENT="production"
+
+# Pi Environment Validation - CRITICAL: Must fail on non-Pi systems
+validate_pi_environment() {
+    log_info "Validating Pi environment..."
+    
+    # CRITICAL: Check Pi mount point - MUST exist for Pi deployment
+    if [[ ! -d "/mnt/myssd" ]]; then
+        log_error "❌ CRITICAL ERROR: This script is designed ONLY for Pi environment"
+        log_error "❌ Required Pi mount point not found: /mnt/myssd"
+        log_error "❌ Current system: $(uname -a)"
+        log_error "❌ This script MUST be run on Raspberry Pi with SSD mounted at /mnt/myssd"
+        log_error "❌ Expected Pi environment: /mnt/myssd/Lucid/Lucid/"
+        exit 1
+    fi
+    
+    # CRITICAL: Check if running on Pi hardware - MUST be Pi
+    if [[ -f "/proc/device-tree/model" ]]; then
+        local model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0')
+        if [[ "$model" == *"Raspberry Pi"* ]]; then
+            log_success "✅ Running on Raspberry Pi: $model"
+        else
+            log_error "❌ CRITICAL ERROR: Not running on Raspberry Pi hardware"
+            log_error "❌ Detected hardware: $model"
+            log_error "❌ This script is designed ONLY for Raspberry Pi deployment"
+            exit 1
+        fi
+    else
+        log_error "❌ CRITICAL ERROR: Cannot detect Pi hardware"
+        log_error "❌ Missing /proc/device-tree/model - not a Pi system"
+        log_error "❌ This script is designed ONLY for Raspberry Pi deployment"
+        exit 1
+    fi
+    
+    # CRITICAL: Check architecture - MUST be ARM64
+    local arch=$(uname -m)
+    if [[ "$arch" != "aarch64" ]]; then
+        log_error "❌ CRITICAL ERROR: Architecture mismatch"
+        log_error "❌ Current architecture: $arch"
+        log_error "❌ Required architecture: aarch64 (ARM64)"
+        log_error "❌ This script is optimized for Pi 5 (ARM64) deployment"
+        exit 1
+    else
+        log_success "✅ Pi architecture compatible (ARM64)"
+    fi
+    
+    # CRITICAL: Check Pi-specific paths exist
+    if [[ ! -d "/mnt/myssd/Lucid/Lucid" ]]; then
+        log_error "❌ CRITICAL ERROR: Pi project path not found"
+        log_error "❌ Expected path: /mnt/myssd/Lucid/Lucid"
+        log_error "❌ Please ensure the Lucid project is properly mounted on Pi"
+        exit 1
+    fi
+    
+    log_success "✅ Pi environment validation completed - Pi deployment ready"
+}
 
 # Colors for output
 RED='\033[0;31m'
@@ -115,11 +181,49 @@ EOF
 source_secure_keys() {
     local secrets_file="${ENV_DIR}/.env.secrets"
     if [[ -f "$secrets_file" ]]; then
+        log_info "Sourcing secure keys from: $secrets_file"
+        # Source the file and export variables to make them available
+        set -a  # automatically export all variables
         source "$secrets_file"
+        set +a  # turn off automatic export
+        log_success "Secure keys sourced successfully"
     else
         log_error "Secure keys file not found: $secrets_file"
+        log_error "Please run the script to generate secure keys first"
         exit 1
     fi
+}
+
+# Validate required variables are bound
+validate_required_variables() {
+    log_info "Validating required variables..."
+    
+    local required_vars=(
+        "JWT_SECRET_KEY"
+        "ENCRYPTION_KEY"
+        "MONGODB_PASSWORD"
+        "REDIS_PASSWORD"
+        "TOR_PASSWORD"
+        "TRON_API_KEY"
+        "NODE_ADDRESS"
+        "NODE_PRIVATE_KEY"
+    )
+    
+    local missing_vars=()
+    
+    for var in "${required_vars[@]}"; do
+        if [[ -z "${!var:-}" ]]; then
+            missing_vars+=("$var")
+        fi
+    done
+    
+    if [[ ${#missing_vars[@]} -gt 0 ]]; then
+        log_error "Missing required variables: ${missing_vars[*]}"
+        log_error "Please ensure all variables are properly set in .env.secrets"
+        exit 1
+    fi
+    
+    log_success "All required variables are bound"
 }
 
 # Generate .env.api-gateway
@@ -1756,9 +1860,9 @@ BUILD_PLATFORM=linux/arm64
 BUILD_ARCHITECTURE=arm64
 BUILD_TARGET=pi
 
-# Pi Configuration
-PI_USER=pickme
-PI_HOST=192.168.0.75
+# Pi Configuration (from path_plan.md)
+PI_USER=${PI_USER}
+PI_HOST=${PI_HOST}
 PI_SSH_PORT=22
 PI_SSH_KEY_PATH=/root/.ssh/id_rsa
 
@@ -2142,12 +2246,7 @@ main() {
     log_info "Git Commit: $GIT_COMMIT"
     
     # Validate Pi environment
-    if [[ ! -d "/mnt/myssd" ]]; then
-        log_error "This script must be run on the Pi environment with /mnt/myssd mount point"
-        log_error "Current system: $(uname -a)"
-        log_error "Expected Pi environment with SSD mount at /mnt/myssd"
-        exit 1
-    fi
+    validate_pi_environment
     
     # Validate project structure
     if [[ ! -d "$PROJECT_ROOT" ]]; then
@@ -2164,6 +2263,9 @@ main() {
     
     # Source the secure keys
     source_secure_keys
+    
+    # Validate all required variables are bound
+    validate_required_variables
     
     # Generate all service-specific environment files
     generate_api_gateway_env
