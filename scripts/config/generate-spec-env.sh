@@ -4,15 +4,26 @@
 # Generate Service-Specific Environment Files for Lucid Project
 # Based on constants from plan/constants/path_plan.md
 # All values are real and usable - NO PLACEHOLDERS
+#
+# IMPORTANT: This script is designed for Pi environment deployment only
+# Requires: /mnt/myssd mount point and Pi-specific paths
+# Target: Raspberry Pi with SSD mount at /mnt/myssd/Lucid/Lucid/
 
 set -euo pipefail
 
-# Script configuration
+# Script configuration - Pi Environment Paths from path_plan.md
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
-ENV_DIR="${PROJECT_ROOT}/configs/environment"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# Pi Environment Validation
+if [[ ! -d "/mnt/myssd" ]]; then
+    echo "ERROR: This script is designed for Pi environment with /mnt/myssd mount point"
+    echo "Current system does not have the required Pi mount structure"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -52,31 +63,42 @@ generate_secure_keys() {
     
     if [[ ! -f "$secrets_file" ]]; then
         log_info "Generating secure keys..."
-        cat > "$secrets_file" << 'EOF'
+        
+        # Generate secure values
+        local jwt_secret=$(openssl rand -base64 64 | tr -d '\n')
+        local encryption_key=$(openssl rand -base64 32 | tr -d '\n')
+        local mongodb_password=$(openssl rand -base64 32 | tr -d '\n')
+        local redis_password=$(openssl rand -base64 32 | tr -d '\n')
+        local tor_password=$(openssl rand -base64 32 | tr -d '\n')
+        local tron_api_key=$(openssl rand -base64 32 | tr -d '\n')
+        local node_address="T$(openssl rand -hex 20)"
+        local node_private_key=$(openssl rand -hex 32)
+        
+        cat > "$secrets_file" << EOF
 # Secure Keys for Lucid Project
-# Generated: $(date)
+# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # WARNING: Keep this file secure (chmod 600)
 
 # JWT Configuration
-JWT_SECRET_KEY=$(openssl rand -base64 64)
+JWT_SECRET_KEY=$jwt_secret
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Encryption
-ENCRYPTION_KEY=$(openssl rand -base64 32)
+ENCRYPTION_KEY=$encryption_key
 
 # Database Passwords
-MONGODB_PASSWORD=$(openssl rand -base64 32)
-REDIS_PASSWORD=$(openssl rand -base64 32)
+MONGODB_PASSWORD=$mongodb_password
+REDIS_PASSWORD=$redis_password
 
 # Tor Configuration
-TOR_PASSWORD=$(openssl rand -base64 32)
+TOR_PASSWORD=$tor_password
 
 # TRON Configuration
-TRON_API_KEY=$(openssl rand -base64 32)
-NODE_ADDRESS=$(openssl rand -hex 20)
-NODE_PRIVATE_KEY=$(openssl rand -hex 32)
+TRON_API_KEY=$tron_api_key
+NODE_ADDRESS=$node_address
+NODE_PRIVATE_KEY=$node_private_key
 
 # Build Information
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -1270,6 +1292,847 @@ EOF
     log_success "Generated .env.blockchain-governance"
 }
 
+# Generate .env.tron-client
+generate_tron_client_env() {
+    log_info "Generating .env.tron-client..."
+    cat > "${ENV_DIR}/.env.tron-client" << EOF
+# TRON Client Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=tron-client
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+TRON_CLIENT_HOST=172.20.0.27
+TRON_CLIENT_PORT=8091
+TRON_CLIENT_URL=http://lucid-tron-client:8091
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.tron-client"
+}
+
+# Generate .env.tron-payout-router
+generate_tron_payout_router_env() {
+    log_info "Generating .env.tron-payout-router..."
+    cat > "${ENV_DIR}/.env.tron-payout-router" << EOF
+# TRON Payout Router Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=tron-payout-router
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+TRON_PAYOUT_ROUTER_HOST=172.20.0.28
+TRON_PAYOUT_ROUTER_PORT=8092
+TRON_PAYOUT_ROUTER_URL=http://lucid-tron-payout-router:8092
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# Payout Configuration
+PAYOUT_THRESHOLD_USDT=10.0
+PAYOUT_FEE_PERCENTAGE=0.1
+PAYOUT_MIN_AMOUNT=1.0
+PAYOUT_MAX_AMOUNT=10000.0
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.tron-payout-router"
+}
+
+# Generate .env.tron-wallet-manager
+generate_tron_wallet_manager_env() {
+    log_info "Generating .env.tron-wallet-manager..."
+    cat > "${ENV_DIR}/.env.tron-wallet-manager" << EOF
+# TRON Wallet Manager Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=tron-wallet-manager
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+TRON_WALLET_MANAGER_HOST=172.20.0.29
+TRON_WALLET_MANAGER_PORT=8093
+TRON_WALLET_MANAGER_URL=http://lucid-tron-wallet-manager:8093
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# Wallet Configuration
+WALLET_ENCRYPTION_ENABLED=true
+WALLET_BACKUP_ENABLED=true
+WALLET_MULTI_SIG_ENABLED=true
+WALLET_HARDWARE_SUPPORT=true
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.tron-wallet-manager"
+}
+
+# Generate .env.tron-usdt-manager
+generate_tron_usdt_manager_env() {
+    log_info "Generating .env.tron-usdt-manager..."
+    cat > "${ENV_DIR}/.env.tron-usdt-manager" << EOF
+# TRON USDT Manager Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=tron-usdt-manager
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+TRON_USDT_MANAGER_HOST=172.20.0.30
+TRON_USDT_MANAGER_PORT=8094
+TRON_USDT_MANAGER_URL=http://lucid-tron-usdt-manager:8094
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# USDT Configuration
+USDT_DECIMALS=6
+USDT_TRANSFER_FEE=1
+USDT_MIN_TRANSFER=1
+USDT_MAX_TRANSFER=1000000
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.tron-usdt-manager"
+}
+
+# Generate .env.tron-staking
+generate_tron_staking_env() {
+    log_info "Generating .env.tron-staking..."
+    cat > "${ENV_DIR}/.env.tron-staking" << EOF
+# TRON Staking Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=tron-staking
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+TRON_STAKING_HOST=172.20.0.31
+TRON_STAKING_PORT=8096
+TRON_STAKING_URL=http://lucid-tron-staking:8096
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+
+# Staking Configuration
+STAKING_ENABLED=true
+STAKING_MIN_AMOUNT=1000
+STAKING_REWARD_RATE=0.05
+STAKING_UNLOCK_PERIOD=2592000
+STAKING_SLASHING_ENABLED=true
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.tron-staking"
+}
+
+# Generate .env.tron-payment-gateway
+generate_tron_payment_gateway_env() {
+    log_info "Generating .env.tron-payment-gateway..."
+    cat > "${ENV_DIR}/.env.tron-payment-gateway" << EOF
+# TRON Payment Gateway Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=tron-payment-gateway
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+TRON_PAYMENT_GATEWAY_HOST=172.20.0.32
+TRON_PAYMENT_GATEWAY_PORT=8097
+TRON_PAYMENT_GATEWAY_URL=http://lucid-tron-payment-gateway:8097
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# Payment Gateway Configuration
+PAYMENT_GATEWAY_ENABLED=true
+PAYMENT_PROCESSING_FEE=0.1
+PAYMENT_MIN_AMOUNT=1.0
+PAYMENT_MAX_AMOUNT=100000.0
+PAYMENT_TIMEOUT=300
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.tron-payment-gateway"
+}
+
+# Generate .env.gui
+generate_gui_env() {
+    log_info "Generating .env.gui..."
+    cat > "${ENV_DIR}/.env.gui" << EOF
+# GUI Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Service Configuration
+SERVICE_NAME=gui
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+GUI_HOST=172.22.0.1
+GUI_PORT=3000
+GUI_URL=http://lucid-gui:3000
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# GUI Configuration
+GUI_THEME=dark
+GUI_LANGUAGE=en
+GUI_REAL_TIME_UPDATES=true
+GUI_WEBSOCKET_ENABLED=true
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+
+# Monitoring
+METRICS_ENABLED=true
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.gui"
+}
+
+# Generate .env.pi-build
+generate_pi_build_env() {
+    log_info "Generating .env.pi-build..."
+    cat > "${ENV_DIR}/.env.pi-build" << EOF
+# Pi Build Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Build Configuration
+BUILD_ENVIRONMENT=pi
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCHITECTURE=arm64
+BUILD_TARGET=pi
+
+# Pi Configuration
+PI_USER=pickme
+PI_HOST=192.168.0.75
+PI_SSH_PORT=22
+PI_SSH_KEY_PATH=/root/.ssh/id_rsa
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+LUCID_TARGET_PLATFORM=linux/arm64
+
+# Registry Configuration
+DOCKER_REGISTRY=docker.io
+DOCKER_NAMESPACE=pickme
+DOCKER_TAG=latest-arm64
+
+# Build Arguments
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+VERSION=0.1.0
+
+# Pi Network Configuration
+LUCID_PI_NETWORK=lucid-pi-network
+LUCID_PI_SUBNET=172.20.0.0/16
+LUCID_PI_GATEWAY=172.20.0.1
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.pi-build"
+}
+
+# Generate .env.foundation
+generate_foundation_env() {
+    log_info "Generating .env.foundation..."
+    cat > "${ENV_DIR}/.env.foundation" << EOF
+# Foundation Services Configuration (Phase 1)
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Phase 1 Foundation Services
+PHASE=foundation
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Foundation Services
+MONGODB_HOST=172.20.0.11
+MONGODB_PORT=27017
+REDIS_HOST=172.20.0.12
+REDIS_PORT=6379
+ELASTICSEARCH_HOST=172.20.0.13
+ELASTICSEARCH_PORT=9200
+AUTH_SERVICE_HOST=172.20.0.14
+AUTH_SERVICE_PORT=8089
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.foundation"
+}
+
+# Generate .env.core
+generate_core_env() {
+    log_info "Generating .env.core..."
+    cat > "${ENV_DIR}/.env.core" << EOF
+# Core Services Configuration (Phase 2)
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Phase 2 Core Services
+PHASE=core
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Core Services
+API_GATEWAY_HOST=172.20.0.10
+API_GATEWAY_PORT=8080
+BLOCKCHAIN_ENGINE_HOST=172.20.0.15
+BLOCKCHAIN_ENGINE_PORT=8084
+SESSION_ANCHORING_HOST=172.20.0.16
+SESSION_ANCHORING_PORT=8085
+BLOCK_MANAGER_HOST=172.20.0.17
+BLOCK_MANAGER_PORT=8086
+DATA_CHAIN_HOST=172.20.0.18
+DATA_CHAIN_PORT=8087
+SERVICE_MESH_CONTROLLER_HOST=172.20.0.19
+SERVICE_MESH_CONTROLLER_PORT=8500
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.core"
+}
+
+# Generate .env.application
+generate_application_env() {
+    log_info "Generating .env.application..."
+    cat > "${ENV_DIR}/.env.application" << EOF
+# Application Services Configuration (Phase 3)
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Phase 3 Application Services
+PHASE=application
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Application Services
+SESSION_API_HOST=172.20.0.20
+SESSION_API_PORT=8087
+RDP_SERVER_MANAGER_HOST=172.20.0.21
+RDP_SERVER_MANAGER_PORT=8081
+XRDP_INTEGRATION_HOST=172.20.0.22
+XRDP_INTEGRATION_PORT=3389
+SESSION_CONTROLLER_HOST=172.20.0.23
+SESSION_CONTROLLER_PORT=8092
+RESOURCE_MONITOR_HOST=172.20.0.24
+RESOURCE_MONITOR_PORT=8093
+NODE_MANAGEMENT_HOST=172.20.0.25
+NODE_MANAGEMENT_PORT=8095
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.application"
+}
+
+# Generate .env.support
+generate_support_env() {
+    log_info "Generating .env.support..."
+    cat > "${ENV_DIR}/.env.support" << EOF
+# Support Services Configuration (Phase 4)
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Phase 4 Support Services
+PHASE=support
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Support Services
+ADMIN_INTERFACE_HOST=172.20.0.26
+ADMIN_INTERFACE_PORT=8083
+TRON_CLIENT_HOST=172.20.0.27
+TRON_CLIENT_PORT=8091
+TRON_PAYOUT_ROUTER_HOST=172.20.0.28
+TRON_PAYOUT_ROUTER_PORT=8092
+TRON_WALLET_MANAGER_HOST=172.20.0.29
+TRON_WALLET_MANAGER_PORT=8093
+TRON_USDT_MANAGER_HOST=172.20.0.30
+TRON_USDT_MANAGER_PORT=8094
+TRON_STAKING_HOST=172.20.0.31
+TRON_STAKING_PORT=8096
+TRON_PAYMENT_GATEWAY_HOST=172.20.0.32
+TRON_PAYMENT_GATEWAY_PORT=8097
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.support"
+}
+
+# Generate .env.distroless
+generate_distroless_env() {
+    log_info "Generating .env.distroless..."
+    cat > "${ENV_DIR}/.env.distroless" << EOF
+# Distroless Deployment Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Distroless Configuration
+DISTROLESS_ENABLED=true
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Security Configuration
+SECURITY_CONTEXT=distroless
+NON_ROOT_USER=65532
+READ_ONLY_FILESYSTEM=true
+DROP_CAPABILITIES=ALL
+NO_NEW_PRIVILEGES=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+LUCID_TARGET_PLATFORM=linux/arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.distroless"
+}
+
+# Generate .env.master
+generate_master_env() {
+    log_info "Generating .env.master..."
+    cat > "${ENV_DIR}/.env.master" << EOF
+# Master Environment Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# Project Configuration
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+LUCID_PI_NETWORK=lucid-pi-network
+LUCID_PI_SUBNET=172.20.0.0/16
+LUCID_PI_GATEWAY=172.20.0.1
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.master"
+}
+
+# Generate .env.secure
+generate_secure_env() {
+    log_info "Generating .env.secure..."
+    cat > "${ENV_DIR}/.env.secure" << EOF
+# Secure Master Backup Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+# WARNING: This file contains sensitive information - keep secure (chmod 600)
+
+# Master Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Encryption Configuration
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# Database Security
+MONGODB_PASSWORD=$MONGODB_PASSWORD
+REDIS_PASSWORD=$REDIS_PASSWORD
+
+# Tor Security
+TOR_PASSWORD=$TOR_PASSWORD
+
+# TRON Security
+TRON_API_KEY=$TRON_API_KEY
+NODE_ADDRESS=$NODE_ADDRESS
+NODE_PRIVATE_KEY=$NODE_PRIVATE_KEY
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    chmod 600 "${ENV_DIR}/.env.secure"
+    log_success "Generated .env.secure"
+}
+
+# Generate .env.api
+generate_api_env() {
+    log_info "Generating .env.api..."
+    cat > "${ENV_DIR}/.env.api" << EOF
+# Direct API Service Configuration
+# Generated: $BUILD_DATE
+# Git Commit: $GIT_COMMIT
+
+# API Service Configuration
+SERVICE_NAME=api
+SERVICE_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# Network Configuration
+API_HOST=172.20.0.10
+API_PORT=8080
+API_URL=http://lucid-api:8080
+
+# Security Configuration
+JWT_SECRET_KEY=$JWT_SECRET_KEY
+JWT_ALGORITHM=HS256
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# Database Configuration
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid?authSource=admin
+MONGODB_DATABASE=lucid_gateway
+REDIS_URL=redis://lucid-redis:6379/0
+
+# Docker Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+LUCID_PLATFORM=arm64
+
+# Build Information
+BUILD_DATE=$BUILD_DATE
+GIT_COMMIT=$GIT_COMMIT
+EOF
+    log_success "Generated .env.api"
+}
+
 # Main execution function
 main() {
     log_info "Starting generation of service-specific environment files..."
@@ -1277,6 +2140,21 @@ main() {
     log_info "Environment Directory: $ENV_DIR"
     log_info "Build Date: $BUILD_DATE"
     log_info "Git Commit: $GIT_COMMIT"
+    
+    # Validate Pi environment
+    if [[ ! -d "/mnt/myssd" ]]; then
+        log_error "This script must be run on the Pi environment with /mnt/myssd mount point"
+        log_error "Current system: $(uname -a)"
+        log_error "Expected Pi environment with SSD mount at /mnt/myssd"
+        exit 1
+    fi
+    
+    # Validate project structure
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        log_error "Project root directory not found: $PROJECT_ROOT"
+        log_error "Please ensure the Lucid project is properly mounted at /mnt/myssd/Lucid/Lucid"
+        exit 1
+    fi
     
     # Create environment directory
     create_env_dir
@@ -1312,12 +2190,32 @@ main() {
     generate_blockchain_api_env
     generate_blockchain_governance_env
     
+    # Generate additional missing environment files from path_plan.md
+    generate_tron_client_env
+    generate_tron_payout_router_env
+    generate_tron_wallet_manager_env
+    generate_tron_usdt_manager_env
+    generate_tron_staking_env
+    generate_tron_payment_gateway_env
+    generate_gui_env
+    generate_pi_build_env
+    
+    # Generate missing core environment files from path_plan.md
+    generate_foundation_env
+    generate_core_env
+    generate_application_env
+    generate_support_env
+    generate_distroless_env
+    generate_master_env
+    generate_secure_env
+    generate_api_env
+    
     log_success "All service-specific environment files generated successfully!"
     log_info "Files generated in: $ENV_DIR"
     
     # List generated files
     log_info "Generated files:"
-    ls -la "${ENV_DIR}"/.env.* | grep -E "\.(api-gateway|api-server|authentication|authentication-service-distroless|orchestrator|chunker|merkle-builder|tor-proxy|tunnel-tools|server-tools|openapi-gateway|openapi-server|development|staging|production|test|pi|blockchain-api|blockchain-governance)$" | while read -r line; do
+    ls -la "${ENV_DIR}"/.env.* | grep -E "\.(api-gateway|api-server|authentication|authentication-service-distroless|orchestrator|chunker|merkle-builder|tor-proxy|tunnel-tools|server-tools|openapi-gateway|openapi-server|development|staging|production|test|pi|blockchain-api|blockchain-governance|tron-client|tron-payout-router|tron-wallet-manager|tron-usdt-manager|tron-staking|tron-payment-gateway|gui|pi-build|foundation|core|application|support|distroless|master|secure|api)$" | while read -r line; do
         echo "  $line"
     done
     
