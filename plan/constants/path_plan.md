@@ -2,7 +2,9 @@
 
 *Root Project Path:*
   - PROJECT=/mnt/myssd/Lucid/Lucid/
-
+*ROOT scripts path:*
+ - /mnt/myssd/Lucid/Lucid/scripts/*/
+ 
 **ALL env documents steam:**
 - ENV_DIR=/mnt/myssd/Lucid/Lucid/configs/environment/
 
