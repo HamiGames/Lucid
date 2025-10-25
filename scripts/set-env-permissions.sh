@@ -123,17 +123,17 @@ main() {
     
     # Regular Environment Files (664 permissions)
     regular_files=(
-        "$ENV_DIR/env.development"
-        "$ENV_DIR/env.staging" 
-        "$ENV_DIR/env.production"
-        "$ENV_DIR/env.test"
+        "$ENV_DIR/.env.development"
+        "$ENV_DIR/.env.staging" 
+        "$ENV_DIR/.env.production"
+        "$ENV_DIR/.env.test"
         "$ENV_DIR/env.coordination.yml"
-        "$ENV_DIR/env.foundation"
-        "$ENV_DIR/env.core"
-        "$ENV_DIR/env.application"
-        "$ENV_DIR/env.support"
-        "$ENV_DIR/env.gui"
-        "$ENV_DIR/env.pi-build"
+        "$ENV_DIR/.env.foundation"
+        "$ENV_DIR/.env.core"
+        "$ENV_DIR/.env.application"
+        "$ENV_DIR/.env.support"
+        "$ENV_DIR/.env.gui"
+        "$ENV_DIR/.env.pi-build"
         "$ENV_DIR/layer2.env"
         "$ENV_DIR/layer2-simple.env"
     )
