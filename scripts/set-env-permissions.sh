@@ -228,6 +228,44 @@ main() {
         set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Service Environment"
     done
     
+    # Set permissions for infrastructure blockchain environment files
+    blockchain_env_dir="$PROJECT_ROOT/infrastructure/docker/blockchain/env"
+    if [[ -d "$blockchain_env_dir" ]]; then
+        blockchain_env_files=(
+            "$blockchain_env_dir/.env.blockchain-api"
+            "$blockchain_env_dir/.env.blockchain-governance"
+            "$blockchain_env_dir/.env.blockchain-ledger"
+            "$blockchain_env_dir/.env.blockchain-sessions-data"
+            "$blockchain_env_dir/.env.blockchain-vm"
+            "$blockchain_env_dir/.env.contract-compiler"
+            "$blockchain_env_dir/.env.contract-deployment"
+            "$blockchain_env_dir/.env.deployment-orchestrator"
+            "$blockchain_env_dir/.env.on-system-chain-client"
+            "$blockchain_env_dir/.env.tron-node-client"
+        )
+        for file in "${blockchain_env_files[@]}"; do
+            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Blockchain Environment"
+        done
+        log_success "Set permissions for blockchain environment files"
+    fi
+    
+    # Set permissions for infrastructure database environment files
+    database_env_dir="$PROJECT_ROOT/infrastructure/docker/databases/env"
+    if [[ -d "$database_env_dir" ]]; then
+        database_env_files=(
+            "$database_env_dir/.env.database-backup"
+            "$database_env_dir/.env.database-migration"
+            "$database_env_dir/.env.database-monitoring"
+            "$database_env_dir/.env.database-restore"
+            "$database_env_dir/.env.mongodb"
+            "$database_env_dir/.env.mongodb-init"
+        )
+        for file in "${database_env_files[@]}"; do
+            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Database Environment"
+        done
+        log_success "Set permissions for database environment files"
+    fi
+    
     # Set permissions for API Gateway specific files
     api_gateway_env_dir="$PROJECT_ROOT/03-api-gateway/api"
     if [[ -d "$api_gateway_env_dir" ]]; then
@@ -241,6 +279,38 @@ main() {
         find "$sessions_env_dir" -name "*.env*" -type f -exec chmod "$REGULAR_PERMISSIONS" {} \; 2>/dev/null || true
         log_success "Set permissions for session management environment files"
     fi
+    
+    # Scan and set permissions for all remaining .env files in infrastructure directories
+    log "Scanning infrastructure directories for additional .env files..."
+    infrastructure_dirs=(
+        "$PROJECT_ROOT/infrastructure/docker"
+        "$PROJECT_ROOT/infrastructure/containers"
+        "$PROJECT_ROOT/sessions"
+        "$PROJECT_ROOT/RDP"
+        "$PROJECT_ROOT/blockchain"
+        "$PROJECT_ROOT/node"
+        "$PROJECT_ROOT/admin"
+        "$PROJECT_ROOT/payment-systems"
+    )
+    
+    for infra_dir in "${infrastructure_dirs[@]}"; do
+        if [[ -d "$infra_dir" ]]; then
+            find "$infra_dir" -type f -name "*.env*" -not -path "*/.git/*" 2>/dev/null | while read -r file; do
+                # Skip if already in secure files list
+                is_secure=false
+                for secure_file in "${secure_files[@]}"; do
+                    if [[ "$file" == "$secure_file" ]]; then
+                        is_secure=true
+                        break
+                    fi
+                done
+                
+                if [[ "$is_secure" == "false" ]]; then
+                    set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Infrastructure Environment"
+                fi
+            done
+        fi
+    done
     
     echo
     log "Verifying permissions..."
