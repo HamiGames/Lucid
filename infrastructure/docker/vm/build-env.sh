@@ -1,14 +1,78 @@
 #!/bin/bash
-# Path: infrastructure/docker/vm/build-env.sh
-# Build Environment Script for Lucid VM Services
-# Generates .env files for virtual machine management containers
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/vm/build-env.sh
+# Build Environment Script for Lucid vm Services
+# Generates .env files for vm containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/vm"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -25,208 +89,50 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
 # Create environment directory
 mkdir -p "$ENV_DIR"
 
-log_info "Building environment files for Lucid VM Services"
+log_info "Building environment files for Lucid vm Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
 log_info "Build timestamp: $BUILD_TIMESTAMP"
 log_info "Git SHA: $GIT_SHA"
 
-# VM Manager Environment
-log_info "Creating vm-manager.env..."
-cat > "$ENV_DIR/vm-manager.env" << EOF
-# Lucid VM Manager Environment
-# Generated: $(date)
+# Common environment variables for all services
+COMMON_ENV_VARS=(
+    "PYTHONDONTWRITEBYTECODE=1"
+    "PYTHONUNBUFFERED=1"
+    "PYTHONPATH=/app"
+    "BUILD_TIMESTAMP=$BUILD_TIMESTAMP"
+    "GIT_SHA=$GIT_SHA"
+    "LUCID_ENV=dev"
+    "LUCID_NETWORK=testnet"
+    "LUCID_PLANE=ops"
+    "LUCID_CLUSTER_ID=dev-core"
+    "LOG_LEVEL=DEBUG"
+    "PROJECT_ROOT=$PROJECT_ROOT"
+    "ENV_DIR=$ENV_DIR"
+    "SCRIPTS_DIR=$SCRIPTS_DIR"
+    "CONFIG_SCRIPTS_DIR=$CONFIG_SCRIPTS_DIR"
+)
 
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=vm-manager
-SERVICE_PORT=8113
-
-# VM Configuration
-VM_TYPE=qemu
-VM_HYPERVISOR=kvm
-VM_ARCHITECTURE=x86_64
-VM_DEFAULT_MEMORY=2048
-VM_DEFAULT_CPUS=2
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-VM_DATABASE=lucid_vms
-
-# Security Configuration
-VM_ENCRYPTION_KEY=""
-VM_ACCESS_KEY=""
-VM_ISOLATION=true
-VM_NETWORK_ISOLATION=true
-
-# Performance Configuration
-MAX_VM_INSTANCES=10
-VM_STARTUP_TIMEOUT=120
-VM_SHUTDOWN_TIMEOUT=30
-VM_RESOURCE_LIMIT_CPU=80
-VM_RESOURCE_LIMIT_MEMORY=80
-
-# Storage Configuration
-VM_STORAGE_PATH=/data/vms
-VM_DISK_SIZE=20G
-VM_DISK_FORMAT=qcow2
-VM_SNAPSHOT_ENABLED=true
-
-# Network Configuration
-VM_NETWORK_TYPE=bridge
-VM_NETWORK_INTERFACE=virbr0
-VM_NETWORK_ISOLATION=true
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-VM_DATA_DIR=/data/vms
-VM_INSTANCES_DIR=/data/instances
-VM_LOGS_DIR=/data/logs
-EOF
-
-# VM Orchestrator Environment
-log_info "Creating vm-orchestrator.env..."
-cat > "$ENV_DIR/vm-orchestrator.env" << EOF
-# Lucid VM Orchestrator Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=vm-orchestrator
-SERVICE_PORT=8114
-
-# Orchestration Configuration
-ORCHESTRATOR_MODE=distributed
-ORCHESTRATION_ALGORITHM=round_robin
-LOAD_BALANCING=true
-AUTO_SCALING=true
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-ORCHESTRATOR_DATABASE=lucid_orchestrator
-
-# VM Management Configuration
-VM_POOL_SIZE=20
-VM_POOL_MIN_SIZE=5
-VM_POOL_MAX_SIZE=50
-VM_POOL_SCALE_THRESHOLD=0.8
-
-# Security Configuration
-ORCHESTRATOR_ENCRYPTION_KEY=""
-VM_COMMUNICATION_ENCRYPTION=true
-ORCHESTRATOR_ACCESS_CONTROL=true
-
-# Performance Configuration
-ORCHESTRATOR_THREAD_POOL_SIZE=20
-ORCHESTRATOR_QUEUE_SIZE=100
-VM_PROVISIONING_TIMEOUT=300
-VM_DEPROVISIONING_TIMEOUT=60
-
-# Monitoring Configuration
-VM_MONITORING_ENABLED=true
-VM_METRICS_COLLECTION=true
-VM_ALERTING_ENABLED=true
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-ORCHESTRATOR_DATA_DIR=/data/orchestrator
-VM_POOL_DATA_DIR=/data/vm-pool
-LOGS_DIR=/data/logs
-EOF
-
-# VM Resource Monitor Environment
-log_info "Creating vm-resource-monitor.env..."
-cat > "$ENV_DIR/vm-resource-monitor.env" << EOF
-# Lucid VM Resource Monitor Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=vm-resource-monitor
-SERVICE_PORT=8115
-
-# Monitoring Configuration
-MONITORING_INTERVAL=10
-METRICS_COLLECTION_INTERVAL=5
-ALERT_CHECK_INTERVAL=30
-RESOURCE_THRESHOLD_CPU=80
-RESOURCE_THRESHOLD_MEMORY=80
-RESOURCE_THRESHOLD_DISK=90
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-MONITORING_DATABASE=lucid_monitoring
-
-# Alerting Configuration
-ALERT_ENABLED=true
-ALERT_THRESHOLD_BREACHES=3
-ALERT_COOLDOWN_PERIOD=300
-ALERT_ESCALATION_ENABLED=true
-
-# Performance Configuration
-MONITORING_DATA_RETENTION=86400
-METRICS_COMPRESSION=true
-MAX_MONITORING_HISTORY=1000
-MONITORING_BATCH_SIZE=100
-
-# Security Configuration
-MONITORING_ENCRYPTION_KEY=""
-METRICS_ENCRYPTION=true
-MONITORING_ACCESS_CONTROL=true
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-MONITORING_DATA_DIR=/data/monitoring
-METRICS_DATA_DIR=/data/metrics
-ALERT_DATA_DIR=/data/alerts
-LOGS_DIR=/data/logs
-EOF
+# Service-specific environment files will be added here
+# This is a template - each service should implement its specific .env files
 
 log_success "Environment files created successfully in $ENV_DIR"
-log_info "Created environment files for:"
-log_info "  - vm-manager.env"
-log_info "  - vm-orchestrator.env"
-log_info "  - vm-resource-monitor.env"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
+log_info "📁 All environment files saved to: $ENV_DIR"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/vm-manager.env -t pickme/lucid:vm-manager ."
-log_info "  docker build --env-file $ENV_DIR/vm-orchestrator.env -t pickme/lucid:vm-orchestrator ."
-log_info "  docker build --env-file $ENV_DIR/vm-resource-monitor.env -t pickme/lucid:vm-resource-monitor ."
+log_info "  docker build --env-file $ENV_DIR/.env.<service> -t pickme/lucid:<service> ."

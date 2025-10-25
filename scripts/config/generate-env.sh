@@ -1,593 +1,503 @@
 #!/bin/bash
-
-# Environment Configuration Generator for Lucid RDP System
-# This script generates environment configuration files for different deployment scenarios
+# =============================================================================
+# Lucid Environment Configuration Generator - Pi Console Native
+# =============================================================================
+# This script generates environment configuration files for the Lucid project
+# Optimized for Raspberry Pi console usage with comprehensive validation
+# 
+# Features:
+# - Pi console native with package requirement checks
+# - Mount point validation for Pi storage
+# - Robust fallback mechanisms for minimal Pi installations
+# - Consistent .env.* file naming
+# - Global path management
+# =============================================================================
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CONFIGS_DIR="$PROJECT_ROOT/configs/environment"
+# =============================================================================
+# GLOBAL PATH CONFIGURATION
+# =============================================================================
+# Set global path variables for consistent file management across all scripts
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_CONFIG_DIR="$PROJECT_ROOT/configs/environment"
+SCRIPTS_CONFIG_DIR="$PROJECT_ROOT/scripts/config"
+SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 TEMPLATES_DIR="$PROJECT_ROOT/configs/templates"
+BACKUP_DIR="$PROJECT_ROOT/configs/backups"
 
-# Colors for output
+# Current script directory (for relative operations)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Build configuration
+BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_PLATFORM="linux/arm64"
+
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+# Pi-specific mount points and storage validation
+PI_MOUNT_POINTS=(
+    "/mnt/myssd"
+    "/mnt/usb"
+    "/mnt/sdcard"
+    "/opt"
+    "/var"
+    "/tmp"
+)
+
+# Required Pi packages for environment generation
+PI_REQUIRED_PACKAGES=(
+    "openssl"
+    "coreutils"
+    "util-linux"
+    "procps"
+    "grep"
+    "sed"
+    "awk"
+    "bash"
+)
+
+# Pi-specific fallback mechanisms
+PI_FALLBACK_DIRS=(
+    "/tmp/lucid-env"
+    "/var/tmp/lucid-env"
+    "/home/pi/lucid-env"
+)
+
+# =============================================================================
+# COLORED OUTPUT FUNCTIONS
+# =============================================================================
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Function to print colored output
-print_status() {
-    local color=$1
-    local message=$2
-    echo -e "${color}[$(date +'%Y-%m-%d %H:%M:%S')] ${message}${NC}"
-}
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_debug() { echo -e "${CYAN}[DEBUG]${NC} $1"; }
+log_critical() { echo -e "${PURPLE}[CRITICAL]${NC} $1"; }
 
-print_info() {
-    print_status "$BLUE" "INFO: $1"
-}
+# =============================================================================
+# PI CONSOLE NATIVE VALIDATION FUNCTIONS
+# =============================================================================
 
-print_success() {
-    print_status "$GREEN" "SUCCESS: $1"
-}
-
-print_warning() {
-    print_status "$YELLOW" "WARNING: $1"
-}
-
-print_error() {
-    print_status "$RED" "ERROR: $1"
-}
-
-# Function to show usage
-show_usage() {
-    cat << EOF
-Usage: $0 [OPTIONS]
-
-Environment Configuration Generator for Lucid RDP System
-
-OPTIONS:
-    -e, --environment ENV    Target environment (development, staging, production, test)
-    -t, --template TEMPLATE  Template to use (default, pi, cloud, local)
-    -o, --output FILE        Output file path
-    -f, --force              Overwrite existing files
-    -v, --verbose            Verbose output
-    --help                   Show this help message
-
-ENVIRONMENTS:
-    development              Development environment configuration
-    staging                  Staging environment configuration
-    production               Production environment configuration
-    test                     Test environment configuration
-
-TEMPLATES:
-    default                  Default configuration template
-    pi                       Raspberry Pi optimized configuration
-    cloud                    Cloud deployment configuration
-    local                    Local development configuration
-
-EXAMPLES:
-    $0 --environment development --template local
-    $0 --environment production --template cloud --output .env.production
-    $0 --environment pi --template pi --force
-
-EOF
-}
-
-# Function to generate random secrets
-generate_secret() {
-    local length=${1:-32}
-    openssl rand -hex $((length / 2)) 2>/dev/null || \
-    python3 -c "import secrets; print(secrets.token_hex($((length / 2))))" 2>/dev/null || \
-    head -c $length /dev/urandom | base64 | tr -d '\n' | cut -c1-$length
-}
-
-# Function to generate JWT secret
-generate_jwt_secret() {
-    generate_secret 64
-}
-
-# Function to generate database password
-generate_db_password() {
-    generate_secret 32
-}
-
-# Function to generate encryption key
-generate_encryption_key() {
-    generate_secret 32
-}
-
-# Function to get environment-specific values
-get_env_values() {
-    local environment=$1
-    local template=$2
+# Check if running on Pi console
+check_pi_console() {
+    log_info "Validating Pi console environment..."
     
-    case "$environment" in
-        "development")
-            echo "DEBUG=true"
-            echo "LOG_LEVEL=DEBUG"
-            echo "API_RATE_LIMIT=1000"
-            echo "SESSION_TIMEOUT=3600"
-            echo "DATABASE_POOL_SIZE=10"
-            echo "REDIS_POOL_SIZE=20"
-            ;;
-        "staging")
-            echo "DEBUG=false"
-            echo "LOG_LEVEL=INFO"
-            echo "API_RATE_LIMIT=500"
-            echo "SESSION_TIMEOUT=7200"
-            echo "DATABASE_POOL_SIZE=20"
-            echo "REDIS_POOL_SIZE=50"
-            ;;
-        "production")
-            echo "DEBUG=false"
-            echo "LOG_LEVEL=WARNING"
-            echo "API_RATE_LIMIT=100"
-            echo "SESSION_TIMEOUT=14400"
-            echo "DATABASE_POOL_SIZE=50"
-            echo "REDIS_POOL_SIZE=100"
-            ;;
-        "test")
-            echo "DEBUG=true"
-            echo "LOG_LEVEL=DEBUG"
-            echo "API_RATE_LIMIT=10000"
-            echo "SESSION_TIMEOUT=300"
-            echo "DATABASE_POOL_SIZE=5"
-            echo "REDIS_POOL_SIZE=10"
-            ;;
-    esac
-    
-    case "$template" in
-        "pi")
-            echo "HARDWARE_ACCELERATION=true"
-            echo "V4L2_ENABLED=true"
-            echo "GPU_MEMORY=128"
-            echo "CPU_CORES=4"
-            echo "MEMORY_LIMIT=2G"
-            ;;
-        "cloud")
-            echo "HARDWARE_ACCELERATION=false"
-            echo "V4L2_ENABLED=false"
-            echo "SCALING_ENABLED=true"
-            echo "AUTO_SCALING=true"
-            echo "LOAD_BALANCER=true"
-            ;;
-        "local")
-            echo "HARDWARE_ACCELERATION=false"
-            echo "V4L2_ENABLED=false"
-            echo "LOCAL_DEVELOPMENT=true"
-            echo "HOT_RELOAD=true"
-            ;;
-    esac
-}
-
-# Function to generate environment file
-generate_env_file() {
-    local environment=$1
-    local template=$2
-    local output_file=$3
-    local force=$4
-    
-    print_info "Generating environment file for $environment with $template template..."
-    
-    # Check if file exists and force is not set
-    if [ -f "$output_file" ] && [ "$force" = false ]; then
-        print_warning "File $output_file already exists. Use --force to overwrite."
-        return 1
+    # Check if we're on a Pi
+    if [ -f "/proc/device-tree/model" ]; then
+        local model=$(cat /proc/device-tree/model 2>/dev/null || echo "unknown")
+        if [[ "$model" == *"Raspberry Pi"* ]]; then
+            log_success "Running on Raspberry Pi: $model"
+            return 0
+        fi
     fi
     
-    # Create output directory if it doesn't exist
-    mkdir -p "$(dirname "$output_file")"
+    # Check for Pi-specific hardware
+    if [ -d "/sys/class/gpio" ] && [ -f "/proc/cpuinfo" ]; then
+        if grep -q "BCM" /proc/cpuinfo 2>/dev/null; then
+            log_success "Running on Pi-compatible hardware"
+            return 0
+        fi
+    fi
     
-    # Generate secrets
-    local jwt_secret=$(generate_jwt_secret)
-    local db_password=$(generate_db_password)
-    local encryption_key=$(generate_encryption_key)
-    local tron_private_key=$(generate_secret 64)
+    log_warning "Not running on Pi console - some features may be limited"
+    return 1
+}
+
+# Validate Pi mount points
+validate_pi_mounts() {
+    log_info "Validating Pi mount points..."
     
-    # Get environment-specific values
-    local env_values=$(get_env_values "$environment" "$template")
+    local valid_mounts=0
+    local total_mounts=${#PI_MOUNT_POINTS[@]}
     
-    # Generate the environment file
-    cat > "$output_file" << EOF
-# Lucid RDP System Environment Configuration
-# Generated: $(date)
-# Environment: $environment
-# Template: $template
+    for mount_point in "${PI_MOUNT_POINTS[@]}"; do
+        if [ -d "$mount_point" ] && [ -w "$mount_point" ]; then
+            log_success "Mount point accessible: $mount_point"
+            ((valid_mounts++))
+        else
+            log_warning "Mount point not accessible: $mount_point"
+        fi
+    done
+    
+    if [ $valid_mounts -eq 0 ]; then
+        log_error "No valid mount points found! Cannot proceed."
+        return 1
+    elif [ $valid_mounts -lt $((total_mounts / 2)) ]; then
+        log_warning "Limited mount points available - using fallback mechanisms"
+    fi
+    
+    return 0
+}
+
+# Check required packages
+check_pi_packages() {
+    log_info "Checking required packages for Pi console..."
+    
+    local missing_packages=()
+    
+    for package in "${PI_REQUIRED_PACKAGES[@]}"; do
+        if command -v "$package" >/dev/null 2>&1; then
+            log_success "Package available: $package"
+        else
+            log_warning "Package missing: $package"
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [ ${#missing_packages[@]} -gt 0 ]; then
+        log_warning "Missing packages: ${missing_packages[*]}"
+        log_info "Attempting to install missing packages..."
+        
+        # Try to install missing packages
+        if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update >/dev/null 2>&1 || true
+            for package in "${missing_packages[@]}"; do
+                if sudo apt-get install -y "$package" >/dev/null 2>&1; then
+                    log_success "Installed: $package"
+                else
+                    log_warning "Failed to install: $package - using fallback"
+                fi
+            done
+        else
+            log_warning "Package manager not available - using fallback mechanisms"
+        fi
+    fi
+    
+    return 0
+}
+
+# Validate storage space
+validate_storage() {
+    log_info "Validating storage space..."
+    
+    local min_space_mb=1000  # 1GB minimum
+    local available_space=0
+    
+    # Check main project directory
+    if [ -d "$PROJECT_ROOT" ]; then
+        available_space=$(df "$PROJECT_ROOT" | awk 'NR==2 {print int($4/1024)}' 2>/dev/null || echo "0")
+    else
+        # Check parent directory
+        local parent_dir=$(dirname "$PROJECT_ROOT")
+        if [ -d "$parent_dir" ]; then
+            available_space=$(df "$parent_dir" | awk 'NR==2 {print int($4/1024)}' 2>/dev/null || echo "0")
+        fi
+    fi
+    
+    if [ $available_space -gt $min_space_mb ]; then
+        log_success "Storage space available: ${available_space}MB"
+        return 0
+    else
+        log_warning "Limited storage space: ${available_space}MB (minimum: ${min_space_mb}MB)"
+        
+        # Try fallback directories
+        for fallback_dir in "${PI_FALLBACK_DIRS[@]}"; do
+            if [ -d "$fallback_dir" ] || mkdir -p "$fallback_dir" 2>/dev/null; then
+                local fallback_space=$(df "$fallback_dir" | awk 'NR==2 {print int($4/1024)}' 2>/dev/null || echo "0")
+                if [ $fallback_space -gt $min_space_mb ]; then
+                    log_success "Using fallback directory: $fallback_dir (${fallback_space}MB available)"
+                    PROJECT_ROOT="$fallback_dir/Lucid"
+                    ENV_CONFIG_DIR="$PROJECT_ROOT/configs/environment"
+                    return 0
+                fi
+            fi
+        done
+        
+        log_error "Insufficient storage space and no fallback available!"
+        return 1
+    fi
+}
 
 # =============================================================================
-# SYSTEM CONFIGURATION
+# DIRECTORY VALIDATION AND CREATION
+# =============================================================================
+validate_and_create_directories() {
+    log_info "Validating and creating required directories..."
+    
+    local directories=(
+        "$PROJECT_ROOT"
+        "$ENV_CONFIG_DIR"
+        "$SCRIPTS_CONFIG_DIR"
+        "$TEMPLATES_DIR"
+        "$BACKUP_DIR"
+    )
+    
+    for dir in "${directories[@]}"; do
+        if [ ! -d "$dir" ]; then
+            log_info "Creating directory: $dir"
+            if mkdir -p "$dir" 2>/dev/null; then
+                log_success "Created directory: $dir"
+            else
+                log_error "Failed to create directory: $dir"
+                return 1
+            fi
+        else
+            log_success "Directory exists: $dir"
+        fi
+        
+        # Check write permissions
+        if [ -w "$dir" ]; then
+            log_success "Directory writable: $dir"
+        else
+            log_warning "Directory not writable: $dir - attempting to fix permissions"
+            if chmod 755 "$dir" 2>/dev/null; then
+                log_success "Fixed permissions for: $dir"
+            else
+                log_error "Cannot fix permissions for: $dir"
+                return 1
+            fi
+        fi
+    done
+    
+    return 0
+}
+
+# =============================================================================
+# SECURE VALUE GENERATION WITH FALLBACKS
+# =============================================================================
+generate_secure_value() {
+    local length=${1:-32}
+    local value=""
+    
+    # Try multiple methods for generating secure values
+    if command -v openssl >/dev/null 2>&1; then
+        value=$(openssl rand -base64 $length 2>/dev/null | tr -d '\n' || echo "")
+    fi
+    
+    if [ -z "$value" ] && command -v python3 >/dev/null 2>&1; then
+        value=$(python3 -c "import secrets; print(secrets.token_urlsafe($length))" 2>/dev/null || echo "")
+    fi
+    
+    if [ -z "$value" ] && [ -r "/dev/urandom" ]; then
+        value=$(head -c $length /dev/urandom 2>/dev/null | base64 | tr -d '\n' | cut -c1-$length || echo "")
+    fi
+    
+    if [ -z "$value" ]; then
+        # Ultimate fallback - use date and process ID
+        value=$(date +%s%N | sha256sum | cut -c1-$length || echo "fallback$(date +%s)")
+        log_warning "Using fallback value generation method"
+    fi
+    
+    echo "$value"
+}
+
+generate_hex_key() {
+    local length=${1:-32}
+    local value=""
+    
+    if command -v openssl >/dev/null 2>&1; then
+        value=$(openssl rand -hex $length 2>/dev/null | tr -d '\n' || echo "")
+    fi
+    
+    if [ -z "$value" ] && [ -r "/dev/urandom" ]; then
+        value=$(head -c $length /dev/urandom 2>/dev/null | hexdump -v -e '/1 "%02x"' | cut -c1-$((length*2)) || echo "")
+    fi
+    
+    if [ -z "$value" ]; then
+        value=$(generate_secure_value $length | hexdump -v -e '/1 "%02x"' | cut -c1-$((length*2)) || echo "fallback$(date +%s)")
+        log_warning "Using fallback hex key generation"
+    fi
+    
+    echo "$value"
+}
+
+# =============================================================================
+# ENVIRONMENT FILE GENERATION
+# =============================================================================
+generate_master_env() {
+    log_info "Generating master environment configuration..."
+    
+    # Generate secure values
+    local mongodb_password=$(generate_secure_value 32)
+    local redis_password=$(generate_secure_value 32)
+    local jwt_secret=$(generate_secure_value 64)
+    local encryption_key=$(generate_hex_key 32)
+    local session_secret=$(generate_secure_value 32)
+    local hmac_key=$(generate_secure_value 32)
+    local signing_key=$(generate_hex_key 32)
+    local tor_password=$(generate_secure_value 32)
+    local api_secret=$(generate_secure_value 32)
+    
+    # Generate .onion addresses for Tor
+    local api_gateway_onion=""
+    local auth_service_onion=""
+    local blockchain_onion=""
+    
+    if command -v openssl >/dev/null 2>&1; then
+        # Generate v3 .onion addresses
+        for i in {1..3}; do
+            local temp_dir=$(mktemp -d 2>/dev/null || echo "/tmp")
+            if openssl genpkey -algorithm ed25519 -out "$temp_dir/key.pem" 2>/dev/null; then
+                local pubkey=$(openssl pkey -in "$temp_dir/key.pem" -pubout -outform DER 2>/dev/null | tail -c 32 | base32 | tr -d '=' | tr '[:upper:]' '[:lower:]' || echo "")
+                if [ -n "$pubkey" ]; then
+                    case $i in
+                        1) api_gateway_onion="${pubkey:0:56}.onion" ;;
+                        2) auth_service_onion="${pubkey:0:56}.onion" ;;
+                        3) blockchain_onion="${pubkey:0:56}.onion" ;;
+                    esac
+                fi
+            fi
+            rm -rf "$temp_dir" 2>/dev/null || true
+        done
+    fi
+    
+    # Fallback .onion addresses
+    if [ -z "$api_gateway_onion" ]; then
+        api_gateway_onion="lucid-api-$(generate_secure_value 16 | cut -c1-16).onion"
+    fi
+    if [ -z "$auth_service_onion" ]; then
+        auth_service_onion="lucid-auth-$(generate_secure_value 16 | cut -c1-16).onion"
+    fi
+    if [ -z "$blockchain_onion" ]; then
+        blockchain_onion="lucid-blockchain-$(generate_secure_value 16 | cut -c1-16).onion"
+    fi
+    
+    # Create master environment file
+    cat > "$ENV_CONFIG_DIR/.env.master" << EOF
+# =============================================================================
+# LUCID MASTER ENVIRONMENT CONFIGURATION
+# =============================================================================
+# Generated: $BUILD_TIMESTAMP
+# Git SHA: $GIT_SHA
+# Platform: $BUILD_PLATFORM
+# Target: Raspberry Pi Console
 # =============================================================================
 
-# Project Information
-PROJECT_NAME="Lucid RDP System"
-PROJECT_VERSION="1.0.0"
-ENVIRONMENT="$environment"
-TEMPLATE="$template"
+# Build Information
+BUILD_TIMESTAMP=$BUILD_TIMESTAMP
+GIT_SHA=$GIT_SHA
+BUILD_PLATFORM=$BUILD_PLATFORM
+BUILD_REGISTRY=pickme/lucid
 
-# Debug and Logging
-DEBUG=$(echo "$env_values" | grep "^DEBUG=" | cut -d'=' -f2)
-LOG_LEVEL=$(echo "$env_values" | grep "^LOG_LEVEL=" | cut -d'=' -f2)
-LOG_FORMAT="json"
-LOG_FILE="/var/log/lucid/lucid.log"
+# Project Paths
+PROJECT_ROOT=$PROJECT_ROOT
+ENV_CONFIG_DIR=$ENV_CONFIG_DIR
+SCRIPTS_CONFIG_DIR=$SCRIPTS_CONFIG_DIR
+SCRIPTS_DIR=$SCRIPTS_DIR
+TEMPLATES_DIR=$TEMPLATES_DIR
+BACKUP_DIR=$BACKUP_DIR
 
-# =============================================================================
-# API GATEWAY CONFIGURATION
-# =============================================================================
+# Environment
+LUCID_ENV=production
+LUCID_NETWORK=mainnet
+LUCID_PLANE=ops
+LUCID_CLUSTER_ID=pi-production
 
-# API Gateway Settings
-API_GATEWAY_HOST="0.0.0.0"
-API_GATEWAY_PORT=8080
-API_GATEWAY_WORKERS=4
-API_RATE_LIMIT=$(echo "$env_values" | grep "^API_RATE_LIMIT=" | cut -d'=' -f2)
-API_TIMEOUT=30
+# Database Configuration
+MONGODB_HOST=lucid-mongodb
+MONGODB_PORT=27017
+MONGODB_DATABASE=lucid_production
+MONGODB_USERNAME=lucid
+MONGODB_PASSWORD=$mongodb_password
+MONGODB_URI=mongodb://lucid:$mongodb_password@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_AUTH_SOURCE=admin
+MONGODB_POOL_SIZE=50
 
-# CORS Configuration
-CORS_ORIGINS="*"
-CORS_METHODS="GET,POST,PUT,DELETE,OPTIONS"
-CORS_HEADERS="*"
+REDIS_HOST=lucid-redis
+REDIS_PORT=6379
+REDIS_PASSWORD=$redis_password
+REDIS_URI=redis://:$redis_password@lucid-redis:6379
+REDIS_DATABASE=0
+REDIS_POOL_SIZE=100
 
-# =============================================================================
-# AUTHENTICATION CONFIGURATION
-# =============================================================================
-
-# JWT Configuration
-JWT_SECRET="$jwt_secret"
-JWT_ALGORITHM="HS256"
+# Security Configuration
+JWT_SECRET=$jwt_secret
+JWT_SECRET_KEY=$jwt_secret
+JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
 JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 
-# Session Configuration
-SESSION_TIMEOUT=$(echo "$env_values" | grep "^SESSION_TIMEOUT=" | cut -d'=' -f2)
-SESSION_SECRET=$(generate_secret 32)
+ENCRYPTION_KEY=$encryption_key
+ENCRYPTION_ALGORITHM=AES-256-GCM
+ENCRYPTION_IV_LENGTH=12
+
+SESSION_SECRET=$session_secret
+SESSION_TIMEOUT=3600
 SESSION_COOKIE_SECURE=true
 SESSION_COOKIE_HTTPONLY=true
 
-# Hardware Wallet Configuration
-HARDWARE_WALLET_ENABLED=true
-HARDWARE_WALLET_TIMEOUT=30
-HARDWARE_WALLET_RETRY_ATTEMPTS=3
-
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-
-# MongoDB Configuration
-MONGODB_HOST="localhost"
-MONGODB_PORT=27017
-MONGODB_DATABASE="lucid"
-MONGODB_USERNAME="lucid"
-MONGODB_PASSWORD="$db_password"
-MONGODB_AUTH_SOURCE="admin"
-MONGODB_POOL_SIZE=$(echo "$env_values" | grep "^DATABASE_POOL_SIZE=" | cut -d'=' -f2)
-MONGODB_MAX_IDLE_TIME=30000
-MONGODB_SERVER_SELECTION_TIMEOUT=5000
-
-# MongoDB Replica Set
-MONGODB_REPLICA_SET="lucid-rs"
-MONGODB_REPLICA_SET_HOSTS="localhost:27017,localhost:27018,localhost:27019"
-
-# Redis Configuration
-REDIS_HOST="localhost"
-REDIS_PORT=6379
-REDIS_PASSWORD=""
-REDIS_DATABASE=0
-REDIS_POOL_SIZE=$(echo "$env_values" | grep "^REDIS_POOL_SIZE=" | cut -d'=' -f2)
-REDIS_MAX_CONNECTIONS=1000
-REDIS_TIMEOUT=5
-
-# Elasticsearch Configuration
-ELASTICSEARCH_HOST="localhost"
-ELASTICSEARCH_PORT=9200
-ELASTICSEARCH_USERNAME=""
-ELASTICSEARCH_PASSWORD=""
-ELASTICSEARCH_INDEX_PREFIX="lucid"
-
-# =============================================================================
-# BLOCKCHAIN CONFIGURATION
-# =============================================================================
-
-# Blockchain Core Settings
-BLOCKCHAIN_NETWORK="lucid"
-BLOCKCHAIN_CONSENSUS="poot"
-BLOCKCHAIN_BLOCK_TIME=10
-BLOCKCHAIN_DIFFICULTY=1
-BLOCKCHAIN_REWARD=1.0
-
-# Session Anchoring
-ANCHORING_ENABLED=true
-ANCHORING_BATCH_SIZE=10
-ANCHORING_INTERVAL=60
-ANCHORING_TIMEOUT=30
-
-# Merkle Tree Configuration
-MERKLE_TREE_ALGORITHM="blake3"
-MERKLE_TREE_LEAF_SIZE=1024
-MERKLE_TREE_DEPTH_LIMIT=20
-
-# =============================================================================
-# SESSION MANAGEMENT CONFIGURATION
-# =============================================================================
-
-# Session Recording
-RECORDING_ENABLED=true
-RECORDING_QUALITY="medium"
-RECORDING_FPS=30
-RECORDING_BITRATE=2000
-RECORDING_RESOLUTION="1920x1080"
-
-# Chunk Processing
-CHUNK_SIZE=10485760
-CHUNK_COMPRESSION_LEVEL=6
-CHUNK_ENCRYPTION_ENABLED=true
-CHUNK_ENCRYPTION_ALGORITHM="AES-256-GCM"
-
-# Session Storage
-SESSION_STORAGE_PATH="/data/sessions"
-SESSION_STORAGE_RETENTION_DAYS=30
-SESSION_BACKUP_ENABLED=true
-SESSION_BACKUP_INTERVAL=3600
-
-# =============================================================================
-# RDP SERVICES CONFIGURATION
-# =============================================================================
-
-# RDP Server Configuration
-RDP_SERVER_ENABLED=true
-RDP_SERVER_PORT_RANGE="13389-14389"
-RDP_SERVER_MAX_SESSIONS=100
-RDP_SERVER_TIMEOUT=300
-
-# XRDP Configuration
-XRDP_ENABLED=true
-XRDP_CONFIG_PATH="/etc/xrdp"
-XRDP_LOG_PATH="/var/log/xrdp"
-
-# Session Controller
-SESSION_CONTROLLER_PORT=8092
-SESSION_CONTROLLER_WORKERS=2
-SESSION_CONTROLLER_TIMEOUT=30
-
-# Resource Monitor
-RESOURCE_MONITOR_PORT=8093
-RESOURCE_MONITOR_INTERVAL=30
-RESOURCE_MONITOR_THRESHOLDS_CPU=80
-RESOURCE_MONITOR_THRESHOLDS_MEMORY=80
-RESOURCE_MONITOR_THRESHOLDS_DISK=90
-
-# =============================================================================
-# NODE MANAGEMENT CONFIGURATION
-# =============================================================================
-
-# Node Registration
-NODE_REGISTRATION_ENABLED=true
-NODE_REGISTRATION_PORT=8095
-NODE_REGISTRATION_TIMEOUT=30
-
-# PoOT Configuration
-POOT_ENABLED=true
-POOT_CALCULATION_INTERVAL=300
-POOT_REWARD_FACTOR=1.0
-POOT_PENALTY_FACTOR=0.5
-
-# Node Pools
-NODE_POOL_ENABLED=true
-NODE_POOL_MIN_SIZE=5
-NODE_POOL_MAX_SIZE=100
-NODE_POOL_SCALE_UP_THRESHOLD=80
-NODE_POOL_SCALE_DOWN_THRESHOLD=20
-
-# =============================================================================
-# ADMIN INTERFACE CONFIGURATION
-# =============================================================================
-
-# Admin Interface
-ADMIN_INTERFACE_ENABLED=true
-ADMIN_INTERFACE_PORT=8083
-ADMIN_INTERFACE_HOST="0.0.0.0"
-
-# RBAC Configuration
-RBAC_ENABLED=true
-RBAC_DEFAULT_ROLE="read_only"
-RBAC_ADMIN_ROLE="super_admin"
-
-# Audit Logging
-AUDIT_LOGGING_ENABLED=true
-AUDIT_LOG_RETENTION_DAYS=90
-AUDIT_LOG_LEVEL="INFO"
-
-# Emergency Controls
-EMERGENCY_CONTROLS_ENABLED=true
-EMERGENCY_LOCKDOWN_ENABLED=true
-EMERGENCY_SHUTDOWN_ENABLED=true
-
-# =============================================================================
-# TRON PAYMENT CONFIGURATION
-# =============================================================================
-
-# TRON Network Configuration
-TRON_NETWORK="mainnet"
-TRON_API_URL="https://api.trongrid.io"
-TRON_API_KEY=""
-TRON_PRIVATE_KEY="$tron_private_key"
-
-# USDT Configuration
-USDT_CONTRACT_ADDRESS="TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
-USDT_DECIMALS=6
-USDT_MIN_TRANSFER=1
-
-# Payout Configuration
-PAYOUT_ENABLED=true
-PAYOUT_V0_ENABLED=true
-PAYOUT_KYC_ENABLED=true
-PAYOUT_DIRECT_ENABLED=true
-PAYOUT_MIN_AMOUNT=1
-PAYOUT_MAX_AMOUNT=10000
-
-# Staking Configuration
-STAKING_ENABLED=true
-STAKING_MIN_AMOUNT=1000
-STAKING_REWARD_RATE=0.05
-STAKING_LOCK_PERIOD=86400
-
-# =============================================================================
-# SECURITY CONFIGURATION
-# =============================================================================
-
-# Encryption
-ENCRYPTION_KEY="$encryption_key"
-ENCRYPTION_ALGORITHM="AES-256-GCM"
-ENCRYPTION_IV_LENGTH=12
-
-# SSL/TLS Configuration
-SSL_ENABLED=true
-SSL_CERT_PATH="/etc/ssl/certs/lucid.crt"
-SSL_KEY_PATH="/etc/ssl/private/lucid.key"
-SSL_CA_PATH="/etc/ssl/certs/ca.crt"
-
-# Security Headers
-SECURITY_HEADERS_ENABLED=true
-SECURITY_HEADERS_HSTS=true
-SECURITY_HEADERS_CSP=true
-SECURITY_HEADERS_XFRAME=true
-
-# =============================================================================
-# MONITORING CONFIGURATION
-# =============================================================================
-
-# Prometheus Configuration
-PROMETHEUS_ENABLED=true
-PROMETHEUS_PORT=9090
-PROMETHEUS_PATH="/metrics"
-PROMETHEUS_INTERVAL=15
-
-# Grafana Configuration
-GRAFANA_ENABLED=true
-GRAFANA_PORT=3000
-GRAFANA_ADMIN_USER="admin"
-GRAFANA_ADMIN_PASSWORD="$(generate_secret 16)"
-
-# Health Checks
-HEALTH_CHECK_ENABLED=true
-HEALTH_CHECK_INTERVAL=30
-HEALTH_CHECK_TIMEOUT=10
-HEALTH_CHECK_RETRIES=3
-
-# =============================================================================
-# HARDWARE CONFIGURATION
-# =============================================================================
-
-# Hardware Acceleration
-HARDWARE_ACCELERATION=$(echo "$env_values" | grep "^HARDWARE_ACCELERATION=" | cut -d'=' -f2)
-V4L2_ENABLED=$(echo "$env_values" | grep "^V4L2_ENABLED=" | cut -d'=' -f2)
-
-# GPU Configuration
-GPU_ENABLED=false
-GPU_MEMORY=$(echo "$env_values" | grep "^GPU_MEMORY=" | cut -d'=' -f2)
-GPU_DEVICE_ID=0
-
-# CPU Configuration
-CPU_CORES=$(echo "$env_values" | grep "^CPU_CORES=" | cut -d'=' -f2)
-CPU_AFFINITY=""
-
-# Memory Configuration
-MEMORY_LIMIT=$(echo "$env_values" | grep "^MEMORY_LIMIT=" | cut -d'=' -f2)
-MEMORY_SWAP=false
-
-# =============================================================================
-# NETWORK CONFIGURATION
-# =============================================================================
-
-# Network Settings
-NETWORK_INTERFACE="eth0"
-NETWORK_MTU=1500
-NETWORK_BUFFER_SIZE=65536
+HMAC_KEY=$hmac_key
+SIGNING_KEY=$signing_key
 
 # Tor Configuration
-TOR_ENABLED=false
+TOR_ENABLED=true
 TOR_SOCKS_PORT=9050
 TOR_CONTROL_PORT=9051
-TOR_DATA_DIR="/var/lib/tor"
+TOR_PASSWORD=$tor_password
+TOR_DATA_DIR=/var/lib/tor
 
-# Firewall Configuration
-FIREWALL_ENABLED=true
-FIREWALL_DEFAULT_POLICY="DROP"
-FIREWALL_ALLOWED_PORTS="22,80,443,8080,8083,8089,8091,8092,8093,8094,8095,8096"
+# Tor Hidden Services
+API_GATEWAY_ONION=$api_gateway_onion
+AUTH_SERVICE_ONION=$auth_service_onion
+BLOCKCHAIN_ONION=$blockchain_onion
 
-# =============================================================================
-# DEPLOYMENT CONFIGURATION
-# =============================================================================
+# API Configuration
+API_SECRET=$api_secret
+API_RATE_LIMIT=1000
+API_TIMEOUT=30
 
-# Container Configuration
-CONTAINER_RUNTIME="docker"
-CONTAINER_NETWORK="lucid-network"
-CONTAINER_SUBNET="172.20.0.0/16"
+# Network Configuration
+LUCID_NETWORK=lucid-pi-network
+LUCID_SUBNET=172.20.0.0/16
+LUCID_GATEWAY=172.20.0.1
 
-# Scaling Configuration
-SCALING_ENABLED=$(echo "$env_values" | grep "^SCALING_ENABLED=" | cut -d'=' -f2)
-AUTO_SCALING=$(echo "$env_values" | grep "^AUTO_SCALING=" | cut -d'=' -f2)
-LOAD_BALANCER=$(echo "$env_values" | grep "^LOAD_BALANCER=" | cut -d'=' -f2)
+# Pi-specific Configuration
+PI_HOST=192.168.0.75
+PI_USER=pickme
+PI_DEPLOY_DIR=/opt/lucid/production
+PI_SSH_PORT=22
+PI_ARCHITECTURE=aarch64
+PI_OPTIMIZATION=true
 
-# Development Configuration
-LOCAL_DEVELOPMENT=$(echo "$env_values" | grep "^LOCAL_DEVELOPMENT=" | cut -d'=' -f2)
-HOT_RELOAD=$(echo "$env_values" | grep "^HOT_RELOAD=" | cut -d'=' -f2)
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_MEMORY=128
+CPU_CORES=4
+MEMORY_LIMIT=2G
 
-# =============================================================================
-# BACKUP CONFIGURATION
-# =============================================================================
-
-# Backup Settings
-BACKUP_ENABLED=true
-BACKUP_SCHEDULE="0 2 * * *"
-BACKUP_RETENTION_DAYS=30
-BACKUP_COMPRESSION=true
-BACKUP_ENCRYPTION=true
-
-# Backup Storage
-BACKUP_STORAGE_TYPE="local"
-BACKUP_STORAGE_PATH="/var/backups/lucid"
-BACKUP_S3_BUCKET=""
-BACKUP_S3_REGION=""
-BACKUP_S3_ACCESS_KEY=""
-BACKUP_S3_SECRET_KEY=""
-
-# =============================================================================
-# LOGGING CONFIGURATION
-# =============================================================================
-
-# Log Configuration
-LOG_ENABLED=true
-LOG_LEVEL=$(echo "$env_values" | grep "^LOG_LEVEL=" | cut -d'=' -f2)
-LOG_FORMAT="json"
-LOG_OUTPUT="file"
-LOG_FILE="/var/log/lucid/lucid.log"
-LOG_MAX_SIZE="100MB"
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_FILE=/var/log/lucid/lucid.log
+LOG_MAX_SIZE=100MB
 LOG_MAX_FILES=10
 LOG_COMPRESS=true
 
-# Log Aggregation
-LOG_AGGREGATION_ENABLED=false
-LOG_AGGREGATION_HOST=""
-LOG_AGGREGATION_PORT=514
-LOG_AGGREGATION_PROTOCOL="udp"
+# Monitoring Configuration
+MONITORING_ENABLED=true
+PROMETHEUS_ENABLED=true
+PROMETHEUS_PORT=9090
+PROMETHEUS_PATH=/metrics
+GRAFANA_ENABLED=true
+GRAFANA_PORT=3000
 
-# =============================================================================
-# ALERTING CONFIGURATION
-# =============================================================================
+# Health Check Configuration
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
 
-# Alert Configuration
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+BACKUP_COMPRESSION=true
+BACKUP_ENCRYPTION=true
+BACKUP_STORAGE_PATH=/var/backups/lucid
+
+# Alerting Configuration
 ALERTING_ENABLED=true
-ALERTING_PROVIDER="email"
-ALERTING_EMAIL_SMTP_HOST=""
-ALERTING_EMAIL_SMTP_PORT=587
-ALERTING_EMAIL_SMTP_USER=""
-ALERTING_EMAIL_SMTP_PASSWORD=""
-ALERTING_EMAIL_FROM=""
-ALERTING_EMAIL_TO=""
-
-# Alert Thresholds
 ALERT_CPU_THRESHOLD=80
 ALERT_MEMORY_THRESHOLD=80
 ALERT_DISK_THRESHOLD=90
@@ -595,164 +505,355 @@ ALERT_NETWORK_THRESHOLD=1000
 ALERT_ERROR_RATE_THRESHOLD=5
 
 EOF
+
+    log_success "Master environment file generated: $ENV_CONFIG_DIR/.env.master"
     
-    print_success "Environment file generated: $output_file"
+    # Save secrets to secure file
+    cat > "$ENV_CONFIG_DIR/.env.secrets" << EOF
+# =============================================================================
+# LUCID GENERATED SECRETS REFERENCE
+# =============================================================================
+# Generated: $(date)
+# WARNING: Keep this file secure! Never commit to version control!
+# =============================================================================
+
+MONGODB_PASSWORD=$mongodb_password
+REDIS_PASSWORD=$redis_password
+JWT_SECRET=$jwt_secret
+ENCRYPTION_KEY=$encryption_key
+SESSION_SECRET=$session_secret
+HMAC_KEY=$hmac_key
+SIGNING_KEY=$signing_key
+TOR_PASSWORD=$tor_password
+API_SECRET=$api_secret
+
+# Tor Hidden Service Addresses
+API_GATEWAY_ONION=$api_gateway_onion
+AUTH_SERVICE_ONION=$auth_service_onion
+BLOCKCHAIN_ONION=$blockchain_onion
+
+EOF
+
+    chmod 600 "$ENV_CONFIG_DIR/.env.secrets"
+    log_success "Secrets saved to: $ENV_CONFIG_DIR/.env.secrets (permissions: 600)"
 }
 
-# Function to validate environment file
-validate_env_file() {
-    local env_file=$1
+# =============================================================================
+# SERVICE-SPECIFIC ENVIRONMENT GENERATION
+# =============================================================================
+generate_service_env() {
+    local service_name="$1"
+    local service_port="$2"
+    local service_host="${3:-0.0.0.0}"
     
-    print_info "Validating environment file: $env_file"
+    log_info "Generating environment for service: $service_name"
     
-    if [ ! -f "$env_file" ]; then
-        print_error "Environment file not found: $env_file"
-        return 1
+    # Load master environment
+    if [ -f "$ENV_CONFIG_DIR/.env.master" ]; then
+        source "$ENV_CONFIG_DIR/.env.master"
     fi
     
-    # Check for required variables
-    local required_vars=(
-        "PROJECT_NAME"
-        "ENVIRONMENT"
-        "JWT_SECRET"
-        "MONGODB_PASSWORD"
-        "ENCRYPTION_KEY"
+    # Generate service-specific environment
+    cat > "$ENV_CONFIG_DIR/.env.$service_name" << EOF
+# =============================================================================
+# LUCID $service_name ENVIRONMENT CONFIGURATION
+# =============================================================================
+# Generated: $BUILD_TIMESTAMP
+# Service: $service_name
+# Port: $service_port
+# Host: $service_host
+# =============================================================================
+
+# Build Information
+BUILD_TIMESTAMP=$BUILD_TIMESTAMP
+GIT_SHA=$GIT_SHA
+BUILD_PLATFORM=$BUILD_PLATFORM
+
+# Service Configuration
+SERVICE_NAME=$service_name
+SERVICE_PORT=$service_port
+SERVICE_HOST=$service_host
+
+# Environment
+LUCID_ENV=production
+LUCID_NETWORK=mainnet
+LUCID_PLANE=ops
+LUCID_CLUSTER_ID=pi-production
+
+# Database Configuration
+MONGODB_HOST=lucid-mongodb
+MONGODB_PORT=27017
+MONGODB_DATABASE=lucid_production
+MONGODB_USERNAME=lucid
+MONGODB_PASSWORD=$MONGODB_PASSWORD
+MONGODB_URI=mongodb://lucid:$MONGODB_PASSWORD@lucid-mongodb:27017/lucid_production?authSource=admin
+MONGODB_AUTH_SOURCE=admin
+MONGODB_POOL_SIZE=50
+
+REDIS_HOST=lucid-redis
+REDIS_PORT=6379
+REDIS_PASSWORD=$REDIS_PASSWORD
+REDIS_URI=redis://:$REDIS_PASSWORD@lucid-redis:6379
+REDIS_DATABASE=0
+REDIS_POOL_SIZE=100
+
+# Security Configuration
+JWT_SECRET=$JWT_SECRET
+JWT_SECRET_KEY=$JWT_SECRET
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+ENCRYPTION_KEY=$ENCRYPTION_KEY
+ENCRYPTION_ALGORITHM=AES-256-GCM
+ENCRYPTION_IV_LENGTH=12
+
+SESSION_SECRET=$SESSION_SECRET
+SESSION_TIMEOUT=3600
+SESSION_COOKIE_SECURE=true
+SESSION_COOKIE_HTTPONLY=true
+
+HMAC_KEY=$HMAC_KEY
+SIGNING_KEY=$SIGNING_KEY
+
+# Tor Configuration
+TOR_ENABLED=true
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+TOR_PASSWORD=$TOR_PASSWORD
+TOR_DATA_DIR=/var/lib/tor
+
+# Tor Hidden Services
+API_GATEWAY_ONION=$API_GATEWAY_ONION
+AUTH_SERVICE_ONION=$AUTH_SERVICE_ONION
+BLOCKCHAIN_ONION=$BLOCKCHAIN_ONION
+
+# Network Configuration
+LUCID_NETWORK=lucid-pi-network
+LUCID_SUBNET=172.20.0.0/16
+LUCID_GATEWAY=172.20.0.1
+
+# Pi-specific Configuration
+PI_HOST=192.168.0.75
+PI_USER=pickme
+PI_DEPLOY_DIR=/opt/lucid/production
+PI_SSH_PORT=22
+PI_ARCHITECTURE=aarch64
+PI_OPTIMIZATION=true
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_MEMORY=128
+CPU_CORES=4
+MEMORY_LIMIT=2G
+
+# Logging Configuration
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_FILE=/var/log/lucid/$service_name.log
+LOG_MAX_SIZE=100MB
+LOG_MAX_FILES=10
+LOG_COMPRESS=true
+
+# Health Check Configuration
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
+
+# Monitoring Configuration
+MONITORING_ENABLED=true
+METRICS_PORT=$((9090 + service_port % 100))
+METRICS_PATH=/metrics
+
+EOF
+
+    log_success "Service environment generated: $ENV_CONFIG_DIR/.env.$service_name"
+}
+
+# =============================================================================
+# VALIDATION FUNCTIONS
+# =============================================================================
+validate_environment_files() {
+    log_info "Validating generated environment files..."
+    
+    local env_files=(
+        "$ENV_CONFIG_DIR/.env.master"
+        "$ENV_CONFIG_DIR/.env.secrets"
     )
     
-    local missing_vars=()
-    
-    for var in "${required_vars[@]}"; do
-        if ! grep -q "^${var}=" "$env_file"; then
-            missing_vars+=("$var")
+    for env_file in "${env_files[@]}"; do
+        if [ -f "$env_file" ]; then
+            log_success "Environment file exists: $env_file"
+            
+            # Check for required variables
+            local required_vars=(
+                "MONGODB_PASSWORD"
+                "REDIS_PASSWORD"
+                "JWT_SECRET"
+                "ENCRYPTION_KEY"
+                "SESSION_SECRET"
+            )
+            
+            for var in "${required_vars[@]}"; do
+                if grep -q "^${var}=" "$env_file"; then
+                    log_success "Required variable found: $var"
+                else
+                    log_error "Required variable missing: $var"
+                    return 1
+                fi
+            done
+        else
+            log_error "Environment file missing: $env_file"
+            return 1
         fi
     done
     
-    if [ ${#missing_vars[@]} -gt 0 ]; then
-        print_error "Missing required variables: ${missing_vars[*]}"
-        return 1
-    fi
-    
-    # Check for empty values
-    local empty_vars=()
-    
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^[A-Z_]+=.*$ ]] && [[ "$line" =~ =$ ]]; then
-            local var_name=$(echo "$line" | cut -d'=' -f1)
-            empty_vars+=("$var_name")
-        fi
-    done < "$env_file"
-    
-    if [ ${#empty_vars[@]} -gt 0 ]; then
-        print_warning "Variables with empty values: ${empty_vars[*]}"
-    fi
-    
-    print_success "Environment file validation completed"
+    log_success "Environment file validation completed"
     return 0
 }
 
-# Main execution
-main() {
-    # Parse command line arguments
-    local environment=""
-    local template="default"
-    local output_file=""
-    local force=false
-    local verbose=false
+# =============================================================================
+# BACKUP FUNCTIONS
+# =============================================================================
+backup_existing_configs() {
+    log_info "Backing up existing configurations..."
     
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -e|--environment)
-                environment="$2"
-                shift 2
-                ;;
-            -t|--template)
-                template="$2"
-                shift 2
-                ;;
-            -o|--output)
-                output_file="$2"
-                shift 2
-                ;;
-            -f|--force)
-                force=true
-                shift
-                ;;
-            -v|--verbose)
-                verbose=true
-                shift
-                ;;
-            --help)
-                show_usage
-                exit 0
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                show_usage
-                exit 1
-                ;;
-        esac
+    if [ -d "$ENV_CONFIG_DIR" ]; then
+        local backup_file="$BACKUP_DIR/env-backup-$BUILD_TIMESTAMP.tar.gz"
+        
+        if tar -czf "$backup_file" -C "$ENV_CONFIG_DIR" . 2>/dev/null; then
+            log_success "Configuration backup created: $backup_file"
+        else
+            log_warning "Failed to create configuration backup"
+        fi
+    fi
+}
+
+# =============================================================================
+# MAIN EXECUTION
+# =============================================================================
+main() {
+    log_info "==================================================================="
+    log_info "LUCID ENVIRONMENT CONFIGURATION GENERATOR - PI CONSOLE NATIVE"
+    log_info "==================================================================="
+    log_info "Project Root: $PROJECT_ROOT"
+    log_info "Environment Config: $ENV_CONFIG_DIR"
+    log_info "Build Timestamp: $BUILD_TIMESTAMP"
+    log_info "Git SHA: $GIT_SHA"
+    log_info "Platform: $BUILD_PLATFORM"
+    echo ""
+    
+    # Pi console native validation
+    log_info "Step 1: Pi Console Native Validation"
+    if ! check_pi_console; then
+        log_warning "Not running on Pi console - some features may be limited"
+    fi
+    
+    if ! validate_pi_mounts; then
+        log_error "Pi mount validation failed!"
+        exit 1
+    fi
+    
+    if ! check_pi_packages; then
+        log_warning "Package validation completed with warnings"
+    fi
+    
+    if ! validate_storage; then
+        log_error "Storage validation failed!"
+        exit 1
+    fi
+    
+    log_success "Pi console native validation completed"
+    echo ""
+    
+    # Directory validation and creation
+    log_info "Step 2: Directory Validation and Creation"
+    if ! validate_and_create_directories; then
+        log_error "Directory validation failed!"
+        exit 1
+    fi
+    
+    log_success "Directory validation completed"
+    echo ""
+    
+    # Backup existing configurations
+    log_info "Step 3: Backup Existing Configurations"
+    backup_existing_configs
+    
+    log_success "Backup completed"
+    echo ""
+    
+    # Generate master environment
+    log_info "Step 4: Generate Master Environment"
+    generate_master_env
+    
+    log_success "Master environment generation completed"
+    echo ""
+    
+    # Generate service-specific environments
+    log_info "Step 5: Generate Service-Specific Environments"
+    
+    # Define services with their ports
+    local services=(
+        "api-gateway:8080"
+        "auth-service:8089"
+        "blockchain-core:8084"
+        "session-management:8085"
+        "rdp-services:8086"
+        "node-management:8087"
+        "admin-interface:8083"
+        "orchestrator:8090"
+        "chunker:8092"
+        "merkle-builder:8094"
+    )
+    
+    for service_config in "${services[@]}"; do
+        local service_name=$(echo "$service_config" | cut -d: -f1)
+        local service_port=$(echo "$service_config" | cut -d: -f2)
+        
+        generate_service_env "$service_name" "$service_port"
     done
     
-    # Validate required parameters
-    if [ -z "$environment" ]; then
-        print_error "Environment is required"
-        show_usage
+    log_success "Service environment generation completed"
+    echo ""
+    
+    # Validate generated files
+    log_info "Step 6: Validate Generated Files"
+    if ! validate_environment_files; then
+        log_error "Environment file validation failed!"
         exit 1
     fi
     
-    # Set default output file if not provided
-    if [ -z "$output_file" ]; then
-        output_file="$CONFIGS_DIR/.env.$environment"
-    fi
+    log_success "Environment file validation completed"
+    echo ""
     
-    # Validate environment
-    case "$environment" in
-        "development"|"staging"|"production"|"test")
-            ;;
-        *)
-            print_error "Invalid environment: $environment"
-            print_info "Valid environments: development, staging, production, test"
-            exit 1
-            ;;
-    esac
-    
-    # Validate template
-    case "$template" in
-        "default"|"pi"|"cloud"|"local")
-            ;;
-        *)
-            print_error "Invalid template: $template"
-            print_info "Valid templates: default, pi, cloud, local"
-            exit 1
-            ;;
-    esac
-    
-    print_info "Generating environment configuration..."
-    print_info "Environment: $environment"
-    print_info "Template: $template"
-    print_info "Output file: $output_file"
-    
-    # Generate environment file
-    if generate_env_file "$environment" "$template" "$output_file" "$force"; then
-        print_success "Environment file generated successfully"
-        
-        # Validate the generated file
-        if validate_env_file "$output_file"; then
-            print_success "Environment file validation passed"
-        else
-            print_warning "Environment file validation failed"
-        fi
-        
-        print_info "Next steps:"
-        print_info "1. Review the generated environment file: $output_file"
-        print_info "2. Update any environment-specific values"
-        print_info "3. Secure the file with appropriate permissions"
-        print_info "4. Use the file in your deployment configuration"
-        
-    else
-        print_error "Failed to generate environment file"
-        exit 1
-    fi
+    # Final summary
+    log_info "==================================================================="
+    log_info "ENVIRONMENT GENERATION COMPLETE!"
+    log_info "==================================================================="
+    echo ""
+    log_info "Generated files:"
+    log_info "  • .env.master        : $ENV_CONFIG_DIR/.env.master"
+    log_info "  • .env.secrets       : $ENV_CONFIG_DIR/.env.secrets"
+    for service_config in "${services[@]}"; do
+        local service_name=$(echo "$service_config" | cut -d: -f1)
+        log_info "  • .env.$service_name    : $ENV_CONFIG_DIR/.env.$service_name"
+    done
+    echo ""
+    log_info "Build details:"
+    log_info "  • Build timestamp   : $BUILD_TIMESTAMP"
+    log_info "  • Git SHA           : $GIT_SHA"
+    log_info "  • Platform          : $BUILD_PLATFORM"
+    echo ""
+    log_warning "SECURITY NOTICE:"
+    log_warning "  • Keep .env.secrets file secure (chmod 600)"
+    log_warning "  • Never commit .env.secrets to version control"
+    log_warning "  • Backup secrets file to secure location"
+    log_warning "  • Rotate keys regularly in production"
+    echo ""
+    log_success "Environment generation completed successfully!"
 }
 
 # Run main function

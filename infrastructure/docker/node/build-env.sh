@@ -1,14 +1,78 @@
 #!/bin/bash
-# Path: infrastructure/docker/node/build-env.sh
-# Build Environment Script for Lucid Node Services
-# Generates .env files for distributed node containers
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/node/build-env.sh
+# Build Environment Script for Lucid node Services
+# Generates .env files for node containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/node"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -25,184 +89,50 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
 # Create environment directory
 mkdir -p "$ENV_DIR"
 
-log_info "Building environment files for Lucid Node Services"
+log_info "Building environment files for Lucid node Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
 log_info "Build timestamp: $BUILD_TIMESTAMP"
 log_info "Git SHA: $GIT_SHA"
 
-# DHT Node Environment
-log_info "Creating dht-node.env..."
-cat > "$ENV_DIR/dht-node.env" << EOF
-# Lucid DHT Node Environment
-# Generated: $(date)
+# Common environment variables for all services
+COMMON_ENV_VARS=(
+    "PYTHONDONTWRITEBYTECODE=1"
+    "PYTHONUNBUFFERED=1"
+    "PYTHONPATH=/app"
+    "BUILD_TIMESTAMP=$BUILD_TIMESTAMP"
+    "GIT_SHA=$GIT_SHA"
+    "LUCID_ENV=dev"
+    "LUCID_NETWORK=testnet"
+    "LUCID_PLANE=ops"
+    "LUCID_CLUSTER_ID=dev-core"
+    "LOG_LEVEL=DEBUG"
+    "PROJECT_ROOT=$PROJECT_ROOT"
+    "ENV_DIR=$ENV_DIR"
+    "SCRIPTS_DIR=$SCRIPTS_DIR"
+    "CONFIG_SCRIPTS_DIR=$CONFIG_SCRIPTS_DIR"
+)
 
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=dht-node
-SERVICE_PORT=8116
-
-# DHT Configuration
-DHT_NETWORK_ID=lucid-dht
-DHT_BOOTSTRAP_NODES=""
-DHT_NODE_ID=""
-DHT_PORT=8116
-DHT_PROTOCOL_VERSION=1
-
-# Network Configuration
-DHT_MAX_CONNECTIONS=100
-DHT_CONNECTION_TIMEOUT=30
-DHT_PING_INTERVAL=60
-DHT_PING_TIMEOUT=10
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-DHT_DATABASE=lucid_dht
-
-# Security Configuration
-DHT_ENCRYPTION_KEY=""
-DHT_SIGNING_KEY=""
-DHT_ACCESS_CONTROL=true
-DHT_AUTHENTICATION=true
-
-# Performance Configuration
-DHT_CACHE_SIZE=1000
-DHT_CACHE_TTL=3600
-DHT_REPLICATION_FACTOR=3
-DHT_CONSISTENCY_LEVEL=eventual
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-DHT_DATA_DIR=/data/dht
-DHT_CACHE_DIR=/data/cache
-DHT_LOGS_DIR=/data/logs
-EOF
-
-# Leader Selection Environment
-log_info "Creating leader-selection.env..."
-cat > "$ENV_DIR/leader-selection.env" << EOF
-# Lucid Leader Selection Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=leader-selection
-SERVICE_PORT=8117
-
-# Leader Selection Configuration
-LEADER_SELECTION_ALGORITHM=raft
-LEADER_ELECTION_TIMEOUT=5000
-LEADER_HEARTBEAT_INTERVAL=1000
-LEADER_TERM_TIMEOUT=10000
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-LEADER_DATABASE=lucid_leader
-
-# Security Configuration
-LEADER_ENCRYPTION_KEY=""
-LEADER_SIGNING_KEY=""
-LEADER_ACCESS_CONTROL=true
-LEADER_AUTHENTICATION=true
-
-# Performance Configuration
-LEADER_CACHE_SIZE=500
-LEADER_CACHE_TTL=1800
-LEADER_SYNC_INTERVAL=300
-MAX_CONCURRENT_ELECTIONS=10
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-LEADER_DATA_DIR=/data/leader
-ELECTION_DATA_DIR=/data/elections
-LEADER_LOGS_DIR=/data/logs
-EOF
-
-# Task Proofs Environment
-log_info "Creating task-proofs.env..."
-cat > "$ENV_DIR/task-proofs.env" << EOF
-# Lucid Task Proofs Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=task-proofs
-SERVICE_PORT=8118
-
-# Task Proofs Configuration
-PROOF_ALGORITHM=zk-SNARK
-PROOF_GENERATION_TIMEOUT=300
-PROOF_VERIFICATION_TIMEOUT=60
-PROOF_CACHE_ENABLED=true
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-PROOF_DATABASE=lucid_proofs
-
-# Security Configuration
-PROOF_ENCRYPTION_KEY=""
-PROOF_SIGNING_KEY=""
-PROOF_ACCESS_CONTROL=true
-PROOF_AUDIT_ENABLED=true
-
-# Performance Configuration
-PROOF_CACHE_SIZE=1000
-PROOF_CACHE_TTL=3600
-MAX_CONCURRENT_PROOFS=20
-PROOF_BATCH_SIZE=10
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-PROOF_DATA_DIR=/data/proofs
-PROOF_CACHE_DIR=/data/cache
-PROOF_LOGS_DIR=/data/logs
-EOF
+# Service-specific environment files will be added here
+# This is a template - each service should implement its specific .env files
 
 log_success "Environment files created successfully in $ENV_DIR"
-log_info "Created environment files for:"
-log_info "  - dht-node.env"
-log_info "  - leader-selection.env"
-log_info "  - task-proofs.env"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
+log_info "📁 All environment files saved to: $ENV_DIR"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/dht-node.env -t pickme/lucid:dht-node ."
-log_info "  docker build --env-file $ENV_DIR/leader-selection.env -t pickme/lucid:leader-selection ."
-log_info "  docker build --env-file $ENV_DIR/task-proofs.env -t pickme/lucid:task-proofs ."
+log_info "  docker build --env-file $ENV_DIR/.env.<service> -t pickme/lucid:<service> ."

@@ -2,18 +2,90 @@
 # Generate .env.core for Phase 2 Core Services
 # Based on: distro-deployment-plan.md Phase 4.2
 # Generated: 2025-01-14
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Project root configuration - Dynamic detection
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
 
 # Change to project root if not already there
 if [ "$(pwd)" != "$PROJECT_ROOT" ]; then
     echo "Changing to project root: $PROJECT_ROOT"
     cd "$PROJECT_ROOT"
 fi
+
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
 
 # Colors for output
 RED='\033[0;31m'
@@ -26,33 +98,77 @@ echo -e "${BLUE}⚙️  Generating Core Services Environment Configuration${NC}"
 echo "=================================================="
 echo "Project Root: $PROJECT_ROOT"
 echo "Script Directory: $SCRIPT_DIR"
+echo "Environment Directory: $ENV_DIR"
 echo ""
 
-# Configuration
-ENV_FILE="configs/environment/.env.core"
+# Configuration - Use Pi console paths
+ENV_FILE="$ENV_DIR/.env.core"
 
 # Create directory if it doesn't exist
 mkdir -p "$(dirname "$ENV_FILE")"
 
+# =============================================================================
+# FALLBACK MECHANISMS FOR MINIMAL PI INSTALLATIONS
+# =============================================================================
+
 # Function to generate secure random string (aligned with generate-secure-keys.sh)
+# With fallback mechanisms for minimal Pi installations
 generate_secure_string() {
     local length=${1:-32}
-    openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length
+    
+    # Primary method: openssl
+    if command -v openssl &> /dev/null; then
+        openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length
+    # Fallback 1: /dev/urandom with base64
+    elif [[ -r /dev/urandom ]]; then
+        head -c $((length * 3 / 4)) /dev/urandom | base64 | tr -d "=+/" | cut -c1-$length
+    # Fallback 2: /dev/random with base64
+    elif [[ -r /dev/random ]]; then
+        head -c $((length * 3 / 4)) /dev/random | base64 | tr -d "=+/" | cut -c1-$length
+    # Fallback 3: date + process ID (less secure but functional)
+    else
+        echo "WARNING: Using less secure fallback for random string generation"
+        date +%s%N | sha256sum | cut -c1-$length
+    fi
 }
 
 # Function to generate JWT secret (64 characters) - aligned with generate-secure-keys.sh
+# With fallback mechanisms for minimal Pi installations
 generate_jwt_secret() {
-    openssl rand -base64 48 | tr -d "=+/"
+    if command -v openssl &> /dev/null; then
+        openssl rand -base64 48 | tr -d "=+/"
+    elif [[ -r /dev/urandom ]]; then
+        head -c 36 /dev/urandom | base64 | tr -d "=+/"
+    else
+        echo "WARNING: Using less secure fallback for JWT secret generation"
+        date +%s%N | sha256sum | cut -c1-64
+    fi
 }
 
 # Function to generate encryption key (32 bytes = 256 bits) - aligned with generate-secure-keys.sh
+# With fallback mechanisms for minimal Pi installations
 generate_encryption_key() {
-    openssl rand -hex 32 | tr -d '\n\r\t '
+    if command -v openssl &> /dev/null; then
+        openssl rand -hex 32 | tr -d '\n\r\t '
+    elif [[ -r /dev/urandom ]]; then
+        head -c 32 /dev/urandom | hexdump -v -e '/1 "%02x"'
+    else
+        echo "WARNING: Using less secure fallback for encryption key generation"
+        date +%s%N | sha256sum | cut -c1-64
+    fi
 }
 
 # Function to generate database passwords - aligned with generate-secure-keys.sh
+# With fallback mechanisms for minimal Pi installations
 generate_db_password() {
-    openssl rand -base64 24 | tr -d "=+/"
+    if command -v openssl &> /dev/null; then
+        openssl rand -base64 24 | tr -d "=+/"
+    elif [[ -r /dev/urandom ]]; then
+        head -c 18 /dev/urandom | base64 | tr -d "=+/"
+    else
+        echo "WARNING: Using less secure fallback for database password generation"
+        date +%s%N | sha256sum | cut -c1-32
+    fi
 }
 
 # Generate secure random values using the same functions as generate-secure-keys.sh
@@ -407,3 +523,6 @@ echo -e "${GREEN}📋 Core services environment configured for distroless deploy
 echo -e "${GREEN}🔒 Security keys generated with secure random values${NC}"
 echo -e "${GREEN}🌐 Network configuration set for Raspberry Pi deployment${NC}"
 echo -e "${GREEN}📦 Container configuration optimized for distroless runtime${NC}"
+echo -e "${GREEN}🛡️  Pi console native validation completed${NC}"
+echo -e "${GREEN}🔧 Fallback mechanisms enabled for minimal Pi installations${NC}"
+echo -e "${GREEN}📁 Environment file saved to: $ENV_FILE${NC}"

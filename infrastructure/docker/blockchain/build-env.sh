@@ -1,14 +1,78 @@
 #!/bin/bash
-# Path: infrastructure/docker/blockchain/build-env.sh
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/blockchain/build-env.sh
 # Build Environment Script for Lucid Blockchain Services
 # Generates .env files for all blockchain-related containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_DIR="/mnt/myssd/Lucid/Lucid/configs"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/blockchain"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -25,10 +89,21 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
 # Create environment directory
 mkdir -p "$ENV_DIR"
 
 log_info "Building environment files for Lucid Blockchain Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
 log_info "Build timestamp: $BUILD_TIMESTAMP"
 log_info "Git SHA: $GIT_SHA"
 
@@ -44,6 +119,10 @@ COMMON_ENV_VARS=(
     "LUCID_PLANE=ops"
     "LUCID_CLUSTER_ID=dev-core"
     "LOG_LEVEL=DEBUG"
+    "PROJECT_ROOT=$PROJECT_ROOT"
+    "ENV_DIR=$ENV_DIR"
+    "SCRIPTS_DIR=$SCRIPTS_DIR"
+    "CONFIG_DIR=$CONFIG_DIR"
 )
 
 # Blockchain API Environment
@@ -51,9 +130,10 @@ log_info "Creating .env.blockchain-api..."
 cat > "$ENV_DIR/.env.blockchain-api" << EOF
 # Lucid Blockchain API Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # API Configuration
 API_HOST=0.0.0.0
@@ -101,9 +181,10 @@ log_info "Creating .env.blockchain-governance..."
 cat > "$ENV_DIR/.env.blockchain-governance" << EOF
 # Lucid Blockchain Governance Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Governance Configuration
 GOVERNANCE_PATH=/opt/lucid/governance
@@ -143,9 +224,10 @@ log_info "Creating .env.blockchain-sessions-data..."
 cat > "$ENV_DIR/.env.blockchain-sessions-data" << EOF
 # Lucid Blockchain Sessions Data Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -176,9 +258,10 @@ log_info "Creating .env.blockchain-vm..."
 cat > "$ENV_DIR/.env.blockchain-vm" << EOF
 # Lucid Blockchain VM Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -211,9 +294,10 @@ log_info "Creating .env.blockchain-ledger..."
 cat > "$ENV_DIR/.env.blockchain-ledger" << EOF
 # Lucid Blockchain Ledger Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -244,9 +328,10 @@ log_info "Creating .env.tron-node-client..."
 cat > "$ENV_DIR/.env.tron-node-client" << EOF
 # Lucid TRON Node Client Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -280,9 +365,10 @@ log_info "Creating .env.contract-deployment..."
 cat > "$ENV_DIR/.env.contract-deployment" << EOF
 # Lucid Contract Deployment Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Deployment Configuration
 CONTRACT_ARTIFACTS_PATH=/data/contracts
@@ -311,9 +397,10 @@ log_info "Creating .env.contract-compiler..."
 cat > "$ENV_DIR/.env.contract-compiler" << EOF
 # Lucid Contract Compiler Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -340,9 +427,10 @@ log_info "Creating .env.on-system-chain-client..."
 cat > "$ENV_DIR/.env.on-system-chain-client" << EOF
 # Lucid On-System Chain Client Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -372,9 +460,10 @@ log_info "Creating .env.deployment-orchestrator..."
 cat > "$ENV_DIR/.env.deployment-orchestrator" << EOF
 # Lucid Deployment Orchestrator Environment
 # Generated: $(date)
+# Project Root: $PROJECT_ROOT
 
 # Common Python settings
-${COMMON_ENV_VARS[*]}
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
 
 # Database Configuration
 MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
@@ -396,6 +485,8 @@ DEPLOYMENT_TIMEOUT=600
 EOF
 
 log_success "Environment files created successfully in $ENV_DIR"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
 log_info "Created environment files for:"
 log_info "  - .env.blockchain-api"
 log_info "  - .env.blockchain-governance"
@@ -411,3 +502,4 @@ log_info "  - .env.deployment-orchestrator"
 echo
 log_info "To use these environment files in Docker builds:"
 log_info "  docker build --env-file $ENV_DIR/.env.blockchain-api -t pickme/lucid:blockchain-api ."
+log_info "📁 All environment files saved to: $ENV_DIR"

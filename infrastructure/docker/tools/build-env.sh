@@ -1,14 +1,78 @@
 #!/bin/bash
-# Path: infrastructure/docker/tools/build-env.sh
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/tools/build-env.sh
 # Build Environment Script for Lucid Tools Services
 # Generates .env files for core infrastructure tools containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/tools"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -25,16 +89,27 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
 # Create environment directory
 mkdir -p "$ENV_DIR"
 
 log_info "Building environment files for Lucid Tools Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
 log_info "Build timestamp: $BUILD_TIMESTAMP"
 log_info "Git SHA: $GIT_SHA"
 
 # API Gateway Environment
-log_info "Creating api-gateway.env..."
-cat > "$ENV_DIR/api-gateway.env" << EOF
+log_info "Creating .env.api-gateway..."
+cat > "$ENV_DIR/.env.api-gateway" << EOF
 # Lucid API Gateway Environment
 # Generated: $(date)
 
@@ -92,8 +167,8 @@ HEALTH_CHECK_INTERVAL=30
 EOF
 
 # API Server Environment
-log_info "Creating api-server.env..."
-cat > "$ENV_DIR/api-server.env" << EOF
+log_info "Creating .env.api-server..."
+cat > "$ENV_DIR/.env.api-server" << EOF
 # Lucid API Server Environment
 # Generated: $(date)
 
@@ -144,8 +219,8 @@ HEALTH_CHECK_INTERVAL=30
 EOF
 
 # Tor Proxy Environment
-log_info "Creating tor-proxy.env..."
-cat > "$ENV_DIR/tor-proxy.env" << EOF
+log_info "Creating .env.tor-proxy..."
+cat > "$ENV_DIR/.env.tor-proxy" << EOF
 # Lucid Tor Proxy Environment
 # Generated: $(date)
 
@@ -202,8 +277,8 @@ FASCIST_FIREWALL=1
 EOF
 
 # Tunnel Tools Environment
-log_info "Creating tunnel-tools.env..."
-cat > "$ENV_DIR/tunnel-tools.env" << EOF
+log_info "Creating .env.tunnel-tools..."
+cat > "$ENV_DIR/.env.tunnel-tools" << EOF
 # Lucid Tunnel Tools Environment
 # Generated: $(date)
 
@@ -245,8 +320,8 @@ HEALTH_CHECK_TIMEOUT=10
 EOF
 
 # Server Tools Environment
-log_info "Creating server-tools.env..."
-cat > "$ENV_DIR/server-tools.env" << EOF
+log_info "Creating .env.server-tools..."
+cat > "$ENV_DIR/.env.server-tools" << EOF
 # Lucid Server Tools Environment
 # Generated: $(date)
 
@@ -293,8 +368,8 @@ ENCRYPTION_KEY=""
 EOF
 
 # OpenAPI Gateway Environment
-log_info "Creating openapi-gateway.env..."
-cat > "$ENV_DIR/openapi-gateway.env" << EOF
+log_info "Creating .env.openapi-gateway..."
+cat > "$ENV_DIR/.env.openapi-gateway" << EOF
 # Lucid OpenAPI Gateway Environment
 # Generated: $(date)
 
@@ -337,8 +412,8 @@ ERROR_LOG=/var/log/nginx/error.log
 EOF
 
 # OpenAPI Server Environment
-log_info "Creating openapi-server.env..."
-cat > "$ENV_DIR/openapi-server.env" << EOF
+log_info "Creating .env.openapi-server..."
+cat > "$ENV_DIR/.env.openapi-server" << EOF
 # Lucid OpenAPI Server Environment
 # Generated: $(date)
 
@@ -380,32 +455,34 @@ OPENAPI_URL=/openapi.json
 EOF
 
 log_success "Environment files created successfully in $ENV_DIR"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
 log_info "Created environment files for:"
-log_info "  - api-gateway.env"
-log_info "  - api-server.env"
-log_info "  - tor-proxy.env"
-log_info "  - tunnel-tools.env"
-log_info "  - server-tools.env"
-log_info "  - openapi-gateway.env"
-log_info "  - openapi-server.env"
+log_info "  - .env.api-gateway"
+log_info "  - .env.api-server"
+log_info "  - .env.tor-proxy"
+log_info "  - .env.tunnel-tools"
+log_info "  - .env.server-tools"
+log_info "  - .env.openapi-gateway"
+log_info "  - .env.openapi-server"
 
 # Also create .env.api in 03-api-gateway/api/ directory for direct service use
 log_info "Creating .env.api in 03-api-gateway/api/ directory..."
 API_GATEWAY_DIR="$PROJECT_ROOT/03-api-gateway/api"
 mkdir -p "$API_GATEWAY_DIR"
 
-# Create .env.api from api-gateway.env
-cp "$ENV_DIR/api-gateway.env" "$API_GATEWAY_DIR/.env.api"
+# Create .env.api from .env.api-gateway
+cp "$ENV_DIR/.env.api-gateway" "$API_GATEWAY_DIR/.env.api"
 log_info "  - Created $API_GATEWAY_DIR/.env.api"
 
 log_success "API Gateway environment file also created in 03-api-gateway/api/ directory"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/api-gateway.env -t pickme/lucid:api-gateway ."
-log_info "  docker build --env-file $ENV_DIR/api-server.env -t pickme/lucid:api-server ."
-log_info "  docker build --env-file $ENV_DIR/tor-proxy.env -t pickme/lucid:tor-proxy ."
-log_info "  docker build --env-file $ENV_DIR/tunnel-tools.env -t pickme/lucid:tunnel-tools ."
-log_info "  docker build --env-file $ENV_DIR/server-tools.env -t pickme/lucid:server-tools ."
-log_info "  docker build --env-file $ENV_DIR/openapi-gateway.env -t pickme/lucid:openapi-gateway ."
-log_info "  docker build --env-file $ENV_DIR/openapi-server.env -t pickme/lucid:openapi-server ."
+log_info "  docker build --env-file $ENV_DIR/.env.api-gateway -t pickme/lucid:api-gateway ."
+log_info "  docker build --env-file $ENV_DIR/.env.api-server -t pickme/lucid:api-server ."
+log_info "  docker build --env-file $ENV_DIR/.env.tor-proxy -t pickme/lucid:tor-proxy ."
+log_info "  docker build --env-file $ENV_DIR/.env.tunnel-tools -t pickme/lucid:tunnel-tools ."
+log_info "  docker build --env-file $ENV_DIR/.env.server-tools -t pickme/lucid:server-tools ."
+log_info "  docker build --env-file $ENV_DIR/.env.openapi-gateway -t pickme/lucid:openapi-gateway ."
+log_info "  docker build --env-file $ENV_DIR/.env.openapi-server -t pickme/lucid:openapi-server ."

@@ -1,7 +1,7 @@
 #!/bin/bash
 # LUCID STAGING DEPLOYMENT SCRIPT
 # Deploys Lucid system to staging environment
-# Path: scripts/deployment/deploy-staging.sh
+# Path: /mnt/myssd/Lucid/Lucid/scripts/deployment/deploy-staging.sh
 
 set -euo pipefail
 
@@ -14,9 +14,13 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# Configuration
+# Global Configuration - Pi Native Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LUCID_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+LUCID_ROOT="/mnt/myssd/Lucid/Lucid"
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+CONFIGS_DIR="/mnt/myssd/Lucid/Lucid/configs"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
 STAGING_DIR="/opt/lucid/staging"
 STAGING_ENV="staging"
 DOCKER_REGISTRY="ghcr.io/hamigames/lucid"
@@ -196,7 +200,7 @@ services:
 
   # Core Services
   lucid-api-gateway:
-    image: ${DOCKER_REGISTRY}/api-gateway:${IMAGE_TAG:-latest}
+    image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid-api-gateway
     ports:
       - "8080:8080"
@@ -217,7 +221,7 @@ services:
       retries: 3
 
   lucid-blockchain-core:
-    image: ${DOCKER_REGISTRY}/blockchain-core:${IMAGE_TAG:-latest}
+    image: pickme/lucid-blockchain-engine:latest-arm64
     container_name: lucid-blockchain-core
     ports:
       - "8084:8084"
@@ -238,7 +242,7 @@ services:
       retries: 3
 
   lucid-session-management:
-    image: ${DOCKER_REGISTRY}/session-management:${IMAGE_TAG:-latest}
+    image: pickme/lucid-session-api:latest-arm64
     container_name: lucid-session-management
     ports:
       - "8085:8085"
@@ -259,7 +263,7 @@ services:
       retries: 3
 
   lucid-rdp-services:
-    image: ${DOCKER_REGISTRY}/rdp-services:${IMAGE_TAG:-latest}
+    image: pickme/lucid-rdp:latest-arm64
     container_name: lucid-rdp-services
     ports:
       - "8086:8086"
@@ -280,7 +284,7 @@ services:
       retries: 3
 
   lucid-node-management:
-    image: ${DOCKER_REGISTRY}/node-management:${IMAGE_TAG:-latest}
+    image: pickme/lucid-node-management:latest-arm64
     container_name: lucid-node-management
     ports:
       - "8087:8087"
@@ -301,7 +305,7 @@ services:
       retries: 3
 
   lucid-admin-interface:
-    image: ${DOCKER_REGISTRY}/admin-interface:${IMAGE_TAG:-latest}
+    image: pickme/lucid-admin-interface:latest-arm64
     container_name: lucid-admin-interface
     ports:
       - "8088:8088"
@@ -322,7 +326,7 @@ services:
       retries: 3
 
   lucid-auth-service:
-    image: ${DOCKER_REGISTRY}/auth-service:${IMAGE_TAG:-latest}
+    image: pickme/lucid-auth-service:latest-arm64
     container_name: lucid-auth-service
     ports:
       - "8089:8089"

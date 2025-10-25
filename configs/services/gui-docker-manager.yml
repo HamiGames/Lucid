@@ -146,8 +146,8 @@ compose_management:
   compose_files_directory: "configs/docker/"
   default_project_name: "lucid"
   environment_files:
-    - "configs/environment/env.gui"
-    - "configs/docker/docker.env"
+    - "configs/environment/.env.gui"
+    - "configs/environment/.env.secure"
   
   # Service startup configuration
   startup:

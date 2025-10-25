@@ -23,11 +23,30 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_header() { echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"; echo -e "${PURPLE}$1${NC}"; echo -e "${PURPLE}═══════════════════════════════════════════════════════════════${NC}"; }
 log_step() { echo -e "${CYAN}[STEP]${NC} $1"; }
 
-# Configuration
+# Configuration - Pi Console Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# Validate paths exist
+if [[ ! -d "$PROJECT_ROOT" ]]; then
+    echo "ERROR: Project root not found: $PROJECT_ROOT"
+    exit 1
+fi
+
+if [[ ! -d "$ENV_DIR" ]]; then
+    echo "ERROR: Environment directory not found: $ENV_DIR"
+    exit 1
+fi
+
+if [[ ! -d "$SCRIPTS_DIR" ]]; then
+    echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+    exit 1
+fi
 
 # Statistics
 TOTAL_FILES=0
@@ -36,28 +55,238 @@ FAILED_FILES=0
 TOTAL_SECRETS=0
 
 # =============================================================================
+# PI CONSOLE NATIVE VALIDATION FUNCTIONS
+# =============================================================================
+
+# Function to check Pi package requirements
+check_pi_requirements() {
+    log_info "Checking Pi console requirements..."
+    
+    local missing_packages=()
+    local critical_missing=()
+    
+    # Check for critical packages
+    if ! command -v openssl >/dev/null 2>&1; then
+        critical_missing+=("openssl")
+    fi
+    
+    if ! command -v base64 >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v head >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v tr >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v cut >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v hexdump >/dev/null 2>&1; then
+        critical_missing+=("bsdutils")
+    fi
+    
+    if ! command -v date >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v mkdir >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v wc >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v sed >/dev/null 2>&1; then
+        critical_missing+=("sed")
+    fi
+    
+    if ! command -v grep >/dev/null 2>&1; then
+        critical_missing+=("grep")
+    fi
+    
+    # Check for optional but recommended packages
+    if ! command -v git >/dev/null 2>&1; then
+        missing_packages+=("git")
+    fi
+    
+    if ! command -v mktemp >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    if ! command -v rm >/dev/null 2>&1; then
+        critical_missing+=("coreutils")
+    fi
+    
+    # Report critical missing packages
+    if [ ${#critical_missing[@]} -gt 0 ]; then
+        log_error "Critical packages missing: ${critical_missing[*]}"
+        log_info "Install with: sudo apt update && sudo apt install -y ${critical_missing[*]}"
+        return 1
+    fi
+    
+    # Report optional missing packages
+    if [ ${#missing_packages[@]} -gt 0 ]; then
+        log_warning "Optional packages missing: ${missing_packages[*]}"
+        log_info "Consider installing: sudo apt install -y ${missing_packages[*]}"
+    fi
+    
+    log_success "All critical Pi console requirements met"
+    return 0
+}
+
+# Function to validate Pi mount points
+validate_pi_mounts() {
+    log_info "Validating Pi mount points..."
+    
+    # Check if Pi SSD is mounted
+    if [ ! -d "/mnt/myssd" ]; then
+        log_error "Pi SSD not mounted at /mnt/myssd"
+        log_info "Mount with: sudo mount /dev/sda1 /mnt/myssd"
+        log_info "Or check mount status: lsblk"
+        return 1
+    fi
+    
+    # Check if mount point is writable
+    if [ ! -w "/mnt/myssd" ]; then
+        log_error "Pi SSD mount point not writable"
+        log_info "Fix permissions: sudo chown -R $USER:$USER /mnt/myssd"
+        return 1
+    fi
+    
+    # Check available space (minimum 2GB for complete generation)
+    local available_space=$(df /mnt/myssd | awk 'NR==2 {print $4}')
+    if [ "$available_space" -lt 2097152 ]; then  # 2GB in KB
+        log_warning "Low disk space on Pi SSD: $(($available_space / 1024))MB available"
+        log_info "Consider freeing space or using larger storage"
+    fi
+    
+    log_success "Pi mount points validated"
+    return 0
+}
+
+# Function to check Pi architecture compatibility
+check_pi_architecture() {
+    log_info "Checking Pi architecture compatibility..."
+    
+    local arch=$(uname -m)
+    local expected_arch="aarch64"
+    
+    if [ "$arch" != "$expected_arch" ]; then
+        log_warning "Architecture mismatch: $arch (expected: $expected_arch)"
+        log_info "This script is optimized for Pi 5 (ARM64)"
+    else
+        log_success "Pi architecture compatible (ARM64)"
+    fi
+    
+    # Check if running on Pi hardware
+    if [ -f "/proc/device-tree/model" ]; then
+        local model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0')
+        if [[ "$model" == *"Raspberry Pi"* ]]; then
+            log_success "Running on Raspberry Pi: $model"
+        else
+            log_warning "Not running on Raspberry Pi hardware"
+        fi
+    fi
+}
+
+# Function to validate Pi console environment
+validate_pi_environment() {
+    log_header "VALIDATING PI CONSOLE ENVIRONMENT"
+    
+    # Run all validation checks
+    if ! check_pi_requirements; then
+        log_error "Pi requirements check failed"
+        exit 1
+    fi
+    
+    if ! validate_pi_mounts; then
+        log_error "Pi mount validation failed"
+        exit 1
+    fi
+    
+    check_pi_architecture
+    
+    log_success "Pi console environment validated successfully"
+    echo ""
+}
+
+# =============================================================================
 # SECURE VALUE GENERATION FUNCTIONS
 # =============================================================================
 
-# Function to generate secure random string (base64)
+# Function to generate secure random string (base64) - Pi console native
 generate_secure_value() {
     local length=${1:-32}
-    openssl rand -base64 $length | tr -d '\n='
+    
+    # Primary method: openssl (preferred for Pi)
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -base64 $length | tr -d '\n='
+    # Fallback 1: /dev/urandom with base64
+    elif command -v base64 >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+        head -c $((length * 3/4)) /dev/urandom | base64 | tr -d '\n='
+    # Fallback 2: /dev/urandom with hexdump (minimal Pi installation)
+    elif command -v hexdump >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+        head -c $((length / 2)) /dev/urandom | hexdump -v -e '/1 "%02x"' | cut -c1-$length
+    # Fallback 3: /dev/urandom with od (last resort)
+    elif command -v od >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+        head -c $((length / 2)) /dev/urandom | od -An -tx1 | tr -d ' \n' | cut -c1-$length
+    else
+        log_error "No secure random generation method available"
+        log_info "Install openssl: sudo apt install -y openssl"
+        exit 1
+    fi
 }
 
-# Function to generate hex key
+# Function to generate hex key - Pi console native
 generate_hex_key() {
     local length=${1:-32}
-    openssl rand -hex $length | tr -d '\n'
+    
+    # Primary method: openssl (preferred for Pi)
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex $length | tr -d '\n'
+    # Fallback 1: /dev/urandom with hexdump
+    elif command -v hexdump >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+        head -c $((length / 2)) /dev/urandom | hexdump -v -e '/1 "%02x"' | tr -d '\n'
+    # Fallback 2: /dev/urandom with od
+    elif command -v od >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+        head -c $((length / 2)) /dev/urandom | od -An -tx1 | tr -d ' \n'
+    else
+        log_error "Cannot generate hex key - no suitable method available"
+        exit 1
+    fi
 }
 
-# Function to generate .onion address (v3)
+# Function to generate .onion address (v3) - Pi console native
 generate_onion_address() {
     local temp_dir=$(mktemp -d)
-    openssl genpkey -algorithm ed25519 -out "$temp_dir/private_key.pem" 2>/dev/null
-    local pubkey=$(openssl pkey -in "$temp_dir/private_key.pem" -pubout -outform DER 2>/dev/null | tail -c 32 | base32 | tr -d '=' | tr '[:upper:]' '[:lower:]')
-    rm -rf "$temp_dir"
-    echo "${pubkey:0:56}.onion"
+    
+    # Primary method: openssl with ed25519
+    if command -v openssl >/dev/null 2>&1; then
+        if openssl genpkey -algorithm ed25519 -out "$temp_dir/private_key.pem" 2>/dev/null; then
+            local pubkey=$(openssl pkey -in "$temp_dir/private_key.pem" -pubout -outform DER 2>/dev/null | tail -c 32 | base32 | tr -d '=' | tr '[:upper:]' '[:lower:]')
+            rm -rf "$temp_dir"
+            echo "${pubkey:0:56}.onion"
+            return 0
+        fi
+    fi
+    
+    # Fallback method: generate random .onion-like address
+    if command -v base32 >/dev/null 2>&1 && [ -r /dev/urandom ]; then
+        local random_data=$(head -c 32 /dev/urandom | base32 | tr -d '=' | tr '[:upper:]' '[:lower:]')
+        rm -rf "$temp_dir"
+        echo "${random_data:0:56}.onion"
+    else
+        # Last resort: simple random string
+        local random_string=$(head -c 32 /dev/urandom | hexdump -v -e '/1 "%02x"' | cut -c1-56)
+        rm -rf "$temp_dir"
+        echo "${random_string}.onion"
+    fi
 }
 
 # =============================================================================
@@ -173,9 +402,8 @@ generate_all_secure_values() {
 save_secure_values() {
     log_header "STEP 2: SAVING SECURE VALUES TO MASTER FILE"
     
-    local secure_file="$PROJECT_ROOT/configs/environment/.env.secure"
-    local secrets_dir="$(dirname "$secure_file")"
-    mkdir -p "$secrets_dir"
+    local secure_file="$ENV_DIR/.env.secure"
+    mkdir -p "$ENV_DIR"
     
     log_info "Creating master secure values file: $secure_file"
     
@@ -322,7 +550,7 @@ EOF
 generate_phase_configs() {
     log_header "STEP 3: GENERATING PHASE-LEVEL CONFIGURATIONS"
     
-    local gen_all_script="$SCRIPT_DIR/generate-all-env.sh"
+    local gen_all_script="$CONFIG_SCRIPTS_DIR/generate-all-env.sh"
     
     if [[ -f "$gen_all_script" ]]; then
         log_step "Running generate-all-env.sh..."
@@ -350,7 +578,7 @@ generate_phase_configs() {
 fix_phase_configs() {
     log_header "STEP 3.1: FIXING PHASE CONFIGURATION FILES"
     
-    local config_dir="$PROJECT_ROOT/configs/environment"
+    local config_dir="$ENV_DIR"
     
     # Fix foundation config
     if [[ -f "$config_dir/.env.foundation" ]]; then
@@ -365,58 +593,58 @@ fix_phase_configs() {
     fi
     
     # Fix application config
-    if [[ -f "$config_dir/env.application" ]]; then
-        log_info "Fixing env.application..."
-        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/env.application"
-        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/env.application"
-        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/env.application"
-        sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$config_dir/env.application"
-        sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/env.application"
-        sed -i "s|SERVICE_MESH_URL=\${SERVICE_MESH_URL}|SERVICE_MESH_URL=${SERVICE_MESH_URL}|g" "$config_dir/env.application"
-        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.application"
+    if [[ -f "$config_dir/.env.application" ]]; then
+        log_info "Fixing .env.application..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/.env.application"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/.env.application"
+        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/.env.application"
+        sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$config_dir/.env.application"
+        sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/.env.application"
+        sed -i "s|SERVICE_MESH_URL=\${SERVICE_MESH_URL}|SERVICE_MESH_URL=${SERVICE_MESH_URL}|g" "$config_dir/.env.application"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/.env.application"
         # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
-        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.application"
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/.env.application"
     fi
     
     # Fix core config
-    if [[ -f "$config_dir/env.core" ]]; then
-        log_info "Fixing env.core..."
-        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/env.core"
-        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/env.core"
-        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/env.core"
-        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.core"
-        sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/env.core"
+    if [[ -f "$config_dir/.env.core" ]]; then
+        log_info "Fixing .env.core..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/.env.core"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/.env.core"
+        sed -i "s|ELASTICSEARCH_URL=\${ELASTICSEARCH_URL}|ELASTICSEARCH_URL=${ELASTICSEARCH_URL}|g" "$config_dir/.env.core"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/.env.core"
+        sed -i "s|BLOCKCHAIN_ENGINE_URL=\${BLOCKCHAIN_ENGINE_URL}|BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}|g" "$config_dir/.env.core"
         # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
-        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.core"
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/.env.core"
     fi
     
     # Fix support config
-    if [[ -f "$config_dir/env.support" ]]; then
-        log_info "Fixing env.support..."
-        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/env.support"
-        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/env.support"
-        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.support"
-        sed -i "s|TRON_NETWORK=\${TRON_NETWORK}|TRON_NETWORK=${TRON_NETWORK}|g" "$config_dir/env.support"
-        sed -i "s|TRON_NODE_URL=\${TRON_NODE_URL}|TRON_NODE_URL=${TRON_NODE_URL}|g" "$config_dir/env.support"
-        sed -i "s|TRON_ADDRESS=\${TRON_ADDRESS}|TRON_ADDRESS=${TRON_ADDRESS}|g" "$config_dir/env.support"
-        sed -i "s|USDT_CONTRACT_ADDRESS=\${USDT_CONTRACT_ADDRESS}|USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}|g" "$config_dir/env.support"
-        sed -i "s|USDT_DECIMALS=\${USDT_DECIMALS}|USDT_DECIMALS=${USDT_DECIMALS}|g" "$config_dir/env.support"
+    if [[ -f "$config_dir/.env.support" ]]; then
+        log_info "Fixing .env.support..."
+        sed -i "s|MONGODB_URL=\${MONGODB_URL}|MONGODB_URL=${MONGODB_URL}|g" "$config_dir/.env.support"
+        sed -i "s|REDIS_URL=\${REDIS_URL}|REDIS_URL=${REDIS_URL}|g" "$config_dir/.env.support"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/.env.support"
+        sed -i "s|TRON_NETWORK=\${TRON_NETWORK}|TRON_NETWORK=${TRON_NETWORK}|g" "$config_dir/.env.support"
+        sed -i "s|TRON_NODE_URL=\${TRON_NODE_URL}|TRON_NODE_URL=${TRON_NODE_URL}|g" "$config_dir/.env.support"
+        sed -i "s|TRON_ADDRESS=\${TRON_ADDRESS}|TRON_ADDRESS=${TRON_ADDRESS}|g" "$config_dir/.env.support"
+        sed -i "s|USDT_CONTRACT_ADDRESS=\${USDT_CONTRACT_ADDRESS}|USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}|g" "$config_dir/.env.support"
+        sed -i "s|USDT_DECIMALS=\${USDT_DECIMALS}|USDT_DECIMALS=${USDT_DECIMALS}|g" "$config_dir/.env.support"
         # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
-        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.support"
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/.env.support"
     fi
     
     # Fix GUI config
-    if [[ -f "$config_dir/env.gui" ]]; then
-        log_info "Fixing env.gui..."
-        sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$config_dir/env.gui"
-        sed -i "s|BLOCKCHAIN_CORE_URL=\${BLOCKCHAIN_CORE_URL}|BLOCKCHAIN_CORE_URL=${BLOCKCHAIN_CORE_URL}|g" "$config_dir/env.gui"
-        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/env.gui"
-        sed -i "s|SESSION_API_URL=\${SESSION_API_URL}|SESSION_API_URL=${SESSION_API_URL}|g" "$config_dir/env.gui"
-        sed -i "s|NODE_MANAGEMENT_URL=\${NODE_MANAGEMENT_URL}|NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}|g" "$config_dir/env.gui"
-        sed -i "s|ADMIN_INTERFACE_URL=\${ADMIN_INTERFACE_URL}|ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}|g" "$config_dir/env.gui"
-        sed -i "s|TRON_PAYMENT_URL=\${TRON_PAYMENT_URL}|TRON_PAYMENT_URL=${TRON_PAYMENT_URL}|g" "$config_dir/env.gui"
+    if [[ -f "$config_dir/.env.gui" ]]; then
+        log_info "Fixing .env.gui..."
+        sed -i "s|API_GATEWAY_URL=\${API_GATEWAY_URL}|API_GATEWAY_URL=${API_GATEWAY_URL}|g" "$config_dir/.env.gui"
+        sed -i "s|BLOCKCHAIN_CORE_URL=\${BLOCKCHAIN_CORE_URL}|BLOCKCHAIN_CORE_URL=${BLOCKCHAIN_CORE_URL}|g" "$config_dir/.env.gui"
+        sed -i "s|AUTH_SERVICE_URL=\${AUTH_SERVICE_URL}|AUTH_SERVICE_URL=${AUTH_SERVICE_URL}|g" "$config_dir/.env.gui"
+        sed -i "s|SESSION_API_URL=\${SESSION_API_URL}|SESSION_API_URL=${SESSION_API_URL}|g" "$config_dir/.env.gui"
+        sed -i "s|NODE_MANAGEMENT_URL=\${NODE_MANAGEMENT_URL}|NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}|g" "$config_dir/.env.gui"
+        sed -i "s|ADMIN_INTERFACE_URL=\${ADMIN_INTERFACE_URL}|ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}|g" "$config_dir/.env.gui"
+        sed -i "s|TRON_PAYMENT_URL=\${TRON_PAYMENT_URL}|TRON_PAYMENT_URL=${TRON_PAYMENT_URL}|g" "$config_dir/.env.gui"
         # Fix any remaining ${VARIABLE} patterns that might cause shell interpretation errors
-        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/env.gui"
+        sed -i "s|\${[A-Z_]*}|REPLACED|g" "$config_dir/.env.gui"
     fi
     
     log_success "Phase configuration files fixed"
@@ -587,50 +815,66 @@ run_all_generation_scripts() {
     # Run blockchain build-env.sh
     log_step "Generating blockchain .env files..."
     ((TOTAL_FILES+=10))
-    if bash "$PROJECT_ROOT/infrastructure/docker/blockchain/build-env.sh"; then
-        log_success "✅ Blockchain .env files created (10 files)"
-        ((GENERATED_FILES+=10))
-        # Now inject values
-        inject_blockchain_values
+    if [[ -f "$PROJECT_ROOT/infrastructure/docker/blockchain/build-env.sh" ]]; then
+        if bash "$PROJECT_ROOT/infrastructure/docker/blockchain/build-env.sh"; then
+            log_success "✅ Blockchain .env files created (10 files)"
+            ((GENERATED_FILES+=10))
+            # Now inject values
+            inject_blockchain_values
+        else
+            log_error "❌ Blockchain generation failed"
+            ((FAILED_FILES+=10))
+        fi
     else
-        log_error "❌ Blockchain generation failed"
-        ((FAILED_FILES+=10))
+        log_warning "Blockchain build-env.sh not found, skipping"
     fi
     
     # Run databases build-env.sh
     log_step "Generating database .env files..."
     ((TOTAL_FILES+=6))
-    if bash "$PROJECT_ROOT/infrastructure/docker/databases/build-env.sh"; then
-        log_success "✅ Database .env files created (6 files)"
-        ((GENERATED_FILES+=6))
-        # Now inject values
-        inject_database_values
+    if [[ -f "$PROJECT_ROOT/infrastructure/docker/databases/build-env.sh" ]]; then
+        if bash "$PROJECT_ROOT/infrastructure/docker/databases/build-env.sh"; then
+            log_success "✅ Database .env files created (6 files)"
+            ((GENERATED_FILES+=6))
+            # Now inject values
+            inject_database_values
+        else
+            log_error "❌ Database generation failed"
+            ((FAILED_FILES+=6))
+        fi
     else
-        log_error "❌ Database generation failed"
-        ((FAILED_FILES+=6))
+        log_warning "Database build-env.sh not found, skipping"
     fi
     
     # Run API Gateway generate-env.sh
     log_step "Generating API Gateway .env.api..."
     ((TOTAL_FILES+=1))
-    if bash "$PROJECT_ROOT/03-api-gateway/api/generate-env.sh"; then
-        log_success "✅ API Gateway .env.api generated"
-        ((GENERATED_FILES+=1))
+    if [[ -f "$PROJECT_ROOT/03-api-gateway/api/generate-env.sh" ]]; then
+        if bash "$PROJECT_ROOT/03-api-gateway/api/generate-env.sh"; then
+            log_success "✅ API Gateway .env.api generated"
+            ((GENERATED_FILES+=1))
+        else
+            log_error "❌ API Gateway generation failed"
+            ((FAILED_FILES+=1))
+        fi
     else
-        log_error "❌ API Gateway generation failed"
-        ((FAILED_FILES+=1))
+        log_warning "API Gateway generate-env.sh not found, skipping"
     fi
     echo ""
     
     # Run sessions/core generate-env.sh
     log_step "Generating Session Core .env files..."
     ((TOTAL_FILES+=3))
-    if bash "$PROJECT_ROOT/sessions/core/generate-env.sh"; then
-        log_success "✅ Session Core .env files generated (3 files)"
-        ((GENERATED_FILES+=3))
+    if [[ -f "$PROJECT_ROOT/sessions/core/generate-env.sh" ]]; then
+        if bash "$PROJECT_ROOT/sessions/core/generate-env.sh"; then
+            log_success "✅ Session Core .env files generated (3 files)"
+            ((GENERATED_FILES+=3))
+        else
+            log_error "❌ Session Core generation failed"
+            ((FAILED_FILES+=3))
+        fi
     else
-        log_error "❌ Session Core generation failed"
-        ((FAILED_FILES+=3))
+        log_warning "Session Core generate-env.sh not found, skipping"
     fi
     echo ""
 }
@@ -730,7 +974,7 @@ validate_generated_files() {
 create_summary() {
     log_header "STEP 8: GENERATING COMPREHENSIVE SUMMARY"
     
-    local summary_file="$PROJECT_ROOT/configs/environment/COMPLETE_ENV_GENERATION_SUMMARY.md"
+    local summary_file="$ENV_DIR/COMPLETE_ENV_GENERATION_SUMMARY.md"
     
     cat > "$summary_file" << EOF
 # Complete Environment Generation Summary
@@ -1000,6 +1244,9 @@ main() {
     echo ""
     log_info "Total: 27 environment files with $TOTAL_SECRETS cryptographic values"
     echo ""
+    
+    # Validate Pi console environment before proceeding
+    validate_pi_environment
     
     # Confirm execution
     read -p "Continue with environment generation? (y/N): " -n 1 -r

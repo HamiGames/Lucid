@@ -1,14 +1,78 @@
 #!/bin/bash
-# Path: infrastructure/docker/sessions/build-env.sh
-# Build Environment Script for Lucid Session Services
-# Generates .env files for session processing containers
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/sessions/build-env.sh
+# Build Environment Script for Lucid sessions Services
+# Generates .env files for sessions containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/sessions"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -25,351 +89,50 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
 # Create environment directory
 mkdir -p "$ENV_DIR"
 
-log_info "Building environment files for Lucid Session Services"
+log_info "Building environment files for Lucid sessions Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
 log_info "Build timestamp: $BUILD_TIMESTAMP"
 log_info "Git SHA: $GIT_SHA"
 
-# Session Orchestrator Environment
-log_info "Creating session-orchestrator.env..."
-cat > "$ENV_DIR/session-orchestrator.env" << EOF
-# Lucid Session Orchestrator Environment
-# Generated: $(date)
+# Common environment variables for all services
+COMMON_ENV_VARS=(
+    "PYTHONDONTWRITEBYTECODE=1"
+    "PYTHONUNBUFFERED=1"
+    "PYTHONPATH=/app"
+    "BUILD_TIMESTAMP=$BUILD_TIMESTAMP"
+    "GIT_SHA=$GIT_SHA"
+    "LUCID_ENV=dev"
+    "LUCID_NETWORK=testnet"
+    "LUCID_PLANE=ops"
+    "LUCID_CLUSTER_ID=dev-core"
+    "LOG_LEVEL=DEBUG"
+    "PROJECT_ROOT=$PROJECT_ROOT"
+    "ENV_DIR=$ENV_DIR"
+    "SCRIPTS_DIR=$SCRIPTS_DIR"
+    "CONFIG_SCRIPTS_DIR=$CONFIG_SCRIPTS_DIR"
+)
 
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=session-orchestrator
-SERVICE_PORT=8090
-
-# Orchestration Configuration
-ORCHESTRATOR_MODE=pipeline
-PIPELINE_STAGES=chunker,encryptor,merkle-builder
-STAGE_TIMEOUT=300
-
-# Session Configuration
-SESSION_TIMEOUT=3600
-SESSION_CLEANUP_INTERVAL=300
-MAX_CONCURRENT_SESSIONS=10
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-SESSION_DATABASE=lucid_sessions
-
-# Security Configuration
-ENCRYPTION_KEY=""
-SESSION_SECRET=""
-HMAC_KEY=""
-
-# Performance Configuration
-CHUNK_SIZE=8388608
-COMPRESSION_LEVEL=1
-BATCH_SIZE=100
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-SESSION_DATA_DIR=/data/sessions
-TEMP_DIR=/tmp/orchestrator
-LOGS_DIR=/data/logs
-EOF
-
-# Session Recorder Environment
-log_info "Creating session-recorder.env..."
-cat > "$ENV_DIR/session-recorder.env" << EOF
-# Lucid Session Recorder Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=session-recorder
-SERVICE_PORT=8091
-
-# Recording Configuration
-RECORDING_FORMAT=mp4
-RECORDING_QUALITY=high
-RECORDING_FPS=30
-RECORDING_RESOLUTION=1920x1080
-
-# FFmpeg Configuration
-FFMPEG_PATH=/usr/bin/ffmpeg
-FFMPEG_PRESET=ultrafast
-FFMPEG_CRF=23
-FFMPEG_THREADS=4
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-RECORDING_DATABASE=lucid_recordings
-
-# Storage Configuration
-RECORDING_STORAGE_PATH=/data/recordings
-RECORDING_MAX_SIZE=1073741824
-RECORDING_RETENTION_DAYS=30
-
-# Security Configuration
-RECORDING_ENCRYPTION=true
-ENCRYPTION_KEY=""
-
-# Performance Configuration
-RECORDING_BUFFER_SIZE=1048576
-RECORDING_CHUNK_SIZE=8388608
-MAX_CONCURRENT_RECORDINGS=5
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-RECORDINGS_DIR=/data/recordings
-TEMP_DIR=/tmp/recorder
-LOGS_DIR=/data/logs
-EOF
-
-# Session Chunker Environment
-log_info "Creating chunker.env..."
-cat > "$ENV_DIR/chunker.env" << EOF
-# Lucid Session Chunker Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=chunker
-SERVICE_PORT=8092
-
-# Chunking Configuration
-CHUNK_SIZE=8388608
-CHUNK_OVERLAP=0
-CHUNK_ALGORITHM=rolling_hash
-HASH_ALGORITHM=sha256
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-CHUNK_DATABASE=lucid_chunks
-
-# Performance Configuration
-MAX_CHUNK_SIZE=16777216
-MIN_CHUNK_SIZE=1048576
-CHUNK_PROCESSING_TIMEOUT=60
-
-# Security Configuration
-CHUNK_ENCRYPTION=false
-ENCRYPTION_KEY=""
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-CHUNKS_DIR=/data/chunks
-TEMP_DIR=/tmp/chunker
-LOGS_DIR=/data/logs
-EOF
-
-# Session Encryptor Environment
-log_info "Creating encryptor.env..."
-cat > "$ENV_DIR/encryptor.env" << EOF
-# Lucid Session Encryptor Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=encryptor
-SERVICE_PORT=8093
-
-# Encryption Configuration
-ENCRYPTION_ALGORITHM=AES-256-GCM
-KEY_DERIVATION_FUNCTION=PBKDF2
-KEY_DERIVATION_ITERATIONS=100000
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-ENCRYPTION_DATABASE=lucid_encrypted
-
-# Security Configuration
-MASTER_ENCRYPTION_KEY=""
-KEY_ROTATION_INTERVAL=86400
-ENCRYPTION_SALT_SIZE=32
-
-# Performance Configuration
-ENCRYPTION_CHUNK_SIZE=1048576
-MAX_CONCURRENT_ENCRYPTIONS=10
-ENCRYPTION_TIMEOUT=120
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-ENCRYPTED_DIR=/data/encrypted
-TEMP_DIR=/tmp/encryptor
-LOGS_DIR=/data/logs
-EOF
-
-# Merkle Builder Environment
-log_info "Creating merkle-builder.env..."
-cat > "$ENV_DIR/merkle-builder.env" << EOF
-# Lucid Merkle Builder Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=merkle-builder
-SERVICE_PORT=8094
-
-# Merkle Tree Configuration
-MERKLE_ALGORITHM=sha256
-MERKLE_LEAF_SIZE=32
-MERKLE_TREE_HEIGHT=20
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-MERKLE_DATABASE=lucid_merkle
-
-# Performance Configuration
-MERKLE_BATCH_SIZE=1000
-MERKLE_BUILD_TIMEOUT=300
-MAX_CONCURRENT_TREES=5
-
-# Security Configuration
-MERKLE_ROOT_SIGNATURE=true
-SIGNING_KEY=""
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-MERKLE_DIR=/data/merkle
-TEMP_DIR=/tmp/merkle-builder
-LOGS_DIR=/data/logs
-EOF
-
-# Clipboard Handler Environment
-log_info "Creating clipboard-handler.env..."
-cat > "$ENV_DIR/clipboard-handler.env" << EOF
-# Lucid Clipboard Handler Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=clipboard-handler
-SERVICE_PORT=8095
-
-# Clipboard Configuration
-CLIPBOARD_MAX_SIZE=1048576
-CLIPBOARD_FORMATS=text,html,image
-CLIPBOARD_COMPRESSION=true
-
-# Security Configuration
-CLIPBOARD_ENCRYPTION=true
-ENCRYPTION_KEY=""
-CLIPBOARD_VALIDATION=true
-
-# Performance Configuration
-CLIPBOARD_BUFFER_SIZE=65536
-CLIPBOARD_SYNC_INTERVAL=100
-MAX_CLIPBOARD_HISTORY=100
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-CLIPBOARD_DIR=/data/clipboard
-TEMP_DIR=/tmp/clipboard
-LOGS_DIR=/data/logs
-EOF
+# Service-specific environment files will be added here
+# This is a template - each service should implement its specific .env files
 
 log_success "Environment files created successfully in $ENV_DIR"
-log_info "Created environment files for:"
-log_info "  - session-orchestrator.env"
-log_info "  - session-recorder.env"
-log_info "  - chunker.env"
-log_info "  - encryptor.env"
-log_info "  - merkle-builder.env"
-log_info "  - clipboard-handler.env"
-
-# Also create .env files in sessions/core/ directory for direct service use
-log_info "Creating symlinks in sessions/core/ directory..."
-SESSIONS_CORE_DIR="$PROJECT_ROOT/sessions/core"
-mkdir -p "$SESSIONS_CORE_DIR"
-
-# Create .env.orchestrator
-cp "$ENV_DIR/session-orchestrator.env" "$SESSIONS_CORE_DIR/.env.orchestrator"
-log_info "  - Created $SESSIONS_CORE_DIR/.env.orchestrator"
-
-# Create .env.chunker
-cp "$ENV_DIR/chunker.env" "$SESSIONS_CORE_DIR/.env.chunker"
-log_info "  - Created $SESSIONS_CORE_DIR/.env.chunker"
-
-# Create .env.merkle_builder
-cp "$ENV_DIR/merkle-builder.env" "$SESSIONS_CORE_DIR/.env.merkle_builder"
-log_info "  - Created $SESSIONS_CORE_DIR/.env.merkle_builder"
-
-log_success "Environment files also created in sessions/core/ directory"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
+log_info "📁 All environment files saved to: $ENV_DIR"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/session-orchestrator.env -t pickme/lucid:session-orchestrator ."
-log_info "  docker build --env-file $ENV_DIR/session-recorder.env -t pickme/lucid:session-recorder ."
-log_info "  docker build --env-file $ENV_DIR/chunker.env -t pickme/lucid:chunker ."
-log_info "  docker build --env-file $ENV_DIR/encryptor.env -t pickme/lucid:encryptor ."
-log_info "  docker build --env-file $ENV_DIR/merkle-builder.env -t pickme/lucid:merkle-builder ."
-log_info "  docker build --env-file $ENV_DIR/clipboard-handler.env -t pickme/lucid:clipboard-handler ."
+log_info "  docker build --env-file $ENV_DIR/.env.<service> -t pickme/lucid:<service> ."

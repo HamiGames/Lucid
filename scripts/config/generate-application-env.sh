@@ -74,7 +74,7 @@ echo "SESSION_SECRET generated: ${SESSION_SECRET:0:8}..."
 echo "NODE_MANAGEMENT_SECRET generated: ${NODE_MANAGEMENT_SECRET:0:8}..."
 
 # Create .env.application file
-cat > "$ENV_FILE" << 'EOF'
+cat > "$ENV_FILE" << EOF
 # Phase 3 Application Services Configuration
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Target: Raspberry Pi 5 (192.168.0.75)
@@ -103,7 +103,7 @@ API_RATE_LIMIT=1000
 # AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
 # =============================================================================
 
-JWT_SECRET=${JWT_SECRET_KEY}
+JWT_SECRET="$JWT_SECRET_KEY"
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
 SESSION_TIMEOUT=1800
@@ -112,7 +112,7 @@ SESSION_TIMEOUT=1800
 # SECURITY CONFIGURATION (Required by validate-env.sh)
 # =============================================================================
 
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ENCRYPTION_KEY="$ENCRYPTION_KEY"
 SSL_ENABLED=true
 SECURITY_HEADERS_ENABLED=true
 
@@ -180,7 +180,7 @@ MONGODB_HOST=172.20.0.11
 MONGODB_PORT=27017
 MONGODB_DATABASE=lucid
 MONGODB_USERNAME=lucid
-MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_PASSWORD="$MONGODB_PASSWORD"
 MONGODB_AUTH_SOURCE=admin
 MONGODB_RETRY_WRITES=false
 MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false
@@ -188,14 +188,14 @@ MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSour
 # Redis Configuration
 REDIS_HOST=172.20.0.12
 REDIS_PORT=6379
-REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_PASSWORD="$REDIS_PASSWORD"
 REDIS_URL=redis://:${REDIS_PASSWORD}@172.20.0.12:6379
 
 # Elasticsearch Configuration
 ELASTICSEARCH_HOST=172.20.0.13
 ELASTICSEARCH_PORT=9200
 ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+ELASTICSEARCH_PASSWORD="$ELASTICSEARCH_PASSWORD"
 ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200
 
 # =============================================================================
@@ -203,16 +203,16 @@ ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200
 # =============================================================================
 
 # JWT Configuration
-JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_SECRET_KEY="$JWT_SECRET_KEY"
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION=3600
 
 # Encryption Configuration
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ENCRYPTION_KEY="$ENCRYPTION_KEY"
 ENCRYPTION_ALGORITHM=AES-256-GCM
 
 # Session Configuration
-SESSION_SECRET=${SESSION_SECRET}
+SESSION_SECRET="$SESSION_SECRET"
 SESSION_TIMEOUT=1800
 
 # =============================================================================
@@ -338,7 +338,7 @@ RDP_MONITOR_ALERT_THRESHOLD_DISK=90
 # =============================================================================
 
 # Node Management Configuration
-NODE_MANAGEMENT_SECRET=${NODE_MANAGEMENT_SECRET}
+NODE_MANAGEMENT_SECRET="$NODE_MANAGEMENT_SECRET"
 NODE_POOL_MAX_SIZE=100
 NODE_PAYOUT_THRESHOLD=10
 NODE_CONSENSUS_WEIGHT=1.0

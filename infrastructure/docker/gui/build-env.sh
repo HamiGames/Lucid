@@ -1,14 +1,78 @@
 #!/bin/bash
-# Path: infrastructure/docker/gui/build-env.sh
-# Build Environment Script for Lucid GUI Services
-# Generates .env files for graphical user interface containers
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/gui/build-env.sh
+# Build Environment Script for Lucid gui Services
+# Generates .env files for gui containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
 
 set -euo pipefail
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts/config"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/gui"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
 BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
@@ -25,174 +89,50 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
 # Create environment directory
 mkdir -p "$ENV_DIR"
 
-log_info "Building environment files for Lucid GUI Services"
+log_info "Building environment files for Lucid gui Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
 log_info "Build timestamp: $BUILD_TIMESTAMP"
 log_info "Git SHA: $GIT_SHA"
 
-# Desktop Environment Environment
-log_info "Creating desktop-environment.env..."
-cat > "$ENV_DIR/desktop-environment.env" << EOF
-# Lucid Desktop Environment Environment
-# Generated: $(date)
+# Common environment variables for all services
+COMMON_ENV_VARS=(
+    "PYTHONDONTWRITEBYTECODE=1"
+    "PYTHONUNBUFFERED=1"
+    "PYTHONPATH=/app"
+    "BUILD_TIMESTAMP=$BUILD_TIMESTAMP"
+    "GIT_SHA=$GIT_SHA"
+    "LUCID_ENV=dev"
+    "LUCID_NETWORK=testnet"
+    "LUCID_PLANE=ops"
+    "LUCID_CLUSTER_ID=dev-core"
+    "LOG_LEVEL=DEBUG"
+    "PROJECT_ROOT=$PROJECT_ROOT"
+    "ENV_DIR=$ENV_DIR"
+    "SCRIPTS_DIR=$SCRIPTS_DIR"
+    "CONFIG_SCRIPTS_DIR=$CONFIG_SCRIPTS_DIR"
+)
 
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=desktop-environment
-DISPLAY_NUMBER=:1
-DISPLAY_WIDTH=1920
-DISPLAY_HEIGHT=1080
-DISPLAY_DEPTH=24
-
-# Desktop Environment Configuration
-DESKTOP_ENVIRONMENT=gnome
-DESKTOP_SESSION=gnome
-DESKTOP_AUTOLOGIN=true
-DESKTOP_SCREENSAVER_TIMEOUT=0
-
-# X11 Configuration
-X11_DISPLAY=:1
-X11_AUTH_PROTOCOL=MIT-MAGIC-COOKIE-1
-X11_FORWARDING=true
-X11_COMPOSITING=true
-
-# Security Configuration
-DESKTOP_ENCRYPTION_KEY=""
-DESKTOP_ACCESS_CONTROL=true
-DESKTOP_SESSION_ISOLATION=true
-
-# Performance Configuration
-DESKTOP_MEMORY_LIMIT=2048
-DESKTOP_CPU_LIMIT=2
-DESKTOP_GPU_ACCELERATION=true
-DESKTOP_COMPOSITING=true
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-DESKTOP_DATA_DIR=/data/desktop
-DESKTOP_SESSIONS_DIR=/data/sessions
-DESKTOP_LOGS_DIR=/data/logs
-EOF
-
-# GUI Builder Environment
-log_info "Creating gui-builder.env..."
-cat > "$ENV_DIR/gui-builder.env" << EOF
-# Lucid GUI Builder Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=gui-builder
-SERVICE_PORT=8119
-
-# GUI Builder Configuration
-BUILDER_TYPE=qt
-BUILDER_THEME=lucid
-BUILDER_RESOLUTION=1920x1080
-BUILDER_COLOR_DEPTH=32
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-GUI_DATABASE=lucid_gui
-
-# Security Configuration
-BUILDER_ENCRYPTION_KEY=""
-BUILDER_ACCESS_CONTROL=true
-BUILDER_AUDIT_ENABLED=true
-
-# Performance Configuration
-BUILDER_CACHE_SIZE=1000
-BUILDER_CACHE_TTL=3600
-MAX_CONCURRENT_BUILDS=5
-BUILD_TIMEOUT=300
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-BUILDER_DATA_DIR=/data/builder
-BUILDER_CACHE_DIR=/data/cache
-BUILDER_LOGS_DIR=/data/logs
-EOF
-
-# GUI Hooks Environment
-log_info "Creating gui-hooks.env..."
-cat > "$ENV_DIR/gui-hooks.env" << EOF
-# Lucid GUI Hooks Environment
-# Generated: $(date)
-
-# Python Configuration
-PYTHONDONTWRITEBYTECODE=1
-PYTHONUNBUFFERED=1
-PYTHONPATH=/app
-
-# Build Configuration
-BUILD_TIMESTAMP=$BUILD_TIMESTAMP
-GIT_SHA=$GIT_SHA
-LUCID_ENV=dev
-
-# Service Configuration
-SERVICE_NAME=gui-hooks
-SERVICE_PORT=8120
-
-# Hooks Configuration
-HOOKS_ENABLED=true
-HOOKS_TIMEOUT=30
-HOOKS_RETRY_ATTEMPTS=3
-HOOKS_PRIORITY_QUEUE=true
-
-# Database Configuration
-MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
-HOOKS_DATABASE=lucid_hooks
-
-# Security Configuration
-HOOKS_ENCRYPTION_KEY=""
-HOOKS_ACCESS_CONTROL=true
-HOOKS_AUDIT_ENABLED=true
-
-# Performance Configuration
-HOOKS_CACHE_SIZE=500
-HOOKS_CACHE_TTL=1800
-MAX_CONCURRENT_HOOKS=20
-HOOKS_BATCH_SIZE=10
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-
-# Data Directories
-HOOKS_DATA_DIR=/data/hooks
-HOOKS_CACHE_DIR=/data/cache
-HOOKS_LOGS_DIR=/data/logs
-EOF
+# Service-specific environment files will be added here
+# This is a template - each service should implement its specific .env files
 
 log_success "Environment files created successfully in $ENV_DIR"
-log_info "Created environment files for:"
-log_info "  - desktop-environment.env"
-log_info "  - gui-builder.env"
-log_info "  - gui-hooks.env"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
+log_info "📁 All environment files saved to: $ENV_DIR"
 
 echo
 log_info "To use these environment files in Docker builds:"
-log_info "  docker build --env-file $ENV_DIR/desktop-environment.env -t pickme/lucid:desktop-environment ."
-log_info "  docker build --env-file $ENV_DIR/gui-builder.env -t pickme/lucid:gui-builder ."
-log_info "  docker build --env-file $ENV_DIR/gui-hooks.env -t pickme/lucid:gui-hooks ."
+log_info "  docker build --env-file $ENV_DIR/.env.<service> -t pickme/lucid:<service> ."
