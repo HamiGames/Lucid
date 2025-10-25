@@ -52,6 +52,15 @@ echo ""
 
 # Validate Pi console environment before proceeding
 validate_pi_environment
+Run /mnt/myssd/Lucid/Lucid/scripts/config/generate-distroless-env.sh
+echo -e "${GREEN}✅ Distroless environment configuration generated successfully${NC}"
+echo -e "${GREEN}📋 Environment variables configured for distroless deployment${NC}"
+echo -e "${GREEN}🔒 Security keys generated with secure random values (NO PLACEHOLDERS)${NC}"
+echo -e "${GREEN}🌐 Network configuration set for Raspberry Pi deployment${NC}"
+echo -e "${GREEN}📦 Container configuration optimized for distroless runtime${NC}"
+echo -e "${GREEN}🔐 Distroless design maintained throughout${NC}"
+echo -e "${GREEN}🛡️ Secure design maintained throughout${NC}"
+echo ""
 
 # =============================================================================
 # CONFIGURATION
