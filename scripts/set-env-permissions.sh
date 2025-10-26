@@ -14,6 +14,11 @@
 # Target Platform: Raspberry Pi (linux/arm64)
 # Base Path: /mnt/myssd/Lucid/Lucid/
 #
+# Error Handling:
+# - Missing files are handled gracefully (expected behavior)
+# - Script continues execution even if some files are not found
+# - Uses '|| true' to prevent script exit on missing files
+#
 # =============================================================================
 
 set -euo pipefail
@@ -67,8 +72,8 @@ set_file_permissions() {
             return 1
         fi
     else
-        log_warning "File not found: $file_path"
-        return 1
+        log_warning "File not found: $file_path (this is expected for some files)"
+        return 0  # Return 0 for missing files since this is expected behavior
     fi
 }
 
@@ -92,8 +97,8 @@ set_directory_permissions() {
         find "$dir_path" -type f -name "*.yml" -exec chmod "$permissions" {} \; 2>/dev/null || true
         find "$dir_path" -type f -name "*.yaml" -exec chmod "$permissions" {} \; 2>/dev/null || true
     else
-        log_warning "Directory not found: $dir_path"
-        return 1
+        log_warning "Directory not found: $dir_path (this is expected for some directories)"
+        return 0  # Return 0 for missing directories since this is expected behavior
     fi
 }
 
@@ -180,7 +185,7 @@ main() {
     )
     
     for file in "${regular_files[@]}"; do
-        set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Regular Environment"
+        set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Regular Environment" || true
     done
     
     # Set permissions for environment subdirectories
@@ -204,7 +209,7 @@ main() {
     )
     
     for file in "${secure_files[@]}"; do
-        set_file_permissions "$file" "$SECURE_PERMISSIONS" "Secure Secret"
+        set_file_permissions "$file" "$SECURE_PERMISSIONS" "Secure Secret" || true
     done
     
     # Find and set permissions for any files with "secrets" in the name
@@ -273,7 +278,7 @@ main() {
     )
     
     for file in "${service_files[@]}"; do
-        set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Service Environment"
+        set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Service Environment" || true
     done
     
     # Set permissions for infrastructure blockchain environment files
@@ -292,7 +297,7 @@ main() {
             "$blockchain_env_dir/.env.tron-node-client"
         )
         for file in "${blockchain_env_files[@]}"; do
-            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Blockchain Environment"
+            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Blockchain Environment" || true
         done
         log_success "Set permissions for blockchain environment files"
     fi
@@ -316,7 +321,7 @@ main() {
             "$database_env_dir/mongodb.env"
         )
         for file in "${database_env_files[@]}"; do
-            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Database Environment"
+            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Database Environment" || true
         done
         log_success "Set permissions for database environment files"
     fi
