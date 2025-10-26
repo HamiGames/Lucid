@@ -130,15 +130,12 @@ main() {
         "$ENV_DIR/env.test"
         "$ENV_DIR/env.coordination.yml"
         "$ENV_DIR/env.foundation"
-        "$ENV_DIR/env.core"
-        "$ENV_DIR/env.application"
-        "$ENV_DIR/env.support"
         "$ENV_DIR/env.gui"
-        "$ENV_DIR/env.pi-build"
         "$ENV_DIR/layer2.env"
         "$ENV_DIR/layer2-simple.env"
         # .env.* files (with dot prefix)
         "$ENV_DIR/.env.application"
+        "$ENV_DIR/.env.master"
         "$ENV_DIR/.env.core"
         "$ENV_DIR/.env.distroless"
         "$ENV_DIR/.env.foundation"
@@ -147,6 +144,39 @@ main() {
         "$ENV_DIR/.env.support"
         "$ENV_DIR/.env.api"
         "$ENV_DIR/.env.user"
+        # API Gateway specific files
+        "$PROJECT_ROOT/03-api-gateway/api/.env.api"
+        "$PROJECT_ROOT/03-api-gateway/env.template"
+        # Auth service files
+        "$PROJECT_ROOT/auth/.env.authentication"
+        "$PROJECT_ROOT/auth/env.example"
+        # Blockchain API files
+        "$PROJECT_ROOT/blockchain/api/env.example"
+        # Build config files
+        "$PROJECT_ROOT/build/config/session-images.env"
+        # Compose files
+        "$PROJECT_ROOT/compose/.env.example"
+        # Docker config files
+        "$PROJECT_ROOT/configs/docker/distroless/distroless.env"
+        "$PROJECT_ROOT/configs/docker/distroless/production.env"
+        "$PROJECT_ROOT/configs/docker/docker.env"
+        "$PROJECT_ROOT/configs/docker/multi-stage/multi-stage.env"
+        # Electron GUI files
+        "$PROJECT_ROOT/electron-gui/.env.development"
+        "$PROJECT_ROOT/electron-gui/.env.production"
+        "$PROJECT_ROOT/electron-gui/configs/env.development.json"
+        "$PROJECT_ROOT/electron-gui/configs/env.production.json"
+        # Infrastructure files
+        "$PROJECT_ROOT/infrastructure/containers/base/env.template"
+        # Node files
+        "$PROJECT_ROOT/node/env.example"
+        # Payment systems files
+        "$PROJECT_ROOT/payment-systems/tron/env.example"
+        # Session management files
+        "$PROJECT_ROOT/sessions/core/.env.chunker"
+        "$PROJECT_ROOT/sessions/core/.env.merkle_builder"
+        "$PROJECT_ROOT/sessions/core/.env.orchestrator"
+        "$PROJECT_ROOT/sessions/encryption/.env.encryptor"
     )
     
     for file in "${regular_files[@]}"; do
@@ -177,6 +207,10 @@ main() {
         "$SECRETS_DIR/.env.secrets"
         "$SECRETS_DIR/.env.secure"
         "$SECRETS_DIR/.env.tron-secrets"
+        # API Gateway secrets
+        "$PROJECT_ROOT/03-api-gateway/api/.env.api.secrets"
+        # Session secrets
+        "$PROJECT_ROOT/sessions/core/.env.sessions.secrets"
     )
     
     for file in "${secure_files[@]}"; do
@@ -206,7 +240,7 @@ main() {
         "$ENV_DIR/.env.api-server"
         "$ENV_DIR/.env.authentication"
         "$ENV_DIR/.env.authentication-service-distroless"
-        "$ENV_DIR/.env.orchestrator"
+        "$PROJECT_ROOT/sessions/core/.env.orchestrator"
         "$ENV_DIR/.env.chunker"
         "$ENV_DIR/.env.merkle-builder"
         "$ENV_DIR/.env.tor-proxy"
@@ -222,6 +256,30 @@ main() {
         "$ENV_DIR/.env.tron-usdt-manager"
         "$ENV_DIR/.env.tron-staking"
         "$ENV_DIR/.env.tron-payment-gateway"
+        # Admin interface files
+        "$PROJECT_ROOT/admin/env.example"
+        # Blockchain infrastructure files
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-api"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-governance"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-ledger"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-sessions-data"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-vm"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.contract-compiler"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.contract-deployment"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.deployment-orchestrator"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.on-system-chain-client"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.tron-node-client"
+        # Blockchain environment files (without dot prefix)
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-api.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-governance.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-ledger.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-sessions-data.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-vm.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-compiler.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-deployment.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/deployment-orchestrator.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/on-system-chain-client.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/tron-node-client.env"
     )
     
     for file in "${service_files[@]}"; do
@@ -259,6 +317,13 @@ main() {
             "$database_env_dir/.env.database-restore"
             "$database_env_dir/.env.mongodb"
             "$database_env_dir/.env.mongodb-init"
+            # Database environment files (without dot prefix)
+            "$database_env_dir/database-backup.env"
+            "$database_env_dir/database-migration.env"
+            "$database_env_dir/database-monitoring.env"
+            "$database_env_dir/database-restore.env"
+            "$database_env_dir/mongodb-init.env"
+            "$database_env_dir/mongodb.env"
         )
         for file in "${database_env_files[@]}"; do
             set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Database Environment"
@@ -291,6 +356,24 @@ main() {
         "$PROJECT_ROOT/node"
         "$PROJECT_ROOT/admin"
         "$PROJECT_ROOT/payment-systems"
+        "$PROJECT_ROOT/03-api-gateway"
+        "$PROJECT_ROOT/auth"
+        "$PROJECT_ROOT/build"
+        "$PROJECT_ROOT/compose"
+        "$PROJECT_ROOT/configs"
+        "$PROJECT_ROOT/electron-gui"
+        "$PROJECT_ROOT/gui"
+        "$PROJECT_ROOT/infrastructure"
+        "$PROJECT_ROOT/ops"
+        "$PROJECT_ROOT/scripts"
+        "$PROJECT_ROOT/src"
+        "$PROJECT_ROOT/storage"
+        "$PROJECT_ROOT/tests"
+        "$PROJECT_ROOT/tools"
+        "$PROJECT_ROOT/user"
+        "$PROJECT_ROOT/user_content"
+        "$PROJECT_ROOT/vm"
+        "$PROJECT_ROOT/wallet"
     )
     
     for infra_dir in "${infrastructure_dirs[@]}"; do
