@@ -19,9 +19,16 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-# Distroless-safe path resolution
-project_root = os.getenv('LUCID_PROJECT_ROOT', str(Path(__file__).parent.parent.parent.parent))
-sys.path.insert(0, project_root)
+# Distroless-safe path resolution with validation
+try:
+    from src.core.utils import get_safe_project_root
+    project_root = get_safe_project_root()
+    sys.path.insert(0, project_root)
+except Exception as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to resolve project root: {e}")
+    sys.exit(1)
 
 # Removed app.config import - using local config module
 from .config import config, get_service_config, get_api_endpoints, validate_config
@@ -73,13 +80,20 @@ async def lifespan(app: FastAPI):
     logger.info("Starting TRON Payment Services...")
     
     # Validate configuration
-    config_errors = validate_config()
-    if config_errors:
-        logger.error("Configuration validation failed:")
-        for error in config_errors:
-            logger.error(f"  - {error}")
+    try:
+        config_errors = validate_config()
+        if config_errors:
+            logger.error("Configuration validation failed:")
+            for error in config_errors:
+                logger.error(f"  - {error}")
+            if config.get("production_mode", False):
+                raise RuntimeError("Configuration validation failed in production mode")
+    except Exception as e:
+        logger.error(f"Configuration validation error: {e}")
         if config.get("production_mode", False):
-            raise RuntimeError("Configuration validation failed in production mode")
+            raise RuntimeError(f"Configuration validation failed in production mode: {e}")
+        else:
+            logger.warning("Continuing in non-production mode despite config validation errors")
     
     # Initialize services
     await initialize_services()

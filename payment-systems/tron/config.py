@@ -339,14 +339,17 @@ def validate_config() -> List[str]:
         errors.append(f"Invalid TRON network: {config.tron_network}")
     
     # Validate amounts
-    if config.min_payment_amount <= 0:
-        errors.append("Minimum payment amount must be greater than 0")
-    
-    if config.max_payment_amount <= config.min_payment_amount:
-        errors.append("Maximum payment amount must be greater than minimum")
-    
-    if config.daily_payment_limit <= 0:
-        errors.append("Daily payment limit must be greater than 0")
+    try:
+        if config.min_payment_amount <= 0:
+            errors.append("Minimum payment amount must be greater than 0")
+        
+        if config.max_payment_amount <= config.min_payment_amount:
+            errors.append("Maximum payment amount must be greater than minimum")
+        
+        if config.daily_payment_limit <= 0:
+            errors.append("Daily payment limit must be greater than 0")
+    except TypeError as e:
+        errors.append(f"Invalid payment amount configuration: {e}")
     
     # Validate staking configuration
     if config.min_staking_amount <= 0:
@@ -379,6 +382,8 @@ def validate_config() -> List[str]:
     if not data_dir.exists():
         try:
             data_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError as e:
+            errors.append(f"Cannot create data directory due to permissions: {e}")
         except Exception as e:
             errors.append(f"Cannot create data directory: {e}")
     

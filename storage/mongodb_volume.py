@@ -13,8 +13,12 @@ class MongoVolumeManager:
     """Manages MongoDB volume and sharding configuration."""
     
     def __init__(self, connection_string: str):
-        self.client = AsyncIOMotorClient(connection_string)
-        self.admin_db = self.client.admin
+        try:
+            self.client = AsyncIOMotorClient(connection_string)
+            self.admin_db = self.client.admin
+        except Exception as e:
+            logger.error(f"Failed to connect to MongoDB: {e}")
+            raise
         
     async def setup_sharding(self, database_name: str) -> None:
         """Setup sharding for database collections."""

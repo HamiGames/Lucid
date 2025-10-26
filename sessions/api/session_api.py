@@ -26,6 +26,15 @@ from ..core.session_orchestrator import SessionPipeline, PipelineStage
 
 logger = logging.getLogger(__name__)
 
+# Safe environment variable handling
+def safe_int_env(key: str, default: int) -> int:
+    """Safely convert environment variable to int."""
+    try:
+        return int(os.getenv(key, str(default)))
+    except ValueError:
+        logger.warning(f"Invalid {key}, using default: {default}")
+        return default
+
 # Pydantic models for API
 class SessionStatus(str, Enum):
     CREATED = "created"
@@ -157,12 +166,12 @@ class SessionAPI:
         # Initialize storage services
         storage_config = StorageConfig(
             base_path=os.getenv("LUCID_STORAGE_PATH", "/data/sessions"),
-            chunk_size_mb=int(os.getenv("LUCID_CHUNK_SIZE_MB", "10")),
-            compression_level=int(os.getenv("LUCID_COMPRESSION_LEVEL", "6")),
+            chunk_size_mb=safe_int_env("LUCID_CHUNK_SIZE_MB", 10),
+            compression_level=safe_int_env("LUCID_COMPRESSION_LEVEL", 6),
             encryption_enabled=os.getenv("LUCID_ENCRYPTION_ENABLED", "true").lower() == "true",
-            retention_days=int(os.getenv("LUCID_RETENTION_DAYS", "30")),
-            max_sessions=int(os.getenv("LUCID_MAX_SESSIONS", "1000")),
-            cleanup_interval_hours=int(os.getenv("LUCID_CLEANUP_INTERVAL_HOURS", "24"))
+            retention_days=safe_int_env("LUCID_RETENTION_DAYS", 30),
+            max_sessions=safe_int_env("LUCID_MAX_SESSIONS", 1000),
+            cleanup_interval_hours=safe_int_env("LUCID_CLEANUP_INTERVAL_HOURS", 24)
         )
         
         chunk_config = ChunkStoreConfig(

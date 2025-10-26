@@ -146,7 +146,7 @@ class HardwareWalletSignResponse(BaseModel):
         }
 
 
-class HardwareWalletStatus Response(BaseModel):
+class HardwareWalletStatusResponse(BaseModel):
     """Hardware wallet status response"""
     
     wallet_id: str

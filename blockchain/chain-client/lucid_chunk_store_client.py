@@ -322,8 +322,11 @@ class LucidChunkStoreClient:
             
             # Create retrieval record
             retrieval_id = secrets.token_hex(16)
-            retrieval = ChunkRetri# SECURITY: eval() removed - use safer alternative
-    # eval(\1),
+            retrieval = ChunkRetrieval(
+                retrieval_id=retrieval_id,
+                chunk_id=chunk_id,
+                requested_by="user",
+                timestamp=datetime.now(timezone.utc),
                 retrieval_paths=metadata.storage_paths.copy()
             )
             

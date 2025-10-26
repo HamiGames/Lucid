@@ -12,7 +12,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.tron-client
-    image: pickme/lucid:tron-client:latest
+    image: pickme/lucid-tron-client:latest-arm64
+    platform: linux/arm64
     container_name: lucid-tron-client
     env_file:
       - ../../configs/environment/.env.foundation
@@ -52,7 +53,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.payout-router
-    image: pickme/lucid:payout-router:latest
+    image: pickme/lucid-tron-payout-router:latest-arm64
+    platform: linux/arm64
     container_name: lucid-payout-router
     env_file:
       - ../../configs/environment/.env.foundation
@@ -92,7 +94,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.wallet-manager
-    image: pickme/lucid:wallet-manager:latest
+    image: pickme/lucid-tron-wallet-manager:latest-arm64
+    platform: linux/arm64
     container_name: lucid-wallet-manager
     env_file:
       - ../../configs/environment/.env.foundation
@@ -132,7 +135,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.usdt-manager
-    image: pickme/lucid:usdt-manager:latest
+    image: pickme/lucid-tron-usdt-manager:latest-arm64
+    platform: linux/arm64
     container_name: lucid-usdt-manager
     env_file:
       - ../../configs/environment/.env.foundation
@@ -172,7 +176,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.trx-staking
-    image: pickme/lucid:trx-staking:latest
+    image: pickme/lucid-tron-staking:latest-arm64
+    platform: linux/arm64
     container_name: lucid-trx-staking
     env_file:
       - ../../configs/environment/.env.foundation
@@ -212,7 +217,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.payment-gateway
-    image: pickme/lucid:payment-gateway:latest
+    image: pickme/lucid-tron-payment-gateway:latest-arm64
+    platform: linux/arm64
     container_name: lucid-payment-gateway
     env_file:
       - ../../configs/environment/.env.foundation

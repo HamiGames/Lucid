@@ -9,7 +9,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.pipeline
-    image: lucid-session-pipeline:latest
+    image: pickme/lucid-session-pipeline:latest-arm64
+    platform: linux/arm64
     container_name: lucid-session-pipeline
     env_file:
       - ../configs/environment/.env.foundation
@@ -41,7 +42,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.recorder
-    image: lucid-session-recorder:latest
+    image: pickme/lucid-session-recorder:latest-arm64
+    platform: linux/arm64
     container_name: lucid-session-recorder
     env_file:
       - ../configs/environment/.env.foundation
@@ -73,7 +75,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.processor
-    image: lucid-session-processor:latest
+    image: pickme/lucid-session-processor:latest-arm64
+    platform: linux/arm64
     container_name: lucid-session-processor
     env_file:
       - ../configs/environment/.env.foundation
@@ -105,7 +108,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.storage
-    image: lucid-session-storage:latest
+    image: pickme/lucid-session-storage:latest-arm64
+    platform: linux/arm64
     container_name: lucid-session-storage
     env_file:
       - ../configs/environment/.env.foundation
@@ -139,7 +143,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-    image: lucid-session-api:latest
+    image: pickme/lucid-session-api:latest-arm64
+    platform: linux/arm64
     container_name: lucid-session-api
     env_file:
       - ../configs/environment/.env.foundation

@@ -48,12 +48,28 @@ payout_manager: Optional[PayoutManager] = None
 pool_manager: Optional[NodePoolManager] = None
 db_adapter: Optional[DatabaseAdapter] = None
 
-# Configuration
-NODE_MANAGEMENT_PORT = int(os.getenv("NODE_MANAGEMENT_PORT", "8095"))
-MAX_NODES_PER_POOL = int(os.getenv("MAX_NODES_PER_POOL", "100"))
-PAYOUT_THRESHOLD_USDT = float(os.getenv("PAYOUT_THRESHOLD_USDT", "10.0"))
-POOT_CALCULATION_INTERVAL = int(os.getenv("POOT_CALCULATION_INTERVAL", "300"))  # 5 minutes
-PAYOUT_PROCESSING_INTERVAL = int(os.getenv("PAYOUT_PROCESSING_INTERVAL", "3600"))  # 1 hour
+# Configuration with safe type conversion
+def safe_int_env(key: str, default: int) -> int:
+    """Safely convert environment variable to int."""
+    try:
+        return int(os.getenv(key, str(default)))
+    except ValueError:
+        logger.warning(f"Invalid {key}, using default: {default}")
+        return default
+
+def safe_float_env(key: str, default: float) -> float:
+    """Safely convert environment variable to float."""
+    try:
+        return float(os.getenv(key, str(default)))
+    except ValueError:
+        logger.warning(f"Invalid {key}, using default: {default}")
+        return default
+
+NODE_MANAGEMENT_PORT = safe_int_env("NODE_MANAGEMENT_PORT", 8095)
+MAX_NODES_PER_POOL = safe_int_env("MAX_NODES_PER_POOL", 100)
+PAYOUT_THRESHOLD_USDT = safe_float_env("PAYOUT_THRESHOLD_USDT", 10.0)
+POOT_CALCULATION_INTERVAL = safe_int_env("POOT_CALCULATION_INTERVAL", 300)  # 5 minutes
+PAYOUT_PROCESSING_INTERVAL = safe_int_env("PAYOUT_PROCESSING_INTERVAL", 3600)  # 1 hour
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -94,6 +110,11 @@ async def lifespan(app: FastAPI):
             work_credits_enabled=True,
             relay_enabled=True
         )
+        
+        # Validate critical node configuration
+        if not node_config.node_id:
+            logger.error("NODE_ID is required but not set")
+            raise ValueError("NODE_ID environment variable is required")
         
         node_manager = NodeManager(node_config, db_adapter)
         await node_manager.start()

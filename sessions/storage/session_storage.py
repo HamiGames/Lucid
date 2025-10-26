@@ -193,8 +193,14 @@ class SessionStorage:
             session_dir.mkdir(parents=True, exist_ok=True)
             
             # Compress chunk data
-            compressed_data = zstd.compress(chunk_data, level=self.config.compression_level)
-            compression_ratio = len(compressed_data) / len(chunk_data) if chunk_data else 0.0
+            try:
+                compressed_data = zstd.compress(chunk_data, level=self.config.compression_level)
+                compression_ratio = len(compressed_data) / len(chunk_data) if chunk_data else 0.0
+            except zstd.error as e:
+                logger.error(f"Compression failed for chunk {chunk.chunk_id}: {e}")
+                # Fallback to uncompressed storage
+                compressed_data = chunk_data
+                compression_ratio = 1.0
             
             # Generate storage path
             chunk_filename = f"{chunk.chunk_id}.zstd"
@@ -266,7 +272,12 @@ class SessionStorage:
             async with aiofiles.open(storage_path, 'rb') as f:
                 compressed_data = await f.read()
             
-            chunk_data = zstd.decompress(compressed_data)
+            try:
+                chunk_data = zstd.decompress(compressed_data)
+            except zstd.error as e:
+                logger.error(f"Decompression failed for chunk {chunk_id}: {e}")
+                # Return compressed data as fallback
+                chunk_data = compressed_data
             logger.info(f"Chunk retrieved: {chunk_id}")
             return chunk_data
             

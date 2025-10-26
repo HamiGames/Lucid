@@ -15,11 +15,13 @@ from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
-
-from 03-api-gateway.utils.validation import InputValidator
-from 03-api-gateway.models.user import UserCreate, UserUpdate
-from 03-api-gateway.models.session import SessionCreate, SessionUpdate
-from 03-api-gateway.models.auth import LoginRequest
+import sys
+sys.path.insert(0, '03-api-gateway')
+from utils.validation import InputValidator
+sys.path.insert(0, '03-api-gateway')
+from models.user import UserCreate, UserUpdate
+from models.session import SessionCreate, SessionUpdate
+from models.auth import LoginRequest
 from auth.utils.validators import SecurityValidator
 
 

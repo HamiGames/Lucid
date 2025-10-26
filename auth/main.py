@@ -17,7 +17,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from datetime import datetime
 
-from config import settings
+try:
+    from config import settings
+except ImportError as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to import config: {e}")
+    sys.exit(1)
 from middleware import AuthMiddleware, RateLimitMiddleware, AuditLogMiddleware
 from authentication_service import AuthenticationService
 from user_manager import UserManager
@@ -25,9 +31,20 @@ from hardware_wallet import HardwareWalletService
 from session_manager import SessionManager
 from permissions import RBACManager
 
-# Configure logging
+# Configure logging with safe level validation
+def get_safe_log_level(log_level_str: str) -> int:
+    """Safely convert log level string to logging constant."""
+    valid_levels = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL
+    }
+    return valid_levels.get(log_level_str.upper(), logging.INFO)
+
 logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
+    level=get_safe_log_level(settings.LOG_LEVEL),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)

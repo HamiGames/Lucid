@@ -15,10 +15,13 @@ from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 import redis.asyncio as redis
-
-from 03-api-gateway.middleware.rate_limit import RateLimitMiddleware
-from 03-api-gateway.services.rate_limit_service import RateLimitService
-from 03-api-gateway.models.common import RateLimitTier
+import sys
+sys.path.insert(0, '03-api-gateway')
+from middleware.rate_limit import RateLimitMiddleware
+sys.path.insert(0, '03-api-gateway')
+from services.rate_limit_service import RateLimitService
+sys.path.insert(0, '03-api-gateway')
+from models.common import RateLimitTier
 
 
 class TestRateLimitingSecurity:

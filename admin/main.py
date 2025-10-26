@@ -23,9 +23,14 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# Distroless-safe path resolution
-project_root = os.getenv('LUCID_PROJECT_ROOT', str(Path(__file__).parent.parent))
-sys.path.append(project_root)
+# Distroless-safe path resolution with validation
+try:
+    from src.core.utils import get_safe_project_root
+    project_root = get_safe_project_root()
+    sys.path.append(project_root)
+except Exception as e:
+    logger.error(f"Failed to resolve project root: {e}")
+    sys.exit(1)
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -376,11 +381,20 @@ if __name__ == "__main__":
     # Get configuration
     config = get_admin_config()
     
+    # Safe port conversion with validation
+    try:
+        from src.core.utils import validate_port_env
+        port = validate_port_env("ADMIN_PORT", config.port)
+    except Exception as e:
+        logger.error(f"Invalid ADMIN_PORT environment variable: {e}")
+        logger.info(f"Using default port: {config.port}")
+        port = config.port
+    
     # Run the application
     uvicorn.run(
         "admin.main:app",
         host=config.host,
-        port=config.port,
+        port=port,
         reload=config.debug,
         log_level="info",
         access_log=True

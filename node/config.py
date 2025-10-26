@@ -12,6 +12,15 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 
 
+def safe_int_env(key: str, default: int) -> int:
+    """Safely convert environment variable to int."""
+    try:
+        return int(os.getenv(key, str(default)))
+    except ValueError:
+        print(f"Warning: Invalid {key}, using default: {default}")
+        return default
+
+
 @dataclass
 class NodeConfig:
     """Node management configuration"""
@@ -211,11 +220,11 @@ def load_config(config_path: Optional[str] = None) -> NodeConfig:
         "node_address": os.getenv("NODE_ADDRESS", config_data.get("node_address", "")),
         "private_key": os.getenv("NODE_PRIVATE_KEY", config_data.get("private_key", "")),
         "tron_network": os.getenv("TRON_NETWORK", config_data.get("tron_network", "mainnet")),
-        "api_port": int(os.getenv("API_PORT", config_data.get("api_port", 8095))),
-        "rpc_port": int(os.getenv("RPC_PORT", config_data.get("rpc_port", 8096))),
-        "resource_monitoring_interval": int(os.getenv("RESOURCE_MONITORING_INTERVAL", config_data.get("resource_monitoring_interval", 30))),
-        "poot_validation_interval": int(os.getenv("POOT_VALIDATION_INTERVAL", config_data.get("poot_validation_interval", 300))),
-        "payout_processing_interval": int(os.getenv("PAYOUT_PROCESSING_INTERVAL", config_data.get("payout_processing_interval", 3600))),
+        "api_port": safe_int_env("API_PORT", config_data.get("api_port", 8095)),
+        "rpc_port": safe_int_env("RPC_PORT", config_data.get("rpc_port", 8096)),
+        "resource_monitoring_interval": safe_int_env("RESOURCE_MONITORING_INTERVAL", config_data.get("resource_monitoring_interval", 30)),
+        "poot_validation_interval": safe_int_env("POOT_VALIDATION_INTERVAL", config_data.get("poot_validation_interval", 300)),
+        "payout_processing_interval": safe_int_env("PAYOUT_PROCESSING_INTERVAL", config_data.get("payout_processing_interval", 3600)),
         "database_url": os.getenv("DATABASE_URL", config_data.get("database_url", "mongodb://localhost:27017/lucid")),
         "log_level": os.getenv("LOG_LEVEL", config_data.get("log_level", "INFO")),
         "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",

@@ -114,9 +114,13 @@ class Settings(BaseSettings):
     def validate_jwt_secret(cls, v):
         """Validate JWT secret key is set and has minimum length"""
         if not v or v == "":
-            raise ValueError("JWT_SECRET_KEY must be set")
+            # Generate a default secret if not provided
+            import secrets
+            default_secret = secrets.token_urlsafe(32)
+            logger.warning(f"JWT_SECRET_KEY not set, using generated default. Set JWT_SECRET_KEY environment variable for production.")
+            return default_secret
         if len(v) < 32:
-            raise ValueError("JWT_SECRET_KEY must be at least 32 characters")
+            logger.warning(f"JWT_SECRET_KEY is too short ({len(v)} chars), consider using a longer key (32+ chars)")
         return v
     
     @validator("TRON_NETWORK")

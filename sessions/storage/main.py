@@ -181,21 +181,33 @@ async def store_chunk(
 ):
     """Store a chunk for a session"""
     try:
-        # Create ChunkMetadata object
-        from ..recorder.session_recorder import ChunkMetadata
-        from datetime import datetime
-        
-        chunk = ChunkMetadata(
-            chunk_id=chunk_metadata["chunk_id"],
-            session_id=session_id,
-            chunk_index=chunk_metadata["chunk_index"],
-            size_bytes=len(chunk_data),
-            hash_sha256=chunk_metadata["hash_sha256"],
-            timestamp=datetime.fromisoformat(chunk_metadata["timestamp"]),
-            compressed=chunk_metadata.get("compressed", False),
-            compression_ratio=chunk_metadata.get("compression_ratio", 0.0),
-            quality_score=chunk_metadata.get("quality_score", 0.0)
-        )
+        # Create ChunkMetadata object with safe timestamp parsing
+        try:
+            from ..recorder.session_recorder import ChunkMetadata
+            from datetime import datetime
+            
+            # Safe timestamp parsing
+            timestamp_str = chunk_metadata["timestamp"]
+            try:
+                timestamp = datetime.fromisoformat(timestamp_str)
+            except ValueError as e:
+                logger.warning(f"Invalid timestamp format '{timestamp_str}', using current time: {e}")
+                timestamp = datetime.utcnow()
+            
+            chunk = ChunkMetadata(
+                chunk_id=chunk_metadata["chunk_id"],
+                session_id=session_id,
+                chunk_index=chunk_metadata["chunk_index"],
+                size_bytes=len(chunk_data),
+                hash_sha256=chunk_metadata["hash_sha256"],
+                timestamp=timestamp,
+                compressed=chunk_metadata.get("compressed", False),
+                compression_ratio=chunk_metadata.get("compression_ratio", 0.0),
+                quality_score=chunk_metadata.get("quality_score", 0.0)
+            )
+        except ImportError as e:
+            logger.error(f"Failed to import ChunkMetadata: {e}")
+            raise HTTPException(status_code=500, detail="Session recorder module not available")
         
         # Store chunk in chunk store
         success, storage_path, metadata = await chunk_store.store_chunk(

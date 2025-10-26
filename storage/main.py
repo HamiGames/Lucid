@@ -29,8 +29,8 @@ async def main():
     logger.info("Starting Lucid Storage Service")
     
     try:
-        # Initialize storage manager
-        connection_string = "mongodb://localhost:27017"
+        # Initialize storage manager with safe connection handling
+        connection_string = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
         storage_manager = MongoVolumeManager(connection_string)
         
         # Setup storage

@@ -249,10 +249,16 @@ class ConfigurationManager:
     
     def _initialize_component_configs(self) -> None:
         """Initialize component-specific configurations."""
-        # Database configuration
+        # Database configuration with safe port conversion
+        try:
+            mongodb_port = int(os.getenv('MONGODB_PORT', '27017'))
+        except ValueError:
+            self._logger.warning("Invalid MONGODB_PORT, using default: 27017")
+            mongodb_port = 27017
+            
         self._database_config = DatabaseConfig(
             host=os.getenv('MONGODB_HOST', 'localhost'),
-            port=int(os.getenv('MONGODB_PORT', '27017')),
+            port=mongodb_port,
             name=os.getenv('MONGODB_NAME', 'lucid'),
             username=os.getenv('MONGODB_USERNAME', 'lucid'),
             password=os.getenv('MONGODB_PASSWORD', 'lucid'),
@@ -305,7 +311,13 @@ class ConfigurationManager:
     def _setup_encryption(self) -> None:
         """Setup encryption key."""
         try:
-            self._encryption_key = self._settings.encryption_key.encode()
+            if self._settings.encryption_key:
+                self._encryption_key = self._settings.encryption_key.encode()
+            else:
+                self._logger.warning("No encryption key provided, generating new one")
+                from cryptography.fernet import Fernet
+                key = Fernet.generate_key()
+                self._encryption_key = key
         except Exception as e:
             self._logger.error(f"Failed to setup encryption: {e}")
             raise

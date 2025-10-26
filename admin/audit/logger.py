@@ -248,6 +248,8 @@ class AuditLogger:
     ) -> str:
         """Log user management events"""
         severity = AuditEventSeverity.HIGH if action in ["create", "suspend", "activate"] else AuditEventSeverity.MEDIUM
+        merged_details = details.copy() if details else {}
+        merged_details["target_username"] = target_username
         return await self.log_event(
             event_type=AuditEventType.USER_MANAGEMENT,
             severity=severity,
@@ -257,7 +259,7 @@ class AuditLogger:
             action=action,
             resource="user",
             resource_id=target_user_id,
-            details={**details or {}, "target_username": target_username}
+            details=merged_details
         )
     
     async def log_session_management(
@@ -266,12 +268,15 @@ class AuditLogger:
         admin_username: str,
         action: str,
         session_id: str,
-        target_user_id: Optional[str] = None,
         status: AuditEventStatus,
+        target_user_id: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None
     ) -> str:
         """Log session management events"""
         severity = AuditEventSeverity.MEDIUM if action == "terminate" else AuditEventSeverity.LOW
+        merged_details = details.copy() if details else {}
+        if target_user_id:
+            merged_details["target_user_id"] = target_user_id
         return await self.log_event(
             event_type=AuditEventType.SESSION_MANAGEMENT,
             severity=severity,
@@ -281,7 +286,7 @@ class AuditLogger:
             action=action,
             resource="session",
             resource_id=session_id,
-            details={**details or {}, "target_user_id": target_user_id}
+            details=merged_details
         )
     
     async def log_blockchain_operation(

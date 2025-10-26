@@ -9,7 +9,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server-manager
-    image: lucid-rdp-server-manager:latest
+    image: pickme/lucid-rdp-server-manager:latest-arm64
+    platform: linux/arm64
     container_name: lucid-rdp-server-manager
     env_file:
       - ../configs/environment/.env.foundation
@@ -41,7 +42,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.xrdp
-    image: lucid-xrdp:latest
+    image: pickme/lucid-rdp-xrdp:latest-arm64
+    platform: linux/arm64
     container_name: lucid-xrdp
     env_file:
       - ../configs/environment/.env.foundation
@@ -74,7 +76,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.controller
-    image: lucid-rdp-controller:latest
+    image: pickme/lucid-rdp-controller:latest-arm64
+    platform: linux/arm64
     container_name: lucid-rdp-controller
     env_file:
       - ../configs/environment/.env.foundation
@@ -107,7 +110,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.monitor
-    image: lucid-rdp-monitor:latest
+    image: pickme/lucid-rdp-monitor:latest-arm64
+    platform: linux/arm64
     container_name: lucid-rdp-monitor
     env_file:
       - ../configs/environment/.env.foundation

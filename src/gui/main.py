@@ -20,6 +20,24 @@ import requests
 from dataclasses import dataclass
 from enum import Enum
 
+
+def safe_int_env(key: str, default: int) -> int:
+    """Safely convert environment variable to int."""
+    try:
+        return int(os.getenv(key, str(default)))
+    except ValueError:
+        logging.warning(f"Invalid {key}, using default: {default}")
+        return default
+
+
+def safe_float_env(key: str, default: float) -> float:
+    """Safely convert environment variable to float."""
+    try:
+        return float(os.getenv(key, str(default)))
+    except ValueError:
+        logging.warning(f"Invalid {key}, using default: {default}")
+        return default
+
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -132,14 +150,14 @@ class PlatformDetector:
         """Get system resource information."""
         # Default values for distroless environments
         default_resources = {
-            'cpu_count': int(os.getenv('LUCID_CPU_COUNT', '1')),
-            'cpu_percent': float(os.getenv('LUCID_CPU_PERCENT', '0')),
-            'memory_total': int(os.getenv('LUCID_MEMORY_TOTAL', '0')),
-            'memory_available': int(os.getenv('LUCID_MEMORY_AVAILABLE', '0')),
-            'memory_percent': float(os.getenv('LUCID_MEMORY_PERCENT', '0')),
-            'disk_total': int(os.getenv('LUCID_DISK_TOTAL', '0')),
-            'disk_free': int(os.getenv('LUCID_DISK_FREE', '0')),
-            'disk_percent': float(os.getenv('LUCID_DISK_PERCENT', '0'))
+            'cpu_count': safe_int_env('LUCID_CPU_COUNT', 1),
+            'cpu_percent': safe_float_env('LUCID_CPU_PERCENT', 0.0),
+            'memory_total': safe_int_env('LUCID_MEMORY_TOTAL', 0),
+            'memory_available': safe_int_env('LUCID_MEMORY_AVAILABLE', 0),
+            'memory_percent': safe_float_env('LUCID_MEMORY_PERCENT', 0.0),
+            'disk_total': safe_int_env('LUCID_DISK_TOTAL', 0),
+            'disk_free': safe_int_env('LUCID_DISK_FREE', 0),
+            'disk_percent': safe_float_env('LUCID_DISK_PERCENT', 0.0)
         }
         
         # Check if running in distroless container

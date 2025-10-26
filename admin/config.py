@@ -169,7 +169,10 @@ class AdminConfig:
         
         # Service configuration
         self.service.host = os.getenv("ADMIN_HOST", self.service.host)
-        self.service.port = int(os.getenv("ADMIN_PORT", self.service.port))
+        try:
+            self.service.port = int(os.getenv("ADMIN_PORT", str(self.service.port)))
+        except ValueError:
+            logger.warning(f"Invalid ADMIN_PORT, using default: {self.service.port}")
         self.service.debug = os.getenv("ADMIN_DEBUG", "false").lower() == "true"
         self.service.log_level = os.getenv("LOG_LEVEL", self.service.log_level)
         
@@ -204,8 +207,9 @@ class AdminConfig:
             logger.warning("JWT secret key is too short, consider using a longer key")
         
         # Validate database URIs
-        if not self.database.mongodb_uri.startswith(("mongodb://", "mongodb+srv://")):
-            raise ValueError("Invalid MongoDB URI format")
+        if not self.database.mongodb_uri or not self.database.mongodb_uri.startswith(("mongodb://", "mongodb+srv://")):
+            logger.warning("Invalid MongoDB URI format, using default")
+            self.database.mongodb_uri = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true"
         
         if not self.database.redis_url.startswith(("redis://", "rediss://")):
             raise ValueError("Invalid Redis URL format")

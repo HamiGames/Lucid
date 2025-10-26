@@ -29,10 +29,13 @@ async def main():
     logger.info("Starting Lucid VM Management Service")
     
     try:
-        # Initialize VM manager
-        vm_manager = VMManager()
-        
-        logger.info("VM management service initialized successfully")
+        # Initialize VM manager with error handling
+        try:
+            vm_manager = VMManager()
+            logger.info("VM management service initialized successfully")
+        except Exception as init_error:
+            logger.error(f"Failed to initialize VM manager: {init_error}")
+            raise
         
         # Keep service running
         while True:
