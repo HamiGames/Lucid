@@ -184,17 +184,7 @@ main() {
     done
     
     # Set permissions for environment subdirectories
-    env_subdirs=(
-        "$ENV_DIR/development"
-        "$ENV_DIR/production"
-        "$ENV_DIR/staging"
-        "$ENV_DIR/pi"
-    )
-    
-    for dir in "${env_subdirs[@]}"; do
-        set_directory_permissions "$dir" "$REGULAR_PERMISSIONS" "Environment Subdirectory"
-    done
-    
+   
     echo
     log "Setting permissions for Secure Secret Files (600)..."
     echo "=========================================="

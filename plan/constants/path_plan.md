@@ -485,7 +485,7 @@ docker buildx build \
    .
 
 
-*full .env file Directory:*
+*Full ENV File Directory:*
 '''
 /mnt/myssd/Lucid/Lucid/03-api-gateway/api/.env.api
 /mnt/myssd/Lucid/Lucid/03-api-gateway/api/.env.api.secrets
