@@ -19,6 +19,10 @@ services:
     container_name: lucid-api-gateway
     restart: unless-stopped
     
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+    
     ports:
       - "8080:8080"  # HTTP
       - "8081:8081"  # HTTPS
@@ -112,6 +116,8 @@ services:
     image: mongo:7.0
     container_name: lucid-mongodb
     restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
@@ -132,6 +138,8 @@ services:
     image: redis:7.2-alpine
     container_name: lucid-redis
     restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data

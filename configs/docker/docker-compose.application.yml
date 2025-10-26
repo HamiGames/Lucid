@@ -5,6 +5,9 @@ services:
     image: pickme/lucid-session-pipeline:latest-arm64
     container_name: session-pipeline
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -48,6 +51,9 @@ services:
     image: pickme/lucid-session-recorder:latest-arm64
     container_name: session-recorder
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -92,6 +98,9 @@ services:
     image: pickme/lucid-session-processor:latest-arm64
     container_name: session-processor
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -135,6 +144,9 @@ services:
     image: pickme/lucid-session-storage:latest-arm64
     container_name: session-storage
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -178,6 +190,9 @@ services:
     image: pickme/lucid-session-api:latest-arm64
     container_name: session-api
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -224,6 +239,9 @@ services:
     image: pickme/lucid-rdp-server-manager:latest-arm64
     container_name: rdp-server-manager
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -270,6 +288,9 @@ services:
     image: pickme/lucid-rdp-xrdp:latest-arm64
     container_name: rdp-xrdp
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -313,6 +334,9 @@ services:
     image: pickme/lucid-rdp-controller:latest-arm64
     container_name: rdp-controller
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -355,6 +379,9 @@ services:
     image: pickme/lucid-rdp-monitor:latest-arm64
     container_name: rdp-monitor
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -396,6 +423,9 @@ services:
     image: pickme/lucid-node-management:latest-arm64
     container_name: node-management
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:

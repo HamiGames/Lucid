@@ -10,6 +10,8 @@ services:
       dockerfile: Dockerfile
     image: lucid-auth-service:latest
     container_name: lucid-auth-service
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "8089:8089"
     environment:
@@ -92,6 +94,8 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: lucid-auth-mongodb
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "27017:27017"
     environment:
@@ -107,6 +111,8 @@ services:
   redis:
     image: redis:7.0-alpine
     container_name: lucid-auth-redis
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes

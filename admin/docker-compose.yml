@@ -15,6 +15,9 @@ services:
       dockerfile: Dockerfile
     image: pickme/lucid:admin-interface:latest
     container_name: lucid-admin-interface
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
     ports:
       - "8083:8083"
     environment:
@@ -67,6 +70,8 @@ services:
   lucid-mongodb:
     image: mongo:7.0
     container_name: lucid-mongodb
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "27017:27017"
     environment:
@@ -90,6 +95,8 @@ services:
   lucid-redis:
     image: redis:7.0-alpine
     container_name: lucid-redis
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "6379:6379"
     volumes:

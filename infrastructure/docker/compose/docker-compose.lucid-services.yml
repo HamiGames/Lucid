@@ -11,12 +11,14 @@ services:
     container_name: lucid-mongodb
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
-      - lucid-network
+      - lucid-pi-network
     environment:
       - MONGO_INITDB_ROOT_USERNAME=lucid
       - MONGO_INITDB_ROOT_PASSWORD=lucid
@@ -32,12 +34,14 @@ services:
     container_name: lucid-redis
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - lucid-network
+      - lucid-pi-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -49,12 +53,14 @@ services:
     container_name: lucid-elasticsearch
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - lucid-network
+      - lucid-pi-network
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -70,10 +76,13 @@ services:
     container_name: lucid-api-gateway
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.core
     ports:
       - "8080:8080"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -91,10 +100,13 @@ services:
     container_name: lucid-blockchain-engine
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.core
     ports:
       - "8084:8084"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -115,7 +127,7 @@ services:
     ports:
       - "8085:8085"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -136,7 +148,7 @@ services:
     ports:
       - "8086:8086"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -157,7 +169,7 @@ services:
     ports:
       - "8087:8087"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -178,7 +190,7 @@ services:
     ports:
       - "8088:8088"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -197,10 +209,13 @@ services:
     container_name: lucid-session-pipeline
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.application
     ports:
       - "8089:8089"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -221,7 +236,7 @@ services:
     ports:
       - "8090:8090"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -242,7 +257,7 @@ services:
     ports:
       - "8091:8091"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -263,7 +278,7 @@ services:
     ports:
       - "8092:8092"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -284,7 +299,7 @@ services:
     ports:
       - "8093:8093"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -303,12 +318,15 @@ services:
     container_name: lucid-rdp-server-manager
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.application
     ports:
       - "3389:3389"
       - "3350:3350"
       - "3351:3351"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -329,7 +347,7 @@ services:
     ports:
       - "8094:8094"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -350,7 +368,7 @@ services:
     ports:
       - "8095:8095"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -372,7 +390,7 @@ services:
     ports:
       - "8096:8096"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -391,10 +409,13 @@ services:
     container_name: lucid-admin-interface
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.support
     ports:
       - "8097:8097"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -413,10 +434,14 @@ services:
     container_name: lucid-tron-client
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.support
+      - ../../../configs/environment/.env.tron-staking
     ports:
       - "8098:8098"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -437,7 +462,7 @@ services:
     ports:
       - "8099:8099"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -458,7 +483,7 @@ services:
     ports:
       - "8100:8100"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -479,7 +504,7 @@ services:
     ports:
       - "8101:8101"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -500,7 +525,7 @@ services:
     ports:
       - "8102:8102"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -521,7 +546,7 @@ services:
     ports:
       - "8103:8103"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -540,10 +565,13 @@ services:
     container_name: lucid-gui
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.gui
     ports:
       - "8083:8083"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -562,10 +590,12 @@ services:
     container_name: lucid-auth-service
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - ../../../configs/environment/.env.foundation
     ports:
       - "8089:8089"
     networks:
-      - lucid-network
+      - lucid-pi-network
     depends_on:
       - lucid-mongodb
       - lucid-redis
@@ -579,7 +609,7 @@ services:
       retries: 3
 
 networks:
-  lucid-network:
+  lucid-pi-network:
     driver: bridge
     ipam:
       config:

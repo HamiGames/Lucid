@@ -5,6 +5,8 @@ services:
     image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid-mongodb
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:
@@ -49,6 +51,8 @@ services:
     image: pickme/lucid-redis:latest-arm64
     container_name: lucid-redis
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:
@@ -89,6 +93,8 @@ services:
     image: pickme/lucid-elasticsearch:latest-arm64
     container_name: lucid-elasticsearch
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:
@@ -130,6 +136,8 @@ services:
     image: pickme/lucid-auth-service:latest-arm64
     container_name: lucid-auth-service
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:

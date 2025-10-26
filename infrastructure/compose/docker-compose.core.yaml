@@ -6,15 +6,17 @@
 # Core services with distroless images
 services:
   lucid_mongo:
-    image: mongo:7
+    image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid_mongo
+    env_file:
+      - ../../configs/environment/.env.foundation
     environment:
       MONGO_INITDB_ROOT_USERNAME: lucid
       MONGO_INITDB_ROOT_PASSWORD: lucid
     volumes:
       - mongo_data:/data/db
     networks:
-      - lucid_core_net
+      - lucid-pi-network
     ports:
       - "27017:27017"
     healthcheck:
@@ -33,9 +35,11 @@ services:
           cpus: '0.25'
 
   tor-proxy:
-    image: pickme/lucid:tor-proxy:latest
+    image: pickme/lucid-tor-proxy:latest-arm64
     container_name: tor-proxy
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.foundation
     environment:
       TOR_SOCKS_PORT: "9050"
       TOR_CONTROL_PORT: "9051"
@@ -44,7 +48,7 @@ services:
       - tor_data:/var/lib/tor
       - onion_state:/run/lucid/onion
     networks:
-      - lucid_core_net
+      - lucid-pi-network
     ports:
       - "9050:9050"
       - "9051:9051"
@@ -64,9 +68,12 @@ services:
           cpus: '0.25'
 
   api-server:
-    image: pickme/lucid:api-server:latest
+    image: pickme/lucid-api-server:latest-arm64
     container_name: lucid_api
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
     environment:
       API_HOST: "0.0.0.0"
       API_PORT: "8081"
@@ -74,7 +81,7 @@ services:
     volumes:
       - onion_state:/run/lucid/onion:ro
     networks:
-      - lucid_core_net
+      - lucid-pi-network
     depends_on:
       - lucid_mongo
       - tor-proxy
@@ -96,14 +103,17 @@ services:
           cpus: '0.25'
 
   api-gateway:
-    image: pickme/lucid:api-gateway:latest
+    image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid_api_gateway
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
     environment:
-      API_UPSTREAM: "lucid_api:8081"
+      API_UPSTREAM: "api-server:8081"
       GATEWAY_PORT: "8080"
     networks:
-      - lucid_core_net
+      - lucid-pi-network
     depends_on:
       - api-server
     ports:
@@ -124,9 +134,12 @@ services:
           cpus: '0.1'
 
   tunnel-tools:
-    image: pickme/lucid:tunnel-tools:latest
+    image: pickme/lucid-tunnel-tools:latest-arm64
     container_name: lucid_tunnel_tools
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
     environment:
       TUNNEL_PORT: "7000"
       TUNNEL_MODE: "client"
@@ -134,10 +147,10 @@ services:
       - onion_state:/run/lucid/onion
       - tunnel_data:/var/lib/tunnel
     networks:
-      - lucid_core_net
+      - lucid-pi-network
     depends_on:
       - tor-proxy
-      - lucid_api
+      - api-server
     ports:
       - "7000:7000"
     healthcheck:
@@ -156,9 +169,12 @@ services:
           cpus: '0.1'
 
   server-tools:
-    image: pickme/lucid:server-tools:latest
+    image: pickme/lucid-server-tools:latest-arm64
     container_name: lucid_server_tools
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
     environment:
       LUCID_ENV: production
       LUCID_PLANE: ops
@@ -166,11 +182,11 @@ services:
       - onion_state:/run/lucid/onion:ro
       - tunnel_data:/var/lib/tunnel:ro
     networks:
-      - lucid_core_net
+      - lucid-pi-network
     depends_on:
       - tor-proxy
       - lucid_mongo
-      - lucid_api
+      - api-server
     healthcheck:
       test: ["CMD-SHELL", "/opt/lucid/scripts/health-check.sh || exit 1"]
       interval: 30s
@@ -187,11 +203,18 @@ services:
           cpus: '0.05'
 
 networks:
-  lucid_core_net:
+  lucid-pi-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+  lucid-tron-isolated:
     driver: bridge
     ipam:
       config:
         - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
 
 volumes:
   mongo_data:

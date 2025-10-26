@@ -14,6 +14,10 @@ services:
       dockerfile: Dockerfile.tron-client
     image: pickme/lucid:tron-client:latest
     container_name: lucid-tron-client
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8091:8091"
     environment:
@@ -50,6 +54,10 @@ services:
       dockerfile: Dockerfile.payout-router
     image: pickme/lucid:payout-router:latest
     container_name: lucid-payout-router
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8092:8092"
     environment:
@@ -86,6 +94,10 @@ services:
       dockerfile: Dockerfile.wallet-manager
     image: pickme/lucid:wallet-manager:latest
     container_name: lucid-wallet-manager
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8093:8093"
     environment:
@@ -122,6 +134,10 @@ services:
       dockerfile: Dockerfile.usdt-manager
     image: pickme/lucid:usdt-manager:latest
     container_name: lucid-usdt-manager
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8094:8094"
     environment:
@@ -158,6 +174,10 @@ services:
       dockerfile: Dockerfile.trx-staking
     image: pickme/lucid:trx-staking:latest
     container_name: lucid-trx-staking
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8095:8095"
     environment:
@@ -194,6 +214,10 @@ services:
       dockerfile: Dockerfile.payment-gateway
     image: pickme/lucid:payment-gateway:latest
     container_name: lucid-payment-gateway
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8096:8096"
     environment:
@@ -227,6 +251,10 @@ services:
   tron-node:
     image: tronprotocol/tron:latest
     container_name: lucid-tron-node
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.support
+      - ../../configs/environment/.env.tron-staking
     ports:
       - "8097:8090"
       - "8098:8091"

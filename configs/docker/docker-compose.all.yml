@@ -14,6 +14,8 @@ services:
     image: pickme/lucid-auth-service:latest-arm64
     container_name: lucid-auth-service
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
     ports:
       - "8089:8089"
     environment:
@@ -55,6 +57,8 @@ services:
     image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid-mongodb
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
     ports:
       - "27017:27017"
     environment:

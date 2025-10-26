@@ -11,6 +11,9 @@ services:
       dockerfile: Dockerfile.pipeline
     image: lucid-session-pipeline:latest
     container_name: lucid-session-pipeline
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8083:8083"
     environment:
@@ -40,6 +43,9 @@ services:
       dockerfile: Dockerfile.recorder
     image: lucid-session-recorder:latest
     container_name: lucid-session-recorder
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8084:8084"
     environment:
@@ -69,6 +75,9 @@ services:
       dockerfile: Dockerfile.processor
     image: lucid-session-processor:latest
     container_name: lucid-session-processor
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8085:8085"
     environment:
@@ -98,6 +107,9 @@ services:
       dockerfile: Dockerfile.storage
     image: lucid-session-storage:latest
     container_name: lucid-session-storage
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8086:8086"
     environment:
@@ -129,6 +141,9 @@ services:
       dockerfile: Dockerfile.api
     image: lucid-session-api:latest
     container_name: lucid-session-api
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8087:8087"
     environment:
@@ -159,6 +174,8 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: lucid-mongodb
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "27017:27017"
     environment:
@@ -173,6 +190,8 @@ services:
   redis:
     image: redis:7.0-alpine
     container_name: lucid-redis
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "6379:6379"
     volumes:

@@ -11,6 +11,9 @@ services:
       dockerfile: Dockerfile.server-manager
     image: lucid-rdp-server-manager:latest
     container_name: lucid-rdp-server-manager
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8090:8090"
     environment:
@@ -40,6 +43,9 @@ services:
       dockerfile: Dockerfile.xrdp
     image: lucid-xrdp:latest
     container_name: lucid-xrdp
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8091:8091"
     environment:
@@ -70,6 +76,9 @@ services:
       dockerfile: Dockerfile.controller
     image: lucid-rdp-controller:latest
     container_name: lucid-rdp-controller
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8092:8092"
     environment:
@@ -100,6 +109,9 @@ services:
       dockerfile: Dockerfile.monitor
     image: lucid-rdp-monitor:latest
     container_name: lucid-rdp-monitor
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
     ports:
       - "8093:8093"
     environment:
@@ -126,6 +138,8 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: lucid-mongodb
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "27017:27017"
     environment:
@@ -140,6 +154,8 @@ services:
   redis:
     image: redis:7.0-alpine
     container_name: lucid-redis
+    env_file:
+      - ../configs/environment/.env.foundation
     ports:
       - "6379:6379"
     volumes:

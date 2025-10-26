@@ -21,6 +21,11 @@ services:
     container_name: lucid-node-management
     hostname: lucid-node-management
     
+    # Environment files
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+    
     # Port mapping
     ports:
       - "8095:8095"
@@ -110,6 +115,9 @@ services:
     container_name: lucid-mongodb
     hostname: lucid-mongodb
     
+    env_file:
+      - ../configs/environment/.env.foundation
+    
     environment:
       - MONGO_INITDB_ROOT_USERNAME=lucid
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-lucid-password}
@@ -144,6 +152,9 @@ services:
     image: redis:7.2-alpine
     container_name: lucid-redis
     hostname: lucid-redis
+    
+    env_file:
+      - ../configs/environment/.env.foundation
     
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-lucid-redis-password}
     

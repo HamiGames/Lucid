@@ -7,6 +7,9 @@ services:
   # Multi-stage development environment
   dev-multi-stage:
     image: lucid/multi-stage-dev:${VERSION:-latest}
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.development
     environment:
       - PYTHONPATH=/app:/app/src
       - PYTHONDONTWRITEBYTECODE=1
@@ -17,7 +20,7 @@ services:
       - BUILD_STAGE=development
       - DEV_TOOLS=true
     networks:
-      - lucid-dev
+      - lucid-distroless-dev
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -50,6 +53,9 @@ services:
   # Multi-stage builder for development
   dev-builder:
     image: lucid/multi-stage-builder:${VERSION:-latest}
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.development
     environment:
       - PYTHONPATH=/app
       - BUILD_STAGE=builder
@@ -57,7 +63,7 @@ services:
       - FAST_BUILD=true
       - DEBUG_BUILD=true
     networks:
-      - lucid-dev
+      - lucid-distroless-dev
     restart: "no"
     security_opt:
       - no-new-privileges:true
@@ -81,12 +87,15 @@ services:
   # Development tools and utilities
   dev-tools:
     image: lucid/multi-stage-dev:${VERSION:-latest}
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.development
     environment:
       - PYTHONPATH=/app
       - DEV_TOOLS_MODE=true
       - DEBUG_TOOLS=true
     networks:
-      - lucid-dev
+      - lucid-distroless-dev
     restart: "no"
     security_opt:
       - no-new-privileges:true
@@ -113,12 +122,15 @@ services:
   # Development database for testing
   dev-database:
     image: mongo:7.0
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.development
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DB_USER:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD:-password}
       - MONGO_INITDB_DATABASE=${DB_NAME:-lucid_dev}
     networks:
-      - lucid-dev
+      - lucid-distroless-dev
     restart: unless-stopped
     volumes:
       - ./dev-data:/data/db:rw
@@ -133,16 +145,16 @@ services:
       start_period: 10s
 
 networks:
-  lucid-dev:
+  lucid-distroless-dev:
     driver: bridge
-    name: lucid-multi-stage-dev
+    name: lucid-distroless-dev
     driver_opts:
       com.docker.network.bridge.enable_icc: "true"
       com.docker.network.bridge.enable_ip_masquerade: "true"
     ipam:
       config:
-        - subnet: 172.25.0.0/16
-          gateway: 172.25.0.1
+        - subnet: 172.24.0.0/16
+          gateway: 172.24.0.1
 
 volumes:
   lucid-dev-data:

@@ -5,6 +5,9 @@ services:
     image: pickme/lucid-admin-interface:latest-arm64
     container_name: admin-interface
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
     networks:
       - lucid-pi-network
     ports:
@@ -46,6 +49,10 @@ services:
     image: pickme/lucid-tron-client:latest-arm64
     container_name: tron-client
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
+      - ../environment/.env.tron-client
     networks:
       - lucid-tron-isolated
     environment:
@@ -89,6 +96,10 @@ services:
     image: pickme/lucid-tron-payout-router:latest-arm64
     container_name: tron-payout-router
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
+      - ../environment/.env.tron-payout-router
     networks:
       - lucid-tron-isolated
     environment:
@@ -127,6 +138,10 @@ services:
     image: pickme/lucid-tron-wallet-manager:latest-arm64
     container_name: tron-wallet-manager
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
+      - ../environment/.env.tron-wallet-manager
     networks:
       - lucid-tron-isolated
     environment:
@@ -165,6 +180,10 @@ services:
     image: pickme/lucid-tron-usdt-manager:latest-arm64
     container_name: tron-usdt-manager
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
+      - ../environment/.env.tron-usdt-manager
     networks:
       - lucid-tron-isolated
     environment:
@@ -205,6 +224,10 @@ services:
     image: pickme/lucid-tron-staking:latest-arm64
     container_name: tron-staking
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
+      - ../environment/.env.tron-staking
     networks:
       - lucid-tron-isolated
     environment:
@@ -243,6 +266,10 @@ services:
     image: pickme/lucid-tron-payment-gateway:latest-arm64
     container_name: tron-payment-gateway
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.support
+      - ../environment/.env.tron-payment-gateway
     networks:
       - lucid-tron-isolated
     environment:

@@ -5,6 +5,9 @@ services:
     image: pickme/lucid-api-gateway:latest-arm64
     container_name: api-gateway
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -50,6 +53,9 @@ services:
     image: pickme/lucid-blockchain-engine:latest-arm64
     container_name: blockchain-engine
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -94,6 +100,9 @@ services:
     image: pickme/lucid-service-mesh:latest-arm64
     container_name: service-mesh
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -138,6 +147,9 @@ services:
     image: pickme/lucid-session-anchoring:latest-arm64
     container_name: session-anchoring
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.core
     networks:
       - lucid-pi-network
     volumes:
@@ -179,6 +191,9 @@ services:
     image: pickme/lucid-block-manager:latest-arm64
     container_name: block-manager
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.core
     networks:
       - lucid-pi-network
     volumes:
@@ -220,6 +235,9 @@ services:
     image: pickme/lucid-data-chain:latest-arm64
     container_name: data-chain
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.foundation
+      - ../environment/.env.core
     networks:
       - lucid-pi-network
     volumes:

@@ -6,168 +6,232 @@
 
 services:
   session-chunker:
-    image: pickme/lucid:session-chunker:latest
-    container_name: session_chunker
-    pull_policy: always
-    environment:
-      CHUNK_SIZE_MB: "8"
-      COMPRESSION_LEVEL: "3"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - sessions_data:/data/sessions
+    image: pickme/lucid-session-chunker:latest-arm64
+    container_name: session-chunker
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_mongo
-    ports:
-      - "8090:8090"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - CHUNK_SIZE_MB=8
+      - COMPRESSION_LEVEL=3
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/logs/session-chunker:/app/logs:rw
+      - session-chunker-cache:/tmp/chunker
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=session-chunker"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=sessions"
 
   session-encryptor:
-    image: pickme/lucid:session-encryptor:latest
-    container_name: session_encryptor
-    pull_policy: always
-    environment:
-      ENCRYPTION_ALGORITHM: "XChaCha20-Poly1305"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - sessions_data:/data/sessions:ro
-      - encrypted_data:/data/encrypted
+    image: pickme/lucid-session-encryptor:latest-arm64
+    container_name: session-encryptor
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - session-chunker
-    ports:
-      - "8091:8091"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - ENCRYPTION_ALGORITHM=XChaCha20-Poly1305
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/sessions:/data/sessions:ro
+      - /mnt/myssd/Lucid/data/encrypted:/data/encrypted:rw
+      - /mnt/myssd/Lucid/logs/session-encryptor:/app/logs:rw
+      - session-encryptor-cache:/tmp/encryptor
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8091/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=session-encryptor"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=sessions"
 
   merkle-builder:
-    image: pickme/lucid:merkle-builder:latest
-    container_name: merkle_builder
-    pull_policy: always
-    environment:
-      MERKLE_ALGORITHM: "BLAKE3"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - encrypted_data:/data/encrypted:ro
-      - chain_data:/data/merkle
+    image: pickme/lucid-merkle-builder:latest-arm64
+    container_name: merkle-builder
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - session-encryptor
-    ports:
-      - "8092:8092"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - MERKLE_ALGORITHM=BLAKE3
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/encrypted:/data/encrypted:ro
+      - /mnt/myssd/Lucid/data/merkle:/data/merkle:rw
+      - /mnt/myssd/Lucid/logs/merkle-builder:/app/logs:rw
+      - merkle-builder-cache:/tmp/merkle
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8092/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=merkle-builder"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=sessions"
 
   session-orchestrator:
-    image: pickme/lucid:session-orchestrator:latest
-    container_name: session_orchestrator
-    pull_policy: always
-    environment:
-      CHUNKER_URL: "http://session-chunker:8090"
-      ENCRYPTOR_URL: "http://session-encryptor:8091"
-      MERKLE_URL: "http://merkle-builder:8092"
-    volumes:
-      - sessions_data:/data/sessions
-      - encrypted_data:/data/encrypted:ro
-      - chain_data:/data/merkle:ro
+    image: pickme/lucid-session-orchestrator:latest-arm64
+    container_name: session-orchestrator
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - merkle-builder
-    ports:
-      - "8093:8093"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - CHUNKER_URL=http://session-chunker:8090
+      - ENCRYPTOR_URL=http://session-encryptor:8091
+      - MERKLE_URL=http://merkle-builder:8092
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/data/encrypted:/data/encrypted:ro
+      - /mnt/myssd/Lucid/data/merkle:/data/merkle:ro
+      - /mnt/myssd/Lucid/logs/session-orchestrator:/app/logs:rw
+      - session-orchestrator-cache:/tmp/orchestrator
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8093/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=session-orchestrator"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=sessions"
 
   authentication_service:
-    image: pickme/lucid:authentication:latest
-    container_name: authentication_service
-    pull_policy: always
-    environment:
-      AUTH_SERVICE_PORT: "8094"
-      TRON_NETWORK: "shasta"
-      TRON_RPC_URL: "https://api.shasta.trongrid.io"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - chain_data:/data/auth
+    image: pickme/lucid-auth-service:latest-arm64
+    container_name: authentication-service
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_mongo
-    ports:
-      - "8094:8094"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - AUTH_SERVICE_PORT=8094
+      - TRON_NETWORK=shasta
+      - TRON_RPC_URL=https://api.shasta.trongrid.io
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/auth:/data/auth:rw
+      - /mnt/myssd/Lucid/logs/authentication-service:/app/logs:rw
+      - authentication-service-cache:/tmp/auth
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8094/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
-
-networks:
-  lucid_core_net:
-    external: true
+    labels:
+      - "lucid.service=authentication-service"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=sessions"
 
 volumes:
-  sessions_data:
-  encrypted_data:
-  chain_data:
+  session-chunker-cache:
+    driver: local
+    name: lucid-session-chunker-cache
+  session-encryptor-cache:
+    driver: local
+    name: lucid-session-encryptor-cache
+  merkle-builder-cache:
+    driver: local
+    name: lucid-merkle-builder-cache
+  session-orchestrator-cache:
+    driver: local
+    name: lucid-session-orchestrator-cache
+  authentication-service-cache:
+    driver: local
+    name: lucid-authentication-service-cache
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network

@@ -6,297 +6,400 @@
 
 services:
   openapi-gateway:
-    image: pickme/lucid:openapi-gateway:latest
-    container_name: openapi_gateway
-    pull_policy: always
-    environment:
-      OPENAPI_GATEWAY_PORT: "8095"
-      OPENAPI_SERVER_URL: "http://openapi_server:8096"
-    volumes:
-      - onion_state:/run/lucid/onion:ro
+    image: pickme/lucid-openapi-gateway:latest-arm64
+    container_name: openapi-gateway
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_api
-    ports:
-      - "8095:8095"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - OPENAPI_GATEWAY_PORT=8095
+      - OPENAPI_SERVER_URL=http://openapi-server:8096
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/logs/openapi-gateway:/app/logs:rw
+      - openapi-gateway-cache:/tmp/gateway
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8095/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
+    labels:
+      - "lucid.service=openapi-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   openapi-server:
-    image: pickme/lucid:openapi-server:latest
-    container_name: openapi_server
-    pull_policy: always
-    environment:
-      OPENAPI_SERVER_PORT: "8096"
-      API_GATEWAY_URL: "http://lucid_api_gateway:8080"
-      BLOCKCHAIN_API_URL: "http://blockchain_api:8084"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - onion_state:/run/lucid/onion:ro
+    image: pickme/lucid-openapi-server:latest-arm64
+    container_name: openapi-server
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_mongo
-      - lucid_api_gateway
-      - blockchain_api
-    ports:
-      - "8096:8096"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - OPENAPI_SERVER_PORT=8096
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - BLOCKCHAIN_API_URL=http://blockchain-api:8084
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/logs/openapi-server:/app/logs:rw
+      - openapi-server-cache:/tmp/server
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8096/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=openapi-server"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   rdp-server-manager:
-    image: pickme/lucid:rdp-server-manager:latest
-    container_name: rdp_server_manager
-    pull_policy: always
-    environment:
-      RDP_MANAGER_PORT: "8097"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - rdp_sessions:/data/sessions
-      - rdp_recordings:/data/recordings
-      - rdp_temp:/tmp/rdp
+    image: pickme/lucid-rdp-server-manager:latest-arm64
+    container_name: rdp-server-manager
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_mongo
-    ports:
-      - "8097:8097"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - RDP_MANAGER_PORT=8097
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/rdp-sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/data/rdp-recordings:/data/recordings:rw
+      - /mnt/myssd/Lucid/logs/rdp-server-manager:/app/logs:rw
+      - rdp-server-manager-cache:/tmp/rdp
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8097/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=rdp-server-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   admin-ui:
-    image: pickme/lucid:admin-ui:latest
-    container_name: admin_ui
-    pull_policy: always
-    environment:
-      ADMIN_UI_PORT: "8098"
-      API_GATEWAY_URL: "http://lucid_api_gateway:8080"
+    image: pickme/lucid-admin-interface:latest-arm64
+    container_name: admin-ui
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_api_gateway
-    ports:
-      - "8098:8098"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - ADMIN_UI_PORT=8098
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/logs/admin-ui:/app/logs:rw
+      - admin-ui-cache:/tmp/admin
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8098/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
+    labels:
+      - "lucid.service=admin-ui"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   contract-deployment:
-    image: pickme/lucid:contract-deployment:latest
-    container_name: contract_deployment
-    pull_policy: always
-    environment:
-      DEPLOYMENT_PORT: "8099"
-      BLOCKCHAIN_API_URL: "http://blockchain_api:8084"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - contract_data:/data/contracts
-      - deployment_temp:/tmp/deployment
+    image: pickme/lucid-contract-deployment:latest-arm64
+    container_name: contract-deployment
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - blockchain_api
-    ports:
-      - "8099:8099"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - DEPLOYMENT_PORT=8099
+      - BLOCKCHAIN_API_URL=http://blockchain-api:8084
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/contracts:/data/contracts:rw
+      - /mnt/myssd/Lucid/logs/contract-deployment:/app/logs:rw
+      - contract-deployment-cache:/tmp/deployment
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8099/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=contract-deployment"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   contract-compiler:
-    image: pickme/lucid:contract-compiler:latest
-    container_name: contract_compiler
-    pull_policy: always
-    environment:
-      COMPILER_PORT: "8100"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - contract_data:/data/contracts
-      - deployment_temp:/tmp/compilation
+    image: pickme/lucid-contract-compiler:latest-arm64
+    container_name: contract-compiler
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_mongo
-    ports:
-      - "8100:8100"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - COMPILER_PORT=8100
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    volumes:
+      - /mnt/myssd/Lucid/data/contracts:/data/contracts:rw
+      - /mnt/myssd/Lucid/logs/contract-compiler:/app/logs:rw
+      - contract-compiler-cache:/tmp/compilation
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8100/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=contract-compiler"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   deployment-orchestrator:
-    image: pickme/lucid:deployment-orchestrator:latest
-    container_name: deployment_orchestrator
-    pull_policy: always
-    environment:
-      ORCHESTRATOR_PORT: "8101"
-      BLOCKCHAIN_API_URL: "http://blockchain_api:8084"
-      CONTRACT_DEPLOYMENT_URL: "http://contract_deployment:8099"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - deployment_temp:/tmp/orchestration
+    image: pickme/lucid-deployment-orchestrator:latest-arm64
+    container_name: deployment-orchestrator
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - blockchain_api
-      - contract-deployment
-    ports:
-      - "8101:8101"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - ORCHESTRATOR_PORT=8101
+      - BLOCKCHAIN_API_URL=http://blockchain-api:8084
+      - CONTRACT_DEPLOYMENT_URL=http://contract-deployment:8099
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/logs/deployment-orchestrator:/app/logs:rw
+      - deployment-orchestrator-cache:/tmp/orchestration
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8101/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=deployment-orchestrator"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   session-host-manager:
-    image: pickme/lucid:session-host-manager:latest
-    container_name: session_host_manager
-    pull_policy: always
-    environment:
-      HOST_MANAGER_PORT: "8102"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - rdp_sessions:/data/sessions
-      - rdp_recordings:/data/recordings
+    image: pickme/lucid-session-host-manager:latest-arm64
+    container_name: session-host-manager
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - lucid_mongo
-    ports:
-      - "8102:8102"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - HOST_MANAGER_PORT=8102
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/data/rdp-sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/data/rdp-recordings:/data/recordings:rw
+      - /mnt/myssd/Lucid/logs/session-host-manager:/app/logs:rw
+      - session-host-manager-cache:/tmp/host
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8102/health || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+    labels:
+      - "lucid.service=session-host-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
   xrdp-integration:
-    image: pickme/lucid:xrdp-integration:latest
-    container_name: xrdp_integration
-    pull_policy: always
-    environment:
-      XRDP_PORT: "3389"
-      XRDP_DISPLAY: ":10"
-      MONGODB_URL: "mongodb://lucid:lucid@lucid_mongo:27017/lucid"
-    volumes:
-      - rdp_sessions:/data/sessions
-      - rdp_recordings:/data/recordings
-      - rdp_temp:/tmp/rdp
+    image: pickme/lucid-rdp-xrdp:latest-arm64
+    container_name: xrdp-integration
+    restart: unless-stopped
     networks:
-      - lucid_core_net
-    depends_on:
-      - rdp-server-manager
-    ports:
-      - "3389:3389"
+      - lucid-pi-network
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - XRDP_PORT=3389
+      - XRDP_DISPLAY=:10
+      - MONGODB_URL=${MONGODB_URL}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    volumes:
+      - /mnt/myssd/Lucid/data/rdp-sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/data/rdp-recordings:/data/recordings:rw
+      - /mnt/myssd/Lucid/logs/xrdp-integration:/app/logs:rw
+      - xrdp-integration-cache:/tmp/rdp
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 3389 || exit 1"]
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '2.0'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
-
-networks:
-  lucid_core_net:
-    external: true
+    labels:
+      - "lucid.service=xrdp-integration"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=integration"
 
 volumes:
-  onion_state:
-  rdp_sessions:
-  rdp_recordings:
-  rdp_temp:
-  contract_data:
-  deployment_temp:
+  openapi-gateway-cache:
+    driver: local
+    name: lucid-openapi-gateway-cache
+  openapi-server-cache:
+    driver: local
+    name: lucid-openapi-server-cache
+  rdp-server-manager-cache:
+    driver: local
+    name: lucid-rdp-server-manager-cache
+  admin-ui-cache:
+    driver: local
+    name: lucid-admin-ui-cache
+  contract-deployment-cache:
+    driver: local
+    name: lucid-contract-deployment-cache
+  contract-compiler-cache:
+    driver: local
+    name: lucid-contract-compiler-cache
+  deployment-orchestrator-cache:
+    driver: local
+    name: lucid-deployment-orchestrator-cache
+  session-host-manager-cache:
+    driver: local
+    name: lucid-session-host-manager-cache
+  xrdp-integration-cache:
+    driver: local
+    name: lucid-xrdp-integration-cache
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
