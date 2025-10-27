@@ -31,8 +31,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     volumes:
-      - /mnt/myssd/Lucid/data/mongodb:/data/db:rw
-      - /mnt/myssd/Lucid/logs/mongodb:/var/log/mongodb:rw
+      - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db:rw
+      - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
       - mongodb-cache:/var/cache/mongodb
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
@@ -73,8 +73,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /mnt/myssd/Lucid/data/redis:/data:rw
-      - /mnt/myssd/Lucid/logs/redis:/var/log/redis:rw
+      - /mnt/myssd/Lucid/Lucid/data/redis:/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
       - redis-cache:/var/cache/redis
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
@@ -116,8 +116,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     volumes:
-      - /mnt/myssd/Lucid/data/elasticsearch:/usr/share/elasticsearch/data:rw
-      - /mnt/myssd/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
       - elasticsearch-cache:/tmp/elasticsearch
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
@@ -163,7 +163,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /mnt/myssd/Lucid/logs/auth-service:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
       - auth-cache:/tmp/auth
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]

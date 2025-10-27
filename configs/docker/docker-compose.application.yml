@@ -13,8 +13,8 @@ services:
     ports:
       - "8083:8083"
     volumes:
-      - /mnt/myssd/Lucid/data/session-pipeline:/app/data:rw
-      - /mnt/myssd/Lucid/logs/session-pipeline:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs:rw
       - session-pipeline-cache:/tmp/pipeline
     environment:
       - LUCID_ENV=production
@@ -59,9 +59,9 @@ services:
     ports:
       - "8084:8084"
     volumes:
-      - /mnt/myssd/Lucid/data/session-recorder/recordings:/app/recordings:rw
-      - /mnt/myssd/Lucid/data/session-recorder/chunks:/app/chunks:rw
-      - /mnt/myssd/Lucid/logs/session-recorder:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/session-recorder/recordings:/app/recordings:rw
+      - /mnt/myssd/Lucid/Lucid/data/session-recorder/chunks:/app/chunks:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-recorder:/app/logs:rw
       - session-recorder-cache:/tmp/recorder
     environment:
       - LUCID_ENV=production
@@ -106,8 +106,8 @@ services:
     ports:
       - "8085:8085"
     volumes:
-      - /mnt/myssd/Lucid/data/session-processor:/app/data:rw
-      - /mnt/myssd/Lucid/logs/session-processor:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/session-processor:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-processor:/app/logs:rw
       - session-processor-cache:/tmp/processor
     environment:
       - LUCID_ENV=production
@@ -152,8 +152,8 @@ services:
     ports:
       - "8086:8086"
     volumes:
-      - /mnt/myssd/Lucid/data/session-storage:/app/data:rw
-      - /mnt/myssd/Lucid/logs/session-storage:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/session-storage:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs:rw
       - session-storage-cache:/tmp/storage
     environment:
       - LUCID_ENV=production
@@ -198,7 +198,7 @@ services:
     ports:
       - "8087:8087"
     volumes:
-      - /mnt/myssd/Lucid/logs/session-api:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs:rw
       - session-api-cache:/tmp/api
     environment:
       - LUCID_ENV=production
@@ -247,8 +247,8 @@ services:
     ports:
       - "8090:8090"
     volumes:
-      - /mnt/myssd/Lucid/data/rdp-server-manager:/app/data:rw
-      - /mnt/myssd/Lucid/logs/rdp-server-manager:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
       - rdp-server-manager-cache:/tmp/rdp-manager
     environment:
       - LUCID_ENV=production
@@ -297,8 +297,8 @@ services:
       - "8091:8091"
       - "3389:3389"
     volumes:
-      - /mnt/myssd/Lucid/data/rdp-xrdp/config:/app/config:rw
-      - /mnt/myssd/Lucid/logs/rdp-xrdp:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp/config:/app/config:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp:/app/logs:rw
       - rdp-xrdp-cache:/tmp/xrdp
     environment:
       - LUCID_ENV=production
@@ -342,8 +342,8 @@ services:
     ports:
       - "8092:8092"
     volumes:
-      - /mnt/myssd/Lucid/data/rdp-controller:/app/data:rw
-      - /mnt/myssd/Lucid/logs/rdp-controller:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/rdp-controller:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs:rw
       - rdp-controller-cache:/tmp/controller
     environment:
       - LUCID_ENV=production
@@ -387,7 +387,7 @@ services:
     ports:
       - "8093:8093"
     volumes:
-      - /mnt/myssd/Lucid/logs/rdp-monitor:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-monitor:/app/logs:rw
       - rdp-monitor-cache:/tmp/monitor
     environment:
       - LUCID_ENV=production
@@ -431,8 +431,8 @@ services:
     ports:
       - "8095:8095"
     volumes:
-      - /mnt/myssd/Lucid/data/node-management:/app/data:rw
-      - /mnt/myssd/Lucid/logs/node-management:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs:rw
       - node-management-cache:/tmp/nodes
     environment:
       - LUCID_ENV=production

@@ -13,8 +13,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - /mnt/myssd/Lucid/logs/api-gateway:/app/logs:rw
-      - /mnt/myssd/Lucid/data/api-gateway/cache:/app/cache:rw
+      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/api-gateway/cache:/app/cache:rw
       - api-gateway-tmp:/tmp/api
     environment:
       - LUCID_ENV=production
@@ -61,8 +61,8 @@ services:
     ports:
       - "8084:8084"
     volumes:
-      - /mnt/myssd/Lucid/data/blockchain:/app/data:rw
-      - /mnt/myssd/Lucid/logs/blockchain-engine:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs:rw
       - blockchain-cache:/tmp/blockchain
     environment:
       - LUCID_ENV=production
@@ -108,8 +108,8 @@ services:
     ports:
       - "8500:8500"
     volumes:
-      - /mnt/myssd/Lucid/logs/service-mesh:/app/logs:rw
-      - /mnt/myssd/Lucid/data/service-mesh/config:/app/config:rw
+      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/service-mesh/config:/app/config:rw
       - service-mesh-cache:/tmp/mesh
     environment:
       - LUCID_ENV=production
@@ -153,8 +153,8 @@ services:
     networks:
       - lucid-pi-network
     volumes:
-      - /mnt/myssd/Lucid/data/session-anchoring:/app/data:rw
-      - /mnt/myssd/Lucid/logs/session-anchoring:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw
       - session-anchoring-cache:/tmp/anchoring
     environment:
       - LUCID_ENV=production
@@ -197,8 +197,8 @@ services:
     networks:
       - lucid-pi-network
     volumes:
-      - /mnt/myssd/Lucid/data/block-manager:/app/data:rw
-      - /mnt/myssd/Lucid/logs/block-manager:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
       - block-manager-cache:/tmp/blocks
     environment:
       - LUCID_ENV=production
@@ -241,8 +241,8 @@ services:
     networks:
       - lucid-pi-network
     volumes:
-      - /mnt/myssd/Lucid/data/data-chain:/app/data:rw
-      - /mnt/myssd/Lucid/logs/data-chain:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
       - data-chain-cache:/tmp/chain
     environment:
       - LUCID_ENV=production
