@@ -7,8 +7,8 @@
 
 set -e
 
-# Configuration
-SECRETS_DIR="${LUCID_SECRETS_DIR:-configs/secrets}"
+# Configuration - Aligned with config directory structure
+SECRETS_DIR="${LUCID_SECRETS_DIR:-configs/environment}"
 BACKUP_DIR="${LUCID_BACKUP_DIR:-/data/backups/secrets}"
 LOG_FILE="${LOG_FILE:-/var/log/lucid/secret-generation.log}"
 SECRET_TYPES=("jwt" "database" "tron" "hardware" "mesh" "admin" "blockchain" "session" "rdp" "node" "monitoring" "external" "backup")
@@ -85,7 +85,7 @@ show_usage() {
     echo "  backup                  Backup encryption secrets"
     echo ""
     echo "Environment Variables:"
-    echo "  LUCID_SECRETS_DIR       Secrets directory (default: configs/secrets)"
+    echo "  LUCID_SECRETS_DIR       Secrets directory (default: configs/environment)"
     echo "  LUCID_BACKUP_DIR        Backup directory (default: /data/backups/secrets)"
     echo ""
     echo "Examples:"
@@ -172,7 +172,7 @@ fi
 
 # Function to generate JWT secrets
 generate_jwt_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     local timestamp=$(date +%Y%m%d-%H%M%S)
     
     log_info "Generating JWT secrets..."
@@ -192,10 +192,9 @@ generate_jwt_secrets() {
         sed -i "s/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=$jwt_secret/" "$secrets_file"
         sed -i "s/JWT_REFRESH_SECRET_KEY=.*/JWT_REFRESH_SECRET_KEY=$jwt_refresh_secret/" "$secrets_file"
     else
-        # Create new file from template
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-256-bit-jwt-secret-key-here-change-in-production/$jwt_secret/" "$secrets_file"
-        sed -i "s/your-256-bit-jwt-refresh-secret-key-here-change-in-production/$jwt_refresh_secret/" "$secrets_file"
+        # Create new file
+        echo "JWT_SECRET_KEY=$jwt_secret" >> "$secrets_file"
+        echo "JWT_REFRESH_SECRET_KEY=$jwt_refresh_secret" >> "$secrets_file"
     fi
     
     # Set secure permissions
@@ -207,7 +206,7 @@ generate_jwt_secrets() {
 
 # Function to generate database secrets
 generate_database_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating database secrets..."
     
@@ -229,11 +228,10 @@ generate_database_secrets() {
         sed -i "s/REDIS_PASSWORD=.*/REDIS_PASSWORD=$redis_password/" "$secrets_file"
         sed -i "s/ELASTICSEARCH_PASSWORD=.*/ELASTICSEARCH_PASSWORD=$elasticsearch_password/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-mongodb-password-here-change-in-production/$mongodb_password/" "$secrets_file"
-        sed -i "s/your-mongodb-root-password-here-change-in-production/$mongodb_root_password/" "$secrets_file"
-        sed -i "s/your-redis-password-here-change-in-production/$redis_password/" "$secrets_file"
-        sed -i "s/your-elasticsearch-password-here-change-in-production/$elasticsearch_password/" "$secrets_file"
+        echo "MONGODB_PASSWORD=$mongodb_password" >> "$secrets_file"
+        echo "MONGODB_ROOT_PASSWORD=$mongodb_root_password" >> "$secrets_file"
+        echo "REDIS_PASSWORD=$redis_password" >> "$secrets_file"
+        echo "ELASTICSEARCH_PASSWORD=$elasticsearch_password" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -244,7 +242,7 @@ generate_database_secrets() {
 
 # Function to generate TRON payment secrets
 generate_tron_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating TRON payment secrets..."
     
@@ -264,10 +262,9 @@ generate_tron_secrets() {
         sed -i "s/TRON_PRIVATE_KEY_PASSPHRASE=.*/TRON_PRIVATE_KEY_PASSPHRASE=$tron_passphrase/" "$secrets_file"
         sed -i "s/TRON_API_KEY=.*/TRON_API_KEY=$tron_api_key/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-encrypted-tron-private-key-here/$tron_private_key/" "$secrets_file"
-        sed -i "s/your-tron-key-passphrase-here/$tron_passphrase/" "$secrets_file"
-        sed -i "s/your-tron-api-key-here/$tron_api_key/" "$secrets_file"
+        echo "TRON_PRIVATE_KEY_ENCRYPTED=$tron_private_key" >> "$secrets_file"
+        echo "TRON_PRIVATE_KEY_PASSPHRASE=$tron_passphrase" >> "$secrets_file"
+        echo "TRON_API_KEY=$tron_api_key" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -278,7 +275,7 @@ generate_tron_secrets() {
 
 # Function to generate hardware wallet secrets
 generate_hardware_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating hardware wallet secrets..."
     
@@ -298,10 +295,9 @@ generate_hardware_secrets() {
         sed -i "s/TREZOR_APP_ID=.*/TREZOR_APP_ID=$trezor_app_id/" "$secrets_file"
         sed -i "s/KEEPKEY_APP_ID=.*/KEEPKEY_APP_ID=$keepkey_app_id/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-ledger-app-id-here/$ledger_app_id/" "$secrets_file"
-        sed -i "s/your-trezor-app-id-here/$trezor_app_id/" "$secrets_file"
-        sed -i "s/your-keepkey-app-id-here/$keepkey_app_id/" "$secrets_file"
+        echo "LEDGER_APP_ID=$ledger_app_id" >> "$secrets_file"
+        echo "TREZOR_APP_ID=$trezor_app_id" >> "$secrets_file"
+        echo "KEEPKEY_APP_ID=$keepkey_app_id" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -312,7 +308,7 @@ generate_hardware_secrets() {
 
 # Function to generate service mesh secrets
 generate_mesh_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating service mesh secrets..."
     
@@ -332,10 +328,9 @@ generate_mesh_secrets() {
         sed -i "s/SERVICE_MESH_CA_KEY=.*/SERVICE_MESH_CA_KEY=$mesh_ca_key/" "$secrets_file"
         sed -i "s/SERVICE_MESH_JWT_SECRET=.*/SERVICE_MESH_JWT_SECRET=$mesh_jwt_secret/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-service-mesh-ca-certificate-here/$mesh_ca_cert/" "$secrets_file"
-        sed -i "s/your-service-mesh-ca-private-key-here/$mesh_ca_key/" "$secrets_file"
-        sed -i "s/your-service-mesh-jwt-secret-here/$mesh_jwt_secret/" "$secrets_file"
+        echo "SERVICE_MESH_CA_CERT=$mesh_ca_cert" >> "$secrets_file"
+        echo "SERVICE_MESH_CA_KEY=$mesh_ca_key" >> "$secrets_file"
+        echo "SERVICE_MESH_JWT_SECRET=$mesh_jwt_secret" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -344,9 +339,9 @@ generate_mesh_secrets() {
     return 0
 }
 
-# Function to generate admin interface secrets
+# Function to generate admin secrets
 generate_admin_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating admin interface secrets..."
     
@@ -366,10 +361,9 @@ generate_admin_secrets() {
         sed -i "s/ADMIN_API_KEY=.*/ADMIN_API_KEY=$admin_api_key/" "$secrets_file"
         sed -i "s/ADMIN_SESSION_SECRET=.*/ADMIN_SESSION_SECRET=$admin_session_secret/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-admin-jwt-secret-here/$admin_jwt_secret/" "$secrets_file"
-        sed -i "s/your-admin-api-key-here/$admin_api_key/" "$secrets_file"
-        sed -i "s/your-admin-session-secret-here/$admin_session_secret/" "$secrets_file"
+        echo "ADMIN_JWT_SECRET=$admin_jwt_secret" >> "$secrets_file"
+        echo "ADMIN_API_KEY=$admin_api_key" >> "$secrets_file"
+        echo "ADMIN_SESSION_SECRET=$admin_session_secret" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -380,7 +374,7 @@ generate_admin_secrets() {
 
 # Function to generate blockchain secrets
 generate_blockchain_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating blockchain secrets..."
     
@@ -400,10 +394,9 @@ generate_blockchain_secrets() {
         sed -i "s/BLOCKCHAIN_VALIDATOR_KEY=.*/BLOCKCHAIN_VALIDATOR_KEY=$validator_key/" "$secrets_file"
         sed -i "s/BLOCKCHAIN_NODE_ID=.*/BLOCKCHAIN_NODE_ID=$node_id/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-blockchain-consensus-secret-here/$consensus_secret/" "$secrets_file"
-        sed -i "s/your-blockchain-validator-private-key-here/$validator_key/" "$secrets_file"
-        sed -i "s/your-blockchain-node-id-here/$node_id/" "$secrets_file"
+        echo "BLOCKCHAIN_CONSENSUS_SECRET=$consensus_secret" >> "$secrets_file"
+        echo "BLOCKCHAIN_VALIDATOR_KEY=$validator_key" >> "$secrets_file"
+        echo "BLOCKCHAIN_NODE_ID=$node_id" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -414,7 +407,7 @@ generate_blockchain_secrets() {
 
 # Function to generate session management secrets
 generate_session_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating session management secrets..."
     
@@ -434,10 +427,9 @@ generate_session_secrets() {
         sed -i "s/SESSION_SIGNING_KEY=.*/SESSION_SIGNING_KEY=$session_signing_key/" "$secrets_file"
         sed -i "s/CHUNK_ENCRYPTION_KEY=.*/CHUNK_ENCRYPTION_KEY=$chunk_encryption_key/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-session-encryption-key-here/$session_encryption_key/" "$secrets_file"
-        sed -i "s/your-session-signing-key-here/$session_signing_key/" "$secrets_file"
-        sed -i "s/your-chunk-encryption-key-here/$chunk_encryption_key/" "$secrets_file"
+        echo "SESSION_ENCRYPTION_KEY=$session_encryption_key" >> "$secrets_file"
+        echo "SESSION_SIGNING_KEY=$session_signing_key" >> "$secrets_file"
+        echo "CHUNK_ENCRYPTION_KEY=$chunk_encryption_key" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -448,7 +440,7 @@ generate_session_secrets() {
 
 # Function to generate RDP service secrets
 generate_rdp_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating RDP service secrets..."
     
@@ -468,10 +460,9 @@ generate_rdp_secrets() {
         sed -i "s/XRDP_PASSWORD=.*/XRDP_PASSWORD=$xrdp_password/" "$secrets_file"
         sed -i "s/RDP_SESSION_KEY=.*/RDP_SESSION_KEY=$rdp_session_key/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-rdp-admin-password-here/$rdp_admin_password/" "$secrets_file"
-        sed -i "s/your-xrdp-password-here/$xrdp_password/" "$secrets_file"
-        sed -i "s/your-rdp-session-key-here/$rdp_session_key/" "$secrets_file"
+        echo "RDP_ADMIN_PASSWORD=$rdp_admin_password" >> "$secrets_file"
+        echo "XRDP_PASSWORD=$xrdp_password" >> "$secrets_file"
+        echo "RDP_SESSION_KEY=$rdp_session_key" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -482,7 +473,7 @@ generate_rdp_secrets() {
 
 # Function to generate node management secrets
 generate_node_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating node management secrets..."
     
@@ -502,10 +493,9 @@ generate_node_secrets() {
         sed -i "s/POOT_VALIDATION_SECRET=.*/POOT_VALIDATION_SECRET=$poot_validation_secret/" "$secrets_file"
         sed -i "s/NODE_REGISTRATION_TOKEN=.*/NODE_REGISTRATION_TOKEN=$node_registration_token/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-node-operator-private-key-here/$node_operator_key/" "$secrets_file"
-        sed -i "s/your-poot-validation-secret-here/$poot_validation_secret/" "$secrets_file"
-        sed -i "s/your-node-registration-token-here/$node_registration_token/" "$secrets_file"
+        echo "NODE_OPERATOR_KEY=$node_operator_key" >> "$secrets_file"
+        echo "POOT_VALIDATION_SECRET=$poot_validation_secret" >> "$secrets_file"
+        echo "NODE_REGISTRATION_TOKEN=$node_registration_token" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -516,7 +506,7 @@ generate_node_secrets() {
 
 # Function to generate monitoring secrets
 generate_monitoring_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating monitoring secrets..."
     
@@ -536,10 +526,9 @@ generate_monitoring_secrets() {
         sed -i "s/GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$grafana_admin_password/" "$secrets_file"
         sed -i "s/ALERTMANAGER_WEBHOOK_SECRET=.*/ALERTMANAGER_WEBHOOK_SECRET=$alertmanager_webhook_secret/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-prometheus-secret-here/$prometheus_secret/" "$secrets_file"
-        sed -i "s/your-grafana-admin-password-here/$grafana_admin_password/" "$secrets_file"
-        sed -i "s/your-alertmanager-webhook-secret-here/$alertmanager_webhook_secret/" "$secrets_file"
+        echo "PROMETHEUS_SECRET=$prometheus_secret" >> "$secrets_file"
+        echo "GRAFANA_ADMIN_PASSWORD=$grafana_admin_password" >> "$secrets_file"
+        echo "ALERTMANAGER_WEBHOOK_SECRET=$alertmanager_webhook_secret" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -550,7 +539,7 @@ generate_monitoring_secrets() {
 
 # Function to generate external service secrets
 generate_external_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating external service secrets..."
     
@@ -570,10 +559,9 @@ generate_external_secrets() {
         sed -i "s/DOCKER_REGISTRY_PASSWORD=.*/DOCKER_REGISTRY_PASSWORD=$docker_registry_password/" "$secrets_file"
         sed -i "s/GITHUB_TOKEN=.*/GITHUB_TOKEN=$github_token/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-tor-control-password-here/$tor_control_password/" "$secrets_file"
-        sed -i "s/your-docker-registry-password-here/$docker_registry_password/" "$secrets_file"
-        sed -i "s/your-github-token-here/$github_token/" "$secrets_file"
+        echo "TOR_CONTROL_PASSWORD=$tor_control_password" >> "$secrets_file"
+        echo "DOCKER_REGISTRY_PASSWORD=$docker_registry_password" >> "$secrets_file"
+        echo "GITHUB_TOKEN=$github_token" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -584,7 +572,7 @@ generate_external_secrets() {
 
 # Function to generate backup secrets
 generate_backup_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Generating backup secrets..."
     
@@ -602,9 +590,8 @@ generate_backup_secrets() {
         sed -i "s/BACKUP_ENCRYPTION_KEY=.*/BACKUP_ENCRYPTION_KEY=$backup_encryption_key/" "$secrets_file"
         sed -i "s/BACKUP_SIGNING_KEY=.*/BACKUP_SIGNING_KEY=$backup_signing_key/" "$secrets_file"
     else
-        cp "$SECRETS_DIR/.secrets.example" "$secrets_file"
-        sed -i "s/your-backup-encryption-key-here/$backup_encryption_key/" "$secrets_file"
-        sed -i "s/your-backup-signing-key-here/$backup_signing_key/" "$secrets_file"
+        echo "BACKUP_ENCRYPTION_KEY=$backup_encryption_key" >> "$secrets_file"
+        echo "BACKUP_SIGNING_KEY=$backup_signing_key" >> "$secrets_file"
     fi
     
     chmod 600 "$secrets_file"
@@ -615,7 +602,7 @@ generate_backup_secrets() {
 
 # Function to check existing secrets
 check_existing_secrets() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Checking existing secrets..."
     
@@ -644,7 +631,7 @@ check_existing_secrets() {
     for secret in "${required_secrets[@]}"; do
         if grep -q "^${secret}=" "$secrets_file"; then
             local value=$(grep "^${secret}=" "$secrets_file" | cut -d'=' -f2)
-            if [[ "$value" == *"your-"* ]] || [[ "$value" == *"change-in-production"* ]]; then
+            if [[ "$value" == *"your-"* ]] || [[ "$value" == *"change-in-production"* ]] || [[ -z "$value" ]]; then
                 missing_secrets+=("$secret")
             else
                 present_secrets+=("$secret")
@@ -675,7 +662,7 @@ check_existing_secrets() {
 
 # Function to validate secret formats
 validate_secret_formats() {
-    local secrets_file="$SECRETS_DIR/.secrets"
+    local secrets_file="$SECRETS_DIR/.env.secure"
     
     log_info "Validating secret formats..."
     
@@ -689,7 +676,7 @@ validate_secret_formats() {
     # Validate JWT secrets (base64, 64 characters)
     local jwt_secret=$(grep "^JWT_SECRET_KEY=" "$secrets_file" | cut -d'=' -f2)
     if [[ -n "$jwt_secret" ]]; then
-        if [[ ${#jwt_secret} -lt 32 ]] || [[ "$jwt_secret" == *"your-"* ]]; then
+        if [[ ${#jwt_secret} -lt 32 ]] || [[ "$jwt_secret" == *"your-"* ]] || [[ -z "$jwt_secret" ]]; then
             validation_errors+=("JWT_SECRET_KEY: Invalid format or default value")
         fi
     fi
@@ -697,7 +684,7 @@ validate_secret_formats() {
     # Validate database passwords (32+ characters)
     local mongodb_password=$(grep "^MONGODB_PASSWORD=" "$secrets_file" | cut -d'=' -f2)
     if [[ -n "$mongodb_password" ]]; then
-        if [[ ${#mongodb_password} -lt 32 ]] || [[ "$mongodb_password" == *"your-"* ]]; then
+        if [[ ${#mongodb_password} -lt 32 ]] || [[ "$mongodb_password" == *"your-"* ]] || [[ -z "$mongodb_password" ]]; then
             validation_errors+=("MONGODB_PASSWORD: Invalid format or default value")
         fi
     fi
@@ -705,7 +692,7 @@ validate_secret_formats() {
     # Validate TRON private key (hex, 64 characters)
     local tron_key=$(grep "^TRON_PRIVATE_KEY_ENCRYPTED=" "$secrets_file" | cut -d'=' -f2)
     if [[ -n "$tron_key" ]]; then
-        if [[ ${#tron_key} -ne 64 ]] || [[ "$tron_key" == *"your-"* ]]; then
+        if [[ ${#tron_key} -ne 64 ]] || [[ "$tron_key" == *"your-"* ]] || [[ -z "$tron_key" ]]; then
             validation_errors+=("TRON_PRIVATE_KEY_ENCRYPTED: Invalid format or default value")
         fi
     fi
@@ -729,8 +716,8 @@ create_backup() {
     
     log_info "Creating secrets backup: $backup_file"
     
-    if [[ -f "$SECRETS_DIR/.secrets" ]]; then
-        if tar -czf "$backup_file" -C "$SECRETS_DIR" .secrets; then
+    if [[ -f "$SECRETS_DIR/.env.secure" ]]; then
+        if tar -czf "$backup_file" -C "$SECRETS_DIR" .env.secure; then
             log_success "Secrets backup created: $backup_file"
             return 0
         else
