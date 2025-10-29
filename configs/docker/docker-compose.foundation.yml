@@ -35,7 +35,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
       - mongodb-cache:/var/cache/mongodb
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -77,7 +77,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
       - redis-cache:/var/cache/redis
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -120,7 +120,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
       - elasticsearch-cache:/tmp/elasticsearch
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -166,7 +166,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
       - auth-cache:/tmp/auth
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
       interval: 30s
       timeout: 10s
       retries: 3
