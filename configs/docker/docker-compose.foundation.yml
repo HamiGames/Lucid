@@ -35,7 +35,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
       - mongodb-cache:/var/cache/mongodb
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "nc -z localhost 27017 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -77,7 +77,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
       - redis-cache:/var/cache/redis
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD-SHELL", "nc -z localhost 6379 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -120,7 +120,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
       - elasticsearch-cache:/tmp/elasticsearch
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      test: ["CMD-SHELL", "nc -z localhost 9200 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -166,7 +166,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
       - auth-cache:/tmp/auth
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8089/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
