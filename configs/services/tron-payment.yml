@@ -159,7 +159,7 @@ network:
 # Container Configuration
 container:
   runtime: "docker"
-  network: "lucid-network-isolated"
+  network: "lucid-tron-isolated"
   subnet: "172.21.0.0/16"
   gateway: "172.21.0.1"
 

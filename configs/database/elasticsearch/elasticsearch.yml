@@ -1,23 +1,24 @@
 # Elasticsearch 8.11.0 Configuration for Lucid Blockchain System
 # Database Cluster 08: Storage Database
-# Step 3: Redis & Elasticsearch Setup
+# Aligned with essentials.md - Elasticsearch Service Configuration
+# Project Root: /mnt/myssd/Lucid/Lucid/
 
 # ======================== Elasticsearch Configuration =========================
 
 # ---------------------------------- Cluster -----------------------------------
 
-# Cluster name identifies your cluster for auto-discovery
-cluster.name: lucid-elasticsearch
+# Cluster name (aligned with essentials.md: lucid-cluster)
+cluster.name: lucid-cluster
 
-# Node name (unique identifier for this node)
-node.name: lucid-es-node-1
+# Node name (aligned with essentials.md: lucid-node)
+node.name: lucid-node
 
 # ----------------------------------- Paths ------------------------------------
 
-# Path to directory where to store the data
+# Path to directory where to store the data (aligned with path_plan.md)
 path.data: /usr/share/elasticsearch/data
 
-# Path to log files
+# Path to log files (aligned with path_plan.md)
 path.logs: /usr/share/elasticsearch/logs
 
 # ----------------------------------- Memory -----------------------------------
@@ -25,25 +26,30 @@ path.logs: /usr/share/elasticsearch/logs
 # Lock the memory on startup to prevent swapping
 bootstrap.memory_lock: false
 
+# Memory settings for ARM64/Raspberry Pi
+# ES_JAVA_OPTS should be set in docker-compose environment
+# Recommended: -Xms256m -Xmx256m for Pi
+
 # ---------------------------------- Network -----------------------------------
 
 # Bind to all interfaces for Docker network
 network.host: 0.0.0.0
 
-# HTTP port
+# HTTP port (aligned with essentials.md: 9200)
 http.port: 9200
 
-# Transport port for node-to-node communication
+# Transport port for node-to-node communication (aligned with essentials.md: 9300)
 transport.port: 9300
 
 # --------------------------------- Discovery ----------------------------------
 
 # Single-node discovery for development/testing
+# Aligned with docker-compose.core.yaml configuration
 discovery.type: single-node
 
-# For production cluster mode (comment out single-node above):
-# discovery.seed_hosts: ["es-node-1", "es-node-2", "es-node-3"]
-# cluster.initial_master_nodes: ["lucid-es-node-1"]
+# For production cluster mode (uncomment when ready):
+# discovery.seed_hosts: ["lucid-elasticsearch:9300"]
+# cluster.initial_master_nodes: ["lucid-node"]
 
 # ---------------------------------- Gateway -----------------------------------
 
@@ -58,6 +64,7 @@ action.destructive_requires_name: true
 # ---------------------------------- Security ----------------------------------
 
 # Disable X-Pack security for development (enable in production)
+# Aligned with docker-compose.core.yaml: xpack.security.enabled=false
 xpack.security.enabled: false
 
 # For production with security enabled:
@@ -71,20 +78,24 @@ xpack.security.enabled: false
 # Enable monitoring
 xpack.monitoring.collection.enabled: true
 
+# Disable other X-Pack features for resource efficiency
+xpack.ml.enabled: false
+xpack.watcher.enabled: false
+
 # ---------------------------------- Indexing ----------------------------------
 
 # Refresh interval for indices
 indices.memory.index_buffer_size: 10%
 
-# Number of shards per index
+# Number of shards per index (optimized for single node)
 index.number_of_shards: 1
 
-# Number of replicas per index
+# Number of replicas per index (0 for single node)
 index.number_of_replicas: 0
 
 # ----------------------------------- HTTP -------------------------------------
 
-# Enable CORS for development
+# Enable CORS for development (aligned with essentials.md CORS settings)
 http.cors.enabled: true
 http.cors.allow-origin: "*"
 http.cors.allow-headers: "X-Requested-With,Content-Type,Content-Length,Authorization"
@@ -100,7 +111,7 @@ http.compression: true
 # Max result window
 index.max_result_window: 10000
 
-# Search thread pool
+# Search thread pool (optimized for ARM64)
 thread_pool.search.size: 4
 thread_pool.search.queue_size: 1000
 
@@ -108,63 +119,13 @@ thread_pool.search.queue_size: 1000
 thread_pool.write.size: 4
 thread_pool.write.queue_size: 1000
 
-# ---------------------------------- Lucid Custom ------------------------------
-
-# Lucid-specific index templates and settings
-
-# Index lifecycle management
-# xpack.ilm.enabled: true
-
-# Lucid Index Templates (applied via API after startup):
-
-# 1. Sessions Index Template
-# - index.number_of_shards: 1
-# - index.number_of_replicas: 0
-# - index.refresh_interval: "5s"
-# Mappings:
-#   - session_id: keyword
-#   - user_id: keyword
-#   - status: keyword
-#   - merkle_root: keyword
-#   - created_at: date
-#   - completed_at: date
-#   - metadata: object
-
-# 2. Blocks Index Template
-# - index.number_of_shards: 1
-# - index.number_of_replicas: 0
-# - index.refresh_interval: "10s"
-# Mappings:
-#   - block_id: keyword
-#   - block_height: long
-#   - block_hash: keyword
-#   - previous_hash: keyword
-#   - merkle_root: keyword
-#   - timestamp: date
-#   - transactions: nested
-
-# 3. Users Index Template
-# - index.number_of_shards: 1
-# - index.number_of_replicas: 0
-# - index.refresh_interval: "30s"
-# Mappings:
-#   - user_id: keyword
-#   - email: text (with keyword field)
-#   - tron_address: keyword
-#   - roles: keyword
-#   - status: keyword
-#   - created_at: date
-#   - last_activity: date
-
-# Index retention policies:
-# - Sessions: 90 days
-# - Blocks: permanent
-# - Users: permanent
-# - Logs: 30 days
+# Bulk thread pool
+thread_pool.bulk.size: 4
+thread_pool.bulk.queue_size: 1000
 
 # ---------------------------------- Performance -------------------------------
 
-# Circuit breaker settings
+# Circuit breaker settings (optimized for Pi)
 indices.breaker.total.limit: 70%
 indices.breaker.request.limit: 40%
 indices.breaker.fielddata.limit: 40%
@@ -174,10 +135,6 @@ indices.queries.cache.size: 10%
 
 # Field data cache
 indices.fielddata.cache.size: 20%
-
-# Bulk thread pool
-thread_pool.bulk.size: 4
-thread_pool.bulk.queue_size: 1000
 
 # ---------------------------------- Logging -----------------------------------
 
@@ -193,25 +150,22 @@ index.search.slowlog.threshold.fetch.info: 500ms
 index.indexing.slowlog.threshold.index.warn: 10s
 index.indexing.slowlog.threshold.index.info: 5s
 
-# ---------------------------------- Snapshots ---------------------------------
-
-# Snapshot repository path (configure via API)
-# path.repo: ["/usr/share/elasticsearch/backups"]
-
 # ---------------------------------- Lucid Integration -------------------------
 
 # These indices will be created via API after ES startup:
-# - lucid_sessions
-# - lucid_blocks
-# - lucid_users
+# - lucid_sessions (aligned with session services)
+# - lucid_blocks (aligned with blockchain services)
+# - lucid_users (aligned with auth-service)
 
-# Search optimization for Lucid use cases:
-# - Session search by user_id, status, date range
-# - Block search by height, hash, date range
-# - User search by email, tron_address, status
+# Index retention policies (aligned with path_plan.md):
+# - Sessions: 90 days
+# - Blocks: permanent
+# - Users: permanent
+# - Logs: 30 days
 
 # Performance targets:
 # - Search query latency: <100ms p95
 # - Index throughput: >1000 docs/sec
 # - Storage efficiency: compression enabled
 
+# ---------------------------------- End of Configuration -----------------

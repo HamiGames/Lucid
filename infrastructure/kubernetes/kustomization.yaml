@@ -24,6 +24,7 @@ resources:
   - 01-configmaps/tron-payment-config.yaml
   - 01-configmaps/auth-service-config.yaml
   - 01-configmaps/database-config.yaml
+  - 01-configmaps/service-discovery-config.yaml
   
   # Secrets
   - 02-secrets/jwt-secrets.yaml
@@ -40,18 +41,45 @@ resources:
   - 05-core/api-gateway.yaml
   - 05-core/blockchain-engine.yaml
   - 05-core/service-mesh.yaml
+  - 05-core/session-anchoring.yaml
+  - 05-core/block-manager.yaml
+  - 05-core/data-chain.yaml
   
   # Application services
   - 06-application/session-management.yaml
+  - 06-application/session-pipeline.yaml
+  - 06-application/session-recorder.yaml
+  - 06-application/chunk-processor.yaml
+  - 06-application/session-storage.yaml
+  - 06-application/session-api.yaml
   - 06-application/rdp-services.yaml
+  - 06-application/rdp-server-manager.yaml
+  - 06-application/rdp-xrdp.yaml
+  - 06-application/rdp-controller.yaml
+  - 06-application/rdp-monitor.yaml
   - 06-application/node-management.yaml
   
   # Support services
   - 07-support/admin-interface.yaml
   - 07-support/tron-payment.yaml
+  - 07-support/tron-client.yaml
+  - 07-support/payout-router.yaml
+  - 07-support/wallet-manager.yaml
+  - 07-support/usdt-manager.yaml
+  - 07-support/trx-staking.yaml
+  - 07-support/payment-gateway.yaml
+  
+  # GUI services
+  - 08-gui/gui-api-bridge.yaml
+  - 08-gui/gui-tor-manager.yaml
+  - 08-gui/gui-hardware-wallet.yaml
+  - 08-gui/gui-docker-manager.yaml
+  
+  # Network policies
+  - 04-network/lucid-network-policies.yaml
   
   # Ingress
-  - 08-ingress/lucid-ingress.yaml
+  - 09-ingress/lucid-ingress.yaml
 
 commonLabels:
   app.kubernetes.io/name: lucid
@@ -72,56 +100,101 @@ patchesStrategicMerge:
           - name: api-gateway
             resources:
               requests:
-                cpu: "300m"
-                memory: "1Gi"
+                cpu: "100m"
+                memory: "256Mi"
               limits:
-                cpu: "2"
-                memory: "4Gi"
+                cpu: "1"
+                memory: "2Gi"
 
 images:
-  - name: lucid-api-gateway
-    newTag: latest
-  - name: lucid-blockchain-engine
-    newTag: latest
-  - name: lucid-session-management
-    newTag: latest
-  - name: lucid-rdp-services
-    newTag: latest
-  - name: lucid-node-management
-    newTag: latest
-  - name: lucid-admin-interface
-    newTag: latest
-  - name: lucid-tron-payment
-    newTag: latest
-  - name: lucid-auth-service
-    newTag: latest
-  - name: lucid-service-mesh-controller
-    newTag: latest
+  - name: pickme/lucid-api-gateway
+    newTag: latest-arm64
+  - name: pickme/lucid-blockchain-engine
+    newTag: latest-arm64
+  - name: pickme/lucid-service-mesh-controller
+    newTag: latest-arm64
+  - name: pickme/lucid-session-anchoring
+    newTag: latest-arm64
+  - name: pickme/lucid-block-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-data-chain
+    newTag: latest-arm64
+  - name: pickme/lucid-session-pipeline
+    newTag: latest-arm64
+  - name: pickme/lucid-session-recorder
+    newTag: latest-arm64
+  - name: pickme/lucid-chunk-processor
+    newTag: latest-arm64
+  - name: pickme/lucid-session-storage
+    newTag: latest-arm64
+  - name: pickme/lucid-session-api
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-server-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-xrdp
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-controller
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-monitor
+    newTag: latest-arm64
+  - name: pickme/lucid-node-management
+    newTag: latest-arm64
+  - name: pickme/lucid-admin-interface
+    newTag: latest-arm64
+  - name: pickme/lucid-tron-client
+    newTag: latest-arm64
+  - name: pickme/lucid-payout-router
+    newTag: latest-arm64
+  - name: pickme/lucid-wallet-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-usdt-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-trx-staking
+    newTag: latest-arm64
+  - name: pickme/lucid-payment-gateway
+    newTag: latest-arm64
+  - name: pickme/lucid-auth-service
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-api-bridge
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-tor-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-hardware-wallet
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-docker-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-mongodb
+    newTag: latest-arm64
+  - name: pickme/lucid-redis
+    newTag: latest-arm64
+  - name: pickme/lucid-elasticsearch
+    newTag: latest-arm64
 
 configMapGenerator:
   - name: lucid-config
     literals:
-      - APP_NAME=lucid-blockchain
-      - APP_VERSION=1.0.0
+      - PROJECT_NAME=Lucid
+      - PROJECT_VERSION=0.1.0
       - ENVIRONMENT=production
+      - DEBUG=false
       - LOG_LEVEL=INFO
-      - METRICS_ENABLED=true
-      - HEALTH_CHECK_ENABLED=true
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - PI_USER=pickme
+      - PI_HOST=192.168.0.75
+      - LUCID_PI_NETWORK=lucid-pi-network
+      - LUCID_PI_SUBNET=172.20.0.0/16
+      - LUCID_PI_GATEWAY=172.20.0.1
+      - LUCID_TRON_ISOLATED=lucid-tron-isolated
+      - LUCID_TRON_SUBNET=172.21.0.0/16
+      - LUCID_TRON_GATEWAY=172.21.0.1
+      - LUCID_GUI_NETWORK=lucid-gui-network
+      - LUCID_GUI_SUBNET=172.22.0.0/16
+      - LUCID_GUI_GATEWAY=172.22.0.1
 
 secretGenerator:
   - name: lucid-secrets
-    literals:
-      - JWT_SECRET_KEY=change-me-in-production
-      - JWT_REFRESH_SECRET_KEY=change-me-in-production
-      - MONGODB_PASSWORD=change-me-in-production
-      - REDIS_PASSWORD=change-me-in-production
-      - ELASTICSEARCH_PASSWORD=change-me-in-production
-      - TRON_API_KEY=change-me-in-production
-      - TRON_PRIVATE_KEY=change-me-in-production
-      - USDT_PRIVATE_KEY=change-me-in-production
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=change-me-in-production
-      - ADMIN_EMAIL=admin@lucid.com
+    envs:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     type: Opaque
 
 patchesJson6902:
@@ -191,20 +264,58 @@ patchesJson6902:
 
 replicas:
   - name: api-gateway
-    count: 3
+    count: 1
   - name: blockchain-engine
-    count: 2
-  - name: session-management
-    count: 2
-  - name: rdp-services
-    count: 2
-  - name: node-management
-    count: 2
-  - name: admin-interface
-    count: 2
-  - name: tron-payment
-    count: 2
-  - name: auth-service
-    count: 2
+    count: 1
   - name: service-mesh-controller
-    count: 2
+    count: 1
+  - name: session-anchoring
+    count: 1
+  - name: block-manager
+    count: 1
+  - name: data-chain
+    count: 1
+  - name: session-pipeline
+    count: 1
+  - name: session-recorder
+    count: 1
+  - name: chunk-processor
+    count: 1
+  - name: session-storage
+    count: 1
+  - name: session-api
+    count: 1
+  - name: rdp-server-manager
+    count: 1
+  - name: rdp-xrdp
+    count: 1
+  - name: rdp-controller
+    count: 1
+  - name: rdp-monitor
+    count: 1
+  - name: node-management
+    count: 1
+  - name: admin-interface
+    count: 1
+  - name: tron-client
+    count: 1
+  - name: payout-router
+    count: 1
+  - name: wallet-manager
+    count: 1
+  - name: usdt-manager
+    count: 1
+  - name: trx-staking
+    count: 1
+  - name: payment-gateway
+    count: 1
+  - name: auth-service
+    count: 1
+  - name: gui-api-bridge
+    count: 1
+  - name: gui-tor-manager
+    count: 1
+  - name: gui-hardware-wallet
+    count: 1
+  - name: gui-docker-manager
+    count: 1

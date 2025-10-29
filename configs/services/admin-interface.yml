@@ -17,7 +17,7 @@ ports:
 containers:
   admin_ui:
     name: lucid-admin-interface
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: pickme/lucid-admin-interface:latest-arm64
     tag: "latest"
     multi_stage_build: true
 

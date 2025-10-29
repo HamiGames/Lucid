@@ -1,295 +1,521 @@
-# LUCID Payment Systems - TRON Payment Service - Phase 4
-# Step 33: Phase 4 Container Builds
-# Docker Compose configuration for TRON payment operations
-# Deploy to isolated network (lucid-network-isolated) as support service cluster
-# Distroless containers: 6 TRON payment services
-
-version: '3.8'
+# LUCID PAYMENT SYSTEMS - Distroless Deployment
+# Phase 4: Payment Systems (TRON Integration, Payment Governance, Distribution)
+# Aligned with essentials.md and service-ip-configuration.md
+# Project Root: /mnt/myssd/Lucid/Lucid/
 
 services:
-  # TRON Client Service - Phase 4
-  tron-client:
-    build:
-      context: .
-      dockerfile: Dockerfile.tron-client
+  # TRON Client - Main TRON integration service
+  lucid-tron-client:
     image: pickme/lucid-tron-client:latest-arm64
-    platform: linux/arm64
     container_name: lucid-tron-client
+    hostname: lucid-tron-client
+    platform: linux/arm64
+    pull_policy: always
+    restart: unless-stopped
     env_file:
       - ../../configs/environment/.env.foundation
       - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
+      - ../../configs/environment/.env.tron-client
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - TRON_CLIENT_PORT=8091
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - TRON_CLIENT_HOST=172.20.0.27
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - MIN_PAYOUT_AMOUNT=1.0
+      - MAX_PAYOUT_AMOUNT=10000.0
+      - PAYOUT_FEE=0.1
+      - TRANSACTION_TIMEOUT=300
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/tron:/data/tron:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:rw
+      - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.27
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
     ports:
       - "8091:8091"
-    environment:
-      - TRON_NETWORK=shasta
-      - TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
-      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/app
-      - SERVICE_NAME=tron-client
-      - SERVICE_PORT=8091
-    volumes:
-      - tron_data:/data
-      - tron_logs:/app/logs
-    networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
+      - "8101:8101"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8091/health')"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8091/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
     labels:
       - "lucid.service=tron-client"
-      - "lucid.cluster=tron-payment"
-      - "lucid.phase=phase4"
-      - "lucid.plane=wallet"
-      - "lucid.isolation=payment-only"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=payment"
 
-  # TRON Payout Router Service - Phase 4
-  payout-router:
-    build:
-      context: .
-      dockerfile: Dockerfile.payout-router
-    image: pickme/lucid-tron-payout-router:latest-arm64
-    platform: linux/arm64
+  # Payout Router - Handles payout processing and distribution
+  lucid-payout-router:
+    image: pickme/lucid-payout-router:latest-arm64
     container_name: lucid-payout-router
+    hostname: lucid-payout-router
+    platform: linux/arm64
+    pull_policy: always
+    restart: unless-stopped
     env_file:
       - ../../configs/environment/.env.foundation
       - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
+      - ../../configs/environment/.env.tron-payout-router
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - PAYOUT_ROUTER_PORT=8092
+      - PAYOUT_ROUTER_URL=http://lucid-payout-router:8092
+      - PAYOUT_ROUTER_HOST=172.20.0.28
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - MIN_PAYOUT_AMOUNT=1.0
+      - MAX_PAYOUT_AMOUNT=10000.0
+      - PAYOUT_FEE=0.1
+      - TRANSACTION_TIMEOUT=300
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/payments:/data/payouts:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/data/batches:/data/batches:rw
+      - /mnt/myssd/Lucid/Lucid/logs/payout-router:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.28
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-tron-client:
+        condition: service_healthy
     ports:
       - "8092:8092"
-    environment:
-      - TRON_NETWORK=shasta
-      - TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
-      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/app
-      - SERVICE_NAME=payout-router
-      - SERVICE_PORT=8092
-    volumes:
-      - tron_data:/data
-      - tron_logs:/app/logs
-    networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
+      - "8102:8102"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8092/health')"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8092/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
     labels:
       - "lucid.service=payout-router"
-      - "lucid.cluster=tron-payment"
-      - "lucid.phase=phase4"
-      - "lucid.plane=wallet"
-      - "lucid.isolation=payment-only"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=payment"
 
-  # TRON Wallet Manager Service - Phase 4
-  wallet-manager:
-    build:
-      context: .
-      dockerfile: Dockerfile.wallet-manager
-    image: pickme/lucid-tron-wallet-manager:latest-arm64
-    platform: linux/arm64
+  # Wallet Manager - Manages wallet operations
+  lucid-wallet-manager:
+    image: pickme/lucid-wallet-manager:latest-arm64
     container_name: lucid-wallet-manager
+    hostname: lucid-wallet-manager
+    platform: linux/arm64
+    pull_policy: always
+    restart: unless-stopped
     env_file:
       - ../../configs/environment/.env.foundation
       - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
+      - ../../configs/environment/.env.tron-wallet-manager
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - WALLET_MANAGER_PORT=8093
+      - WALLET_MANAGER_URL=http://lucid-wallet-manager:8093
+      - WALLET_MANAGER_HOST=172.20.0.29
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - WALLET_ENCRYPTION_ALGORITHM=AES-256-GCM
+      - WALLET_KEY_DERIVATION_ITERATIONS=100000
+      - WALLET_STORAGE_PATH=/app/wallets
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/wallets:/data/wallets:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/wallet-manager:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.29
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-tron-client:
+        condition: service_healthy
     ports:
       - "8093:8093"
-    environment:
-      - TRON_NETWORK=shasta
-      - TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
-      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/app
-      - SERVICE_NAME=wallet-manager
-      - SERVICE_PORT=8093
-    volumes:
-      - tron_data:/data
-      - tron_logs:/app/logs
-    networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
+      - "8103:8103"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8093/health')"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8093/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
     labels:
       - "lucid.service=wallet-manager"
-      - "lucid.cluster=tron-payment"
-      - "lucid.phase=phase4"
-      - "lucid.plane=wallet"
-      - "lucid.isolation=payment-only"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=payment"
 
-  # TRON USDT Manager Service - Phase 4
-  usdt-manager:
-    build:
-      context: .
-      dockerfile: Dockerfile.usdt-manager
-    image: pickme/lucid-tron-usdt-manager:latest-arm64
-    platform: linux/arm64
+  # USDT Manager - Direct USDT operations
+  lucid-usdt-manager:
+    image: pickme/lucid-usdt-manager:latest-arm64
     container_name: lucid-usdt-manager
+    hostname: lucid-usdt-manager
+    platform: linux/arm64
+    pull_policy: always
+    restart: unless-stopped
     env_file:
       - ../../configs/environment/.env.foundation
       - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
+      - ../../configs/environment/.env.tron-usdt-manager
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - USDT_MANAGER_PORT=8094
+      - USDT_MANAGER_URL=http://lucid-usdt-manager:8094
+      - USDT_MANAGER_HOST=172.20.0.30
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - MIN_PAYOUT_AMOUNT=1.0
+      - MAX_PAYOUT_AMOUNT=10000.0
+      - PAYOUT_FEE=0.1
+      - TRANSACTION_TIMEOUT=300
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/usdt:/data/usdt:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/usdt-manager:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-tron-client:
+        condition: service_healthy
     ports:
       - "8094:8094"
-    environment:
-      - TRON_NETWORK=shasta
-      - TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
-      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/app
-      - SERVICE_NAME=usdt-manager
-      - SERVICE_PORT=8094
-    volumes:
-      - tron_data:/data
-      - tron_logs:/app/logs
-    networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
+      - "8104:8104"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8094/health')"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8094/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
     labels:
       - "lucid.service=usdt-manager"
-      - "lucid.cluster=tron-payment"
-      - "lucid.phase=phase4"
-      - "lucid.plane=wallet"
-      - "lucid.isolation=payment-only"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=payment"
 
-  # TRON TRX Staking Service - Phase 4
-  trx-staking:
-    build:
-      context: .
-      dockerfile: Dockerfile.trx-staking
-    image: pickme/lucid-tron-staking:latest-arm64
-    platform: linux/arm64
+  # TRX Staking - TRX staking operations
+  lucid-trx-staking:
+    image: pickme/lucid-trx-staking:latest-arm64
     container_name: lucid-trx-staking
-    env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
-    ports:
-      - "8095:8095"
-    environment:
-      - TRON_NETWORK=shasta
-      - TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
-      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/app
-      - SERVICE_NAME=trx-staking
-      - SERVICE_PORT=8095
-    volumes:
-      - tron_data:/data
-      - tron_logs:/app/logs
-    networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8095/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    labels:
-      - "lucid.service=trx-staking"
-      - "lucid.cluster=tron-payment"
-      - "lucid.phase=phase4"
-      - "lucid.plane=wallet"
-      - "lucid.isolation=payment-only"
-
-  # TRON Payment Gateway Service - Phase 4
-  payment-gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile.payment-gateway
-    image: pickme/lucid-tron-payment-gateway:latest-arm64
+    hostname: lucid-trx-staking
     platform: linux/arm64
-    container_name: lucid-payment-gateway
+    pull_policy: always
+    restart: unless-stopped
     env_file:
       - ../../configs/environment/.env.foundation
       - ../../configs/environment/.env.support
       - ../../configs/environment/.env.tron-staking
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - TRX_STAKING_PORT=8096
+      - TRX_STAKING_URL=http://lucid-trx-staking:8096
+      - TRX_STAKING_HOST=172.20.0.31
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - STAKING_CONTRACT_ADDRESS=TLyqzVGLV1srkB7dToTAEqgDSfPtXRJZYH
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - MIN_STAKING_AMOUNT=1000.0
+      - STAKING_DURATION_DAYS=3
+      - STAKING_REWARD_RATE=0.1
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/staking:/data/staking:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/trx-staking:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.31
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-tron-client:
+        condition: service_healthy
     ports:
       - "8096:8096"
-    environment:
-      - TRON_NETWORK=shasta
-      - TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
-      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - LOG_LEVEL=INFO
-      - PYTHONPATH=/app
-      - SERVICE_NAME=payment-gateway
-      - SERVICE_PORT=8096
-    volumes:
-      - tron_data:/data
-      - tron_logs:/app/logs
-    networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
+      - "8105:8105"
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8096/health')"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8096/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
     labels:
-      - "lucid.service=payment-gateway"
-      - "lucid.cluster=tron-payment"
-      - "lucid.phase=phase4"
-      - "lucid.plane=wallet"
-      - "lucid.isolation=payment-only"
+      - "lucid.service=trx-staking"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=payment"
 
-  # Optional: TRON node for local development
-  tron-node:
-    image: tronprotocol/tron:latest
-    container_name: lucid-tron-node
+  # Payment Gateway - Main payment processing
+  lucid-payment-gateway:
+    image: pickme/lucid-payment-gateway:latest-arm64
+    container_name: lucid-payment-gateway
+    hostname: lucid-payment-gateway
+    platform: linux/arm64
+    pull_policy: always
+    restart: unless-stopped
     env_file:
       - ../../configs/environment/.env.foundation
       - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
-    ports:
-      - "8097:8090"
-      - "8098:8091"
+      - ../../configs/environment/.env.tron-payment-gateway
     environment:
-      - NET_TYPE=shasta
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - PAYMENT_GATEWAY_PORT=8097
+      - PAYMENT_GATEWAY_URL=http://lucid-payment-gateway:8097
+      - PAYMENT_GATEWAY_HOST=172.20.0.32
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+      - TRON_CLIENT_URL=http://lucid-tron-client:8091
+      - PAYOUT_ROUTER_URL=http://lucid-payout-router:8092
+      - WALLET_MANAGER_URL=http://lucid-wallet-manager:8093
+      - USDT_MANAGER_URL=http://lucid-usdt-manager:8094
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+      - MIN_PAYOUT_AMOUNT=1.0
+      - MAX_PAYOUT_AMOUNT=10000.0
+      - PAYOUT_FEE=0.1
+      - TRANSACTION_TIMEOUT=300
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
     volumes:
-      - tron_node_data:/tron
+      - /mnt/myssd/Lucid/Lucid/data/gateway:/data/gateway:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/payment-gateway:/app/logs:rw
     networks:
-      - lucid-tron-isolated
-    restart: unless-stopped
-    profiles:
-      - development
+      lucid-pi-network:
+        ipv4_address: 172.20.0.32
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-tron-client:
+        condition: service_healthy
+      lucid-payout-router:
+        condition: service_healthy
+      lucid-wallet-manager:
+        condition: service_healthy
+      lucid-usdt-manager:
+        condition: service_healthy
+    ports:
+      - "8097:8097"
+      - "8106:8106"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8097/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=payment-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=payment"
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
 
 volumes:
   tron_data:
     driver: local
-  tron_logs:
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/tron
+  payment_data:
     driver: local
-  tron_node_data:
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/payments
+  payment_keys:
     driver: local
-
-networks:
-  lucid-tron-isolated:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16
-    labels:
-      - "lucid.network=tron-payment-isolated"
-      - "lucid.phase=phase4"
-      - "lucid.cluster=tron-payment"
-      - "lucid.isolation=payment-only"
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/keys
+  payout_batches:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/batches
+  wallet_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/wallets
+  usdt_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/usdt
+  staking_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/staking
+  gateway_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/gateway

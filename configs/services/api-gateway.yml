@@ -19,7 +19,7 @@ ports:
 # Container Configuration
 container:
   name: lucid-api-gateway
-  base_image: "gcr.io/distroless/python3-debian12"
+  base_image: "pickme/lucid-api-gateway:latest-arm64"
   tag: "latest"
   multi_stage_build: true
   

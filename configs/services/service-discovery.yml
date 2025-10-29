@@ -61,7 +61,7 @@ service_registration:
     # Script health check
     script:
       enabled: false
-      script_path: "/usr/local/bin/health-check.sh"
+      script_path: "/mnt/myssd/Lucid/Lucid/scripts/health-check.sh"
 
 # Service Planes Configuration
 service_planes:
@@ -110,7 +110,7 @@ service_planes:
   wallet_plane:
     name: "wallet"
     description: "Payment operations (TRON only)"
-    network: "lucid-network-isolated"
+    network: "lucid-tron-isolated"
     subnet: "172.21.0.0/16"
     isolated: true
     
@@ -379,9 +379,10 @@ security:
   # mTLS configuration
   mtls:
     enabled: true
-    ca_cert: "/etc/consul/ca.crt"
-    cert_file: "/etc/consul/consul.crt"
-    key_file: "/etc/consul/consul.key"
+    cca_cert: "/mnt/myssd/Lucid/Lucid/certs/consul/ca.crt"
+    cert_file: "/mnt/myssd/Lucid/Lucid/certs/consul/consul.crt"
+    key_file: "/mnt/myssd/Lucid/Lucid/certs/consul/consul.key"
+
     
   # ACL configuration
   acl:
@@ -430,11 +431,11 @@ backup:
   # Backup targets
   targets:
     - name: "consul-data"
-      path: "/consul/data"
+      path: "/mnt/myssd/Lucid/Lucid/data/consul"
       compress: true
       
     - name: "service-configs"
-      path: "/etc/consul"
+      path: "/mnt/myssd/Lucid/Lucid/configs/consul"
       compress: true
       
   # Backup retention

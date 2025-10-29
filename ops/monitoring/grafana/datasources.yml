@@ -1,10 +1,7 @@
-# Grafana datasources configuration for Lucid RDP system - Step 48
-# Datasources configuration for all monitoring data sources
-
+# Grafana datasources configuration for Lucid RDP system
 apiVersion: 1
 
 datasources:
-  # Prometheus datasource for metrics
   - name: Prometheus
     type: prometheus
     access: proxy
@@ -21,11 +18,7 @@ datasources:
       incrementalQueryOverlapWindow: 10m
       queryTimeout: 60s
       timeInterval: 15s
-    secureJsonData:
-      httpHeaderValue1: ""
-    version: 1
 
-  # Loki datasource for logs (if available)
   - name: Loki
     type: loki
     access: proxy
@@ -33,18 +26,11 @@ datasources:
     editable: true
     jsonData:
       maxLines: 1000
-      derivedFields:
-        - datasourceUid: prometheus-uid
-          matcherRegex: "traceID=(\\w+)"
-          name: TraceID
-          url: "$${__value.raw}"
-    version: 1
 
-  # Elasticsearch datasource for log analysis (if available)
   - name: Elasticsearch
     type: elasticsearch
     access: proxy
-    url: http://elasticsearch:9200
+    url: http://lucid-elasticsearch:9200
     database: "lucid-logs-*"
     editable: true
     jsonData:
@@ -54,9 +40,7 @@ datasources:
       maxConcurrentShardRequests: 5
       timeField: "@timestamp"
       interval: Daily
-    version: 1
 
-  # Alertmanager datasource for alert management
   - name: Alertmanager
     type: alertmanager
     access: proxy
@@ -64,180 +48,11 @@ datasources:
     editable: true
     jsonData:
       implementation: prometheus
-    version: 1
 
-  # Jaeger datasource for distributed tracing (if available)
-  - name: Jaeger
-    type: jaeger
-    access: proxy
-    url: http://jaeger:16686
-    editable: true
-    jsonData:
-      tracesToLogs:
-        datasourceUid: loki-uid
-        tags: ['job', 'instance', 'pod', 'namespace']
-        mappedTags: [{ key: 'service.name', value: 'service' }]
-        mapTagNamesEnabled: false
-        spanStartTimeShift: '-1h'
-        spanEndTimeShift: '1h'
-        filterByTraceID: false
-        filterBySpanID: false
-      tracesToMetrics:
-        datasourceUid: prometheus-uid
-        tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
-        queries:
-          - name: 'Sample query'
-            query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
-      serviceMap:
-        datasourceUid: prometheus-uid
-      nodeGraph:
-        enabled: true
-      search:
-        hide: false
-    version: 1
-
-  # InfluxDB datasource for time series data (if available)
-  - name: InfluxDB
-    type: influxdb
-    access: proxy
-    url: http://influxdb:8086
-    database: lucid_metrics
-    editable: true
-    jsonData:
-      version: InfluxQL
-      httpMode: GET
-      organization: lucid-org
-    secureJsonData:
-      password: ""
-    version: 1
-
-  # MySQL datasource for relational data (if available)
-  - name: MySQL
-    type: mysql
-    access: proxy
-    url: mysql:3306
-    database: lucid_analytics
-    editable: true
-    jsonData:
-      maxOpenConns: 0
-      maxIdleConns: 2
-      connMaxLifetime: 14400
-      mysqlANSIQuotes: false
-    secureJsonData:
-      password: ""
-    version: 1
-
-  # PostgreSQL datasource for relational data (if available)
-  - name: PostgreSQL
-    type: postgres
-    access: proxy
-    url: postgres:5432
-    database: lucid_analytics
-    editable: true
-    jsonData:
-      sslmode: disable
-      maxOpenConns: 0
-      maxIdleConns: 2
-      connMaxLifetime: 14400
-      postgresVersion: 1300
-      timescaledb: false
-    secureJsonData:
-      password: ""
-    version: 1
-
-  # CloudWatch datasource for AWS metrics (if using AWS)
-  - name: CloudWatch
-    type: cloudwatch
-    access: proxy
-    url: https://monitoring.us-east-1.amazonaws.com
-    region: us-east-1
-    editable: true
-    jsonData:
-      authType: keys
-      defaultRegion: us-east-1
-      assumeRoleArn: ""
-    secureJsonData:
-      accessKey: ""
-      secretKey: ""
-    version: 1
-
-  # Azure Monitor datasource for Azure metrics (if using Azure)
-  - name: Azure Monitor
-    type: grafana-azure-monitor-datasource
-    access: proxy
-    url: https://management.azure.com/
-    editable: true
-    jsonData:
-      cloudName: azuremonitor
-      subscriptionId: ""
-      tenantId: ""
-      clientId: ""
-      logAnalyticsDefaultWorkspace: ""
-      azureLogAnalyticsSameAs: true
-      enableSecureSocksProxy: false
-    secureJsonData:
-      clientSecret: ""
-    version: 1
-
-  # Google Cloud Monitoring datasource for GCP metrics (if using GCP)
-  - name: Google Cloud Monitoring
-    type: stackdriver
-    access: proxy
-    url: https://monitoring.googleapis.com/
-    editable: true
-    jsonData:
-      authenticationType: jwt
-      clientEmail: ""
-      defaultProject: ""
-      tokenUri: https://oauth2.googleapis.com/token
-    secureJsonData:
-      privateKey: ""
-    version: 1
-
-  # TestData datasource for testing and development
   - name: TestData
     type: testdata
     access: direct
     editable: true
     jsonData:
       scenario: random_walk
-    version: 1
-
-  # MongoDB datasource for database metrics (if available)
-  - name: MongoDB
-    type: mongodb
-    access: proxy
-    url: mongodb://lucid:lucid@mongodb:27017/lucid
-    database: lucid
-    editable: true
-    jsonData:
-      authType: basic
-      sslMode: disable
-    secureJsonData:
-      password: lucid
-    version: 1
-
-  # Redis datasource for cache metrics (if available)
-  - name: Redis
-    type: redis-datasource
-    access: proxy
-    url: redis://redis:6379
-    editable: true
-    jsonData:
-      client: standalone
-      poolSize: 5
-      timeout: 10s
-    version: 1
-
-  # Tor metrics datasource for network monitoring
-  - name: Tor Metrics
-    type: prometheus
-    access: proxy
-    url: http://tor-metrics:9090
-    editable: true
-    jsonData:
-      httpMethod: POST
-      manageAlerts: true
-      prometheusType: Prometheus
-      prometheusVersion: 2.40.0
-    version: 1
+      

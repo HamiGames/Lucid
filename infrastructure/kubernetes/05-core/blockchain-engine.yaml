@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: blockchain-engine
+  name: lucid-blockchain-engine
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: blockchain-engine
     app.kubernetes.io/component: blockchain
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: blockchain-engine
+    lucid.type: core
+    lucid.platform: arm64
 spec:
   replicas: 2
   selector:
@@ -19,20 +22,40 @@ spec:
         app.kubernetes.io/name: blockchain-engine
         app.kubernetes.io/component: blockchain
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: blockchain-engine
+        lucid.type: core
+        lucid.platform: arm64
     spec:
+      hostname: lucid-blockchain-engine
       containers:
       - name: blockchain-engine
-        image: lucid-blockchain-engine:latest
+        image: pickme/lucid-blockchain-engine:latest-arm64
+        imagePullPolicy: Always
         ports:
         - containerPort: 8084
           name: http
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
         - name: SERVICE_NAME
-          value: "lucid-blocks"
+          value: "blockchain-engine"
         - name: BLOCKCHAIN_ENGINE_PORT
           value: "8084"
+        - name: BLOCKCHAIN_ENGINE_URL
+          value: "http://lucid-blockchain-engine:8084"
+        - name: BLOCKCHAIN_ENGINE_HOST
+          value: "172.20.0.15"
         - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017/lucid_blocks"
+          value: "mongodb://lucid:$(MONGODB_PASSWORD)@mongodb-service:27017/lucid?authSource=admin"
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: MONGODB_PASSWORD
         - name: CONSENSUS_ALGORITHM
           value: "PoOT"
         - name: BLOCK_TIME_SECONDS
@@ -41,6 +64,8 @@ spec:
           value: "30"
         - name: CONSENSUS_PARTICIPANTS_MIN
           value: "3"
+        - name: API_GATEWAY_URL
+          value: "http://lucid-api-gateway:8080"
         volumeMounts:
         - name: blockchain-config
           mountPath: /app/config
@@ -76,12 +101,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: blockchain-core-service
+  name: lucid-blockchain-engine
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: blockchain-engine
     app.kubernetes.io/component: blockchain
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: blockchain-engine
+    lucid.type: core
+    lucid.platform: arm64
 spec:
   selector:
     app.kubernetes.io/name: blockchain-engine
@@ -91,6 +119,7 @@ spec:
     targetPort: 8084
     name: http
   type: ClusterIP
+  clusterIP: 172.20.0.15
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

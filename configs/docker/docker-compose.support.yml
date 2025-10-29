@@ -11,7 +11,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "8120:8120"
+      - "8083:8083"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

@@ -1,6 +1,8 @@
 # Lucid Node Management Service - Docker Compose Configuration
-# Port: 8095
+# Port: 8095 (primary), 8099 (staging)
 # Features: Node pool management, PoOT calculation, payout threshold (10 USDT), max 100 nodes
+# Network: lucid-pi-network (172.20.0.0/16), lucid-gui-network (172.22.0.0/16)
+# IP: 172.20.0.25 (main), 172.22.0.25 (GUI)
 
 version: '3.8'
 
@@ -28,20 +30,36 @@ services:
     
     # Port mapping
     ports:
-      - "8095:8095"
+      - "8095:8095"  # Primary API port
+      - "8099:8099"  # Staging/monitoring port
     
     # Environment variables
     environment:
       # Service configuration
       - NODE_MANAGEMENT_PORT=8095
+      - NODE_MANAGEMENT_STAGING_PORT=8099
       - MAX_NODES_PER_POOL=100
       - PAYOUT_THRESHOLD_USDT=10.0
       - POOT_CALCULATION_INTERVAL=300
       - PAYOUT_PROCESSING_INTERVAL=3600
       
-      # Database configuration
-      - MONGODB_URI=mongodb://lucid-mongodb:27017/lucid_node_management
-      - REDIS_URI=redis://lucid-redis:6379
+      # Database configuration (with authentication)
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_HOST=lucid-mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_DATABASE=lucid_node_management
+      
+      # Redis configuration (with database number)
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_HOST=lucid-redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      
+      # Service URLs
+      - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
+      - NODE_MANAGEMENT_API_URL=http://172.20.0.25:8095/api/v1
+      - ELECTRON_GUI_ENDPOINT=http://172.20.0.25:8095/api/v1
       
       # Security configuration
       - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-here}
@@ -58,9 +76,12 @@ services:
       - node-data:/app/data
       - node-cache:/app/cache
     
-    # Networks
+    # Networks (dual network membership: main + GUI)
     networks:
-      - lucid-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.25
+      lucid-gui-network:
+        ipv4_address: 172.22.0.25
     
     # Health check
     healthcheck:
@@ -97,21 +118,26 @@ services:
       - "lucid.service=node-management"
       - "lucid.plane=management"
       - "lucid.port=8095"
+      - "lucid.port.staging=8099"
       - "lucid.features=poot-calculation,payout-processing,node-pool-management"
       - "lucid.security=distroless"
       - "lucid.isolation=management-only"
+      - "lucid.ip.main=172.20.0.25"
+      - "lucid.ip.gui=172.22.0.25"
     
     # Dependencies
     depends_on:
-      - lucid-mongodb
-      - lucid-redis
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
     
     # Restart policy
     restart: unless-stopped
 
   # MongoDB for persistent storage
   lucid-mongodb:
-    image: mongo:7.0
+    image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid-mongodb
     hostname: lucid-mongodb
     
@@ -122,13 +148,15 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=lucid
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-lucid-password}
       - MONGO_INITDB_DATABASE=lucid_node_management
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid-password}@lucid-mongodb:27017/lucid?authSource=admin
     
     volumes:
       - mongodb-data:/data/db
       - mongodb-config:/data/configdb
     
     networks:
-      - lucid-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.11
     
     ports:
       - "27017:27017"
@@ -140,16 +168,26 @@ services:
       retries: 3
       start_period: 40s
     
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
     labels:
       - "lucid.service=mongodb"
       - "lucid.plane=storage"
       - "lucid.port=27017"
+      - "lucid.ip=172.20.0.11"
     
     restart: unless-stopped
 
   # Redis for caching
   lucid-redis:
-    image: redis:7.2-alpine
+    image: pickme/lucid-redis:latest-arm64
     container_name: lucid-redis
     hostname: lucid-redis
     
@@ -158,38 +196,66 @@ services:
     
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-lucid-redis-password}
     
+    environment:
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_URI=redis://lucid-redis:6379/0
+      - REDIS_HOST=lucid-redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+    
     volumes:
       - redis-data:/data
     
     networks:
-      - lucid-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.12
     
     ports:
       - "6379:6379"
     
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-lucid-redis-password}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
     labels:
       - "lucid.service=redis"
       - "lucid.plane=cache"
       - "lucid.port=6379"
+      - "lucid.ip=172.20.0.12"
     
     restart: unless-stopped
 
 # Networks
 networks:
-  lucid-network:
-    name: lucid-network
+  lucid-pi-network:
+    name: lucid-pi-network
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/16
           gateway: 172.20.0.1
+    external: false
+  
+  lucid-gui-network:
+    name: lucid-gui-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+    external: false
 
 # Volumes
 volumes:

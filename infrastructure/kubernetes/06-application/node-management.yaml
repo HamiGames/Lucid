@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-management
+  name: lucid-node-management
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: node-management
     app.kubernetes.io/component: node
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: node-management
+    lucid.type: application
+    lucid.platform: arm64
 spec:
   replicas: 2
   selector:
@@ -19,24 +22,53 @@ spec:
         app.kubernetes.io/name: node-management
         app.kubernetes.io/component: node
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: node-management
+        lucid.type: application
+        lucid.platform: arm64
     spec:
+      hostname: lucid-node-management
       containers:
       - name: node-management
-        image: lucid-node-management:latest
+        image: pickme/lucid-node-management:latest-arm64
+        imagePullPolicy: Always
         ports:
         - containerPort: 8095
           name: http
+        - containerPort: 8099
+          name: staging
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
         - name: SERVICE_NAME
           value: "node-management"
-        - name: NODE_API_PORT
+        - name: NODE_MANAGEMENT_PORT
           value: "8095"
+        - name: NODE_MANAGEMENT_URL
+          value: "http://lucid-node-management:8095"
+        - name: NODE_MANAGEMENT_HOST
+          value: "172.20.0.25"
         - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017/lucid_nodes"
+          value: "mongodb://lucid:$(MONGODB_PASSWORD)@mongodb-service:27017/lucid?authSource=admin"
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: MONGODB_PASSWORD
         - name: REDIS_URL
-          value: "redis://redis-service:6379/3"
+          value: "redis://redis-service:6379/0"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: REDIS_PASSWORD
         - name: TRON_PAYMENT_URL
-          value: "http://tron-payment-service:8085"
+          value: "http://lucid-payment-gateway:8097"
+        - name: API_GATEWAY_URL
+          value: "http://lucid-api-gateway:8080"
         - name: NODE_REGISTRATION_ENABLED
           value: "true"
         - name: NODE_VERIFICATION_REQUIRED
@@ -106,12 +138,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: node-management-service
+  name: lucid-node-management
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: node-management
     app.kubernetes.io/component: node
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: node-management
+    lucid.type: application
+    lucid.platform: arm64
 spec:
   selector:
     app.kubernetes.io/name: node-management
@@ -120,7 +155,11 @@ spec:
   - port: 8095
     targetPort: 8095
     name: http
+  - port: 8099
+    targetPort: 8099
+    name: staging
   type: ClusterIP
+  clusterIP: 172.20.0.25
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

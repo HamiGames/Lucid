@@ -67,8 +67,8 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
-      - ./src:/app/src:rw
-      - ./logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
+      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
     cap_drop:
       - ALL
     user: "1000:1000"
@@ -105,8 +105,8 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - ./build-cache:/cache
-      - ./build-artifacts:/artifacts
+      - /mnt/myssd/Lucid/Lucid/build-cache:/cache
+      - /mnt/myssd/Lucid/Lucid/build-artifacts:/artifacts
     cap_drop:
       - ALL
     user: "1000:1000"

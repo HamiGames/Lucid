@@ -10,7 +10,7 @@ beta_sidecar:
 # Sidecar Configuration
 sidecar:
   name: "lucid-beta-sidecar"
-  image: "lucid/beta-sidecar:latest"
+  image: "pickme/lucid-beta-sidecar:latest-arm64"
   version: "1.0.0"
   
   # Sidecar deployment

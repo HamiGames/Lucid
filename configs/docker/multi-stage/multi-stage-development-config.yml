@@ -26,11 +26,11 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
-      - ./src:/app/src:rw
-      - ./logs:/app/logs:rw
-      - ./cache:/app/cache:rw
-      - ./temp:/app/temp:rw
-      - ./configs:/app/configs:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
+      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/cache:/app/cache:rw
+      - /mnt/myssd/Lucid/Lucid/temp:/app/temp:rw
+      - /mnt/myssd/Lucid/Lucid/configs:/app/configs:rw
     cap_drop:
       - ALL
     cap_add:
@@ -69,10 +69,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - ./src:/app/src:rw
-      - ./build-cache:/cache:rw
-      - ./build-artifacts:/artifacts:rw
-      - ./build-logs:/logs:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
+      - /mnt/myssd/Lucid/Lucid/build-cache:/cache:rw
+      - /mnt/myssd/Lucid/Lucid/build-artifacts:/artifacts:rw
+      - /mnt/myssd/Lucid/Lucid/build-logs:/logs:rw
       - /var/run/docker.sock:/var/run/docker.sock
     cap_drop:
       - ALL
@@ -101,9 +101,9 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - ./src:/app/src:ro
-      - ./logs:/app/logs:rw
-      - ./tools:/app/tools:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
+      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/tools:/app/tools:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
     cap_drop:
       - ALL
@@ -133,8 +133,8 @@ services:
       - lucid-distroless-dev
     restart: unless-stopped
     volumes:
-      - ./dev-data:/data/db:rw
-      - ./dev-scripts:/docker-entrypoint-initdb.d:ro
+      - /mnt/myssd/Lucid/Lucid/dev-data:/data/db:rw
+      - /mnt/myssd/Lucid/Lucid/dev-scripts:/docker-entrypoint-initdb.d:ro
     ports:
       - "27017:27017"
     healthcheck:

@@ -203,7 +203,7 @@ monitoring:
 logging:
   level: "${LOG_LEVEL:-INFO}"
   format: "json"
-  file: "/var/log/lucid/auth-service.log"
+  file: "/mnt/myssd/Lucid/Lucid/logs/auth-service.log"
   max_size: "100MB"
   max_files: 10
   compress: true

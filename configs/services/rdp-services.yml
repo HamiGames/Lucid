@@ -20,22 +20,22 @@ ports:
 containers:
   server_manager:
     name: lucid-rdp-server-manager
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image:  "pickme/lucid-rdp-server-manager:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   xrdp:
     name: lucid-xrdp
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-rdp-xrdp:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_controller:
     name: lucid-rdp-session-controller
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-rdp-controller:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   resource_monitor:
     name: lucid-rdp-resource-monitor
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-rdp-monitor:latest-arm64"
     tag: "latest"
     multi_stage_build: true
 

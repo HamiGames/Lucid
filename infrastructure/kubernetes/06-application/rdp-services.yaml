@@ -1,52 +1,72 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rdp-services
+  name: lucid-rdp-server-manager
   namespace: lucid-system
   labels:
-    app.kubernetes.io/name: rdp-services
+    app.kubernetes.io/name: rdp-server-manager
     app.kubernetes.io/component: rdp
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: rdp-server-manager
+    lucid.type: application
+    lucid.platform: arm64
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: rdp-services
+      app.kubernetes.io/name: rdp-server-manager
       app.kubernetes.io/component: rdp
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: rdp-services
+        app.kubernetes.io/name: rdp-server-manager
         app.kubernetes.io/component: rdp
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: rdp-server-manager
+        lucid.type: application
+        lucid.platform: arm64
     spec:
+      hostname: lucid-rdp-server-manager
       containers:
-      - name: rdp-services
-        image: lucid-rdp-services:latest
+      - name: rdp-server-manager
+        image: pickme/lucid-rdp-server-manager:latest-arm64
+        imagePullPolicy: Always
         ports:
+        - containerPort: 8081
+          name: manager
         - containerPort: 8090
-          name: server-manager
-        - containerPort: 8091
-          name: xrdp
-        - containerPort: 8092
-          name: session-controller
-        - containerPort: 8093
-          name: resource-monitor
+          name: api
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
         - name: SERVICE_NAME
-          value: "rdp-services"
-        - name: SERVER_MANAGER_PORT
-          value: "8090"
-        - name: XRDP_PORT
-          value: "8091"
-        - name: SESSION_CONTROLLER_PORT
-          value: "8092"
-        - name: RESOURCE_MONITOR_PORT
-          value: "8093"
+          value: "rdp-server-manager"
+        - name: RDP_SERVER_MANAGER_PORT
+          value: "8081"
+        - name: RDP_SERVER_MANAGER_URL
+          value: "http://lucid-rdp-server-manager:8081"
+        - name: RDP_SERVER_MANAGER_HOST
+          value: "172.20.0.21"
         - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017/lucid_rdp"
+          value: "mongodb://lucid:$(MONGODB_PASSWORD)@mongodb-service:27017/lucid?authSource=admin"
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: MONGODB_PASSWORD
         - name: REDIS_URL
-          value: "redis://redis-service:6379/2"
+          value: "redis://redis-service:6379/0"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: REDIS_PASSWORD
+        - name: API_GATEWAY_URL
+          value: "http://lucid-api-gateway:8080"
         - name: RDP_PORT_RANGE_START
           value: "13389"
         - name: RDP_PORT_RANGE_END
@@ -60,25 +80,23 @@ spec:
           mountPath: /app/config
         - name: rdp-data
           mountPath: /data/rdp
-        - name: xrdp-config
-          mountPath: /etc/xrdp
         resources:
           requests:
             cpu: "500m"
-            memory: "1Gi"
+            memory: "512Mi"
           limits:
-            cpu: "2"
-            memory: "4Gi"
+            cpu: "1"
+            memory: "1Gi"
         livenessProbe:
           httpGet:
             path: /health
-            port: 8090
+            port: 8081
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 8090
+            port: 8081
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
@@ -88,37 +106,32 @@ spec:
       - name: rdp-data
         persistentVolumeClaim:
           claimName: rdp-data-pvc
-      - name: xrdp-config
-        configMap:
-          name: xrdp-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: rdp-services-service
+  name: lucid-rdp-server-manager
   namespace: lucid-system
   labels:
-    app.kubernetes.io/name: rdp-services
+    app.kubernetes.io/name: rdp-server-manager
     app.kubernetes.io/component: rdp
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: rdp-server-manager
+    lucid.type: application
+    lucid.platform: arm64
 spec:
   selector:
-    app.kubernetes.io/name: rdp-services
+    app.kubernetes.io/name: rdp-server-manager
     app.kubernetes.io/component: rdp
   ports:
+  - port: 8081
+    targetPort: 8081
+    name: manager
   - port: 8090
     targetPort: 8090
-    name: server-manager
-  - port: 8091
-    targetPort: 8091
-    name: xrdp
-  - port: 8092
-    targetPort: 8092
-    name: session-controller
-  - port: 8093
-    targetPort: 8093
-    name: resource-monitor
+    name: api
   type: ClusterIP
+  clusterIP: 172.20.0.21
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -126,7 +139,7 @@ metadata:
   name: rdp-data-pvc
   namespace: lucid-system
   labels:
-    app.kubernetes.io/name: rdp-services
+    app.kubernetes.io/name: rdp-server-manager
     app.kubernetes.io/component: storage
     app.kubernetes.io/part-of: lucid-blockchain
 spec:
@@ -135,29 +148,4 @@ spec:
   resources:
     requests:
       storage: 50Gi
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: xrdp-config
-  namespace: lucid-system
-  labels:
-    app.kubernetes.io/name: rdp-services
-    app.kubernetes.io/component: config
-    app.kubernetes.io/part-of: lucid-blockchain
-data:
-  xrdp.ini: |
-    [globals]
-    bitmap_cache=true
-    bitmap_compression=true
-    port=3389
-    crypt_level=low
-    channel_code=1
-    max_bpp=24
-    [xrdp1]
-    name=sesman
-    lib=libxup.so
-    username=ask
-    password=ask
-    ip=127.0.0.1
-    port=-1
+      

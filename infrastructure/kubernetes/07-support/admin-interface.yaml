@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: admin-interface
+  name: lucid-admin-interface
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: admin-interface
     app.kubernetes.io/component: admin
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: admin-interface
+    lucid.type: support
+    lucid.platform: arm64
 spec:
   replicas: 2
   selector:
@@ -19,32 +22,61 @@ spec:
         app.kubernetes.io/name: admin-interface
         app.kubernetes.io/component: admin
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: admin-interface
+        lucid.type: support
+        lucid.platform: arm64
     spec:
+      hostname: lucid-admin-interface
       containers:
       - name: admin-interface
-        image: lucid-admin-interface:latest
+        image: pickme/lucid-admin-interface:latest-arm64
+        imagePullPolicy: Always
         ports:
         - containerPort: 8083
           name: http
+        - containerPort: 8088
+          name: staging
+        - containerPort: 8100
+          name: monitoring
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
         - name: SERVICE_NAME
           value: "admin-interface"
-        - name: ADMIN_PORT
+        - name: ADMIN_INTERFACE_PORT
           value: "8083"
+        - name: ADMIN_INTERFACE_URL
+          value: "http://lucid-admin-interface:8083"
+        - name: ADMIN_INTERFACE_HOST
+          value: "172.20.0.26"
         - name: MONGODB_URI
-          value: "mongodb://mongodb-service:27017/lucid_admin"
+          value: "mongodb://lucid:$(MONGODB_PASSWORD)@mongodb-service:27017/lucid?authSource=admin"
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: MONGODB_PASSWORD
         - name: REDIS_URL
-          value: "redis://redis-service:6379/4"
+          value: "redis://redis-service:6379/0"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-secrets
+              key: REDIS_PASSWORD
         - name: API_GATEWAY_URL
-          value: "http://api-gateway-service:8080"
+          value: "http://lucid-api-gateway:8080"
         - name: BLOCKCHAIN_CORE_URL
-          value: "http://blockchain-core-service:8084"
+          value: "http://lucid-blockchain-engine:8084"
         - name: SESSION_MANAGEMENT_URL
-          value: "http://session-management-service:8087"
+          value: "http://lucid-session-api:8087"
         - name: NODE_MANAGEMENT_URL
-          value: "http://node-management-service:8095"
+          value: "http://lucid-node-management:8095"
         - name: TRON_PAYMENT_URL
-          value: "http://tron-payment-service:8085"
+          value: "http://lucid-payment-gateway:8097"
         - name: ADMIN_UI_ENABLED
           value: "true"
         - name: DASHBOARD_REFRESH_INTERVAL
@@ -119,12 +151,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: admin-interface-service
+  name: lucid-admin-interface
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: admin-interface
     app.kubernetes.io/component: admin
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: admin-interface
+    lucid.type: support
+    lucid.platform: arm64
 spec:
   selector:
     app.kubernetes.io/name: admin-interface
@@ -133,7 +168,14 @@ spec:
   - port: 8083
     targetPort: 8083
     name: http
+  - port: 8088
+    targetPort: 8088
+    name: staging
+  - port: 8100
+    targetPort: 8100
+    name: monitoring
   type: ClusterIP
+  clusterIP: 172.20.0.26
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -150,3 +192,4 @@ spec:
   resources:
     requests:
       storage: 20Gi
+      

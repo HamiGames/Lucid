@@ -1,14 +1,17 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redis
+  name: lucid-redis
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: redis
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: redis
+    lucid.type: foundation
+    lucid.platform: arm64
 spec:
-  serviceName: redis-service
+  serviceName: lucid-redis
   replicas: 1
   selector:
     matchLabels:
@@ -20,14 +23,25 @@ spec:
         app.kubernetes.io/name: redis
         app.kubernetes.io/component: database
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: redis
+        lucid.type: foundation
+        lucid.platform: arm64
     spec:
+      hostname: lucid-redis
       containers:
       - name: redis
-        image: redis:7.0-alpine
+        image: pickme/lucid-redis:latest-arm64
+        imagePullPolicy: Always
         ports:
         - containerPort: 6379
           name: redis
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -56,6 +70,8 @@ spec:
           exec:
             command:
             - redis-cli
+            - -a
+            - $(REDIS_PASSWORD)
             - ping
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -63,6 +79,8 @@ spec:
           exec:
             command:
             - redis-cli
+            - -a
+            - $(REDIS_PASSWORD)
             - ping
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -82,12 +100,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-service
+  name: lucid-redis
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: redis
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: redis
+    lucid.type: foundation
+    lucid.platform: arm64
 spec:
   selector:
     app.kubernetes.io/name: redis
@@ -97,6 +118,7 @@ spec:
     targetPort: 6379
     name: redis
   type: ClusterIP
+  clusterIP: 172.20.0.12
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -111,63 +133,8 @@ data:
   redis.conf: |
     bind 0.0.0.0
     port 6379
-    tcp-backlog 511
-    timeout 0
-    tcp-keepalive 300
-    daemonize no
-    supervised no
-    pidfile /var/run/redis_6379.pid
-    loglevel notice
-    logfile ""
-    databases 16
-    always-show-logo yes
-    save 900 1
-    save 300 10
-    save 60 10000
-    stop-writes-on-bgsave-error yes
-    rdbcompression yes
-    rdbchecksum yes
-    dbfilename dump.rdb
-    dir /data
-    replica-serve-stale-data yes
-    replica-read-only yes
-    repl-diskless-sync no
-    repl-diskless-sync-delay 5
-    repl-ping-replica-period 10
-    repl-timeout 60
-    repl-disable-tcp-nodelay no
-    repl-backlog-size 1mb
-    repl-backlog-ttl 3600
-    replica-priority 100
-    maxmemory-policy allkeys-lru
+    requirepass ${REDIS_PASSWORD}
     appendonly yes
-    appendfilename "appendonly.aof"
     appendfsync everysec
-    no-appendfsync-on-rewrite no
-    auto-aof-rewrite-percentage 100
-    auto-aof-rewrite-min-size 64mb
-    aof-load-truncated yes
-    aof-use-rdb-preamble yes
-    lua-time-limit 5000
-    slowlog-log-slower-than 10000
-    slowlog-max-len 128
-    latency-monitor-threshold 0
-    notify-keyspace-events ""
-    hash-max-ziplist-entries 512
-    hash-max-ziplist-value 64
-    list-max-ziplist-size -2
-    list-compress-depth 0
-    set-max-intset-entries 512
-    zset-max-ziplist-entries 128
-    zset-max-ziplist-value 64
-    hll-sparse-max-bytes 3000
-    stream-node-max-bytes 4096
-    stream-node-max-entries 100
-    activerehashing yes
-    client-output-buffer-limit normal 0 0 0
-    client-output-buffer-limit replica 256mb 64mb 60
-    client-output-buffer-limit pubsub 32mb 8mb 60
-    hz 10
-    dynamic-hz yes
-    aof-rewrite-incremental-fsync yes
-    rdb-save-incremental-fsync yes
+    maxmemory-policy allkeys-lru
+    

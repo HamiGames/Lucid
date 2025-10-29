@@ -21,23 +21,23 @@ ports:
 # Container Configuration
 containers:
   blockchain_engine:
-    name: lucid-lucid-blocks-engine
-    base_image: "gcr.io/distroless/python3-debian12"
+    name: lucid-blockchain-engine
+    base_image: "pickme/lucid-blockchain-engine:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
   session_anchoring:
     name: lucid-session-anchoring
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-session-anchoring:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
   block_manager:
     name: lucid-block-manager
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-block-manager:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
   data_chain:
     name: lucid-data-chain
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-data-chain:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
 

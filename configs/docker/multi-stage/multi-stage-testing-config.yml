@@ -22,10 +22,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
-      - ./test-logs:/app/logs:rw
-      - ./coverage:/app/coverage:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
+      - /mnt/myssd/Lucid/Lucid/tests:/app/tests:ro
+      - /mnt/myssd/Lucid/Lucid/test-logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/coverage:/app/coverage:rw
     cap_drop:
       - ALL
     user: "1000:1000"
@@ -51,9 +51,9 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - ./src:/app/src:ro
-      - ./build-tests:/app/build-tests:ro
-      - ./test-artifacts:/artifacts:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
+      - /mnt/myssd/Lucid/Lucid/build-tests:/app/build-tests:ro
+      - /mnt/myssd/Lucid/Lucid/test-artifacts:/artifacts:rw
       - /var/run/docker.sock:/var/run/docker.sock
     cap_drop:
       - ALL
@@ -76,8 +76,8 @@ services:
       - lucid-test
     restart: "no"
     volumes:
-      - ./test-data:/data/db:rw
-      - ./test-scripts:/docker-entrypoint-initdb.d:ro
+      - /mnt/myssd/Lucid/Lucid/test-data:/data/db:rw
+      - /mnt/myssd/Lucid/Lucid/test-scripts:/docker-entrypoint-initdb.d:ro
     ports:
       - "27018:27017"
     healthcheck:
@@ -101,9 +101,9 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - ./test-logs:/logs:ro
-      - ./coverage:/coverage:ro
-      - ./test-reports:/reports:rw
+      - /mnt/myssd/Lucid/Lucid/test-logs:/logs:ro
+      - /mnt/myssd/Lucid/Lucid/coverage:/coverage:ro
+      - /mnt/myssd/Lucid/Lucid/test-reports:/reports:rw
     cap_drop:
       - ALL
     user: "1000:1000"

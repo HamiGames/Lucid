@@ -17,7 +17,7 @@ ports:
 containers:
   node_service:
     name: lucid-node-management
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-node-management:latest-arm64"
     tag: "latest"
     multi_stage_build: true
 

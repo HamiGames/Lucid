@@ -1,218 +1,269 @@
-# Phase 3 Container Builds - Session Management Services
-# Step 32: Phase 3 Container Builds
+# LUCID SESSION SERVICES - Distroless Deployment
+# Phase 3: Application Services
+# Aligned with essentials.md Phase 3
+# Project Root: /mnt/myssd/Lucid/Lucid/
 
 version: '3.8'
 
 services:
-  # Session Pipeline Manager
-  session-pipeline:
-    build:
-      context: .
-      dockerfile: Dockerfile.pipeline
-    image: pickme/lucid-session-pipeline:latest-arm64
-    platform: linux/arm64
-    container_name: lucid-session-pipeline
-    env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-    ports:
-      - "8083:8083"
-    environment:
-      - SERVICE_NAME=lucid-session-pipeline
-      - PORT=8083
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   # Session Recorder
-  session-recorder:
-    build:
-      context: .
-      dockerfile: Dockerfile.recorder
+  lucid-session-recorder:
     image: pickme/lucid-session-recorder:latest-arm64
-    platform: linux/arm64
     container_name: lucid-session-recorder
-    env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-    ports:
-      - "8084:8084"
-    environment:
-      - SERVICE_NAME=lucid-session-recorder
-      - PORT=8084
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Session Processor
-  session-processor:
-    build:
-      context: .
-      dockerfile: Dockerfile.processor
-    image: pickme/lucid-session-processor:latest-arm64
+    hostname: lucid-session-recorder
     platform: linux/arm64
-    container_name: lucid-session-processor
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
       - ../configs/environment/.env.application
-    ports:
-      - "8085:8085"
     environment:
-      - SERVICE_NAME=lucid-session-processor
-      - PORT=8085
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - SESSION_RECORDER_PORT=8090
+      - SESSION_RECORDER_URL=http://lucid-session-recorder:8090
+      - SESSION_RECORDER_HOST=172.20.0.20
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-recorder:/app/logs:rw
     networks:
-      - lucid-dev
-    restart: unless-stopped
+      lucid-pi-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=session-recorder"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=sessions"
+
+  # Chunk Processor
+  lucid-chunk-processor:
+    image: pickme/lucid-chunk-processor:latest-arm64
+    container_name: lucid-chunk-processor
+    hostname: lucid-chunk-processor
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.application
+      - ../sessions/core/.env.chunker
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - CHUNK_PROCESSOR_PORT=8091
+      - CHUNK_PROCESSOR_URL=http://lucid-chunk-processor:8091
+      - CHUNK_PROCESSOR_HOST=172.20.0.20
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SESSION_RECORDER_URL=http://lucid-session-recorder:8090
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/Lucid/logs/chunk-processor:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      lucid-session-recorder:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8091/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=chunk-processor"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=sessions"
 
   # Session Storage
-  session-storage:
-    build:
-      context: .
-      dockerfile: Dockerfile.storage
+  lucid-session-storage:
     image: pickme/lucid-session-storage:latest-arm64
-    platform: linux/arm64
     container_name: lucid-session-storage
+    hostname: lucid-session-storage
+    platform: linux/arm64
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
       - ../configs/environment/.env.application
-    ports:
-      - "8086:8086"
     environment:
-      - SERVICE_NAME=lucid-session-storage
-      - PORT=8086
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - lucid-dev
-    restart: unless-stopped
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - SESSION_STORAGE_PORT=8082
+      - SESSION_STORAGE_URL=http://lucid-session-storage:8082
+      - SESSION_STORAGE_HOST=172.20.0.20
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
     volumes:
-      - session_data:/data/sessions
+      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/Lucid/data/encrypted:/data/encrypted:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-elasticsearch:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=session-storage"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=sessions"
 
-  # Session API Gateway
-  session-api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+  # Session API - Main session management API
+  lucid-session-api:
     image: pickme/lucid-session-api:latest-arm64
-    platform: linux/arm64
     container_name: lucid-session-api
+    hostname: lucid-session-api
+    platform: linux/arm64
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
       - ../configs/environment/.env.application
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - SESSION_API_PORT=8087
+      - SESSION_API_URL=http://lucid-session-api:8087
+      - SESSION_API_HOST=172.20.0.20
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SESSION_RECORDER_URL=http://lucid-session-recorder:8090
+      - SESSION_STORAGE_URL=http://lucid-session-storage:8082
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/sessions:/data/sessions:ro
+      - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.20
+      lucid-gui-network:
+        ipv4_address: 172.22.0.20
+    depends_on:
+      lucid-session-recorder:
+        condition: service_healthy
+      lucid-session-storage:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
     ports:
       - "8087:8087"
-    environment:
-      - SERVICE_NAME=lucid-session-api
-      - PORT=8087
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-      - session-pipeline
-      - session-recorder
-      - session-processor
-      - session-storage
-    networks:
-      - lucid-dev
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8087/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # External Dependencies
-  mongodb:
-    image: mongo:7.0
-    container_name: lucid-mongodb
-    env_file:
-      - ../configs/environment/.env.foundation
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=lucid
-      - MONGO_INITDB_ROOT_PASSWORD=lucid_password
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-
-  redis:
-    image: redis:7.0-alpine
-    container_name: lucid-redis
-    env_file:
-      - ../configs/environment/.env.foundation
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-
-volumes:
-  session_data:
-  mongodb_data:
-  redis_data:
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=session-api"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=sessions"
 
 networks:
-  lucid-dev:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+  lucid-gui-network:
+    external: true
+    name: lucid-gui-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+
+volumes:
+  session_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/sessions
+  encrypted_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/encrypted

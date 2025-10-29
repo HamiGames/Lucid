@@ -63,9 +63,9 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
-      - ./src:/app/src:rw
-      - ./logs:/app/logs:rw
-      - ./cache:/app/cache:rw
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
+      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/cache:/app/cache:rw
     cap_drop:
       - ALL
     cap_add:
@@ -113,7 +113,7 @@ services:
     working_dir: /app
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./monitoring-logs:/logs:ro
+      - /mnt/myssd/Lucid/Lucid/monitoring-logs:/logs:ro
     healthcheck:
       test: ["python", "-c", "import sys; print('monitoring runtime healthy'); sys.exit(0)"]
       interval: 30s
@@ -149,6 +149,6 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /opt/lucid/data
+      device: /mnt/myssd/Lucid/Lucid/data
   monitoring-logs:
     name: lucid-multi-stage-monitoring-logs

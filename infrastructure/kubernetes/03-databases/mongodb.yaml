@@ -1,14 +1,17 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mongodb
+  name: lucid-mongodb
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: mongodb
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: mongodb
+    lucid.type: foundation
+    lucid.platform: arm64
 spec:
-  serviceName: mongodb-service
+  serviceName: lucid-mongodb
   replicas: 1
   selector:
     matchLabels:
@@ -20,14 +23,25 @@ spec:
         app.kubernetes.io/name: mongodb
         app.kubernetes.io/component: database
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: mongodb
+        lucid.type: foundation
+        lucid.platform: arm64
     spec:
+      hostname: lucid-mongodb
       containers:
       - name: mongodb
-        image: mongo:7.0
+        image: pickme/lucid-mongodb:latest-arm64
+        imagePullPolicy: Always
         ports:
         - containerPort: 27017
           name: mongodb
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
         - name: MONGO_INITDB_ROOT_USERNAME
           valueFrom:
             secretKeyRef:
@@ -57,16 +71,30 @@ spec:
           exec:
             command:
             - mongosh
+            - --quiet
+            - -u
+            - $(MONGO_INITDB_ROOT_USERNAME)
+            - -p
+            - $(MONGO_INITDB_ROOT_PASSWORD)
+            - --authenticationDatabase
+            - admin
             - --eval
-            - "db.adminCommand('ping')"
+            - "db.runCommand({ ping: 1 }).ok"
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           exec:
             command:
             - mongosh
+            - --quiet
+            - -u
+            - $(MONGO_INITDB_ROOT_USERNAME)
+            - -p
+            - $(MONGO_INITDB_ROOT_PASSWORD)
+            - --authenticationDatabase
+            - admin
             - --eval
-            - "db.adminCommand('ping')"
+            - "db.runCommand({ ping: 1 }).ok"
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
@@ -85,12 +113,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-service
+  name: lucid-mongodb
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: mongodb
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: mongodb
+    lucid.type: foundation
+    lucid.platform: arm64
 spec:
   selector:
     app.kubernetes.io/name: mongodb
@@ -100,6 +131,7 @@ spec:
     targetPort: 27017
     name: mongodb
   type: ClusterIP
+  clusterIP: 172.20.0.11
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -127,3 +159,4 @@ data:
       authorization: enabled
     replication:
       replSetName: lucid-rs
+      

@@ -268,7 +268,7 @@ monitoring:
 logging:
   level: "${LOG_LEVEL:-INFO}"
   format: "json"
-  file: "/var/log/lucid/database.log"
+  file: "/mnt/myssd/Lucid/Lucid/logs/database.log"
   max_size: "100MB"
   max_files: 10
   compress: true

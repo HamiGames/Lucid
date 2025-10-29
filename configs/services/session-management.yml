@@ -21,27 +21,27 @@ ports:
 containers:
   pipeline_manager:
     name: lucid-session-pipeline
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-session-pipeline:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_recorder:
     name: lucid-session-recorder
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-session-recorder:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   chunk_processor:
     name: lucid-chunk-processor
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-chunk-processor:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_storage:
     name: lucid-session-storage
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-session-storage:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_api:
     name: lucid-session-api
-    base_image: "gcr.io/distroless/python3-debian12"
+    base_image: "pickme/lucid-session-api:latest-arm64"
     tag: "latest"
     multi_stage_build: true
 
@@ -69,9 +69,10 @@ dependencies:
       path: "/data/sessions"
       required: true
       volumes:
-        - "session_data:/data/sessions"
-        - "chunk_data:/data/chunks"
-        - "processed_data:/data/processed"
+        - "lucid-session-data:/data/sessions"
+        - "lucid-recording-data:/data/recordings"
+        - "lucid-chunk-data:/data/chunks"
+       
 
 # Pipeline Configuration
 pipeline:

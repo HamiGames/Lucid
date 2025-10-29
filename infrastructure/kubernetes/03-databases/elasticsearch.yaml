@@ -1,14 +1,26 @@
+# LUCID ELASTICSEARCH - Kubernetes Deployment
+# Phase 1: Foundation Services
+# Aligned with essentials.md - Elasticsearch Service
+# Container: lucid-elasticsearch
+# Image: pickme/lucid-elasticsearch:latest-arm64
+# Network: lucid-pi-network (172.20.0.13)
+# Ports: 9200 (HTTP), 9300 (Transport)
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: elasticsearch
+  name: lucid-elasticsearch
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: elasticsearch
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: elasticsearch
+    lucid.type: foundation
+    lucid.platform: arm64
+    lucid.cluster: core
 spec:
-  serviceName: elasticsearch-service
+  serviceName: lucid-elasticsearch-service
   replicas: 1
   selector:
     matchLabels:
@@ -20,52 +32,72 @@ spec:
         app.kubernetes.io/name: elasticsearch
         app.kubernetes.io/component: database
         app.kubernetes.io/part-of: lucid-blockchain
+        lucid.service: elasticsearch
+        lucid.type: foundation
+        lucid.platform: arm64
     spec:
+      hostname: lucid-elasticsearch
       containers:
-      - name: elasticsearch
-        image: elasticsearch:8.11.0
+      - name: lucid-elasticsearch
+        image: pickme/lucid-elasticsearch:latest-arm64
+        imagePullPolicy: Always
         ports:
         - containerPort: 9200
           name: http
+          protocol: TCP
         - containerPort: 9300
           name: transport
+          protocol: TCP
         env:
+        - name: LUCID_ENV
+          value: "production"
+        - name: LUCID_PLATFORM
+          value: "arm64"
+        - name: PROJECT_ROOT
+          value: "/mnt/myssd/Lucid/Lucid"
+        - name: ELASTICSEARCH_URI
+          value: "http://lucid-elasticsearch:9200"
+        - name: ELASTICSEARCH_HOST
+          value: "172.20.0.13"
+        - name: ELASTICSEARCH_HTTP_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_TRANSPORT_PORT
+          value: "9300"
         - name: discovery.type
           value: "single-node"
-        - name: ES_JAVA_OPTS
-          value: "-Xms1g -Xmx1g"
         - name: xpack.security.enabled
-          value: "true"
-        - name: ELASTIC_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: database-secrets
-              key: ELASTICSEARCH_PASSWORD
+          value: "false"
+        - name: ES_JAVA_OPTS
+          value: "-Xms256m -Xmx256m"
         volumeMounts:
         - name: elasticsearch-data
           mountPath: /usr/share/elasticsearch/data
+        - name: elasticsearch-logs
+          mountPath: /usr/share/elasticsearch/logs
         - name: elasticsearch-config
           mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           subPath: elasticsearch.yml
         resources:
           requests:
-            cpu: "500m"
-            memory: "2Gi"
+            cpu: "250m"
+            memory: "256Mi"
           limits:
-            cpu: "2"
-            memory: "4Gi"
+            cpu: "1"
+            memory: "512Mi"
         livenessProbe:
           httpGet:
             path: /_cluster/health
             port: 9200
           initialDelaySeconds: 60
           periodSeconds: 30
+          timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /_cluster/health
             port: 9200
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
           periodSeconds: 10
+          timeoutSeconds: 5
       volumes:
       - name: elasticsearch-config
         configMap:
@@ -77,29 +109,42 @@ spec:
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
-          storage: 20Gi
+          storage: 10Gi
+  - metadata:
+      name: elasticsearch-logs
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch-service
+  name: lucid-elasticsearch-service
   namespace: lucid-system
   labels:
     app.kubernetes.io/name: elasticsearch
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: lucid-blockchain
+    lucid.service: elasticsearch
+    lucid.type: foundation
+    lucid.platform: arm64
 spec:
+  type: ClusterIP
+  clusterIP: 172.20.0.13
   selector:
     app.kubernetes.io/name: elasticsearch
     app.kubernetes.io/component: database
   ports:
   - port: 9200
     targetPort: 9200
+    protocol: TCP
     name: http
   - port: 9300
     targetPort: 9300
+    protocol: TCP
     name: transport
-  type: ClusterIP
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -120,7 +165,29 @@ data:
     http.port: 9200
     transport.port: 9300
     discovery.type: single-node
-    xpack.security.enabled: true
-    xpack.security.transport.ssl.enabled: true
-    xpack.security.http.ssl.enabled: true
-    xpack.security.authc.api_key.enabled: true
+    bootstrap.memory_lock: false
+    xpack.security.enabled: false
+    xpack.monitoring.collection.enabled: true
+    xpack.ml.enabled: false
+    xpack.watcher.enabled: false
+    indices.memory.index_buffer_size: 10%
+    index.number_of_shards: 1
+    index.number_of_replicas: 0
+    http.cors.enabled: true
+    http.cors.allow-origin: "*"
+    http.cors.allow-headers: "X-Requested-With,Content-Type,Content-Length,Authorization"
+    http.max_content_length: 100mb
+    http.compression: true
+    index.max_result_window: 10000
+    thread_pool.search.size: 4
+    thread_pool.search.queue_size: 1000
+    thread_pool.write.size: 4
+    thread_pool.write.queue_size: 1000
+    thread_pool.bulk.size: 4
+    thread_pool.bulk.queue_size: 1000
+    indices.breaker.total.limit: 70%
+    indices.breaker.request.limit: 40%
+    indices.breaker.fielddata.limit: 40%
+    indices.queries.cache.size: 10%
+    indices.fielddata.cache.size: 20%
+    logger.level: info

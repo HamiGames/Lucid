@@ -9,14 +9,19 @@ metadata:
     app.kubernetes.io/part-of: lucid-blockchain
 data:
   SERVICE_NAME: "auth-service"
+  CONTAINER_NAME: "lucid-auth-service"
   DEBUG: "false"
   
-  # Port Configuration
+  # Port Configuration (per essentials.md)
   AUTH_PORT: "8089"
   
-  # Database Configuration
-  MONGODB_URI: "mongodb://mongodb-service:27017/lucid_auth"
-  REDIS_URL: "redis://redis-service:6379/6"
+  # IP Address Configuration (per essentials.md)
+  AUTH_SERVICE_HOST: "172.20.0.14"
+  AUTH_SERVICE_URL: "http://lucid-auth-service:8089"
+  
+  # Database Configuration (with password placeholder)
+  MONGODB_URI: "mongodb://lucid:{MONGODB_PASSWORD}@mongodb-service:27017/lucid_auth?authSource=admin"
+  REDIS_URL: "redis://:${REDIS_PASSWORD}@redis-service:6379/6"
   
   # JWT Configuration
   JWT_ALGORITHM: "HS256"
@@ -52,3 +57,15 @@ data:
   PASSWORD_MIN_LENGTH: "8"
   ACCOUNT_LOCKOUT_ENABLED: "true"
   MAX_LOGIN_ATTEMPTS: "5"
+  
+  # Health Check Configuration (per essentials.md)
+  HEALTHCHECK_PORT: "8089"
+  HEALTHCHECK_PATH: "/health"
+  
+  # Network Configuration (per essentials.md)
+  LUCID_PI_NETWORK: "lucid-pi-network"
+  LUCID_PI_SUBNET: "172.20.0.0/16"
+  LUCID_PI_GATEWAY: "172.20.0.1"
+  PROJECT_ROOT: "/mnt/myssd/Lucid/Lucid"
+  LUCID_PLATFORM: "arm64"
+  LUCID_ENV: "production"

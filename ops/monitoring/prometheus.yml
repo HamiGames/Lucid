@@ -1,144 +1,262 @@
-# Prometheus configuration for Lucid RDP monitoring
+# Prometheus configuration for Lucid RDP system
+# Aligned with essentials.md service names, ports, and IPs
+
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
     cluster: 'lucid-rdp'
     environment: 'production'
+    region: 'pi-deployment'
 
-# Rule files
 rule_files:
-  - "lucid_rules.yml"
+  - "../alerts.yml"
 
-# Alerting configuration
 alerting:
   alertmanagers:
     - static_configs:
-        - targets:
-          - alertmanager:9093
+        - targets: ['alertmanager:9093']
 
-# Scrape configurations
 scrape_configs:
-  # Prometheus itself
   - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
+    static_configs: [{ targets: ['localhost:9090'] }]
 
-  # Node exporter for system metrics
   - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
+    static_configs: [{ targets: ['node-exporter:9100'] }]
+    metrics_path: /metrics
     scrape_interval: 10s
-    metrics_path: /metrics
 
-  # Docker daemon metrics
   - job_name: 'docker-daemon'
-    static_configs:
-      - targets: ['docker-daemon:9323']
-    scrape_interval: 15s
+    static_configs: [{ targets: ['docker-daemon:9323'] }]
     metrics_path: /metrics
 
-  # Lucid RDP services (distroless-compatible)
-  - job_name: 'lucid-admin-ui'
-    static_configs:
-      - targets: ['admin-ui:3000']
-    metrics_path: /api/metrics
-    scrape_interval: 30s
-    metric_relabel_configs:
-      # Ensure distroless-compatible metrics only
-      - source_labels: [__name__]
-        regex: 'http_requests_total|http_request_duration_seconds|process_cpu_seconds_total|process_resident_memory_bytes'
-        action: keep
-
-  - job_name: 'lucid-blockchain'
-    static_configs:
-      - targets: ['blockchain-core:8545']
-    metrics_path: /metrics
-    scrape_interval: 30s
-    metric_relabel_configs:
-      # Ensure distroless-compatible metrics only
-      - source_labels: [__name__]
-        regex: 'blockchain_.*|http_requests_total|process_cpu_seconds_total|process_resident_memory_bytes'
-        action: keep
-
-  - job_name: 'lucid-payment-service'
-    static_configs:
-      - targets: ['payment-service:8080']
-    metrics_path: /metrics
-    scrape_interval: 30s
-    metric_relabel_configs:
-      # Ensure payment-only metrics (TRON isolation)
-      - source_labels: [__name__]
-        regex: 'payment_.*|tron_.*|http_requests_total|process_cpu_seconds_total|process_resident_memory_bytes'
-        action: keep
-
-  - job_name: 'lucid-sessions'
-    static_configs:
-      - targets: ['sessions:8080']
-    metrics_path: /metrics
-    scrape_interval: 30s
-
-  - job_name: 'lucid-storage'
-    static_configs:
-      - targets: ['storage:8081']
-    metrics_path: /metrics
-    scrape_interval: 30s
-
-  - job_name: 'lucid-vm'
-    static_configs:
-      - targets: ['vm:8082']
-    metrics_path: /metrics
-    scrape_interval: 30s
-
-  - job_name: 'lucid-gui'
-    static_configs:
-      - targets: ['gui:8083']
-    metrics_path: /metrics
-    scrape_interval: 30s
-
-  # MongoDB metrics
-  - job_name: 'mongodb'
-    static_configs:
-      - targets: ['mongodb:27017']
-    metrics_path: /metrics
-    scrape_interval: 30s
-
-  # Tor metrics
-  - job_name: 'tor'
-    static_configs:
-      - targets: ['tor-proxy:9051']
-    metrics_path: /metrics
-    scrape_interval: 60s
-
-  # Nginx metrics
-  - job_name: 'nginx'
-    static_configs:
-      - targets: ['nginx:9113']
-    metrics_path: /metrics
-    scrape_interval: 30s
-
-  # cAdvisor for container metrics (distroless-compatible)
   - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['cadvisor:8080']
-    scrape_interval: 15s
+    static_configs: [{ targets: ['cadvisor:8080'] }]
     metrics_path: /metrics
-    metric_relabel_configs:
-      # Filter out distroless-specific metrics
-      - source_labels: [__name__]
-        regex: 'container_spec_memory_limit_bytes|container_spec_cpu_quota'
-        action: drop
 
-  # Blackbox exporter for external checks
+  - job_name: 'lucid-api-gateway'
+    static_configs:
+      - targets: ['172.20.0.10:8080']
+        labels: { service: 'api-gateway', container_name: 'lucid-api-gateway' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'http_requests_total|http_request_duration_seconds|api_gateway_.*|process_cpu_seconds_total|process_resident_memory_bytes'
+        action: keep
+
+  - job_name: 'lucid-blockchain-engine'
+    static_configs:
+      - targets: ['172.20.0.15:8084']
+        labels: { service: 'blockchain-engine', container_name: 'lucid-blockchain-engine' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-session-anchoring'
+    static_configs:
+      - targets: ['172.20.0.16:8085']
+        labels: { service: 'session-anchoring', container_name: 'lucid-session-anchoring' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-block-manager'
+    static_configs:
+      - targets: ['172.20.0.17:8086']
+        labels: { service: 'block-manager', container_name: 'lucid-block-manager' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-data-chain'
+    static_configs:
+      - targets: ['172.20.0.18:8087']
+        labels: { service: 'data-chain', container_name: 'lucid-data-chain' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-service-mesh-controller'
+    static_configs:
+      - targets: ['172.20.0.19:8500']
+        labels: { service: 'service-mesh-controller', container_name: 'lucid-service-mesh-controller' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-session-pipeline'
+    static_configs:
+      - targets: ['172.20.0.20:8087']
+        labels: { service: 'session-pipeline', container_name: 'lucid-session-pipeline' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-session-recorder'
+    static_configs:
+      - targets: ['172.20.0.20:8090']
+        labels: { service: 'session-recorder', container_name: 'lucid-session-recorder' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-chunk-processor'
+    static_configs:
+      - targets: ['172.20.0.20:8091']
+        labels: { service: 'chunk-processor', container_name: 'lucid-chunk-processor' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-session-storage'
+    static_configs:
+      - targets: ['172.20.0.20:8082']
+        labels: { service: 'session-storage', container_name: 'lucid-session-storage' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-session-api'
+    static_configs:
+      - targets: ['172.20.0.20:8087']
+        labels: { service: 'session-api', container_name: 'lucid-session-api' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-rdp-server-manager'
+    static_configs:
+      - targets: ['172.20.0.21:8081']
+        labels: { service: 'rdp-server-manager', container_name: 'lucid-rdp-server-manager' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-rdp-xrdp'
+    static_configs:
+      - targets: ['172.20.0.22:3389']
+        labels: { service: 'rdp-xrdp', container_name: 'lucid-rdp-xrdp' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-rdp-controller'
+    static_configs:
+      - targets: ['172.20.0.23:8092']
+        labels: { service: 'rdp-controller', container_name: 'lucid-rdp-controller' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-rdp-monitor'
+    static_configs:
+      - targets: ['172.20.0.24:8093']
+        labels: { service: 'rdp-monitor', container_name: 'lucid-rdp-monitor' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-node-management'
+    static_configs:
+      - targets: ['172.20.0.25:8095']
+        labels: { service: 'node-management', container_name: 'lucid-node-management' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-admin-interface'
+    static_configs:
+      - targets: ['172.20.0.26:8083']
+        labels: { service: 'admin-interface', container_name: 'lucid-admin-interface' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-auth-service'
+    static_configs:
+      - targets: ['172.20.0.14:8089']
+        labels: { service: 'auth-service', container_name: 'lucid-auth-service' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-tron-client'
+    static_configs:
+      - targets: ['172.20.0.27:8091', '172.20.0.27:8101']
+        labels: { service: 'tron-client', container_name: 'lucid-tron-client' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-payout-router'
+    static_configs:
+      - targets: ['172.20.0.28:8092', '172.20.0.28:8102']
+        labels: { service: 'payout-router', container_name: 'lucid-payout-router' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-wallet-manager'
+    static_configs:
+      - targets: ['172.20.0.29:8093', '172.20.0.29:8103']
+        labels: { service: 'wallet-manager', container_name: 'lucid-wallet-manager' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-usdt-manager'
+    static_configs:
+      - targets: ['172.20.0.30:8094', '172.20.0.30:8104']
+        labels: { service: 'usdt-manager', container_name: 'lucid-usdt-manager' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-trx-staking'
+    static_configs:
+      - targets: ['172.20.0.31:8096', '172.20.0.31:8105']
+        labels: { service: 'trx-staking', container_name: 'lucid-trx-staking' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-payment-gateway'
+    static_configs:
+      - targets: ['172.20.0.32:8097', '172.20.0.32:8106']
+        labels: { service: 'payment-gateway', container_name: 'lucid-payment-gateway' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-mongodb'
+    static_configs:
+      - targets: ['172.20.0.11:27017']
+        labels: { service: 'mongodb', container_name: 'lucid-mongodb' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-redis'
+    static_configs:
+      - targets: ['172.20.0.12:6379']
+        labels: { service: 'redis', container_name: 'lucid-redis' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-elasticsearch'
+    static_configs:
+      - targets: ['172.20.0.13:9200']
+        labels: { service: 'elasticsearch', container_name: 'lucid-elasticsearch' }
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'lucid-health-checks'
+    static_configs:
+      - targets:
+        - '172.20.0.10:8080'
+        - '172.20.0.14:8089'
+        - '172.20.0.15:8084'
+        - '172.20.0.20:8087'
+        - '172.20.0.25:8095'
+        - '172.20.0.26:8083'
+        - '172.20.0.27:8091'
+        - '172.20.0.29:8093'
+        - '172.20.0.32:8097'
+    metrics_path: /health
+    scrape_interval: 30s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'health_check_status|service_uptime_seconds|service_response_time_seconds'
+        action: keep
+
   - job_name: 'blackbox'
     metrics_path: /probe
-    params:
-      module: [http_2xx]
+    params: { module: [http_2xx] }
     static_configs:
       - targets:
-        - http://localhost:3000  # Admin UI
-        - http://localhost:8080  # API Gateway
-        - http://localhost:8545  # Blockchain RPC
+        - http://172.20.0.10:8080/health
+        - http://172.20.0.15:8084/health
+        - http://172.20.0.20:8087/health
+        - http://172.20.0.25:8095/health
+        - http://172.20.0.26:8083/health
+        - http://172.20.0.14:8089/health
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -147,15 +265,11 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox-exporter:9115
 
-  # Tor connectivity checks
   - job_name: 'tor-connectivity'
     metrics_path: /probe
-    params:
-      module: [tcp_connect]
+    params: { module: [tcp_connect] }
     static_configs:
-      - targets:
-        - localhost:9050  # Tor SOCKS
-        - localhost:9051  # Tor Control
+      - targets: ['localhost:9050', 'localhost:9051']
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -163,30 +277,3 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         replacement: blackbox-exporter:9115
-
-  # Payment service connectivity checks
-  - job_name: 'payment-connectivity'
-    metrics_path: /probe
-    params:
-      module: [http_2xx]
-    static_configs:
-      - targets:
-        - http://localhost:8080/health  # Payment service health
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: blackbox-exporter:9115
-
-# Storage configuration
-# Note: Retention settings should be configured via command line flags
-# --storage.tsdb.retention.time=30d
-
-# Remote write configuration (optional)
-# remote_write:
-#   - url: "https://prometheus-remote-write-endpoint/api/v1/write"
-#     basic_auth:
-#       username: "username"
-#       password: "password"

@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: service-mesh-controller
-        image: lucid-service-mesh-controller:latest
+        image: pickme/lucid-service-mesh-controller:latest-arm64
         ports:
         - containerPort: 8500
           name: consul
@@ -44,8 +44,8 @@ spec:
           mountPath: /consul/config
         resources:
           requests:
-            cpu: "200m"
-            memory: "512Mi"
+            cpu: "100m"
+            memory: "256Mi"
           limits:
             cpu: "1"
             memory: "2Gi"

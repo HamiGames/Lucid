@@ -1,180 +1,255 @@
-# Phase 3 Container Builds - RDP Services
-# Step 32: Phase 3 Container Builds
+# LUCID RDP SERVICES - Distroless Deployment
+# Phase 3: Application Services
+# Aligned with essentials.md Phase 3
+# Project Root: /mnt/myssd/Lucid/Lucid/
 
 version: '3.8'
 
 services:
   # RDP Server Manager
-  rdp-server-manager:
-    build:
-      context: .
-      dockerfile: Dockerfile.server-manager
+  lucid-rdp-server-manager:
     image: pickme/lucid-rdp-server-manager:latest-arm64
-    platform: linux/arm64
     container_name: lucid-rdp-server-manager
+    hostname: lucid-rdp-server-manager
+    platform: linux/arm64
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-    ports:
-      - "8090:8090"
+      - ../configs/environment/.env.support
     environment:
-      - SERVICE_NAME=lucid-rdp-server-manager
-      - PORT=8090
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - RDP_SERVER_MANAGER_PORT=8081
+      - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
+      - RDP_SERVER_MANAGER_HOST=172.20.0.21
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/Lucid/data/rdp-recordings:/data/recordings:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
     networks:
-      - lucid-dev
-    restart: unless-stopped
+      lucid-pi-network:
+        ipv4_address: 172.20.0.21
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+      - "8090:8090"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=rdp-server-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=rdp"
 
   # XRDP Integration
-  rdp-xrdp:
-    build:
-      context: .
-      dockerfile: Dockerfile.xrdp
+  lucid-rdp-xrdp:
     image: pickme/lucid-rdp-xrdp:latest-arm64
+    container_name: lucid-rdp-xrdp
+    hostname: lucid-rdp-xrdp
     platform: linux/arm64
-    container_name: lucid-xrdp
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-    ports:
-      - "8091:8091"
+      - ../configs/environment/.env.support
     environment:
-      - SERVICE_NAME=lucid-xrdp
-      - PORT=8091
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-      - rdp-server-manager
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - XRDP_PORT=3389
+      - XRDP_DISPLAY=:10
+      - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/Lucid/data/rdp-recordings:/data/recordings:rw
+      - /mnt/myssd/Lucid/Lucid/logs/xrdp:/app/logs:rw
     networks:
-      - lucid-dev
-    restart: unless-stopped
+      lucid-pi-network:
+        ipv4_address: 172.20.0.22
+    depends_on:
+      lucid-rdp-server-manager:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "3389:3389"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      test: ["CMD-SHELL", "nc -z localhost 3389 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=rdp-xrdp"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=rdp"
 
   # RDP Session Controller
-  rdp-controller:
-    build:
-      context: .
-      dockerfile: Dockerfile.controller
+  lucid-rdp-controller:
     image: pickme/lucid-rdp-controller:latest-arm64
-    platform: linux/arm64
     container_name: lucid-rdp-controller
+    hostname: lucid-rdp-controller
+    platform: linux/arm64
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
+      - ../configs/environment/.env.support
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - RDP_CONTROLLER_PORT=8092
+      - RDP_CONTROLLER_URL=http://lucid-rdp-controller:8092
+      - RDP_CONTROLLER_HOST=172.20.0.23
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.23
+    depends_on:
+      lucid-rdp-server-manager:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
     ports:
       - "8092:8092"
-    environment:
-      - SERVICE_NAME=lucid-rdp-controller
-      - PORT=8092
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-      - rdp-server-manager
-    networks:
-      - lucid-dev
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8092/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=rdp-controller"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=rdp"
 
   # RDP Resource Monitor
-  rdp-monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile.monitor
+  lucid-rdp-monitor:
     image: pickme/lucid-rdp-monitor:latest-arm64
-    platform: linux/arm64
     container_name: lucid-rdp-monitor
+    hostname: lucid-rdp-monitor
+    platform: linux/arm64
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
+      - ../configs/environment/.env.support
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - RDP_MONITOR_PORT=8093
+      - RDP_MONITOR_URL=http://lucid-rdp-monitor:8093
+      - RDP_MONITOR_HOST=172.20.0.24
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:ro
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-monitor:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.24
+    depends_on:
+      lucid-rdp-server-manager:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
     ports:
       - "8093:8093"
-    environment:
-      - SERVICE_NAME=lucid-rdp-monitor
-      - PORT=8093
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://mongodb:27017/lucid
-      - REDIS_URI=redis://redis:6379/0
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - lucid-dev
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8093/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # External Dependencies
-  mongodb:
-    image: mongo:7.0
-    container_name: lucid-mongodb
-    env_file:
-      - ../configs/environment/.env.foundation
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=lucid
-      - MONGO_INITDB_ROOT_PASSWORD=lucid_password
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-
-  redis:
-    image: redis:7.0-alpine
-    container_name: lucid-redis
-    env_file:
-      - ../configs/environment/.env.foundation
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - lucid-dev
-    restart: unless-stopped
-
-volumes:
-  mongodb_data:
-  redis_data:
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "lucid.service=rdp-monitor"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=rdp"
 
 networks:
-  lucid-dev:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
     driver: bridge
     ipam:
       config:
         - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+volumes:
+  rdp_sessions_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/rdp-sessions
+  rdp_recordings_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/rdp-recordings

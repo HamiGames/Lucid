@@ -95,7 +95,7 @@ services:
       - "lucid.cluster=application"
 
   session-processor:
-    image: pickme/lucid-session-processor:latest-arm64
+    image: pickme/lucid-chunk-processor:latest-arm64
     container_name: session-processor
     restart: unless-stopped
     env_file:
