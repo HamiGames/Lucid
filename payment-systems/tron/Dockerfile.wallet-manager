@@ -1,137 +1,35 @@
-# ==============================================================================
-# TRON Wallet Manager Service - Phase 4 Distroless Dockerfile
-# Step 33: Phase 4 Container Builds
-# ==============================================================================
-# 
-# Build Command:
-#   docker buildx build --platform linux/amd64,linux/arm64 \
-#     --target distroless \
-#     --tag pickme/lucid:wallet-manager:latest \
-#     --file Dockerfile.wallet-manager \
-#     --push .
-#
-# Security Features:
-#   - Distroless base image (no shell, no package managers)
-#   - Non-root user (UID 65532)
-#   - Read-only root filesystem
-#   - Minimal attack surface
-#   - Multi-platform support (AMD64/ARM64)
-#
-# Phase 4 Compliance:
-#   - TRON payment container (isolated)
-#   - Deploy to isolated network (lucid-network-isolated)
-#   - Support service cluster
-#   - Wallet plane isolation
-#   - Payment-only operations
-#   - No blockchain consensus operations
-# ==============================================================================
+# TRON Wallet Manager - Distroless (ARM64)
+# Image: pickme/lucid-wallet-manager:latest-arm64
+# Ports per essentials.md: 8093, 8103
 
-# ==============================================================================
-# Stage 1: Builder - Install dependencies and build application
-# ==============================================================================
-FROM python:3.12-slim-bookworm AS builder
-
-# Build arguments
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG PYTHON_VERSION=3.12
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
+FROM --platform=linux/arm64 python:3.12-slim-bookworm AS builder
+RUN apt-get update && apt-get install -y build-essential gcc g++ libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-
-# Create services directory
-RUN mkdir -p services
-
-# Copy requirements first for better caching
-COPY requirements.txt ./
-COPY requirements-prod.txt ./
-
-# Create virtual environment
 RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+COPY requirements.txt ./requirements.txt
+COPY requirements-prod.txt ./requirements-prod.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r requirements-prod.txt
+RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt -r requirements-prod.txt
 
-# Copy application source
-COPY services/wallet_manager.py ./services/
-COPY config.py ./
-COPY main.py ./
-COPY services/__init__.py ./services/
+    COPY services/wallet_manager.py ./services/wallet_manager.py
+COPY services/__init__.py ./services/__init__.py
+COPY config.py ./config.py
+COPY main.py ./main.py
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/logs /app/tmp /app/secrets && \
-    chmod 755 /app/logs /app/tmp && \
-    chmod 700 /app/secrets
-
-# ==============================================================================
-# Stage 2: Runtime - Distroless container with application
-# ==============================================================================
-FROM gcr.io/distroless/python3-debian12:nonroot AS distroless
-
-# Metadata labels
-LABEL maintainer="Lucid RDP Development Team <dev@lucid-rdp.onion>"
-LABEL org.opencontainers.image.title="TRON Wallet Manager Service"
-LABEL org.opencontainers.image.description="TRON wallet management service for payment operations"
-LABEL org.opencontainers.image.version="1.0.0"
-LABEL org.opencontainers.image.vendor="Lucid RDP"
-LABEL org.opencontainers.image.licenses="Proprietary"
-LABEL org.opencontainers.image.url="https://lucid-rdp.onion"
-LABEL org.opencontainers.image.source="https://github.com/HamiGames/Lucid"
-
-# Security labels
-LABEL security.distroless="true"
-LABEL security.nonroot="true"
-LABEL security.readonly="true"
-LABEL security.plane="wallet"
-LABEL security.isolation="payment-only"
-LABEL security.phase="phase4"
-LABEL security.cluster="tron-payment"
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONPATH=/app
-ENV SERVICE_NAME=wallet-manager
-ENV SERVICE_PORT=8093
-ENV LUCID_ENV=production
-
-# Create application directory with proper permissions
-USER nonroot:nonroot
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12:nonroot
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/app \
+    SERVICE_NAME=wallet-manager SERVICE_PORT=8093 \
+    LUCID_ENV=production LUCID_PLATFORM=arm64 PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
 WORKDIR /app
-
-# Copy virtual environment from builder stage
 COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
-
-# Copy application source with proper ownership
 COPY --from=builder --chown=nonroot:nonroot /app /app
 
-# Set Python path to use virtual environment
+
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Health check (HTTP-based, no shell required)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8093/health').read()"]
+  CMD ["/opt/venv/bin/python3","-c","import urllib.request; urllib.request.urlopen('http://localhost:8093/health').read()"]
 
-# Expose service port
-EXPOSE 8093
-
-# Switch to non-root user (redundant but explicit)
-USER 65532:65532
-
-# Default command
-CMD ["/usr/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8093", "--workers", "1"]
+EXPOSE 8093 8103
+CMD ["/opt/venv/bin/python3","-m","uvicorn","main:app","--host","0.0.0.0","--port","8093","--workers","1"]

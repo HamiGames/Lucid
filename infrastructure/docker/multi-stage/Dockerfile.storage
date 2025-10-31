@@ -1,8 +1,9 @@
-# Multi-stage Dockerfile for Storage Services
-# Builds distroless containers for storage-database
+# Multi-stage Dockerfile for Storage Services (Specialized)
+# Builds distroless containers for a generic storage service
+# Aligned with essentials.md: pickme/lucid-storage:latest-arm64, port 8104
 
 # Stage 1: Build stage
-FROM python:3.11-slim as builder
+FROM --platform=linux/arm64 python:3.11-slim AS builder
 
 # Set build arguments
 ARG BUILD_DATE
@@ -30,19 +31,20 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY storage/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
+COPY storage/requirements.storage.txt ./storage/requirements.storage.txt
+RUN pip install --no-cache-dir -r ./storage/requirements.storage.txt
 # Copy source code
-COPY storage/ .
+COPY storage/ ./storage/
+COPY storage/__init__.py ./__init__.py
 COPY src/ ./src/
 COPY common/ ./common/
+COPY database/ ./database/
 
 # Build the application
 RUN python -m compileall -b .
 
 # Stage 2: Runtime stage (distroless)
-FROM gcr.io/distroless/python3-debian12
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
 
 # Set metadata
 LABEL maintainer="Lucid Development Team" \
@@ -55,14 +57,19 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.licenses="MIT" \
       lucid.service="storage" \
       lucid.type="distroless" \
-      lucid.platform="multi-arch" \
+      lucid.platform="arm64" \
       lucid.security="hardened"
 
-# Set environment variables
+# Set environment variables (aligned with essentials.md)
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     LUCID_ENV=production \
-    LUCID_PLATFORM=multi-arch
+    LUCID_PLATFORM=arm64
+ENV STORAGE_HOST=172.20.0.X
+ENV STORAGE_URL=http://lucid-storage:8104
+ENV API_URL=http://lucid-storage:8104
+ENV HEALTHCHECK_PORT=8104
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
 
 # Create non-root user
 USER 65532:65532
@@ -73,15 +80,12 @@ WORKDIR /app
 # Copy built application from builder stage
 COPY --from=builder --chown=65532:65532 /app /app
 
-# Note: Distroless images don't have shell commands like mkdir or chmod
-# Directories will be created by the application if needed
+# Expose port (aligned with essentials.md: port 8104)
+EXPOSE 8104
 
-# Expose port
-EXPOSE 8088
-
-# Health check
+# Health check (aligned with essentials.md: port 8104)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import sys; sys.exit(0)"]
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8104/health')"]
 
 # Run the application
 CMD ["python3", "main.py"]

@@ -1,0 +1,30 @@
+# Lucid Session Recorder Dependencies
+# Core framework
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+
+# Async support
+asyncio-mqtt>=0.16.1
+aiofiles>=23.2.1
+
+# Compression libraries
+# Core compression (always available)
+# gzip is built into Python standard library
+
+# Optional compression libraries
+lz4>=4.3.2
+zstandard>=0.21.0
+
+# Video processing (if needed for advanced features)
+opencv-python-headless>=4.8.1.78
+Pillow>=10.1.0
+
+# Utilities
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+
+# Development and testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0

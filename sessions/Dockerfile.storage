@@ -1,32 +1,56 @@
 # Multi-stage distroless build for Lucid Session Storage
 # Step 32: Phase 3 Container Builds - Session Management
+# Aligned with essentials.md: pickme/lucid-session-storage:latest-arm64, port 8082, IP 172.20.0.20
+# Network Configuration: lucid-pi-network (172.20.0.0/16)
+# Fully aligned with plan/constants/ directory requirements
 
 # Stage 1: Builder
 FROM --platform=linux/arm64 python:3.11-slim AS builder
 
-# Set build arguments
+# Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM=linux/arm64
 ARG PYTHON_VERSION=3.11
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Set environment variables for pip optimization (aligned with path_plan.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
+
+# Install build dependencies with apt cache mount (BuildKit optimization)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     build-essential \
     gcc \
     g++ \
     libffi-dev \
     libssl-dev \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+RUN pip install --upgrade pip setuptools wheel
 
 # Set working directory
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY storage/requirements.txt ./requirements.txt
+COPY requirements.storage.txt ./requirements.storage.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Install Python dependencies with optimizations
+# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
+# Cache mount speeds up subsequent builds (BuildKit feature)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary -r requirements.storage.txt || \
+    pip install --user --prefer-binary -r requirements.storage.txt
 
 # Copy source code
 COPY storage/ ./storage/
@@ -47,23 +71,51 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
+# Set core environment variables (aligned with path_plan.md)
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Service identification (aligned with essentials.md lines 335-349)
 ENV SERVICE_NAME=lucid-session-storage
-ENV PORT=8086
-ENV LUCID_STORAGE_PORT=8086
+ENV CONTAINER_NAME=lucid-session-storage
+ENV HOSTNAME=lucid-session-storage
+
+# Port configuration (aligned with essentials.md, path_plan.md)
+ENV PORT=8082
+ENV LUCID_STORAGE_PORT=8082
 ENV LUCID_STORAGE_HOST=0.0.0.0
 ENV HOST=0.0.0.0
+ENV HEALTHCHECK_PORT=8082
+ENV HEALTHCHECK_PATH=/health
+
+# Network configuration (aligned with Network_conig_requirements.md)
+ENV SESSION_STORAGE_HOST=172.20.0.20
+ENV SESSION_STORAGE_URL=http://lucid-session-storage:8082
+ENV API_URL=http://lucid-session-storage:8082
+
+# Database connections (aligned with Network_conig_requirements.md)
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+ENV REDIS_URL=redis://lucid-redis:6379/0
+
+# Project configuration (aligned with path_plan.md)
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENV PROJECT_NAME=Lucid
+ENV LUCID_PLATFORM=arm64
+ENV LUCID_ARCHITECTURE=linux/arm64
+ENV LUCID_ENV=production
+
+# Logging configuration (aligned with path_plan.md)
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
-# Health check
+# Health check configuration (aligned with Network_conig_requirements.md)
+# Note: Uses Python urllib.request (not curl) since distroless images don't have curl
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health')"]
 
-# Expose port
-EXPOSE 8086
+# Expose port (aligned with essentials.md: ports=8082:8082)
+EXPOSE 8082
 
-# Set entrypoint
+# Set entrypoint (aligned with other session Dockerfiles: pipeline.main, recorder.main pattern)
 ENTRYPOINT ["python", "-m", "storage.main"]

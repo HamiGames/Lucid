@@ -1,5 +1,7 @@
-# Multi-stage distroless build for Lucid Session API Gateway
+# Multi-stage distroless build for Lucid Session API
 # Step 32: Phase 3 Container Builds - Session Management
+# Aligned with essentials.md: pickme/lucid-session-api:latest-arm64, port 8087, IP 172.20.0.20
+# Network: lucid-pi-network (172.20.0.20), lucid-gui-network (172.22.0.20)
 
 # Stage 1: Builder
 FROM --platform=linux/arm64 python:3.11-slim AS builder
@@ -9,8 +11,10 @@ ARG BUILDPLATFORM
 ARG TARGETPLATFORM=linux/arm64
 ARG PYTHON_VERSION=3.11
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Install build dependencies with apt cache mount
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     build-essential \
     gcc \
     g++ \
@@ -22,11 +26,25 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /build
 
-# Copy requirements first for better layer caching
-COPY api/requirements.txt ./requirements.txt
+# Set pip environment variables for optimization
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_PREFER_BINARY=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Upgrade pip to latest version
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip wheel setuptools
+
+# Copy requirements first for better layer caching
+COPY requirements.api.txt ./requirements.api.txt
+
+# Install Python dependencies with cache mount and optimizations
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/pip/wheels \
+    pip install --user \
+    --prefer-binary \
+    --no-warn-script-location \
+    -r requirements.api.txt
 
 # Copy source code
 COPY api/ ./api/
@@ -47,23 +65,70 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV PYTHONPATH=/app
+# Set Python path and base environment variables
+ENV PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Service Configuration (per essentials.md and Network_conig_requirements.md)
 ENV SERVICE_NAME=lucid-session-api
-ENV PORT=8090
-ENV LUCID_API_PORT=8090
+ENV CONTAINER_NAME=lucid-session-api
+ENV HOSTNAME=lucid-session-api
+
+# Port Configuration
+ENV PORT=8087
+ENV LUCID_API_PORT=8087
+ENV SESSION_API_PORT=8087
 ENV LUCID_API_HOST=0.0.0.0
 ENV HOST=0.0.0.0
+
+# Network Configuration (per Network_conig_requirements.md lines 806-826)
+ENV SESSION_API_HOST=172.20.0.20
+ENV SESSION_API_URL=http://lucid-session-api:8087
+ENV API_URL=http://lucid-session-api:8087
+ENV HEALTHCHECK_PORT=8087
+ENV HEALTHCHECK_PATH=/health
+
+# Database Configuration (per Network_conig_requirements.md line 822-823)
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+ENV REDIS_URL=redis://lucid-redis:6379/0
+
+# Service Dependencies URLs (per Network_conig_requirements.md lines 824-826)
+ENV SESSION_RECORDER_URL=http://lucid-session-recorder:8090
+ENV SESSION_STORAGE_URL=http://lucid-session-storage:8082
+ENV API_GATEWAY_URL=http://lucid-api-gateway:8080
+
+# Project Configuration (per path_plan.md)
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENV PROJECT_NAME=Lucid
+ENV PROJECT_VERSION=0.1.0
+ENV LUCID_PLATFORM=arm64
+ENV LUCID_ENV=production
+ENV LUCID_ARCHITECTURE=linux/arm64
+
+# Logging Configuration
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
+ENV LOG_FORMAT=json
 
-# Health check
+# Network Configuration (per network_defs.md)
+ENV LUCID_PI_NETWORK=lucid-pi-network
+ENV LUCID_PI_SUBNET=172.20.0.0/16
+ENV LUCID_PI_GATEWAY=172.20.0.1
+ENV LUCID_GUI_NETWORK=lucid-gui-network
+ENV LUCID_GUI_SUBNET=172.22.0.0/16
+ENV LUCID_GUI_GATEWAY=172.22.0.1
+
+# Electron-GUI Endpoint (per essentials.md line 365 and Network_conig_requirements.md line 849)
+ENV ELECTRON_GUI_ENDPOINT=http://172.20.0.20:8087/api/v1
+
+# Health check (aligned with essentials.md and Network_conig_requirements.md: healthcheck_port=8087, healthcheck_path=/health)
+# Note: Using urllib.request instead of curl for distroless images
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health')"]
 
-# Expose port
-EXPOSE 8090
+# Expose port (aligned with essentials.md: ports=8087:8087)
+EXPOSE 8087
 
-# Set entrypoint
+# Set entrypoint (matches pattern: api.main)
 ENTRYPOINT ["python", "-m", "api.main"]

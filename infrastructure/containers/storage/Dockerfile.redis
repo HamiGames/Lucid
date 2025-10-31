@@ -1,31 +1,36 @@
 # infrastructure/containers/storage/Dockerfile.redis
 # Redis container for Lucid system
+# Aligned with essentials.md: pickme/lucid-redis:latest-arm64, port 6379
 
-# Stage 1: Builder
-FROM redis:7.2-alpine as builder
+# Stage 1: Builder - Use Debian-based Redis
+FROM redis:7.2 AS builder
 
-# Install build dependencies
-RUN apk add --no-cache gcc musl-dev
+# Install tools for dependency analysis
+RUN apt-get update && apt-get install -y \
+    libc-bin \
+    && rm -rf /var/lib/apt/lists/*
+
+# Find actual location of redis-server and copy dependencies
+RUN ldd /usr/local/bin/redis-server 2>/dev/null | grep "=> /" | awk '{print $3}' | xargs -I '{}' sh -c 'mkdir -p /deps$(dirname {}) && cp {} /deps{}' || true
 
 # Stage 2: Runtime (Distroless)
 FROM gcr.io/distroless/base-debian12
 
-# Copy Redis binaries from builder
-COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/
-COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/
+# Copy Redis binaries from builder (CORRECT PATH: /usr/local/bin)
+COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/redis-server
+COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli
 
-# Create necessary directories
+# Copy all shared library dependencies
+COPY --from=builder /deps/ /
+
+# Set working directory
 WORKDIR /data
 
-# Copy configuration
-COPY redis.conf /usr/local/etc/redis.conf
+# Copy Redis configuration
+COPY redis.conf /tmp/redis.conf
 
-# Expose port
+# Expose port (essentials.md: ports=6379:6379, healthcheck_port=6379)
 EXPOSE 6379
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD ["redis-cli", "ping"]
-
-# Default command
-CMD ["redis-server", "/usr/local/etc/redis.conf"]
+# Default command (essentials.md: REDIS_URL=redis://lucid-redis:6379/0)
+CMD ["/usr/local/bin/redis-server", "/tmp/redis.conf"]

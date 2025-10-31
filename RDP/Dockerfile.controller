@@ -1,41 +1,64 @@
 # Multi-stage distroless build for Lucid RDP Session Controller
 # Step 32: Phase 3 Container Builds - RDP Services
+# Aligned with essentials.md: pickme/lucid-rdp-controller:latest-arm64, port 8092, IP 172.20.0.23
+# Network Configuration: lucid-pi-network (172.20.0.0/16)
+# Fully aligned with plan/constants/ directory requirements
 
 # Stage 1: Builder
-FROM python:3.11-slim AS builder
+FROM --platform=linux/arm64 python:3.11-slim AS builder
 
-# Set build arguments
+# Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
-ARG TARGETPLATFORM
+ARG TARGETPLATFORM=linux/arm64
 ARG PYTHON_VERSION=3.11
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Set environment variables for pip optimization (aligned with path_plan.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
+
+# Install build dependencies with apt cache mount (BuildKit optimization)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     build-essential \
     gcc \
     g++ \
     libffi-dev \
     libssl-dev \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+RUN pip install --upgrade pip setuptools wheel
 
 # Set working directory
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY session-controller/requirements.txt ./requirements.txt
+COPY requirements.txt ./requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Install Python dependencies with optimizations
+# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
+# Cache mount speeds up subsequent builds (BuildKit feature)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary -r requirements.txt || \
+    pip install --user --prefer-binary -r requirements.txt
 
 # Copy source code
 COPY session-controller/ ./session-controller/
 COPY protocol/ ./protocol/
 COPY common/ ./common/
-COPY __init__.py ./__init__.py
-
+COPY resource-monitor/ ./resource-monitor/
 # Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/python3-debian12
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
 
 # Copy Python dependencies from builder
 COPY --from=builder /root/.local /root/.local
@@ -44,26 +67,63 @@ COPY --from=builder /root/.local /root/.local
 COPY --from=builder /build/session-controller /app/session-controller
 COPY --from=builder /build/protocol /app/protocol
 COPY --from=builder /build/common /app/common
-COPY --from=builder /build/__init__.py /app/__init__.py
+COPY --from=builder /build/resource-monitor /app/resource-monitor
 
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
+# Set core environment variables (aligned with path_plan.md)
 ENV PYTHONPATH=/app:/app/session-controller
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Service identification (aligned with essentials.md lines 398-411)
 ENV SERVICE_NAME=lucid-rdp-controller
-ENV PORT=8082
+ENV CONTAINER_NAME=lucid-rdp-controller
+ENV HOSTNAME=lucid-rdp-controller
+
+# Port configuration (aligned with essentials.md, path_plan.md, Network_conig_requirements.md)
+ENV PORT=8092
+ENV RDP_CONTROLLER_PORT=8092
+ENV RDP_CONTROLLER_HOST=0.0.0.0
 ENV HOST=0.0.0.0
+ENV HEALTHCHECK_PORT=8092
+ENV HEALTHCHECK_PATH=/health
+
+# Network configuration (aligned with Network_conig_requirements.md)
+ENV RDP_CONTROLLER_HOST=172.20.0.23
+ENV RDP_CONTROLLER_URL=http://lucid-rdp-controller:8092
+ENV API_URL=http://lucid-rdp-controller:8092
+
+# Database connections (aligned with Network_conig_requirements.md)
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_rdp?authSource=admin
+ENV REDIS_URL=redis://lucid-redis:6379/0
+
+# Service dependencies (aligned with Network_conig_requirements.md)
+ENV RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
+
+# Project configuration (aligned with path_plan.md)
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENV PROJECT_NAME=Lucid
+ENV LUCID_PLATFORM=arm64
+ENV LUCID_ARCHITECTURE=linux/arm64
+ENV LUCID_ENV=production
+
+# Logging configuration (aligned with path_plan.md)
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
-# Health check
+# Health check configuration (aligned with Network_conig_requirements.md)
+# Note: Uses Python urllib.request (not curl) since distroless images don't have curl
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8092/health')"]
 
-# Expose port
-EXPOSE 8082
+# Expose port (aligned with essentials.md: port 8092)
+EXPOSE 8092
 
-# Set entrypoint
-ENTRYPOINT ["python", "-m", "session-controller.main"]
+# Set entrypoint (aligned with other session Dockerfiles: session-controller.main pattern)
+# FastAPI entrypoint
+ENTRYPOINT ["python", "-m", "uvicorn"]
+
+# FastAPI application
+CMD ["session-controller.main:app", "--host", "0.0.0.0", "--port", "8092"]

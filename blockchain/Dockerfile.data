@@ -1,52 +1,78 @@
-# Multi-stage build for distroless container
-# File: blockchain/Dockerfile.data
-# Purpose: Distroless container build for Lucid Data Chain Service
-# Build Host: Windows 11 console
-# Target Host: Raspberry Pi (via SSH)
-# Phase 3: Proper distroless implementation
+# Multi-stage distroless build for Lucid Data Chain Service
+# Step 32: Phase 2 Container Builds - Core Services
+# Aligned with essentials.md: pickme/lucid-data-chain:latest-arm64, port 8087, IP 172.20.0.18
+# Network Configuration: lucid-pi-network (172.20.0.0/16)
+# Fully aligned with plan/constants/ directory requirements
 
-FROM python:3.11-slim as builder
+# Stage 1: Builder
+FROM --platform=linux/arm64 python:3.11-slim AS builder
 
-# Set build arguments
+# Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
-ARG TARGETPLATFORM
+ARG TARGETPLATFORM=linux/arm64
 ARG BUILD_DATE
+ARG VCS_REF
 ARG VERSION=1.0.0
 ARG GIT_COMMIT=unknown
+ARG PYTHON_VERSION=3.11
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+# Set environment variables for pip optimization (aligned with path_plan.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
+
+# Install build dependencies with apt cache mount (BuildKit optimization)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     build-essential \
     gcc \
     g++ \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Copy requirements first for better layer caching
+COPY requirements.txt ./requirements.txt
+
+# Install Python dependencies with optimizations
+# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
+# Cache mount speeds up subsequent builds (BuildKit feature)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary -r requirements.txt || \
+    pip install --user --prefer-binary -r requirements.txt
 
 # Copy data chain source code
 COPY data/ ./data/
 COPY core/ ./core/
 COPY utils/ ./utils/
 COPY config/ ./config/
+COPY api/ ./api/
 
-# Production stage - Distroless
-FROM gcr.io/distroless/python3-debian12
+# Stage 2: Runtime (Distroless)
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
 
-# Set labels for Phase 3 compliance
-LABEL maintainer="Lucid Development Team"
-LABEL description="Lucid Data Chain - Phase 3 Distroless Container"
-LABEL version="1.0.0"
-LABEL build_date="${BUILD_DATE}"
-LABEL git_commit="${GIT_COMMIT}"
-LABEL phase="3"
-LABEL cluster="02-blockchain-core"
-LABEL service="data-chain"
+# Set labels for Phase 2 compliance
+LABEL maintainer="Lucid Development Team" \
+      description="Lucid Data Chain - Phase 2 Distroless Container" \
+      version="1.0.0" \
+      build_date="${BUILD_DATE}" \
+      git_commit="${GIT_COMMIT}" \
+      phase="2" \
+      cluster="02-blockchain-core" \
+      service="data-chain"
 
 # Copy Python packages from builder to distroless location
 COPY --from=builder /root/.local /usr/local
@@ -55,29 +81,72 @@ COPY --from=builder /root/.local /usr/local
 COPY --from=builder /app/data /app/data
 COPY --from=builder /app/core /app/core
 COPY --from=builder /app/utils /app/utils
+COPY --from=builder /app/api /app/api
 COPY --from=builder /app/config /app/config
 
 # Set working directory
 WORKDIR /app
 
-# Set Python path and environment
-ENV PYTHONPATH=/app
+# Set Python path and base environment variables
+ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages
 ENV PATH=/usr/local/bin:$PATH
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Service Configuration (per essentials.md and Network_conig_requirements.md lines 528-576)
 ENV SERVICE_NAME=data-chain
+ENV CONTAINER_NAME=lucid-data-chain
+ENV HOSTNAME=lucid-data-chain
+
+# Port Configuration
 ENV PORT=8087
-ENV LOG_LEVEL=INFO
+ENV DATA_CHAIN_PORT=8087
+ENV HOST=0.0.0.0
+ENV HEALTHCHECK_PORT=8087
+ENV HEALTHCHECK_PATH=/health
+
+# Network Configuration (per Network_conig_requirements.md lines 541-557)
+ENV DATA_CHAIN_URL=http://lucid-data-chain:8087
+ENV DATA_CHAIN_HOST=172.20.0.18
+
+# Database Configuration (per Network_conig_requirements.md lines 555-556)
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+ENV REDIS_URL=redis://lucid-redis:6379/0
+
+# Service Dependencies URLs (per Network_conig_requirements.md line 557)
+ENV BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+
+# Storage Configuration
 ENV CHUNK_STORAGE_PATH=/data/chunks
 ENV MERKLE_STORAGE_PATH=/data/merkle
+
+# Project Configuration (per path_plan.md)
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENV PROJECT_NAME=Lucid
+ENV PROJECT_VERSION=0.1.0
+ENV LUCID_PLATFORM=arm64
+ENV LUCID_ENV=production
+ENV LUCID_ARCHITECTURE=linux/arm64
+
+# Logging Configuration
+ENV LOG_LEVEL=INFO
+ENV DEBUG=false
+ENV LOG_FORMAT=json
+
+# Network Configuration (per network_defs.md)
+ENV LUCID_PI_NETWORK=lucid-pi-network
+ENV LUCID_PI_SUBNET=172.20.0.0/16
+ENV LUCID_PI_GATEWAY=172.20.0.1
 
 # Use nonroot user (distroless default)
 USER 65532:65532
 
-# Health check
+# Health check (aligned with essentials.md and Network_conig_requirements.md: healthcheck_port=8087, healthcheck_path=/health)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health')"]
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health')"]
 
-# Expose ports
+# Expose ports (aligned with essentials.md and Network_conig_requirements.md: ports=8087:8087)
 EXPOSE 8087
 
-# Start application
-CMD ["/usr/bin/python3", "-m", "data.main"]
+# Start FastAPI application with uvicorn (structure is correct, but ensure port matches)
+CMD ["python3", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8087"]

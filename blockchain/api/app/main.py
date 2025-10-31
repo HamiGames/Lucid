@@ -137,7 +137,7 @@ async def shutdown_event():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "blockchain.api.app.main:app",
+        "api.app.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,

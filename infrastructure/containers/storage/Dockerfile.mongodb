@@ -1,27 +1,37 @@
 # Multi-stage build for MongoDB distroless
 FROM mongo:7.0 as builder
 
-# Install additional tools
+# Install observed dependencies
 RUN apt-get update && apt-get install -y \
+    libc-bin \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Runtime stage - Distroless
+# Create script to copy all dependencies
+RUN echo '#!/bin/sh\n\
+ldd /usr/bin/mongod | grep "=> /" | awk "{print \$3}" | xargs -I '{}' sh -c "mkdir -p \$(dirname /deps{}) && cp {} /deps{}"\n\
+' > /copy-deps.sh && chmod +x /copy-deps.sh && /copy-deps.sh
+
+# Runtime stage - Distroless (aligned with essentials.md)
 FROM gcr.io/distroless/base-debian12
 
 # Copy MongoDB binaries
 COPY --from=builder /usr/bin/mongod /usr/bin/mongod
-COPY --from=builder /usr/bin/mongos /usr/bin/mongos
+
+# Copy all dependencies
+COPY --from=builder /deps/ /
 
 # Set working directory
 WORKDIR /data/db
 
-# Expose port
+# Expose port (aligned with essentials.md: ports=27017:27017)
 EXPOSE 27017
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["mongod", "--version"]
+# Healthcheck - Disabled in Dockerfile (use compose file healthcheck instead)
+# Essentials.md expects healthcheck on port 27017, but distroless lacks mongosh
+# Healthcheck will be defined in docker-compose.foundation.yml where mongosh is available externally
+# HEALTHCHECK disabled
 
-# Default command
-CMD ["mongod", "--bind_ip_all"]
+# Default command (aligned with essentials.md: auth enabled via env vars)
+# --auth flag enables authentication (required by essentials.md configuration)
+CMD ["/usr/bin/mongod", "--auth", "--bind_ip_all"]

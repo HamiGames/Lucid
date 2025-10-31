@@ -1,46 +1,31 @@
-# ==============================================================================
-# TRON Client Service - Phase 4 Distroless Dockerfile
-# Step 33: Phase 4 Container Builds
-# ==============================================================================
-# 
-# Build Command:
-#   docker buildx build --platform linux/amd64,linux/arm64 \
-#     --target distroless \
-#     --tag pickme/lucid:tron-client:latest \
-#     --file Dockerfile.tron-client \
-#     --push .
-#
-# Security Features:
-#   - Distroless base image (no shell, no package managers)
-#   - Non-root user (UID 65532)
-#   - Read-only root filesystem
-#   - Minimal attack surface
-#   - Multi-platform support (AMD64/ARM64)
-#
-# Phase 4 Compliance:
-#   - TRON payment container (isolated)
-#   - Deploy to isolated network (lucid-network-isolated)
-#   - Support service cluster
-#   - Wallet plane isolation
-#   - Payment-only operations
-#   - No blockchain consensus operations
-# ==============================================================================
+# Multi-stage build for distroless container
+# File: payment-systems/tron/Dockerfile.tron-client
+# Purpose: Distroless container build for Lucid TRON Client Service
+# Build Host: Windows 11 console
+# Target Host: Raspberry Pi (via SSH)
+# Phase 4: Support Services
+# Aligned with essentials.md: pickme/lucid-tron-client:latest-arm64, ports 8091,8101, IP 172.20.0.27
 
-# ==============================================================================
-# Stage 1: Builder - Install dependencies and build application
-# ==============================================================================
-FROM python:3.12-slim-bookworm AS builder
+FROM --platform=linux/arm64 python:3.12-slim-bookworm AS builder
 
-# Build arguments
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG PYTHON_VERSION=3.12
+# Set build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
     g++ \
+    make \
+    pkg-config \
     libffi-dev \
     libssl-dev \
     libxml2-dev \
@@ -51,87 +36,85 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Create services directory
-RUN mkdir -p services
-
-# Copy requirements first for better caching
-COPY requirements.txt ./
-COPY requirements-prod.txt ./
-
 # Create virtual environment
 RUN python -m venv /opt/venv
+
+# Copy requirements and install dependencies
+COPY requirements.txt ./requirements.txt
+COPY requirements-prod.txt ./requirements-prod.txt
+RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt -r requirements-prod.txt
+
+# Copy application source code
+COPY services/tron_client.py ./services/tron_client.py
+COPY services/__init__.py ./services/__init__.py
+COPY config.py ./config.py
+COPY main.py ./main.py
+
+# Compile Python bytecode
+RUN python -m compileall -b .
+
+# Production stage - Distroless
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12:nonroot
+
+# Set metadata labels (aligned with essentials.md)
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid TRON Client" \
+      org.opencontainers.image.description="Distroless TRON client service for Lucid platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="Lucid" \
+      org.opencontainers.image.licenses="MIT" \
+      lucid.service="tron-client" \
+      lucid.type="distroless" \
+      lucid.platform="arm64" \
+      lucid.security="hardened" \
+      lucid.phase="4" \
+      lucid.cluster="payment"
+
+# Set environment variables (aligned with essentials.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    LUCID_ENV=production \
+    LUCID_PLATFORM=arm64 \
+    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+
+# Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
+ENV TZ=UTC \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    COUNTRY=US
+
+# Service Configuration (aligned with Network_conig_requirements.md)
+ENV SERVICE_NAME=tron-client \
+    SERVICE_PORT=8091 \
+    TRON_CLIENT_URL=http://lucid-tron-client:8091 \
+    TRON_CLIENT_HOST=172.20.0.27 \
+    TRON_CLIENT_PORT=8091 \
+    TRON_NETWORK=mainnet \
+    TRON_RPC_URL=https://api.trongrid.io \
+    USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# Virtual environment path
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r requirements-prod.txt
-
-# Copy application source
-COPY services/tron_client.py ./services/
-COPY config.py ./
-COPY main.py ./
-COPY services/__init__.py ./services/
-
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/logs /app/tmp /app/secrets && \
-    chmod 755 /app/logs /app/tmp && \
-    chmod 700 /app/secrets
-
-# ==============================================================================
-# Stage 2: Runtime - Distroless container with application
-# ==============================================================================
-FROM gcr.io/distroless/python3-debian12:nonroot AS distroless
-
-# Metadata labels
-LABEL maintainer="Lucid RDP Development Team <dev@lucid-rdp.onion>"
-LABEL org.opencontainers.image.title="TRON Client Service"
-LABEL org.opencontainers.image.description="TRON network client for payment operations"
-LABEL org.opencontainers.image.version="1.0.0"
-LABEL org.opencontainers.image.vendor="Lucid RDP"
-LABEL org.opencontainers.image.licenses="Proprietary"
-LABEL org.opencontainers.image.url="https://lucid-rdp.onion"
-LABEL org.opencontainers.image.source="https://github.com/HamiGames/Lucid"
-
-# Security labels
-LABEL security.distroless="true"
-LABEL security.nonroot="true"
-LABEL security.readonly="true"
-LABEL security.plane="wallet"
-LABEL security.isolation="payment-only"
-LABEL security.phase="phase4"
-LABEL security.cluster="tron-payment"
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONPATH=/app
-ENV SERVICE_NAME=tron-client
-ENV SERVICE_PORT=8091
-ENV LUCID_ENV=production
-
-# Create application directory with proper permissions
-USER nonroot:nonroot
+# Set working directory
 WORKDIR /app
 
-# Copy virtual environment from builder stage
+# Copy virtual environment from builder
 COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
 
-# Copy application source with proper ownership
+# Copy application code from builder
 COPY --from=builder --chown=nonroot:nonroot /app /app
 
-# Set Python path to use virtual environment
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Health check (HTTP-based, no shell required)
+# Health check (aligned with Network_conig_requirements.md)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD ["/opt/venv/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/health').read()"]
 
-# Expose service port
-EXPOSE 8091
+# Expose ports (aligned with essentials.md)
+EXPOSE 8091 8101
 
-# Switch to non-root user (redundant but explicit)
-USER 65532:65532
-
-# Default command
-CMD ["/usr/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8091", "--workers", "1"]
+# Run the application (aligned with uvicorn pattern)
+CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8091", "--workers", "1"]

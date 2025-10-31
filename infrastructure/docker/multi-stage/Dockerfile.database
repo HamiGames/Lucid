@@ -1,8 +1,9 @@
 # Multi-stage Dockerfile for Database Services
 # Builds distroless containers for mongodb, redis, elasticsearch
+# Aligned with essentials.md: pickme/lucid-database:latest-arm64, port 27018
 
 # Stage 1: Build stage
-FROM python:3.11-slim as builder
+FROM --platform=linux/arm64 python:3.11-slim as builder
 
 # Set build arguments
 ARG BUILD_DATE
@@ -26,23 +27,25 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Create app directory
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY database/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY infrastructure/docker/multi-stage/requirements.database.txt ./requirements.database.txt
+RUN pip install --no-cache-dir -r requirements.database.txt
 
 # Copy source code
-COPY database/ .
+COPY database/ ./database/
 COPY src/ ./src/
 COPY common/ ./common/
+
 
 # Build the application
 RUN python -m compileall -b .
 
 # Stage 2: Runtime stage (distroless)
-FROM gcr.io/distroless/python3-debian12
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
 
 # Set metadata
 LABEL maintainer="Lucid Development Team" \
@@ -55,14 +58,26 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.licenses="MIT" \
       lucid.service="database" \
       lucid.type="distroless" \
-      lucid.platform="multi-arch" \
+      lucid.platform="arm64" \
       lucid.security="hardened"
 
-# Set environment variables
+# Set environment variables (aligned with essentials.md)
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     LUCID_ENV=production \
-    LUCID_PLATFORM=multi-arch
+    LUCID_PLATFORM=arm64
+
+ENV TZ=UTC \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    COUNTRY=US
+
+ENV DATABASE_HOST=172.20.0.X \
+    DATABASE_URL=mongodb://lucid:{MONGODB_PASSWORD}@lucid-database:27018/lucid?authSource=admin \
+    API_URL=http://lucid-database:27018 \
+    HEALTHCHECK_PORT=27018 \
+    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+
 
 # Create non-root user
 USER 65532:65532
@@ -72,16 +87,18 @@ WORKDIR /app
 
 # Copy built application from builder stage
 COPY --from=builder --chown=65532:65532 /app /app
+COPY --from=builder --chown=65532:65532 /build/database /app/database
+COPY --from=builder --chown=65532:65532 /build/src /app/src
+COPY --from=builder --chown=65532:65532 /build/common /app/common
 
-# Note: Distroless images don't have shell commands like mkdir or chmod
-# Directories will be created by the application if needed
 
-# Expose port
-EXPOSE 27017
 
-# Health check
+# Expose port (aligned with essentials.md: port 27018)
+EXPOSE 27018
+
+# Health check (aligned with essentials.md: port 27018)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import sys; sys.exit(0)"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:27018/health')"]
 
 # Run the application
-CMD ["python3", "main.py"]
+CMD ["python","-m", "database.main"]

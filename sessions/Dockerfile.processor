@@ -1,13 +1,27 @@
-# Multi-stage distroless build for Lucid Session Processor
+# Multi-stage distroless build for Lucid Chunk Processor
 # Step 32: Phase 3 Container Builds - Session Management
+# Aligned with essentials.md: pickme/lucid-chunk-processor:latest-arm64, port 8091, IP 172.20.0.20
+# Network Configuration: lucid-pi-network (172.20.0.0/16)
+# Fully aligned with plan/constants/ directory requirements
 
 # Stage 1: Builder
 FROM --platform=linux/arm64 python:3.11-slim AS builder
 
-# Set build arguments
+# Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM=linux/arm64
 ARG PYTHON_VERSION=3.11
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Set environment variables for pip optimization (aligned with path_plan.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -17,16 +31,24 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libssl-dev \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+RUN pip install --upgrade pip setuptools wheel
 
 # Set working directory
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY processor/requirements.txt ./requirements.txt
+COPY requirements.processor.txt ./requirements.processor.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Install Python dependencies with optimizations
+# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
+# Cache mount speeds up subsequent builds (BuildKit feature)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary -r requirements.processor.txt || \
+    pip install --user --prefer-binary -r requirements.processor.txt
 
 # Copy source code
 COPY processor/ ./processor/
@@ -47,22 +69,134 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
+# Set core environment variables (aligned with path_plan.md)
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV SERVICE_NAME=lucid-session-processor
-ENV PORT=8085
-ENV LUCID_PROCESSOR_PORT=8085
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Service identification (aligned with essentials.md lines 320-333)
+ENV SERVICE_NAME=lucid-chunk-processor
+ENV CONTAINER_NAME=lucid-chunk-processor
+ENV HOSTNAME=lucid-chunk-processor
+# Multi-stage distroless build for Lucid Chunk Processor
+# Step 32: Phase 3 Container Builds - Session Management
+# Aligned with essentials.md: pickme/lucid-chunk-processor:latest-arm64, port 8091, IP 172.20.0.20
+# Network Configuration: lucid-pi-network (172.20.0.0/16)
+# Fully aligned with plan/constants/ directory requirements
+
+# Stage 1: Builder
+FROM --platform=linux/arm64 python:3.11-slim AS builder
+
+# Set build arguments (aligned with path_plan.md)
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM=linux/arm64
+ARG PYTHON_VERSION=3.11
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Set environment variables for pip optimization (aligned with path_plan.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+RUN pip install --upgrade pip setuptools wheel
+
+# Set working directory
+WORKDIR /build
+
+# Copy requirements first for better layer caching
+COPY requirements.processor.txt ./requirements.processor.txt
+
+# Install Python dependencies with optimizations
+# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
+# Cache mount speeds up subsequent builds (BuildKit feature)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary -r requirements.processor.txt || \
+    pip install --user --prefer-binary -r requirements.processor.txt
+
+# Copy source code
+COPY processor/ ./processor/
+COPY core/ ./core/
+COPY __init__.py ./__init__.py
+
+# Stage 2: Runtime (Distroless)
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application code
+COPY --from=builder /build/processor /app/processor
+COPY --from=builder /build/core /app/core
+COPY --from=builder /build/__init__.py /app/__init__.py
+
+# Set working directory
+WORKDIR /app
+
+# Set core environment variables (aligned with path_plan.md)
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Service identification (aligned with essentials.md lines 320-333 and Network_conig_requirements.md lines 687-689)
+ENV SERVICE_NAME=lucid-chunk-processor
+ENV CONTAINER_NAME=lucid-chunk-processor
+ENV HOSTNAME=lucid-chunk-processor
+
+# Port configuration (aligned with essentials.md, path_plan.md, and Network_conig_requirements.md line 713)
+ENV PORT=8091
+ENV LUCID_PROCESSOR_PORT=8091
+ENV CHUNK_PROCESSOR_PORT=8091
 ENV HOST=0.0.0.0
+ENV HEALTHCHECK_PORT=8091
+ENV HEALTHCHECK_PATH=/health
+
+# Network configuration (aligned with Network_conig_requirements.md lines 710-712)
+ENV CHUNK_PROCESSOR_HOST=172.20.0.20
+ENV CHUNK_PROCESSOR_URL=http://lucid-chunk-processor:8091
+ENV API_URL=http://lucid-chunk-processor:8091
+
+# Database connections (aligned with Network_conig_requirements.md lines 714-715)
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+ENV REDIS_URL=redis://lucid-redis:6379/0
+
+# Service dependencies (aligned with Network_conig_requirements.md line 716)
+ENV SESSION_RECORDER_URL=http://lucid-session-recorder:8090
+
+# Project configuration (aligned with path_plan.md)
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENV PROJECT_NAME=Lucid
+ENV LUCID_PLATFORM=arm64
+ENV LUCID_ARCHITECTURE=linux/arm64
+ENV LUCID_ENV=production
+
+# Logging configuration (aligned with path_plan.md)
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
-# Health check
+# Health check configuration (aligned with Network_conig_requirements.md lines 718-721)
+# Note: Uses Python urllib.request (not curl) since distroless images don't have curl
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8085/health')"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/health')"]
 
-# Expose port
-EXPOSE 8085
+# Expose port (aligned with essentials.md and Network_conig_requirements.md: ports=8091:8091)
+EXPOSE 8091
 
-# Set entrypoint
+# Set entrypoint (aligned with other session Dockerfiles: pipeline.main, recorder.main pattern)
 ENTRYPOINT ["python", "-m", "processor.main"]

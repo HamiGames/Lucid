@@ -1,8 +1,8 @@
-# Multi-stage Dockerfile for VM Services
-# Builds distroless containers for vm-management
+# Lucid VM Service - Distroless (ARM64)
+# Image: pickme/lucid-vm:latest-arm64
+# Port per essentials.md: 8103
 
-# Stage 1: Build stage
-FROM python:3.11-slim as builder
+FROM --platform=linux/arm64 python:3.11-slim as builder
 
 # Set build arguments
 ARG BUILD_DATE
@@ -24,17 +24,26 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libffi-dev \
     libssl-dev \
+    tzdata \
+    locales \
     && rm -rf /var/lib/apt/lists/*
+
+# Configure timezone and locale for builder
+ENV TZ=UTC
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 # Create app directory
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY vm/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY infrastructure/docker/multi-stage/requirements.vm.txt ./requirements.vm.txt
+RUN pip install --no-cache-dir -r requirements.vm.txt
 
 # Copy source code
-COPY vm/ .
+COPY vm/ ./vm/
 COPY src/ ./src/
 COPY common/ ./common/
 
@@ -42,12 +51,12 @@ COPY common/ ./common/
 RUN python -m compileall -b .
 
 # Stage 2: Runtime stage (distroless)
-FROM gcr.io/distroless/python3-debian12
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
 
 # Set metadata
 LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.title="Lucid VM Service" \
-      org.opencontainers.image.description="Distroless VM service for Lucid platform" \
+      org.opencontainers.image.description="Distroless VM management service for Lucid platform" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
@@ -55,14 +64,26 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.licenses="MIT" \
       lucid.service="vm" \
       lucid.type="distroless" \
-      lucid.platform="multi-arch" \
+      lucid.platform="arm64" \
       lucid.security="hardened"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     LUCID_ENV=production \
-    LUCID_PLATFORM=multi-arch
+    LUCID_PLATFORM=arm64 \
+    LUCID_PROJECT_ROOT=/app
+
+# Locale and Timezone Configuration
+ENV TZ=UTC \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    COUNTRY=US
+
+# VM Service Configuration
+ENV VM_URL=http://lucid-vm:8103 \
+    HEALTHCHECK_PORT=8103 \
+    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
 
 # Create non-root user
 USER 65532:65532
@@ -73,15 +94,12 @@ WORKDIR /app
 # Copy built application from builder stage
 COPY --from=builder --chown=65532:65532 /app /app
 
-# Note: Distroless images don't have shell commands like mkdir or chmod
-# Directories will be created by the application if needed
-
 # Expose port
-EXPOSE 8096
+EXPOSE 8103
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import sys; sys.exit(0)"]
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8103/health')"]
 
-# Run the application
-CMD ["python3", "main.py"]
+# Run the application (async main)
+CMD ["python3", "-c", "import asyncio; from vm.main import main; asyncio.run(main())"]

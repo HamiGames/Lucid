@@ -1,25 +1,28 @@
 # Multi-stage build for Elasticsearch distroless
-FROM elasticsearch:8.11.0 as builder
+# Aligned with essentials.md: pickme/lucid-elasticsearch:latest-arm64, ports 9200:9200,9300:9300
+FROM elasticsearch:8.11.0 AS builder
 
-# Runtime stage - Distroless
-FROM gcr.io/distroless/base-debian12
+# Runtime stage - MUST use Java distroless (Elasticsearch requires Java)
+# essentials.md: distroless base with Java runtime
+FROM gcr.io/distroless/java17-debian12:latest
 
-# Copy Elasticsearch binaries from builder
+# Copy Elasticsearch installation from builder
 COPY --from=builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
-COPY --from=builder /usr/share/elasticsearch/bin/ /usr/share/elasticsearch/bin/
 
-# Set working directory
+# Set working directory (essentials.md: ELASTICSEARCH_URI=http://lucid-elasticsearch:9200)
 WORKDIR /usr/share/elasticsearch
 
-# Copy configuration
-COPY elasticsearch.yml /usr/share/elasticsearch/config/
+# Copy configuration (use full path like Redis Dockerfile)
+# If elasticsearch.yml doesn't exist, Elasticsearch will use defaults
+COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
-# Expose port
-EXPOSE 9200
+# Set Java heap size (optimized for Raspberry Pi)
+ENV ES_JAVA_OPTS="-Xms512m -Xmx512m"
+ENV discovery.type=single-node
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ["curl", "-f", "http://localhost:9200/_cluster/health"]
+# Expose ports (essentials.md: ports=9200:9200,9300:9300, healthcheck_port=9200)
+EXPOSE 9200 9300
 
 # Default command
-CMD ["bin/elasticsearch"]
+# Elasticsearch script is at bin/elasticsearch relative to WORKDIR
+CMD ["/usr/share/elasticsearch/bin/elasticsearch"]

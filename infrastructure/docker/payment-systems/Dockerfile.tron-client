@@ -30,6 +30,9 @@ COPY --from=builder /root/.local /home/nonroot/.local
 
 # Copy application code
 COPY --from=builder /app /app
+COPY --from=builder /build/tron_client /app/tron_client
+COPY --from=builder /build/blockchain /app/blockchain
+COPY --from=builder /build/payment-systems /app/payment-systems
 
 # Set working directory
 WORKDIR /app
@@ -46,7 +49,7 @@ EXPOSE 8088
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import tron_client; print('TRON client service healthy')"]
+    CMD ["python", "-c", "import tron_client; print('TRON client service healthy')"]
 
 # Run the TRON client service
-ENTRYPOINT ["python3", "/app/tron_client.py"]
+ENTRYPOINT ["python3", "-m", "tron_client"]

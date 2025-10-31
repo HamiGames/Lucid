@@ -1,5 +1,6 @@
 # Multi-stage distroless build for Lucid Session Recorder
 # Step 32: Phase 3 Container Builds - Session Management
+# Aligned with essentials.md: pickme/lucid-session-recorder:latest-arm64, port 8090, IP 172.20.0.20
 
 # Stage 1: Builder
 FROM --platform=linux/arm64 python:3.11-slim AS builder
@@ -27,10 +28,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy requirements first for better layer caching
-COPY recorder/requirements.txt ./requirements.txt
+COPY requirements.recorder.txt ./requirements.recorder.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.recorder.txt
 
 # Copy source code
 COPY recorder/ ./recorder/
@@ -51,21 +52,30 @@ COPY --from=builder /build/__init__.py /app/__init__.py
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
+# Set environment variables (aligned with essentials.md)
 ENV PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 ENV PYTHONUNBUFFERED=1
 ENV SERVICE_NAME=lucid-session-recorder
-ENV PORT=8084
+ENV PORT=8090
 ENV HOST=0.0.0.0
 ENV LOG_LEVEL=INFO
 ENV DEBUG=false
 
-# Health check (distroless compatible - no shell)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8084/health')"]
+# Service Configuration (per essentials.md lines 305-318)
+ENV SESSION_RECORDER_HOST=172.20.0.20
+ENV SESSION_RECORDER_URL=http://lucid-session-recorder:8090
+ENV API_URL=http://lucid-session-recorder:8090
+ENV HEALTHCHECK_PORT=8090
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+ENV LUCID_PLATFORM=arm64
+ENV LUCID_ENV=production
 
-# Expose port
-EXPOSE 8084
+# Health check (aligned with essentials.md: healthcheck_port=8090)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["python3","-c","import urllib.request; urllib.request.urlopen('http://localhost:8090/health').read().decode()"]
+
+# Expose port (aligned with essentials.md: ports=8090:8090)
+EXPOSE 8090
 
 # Set entrypoint
 ENTRYPOINT ["python3", "-m", "recorder.main"]
