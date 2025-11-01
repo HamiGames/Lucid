@@ -47,6 +47,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --upgrade pip setuptools wheel
 
 # Copy requirements and install dependencies
+COPY . ./
 COPY requirements.txt ./requirements.txt
 COPY requirements-prod.txt ./requirements-prod.txt
 
@@ -56,13 +57,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --prefer-binary -r requirements.txt -r requirements-prod.txt
 
 # Copy application source code
-COPY payment-systems/tron/services/payment_gateway.py ./services/payment_gateway.py
-COPY payment-systems/tron/services/__init__.py ./services/__init__.py
-COPY payment-systems/tron/config.py ./config.py
-COPY payment-systems/tron/main.py ./main.py
-COPY payment-systems/tron/api/ ./api/
-COPY payment-systems/tron/models/ ./models/
-COPY payment-systems/tron/__init__.py ./__init__.py
+COPY services/payment_gateway.py ./services/payment_gateway.py
+COPY services/__init__.py ./services/__init__.py
+COPY config.py ./config.py
+COPY main.py ./main.py
+COPY api/ ./api/
+COPY models/ ./models/
+COPY __init__.py ./__init__.py
 
 # Compile Python bytecode
 RUN /opt/venv/bin/python -m compileall -b .
