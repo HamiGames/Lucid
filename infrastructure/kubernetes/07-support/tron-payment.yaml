@@ -22,35 +22,35 @@ spec:
     spec:
       containers:
       - name: tron-payment
-        image: lucid-tron-payment:latest
+        image: pickme/lucid-tron-payment:latest-arm64
         ports:
-        - containerPort: 8085
+        - containerPort: 8091
           name: tron-client
-        - containerPort: 8086
+        - containerPort: 8092
           name: payout-router
-        - containerPort: 8087
+        - containerPort: 8093
           name: wallet-manager
-        - containerPort: 8088
+        - containerPort: 8094
           name: usdt-manager
-        - containerPort: 8089
+        - containerPort: 8096
           name: trx-staking
-        - containerPort: 8090
+        - containerPort: 8097
           name: payment-gateway
         env:
         - name: SERVICE_NAME
           value: "tron-payment"
         - name: TRON_CLIENT_PORT
-          value: "8085"
+          value: "8091"
         - name: PAYOUT_ROUTER_PORT
-          value: "8086"
+          value: "8092"
         - name: WALLET_MANAGER_PORT
-          value: "8087"
+          value: "8093"
         - name: USDT_MANAGER_PORT
-          value: "8088"
+          value: "8094"
         - name: TRX_STAKING_PORT
-          value: "8089"
+          value: "8096"
         - name: PAYMENT_GATEWAY_PORT
-          value: "8090"
+          value: "8097"
         - name: TRON_NETWORK
           value: "mainnet"
         - name: TRON_NODE_URL
@@ -121,13 +121,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8085
+            port: 8091
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 8085
+            port: 8091
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
@@ -152,23 +152,23 @@ spec:
     app.kubernetes.io/name: tron-payment
     app.kubernetes.io/component: payment
   ports:
-  - port: 8085
-    targetPort: 8085
+  - port: 8091
+    targetPort: 8091
     name: tron-client
-  - port: 8086
-    targetPort: 8086
+  - port: 8092
+    targetPort: 8092
     name: payout-router
-  - port: 8087
-    targetPort: 8087
+  - port: 8093
+    targetPort: 8093
     name: wallet-manager
-  - port: 8088
-    targetPort: 8088
+  - port: 8094
+    targetPort: 8094
     name: usdt-manager
-  - port: 8089
-    targetPort: 8089
+  - port: 8096
+    targetPort: 8096
     name: trx-staking
-  - port: 8090
-    targetPort: 8090
+  - port: 8097
+    targetPort: 8097
     name: payment-gateway
   type: ClusterIP
 ---

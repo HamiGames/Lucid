@@ -26,16 +26,16 @@ containers:
   # Phase 1 containers
   phase1:
     - name: "lucid-mongodb"
-      image: "lucid-mongodb:latest"
+      image: "pickme/lucid-mongodb:latest-arm64"
       critical: true
     - name: "lucid-redis"
-      image: "lucid-redis:latest"
+      image: "pickme/lucid-redis:latest-arm64"
       critical: true
     - name: "lucid-elasticsearch"
-      image: "lucid-elasticsearch:latest"
+      image: "pickme/lucid-elasticsearch:latest-arm64"
       critical: true
     - name: "lucid-auth-service"
-      image: "lucid-auth-service:latest"
+      image: "pickme/lucid-auth-service:latest-arm64"
       critical: true
 
 # Vulnerability Scanning Configuration

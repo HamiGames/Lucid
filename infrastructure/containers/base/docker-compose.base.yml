@@ -2,7 +2,7 @@
 # Docker Compose for testing base distroless images
 # Supports multi-platform builds for ARM64 and AMD64
 
-version: '3.8'
+version: "3.8"
 
 services:
   python-base:
@@ -18,28 +18,28 @@ services:
     image: lucid-python-base:latest
     container_name: lucid-python-base
     hostname: lucid-python-base
-    
+
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - LUCID_ENV=dev
-    
+
     ports:
       - "8000:8000"
       - "8080:8080"
       - "8081:8081"
-    
+
     healthcheck:
       test: ["python", "-c", "import sys; sys.exit(0)"]
       interval: 30s
       timeout: 10s
       start_period: 5s
       retries: 3
-    
+
     command: ["python", "-c", "print('Lucid Python Base Container Ready')"]
-    
+
     networks:
-      - lucid-base-net
+      - lucid-distroless-dev
 
   java-base:
     build:
@@ -54,37 +54,37 @@ services:
     image: lucid-java-base:latest
     container_name: lucid-java-base
     hostname: lucid-java-base
-    
+
     environment:
       - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
       - LUCID_ENV=dev
-    
+
     ports:
       - "8080:8080"
       - "8081:8081"
       - "8082:8082"
-    
+
     healthcheck:
       test: ["java", "-version"]
       interval: 30s
       timeout: 10s
       start_period: 5s
       retries: 3
-    
+
     command: ["java", "-version"]
-    
+
     networks:
-      - lucid-base-net
+      - lucid-distroless-dev
 
 networks:
-  lucid-base-net:
-    name: lucid-base-net
+  lucid-distroless-dev:
+    name: lucid-distroless-dev
     driver: bridge
     attachable: true
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.24.0.0/16
+          gateway: 172.24.0.1
 
 volumes:
   lucid-base-data:

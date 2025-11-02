@@ -15,7 +15,7 @@ servers:
     description: Production payment service server
   - url: https://payment-dev.lucid-blockchain.org/api/v1
     description: Development payment service server
-  - url: http://localhost:8084/api/v1
+  - url: http://localhost:8091/api/v1
     description: Local development server
 
 security:

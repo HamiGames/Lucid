@@ -184,10 +184,10 @@ services:
     container_name: lucid-session-anchoring
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "8085:8085"
     environment:
       - SERVICE_NAME=lucid-session-anchoring
-      - PORT=8090
+      - PORT=8085
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -204,7 +204,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -220,10 +220,10 @@ services:
     container_name: lucid-block-manager
     restart: unless-stopped
     ports:
-      - "8091:8091"
+      - "8086:8086"
     environment:
       - SERVICE_NAME=lucid-block-manager
-      - PORT=8091
+      - PORT=8086
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -240,7 +240,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -256,10 +256,10 @@ services:
     container_name: lucid-data-chain
     restart: unless-stopped
     ports:
-      - "8092:8092"
+      - "8087:8087"
     environment:
       - SERVICE_NAME=lucid-data-chain
-      - PORT=8092
+      - PORT=8087
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -276,7 +276,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -415,10 +415,10 @@ services:
     container_name: lucid-session-recorder
     restart: unless-stopped
     ports:
-      - "8093:8093"
+      - "8090:8090"
     environment:
       - SERVICE_NAME=lucid-session-recorder
-      - PORT=8093
+      - PORT=8090
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -435,7 +435,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -451,10 +451,10 @@ services:
     container_name: lucid-chunk-processor
     restart: unless-stopped
     ports:
-      - "8094:8094"
+      - "8091:8091"
     environment:
       - SERVICE_NAME=lucid-chunk-processor
-      - PORT=8094
+      - PORT=8091
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -471,7 +471,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8094/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -487,10 +487,10 @@ services:
     container_name: lucid-session-storage
     restart: unless-stopped
     ports:
-      - "8095:8095"
+      - "8082:8082"
     environment:
       - SERVICE_NAME=lucid-session-storage
-      - PORT=8095
+      - PORT=8082
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -507,7 +507,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -523,10 +523,10 @@ services:
     container_name: lucid-session-api
     restart: unless-stopped
     ports:
-      - "8096:8096"
+      - "8087:8087"
     environment:
       - SERVICE_NAME=lucid-session-api
-      - PORT=8096
+      - PORT=8087
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -543,7 +543,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -559,10 +559,10 @@ services:
     container_name: lucid-rdp-server-manager
     restart: unless-stopped
     ports:
-      - "8097:8097"
+      - "8090:8090"
     environment:
       - SERVICE_NAME=lucid-rdp-server-manager
-      - PORT=8097
+      - PORT=8090
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -579,7 +579,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -595,10 +595,10 @@ services:
     container_name: lucid-rdp-xrdp
     restart: unless-stopped
     ports:
-      - "8098:8098"
+      - "3389:3389"
     environment:
       - SERVICE_NAME=lucid-rdp-xrdp
-      - PORT=8098
+      - PORT=3389
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -615,7 +615,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      test: ["CMD-SHELL", "nc -z localhost 3389 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -631,10 +631,10 @@ services:
     container_name: lucid-rdp-controller
     restart: unless-stopped
     ports:
-      - "8099:8099"
+      - "8092:8092"
     environment:
       - SERVICE_NAME=lucid-rdp-controller
-      - PORT=8099
+      - PORT=8092
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -651,7 +651,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -667,10 +667,10 @@ services:
     container_name: lucid-rdp-monitor
     restart: unless-stopped
     ports:
-      - "8100:8100"
+      - "8093:8093"
     environment:
       - SERVICE_NAME=lucid-rdp-monitor
-      - PORT=8100
+      - PORT=8093
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -687,7 +687,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -703,10 +703,10 @@ services:
     container_name: lucid-session-pipeline
     restart: unless-stopped
     ports:
-      - "8083:8083"
+      - "8087:8087"
     environment:
       - SERVICE_NAME=lucid-session-pipeline
-      - PORT=8083
+      - PORT=8087
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -726,7 +726,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -785,10 +785,10 @@ services:
     container_name: lucid-admin-interface
     restart: unless-stopped
     ports:
-      - "8120:8120"
+      - "8083:8083"
     environment:
       - SERVICE_NAME=lucid-admin-interface
-      - PORT=8120
+      - PORT=8083
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -824,10 +824,10 @@ services:
     container_name: lucid-payout-router
     restart: unless-stopped
     ports:
-      - "8101:8101"
+      - "8092:8092"
     environment:
       - SERVICE_NAME=lucid-payout-router
-      - PORT=8101
+      - PORT=8092
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -844,7 +844,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8101/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -860,10 +860,10 @@ services:
     container_name: lucid-wallet-manager
     restart: unless-stopped
     ports:
-      - "8102:8102"
+      - "8093:8093"
     environment:
       - SERVICE_NAME=lucid-wallet-manager
-      - PORT=8102
+      - PORT=8093
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -880,7 +880,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8102/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -896,10 +896,10 @@ services:
     container_name: lucid-usdt-manager
     restart: unless-stopped
     ports:
-      - "8103:8103"
+      - "8094:8094"
     environment:
       - SERVICE_NAME=lucid-usdt-manager
-      - PORT=8103
+      - PORT=8094
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -916,7 +916,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8103/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8094/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -932,10 +932,10 @@ services:
     container_name: lucid-trx-staking
     restart: unless-stopped
     ports:
-      - "8104:8104"
+      - "8096:8096"
     environment:
       - SERVICE_NAME=lucid-trx-staking
-      - PORT=8104
+      - PORT=8096
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -952,7 +952,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8104/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -968,10 +968,10 @@ services:
     container_name: lucid-payment-gateway
     restart: unless-stopped
     ports:
-      - "8105:8105"
+      - "8097:8097"
     environment:
       - SERVICE_NAME=lucid-payment-gateway
-      - PORT=8105
+      - PORT=8097
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -988,7 +988,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8105/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1021,7 +1021,7 @@ services:
     networks:
       - lucid-tron-isolated
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1041,10 +1041,10 @@ services:
     container_name: lucid-gui
     restart: unless-stopped
     ports:
-      - "8106:8106"
+      - "8000:8000"
     environment:
       - SERVICE_NAME=lucid-gui
-      - PORT=8106
+      - PORT=8000
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -1061,7 +1061,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8106/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1077,10 +1077,10 @@ services:
     container_name: lucid-rdp
     restart: unless-stopped
     ports:
-      - "8107:8107"
+      - "3389:3389"
     environment:
       - SERVICE_NAME=lucid-rdp
-      - PORT=8107
+      - PORT=3389
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -1097,7 +1097,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8107/health || exit 1"]
+      test: ["CMD-SHELL", "nc -z localhost 3389 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

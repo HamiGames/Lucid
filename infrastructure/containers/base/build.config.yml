@@ -2,7 +2,7 @@
 # YAML configuration for distroless base image builds
 
 build:
-  registry: "ghcr.io/hamigames/lucid"
+  registry: "pickme/lucid"
   platforms: ["linux/amd64", "linux/arm64"]
   version: "latest"
   

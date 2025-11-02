@@ -15,7 +15,7 @@ servers:
     description: Production session management server
   - url: https://sessions-dev.lucid-blockchain.org/api/v1
     description: Development session management server
-  - url: http://localhost:8083/api/v1
+  - url: http://localhost:8087/api/v1
     description: Local development server
 
 security:

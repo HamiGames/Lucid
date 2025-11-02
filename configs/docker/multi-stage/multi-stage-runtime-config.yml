@@ -15,7 +15,7 @@ services:
       - BUILD_STAGE=runtime
       - RUNTIME_MODE=production
     networks:
-      - lucid-production
+      - lucid-distroless-production
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -57,7 +57,7 @@ services:
       - BUILD_STAGE=development
       - RUNTIME_MODE=development
     networks:
-      - lucid-production
+      - lucid-distroless-production
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -97,7 +97,7 @@ services:
       - BUILD_STAGE=runtime
       - RUNTIME_MODE=monitoring
     networks:
-      - lucid-production
+      - lucid-distroless-production
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -130,17 +130,17 @@ services:
           cpus: '0.1'
 
 networks:
-  lucid-production:
+  lucid-distroless-production:
     driver: bridge
-    name: lucid-multi-stage-production
+    name: lucid-distroless-production
     driver_opts:
       com.docker.network.bridge.enable_icc: "true"
       com.docker.network.bridge.enable_ip_masquerade: "true"
       com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
     ipam:
       config:
-        - subnet: 172.24.0.0/16
-          gateway: 172.24.0.1
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1
 
 volumes:
   lucid-production-data:

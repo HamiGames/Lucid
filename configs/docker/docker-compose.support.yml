@@ -15,12 +15,15 @@ services:
       - lucid-pi-network
     ports:
       - "8083:8083"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/admin:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/admin:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - ADMIN_INTERFACE_HOST=admin-interface
-      - ADMIN_INTERFACE_PORT=8120
-      - ADMIN_INTERFACE_URL=http://admin-interface:8120
+      - ADMIN_INTERFACE_PORT=8083
+      - ADMIN_INTERFACE_URL=http://admin-interface:8083
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
@@ -60,6 +63,12 @@ services:
       - ../environment/.env.core
     networks:
       - lucid-tron-isolated
+    ports:
+      - "8091:8091"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/tron:/data/tron:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:rw
+      - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -110,6 +119,12 @@ services:
       - ../environment/.env.tron-payout-router
     networks:
       - lucid-tron-isolated
+    ports:
+      - "8092:8092"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/payments:/data/payouts:rw
+      - /mnt/myssd/Lucid/Lucid/data/batches:/data/batches:rw
+      - /mnt/myssd/Lucid/Lucid/logs/payout-router:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -155,6 +170,12 @@ services:
       - ../environment/.env.tron-wallet-manager
     networks:
       - lucid-tron-isolated
+    ports:
+      - "8093:8093"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/wallets:/data/wallets:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/wallet-manager:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -200,6 +221,12 @@ services:
       - ../environment/.env.tron-usdt-manager
     networks:
       - lucid-tron-isolated
+    ports:
+      - "8094:8094"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/usdt:/data/usdt:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/usdt-manager:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -247,6 +274,12 @@ services:
       - ../environment/.env.tron-staking
     networks:
       - lucid-tron-isolated
+    ports:
+      - "8096:8096"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/staking:/data/staking:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/trx-staking:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -292,6 +325,12 @@ services:
       - ../environment/.env.tron-payment-gateway
     networks:
       - lucid-tron-isolated
+    ports:
+      - "8097:8097"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/gateway:/data/gateway:rw
+      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
+      - /mnt/myssd/Lucid/Lucid/logs/payment-gateway:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

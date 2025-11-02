@@ -11,7 +11,7 @@ services:
 
   # GUI API Bridge Service
   gui-api-bridge:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-api-bridge:${LUCID_TAG:-latest}
+    image: pickme/lucid-gui-api-bridge:latest-arm64
     container_name: lucid-gui-api-bridge
     restart: unless-stopped
     env_file:
@@ -72,7 +72,7 @@ services:
 
   # GUI Docker Manager Service
   gui-docker-manager:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-docker-manager:${LUCID_TAG:-latest}
+    image: pickme/lucid-gui-docker-manager:latest-arm64
     container_name: lucid-gui-docker-manager
     restart: unless-stopped
     env_file:
@@ -125,7 +125,7 @@ services:
       - /tmp:noexec,nosuid,size=100m
   # GUI Tor Manager Service
   gui-tor-manager:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-tor-manager:${LUCID_TAG:-latest}
+    image: pickme/lucid-gui-tor-manager:latest-arm64
     container_name: lucid-gui-tor-manager
     restart: unless-stopped
     env_file:
@@ -177,7 +177,7 @@ services:
       - /tmp:noexec,nosuid,size=100m
   # GUI Hardware Wallet Service
   gui-hardware-wallet:
-    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-hardware-wallet:${LUCID_TAG:-latest}
+    image: pickme/lucid-gui-hardware-wallet:latest-arm64
     container_name: lucid-gui-hardware-wallet
     restart: unless-stopped
     env_file:

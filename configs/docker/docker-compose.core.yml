@@ -6,7 +6,7 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
+      - ../environment/.env.foundation
       - ../environment/.env.core
     networks:
       - lucid-pi-network
@@ -153,6 +153,8 @@ services:
       - ../environment/.env.core
     networks:
       - lucid-pi-network
+    ports:
+      - "8085:8085"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw

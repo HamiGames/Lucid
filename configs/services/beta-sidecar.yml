@@ -37,7 +37,7 @@ networking:
       subnet: "172.20.0.0/16"
       gateway: "172.20.0.1"
       
-    - name: "lucid-network-isolated"
+    - name: "lucid-tron-isolated"
       subnet: "172.21.0.0/16"
       gateway: "172.21.0.1"
       isolated: true
@@ -380,7 +380,7 @@ health_checks:
         
       - name: "lucid-tron-client"
         url: "http://lucid-tron-client:8096/health"
-        network: "lucid-network-isolated"
+        network: "lucid-tron-isolated"
 
 # Configuration Management
 configuration:

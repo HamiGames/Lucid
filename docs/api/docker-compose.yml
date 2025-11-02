@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Swagger UI service for API documentation
@@ -90,6 +90,11 @@ networks:
   lucid-docs:
     driver: bridge
     name: lucid-docs-network
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 
 volumes:
   docs-data:

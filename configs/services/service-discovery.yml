@@ -116,22 +116,22 @@ service_planes:
     
     services:
       - name: "lucid-tron-client"
-        port: 8096
+        port: 8091
         tags: ["tron", "payment", "wallet"]
         health_check: "/health"
         
       - name: "lucid-payout-router"
-        port: 8097
+        port: 8092
         tags: ["tron", "payout", "wallet"]
         health_check: "/health"
         
       - name: "lucid-wallet-manager"
-        port: 8098
+        port: 8093
         tags: ["tron", "wallet", "wallet"]
         health_check: "/health"
         
       - name: "lucid-usdt-manager"
-        port: 8099
+        port: 8094
         tags: ["tron", "usdt", "wallet"]
         health_check: "/health"
 

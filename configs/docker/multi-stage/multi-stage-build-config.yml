@@ -22,7 +22,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/layer-analysis:/analysis
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - build-network
+      - lucid-multi-stage-network
     command: >
       sh -c "
         echo 'Starting multi-stage build orchestrator...' &&
@@ -41,7 +41,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/layer-reports:/reports
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - build-network
+      - lucid-multi-stage-network
     command: >
       sh -c "
         echo 'Starting layer analysis...' &&
@@ -61,7 +61,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/cache-reports:/reports
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - build-network
+      - lucid-multi-stage-network
     command: >
       sh -c "
         echo 'Starting cache optimization...' &&
@@ -80,7 +80,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/validation-reports:/reports
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - build-network
+      lucid-multi-stage-network
     command: >
       sh -c "
         echo 'Starting build validation...' &&
@@ -89,9 +89,13 @@ services:
       "
 
 networks:
-  build-network:
+  lucid-multi-stage-network:  # Currently "build-network"
     driver: bridge
-    name: lucid-multi-stage-build-network
+    name: lucid-multi-stage-network
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1
 
 volumes:
   build-cache:

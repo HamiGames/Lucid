@@ -107,5 +107,10 @@ services:
 
 networks:
   lucid-distroless-production:
-    external: true
+    driver: bridge
     name: lucid-distroless-production
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1

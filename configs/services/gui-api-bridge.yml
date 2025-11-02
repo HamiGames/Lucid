@@ -75,7 +75,7 @@ backend_services:
 
   tron_payment:
     name: "lucid-tron-client"
-    url: "http://lucid-tron-client:8096"
+    url: "http://lucid-tron-client:8091"
     health_check: "/health"
     timeout: 30000
     retry_attempts: 3

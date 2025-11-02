@@ -15,7 +15,7 @@ servers:
     description: Production auth service server
   - url: https://auth-dev.lucid-blockchain.org/api/v1
     description: Development auth service server
-  - url: http://localhost:8085/api/v1
+  - url: http://localhost:8089/api/v1
     description: Local development server
 
 security:

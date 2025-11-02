@@ -245,7 +245,7 @@ network_integration:
       services: ["foundation", "core", "application", "gui"]
     
     isolated_network:
-      name: "lucid-network-isolated"
+      name: "lucid-tron-isolated"
       subnet: "172.21.0.0/16"
       gateway: "172.21.0.1"
       services: ["tron_payment"]
@@ -302,7 +302,7 @@ data_integration:
     enabled: true
     
     mongodb:
-      connection_string: "mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin"
+      connection_string: "mongodb://lucid:{MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin"
       collections:
         - "sessions"
         - "chunks"
@@ -332,15 +332,15 @@ data_integration:
     
     shared_volumes:
       - name: "lucid_data"
-        path: "/opt/lucid/data"
+        path: "/mnt/myssd/Lucid/Lucid/data"
         services: ["all"]
       
       - name: "lucid_logs"
-        path: "/opt/lucid/logs"
+        path: "/mnt/myssd/Lucid/Lucid/logs"
         services: ["all"]
       
       - name: "lucid_backups"
-        path: "/opt/lucid/backups"
+        path: "/mnt/myssd/Lucid/Lucid/backups"
         services: ["admin", "storage"]
     
     gui_data:

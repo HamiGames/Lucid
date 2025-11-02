@@ -22,9 +22,9 @@ build_environment:
       - "linux/arm64"
     
   registry_config:
-    default_registry: "ghcr.io"
-    image_name: "HamiGames/Lucid"
-    default_tag: "latest"
+    default_registry: "pickme"
+    image_name: "lucid"
+    default_tag: "latest-arm64"
     
   build_config:
     parallel_builds: true
@@ -390,7 +390,7 @@ deployment:
     enabled: true
     host: "192.168.0.75"
     user: "pickme"
-    deploy_dir: "/opt/lucid/production"
+    deploy_dir: "/mnt/myssd/Lucid/Lucid"
     
     phases:
       - name: "copy_configs"
