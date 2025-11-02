@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   session-pipeline:
@@ -6,8 +6,10 @@ services:
     container_name: session-pipeline
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -52,8 +54,10 @@ services:
     container_name: session-recorder
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -99,8 +103,10 @@ services:
     container_name: session-processor
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -145,8 +151,10 @@ services:
     container_name: session-storage
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -191,8 +199,10 @@ services:
     container_name: session-api
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -240,8 +250,10 @@ services:
     container_name: rdp-server-manager
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -289,8 +301,10 @@ services:
     container_name: rdp-xrdp
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -335,8 +349,10 @@ services:
     container_name: rdp-controller
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -380,8 +396,10 @@ services:
     container_name: rdp-monitor
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -424,8 +442,10 @@ services:
     container_name: node-management
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../environment/.env.secrets
+      - ../environment/.env.core
       - ../environment/.env.application
+      - ../environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:

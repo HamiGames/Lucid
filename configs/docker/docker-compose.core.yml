@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   api-gateway:
@@ -6,7 +6,7 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
+      - ../configs/environment/.env.foundation
       - ../environment/.env.core
     networks:
       - lucid-pi-network
@@ -148,6 +148,7 @@ services:
     container_name: session-anchoring
     restart: unless-stopped
     env_file:
+      - ../environment/.env.secrets
       - ../environment/.env.foundation
       - ../environment/.env.core
     networks:
@@ -192,6 +193,7 @@ services:
     container_name: block-manager
     restart: unless-stopped
     env_file:
+      - ../environment/.env.secrets
       - ../environment/.env.foundation
       - ../environment/.env.core
     networks:
@@ -236,6 +238,7 @@ services:
     container_name: data-chain
     restart: unless-stopped
     env_file:
+      - ../environment/.env.secrets
       - ../environment/.env.foundation
       - ../environment/.env.core
     networks:

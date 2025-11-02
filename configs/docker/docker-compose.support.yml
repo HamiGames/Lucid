@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   admin-interface:
@@ -8,6 +8,9 @@ services:
     env_file:
       - ../environment/.env.foundation
       - ../environment/.env.support
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
     networks:
       - lucid-pi-network
     ports:
@@ -53,6 +56,8 @@ services:
       - ../environment/.env.foundation
       - ../environment/.env.support
       - ../environment/.env.tron-client
+      - ../environment/.env.secrets
+      - ../environment/.env.core
     networks:
       - lucid-tron-isolated
     environment:
@@ -99,6 +104,9 @@ services:
     env_file:
       - ../environment/.env.foundation
       - ../environment/.env.support
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
       - ../environment/.env.tron-payout-router
     networks:
       - lucid-tron-isolated
@@ -141,6 +149,9 @@ services:
     env_file:
       - ../environment/.env.foundation
       - ../environment/.env.support
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
       - ../environment/.env.tron-wallet-manager
     networks:
       - lucid-tron-isolated
@@ -183,6 +194,9 @@ services:
     env_file:
       - ../environment/.env.foundation
       - ../environment/.env.support
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
       - ../environment/.env.tron-usdt-manager
     networks:
       - lucid-tron-isolated
@@ -227,6 +241,9 @@ services:
     env_file:
       - ../environment/.env.foundation
       - ../environment/.env.support
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
       - ../environment/.env.tron-staking
     networks:
       - lucid-tron-isolated
@@ -269,6 +286,9 @@ services:
     env_file:
       - ../environment/.env.foundation
       - ../environment/.env.support
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
       - ../environment/.env.tron-payment-gateway
     networks:
       - lucid-tron-isolated

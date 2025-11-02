@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   lucid-mongodb:
@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     env_file:
       - ../environment/.env.foundation
+      - ../environment/.env.secrets
     networks:
       - lucid-pi-network
     environment:
@@ -52,6 +53,7 @@ services:
     container_name: lucid-redis
     restart: unless-stopped
     env_file:
+      - ../environment/.env.secrets
       - ../environment/.env.foundation
     networks:
       - lucid-pi-network
@@ -94,6 +96,7 @@ services:
     container_name: lucid-elasticsearch
     restart: unless-stopped
     env_file:
+      - ../environment/.env.secrets
       - ../environment/.env.foundation
     networks:
       - lucid-pi-network
@@ -137,6 +140,7 @@ services:
     container_name: lucid-auth-service
     restart: unless-stopped
     env_file:
+      - ../environment/.env.secrets
       - ../environment/.env.foundation
     networks:
       - lucid-pi-network
@@ -166,7 +170,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
       - auth-cache:/tmp/auth
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8089/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8089/health || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

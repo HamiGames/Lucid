@@ -2,7 +2,7 @@
 # Integrates Electron GUI with Docker backend services
 # Step 33: GUI Environment Configuration from lucid-container-build-plan.plan.md
 
-version: '3.8'
+version: "3.8"
 
 services:
   # ===========================================
@@ -14,6 +14,12 @@ services:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-api-bridge:${LUCID_TAG:-latest}
     container_name: lucid-gui-api-bridge
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
+      - ../environment/.env.foundation
+      - ../environment/.env.gui
     ports:
       - "8097:8097"
     environment:
@@ -52,12 +58,29 @@ services:
       - "com.lucid.phase=gui"
       - "com.lucid.service=gui-api-bridge"
       - "com.lucid.cluster=gui-integration"
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE # Only for services that bind ports
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
 
   # GUI Docker Manager Service
   gui-docker-manager:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-docker-manager:${LUCID_TAG:-latest}
     container_name: lucid-gui-docker-manager
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
+      - ../environment/.env.foundation
+      - ../environment/.env.gui
     ports:
       - "8098:8098"
     environment:
@@ -89,15 +112,31 @@ services:
       - "com.lucid.phase=gui"
       - "com.lucid.service=gui-docker-manager"
       - "com.lucid.cluster=gui-integration"
-
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE # Only for services that bind ports
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
   # GUI Tor Manager Service
   gui-tor-manager:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-tor-manager:${LUCID_TAG:-latest}
     container_name: lucid-gui-tor-manager
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
+      - ../environment/.env.foundation
+      - ../environment/.env.gui
     ports:
-      - "9050:9050"  # SOCKS5 proxy
-      - "9051:9051"  # Control port
+      - "9050:9050" # SOCKS5 proxy
+      - "9051:9051" # Control port
     environment:
       - SERVICE_NAME=lucid-gui-tor-manager
       - TOR_SOCKS_PORT=9050
@@ -112,7 +151,11 @@ services:
     networks:
       - lucid-gui-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f --socks5-hostname localhost:9050 http://check.torproject.org/api/ip || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --socks5-hostname localhost:9050 http://check.torproject.org/api/ip || exit 1",
+        ]
       interval: 60s
       timeout: 30s
       retries: 3
@@ -121,12 +164,28 @@ services:
       - "com.lucid.phase=gui"
       - "com.lucid.service=gui-tor-manager"
       - "com.lucid.cluster=gui-integration"
-
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE # Only for services that bind ports
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
   # GUI Hardware Wallet Service
   gui-hardware-wallet:
     image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/gui-hardware-wallet:${LUCID_TAG:-latest}
     container_name: lucid-gui-hardware-wallet
     restart: unless-stopped
+    env_file:
+      - ../environment/.env.secrets
+      - ../environment/.env.core
+      - ../environment/.env.application
+      - ../environment/.env.foundation
+      - ../environment/.env.gui
     ports:
       - "8099:8099"
     environment:
@@ -157,7 +216,17 @@ services:
       - "com.lucid.phase=gui"
       - "com.lucid.service=gui-hardware-wallet"
       - "com.lucid.cluster=gui-integration"
-
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE # Only for services that bind ports
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
 # ===========================================
 # NETWORKS
 # ===========================================
@@ -166,7 +235,7 @@ networks:
   lucid-pi-network:
     name: lucid-pi-network
     external: true
-  
+
   # GUI-specific network for secure communication
   lucid-gui-network:
     name: lucid-gui-network
@@ -176,12 +245,4 @@ networks:
       config:
         - subnet: 172.22.0.0/16
           gateway: 172.22.0.1
-
 # ===========================================
-# VOLUMES
-# ===========================================
-# =============================================================================
-# VOLUMES - Using Direct Host Paths on Pi
-# =============================================================================
-# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
-# No named volumes needed - using host path mounts for better performance
