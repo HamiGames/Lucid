@@ -47,7 +47,7 @@
 -r RDP/requirements.monitor.txt
 -r RDP/requirements.xrdp.txt
 -r RDP/requirements.server-manager.txt
--r RDP/requirements.security.txt
+-r RDP/security/requirements.security.txt
 -r RDP/session-controller/requirements.txt
 
 # Infrastructure/base images (keep last to avoid pin conflicts)
@@ -65,9 +65,16 @@
 -r database/mongodb/requirements.txt
 -r database/services/monitoring/requirements-monitoring.txt
 -r database/services/backup/requirements-backup.txt
+# ====================
+# VM requirements
+-r vm/requirements.vm.txt
 
 # =========================
-# PYTHON TOOLCHAIN
+# storage requirements
+-r storage/requirements.storage.txt
+# =========================
+# Node requirements
+-r node/requirements.txt
 # =========================
 # Required Python: >= 3.11 (configs/pyproject.toml, 03-api-gateway/api/pyproject.toml)
 # Windows host (PowerShell):
