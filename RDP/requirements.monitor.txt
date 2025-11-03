@@ -3,7 +3,7 @@
 # Multi-platform support for Pi 5 ARM64
 
 # FastAPI and ASGI server
-fastapi==0.104.1
+fastapi>=0.111,<1.0
 uvicorn[standard]==0.24.0
 
 # HTTP client for health checks

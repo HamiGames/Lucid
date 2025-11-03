@@ -7,7 +7,7 @@ cryptography>=41.0.0
 base58>=2.1.1
 
 # FastAPI & HTTP (starlette is auto-installed with fastapi)
-fastapi>=0.104.0
+fastapi>=0.111,<1.0
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
 requests>=2.31.0

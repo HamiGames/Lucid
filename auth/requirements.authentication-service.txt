@@ -2,7 +2,7 @@
 # Hardware wallet support and user management
 
 # Core dependencies
-fastapi==0.104.1
+fastapi>=0.111,<1.0
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
