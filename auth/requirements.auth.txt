@@ -4,7 +4,7 @@
 
 # Core dependencies
 fastapi>=0.111,<1.0
-uvicorn[standard]>=0.24.0
+uvicorn[standard]>=0.30
 pydantic>=2.0.0
 python-jose[cryptography]>=3.3.0
 cryptography>=41.0.0

@@ -4,6 +4,7 @@
 # Production web server
 gunicorn==21.2.0
 fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
 # Production logging
 structlog==23.2.0
 

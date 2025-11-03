@@ -1,7 +1,7 @@
 # Lucid Session Recorder Dependencies
 # Core framework
 fastapi>=0.111,<1.0
-uvicorn[standard]>=0.24.0
+uvicorn[standard]>=0.30
 pydantic>=2.5.0
 
 # Async support
