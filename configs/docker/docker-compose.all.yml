@@ -1113,10 +1113,10 @@ services:
     container_name: lucid-vm
     restart: unless-stopped
     ports:
-      - "8108:8108"
+      - "8103:8103"
     environment:
       - SERVICE_NAME=lucid-vm
-      - PORT=8108
+      - PORT=8103
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -1133,7 +1133,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8108/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8103/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1149,10 +1149,10 @@ services:
     container_name: lucid-database
     restart: unless-stopped
     ports:
-      - "8109:8109"
+      - "27018:27018"
     environment:
       - SERVICE_NAME=lucid-database
-      - PORT=8109
+      - PORT=27018
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -1169,7 +1169,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8109/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:27018/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1185,10 +1185,10 @@ services:
     container_name: lucid-storage
     restart: unless-stopped
     ports:
-      - "8110:8110"
+      - "8104:8104"
     environment:
       - SERVICE_NAME=lucid-storage
-      - PORT=8110
+      - PORT=8104
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -1205,7 +1205,7 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8110/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8104/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
