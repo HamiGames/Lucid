@@ -20,6 +20,7 @@ services:
       - MONGODB_PORT=27017
       - MONGODB_DATABASE=lucid
       - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - MONGO_INITDB_DATABASE=lucid
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
     user: "65532:65532"
@@ -73,6 +74,7 @@ services:
       - LUCID_PLATFORM=arm64
       - REDIS_HOST=172.20.0.12
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_URL=redis://lucid-redis:6379/0
     command:
       - "/usr/local/bin/redis-server"
@@ -206,6 +208,7 @@ services:
       - AUTH_SERVICE_HOST=172.20.0.14
       - AUTH_SERVICE_PORT=8089
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_auth?authSource=admin
       - REDIS_URL=redis://lucid-redis:6379/6
