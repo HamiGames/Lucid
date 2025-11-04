@@ -8,8 +8,8 @@ services:
   dev-multi-stage:
     image: lucid/multi-stage-dev:${VERSION:-latest}
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.development
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
     environment:
       - PYTHONPATH=/app:/app/src
       - PYTHONDONTWRITEBYTECODE=1
@@ -54,8 +54,8 @@ services:
   dev-builder:
     image: lucid/multi-stage-builder:${VERSION:-latest}
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.development
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
     environment:
       - PYTHONPATH=/app
       - BUILD_STAGE=builder
@@ -88,8 +88,8 @@ services:
   dev-tools:
     image: lucid/multi-stage-dev:${VERSION:-latest}
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.development
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
     environment:
       - PYTHONPATH=/app
       - DEV_TOOLS_MODE=true
@@ -123,8 +123,8 @@ services:
   dev-database:
     image: mongo:7.0
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.development
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DB_USER:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD:-password}

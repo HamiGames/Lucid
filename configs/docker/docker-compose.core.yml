@@ -6,8 +6,8 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -54,8 +54,8 @@ services:
     container_name: blockchain-engine
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -101,8 +101,8 @@ services:
     container_name: service-mesh
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -148,9 +148,9 @@ services:
     container_name: session-anchoring
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.foundation
-      - ../environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
     ports:
@@ -195,9 +195,9 @@ services:
     container_name: block-manager
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.foundation
-      - ../environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
     volumes:
@@ -240,9 +240,9 @@ services:
     container_name: data-chain
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.foundation
-      - ../environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
     volumes:

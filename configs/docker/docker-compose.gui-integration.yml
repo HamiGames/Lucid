@@ -15,11 +15,11 @@ services:
     container_name: lucid-gui-api-bridge
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.core
-      - ../environment/.env.application
-      - ../environment/.env.foundation
-      - ../environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
     ports:
       - "8097:8097"
     environment:
@@ -76,11 +76,11 @@ services:
     container_name: lucid-gui-docker-manager
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.core
-      - ../environment/.env.application
-      - ../environment/.env.foundation
-      - ../environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
     ports:
       - "8098:8098"
     environment:
@@ -129,11 +129,11 @@ services:
     container_name: lucid-gui-tor-manager
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.core
-      - ../environment/.env.application
-      - ../environment/.env.foundation
-      - ../environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
     ports:
       - "9050:9050" # SOCKS5 proxy
       - "9051:9051" # Control port
@@ -181,11 +181,11 @@ services:
     container_name: lucid-gui-hardware-wallet
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.core
-      - ../environment/.env.application
-      - ../environment/.env.foundation
-      - ../environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
     ports:
       - "8099:8099"
     environment:

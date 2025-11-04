@@ -6,8 +6,8 @@ services:
     container_name: lucid-mongodb
     restart: unless-stopped
     env_file:
-      - ../environment/.env.foundation
-      - ../environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       - lucid-pi-network
     environment:
@@ -53,8 +53,8 @@ services:
     container_name: lucid-redis
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:
@@ -96,8 +96,8 @@ services:
     container_name: lucid-elasticsearch
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:
@@ -140,8 +140,8 @@ services:
     container_name: lucid-auth-service
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
-      - ../environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
       - lucid-pi-network
     environment:
