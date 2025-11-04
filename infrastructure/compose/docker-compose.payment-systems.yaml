@@ -13,9 +13,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-client
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.tron-client
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -65,10 +65,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=tron-client"
       - "lucid.type=distroless"
@@ -85,9 +85,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-payout-router
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.tron-payout-router
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -141,10 +141,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=payout-router"
       - "lucid.type=distroless"
@@ -161,9 +161,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-wallet-manager
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.tron-wallet-manager
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -216,10 +216,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=wallet-manager"
       - "lucid.type=distroless"
@@ -236,9 +236,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-usdt-manager
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.tron-usdt-manager
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -291,10 +291,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=usdt-manager"
       - "lucid.type=distroless"
@@ -311,9 +311,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-staking
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.tron-staking
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -365,10 +365,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=trx-staking"
       - "lucid.type=distroless"
@@ -385,9 +385,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-payment-gateway
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.tron-payment-gateway
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -449,10 +449,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=payment-gateway"
       - "lucid.type=distroless"

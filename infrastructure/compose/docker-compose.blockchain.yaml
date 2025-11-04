@@ -11,9 +11,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../configs/environment/.env.blockchain-api
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.blockchain-api
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -65,10 +65,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=blockchain-engine"
       - "lucid.type=distroless"
@@ -83,9 +83,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../configs/environment/.env.blockchain-governance
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.blockchain-governance
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -133,10 +133,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=blockchain-governance"
       - "lucid.type=distroless"
@@ -151,8 +151,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -201,10 +201,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=block-manager"
       - "lucid.type=distroless"
@@ -219,8 +219,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -269,10 +269,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=data-chain"
       - "lucid.type=distroless"
@@ -287,8 +287,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -331,10 +331,10 @@ services:
       resources:
         limits:
           memory: 1G
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 256M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=blockchain-vm"
       - "lucid.type=distroless"
@@ -349,9 +349,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../infrastructure/docker/blockchain/env/.env.blockchain-ledger
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../infrastructure/docker/blockchain/env/.env.blockchain-ledger
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -399,10 +399,10 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: '1.0'
+          cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: '0.25'
+          cpus: "0.25"
     labels:
       - "lucid.service=blockchain-ledger"
       - "lucid.type=distroless"
