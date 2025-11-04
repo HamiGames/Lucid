@@ -1,6 +1,52 @@
 version: "3.8"
 
 services:
+  # =============================================================================
+  # TOR PROXY GATEWAY - MUST START FIRST (Tor Portal for lucid-pi-network)
+  # =============================================================================
+  tor-proxy:
+    image: pickme/lucid-tor-proxy:latest-arm64
+    container_name: tor-proxy
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.9
+    ports:
+      - "8888:8888" # HTTP proxy port
+      - "9050:9050" # SOCKS5 proxy port
+      - "9051:9051" # Control port
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - TOR_SOCKS_PORT=9050
+      - TOR_CONTROL_PORT=9051
+      - TOR_DATA_DIR=/var/lib/tor
+      - ONION_COUNT=5
+      - CREATE_ONION=1
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:rw
+      - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
+      - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
+      - tor-config:/etc/tor
+      - onion-state:/run/lucid/onion
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/tor-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    labels:
+      - "lucid.service=tor-proxy"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=foundation"
+      - "lucid.tor.gateway=true"
+
   lucid-mongodb:
     image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid-mongodb
@@ -23,6 +69,9 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - MONGO_INITDB_DATABASE=lucid
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -88,6 +137,9 @@ services:
       - "/data"
       - "--daemonize"
       - "no"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -156,6 +208,9 @@ services:
         "-jar",
         "/usr/share/elasticsearch/lib/elasticsearch-*.jar",
       ]
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -215,8 +270,12 @@ services:
       - TRON_NETWORK=mainnet
       - TRON_SIGNATURE_VERIFICATION_ENABLED=true
     depends_on:
-      - lucid-mongodb
-      - lucid-redis
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
     entrypoint: ["python3"]
     command: ["main.py"]
     user: "65532:65532"
@@ -265,6 +324,12 @@ volumes:
   auth-cache:
     driver: local
     name: lucid-auth-cache
+  tor-config:
+    driver: local
+    name: lucid-tor-config
+  onion-state:
+    driver: local
+    name: lucid-onion-state
 
 networks:
   lucid-pi-network:
