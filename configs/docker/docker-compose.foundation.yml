@@ -9,17 +9,19 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
-      - lucid-pi-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.11
+    ports:
+      - "27017:27017"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - MONGODB_HOST=lucid-mongodb
       - MONGODB_PORT=27017
       - MONGODB_DATABASE=lucid
-      - MONGODB_USERNAME=lucid
-      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
-      - MONGODB_AUTH_SOURCE=admin
-      - MONGODB_RETRY_WRITES=false
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_DATABASE=lucid
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -36,7 +38,13 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
       - mongodb-cache:/var/cache/mongodb
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 27017 || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s=socket.socket(); s.connect(('localhost', 27017)); s.close(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,26 +64,28 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
-      - lucid-pi-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.12
+    ports:
+      - "6379:6379"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - REDIS_HOST=lucid-redis
+      - REDIS_HOST=172.20.0.12
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    # FIX: Override command to run without config file
+      - REDIS_URL=redis://lucid-redis:6379/0
     command:
-      [
-        "/usr/local/bin/redis-server",
-        "--bind",
-        "0.0.0.0",
-        "--port",
-        "6379",
-        "--dir",
-        "/data",
-      ]
-    # OR create config file in tmpfs
-    # command: ["sh", "-c", "echo 'port 6379\nbind 0.0.0.0\ndir /data' > /tmp/redis.conf && /usr/local/bin/redis-server /tmp/redis.conf"]
+      - "/usr/local/bin/redis-server"
+      - "--bind"
+      - "0.0.0.0"
+      - "--port"
+      - "6379"
+      - "--requirepass"
+      - "${REDIS_PASSWORD}"
+      - "--dir"
+      - "/data"
+      - "--daemonize"
+      - "no"
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -118,17 +128,32 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
-      - lucid-pi-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.13
+    ports:
+      - "9200:9200"
+      - "9300:9300"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - ELASTICSEARCH_HOST=lucid-elasticsearch
-      - ELASTICSEARCH_PORT=9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
-    # FIX: Override entrypoint - elasticsearch binary is not a JAR
+      - ELASTICSEARCH_HOST=172.20.0.13
+      - ELASTICSEARCH_HTTP_PORT=9200
+      - ELASTICSEARCH_TRANSPORT_PORT=9300
+      - ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
     entrypoint: []
-    command: ["/usr/share/elasticsearch/bin/elasticsearch"]
+    command:
+      [
+        "/usr/bin/java",
+        "-Xms256m",
+        "-Xmx256m",
+        "-Des.network.host=0.0.0.0",
+        "-Des.discovery.type=single-node",
+        "-jar",
+        "/usr/share/elasticsearch/lib/elasticsearch-*.jar",
+      ]
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -171,23 +196,26 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
-      - lucid-pi-network
+      lucid-pi-network:
+        ipv4_address: 172.20.0.14
+    ports:
+      - "8089:8089"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - AUTH_SERVICE_HOST=lucid-auth-service
+      - AUTH_SERVICE_HOST=172.20.0.14
       - AUTH_SERVICE_PORT=8089
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
-      - JWT_EXPIRATION=3600
-      - MONGODB_URL=${MONGODB_URL}
-      - REDIS_URL=${REDIS_URL}
-    # FIX: Override entrypoint to use python3 and check if uvicorn is available
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_auth?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/6
+      - TRON_NETWORK=mainnet
+      - TRON_SIGNATURE_VERIFICATION_ENABLED=true
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
     entrypoint: ["python3"]
     command: ["main.py"]
-    # OR if uvicorn is missing, we need to check if it's in the image
-    # First check: docker run --rm pickme/lucid-auth-service:latest-arm64 python3 -c "import uvicorn; print('OK')"
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -200,7 +228,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/auth-service:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/logs/auth:/app/logs:rw
       - auth-cache:/tmp/auth
     healthcheck:
       test:
