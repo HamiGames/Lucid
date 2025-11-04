@@ -63,6 +63,19 @@ services:
       - REDIS_HOST=lucid-redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    # FIX: Override command to run without config file
+    command:
+      [
+        "/usr/local/bin/redis-server",
+        "--bind",
+        "0.0.0.0",
+        "--port",
+        "6379",
+        "--dir",
+        "/data",
+      ]
+    # OR create config file in tmpfs
+    # command: ["sh", "-c", "echo 'port 6379\nbind 0.0.0.0\ndir /data' > /tmp/redis.conf && /usr/local/bin/redis-server /tmp/redis.conf"]
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -79,7 +92,13 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
       - redis-cache:/var/cache/redis
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 6379 || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s=socket.socket(); s.connect(('localhost', 6379)); s.close(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -107,6 +126,9 @@ services:
       - ELASTICSEARCH_PORT=9200
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    # FIX: Override entrypoint - elasticsearch binary is not a JAR
+    entrypoint: []
+    command: ["/usr/share/elasticsearch/bin/elasticsearch"]
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -123,11 +145,17 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
       - elasticsearch-cache:/tmp/elasticsearch
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 9200 || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:9200/_cluster/health').read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     labels:
       - "lucid.service=elasticsearch"
       - "lucid.type=distroless"
@@ -155,6 +183,11 @@ services:
       - JWT_EXPIRATION=3600
       - MONGODB_URL=${MONGODB_URL}
       - REDIS_URL=${REDIS_URL}
+    # FIX: Override entrypoint to use python3 and check if uvicorn is available
+    entrypoint: ["python3"]
+    command: ["main.py"]
+    # OR if uvicorn is missing, we need to check if it's in the image
+    # First check: docker run --rm pickme/lucid-auth-service:latest-arm64 python3 -c "import uvicorn; print('OK')"
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -172,8 +205,10 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:8089/health || exit 1",
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
