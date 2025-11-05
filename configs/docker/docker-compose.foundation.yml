@@ -218,7 +218,7 @@ services:
       - "-Des.path.data=/usr/share/elasticsearch/data"
       - "-Des.path.logs=/usr/share/elasticsearch/logs"
       - "-jar"
-      - "/usr/share/elasticsearch/lib/elasticsearch-8.11.0.jar"
+      - "/usr/share/elasticsearch/lib"
     depends_on:
       tor-proxy:
         condition: service_healthy
