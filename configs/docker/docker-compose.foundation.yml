@@ -210,15 +210,15 @@ services:
       - ES_JAVA_OPTS=-Xms256m -Xmx256m
     entrypoint: []
     command:
-      [
-        "/usr/bin/java",
-        "-Xms256m",
-        "-Xmx256m",
-        "-Des.network.host=0.0.0.0",
-        "-Des.discovery.type=single-node",
-        "-jar",
-        "/usr/share/elasticsearch/lib/elasticsearch-*.jar",
-      ]
+      - "/usr/bin/java"
+      - "-Xms256m"
+      - "-Xmx256m"
+      - "-Des.network.host=0.0.0.0"
+      - "-Des.discovery.type=single-node"
+      - "-Des.path.data=/usr/share/elasticsearch/data"
+      - "-Des.path.logs=/usr/share/elasticsearch/logs"
+      - "-jar"
+      - "/usr/share/elasticsearch/lib/elasticsearch-8.11.0.jar"
     depends_on:
       tor-proxy:
         condition: service_healthy
@@ -287,6 +287,7 @@ services:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
+    working_dir: /app
     entrypoint: ["python3"]
     command: ["main.py"]
     user: "65532:65532"
