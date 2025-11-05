@@ -16,17 +16,21 @@ services:
       lucid-pi-network:
         ipv4_address: 172.20.0.9
     ports:
-      - "8888:8888" # HTTP proxy port
-      - "9050:9050" # SOCKS5 proxy port
-      - "9051:9051" # Control port
+      - "8888:8888"
+      - "9050:9050"
+      - "9051:9051"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - TOR_SOCKS_PORT=9050
-      - TOR_CONTROL_PORT=9051
+      - TOR_SOCKS_PORT=${TOR_SOCKS_PORT:-9050}
+      - TOR_CONTROL_PORT=${TOR_CONTROL_PORT:-9051}
       - TOR_DATA_DIR=/var/lib/tor
-      - ONION_COUNT=5
-      - CREATE_ONION=1
+      - ONION_COUNT=${ONION_COUNT:-5}
+      - CREATE_ONION=${CREATE_ONION:-1}
+      - UPSTREAM_SERVICE=${UPSTREAM_SERVICE:-}
+      - UPSTREAM_PORT=${UPSTREAM_PORT:-8081}
+    entrypoint: ["/usr/bin/tini", "--"]
+    command: ["/usr/local/bin/entrypoint.sh"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:rw
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
@@ -34,7 +38,7 @@ services:
       - tor-config:/etc/tor
       - onion-state:/run/lucid/onion
     healthcheck:
-      test: ["CMD", "/usr/local/bin/tor-health"]
+      test: ["CMD", "/bin/bash", "/usr/local/bin/tor-health"]
       interval: 30s
       timeout: 10s
       retries: 5

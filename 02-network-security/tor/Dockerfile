@@ -44,7 +44,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tor-nonroot || true
 
 # Create Tor system directories with proper ownership
-# Ensure debian-tor user exists with UID that matches distroless requirements
 RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
     && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion \
     && install -d -o root -g root -m 755 /usr/local/bin \
@@ -91,8 +90,7 @@ COPY --from=tor-builder /usr/bin/curl /usr/bin/curl
 COPY --from=tor-builder /usr/bin/jq /usr/bin/jq
 COPY --from=tor-builder /usr/sbin/gosu /usr/sbin/gosu
 
-# Copy Tor system libraries (architecture-aware paths for multi-platform support)
-# Note: distroless handles library path resolution automatically
+# Copy Tor system libraries
 COPY --from=tor-builder /lib/*/libc.so.6 /lib/
 COPY --from=tor-builder /lib/*/libcrypto.so.3 /lib/
 COPY --from=tor-builder /lib/*/libssl.so.3 /lib/
@@ -102,17 +100,17 @@ COPY --from=tor-builder /lib/*/liblzma.so.5 /lib/
 COPY --from=tor-builder /lib/*/libz.so.1 /lib/
 COPY --from=tor-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy Tor system data and GeoIP databases (inherent Tor network data)
+# Copy Tor system data and GeoIP databases
 COPY --from=tor-builder /usr/share/tor /usr/share/tor
 COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy user and directory structure (Tor system integration)
+# Copy user and directory structure
 COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor /var/lib/tor
 COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/onion /run/lucid/onion
 COPY --from=tor-builder /etc/passwd /etc/passwd
 COPY --from=tor-builder /etc/group /etc/group
 
-# Copy Lucid Tor configuration and scripts with distroless-compatible permissions
+# Copy Lucid Tor configuration and scripts
 COPY --chmod=644 torrc /etc/tor/torrc
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chmod=755 tor-health.sh /usr/local/bin/tor-health
@@ -120,6 +118,7 @@ COPY --chmod=755 tor-show-onion.sh /usr/local/bin/tor-show-onion
 COPY --chmod=755 scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
 # Environment variables aligned with plan/constants/path_plan.md
+# Defaults can be overridden by .env.tor-proxy, .env.secrets, .env.foundation
 ENV PROJECT_NAME=Lucid \
     PROJECT_VERSION=0.1.0 \
     ENVIRONMENT=production \
@@ -141,22 +140,18 @@ ENV PROJECT_NAME=Lucid \
     ONION_COUNT=5 \
     CREATE_ONION=1 \
     TOR_INHERENT=true \
-    TOR_PASSWORD=${TOR_PASSWORD} \
     PATH=/usr/local/bin:/usr/bin:/bin
 
 # Health check aligned with deployment-factors.md standards
-# Interval: 30s, Timeout: 10s, Retries: 3, Start Period: 40s
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
     CMD ["/bin/bash", "/usr/local/bin/tor-health"]
 
-# Expose all Tor ports (SPEC-4 compliant)
-# Ports: 9050 (SOCKS), 9051 (Control), 8888 (HTTP)
+# Expose all Tor ports (aligned with Port-summary.md)
 EXPOSE 9050 9051 8888
 
-# Run as debian-tor user with inherent Tor system
-# Note: debian-tor user should exist in /etc/passwd from builder stage
+# Run as debian-tor user
 USER debian-tor
 WORKDIR /var/lib/tor
 
-# Entrypoint using tini for proper signal handling
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+# NOTE: No ENTRYPOINT in Dockerfile - configured in docker-compose.yml for flexibility
+# This allows .env.* files to override entrypoint/command via docker-compose
