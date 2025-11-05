@@ -16,7 +16,7 @@ services:
       lucid-pi-network:
         ipv4_address: 172.20.0.9
     ports:
-      - "8888:8888" # HTTP proxy port
+      - "8889:8888" # HTTP proxy port
       - "9050:9050" # SOCKS5 proxy port
       - "9051:9051" # Control port
     environment:

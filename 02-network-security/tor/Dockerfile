@@ -2,6 +2,16 @@
 # Professional multi-platform Tor proxy for Pi deployment
 # Compatible with devcontainer builds and ARM64 Pi architecture
 # Security: LUCID-STRICT compliant with distroless base + inherent Tor system
+# Aligned with plan/constants/ requirements
+
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=2.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
 # =============================================================================
 # STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
@@ -30,29 +40,45 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         liblzma5 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && adduser --disabled-password --shell /bin/bash --gecos "" lucid
+    && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
+    && adduser --system --no-create-home --uid 65532 --gid 65532 --group tor-nonroot || true
 
 # Create Tor system directories with proper ownership
+# Ensure debian-tor user exists with UID that matches distroless requirements
 RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
     && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion \
-    && install -d -o root -g root -m 755 /usr/local/bin
+    && install -d -o root -g root -m 755 /usr/local/bin \
+    && install -d -o 65532 -g 65532 -m 755 /var/lib/tor-alt || true
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
 # =============================================================================
 FROM gcr.io/distroless/base-debian12:latest
 
-# Metadata for professional container management
+# Build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=2.0.0
+
+# Metadata for professional container management (aligned with constants)
 LABEL maintainer="Lucid Development Team" \
-      version="2.0.0-distroless-tor" \
+      version="${VERSION}" \
       description="Distroless with inherent Tor system for Lucid core support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Tor Proxy" \
+      org.opencontainers.image.description="Distroless Tor proxy for Lucid project" \
       com.lucid.plane="ops" \
       com.lucid.service="tor-proxy" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.tor.inherent="true" \
       com.lucid.tor.system="built-in" \
-      com.lucid.expose="9050,9051,8888"
+      com.lucid.expose="9050,9051,8888" \
+      com.lucid.cluster="foundation"
 
 # Copy complete Tor system from builder
 COPY --from=tor-builder /usr/bin/tor /usr/bin/tor
@@ -93,24 +119,44 @@ COPY --chmod=755 tor-health.sh /usr/local/bin/tor-health
 COPY --chmod=755 tor-show-onion.sh /usr/local/bin/tor-show-onion
 COPY --chmod=755 scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
-# Environment variables for distroless Tor system
-ENV TOR_SOCKS_PORT=9050 \
+# Environment variables aligned with plan/constants/path_plan.md
+ENV PROJECT_NAME=Lucid \
+    PROJECT_VERSION=0.1.0 \
+    ENVIRONMENT=production \
+    DEBUG=false \
+    LOG_LEVEL=INFO \
+    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
+    PI_USER=pickme \
+    PI_HOST=192.168.0.75 \
+    LUCID_ENV=production \
+    LUCID_PLATFORM=arm64 \
+    LUCID_ARCHITECTURE=linux/arm64 \
+    LUCID_TARGET_PLATFORM=linux/arm64 \
+    DISTROLESS_BASE_IMAGE=gcr.io/distroless/base-debian12 \
+    DISTROLESS_USER=65532:65532 \
+    DISTROLESS_SHELL=/bin/false \
+    TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
     TOR_DATA_DIR=/var/lib/tor \
-    LUCID_ENV=dev \
     ONION_COUNT=5 \
     CREATE_ONION=1 \
     TOR_INHERENT=true \
+    TOR_PASSWORD=${TOR_PASSWORD} \
     PATH=/usr/local/bin:/usr/bin:/bin
 
-# Health check for distroless Tor system
-HEALTHCHECK --interval=10s --timeout=5s --start-period=25s --retries=3 \
-    CMD ["/usr/local/bin/tor-health"]
+# Health check aligned with deployment-factors.md standards
+# Interval: 30s, Timeout: 10s, Retries: 3, Start Period: 40s
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/bin/bash", "/usr/local/bin/tor-health"]
 
 # Expose all Tor ports (SPEC-4 compliant)
+# Ports: 9050 (SOCKS), 9051 (Control), 8888 (HTTP)
 EXPOSE 9050 9051 8888
 
 # Run as debian-tor user with inherent Tor system
+# Note: debian-tor user should exist in /etc/passwd from builder stage
 USER debian-tor
 WORKDIR /var/lib/tor
+
+# Entrypoint using tini for proper signal handling
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
