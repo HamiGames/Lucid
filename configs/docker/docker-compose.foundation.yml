@@ -73,6 +73,13 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - MONGO_INITDB_DATABASE=lucid
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+    command:
+      - "/usr/bin/mongod"
+      - "--auth"
+      - "--bind_ip_all"
+      - "--dbpath=/data/db"
+      - "--logpath=/var/log/mongodb/mongod.log"
+      - "--logappend"
     depends_on:
       tor-proxy:
         condition: service_healthy
