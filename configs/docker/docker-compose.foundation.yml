@@ -82,7 +82,7 @@ services:
       - "--logappend"
     depends_on:
       tor-proxy:
-        condition: service_healthy
+        condition: service_started
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -150,7 +150,7 @@ services:
       - "no"
     depends_on:
       tor-proxy:
-        condition: service_healthy
+        condition: service_started
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -218,10 +218,10 @@ services:
       - "-Des.path.data=/usr/share/elasticsearch/data"
       - "-Des.path.logs=/usr/share/elasticsearch/logs"
       - "-jar"
-      - "/usr/share/elasticsearch/lib"
+      - "/usr/share/elasticsearch/lib/elasticsearch-8.11.0.jar"
     depends_on:
       tor-proxy:
-        condition: service_healthy
+        condition: service_started
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -282,7 +282,7 @@ services:
       - TRON_SIGNATURE_VERIFICATION_ENABLED=true
     depends_on:
       tor-proxy:
-        condition: service_healthy
+        condition: service_started
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:

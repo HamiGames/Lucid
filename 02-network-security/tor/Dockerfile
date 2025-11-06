@@ -110,7 +110,7 @@ COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/onion /run/luci
 COPY --from=tor-builder /etc/passwd /etc/passwd
 COPY --from=tor-builder /etc/group /etc/group
 
-# Copy Lucid Tor configuration and scripts
+# Copy Lucid Tor configuration and scripts (CRITICAL: These must be in build context)
 COPY --chmod=644 torrc /etc/tor/torrc
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chmod=755 tor-health.sh /usr/local/bin/tor-health
