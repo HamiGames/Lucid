@@ -1,136 +1,115 @@
-# Multi-stage distroless build for Lucid XRDP Integration
-# Step 32: Phase 3 Container Builds - RDP Services
-# Aligned with essentials.md: pickme/lucid-rdp-xrdp:latest-arm64, port 3389, IP 172.20.0.22
-# Network Configuration: lucid-pi-network (172.20.0.0/16)
-# Fully aligned with plan/constants/ directory requirements
+# LUCID XRDP INTEGRATION - SPEC-1B Implementation
+# Professional multi-platform XRDP Integration service for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+# Security: LUCID-STRICT compliant with distroless base
+# Aligned with plan/constants/ requirements
+# XRDP Integration service (lucid-rdp-xrdp) - Port 3389
+# Image: pickme/lucid-rdp-xrdp:latest-arm64 (essentials.md, path_plan.md)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT)
+# Configuration: All values from .env.application, .env.core, .env.secrets, .env.foundation via docker-compose
+# Build Context: . (project root) - use RDP/ prefix in COPY paths
 
-# Stage 1: Builder
-FROM --platform=linux/arm64 python:3.11-slim AS builder
-
-# Set build arguments (aligned with path_plan.md)
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM=linux/arm64
-ARG PYTHON_VERSION=3.11
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Set environment variables for pip optimization (aligned with path_plan.md)
+FROM python:3.11-slim AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PIP_PREFER_BINARY=1
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies with apt cache mount (BuildKit optimization)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    pkg-config \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
-RUN pip install --upgrade pip setuptools wheel
-
-# Set working directory
 WORKDIR /build
 
-# Copy requirements first for better layer caching
-COPY requirements.xrdp.txt ./requirements.xrdp.txt
-
-# Install Python dependencies with optimizations
-# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
-# Cache mount speeds up subsequent builds (BuildKit feature)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary -r requirements.xrdp.txt || \
+    pip install --upgrade pip wheel setuptools
+
+COPY RDP/requirements.xrdp.txt ./requirements.xrdp.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --prefer-binary -r requirements.xrdp.txt
 
-# Copy source code
-COPY xrdp/ ./xrdp/
-COPY __init__.py ./__init__.py
-COPY common/ ./common/
-COPY protocol/ ./protocol/
-COPY client/ ./client/
-COPY resource-monitor/ ./resource-monitor/
-COPY session-controller/ ./session-controller/
+COPY RDP/xrdp/ ./xrdp/
+COPY RDP/common/ ./common/
+COPY RDP/protocol/ ./protocol/
+COPY RDP/client/ ./client/
+COPY RDP/resource-monitor/ ./resource-monitor/
+COPY RDP/session-controller/ ./session-controller/
+COPY RDP/__init__.py ./__init__.py
 
+FROM gcr.io/distroless/python3-debian12:latest
 
-# Stage 2: Runtime (Distroless)
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Distroless XRDP Integration for Lucid RDP support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid XRDP Integration" \
+      org.opencontainers.image.description="Distroless XRDP integration service for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="rdp-xrdp" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="3389" \
+      com.lucid.cluster="application" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.application,.env.core,.env.secrets,.env.foundation" \
+      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
-# Copy application code
-COPY --from=builder /build/xrdp /app/xrdp
-COPY --from=builder /build/__init__.py /app/__init__.py
-COPY --from=builder /build/common /app/common
-COPY --from=builder /build/protocol /app/protocol
-COPY --from=builder /build/client /app/client
-COPY --from=builder /build/resource-monitor /app/resource-monitor
-COPY --from=builder /build/session-controller /app/session-controller
+ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 
-
-# Set working directory
 WORKDIR /app
 
-# Set core environment variables (aligned with path_plan.md)
-ENV PYTHONPATH=/app:/app/xrdp
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+COPY --from=builder /root/.local /root/.local
+COPY --chown=65532:65532 --from=builder /build/xrdp /app/xrdp
+COPY --chown=65532:65532 --from=builder /build/common /app/common
+COPY --chown=65532:65532 --from=builder /build/protocol /app/protocol
+COPY --chown=65532:65532 --from=builder /build/client /app/client
+COPY --chown=65532:65532 --from=builder /build/resource-monitor /app/resource-monitor
+COPY --chown=65532:65532 --from=builder /build/session-controller /app/session-controller
+COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
-# Service identification (aligned with essentials.md lines 384-396)
-ENV SERVICE_NAME=lucid-rdp-xrdp
-ENV CONTAINER_NAME=lucid-rdp-xrdp
-ENV HOSTNAME=lucid-rdp-xrdp
-
-# Port configuration (aligned with essentials.md, path_plan.md, Network_conig_requirements.md)
-ENV PORT=3389
-ENV XRDP_PORT=3389
-ENV XRDP_DISPLAY=:10
-ENV HOST=0.0.0.0
-ENV HEALTHCHECK_PORT=3389
-
-# Network configuration (aligned with Network_conig_requirements.md)
-ENV XRDP_HOST=172.20.0.22
-ENV API_URL=http://lucid-rdp-xrdp:3389
-
-# Database connections (aligned with Network_conig_requirements.md)
-ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_rdp?authSource=admin
-ENV REDIS_URL=redis://lucid-redis:6379/0
-
-# Service dependencies (aligned with Network_conig_requirements.md)
-ENV RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
-
-# Project configuration (aligned with path_plan.md)
-ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-ENV PROJECT_NAME=Lucid
-ENV LUCID_PLATFORM=arm64
-ENV LUCID_ARCHITECTURE=linux/arm64
-ENV LUCID_ENV=production
-
-# Logging configuration (aligned with path_plan.md)
-ENV LOG_LEVEL=INFO
-ENV DEBUG=false
-
-# Health check configuration (aligned with Network_conig_requirements.md)
-# Note: Uses Python urllib.request (not curl) since distroless images don't have curl
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3389/health')"]
-
-# Expose port (aligned with essentials.md: port 3389)
 EXPOSE 3389
 
-# Set entrypoint (aligned with other session Dockerfiles: xrdp.main pattern)
-# FastAPI entrypoint
-ENTRYPOINT ["python", "-m", "uvicorn"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3389/health').read(); exit(0)"]
 
-# FastAPI application
-CMD ["xrdp.main:app", "--host", "0.0.0.0", "--port", "3389"]
+USER 65532:65532
+
+CMD ["python3", "-m", "uvicorn", "xrdp.main:app", "--host", "0.0.0.0", "--port", "3389"]
+
+# Configuration from .env.application, .env.core, .env.secrets, .env.foundation

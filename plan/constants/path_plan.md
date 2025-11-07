@@ -61,6 +61,9 @@
 34. pickme/lucid-database:latest-arm64
 35. pickme/lucid-storage:latest-arm64
 
+## **images found missing:**
+1. pickme/lucid-storage-services:latest-arm64
+
 *Ports used in API systems:*
 **API Gateway & Core Services**
  - 8080: API Gateway (HTTP)

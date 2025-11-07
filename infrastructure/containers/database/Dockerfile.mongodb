@@ -1,54 +1,145 @@
-# LUCID MongoDB Container - SPEC-1B Implementation
-# Distroless container for MongoDB database
+# LUCID MONGODB - SPEC-1B Implementation
+# Professional multi-platform MongoDB for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+# Security: LUCID-STRICT compliant with distroless base
+# Aligned with plan/constants/ requirements
+# Main MongoDB database system (lucid-mongodb) - Port 27017
+# Image: pickme/lucid-mongodb:latest-arm64 (from essentials.md line 130)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
+# Configuration: All values from .env files via docker-compose (no hardcoded secrets)
 
-# syntax=docker/dockerfile:1.7
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
-# Stage 1: Builder
-FROM mongo:7.0 AS builder
+# =============================================================================
+# STAGE 1: MongoDB Builder (Debian 12 with MongoDB installation)
+# =============================================================================
+FROM mongo:7.0 AS mongodb-builder
 
 # Set build arguments
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-# Install additional tools for customization
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Set environment variables to prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive \
+    DEBCONF_NONINTERACTIVE_SEEN=true
 
-# Create custom MongoDB configuration
-RUN echo "storage:\n  dbPath: /data/db\n  journal:\n    enabled: true\n  wiredTiger:\n    engineConfig:\n      cacheSizeGB: 0.5\nnet:\n  port: 27017\n  bindIpAll: true\nsecurity:\n  authorization: enabled\n  javascriptEnabled: false\noperationProfiling:\n  slowOpThresholdMs: 100\n  mode: slowOp\nreplication:\n  replSetName: lucid-replica-set" > /etc/mongod.conf
+# Install dependencies and tools for dependency extraction
+# Fix for QEMU segfault: Prevent dpkg triggers from running during package installation
+# The libc-bin post-install script crashes under QEMU emulation, so we skip triggers
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        python3 \
+        python3-minimal \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && dpkg --configure -a --force-unsafe-io --no-triggers 2>/dev/null || true \
+    && rm -rf /var/lib/dpkg/triggers/* 2>/dev/null || true
 
-# Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/base-debian12:nonroot
+# =============================================================================
+# STAGE 2: Distroless Runtime
+# =============================================================================
+FROM gcr.io/distroless/python3-debian12:latest
 
-# Copy MongoDB binary and configuration
-COPY --from=builder /usr/bin/mongod /usr/bin/mongod
-COPY --from=builder /usr/bin/mongosh /usr/bin/mongosh
-COPY --from=builder /etc/mongod.conf /etc/mongod.conf
+# Build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Copy required libraries for MongoDB
-COPY --from=builder /lib/aarch64-linux-gnu/libssl.so.3 /lib/aarch64-linux-gnu/
-COPY --from=builder /lib/aarch64-linux-gnu/libcrypto.so.3 /lib/aarch64-linux-gnu/
-COPY --from=builder /lib/aarch64-linux-gnu/libz.so.1 /lib/aarch64-linux-gnu/
-COPY --from=builder /lib/aarch64-linux-gnu/libsnappy.so.1 /lib/aarch64-linux-gnu/
+# Metadata for professional container management (aligned with constants)
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Distroless MongoDB for Lucid core database support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid MongoDB" \
+      org.opencontainers.image.description="Distroless MongoDB database for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="mongodb" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.mongodb.version="7.0" \
+      com.lucid.expose="27017" \
+      com.lucid.cluster="foundation" \
+      com.lucid.tor.compatible="true"
 
-# Set environment variables
-ENV MONGO_INITDB_ROOT_USERNAME=lucid_admin
-ENV MONGO_INITDB_ROOT_PASSWORD=lucid_secure_password
-ENV MONGO_INITDB_DATABASE=lucid_rdp
+# Copy MongoDB binary from builder
+COPY --from=mongodb-builder /usr/bin/mongod /usr/bin/mongod
 
-# Set working directory
-WORKDIR /data
+# Copy Python3 for healthcheck (distroless-compatible)
+COPY --from=mongodb-builder /usr/bin/python3 /usr/bin/python3
+COPY --from=mongodb-builder /usr/lib/python3.* /usr/lib/
 
-# Create non-root user
-USER nonroot
+# Copy MongoDB configuration file (from build context)
+COPY mongod.conf /etc/mongod.conf
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/usr/bin/mongosh", "--eval", "db.adminCommand('ping')"]
+# Copy required libraries explicitly (platform-agnostic pattern - handles ARM64)
+COPY --from=mongodb-builder /lib/*/libc.so.6 /lib/
+COPY --from=mongodb-builder /lib/*/libssl.so.3 /lib/
+COPY --from=mongodb-builder /lib/*/libcrypto.so.3 /lib/
+COPY --from=mongodb-builder /lib/*/libz.so.1 /lib/
+COPY --from=mongodb-builder /lib/*/libsnappy.so.1 /lib/
+COPY --from=mongodb-builder /lib/*/libzstd.so.1 /lib/
+COPY --from=mongodb-builder /lib/*/liblzma.so.5 /lib/
 
-# Expose port
+# Copy dynamic linker (required for ARM64 execution)
+COPY --from=mongodb-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy CA certificates (required for SSL/TLS connections)
+COPY --from=mongodb-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Environment variables - NO HARDCODED SECRETS (aligned with Network_config_requirements.md lines 64-68)
+# All secrets come from .env files via docker-compose (essentials.md, Network_config_requirements.md)
+ENV PROJECT_NAME=Lucid \
+    PROJECT_VERSION=0.1.0 \
+    ENVIRONMENT=production \
+    DEBUG=false \
+    LOG_LEVEL=INFO \
+    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
+    PI_USER=pickme \
+    PI_HOST=192.168.0.75 \
+    LUCID_ENV=production \
+    LUCID_PLATFORM=arm64 \
+    LUCID_ARCHITECTURE=linux/arm64 \
+    LUCID_TARGET_PLATFORM=linux/arm64 \
+    DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12 \
+    DISTROLESS_USER=65532:65532 \
+    MONGODB_HOST=lucid-mongodb \
+    MONGODB_PORT=27017 \
+    MONGODB_DATABASE=lucid \
+    MONGO_INITDB_ROOT_USERNAME=lucid \
+    MONGO_INITDB_DATABASE=lucid
+
+# Note: MONGO_INITDB_ROOT_PASSWORD and MONGODB_URI are set in docker-compose.yml from .env files
+# MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD} (from .env.secrets - Network_config_requirements.md line 67)
+# MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin (from .env.secrets - Network_config_requirements.md line 65)
+
+# Health check (aligned with docker-compose.foundation.yml lines 101-112 and deployment-factors.md line 320)
+# Uses Python3 socket check (distroless-compatible) - matches docker-compose.foundation.yml
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/usr/bin/python3", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 27017)); s.close(); exit(0)"]
+
+# Expose MongoDB port (aligned with essentials.md line 134 and Port-summary.md)
 EXPOSE 27017
 
-# Run MongoDB
-ENTRYPOINT ["/usr/bin/mongod", "--config", "/etc/mongod.conf"]
+# Set working directory
+WORKDIR /data/db
+
+# Run as non-root user (distroless default: 65532:65532)
+USER 65532:65532
+
+# Default command (aligned with essentials.md: auth enabled via env vars)
+# NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override command
+# This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
+CMD ["/usr/bin/mongod", "--config", "/etc/mongod.conf"]

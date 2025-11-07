@@ -124,29 +124,13 @@ ENV SERVICE_PORT=8092 \
     HEALTHCHECK_PORT=8092 \
     HEALTHCHECK_PATH=/health
 
-# Network configuration (aligned with Network_conig_requirements.md lines 1259-1319)
-ENV PAYOUT_ROUTER_URL=http://lucid-payout-router:8092 \
-    PAYOUT_ROUTER_HOST=172.20.0.28
-
-# TRON Configuration (aligned with Network_conig_requirements.md)
-ENV TRON_NETWORK=mainnet \
-    TRON_RPC_URL=https://api.trongrid.io \
-    USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t \
-    TRON_CLIENT_URL=http://lucid-tron-client:8091
-
-# Payout Configuration (aligned with Network_conig_requirements.md)
-ENV MIN_PAYOUT_AMOUNT=1.0 \
-    MAX_PAYOUT_AMOUNT=10000.0 \
-    PAYOUT_FEE=0.1
-
-# Database connections (aligned with Network_conig_requirements.md)
-ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin \
-    REDIS_URL=redis://lucid-redis:6379/0
-
-# Project configuration (aligned with path_plan.md)
-ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
-    PROJECT_NAME=Lucid \
-    PROJECT_VERSION=0.1.0
+# NOTE: All configuration values come from:
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-payout-router
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+# These are loaded via docker-compose.support.yml env_file directive
+# No placeholders or hardcoded secrets in this Dockerfile
 
 # Logging configuration (aligned with path_plan.md)
 ENV LOG_LEVEL=INFO \
@@ -174,6 +158,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose ports (aligned with essentials.md: ports=8092:8092,8102:8102)
 EXPOSE 8092 8102
 
-# Run the application (FastAPI - correct entrypoint: main:app)
-ENTRYPOINT ["/opt/venv/bin/python3", "-m", "uvicorn"]
-CMD ["main:app", "--host", "0.0.0.0", "--port", "8092", "--workers", "1"]
+# Set command (using CMD for tor-proxy compatibility - allows docker-compose override)
+CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8092", "--workers", "1"]

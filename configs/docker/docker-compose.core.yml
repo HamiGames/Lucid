@@ -48,6 +48,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   blockchain-engine:
     image: pickme/lucid-blockchain-engine:latest-arm64
@@ -95,6 +98,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   service-mesh:
     image: pickme/lucid-service-mesh-controller:latest-arm64
@@ -142,6 +148,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   session-anchoring:
     image: pickme/lucid-session-anchoring:latest-arm64
@@ -189,6 +198,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64
@@ -234,6 +246,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   data-chain:
     image: pickme/lucid-data-chain:latest-arm64
@@ -279,6 +294,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
 networks:
   lucid-pi-network:

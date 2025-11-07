@@ -3,6 +3,8 @@
 # Compatible with devcontainer builds and ARM64 Pi architecture
 # Security: LUCID-STRICT compliant with distroless base + inherent Tor system
 # Aligned with plan/constants/ requirements
+# Configuration: All values from .env.tor-proxy, .env.secrets, .env.foundation via docker-compose
+# Build Context: 02-network-security/tor (relative paths used in COPY commands)
 
 # =============================================================================
 # BUILD ARGUMENTS
@@ -110,37 +112,27 @@ COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/onion /run/luci
 COPY --from=tor-builder /etc/passwd /etc/passwd
 COPY --from=tor-builder /etc/group /etc/group
 
-# Copy Lucid Tor configuration and scripts (CRITICAL: These must be in build context)
+# Copy Lucid Tor configuration and scripts
+# Build context: 02-network-security/tor (relative paths)
 COPY --chmod=644 torrc /etc/tor/torrc
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chmod=755 tor-health.sh /usr/local/bin/tor-health
 COPY --chmod=755 tor-show-onion.sh /usr/local/bin/tor-show-onion
 COPY --chmod=755 scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
-# Environment variables aligned with plan/constants/path_plan.md
-# Defaults can be overridden by .env.tor-proxy, .env.secrets, .env.foundation
-ENV PROJECT_NAME=Lucid \
-    PROJECT_VERSION=0.1.0 \
-    ENVIRONMENT=production \
-    DEBUG=false \
-    LOG_LEVEL=INFO \
-    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
-    PI_USER=pickme \
-    PI_HOST=192.168.0.75 \
-    LUCID_ENV=production \
-    LUCID_PLATFORM=arm64 \
-    LUCID_ARCHITECTURE=linux/arm64 \
-    LUCID_TARGET_PLATFORM=linux/arm64 \
-    DISTROLESS_BASE_IMAGE=gcr.io/distroless/base-debian12 \
-    DISTROLESS_USER=65532:65532 \
-    DISTROLESS_SHELL=/bin/false \
-    TOR_SOCKS_PORT=9050 \
+# =============================================================================
+# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# All configuration should come from .env.tor-proxy, .env.secrets, .env.foundation
+# via docker-compose env_file directive. These are fallback defaults only.
+# =============================================================================
+# Essential PATH for runtime
+ENV PATH=/usr/local/bin:/usr/bin:/bin
+
+# Minimal runtime defaults (will be overridden by docker-compose env_file)
+# DO NOT hardcode production values here - use .env files on Pi console
+ENV TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
-    TOR_DATA_DIR=/var/lib/tor \
-    ONION_COUNT=5 \
-    CREATE_ONION=1 \
-    TOR_INHERENT=true \
-    PATH=/usr/local/bin:/usr/bin:/bin
+    TOR_DATA_DIR=/var/lib/tor
 
 # Health check aligned with deployment-factors.md standards
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
@@ -155,3 +147,7 @@ WORKDIR /var/lib/tor
 
 # NOTE: No ENTRYPOINT in Dockerfile - configured in docker-compose.yml for flexibility
 # This allows .env.* files to override entrypoint/command via docker-compose
+# All configuration values come from:
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation

@@ -1,20 +1,35 @@
-# Multi-stage distroless build for Lucid Block Manager Service
-# Step 32: Phase 2 Container Builds - Core Services
-# Aligned with essentials.md: pickme/lucid-block-manager:latest-arm64, port 8086, IP 172.20.0.17
-# Network Configuration: lucid-pi-network (172.20.0.0/16)
-# Fully aligned with plan/constants/ directory requirements
+# LUCID BLOCK MANAGER - SPEC-1B Implementation
+# Professional multi-platform Block Manager service for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+# Security: LUCID-STRICT compliant with distroless base
+# Aligned with plan/constants/ requirements
+# Block Manager service (lucid-block-manager) - Port 8086
+# Image: pickme/lucid-block-manager:latest-arm64 (from essentials.md, path_plan.md line 33)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
+# Configuration: All values from .env.core, .env.secrets, .env.foundation via docker-compose (no hardcoded secrets)
+# Build Context: blockchain/ (blockchain directory) - paths must be relative to blockchain directory
+# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
+# Env Files: /mnt/myssd/Lucid/Lucid/configs/environment/.env.core, .env.secrets, .env.foundation
 
-# Stage 1: Builder
-FROM --platform=linux/arm64 python:3.11-slim AS builder
-
-# Set build arguments (aligned with path_plan.md)
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM=linux/arm64
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-ARG GIT_COMMIT=unknown
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
+
+# =============================================================================
+# STAGE 1: Builder - Install dependencies and compile packages
+# =============================================================================
+FROM python:3.11-slim AS builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
 
 # Set environment variables for pip optimization (aligned with path_plan.md)
 ENV PYTHONUNBUFFERED=1 \
@@ -22,12 +37,13 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_DEFAULT_TIMEOUT=100 \
-    PIP_PREFER_BINARY=1
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies with apt cache mount (BuildKit optimization)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
@@ -35,11 +51,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libssl-dev \
     pkg-config \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Upgrade pip to latest version (faster builds, better wheel support for ARM64)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip wheel setuptools
 
 # Set working directory
 WORKDIR /app
@@ -61,91 +79,99 @@ COPY utils/ ./utils/
 COPY config/ ./config/
 COPY api/ ./api/
 
-# Stage 2: Runtime (Distroless)
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+# =============================================================================
+# STAGE 2: Runtime - Distroless Python base
+# =============================================================================
+FROM gcr.io/distroless/python3-debian12:latest
 
-# Set labels for Phase 2 compliance
+# Build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+# Metadata for professional container management (aligned with constants)
 LABEL maintainer="Lucid Development Team" \
-      description="Lucid Block Manager - Phase 2 Distroless Container" \
-      version="1.0.0" \
-      build_date="${BUILD_DATE}" \
-      git_commit="${GIT_COMMIT}" \
-      phase="2" \
-      cluster="02-blockchain-core" \
-      service="block-manager"
+      version="${VERSION}" \
+      description="Distroless Block Manager for Lucid blockchain support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Block Manager" \
+      org.opencontainers.image.description="Distroless block manager service for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="block-manager" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8086" \
+      com.lucid.cluster="core" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.core,.env.secrets,.env.foundation" \
+      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
 # Copy Python packages from builder to distroless location
-COPY --from=builder /root/.local /usr/local
+COPY --from=builder /root/.local /root/.local
 
 # Copy application code
 COPY --from=builder /app/manager /app/manager
 COPY --from=builder /app/core /app/core
 COPY --from=builder /app/utils /app/utils
 COPY --from=builder /app/config /app/config
+COPY --from=builder /app/api /app/api
 
+# =============================================================================
+# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# All configuration should come from .env.core, .env.secrets, .env.foundation
+# via docker-compose env_file directive. These are fallback defaults only.
+# =============================================================================
+# Essential PATH for runtime (aligned with distroless best practices)
+ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
+
+# Minimal runtime defaults (will be overridden by docker-compose env_file)
+# DO NOT hardcode production values here - use .env files on Pi console
+# All Block Manager configuration comes from docker-compose.yml environment section:
+#   - SERVICE_NAME (from docker-compose)
+#   - PORT (from docker-compose)
+#   - HOST (from docker-compose)
+#   - MONGODB_URI (from docker-compose via .env.secrets)
+#   - REDIS_URL (from docker-compose)
+#   - BLOCK_MANAGER_URL (from docker-compose)
+#   - BLOCK_MANAGER_HOST (from docker-compose)
+#   - BLOCKCHAIN_ENGINE_URL (from docker-compose)
+#   - LOG_LEVEL (from docker-compose)
+#   - DEBUG (from docker-compose)
+#   - ... (all other configuration from .env files)
 
 # Set working directory
 WORKDIR /app
 
-# Set Python path and base environment variables
-ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages
-ENV PATH=/usr/local/bin:$PATH
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+# Health check (aligned with essentials.md and Network_config_requirements.md)
+# Uses Python3 urllib.request (distroless-compatible)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health').read(); exit(0)"]
 
-# Service Configuration (per essentials.md and Network_conig_requirements.md lines 477-525)
-ENV SERVICE_NAME=block-manager
-ENV CONTAINER_NAME=lucid-block-manager
-ENV HOSTNAME=lucid-block-manager
-
-# Port Configuration
-ENV PORT=8086
-ENV BLOCK_MANAGER_PORT=8086
-ENV HOST=0.0.0.0
-ENV HEALTHCHECK_PORT=8086
-ENV HEALTHCHECK_PATH=/health
-
-# Network Configuration (per Network_conig_requirements.md lines 490-506)
-ENV BLOCK_MANAGER_URL=http://lucid-block-manager:8086
-ENV BLOCK_MANAGER_HOST=172.20.0.17
-
-# Database Configuration (per Network_conig_requirements.md lines 504-505)
-ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-ENV REDIS_URL=redis://lucid-redis:6379/0
-
-# Service Dependencies URLs (per Network_conig_requirements.md line 506)
-ENV BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
-
-# Storage Configuration
-ENV BLOCK_STORAGE_PATH=/data/blocks
-
-# Project Configuration (per path_plan.md)
-ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-ENV PROJECT_NAME=Lucid
-ENV PROJECT_VERSION=0.1.0
-ENV LUCID_PLATFORM=arm64
-ENV LUCID_ENV=production
-ENV LUCID_ARCHITECTURE=linux/arm64
-
-# Logging Configuration
-ENV LOG_LEVEL=INFO
-ENV DEBUG=false
-ENV LOG_FORMAT=json
-
-# Network Configuration (per network_defs.md)
-ENV LUCID_PI_NETWORK=lucid-pi-network
-ENV LUCID_PI_SUBNET=172.20.0.0/16
-ENV LUCID_PI_GATEWAY=172.20.0.1
-
-# Use nonroot user (distroless default)
-USER 65532:65532
-
-# Health check (aligned with essentials.md and Network_conig_requirements.md: healthcheck_port=8086, healthcheck_path=/health)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health')"]
-
-# Expose ports (aligned with essentials.md and Network_conig_requirements.md: ports=8086:8086)
+# Expose Block Manager port (aligned with essentials.md, Port-summary.md)
 EXPOSE 8086
 
-# Start FastAPI application with uvicorn (structure is correct, but ensure port matches)
+# Run as non-root user (distroless default: 65532:65532, aligned with docker-compose)
+USER 65532:65532
+
+# Default command (aligned with docker-compose.core.yml)
+# NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override entrypoint/command
+# This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
+# Command arguments come from docker-compose.yml environment section
 CMD ["python3", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8086"]
+
+# =============================================================================
+# CONFIGURATION NOTES
+# =============================================================================
+# All configuration values come from:
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+# These are loaded via docker-compose.core.yml env_file directive
+# No placeholders or hardcoded secrets in this Dockerfile

@@ -106,24 +106,13 @@ ENV TZ=UTC \
     LC_ALL=C.UTF-8 \
     COUNTRY=US
 
-# Service Configuration (aligned with Network_conig_requirements.md)
-ENV SERVICE_NAME=payment-gateway \
-    SERVICE_PORT=8097 \
-    PAYMENT_GATEWAY_URL=http://lucid-payment-gateway:8097 \
-    PAYMENT_GATEWAY_HOST=172.20.0.32 \
-    PAYMENT_GATEWAY_PORT=8097 \
-    TRON_NETWORK=mainnet \
-    TRON_RPC_URL=https://api.trongrid.io \
-    USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t \
-    TRON_CLIENT_URL=http://lucid-tron-client:8091 \
-    PAYOUT_ROUTER_URL=http://lucid-payout-router:8092 \
-    WALLET_MANAGER_URL=http://lucid-wallet-manager:8093 \
-    USDT_MANAGER_URL=http://lucid-usdt-manager:8094 \
-    API_GATEWAY_URL=http://lucid-api-gateway:8080 \
-    MIN_PAYOUT_AMOUNT=1.0 \
-    MAX_PAYOUT_AMOUNT=10000.0 \
-    PAYOUT_FEE=0.1 \
-    TRANSACTION_TIMEOUT=300
+# NOTE: All configuration values come from:
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-payment-gateway
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+# These are loaded via docker-compose.support.yml env_file directive
+# No placeholders or hardcoded secrets in this Dockerfile
 
 # Virtual environment path
 ENV PATH="/opt/venv/bin:$PATH"
@@ -144,7 +133,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose ports (aligned with essentials.md: ports 8097,8106)
 EXPOSE 8097 8106
 
-# Run the application (FastAPI - correct entrypoint: main:app)
-# Using ENTRYPOINT + CMD pattern for better distroless compatibility
-ENTRYPOINT ["/opt/venv/bin/python3", "-m", "uvicorn"]
-CMD ["main:app", "--host", "0.0.0.0", "--port", "8097", "--workers", "1"]
+# Set command (using CMD for tor-proxy compatibility - allows docker-compose override)
+CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8097", "--workers", "1"]

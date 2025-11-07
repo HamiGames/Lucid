@@ -48,6 +48,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   session-recorder:
     image: pickme/lucid-session-recorder:latest-arm64
@@ -97,6 +100,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   session-processor:
     image: pickme/lucid-chunk-processor:latest-arm64
@@ -145,6 +151,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   session-storage:
     image: pickme/lucid-session-storage:latest-arm64
@@ -193,6 +202,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   session-api:
     image: pickme/lucid-session-api:latest-arm64
@@ -200,9 +212,9 @@ services:
     restart: unless-stopped
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - ../environment/.env.core
-      - ../environment/.env.application
-      - ../environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
       - lucid-pi-network
     ports:
@@ -244,13 +256,16 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   rdp-server-manager:
     image: pickme/lucid-rdp-server-manager:latest-arm64
     container_name: rdp-server-manager
     restart: unless-stopped
     env_file:
-      - ../environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
@@ -296,6 +311,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   rdp-xrdp:
     image: pickme/lucid-rdp-xrdp:latest-arm64
@@ -343,6 +361,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   rdp-controller:
     image: pickme/lucid-rdp-controller:latest-arm64
@@ -390,6 +411,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   rdp-monitor:
     image: pickme/lucid-rdp-monitor:latest-arm64
@@ -436,6 +460,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   node-management:
     image: pickme/lucid-node-management:latest-arm64
@@ -485,6 +512,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
 volumes:
   session-pipeline-cache:

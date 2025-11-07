@@ -50,6 +50,9 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=support"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   tron-client:
     image: pickme/lucid-tron-client:latest-arm64
@@ -105,6 +108,9 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   tron-payout-router:
     image: pickme/lucid-tron-payout-router:latest-arm64
@@ -156,6 +162,9 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   tron-wallet-manager:
     image: pickme/lucid-tron-wallet-manager:latest-arm64
@@ -207,6 +216,9 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   tron-usdt-manager:
     image: pickme/lucid-tron-usdt-manager:latest-arm64
@@ -260,6 +272,9 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   tron-staking:
     image: pickme/lucid-tron-staking:latest-arm64
@@ -311,6 +326,9 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
   tron-payment-gateway:
     image: pickme/lucid-tron-payment-gateway:latest-arm64
@@ -364,6 +382,9 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_started
 
 networks:
   lucid-pi-network:

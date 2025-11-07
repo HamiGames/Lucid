@@ -1,152 +1,131 @@
-# Multi-stage distroless build for Lucid Data Chain Service
-# Step 32: Phase 2 Container Builds - Core Services
-# Aligned with essentials.md: pickme/lucid-data-chain:latest-arm64, port 8087, IP 172.20.0.18
-# Network Configuration: lucid-pi-network (172.20.0.0/16)
-# Fully aligned with plan/constants/ directory requirements
+# LUCID DATA CHAIN - SPEC-1B Implementation
+# Professional multi-platform Data Chain service for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+# Security: LUCID-STRICT compliant with distroless base
+# Aligned with plan/constants/ requirements
+# Data Chain service (lucid-data-chain) - Port 8087
+# Image: pickme/lucid-data-chain:latest-arm64 (essentials.md, path_plan.md)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
+# Configuration: All values from .env.core, .env.secrets, .env.foundation via docker-compose
+# Build Context: . (project root) - use blockchain/ prefix in COPY paths
+# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
+# Env Files: /mnt/myssd/Lucid/Lucid/configs/environment/.env.core, .env.secrets, .env.foundation
 
-# Stage 1: Builder
-FROM --platform=linux/arm64 python:3.11-slim AS builder
-
-# Set build arguments (aligned with path_plan.md)
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM=linux/arm64
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-ARG GIT_COMMIT=unknown
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
-# Set environment variables for pip optimization (aligned with path_plan.md)
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+FROM python:3.11-slim AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PIP_PREFER_BINARY=1
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies with apt cache mount (BuildKit optimization)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    pkg-config \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+WORKDIR /build
+
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip wheel setuptools
 
-# Set working directory
-WORKDIR /app
+COPY blockchain/requirements.txt ./requirements.txt
 
-# Copy requirements first for better layer caching
-COPY requirements.txt ./requirements.txt
-
-# Install Python dependencies with optimizations
-# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
-# Cache mount speeds up subsequent builds (BuildKit feature)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary -r requirements.txt || \
     pip install --user --prefer-binary -r requirements.txt
 
-# Copy data chain source code
-COPY data/ ./data/
-COPY core/ ./core/
-COPY utils/ ./utils/
-COPY config/ ./config/
-COPY api/ ./api/
+COPY blockchain/data/ ./data/
+COPY blockchain/core/ ./core/
+COPY blockchain/utils/ ./utils/
+COPY blockchain/config/ ./config/
+COPY blockchain/api/ ./api/
+COPY blockchain/contracts/ ./contracts/
+COPY blockchain/deployment/ ./deployment/
+COPY blockchain/chain-client/ ./chain-client/
+COPY blockchain/evm/ ./evm/
+COPY blockchain/on_system_chain/ ./on_system_chain/
+COPY blockchain/scripts/ ./scripts/
+COPY blockchain/tests/ ./tests/
+COPY blockchain/*.py ./
 
-# Stage 2: Runtime (Distroless)
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+FROM gcr.io/distroless/python3-debian12:latest
 
-# Set labels for Phase 2 compliance
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
 LABEL maintainer="Lucid Development Team" \
-      description="Lucid Data Chain - Phase 2 Distroless Container" \
-      version="1.0.0" \
-      build_date="${BUILD_DATE}" \
-      git_commit="${GIT_COMMIT}" \
-      phase="2" \
-      cluster="02-blockchain-core" \
-      service="data-chain"
+      version="${VERSION}" \
+      description="Distroless Data Chain for Lucid blockchain support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Data Chain" \
+      org.opencontainers.image.description="Distroless data chain service for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="data-chain" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8087" \
+      com.lucid.cluster="core" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.core,.env.secrets,.env.foundation" \
+      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
-# Copy Python packages from builder to distroless location
-COPY --from=builder /root/.local /usr/local
+ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 
-# Copy application code
-COPY --from=builder /app/data /app/data
-COPY --from=builder /app/core /app/core
-COPY --from=builder /app/utils /app/utils
-COPY --from=builder /app/api /app/api
-COPY --from=builder /app/config /app/config
-
-# Set working directory
 WORKDIR /app
 
-# Set Python path and base environment variables
-ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages
-ENV PATH=/usr/local/bin:$PATH
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+COPY --from=builder /root/.local /root/.local
+COPY --chown=65532:65532 --from=builder /build/data /app/data
+COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/utils /app/utils
+COPY --chown=65532:65532 --from=builder /build/config /app/config
+COPY --chown=65532:65532 --from=builder /build/api /app/api
+COPY --chown=65532:65532 --from=builder /build/contracts /app/contracts
+COPY --chown=65532:65532 --from=builder /build/deployment /app/deployment
+COPY --chown=65532:65532 --from=builder /build/chain-client /app/chain-client
+COPY --chown=65532:65532 --from=builder /build/evm /app/evm
+COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/on_system_chain
+COPY --chown=65532:65532 --from=builder /build/scripts /app/scripts
+COPY --chown=65532:65532 --from=builder /build/tests /app/tests
+COPY --chown=65532:65532 --from=builder /build/*.py /app/
 
-# Service Configuration (per essentials.md and Network_conig_requirements.md lines 528-576)
-ENV SERVICE_NAME=data-chain
-ENV CONTAINER_NAME=lucid-data-chain
-ENV HOSTNAME=lucid-data-chain
-
-# Port Configuration
-ENV PORT=8087
-ENV DATA_CHAIN_PORT=8087
-ENV HOST=0.0.0.0
-ENV HEALTHCHECK_PORT=8087
-ENV HEALTHCHECK_PATH=/health
-
-# Network Configuration (per Network_conig_requirements.md lines 541-557)
-ENV DATA_CHAIN_URL=http://lucid-data-chain:8087
-ENV DATA_CHAIN_HOST=172.20.0.18
-
-# Database Configuration (per Network_conig_requirements.md lines 555-556)
-ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-ENV REDIS_URL=redis://lucid-redis:6379/0
-
-# Service Dependencies URLs (per Network_conig_requirements.md line 557)
-ENV BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
-
-# Storage Configuration
-ENV CHUNK_STORAGE_PATH=/data/chunks
-ENV MERKLE_STORAGE_PATH=/data/merkle
-
-# Project Configuration (per path_plan.md)
-ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-ENV PROJECT_NAME=Lucid
-ENV PROJECT_VERSION=0.1.0
-ENV LUCID_PLATFORM=arm64
-ENV LUCID_ENV=production
-ENV LUCID_ARCHITECTURE=linux/arm64
-
-# Logging Configuration
-ENV LOG_LEVEL=INFO
-ENV DEBUG=false
-ENV LOG_FORMAT=json
-
-# Network Configuration (per network_defs.md)
-ENV LUCID_PI_NETWORK=lucid-pi-network
-ENV LUCID_PI_SUBNET=172.20.0.0/16
-ENV LUCID_PI_GATEWAY=172.20.0.1
-
-# Use nonroot user (distroless default)
-USER 65532:65532
-
-# Health check (aligned with essentials.md and Network_conig_requirements.md: healthcheck_port=8087, healthcheck_path=/health)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health')"]
-
-# Expose ports (aligned with essentials.md and Network_conig_requirements.md: ports=8087:8087)
 EXPOSE 8087
 
-# Start FastAPI application with uvicorn (structure is correct, but ensure port matches)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8087/health').read(); exit(0)"]
+
+USER 65532:65532
+
 CMD ["python3", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8087"]
+
+# CONFIGURATION NOTES
+#   - Env sources: .env.core, .env.secrets, .env.foundation
+#   - Build command mirrors other core services (see align-spin-up.md)

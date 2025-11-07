@@ -1,28 +1,141 @@
-# Multi-stage build for Elasticsearch distroless
-# Aligned with essentials.md: pickme/lucid-elasticsearch:latest-arm64, ports 9200:9200,9300:9300
-FROM elasticsearch:8.11.0 AS builder
+# LUCID ELASTICSEARCH - SPEC-1B Implementation
+# Professional multi-platform Elasticsearch for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+# Security: LUCID-STRICT compliant with distroless base
+# Aligned with plan/constants/ requirements
+# Full-text search and indexing engine (lucid-elasticsearch) - Ports 9200, 9300
+# Image: pickme/lucid-elasticsearch:latest-arm64 (from essentials.md line 158, path_plan.md line 25)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
+# Configuration: All values from .env.foundation, .env.secrets via docker-compose (no hardcoded secrets)
+# Build Context: . (project root) - paths must be relative to project root
 
-# Runtime stage - MUST use Java distroless (Elasticsearch requires Java)
-# essentials.md: distroless base with Java runtime
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+
+# =============================================================================
+# STAGE 1: Elasticsearch Builder (Elasticsearch 8.11.0 with Java 17)
+# =============================================================================
+FROM elasticsearch:8.11.0 AS elasticsearch-builder
+
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+# Set environment variables to prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive \
+    DEBCONF_NONINTERACTIVE_SEEN=true
+
+# Switch to root user for package installation (Elasticsearch image runs as non-root by default)
+USER root
+
+# Install curl for healthcheck (distroless-compatible)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# =============================================================================
+# STAGE 2: Distroless Runtime with Java 17
+# =============================================================================
 FROM gcr.io/distroless/java17-debian12:latest
 
-# Copy Elasticsearch installation from builder
-COPY --from=builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
+# Build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Set working directory (essentials.md: ELASTICSEARCH_URI=http://lucid-elasticsearch:9200)
+# Metadata for professional container management (aligned with constants)
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Distroless Elasticsearch for Lucid core search support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Elasticsearch" \
+      org.opencontainers.image.description="Distroless Elasticsearch search engine for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="elasticsearch" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.elasticsearch.version="8.11.0" \
+      com.lucid.expose="9200,9300" \
+      com.lucid.cluster="foundation" \
+      com.lucid.tor.compatible="true"
+
+# Copy Elasticsearch installation from builder
+COPY --from=elasticsearch-builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
+
+# Copy curl for healthcheck (distroless-compatible)
+COPY --from=elasticsearch-builder /usr/bin/curl /usr/bin/curl
+
+# Copy required libraries for curl
+COPY --from=elasticsearch-builder /lib/*/libc.so.6 /lib/
+COPY --from=elasticsearch-builder /lib/*/libssl.so.3 /lib/
+COPY --from=elasticsearch-builder /lib/*/libcrypto.so.3 /lib/
+COPY --from=elasticsearch-builder /lib/*/libz.so.1 /lib/
+COPY --from=elasticsearch-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy CA certificates (required for SSL/TLS connections)
+COPY --from=elasticsearch-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy Elasticsearch configuration file (from build context - project root)
+# Path must be relative to project root when building from root
+COPY infrastructure/containers/storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+
+# =============================================================================
+# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# All configuration should come from .env.foundation, .env.secrets
+# via docker-compose env_file directive. These are fallback defaults only.
+# =============================================================================
+# Essential PATH for runtime (aligned with distroless best practices and MongoDB/Tor Dockerfile pattern)
+ENV PATH=/usr/share/elasticsearch/bin:/usr/bin:/bin
+
+# Minimal runtime defaults (will be overridden by docker-compose env_file)
+# DO NOT hardcode production values here - use .env files on Pi console
+# All Elasticsearch configuration comes from docker-compose.yml environment section:
+#   - LUCID_ENV (from docker-compose.foundation.yml:202)
+#   - LUCID_PLATFORM (from docker-compose.foundation.yml:203)
+#   - ELASTICSEARCH_HOST (from docker-compose.foundation.yml:204)
+#   - ELASTICSEARCH_HTTP_PORT (from docker-compose.foundation.yml:205)
+#   - ELASTICSEARCH_TRANSPORT_PORT (from docker-compose.foundation.yml:206)
+#   - ELASTICSEARCH_URI (from docker-compose.foundation.yml:207)
+#   - discovery.type (from docker-compose.foundation.yml:208)
+#   - xpack.security.enabled (from docker-compose.foundation.yml:209)
+#   - ES_JAVA_OPTS (from docker-compose.foundation.yml:210)
+
+# Set working directory (aligned with essentials.md: ELASTICSEARCH_URI=http://lucid-elasticsearch:9200)
 WORKDIR /usr/share/elasticsearch
 
-# Copy configuration (use full path like Redis Dockerfile)
-# If elasticsearch.yml doesn't exist, Elasticsearch will use defaults
-COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+# Health check (aligned with docker-compose.foundation.yml lines 228-234 and Network_config_requirements.md line 168)
+# Uses curl (distroless-compatible) - matches docker-compose.foundation.yml
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/usr/bin/curl", "-f", "http://localhost:9200/_cluster/health"]
 
-# Set Java heap size (optimized for Raspberry Pi)
-ENV ES_JAVA_OPTS="-Xms512m -Xmx512m"
-ENV discovery.type=single-node
-
-# Expose ports (essentials.md: ports=9200:9200,9300:9300, healthcheck_port=9200)
+# Expose Elasticsearch ports (aligned with essentials.md line 162, Port-summary.md, Network_config_requirements.md lines 153-154)
 EXPOSE 9200 9300
 
-# Default command
+# Run as non-root user (distroless default: 65532:65532, aligned with docker-compose.foundation.yml:225)
+USER 65532:65532
+
+# Default command (aligned with docker-compose.foundation.yml:212-221)
+# NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override command
+# This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
+# Command arguments come from docker-compose.foundation.yml environment section
 # Elasticsearch script is at bin/elasticsearch relative to WORKDIR
 CMD ["/usr/share/elasticsearch/bin/elasticsearch"]
+
+# NOTE: All configuration values come from:
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+# These are loaded via docker-compose.foundation.yml env_file directive (lines 192-194)
+# No placeholders or hardcoded secrets in this Dockerfile

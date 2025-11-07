@@ -1,37 +1,148 @@
-# Multi-stage build for MongoDB distroless
-FROM mongo:7.0 as builder
+# LUCID MONGODB - SPEC-1B Implementation
+# Professional multi-platform MongoDB for Pi deployment
+# Compatible with devcontainer builds and ARM64 Pi architecture
+# Security: LUCID-STRICT compliant with distroless base
+# Aligned with plan/constants/ requirements
+# Main MongoDB database system (lucid-mongodb) - Port 27017
+# Image: pickme/lucid-mongodb:latest-arm64 (from essentials.md line 130, path_plan.md line 23)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
+# Configuration: All values from .env.foundation, .env.secrets via docker-compose (no hardcoded secrets)
+# Build Context: . (project root) - paths must be relative to project root
 
-# Install observed dependencies
-RUN apt-get update && apt-get install -y \
-    libc-bin \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
-# Create script to copy all dependencies
-RUN echo '#!/bin/sh\n\
-ldd /usr/bin/mongod | grep "=> /" | awk "{print \$3}" | xargs -I '{}' sh -c "mkdir -p \$(dirname /deps{}) && cp {} /deps{}"\n\
-' > /copy-deps.sh && chmod +x /copy-deps.sh && /copy-deps.sh
+# =============================================================================
+# STAGE 1: MongoDB Builder (Debian 12 with MongoDB installation)
+# =============================================================================
+FROM mongo:7.0 AS mongodb-builder
 
-# Runtime stage - Distroless (aligned with essentials.md)
-FROM gcr.io/distroless/base-debian12
+# Set build arguments
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 
-# Copy MongoDB binaries
-COPY --from=builder /usr/bin/mongod /usr/bin/mongod
+# Set environment variables to prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive \
+    DEBCONF_NONINTERACTIVE_SEEN=true
 
-# Copy all dependencies
-COPY --from=builder /deps/ /
+# Install dependencies and tools for dependency extraction
+# Fix for QEMU segfault: Prevent dpkg triggers from running during package installation
+# The libc-bin post-install script crashes under QEMU emulation, so we skip triggers
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        python3 \
+        python3-minimal \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && dpkg --configure -a --force-unsafe-io --no-triggers 2>/dev/null || true \
+    && rm -rf /var/lib/dpkg/triggers/* 2>/dev/null || true
+
+# =============================================================================
+# STAGE 2: Distroless Runtime
+# =============================================================================
+FROM gcr.io/distroless/python3-debian12:latest
+
+# Build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+# Metadata for professional container management (aligned with constants)
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Distroless MongoDB for Lucid core database support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid MongoDB" \
+      org.opencontainers.image.description="Distroless MongoDB database for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="mongodb" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.mongodb.version="7.0" \
+      com.lucid.expose="27017" \
+      com.lucid.cluster="foundation" \
+      com.lucid.tor.compatible="true"
+
+# Copy MongoDB binary from builder
+COPY --from=mongodb-builder /usr/bin/mongod /usr/bin/mongod
+
+# Copy Python3 for healthcheck (distroless-compatible)
+COPY --from=mongodb-builder /usr/bin/python3 /usr/bin/python3
+COPY --from=mongodb-builder /usr/lib/python3.* /usr/lib/
+
+# Copy MongoDB configuration file (from build context - project root)
+# Path must be relative to project root when building from root
+COPY infrastructure/containers/storage/mongod.conf /etc/mongod.conf
+
+# Copy required libraries explicitly (platform-agnostic pattern - handles ARM64)
+COPY --from=mongodb-builder /lib/*/libc.so.6 /lib/
+COPY --from=mongodb-builder /lib/*/libssl.so.3 /lib/
+COPY --from=mongodb-builder /lib/*/libcrypto.so.3 /lib/
+COPY --from=mongodb-builder /lib/*/libz.so.1 /lib/
+COPY --from=mongodb-builder /lib/*/libsnappy.so.1 /lib/
+COPY --from=mongodb-builder /lib/*/libzstd.so.1 /lib/
+COPY --from=mongodb-builder /lib/*/liblzma.so.5 /lib/
+
+# Copy dynamic linker (required for ARM64 execution)
+COPY --from=mongodb-builder /lib*/ld-linux-*.so.2 /lib64/
+
+# Copy CA certificates (required for SSL/TLS connections)
+COPY --from=mongodb-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# =============================================================================
+# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# All configuration should come from .env.foundation, .env.secrets
+# via docker-compose env_file directive. These are fallback defaults only.
+# =============================================================================
+# Essential PATH for runtime (aligned with distroless best practices and Tor Dockerfile pattern)
+ENV PATH=/usr/bin:/bin
+
+# Minimal runtime defaults (will be overridden by docker-compose env_file)
+# DO NOT hardcode production values here - use .env files on Pi console
+# All MongoDB configuration comes from docker-compose.yml environment section:
+#   - MONGODB_HOST (from docker-compose.foundation.yml:69)
+#   - MONGODB_PORT (from docker-compose.foundation.yml:70)
+#   - MONGODB_DATABASE (from docker-compose.foundation.yml:71)
+#   - MONGO_INITDB_ROOT_USERNAME (from docker-compose.foundation.yml:72)
+#   - MONGO_INITDB_ROOT_PASSWORD (from docker-compose.foundation.yml:73 via .env.secrets)
+#   - MONGO_INITDB_DATABASE (from docker-compose.foundation.yml:74)
+#   - MONGODB_URI (from docker-compose.foundation.yml:75 via .env.secrets)
+#   - LUCID_ENV, LUCID_PLATFORM (from docker-compose.foundation.yml:67-68)
+
+# Health check (aligned with docker-compose.foundation.yml lines 101-112 and deployment-factors.md line 320)
+# Uses Python3 socket check (distroless-compatible) - matches docker-compose.foundation.yml
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/usr/bin/python3", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 27017)); s.close(); exit(0)"]
+
+# Expose MongoDB port (aligned with essentials.md line 134, Port-summary.md, Network_config_requirements.md line 62)
+EXPOSE 27017
 
 # Set working directory
 WORKDIR /data/db
 
-# Expose port (aligned with essentials.md: ports=27017:27017)
-EXPOSE 27017
+# Run as non-root user (distroless default: 65532:65532, aligned with docker-compose.foundation.yml:86)
+USER 65532:65532
 
-# Healthcheck - Disabled in Dockerfile (use compose file healthcheck instead)
-# Essentials.md expects healthcheck on port 27017, but distroless lacks mongosh
-# Healthcheck will be defined in docker-compose.foundation.yml where mongosh is available externally
-# HEALTHCHECK disabled
+# Default command (aligned with docker-compose.foundation.yml:76-82)
+# NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override command
+# This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
+# Command arguments come from docker-compose.foundation.yml environment section
+CMD ["/usr/bin/mongod", "--config", "/etc/mongod.conf"]
 
-# Default command (aligned with essentials.md: auth enabled via env vars)
-# --auth flag enables authentication (required by essentials.md configuration)
-CMD ["/usr/bin/mongod", "--auth", "--bind_ip_all"]
+# NOTE: All configuration values come from:
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+# These are loaded via docker-compose.foundation.yml env_file directive (lines 58-60)
+# No placeholders or hardcoded secrets in this Dockerfile
