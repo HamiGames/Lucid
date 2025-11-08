@@ -1,35 +1,128 @@
+// File: electron-gui/shared/ipc-channels.ts
+
 /**
- * LUCID IPC Channels - SPEC-1B Implementation
- * Defines all IPC communication channels between main and renderer processes
+ * Lucid Electron GUI IPC channel catalogue and payload contracts.
+ * Channel naming follows the service layout documented in `plan/constants`.
  */
 
-export const IPCChannels = {
-  // Tor Management Channels
-  TOR_GET_STATUS: 'tor:get-status',
+type ValueOf<T> = T[keyof T];
+
+export const RENDERER_TO_MAIN_CHANNELS = {
   TOR_START: 'tor:start',
   TOR_STOP: 'tor:stop',
   TOR_RESTART: 'tor:restart',
-  TOR_GET_VERSION: 'tor:get-version',
-  TOR_GET_CIRCUITS: 'tor:get-circuits',
-  TOR_GET_BANDWIDTH: 'tor:get-bandwidth',
-  TOR_STATUS_CHANGED: 'tor:status-changed',
+  TOR_GET_STATUS: 'tor:get-status',
+  TOR_GET_METRICS: 'tor:get-metrics',
+  TOR_TEST_CONNECTION: 'tor:test-connection',
+  TOR_HEALTH_CHECK: 'tor:health-check',
 
-  // Window Management Channels
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_MAXIMIZE: 'window:maximize',
+  WINDOW_RESTORE: 'window:restore',
+  WINDOW_CLOSE: 'window:close',
+  WINDOW_SET_SIZE: 'window:set-size',
+  WINDOW_SET_POSITION: 'window:set-position',
+  WINDOW_CENTER: 'window:center',
+  WINDOW_SET_ALWAYS_ON_TOP: 'window:set-always-on-top',
+
+  DOCKER_START_SERVICES: 'docker:start-services',
+  DOCKER_STOP_SERVICES: 'docker:stop-services',
+  DOCKER_RESTART_SERVICES: 'docker:restart-services',
+  DOCKER_GET_SERVICE_STATUS: 'docker:get-service-status',
+  DOCKER_GET_CONTAINER_LOGS: 'docker:get-container-logs',
+  DOCKER_EXEC_COMMAND: 'docker:exec-command',
+
+  API_REQUEST: 'api:request',
+  API_GET: 'api:get',
+  API_POST: 'api:post',
+  API_PUT: 'api:put',
+  API_DELETE: 'api:delete',
+  API_UPLOAD: 'api:upload',
+  API_DOWNLOAD: 'api:download',
+
+  AUTH_LOGIN: 'auth:login',
+  AUTH_LOGOUT: 'auth:logout',
+  AUTH_VERIFY_TOKEN: 'auth:verify-token',
+  AUTH_REFRESH_TOKEN: 'auth:refresh-token',
+
+  CONFIG_GET: 'config:get',
+  CONFIG_SET: 'config:set',
+  CONFIG_RESET: 'config:reset',
+  CONFIG_EXPORT: 'config:export',
+  CONFIG_IMPORT: 'config:import',
+
+  FILE_OPEN: 'file:open',
+  FILE_SAVE: 'file:save',
+  FILE_SAVE_AS: 'file:save-as',
+  FILE_SELECT: 'file:select',
+  FILE_DOWNLOAD: 'file:download',
+
+  SYSTEM_GET_INFO: 'system:get-info',
+  SYSTEM_GET_RESOURCES: 'system:get-resources',
+  SYSTEM_GET_NETWORK_INFO: 'system:get-network-info',
+  SYSTEM_SHOW_NOTIFICATION: 'system:show-notification',
+  SYSTEM_OPEN_EXTERNAL: 'system:open-external',
+
+  LOG_INFO: 'log:info',
+  LOG_WARN: 'log:warn',
+  LOG_ERROR: 'log:error',
+  LOG_DEBUG: 'log:debug',
+
+  UPDATE_CHECK: 'update:check',
+  UPDATE_DOWNLOAD: 'update:download',
+  UPDATE_INSTALL: 'update:install',
+  UPDATE_RESTART: 'update:restart',
+} as const;
+
+export const MAIN_TO_RENDERER_CHANNELS = {
+  TOR_STATUS_UPDATE: 'tor:status-update',
+  TOR_CONNECTION_CHANGED: 'tor:connection-changed',
+  TOR_CONNECTION_UPDATE: 'tor:connection-changed',
+  TOR_BOOTSTRAP_PROGRESS: 'tor:bootstrap-progress',
+  TOR_BOOTSTRAP_UPDATE: 'tor:bootstrap-progress',
+  TOR_CIRCUIT_UPDATE: 'tor:circuit-update',
+
+  DOCKER_SERVICE_STATUS: 'docker:service-status',
+  DOCKER_CONTAINER_UPDATE: 'docker:container-update',
+  DOCKER_HEALTH_CHECK: 'docker:health-check',
+
+  SYSTEM_NOTIFICATION: 'system:notification',
+  ERROR_OCCURRED: 'error:occurred',
+
+  AUTH_STATUS_CHANGED: 'auth:status-changed',
+  AUTH_TOKEN_EXPIRED: 'auth:token-expired',
+
+  CONFIG_UPDATED: 'config:updated',
+  SETTINGS_CHANGED: 'settings:changed',
+
+  UPDATE_AVAILABLE: 'update:available',
+  UPDATE_PROGRESS: 'update:progress',
+  UPDATE_COMPLETED: 'update:completed',
+  LOG_EVENT: 'log:event',
+} as const;
+
+export const BIDIRECTIONAL_CHANNELS = {
+  WINDOW_SEND_MESSAGE: 'window:send-message',
+  WINDOW_BROADCAST: 'window:broadcast',
+  DATA_SYNC: 'data:sync',
+  DATA_GET: 'data:get',
+  DATA_SET: 'data:set',
+  DATA_DELETE: 'data:delete',
+  EVENT_SUBSCRIBE: 'event:subscribe',
+  EVENT_UNSUBSCRIBE: 'event:unsubscribe',
+} as const;
+
+export const IPCChannels = {
+  ...RENDERER_TO_MAIN_CHANNELS,
+  ...MAIN_TO_RENDERER_CHANNELS,
+  ...BIDIRECTIONAL_CHANNELS,
   WINDOW_CREATE: 'window:create',
   WINDOW_CLOSE: 'window:close',
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_MAXIMIZE: 'window:maximize',
   WINDOW_RESTORE: 'window:restore',
-  WINDOW_FOCUS: 'window:focus',
-  WINDOW_CASCADE: 'window:cascade',
-  WINDOW_TILE: 'window:tile',
-  WINDOW_MINIMIZE_ALL: 'window:minimize-all',
-  WINDOW_RESTORE_ALL: 'window:restore-all',
-  WINDOW_CLOSE_ALL: 'window:close-all',
   WINDOW_GET_LIST: 'window:get-list',
   WINDOW_GET_STATISTICS: 'window:get-statistics',
-
-  // Docker Service Channels
   DOCKER_GET_STATUS: 'docker:get-status',
   DOCKER_CONNECT_SSH: 'docker:connect-ssh',
   DOCKER_DISCONNECT: 'docker:disconnect',
@@ -44,133 +137,18 @@ export const IPCChannels = {
   DOCKER_GET_ALL_STATS: 'docker:get-all-stats',
   DOCKER_PULL_IMAGE: 'docker:pull-image',
   DOCKER_GET_IMAGES: 'docker:get-images',
-
-  // API Proxy Channels
-  API_REQUEST: 'api:request',
-  API_GET_ENDPOINTS: 'api:get-endpoints',
-  API_TEST_CONNECTION: 'api:test-connection',
-
-  // Hardware Wallet Channels
-  HARDWARE_WALLET_CONNECT: 'hardware-wallet:connect',
-  HARDWARE_WALLET_DISCONNECT: 'hardware-wallet:disconnect',
-  HARDWARE_WALLET_GET_STATUS: 'hardware-wallet:get-status',
-  HARDWARE_WALLET_GET_ADDRESS: 'hardware-wallet:get-address',
-  HARDWARE_WALLET_SIGN: 'hardware-wallet:sign',
-  HARDWARE_WALLET_VERIFY: 'hardware-wallet:verify',
-  HARDWARE_WALLET_STATUS_CHANGED: 'hardware-wallet:status-changed',
-
-  // Session Management Channels
-  SESSION_CREATE: 'session:create',
-  SESSION_GET: 'session:get',
-  SESSION_UPDATE: 'session:update',
-  SESSION_DELETE: 'session:delete',
-  SESSION_LIST: 'session:list',
-  SESSION_START_RECORDING: 'session:start-recording',
-  SESSION_STOP_RECORDING: 'session:stop-recording',
-  SESSION_UPLOAD_CHUNK: 'session:upload-chunk',
-  SESSION_GET_CHUNKS: 'session:get-chunks',
-  SESSION_GET_METADATA: 'session:get-metadata',
-
-  // Blockchain Channels
-  BLOCKCHAIN_GET_STATUS: 'blockchain:get-status',
-  BLOCKCHAIN_GET_HEIGHT: 'blockchain:get-height',
-  BLOCKCHAIN_GET_BLOCK: 'blockchain:get-block',
-  BLOCKCHAIN_SUBMIT_PROOF: 'blockchain:submit-proof',
-  BLOCKCHAIN_GET_PROOFS: 'blockchain:get-proofs',
-  BLOCKCHAIN_ANCHOR_SESSION: 'blockchain:anchor-session',
-
-  // Node Management Channels
-  NODE_REGISTER: 'node:register',
-  NODE_GET_STATUS: 'node:get-status',
-  NODE_GET_METRICS: 'node:get-metrics',
-  NODE_JOIN_POOL: 'node:join-pool',
-  NODE_LEAVE_POOL: 'node:leave-pool',
-  NODE_GET_POOLS: 'node:get-pools',
-  NODE_CALCULATE_POOT: 'node:calculate-poot',
-
-  // User Management Channels
-  USER_LOGIN: 'user:login',
-  USER_LOGOUT: 'user:logout',
-  USER_GET_PROFILE: 'user:get-profile',
-  USER_UPDATE_PROFILE: 'user:update-profile',
-  USER_CHANGE_PASSWORD: 'user:change-password',
-  USER_GET_SESSIONS: 'user:get-sessions',
-
-  // Admin Channels
-  ADMIN_GET_DASHBOARD: 'admin:get-dashboard',
-  ADMIN_GET_USERS: 'admin:get-users',
-  ADMIN_CREATE_USER: 'admin:create-user',
-  ADMIN_UPDATE_USER: 'admin:update-user',
-  ADMIN_DELETE_USER: 'admin:delete-user',
-  ADMIN_GET_NODES: 'admin:get-nodes',
-  ADMIN_MANAGE_NODE: 'admin:manage-node',
-  ADMIN_GET_SYSTEM_LOGS: 'admin:get-system-logs',
-  ADMIN_GET_AUDIT_LOGS: 'admin:get-audit-logs',
-  ADMIN_SYSTEM_SHUTDOWN: 'admin:system-shutdown',
-  ADMIN_SYSTEM_RESTART: 'admin:system-restart',
-  ADMIN_EMERGENCY_LOCKDOWN: 'admin:emergency-lockdown',
-
-  // TRON Payment Channels (Isolated)
-  TRON_GET_WALLET: 'tron:get-wallet',
-  TRON_GET_BALANCE: 'tron:get-balance',
-  TRON_SEND_TRANSACTION: 'tron:send-transaction',
-  TRON_GET_TRANSACTIONS: 'tron:get-transactions',
-  TRON_STAKE_TRX: 'tron:stake-trx',
-  TRON_UNSTAKE_TRX: 'tron:unstake-trx',
-  TRON_GET_STAKING_INFO: 'tron:get-staking-info',
-
-  // File System Channels
-  FS_READ_FILE: 'fs:read-file',
-  FS_WRITE_FILE: 'fs:write-file',
-  FS_DELETE_FILE: 'fs:delete-file',
-  FS_LIST_DIRECTORY: 'fs:list-directory',
-  FS_CREATE_DIRECTORY: 'fs:create-directory',
-  FS_GET_FILE_INFO: 'fs:get-file-info',
-
-  // Configuration Channels
-  CONFIG_GET: 'config:get',
-  CONFIG_SET: 'config:set',
-  CONFIG_RESET: 'config:reset',
-  CONFIG_EXPORT: 'config:export',
-  CONFIG_IMPORT: 'config:import',
-
-  // Notification Channels
-  NOTIFICATION_SHOW: 'notification:show',
-  NOTIFICATION_HIDE: 'notification:hide',
-  NOTIFICATION_CLEAR_ALL: 'notification:clear-all',
-
-  // Update Channels
-  UPDATE_CHECK: 'update:check',
-  UPDATE_DOWNLOAD: 'update:download',
-  UPDATE_INSTALL: 'update:install',
-  UPDATE_STATUS_CHANGED: 'update:status-changed',
-
-  // Security Channels
-  SECURITY_GET_STATUS: 'security:get-status',
-  SECURITY_SCAN_FILE: 'security:scan-file',
-  SECURITY_VALIDATE_CERTIFICATE: 'security:validate-certificate',
-  SECURITY_GENERATE_KEYPAIR: 'security:generate-keypair',
-
-  // Logging Channels
-  LOG_INFO: 'log:info',
-  LOG_WARN: 'log:warn',
-  LOG_ERROR: 'log:error',
-  LOG_DEBUG: 'log:debug',
-
-  // Error Handling Channels
-  ERROR_REPORT: 'error:report',
-  ERROR_GET_LOGS: 'error:get-logs',
-  ERROR_CLEAR_LOGS: 'error:clear-logs',
-
-  // Development Channels (Development only)
-  DEV_OPEN_DEVTOOLS: 'dev:open-devtools',
-  DEV_RELOAD_WINDOW: 'dev:reload-window',
-  DEV_TOGGLE_DEBUG: 'dev:toggle-debug',
-  DEV_GET_PERFORMANCE: 'dev:get-performance'
 } as const;
 
-// Type definitions for IPC message payloads
-export interface IPCMessage<T = any> {
+export type RendererToMainChannel = ValueOf<typeof RENDERER_TO_MAIN_CHANNELS>;
+export type MainToRendererChannel = ValueOf<typeof MAIN_TO_RENDERER_CHANNELS>;
+export type BidirectionalChannel = ValueOf<typeof BIDIRECTIONAL_CHANNELS>;
+export type IpcChannel = ValueOf<typeof IPCChannels>;
+
+/* ------------------------------------------------------------------------ */
+/* Generic IPC payload helpers                                              */
+/* ------------------------------------------------------------------------ */
+
+export interface IPCMessage<T = unknown> {
   id: string;
   channel: string;
   payload: T;
@@ -178,140 +156,422 @@ export interface IPCMessage<T = any> {
   replyChannel?: string;
 }
 
-export interface IPCResponse<T = any> {
+export interface IPCResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   timestamp: string;
 }
 
-// Tor-related types
-export interface TorStatusMessage {
+/* ------------------------------------------------------------------------ */
+/* Tor payloads                                                             */
+/* ------------------------------------------------------------------------ */
+
+export interface TorStartRequest {
+  config?: Record<string, unknown>;
+}
+
+export interface TorStartResponse {
+  success: boolean;
+  pid?: number;
+  error?: string;
+}
+
+export interface TorStopRequest {
+  force?: boolean;
+}
+
+export interface TorStopResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface TorRestartRequest {
+  config?: Record<string, unknown>;
+}
+
+export interface TorRestartResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface TorCircuitDescriptor {
+  id: string;
+  status: 'building' | 'built' | 'extended' | 'closed';
+  path: string[];
+  age: number;
+  purpose?: string;
+  flags?: string[];
+}
+
+export interface TorGetStatusResponse {
   connected: boolean;
-  status: 'stopped' | 'starting' | 'connected' | 'error';
-  socksPort: number;
+  connecting: boolean;
+  bootstrapProgress: number;
+  circuits: TorCircuitDescriptor[];
+  proxyPort: number;
   controlPort: number;
-  version?: string;
   error?: string;
+  lastConnected?: string;
 }
 
-// Docker-related types
-export interface DockerContainerMessage {
-  id: string;
-  name: string;
-  image: string;
-  status: string;
-  ports: string[];
+export interface TorGetMetricsResponse {
+  uptimeSeconds: number;
+  bytesRead: number;
+  bytesWritten: number;
+  circuitsBuilt: number;
+  circuitsFailed: number;
+  lastUpdated: string;
 }
 
-export interface DockerStatsMessage {
-  id: string;
-  cpu_percent: number;
-  memory_usage: number;
-  network_rx: number;
-  network_tx: number;
-}
-
-// Hardware wallet types
-export interface HardwareWalletMessage {
-  type: 'ledger' | 'trezor' | 'keepkey';
-  connected: boolean;
-  address?: string;
-  error?: string;
-}
-
-// Session types
-export interface SessionMessage {
-  sessionId: string;
-  userId: string;
-  state: string;
-  config: any;
-  metadata: any;
-}
-
-export interface SessionChunkMessage {
-  chunkId: string;
-  sessionId: string;
-  sequenceNumber: number;
-  data: Buffer;
-  metadata: any;
-}
-
-// API request types
-export interface APIRequestMessage {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+export interface TorTestConnectionRequest {
   url: string;
-  headers?: Record<string, string>;
-  body?: any;
   timeout?: number;
+  expectedStatus?: number;
 }
 
-// Configuration types
-export interface ConfigMessage {
-  key: string;
-  value: any;
-  scope: 'user' | 'system' | 'session';
+export interface TorTestConnectionResponse {
+  success: boolean;
+  responseTime: number;
+  error?: string;
 }
 
-// Notification types
-export interface NotificationMessage {
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  duration?: number;
-  actions?: Array<{
-    label: string;
-    action: string;
-  }>;
+export interface TorHealthCheckResponse {
+  healthy: boolean;
+  lastCheck: string;
+  responseTime: number;
+  tests: {
+    socksProxy: boolean;
+    controlPort: boolean;
+    bootstrap: boolean;
+    circuitBuild: boolean;
+  };
+  error?: string;
 }
 
-// Error types
-export interface ErrorMessage {
-  code: string;
-  message: string;
-  stack?: string;
-  context?: any;
+export interface TorStatusMessage {
+  status: 'connected' | 'connecting' | 'disconnected' | 'error';
+  progress?: number;
+  circuits?: number;
+  proxyPort?: number;
+  error?: string;
+}
+
+export interface TorConnectionMessage {
+  connected: boolean;
+  timestamp: string;
+  error?: string;
+}
+
+export interface TorBootstrapMessage {
+  progress: number;
+  summary?: string;
+  warning?: string;
+}
+
+export interface TorCircuitMessage {
+  circuitId: string;
+  status: TorCircuitDescriptor['status'];
+  path: string[];
+  age: number;
+  purpose?: string;
+  flags?: string[];
+}
+
+/* ------------------------------------------------------------------------ */
+/* Docker payloads                                                          */
+/* ------------------------------------------------------------------------ */
+
+export type DockerServiceStatus = 'stopped' | 'starting' | 'running' | 'error';
+export type DockerServiceHealth = 'healthy' | 'unhealthy' | 'starting';
+
+export interface DockerServiceState {
+  service: string;
+  displayName: string;
+  image: string;
+  level: 'support' | 'core' | 'application' | 'admin' | 'developer' | 'user' | 'node';
+  plane: 'support' | 'core' | 'application' | 'ops';
+  status: DockerServiceStatus;
+  containerId?: string;
+  ports: string[];
+  health?: DockerServiceHealth;
+  error?: string;
+  updatedAt: string;
+}
+
+export interface DockerStartServicesRequest {
+  services: string[];
+  level?: string;
+}
+
+export interface DockerServiceOperationFailure {
+  service: string;
+  error: string;
+}
+
+export interface DockerStartServicesResponse {
+  success: boolean;
+  started: string[];
+  failed: DockerServiceOperationFailure[];
+  services: DockerServiceState[];
+  level?: string;
   timestamp: string;
 }
 
-// Development types
-export interface PerformanceMessage {
-  memory: {
-    used: number;
-    total: number;
-    percentage: number;
-  };
-  cpu: {
-    usage: number;
-    cores: number;
-  };
-  uptime: number;
-  windows: number;
+export interface DockerStopServicesRequest {
+  services: string[];
 }
 
-// Channel validation
-export function isValidChannel(channel: string): boolean {
-  return Object.values(IPCChannels).includes(channel as any);
+export interface DockerStopServicesResponse {
+  success: boolean;
+  stopped: string[];
+  failed: DockerServiceOperationFailure[];
+  services: DockerServiceState[];
+  timestamp: string;
 }
 
-// Message validation
-export function isValidMessage(message: any): message is IPCMessage {
+export interface DockerRestartServicesResponse {
+  success: boolean;
+  restarted: string[];
+  failed: DockerServiceOperationFailure[];
+  services: DockerServiceState[];
+  timestamp: string;
+}
+
+export interface DockerGetServiceStatusResponse {
+  services: DockerServiceState[];
+  generatedAt: string;
+}
+
+export interface DockerGetContainerLogsRequest {
+  containerId: string;
+  lines?: number;
+  follow?: boolean;
+}
+
+export interface DockerGetContainerLogsResponse {
+  containerId: string;
+  logs: string[];
+  error?: string;
+  generatedAt: string;
+}
+
+export interface DockerExecCommandRequest {
+  containerId: string;
+  command: string[];
+  workingDir?: string;
+  env?: Record<string, string>;
+}
+
+export interface DockerExecCommandResponse {
+  success: boolean;
+  containerId: string;
+  output: string;
+  error?: string;
+  exitCode: number;
+  startedAt: string;
+  finishedAt: string;
+}
+
+export interface DockerServiceMessage {
+  service: string;
+  status: DockerServiceStatus;
+  containerId?: string;
+  error?: string;
+  level?: string;
+  plane?: string;
+  timestamp: string;
+}
+
+export interface DockerContainerMessage {
+  containerId: string;
+  status: DockerServiceStatus | string;
+  name: string;
+  image: string;
+  ports: string[];
+  health?: DockerServiceHealth | string;
+  updatedAt: string;
+}
+
+export interface DockerHealthMessage {
+  service: string;
+  healthy: boolean;
+  lastCheck: string;
+  responseTime: number;
+  error?: string;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Authentication payloads                                                  */
+/* ------------------------------------------------------------------------ */
+
+export interface AuthLoginRequest {
+  email: string;
+  signature: string;
+}
+
+export interface AuthLoginResponse {
+  success: boolean;
+  token?: string;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  expiresAt?: string;
+  error?: string;
+}
+
+export interface AuthLogoutRequest {
+  token: string;
+}
+
+export interface AuthLogoutResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface AuthVerifyTokenRequest {
+  token: string;
+}
+
+export interface AuthVerifyTokenResponse {
+  success: boolean;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  expiresAt?: string;
+  error?: string;
+}
+
+export interface AuthStatusMessage {
+  authenticated: boolean;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  token?: string;
+  expiresAt?: string;
+  timestamp?: string;
+}
+
+export interface AuthTokenExpiredMessage {
+  reason: string;
+  timestamp: string;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Configuration & notification payloads                                   */
+/* ------------------------------------------------------------------------ */
+
+export interface ConfigUpdatedMessage {
+  key: string;
+  value: unknown;
+  scope: 'user' | 'system' | 'session';
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface SettingsChangedMessage {
+  category: string;
+  changes: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface SystemNotificationMessage {
+  title: string;
+  body: string;
+  level?: 'info' | 'success' | 'warning' | 'error';
+  icon?: string;
+  actions?: Array<{ label: string; action: string }>;
+  timeout?: number;
+}
+
+export interface WarningMessage {
+  code: string;
+  message: string;
+  timestamp: string;
+  details?: Record<string, unknown>;
+}
+
+export interface ErrorMessage {
+  code: string;
+  message: string;
+  timestamp: string;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  details?: Record<string, unknown>;
+  stack?: string;
+}
+
+/* ------------------------------------------------------------------------ */
+/* API proxy payloads                                                       */
+/* ------------------------------------------------------------------------ */
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+
+export interface APIRequestMessage {
+  method: HttpMethod;
+  url: string;
+  data?: unknown;
+  headers?: Record<string, string>;
+  timeout?: number;
+}
+
+export interface APIResponseMessage {
+  requestId: string;
+  data: unknown;
+  status: number;
+  headers?: Record<string, string>;
+}
+
+export interface APIErrorMessage {
+  requestId: string;
+  error: string;
+  status: number;
+  details?: unknown;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Logging payloads                                                         */
+/* ------------------------------------------------------------------------ */
+
+export interface LogEventMessage {
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  timestamp: string;
+  context?: Record<string, unknown>;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Validation helpers                                                       */
+/* ------------------------------------------------------------------------ */
+
+export function isValidChannel(channel: string): channel is IpcChannel {
+  return Object.values(IPCChannels).includes(channel as IpcChannel);
+}
+
+export function isValidMessage(message: unknown): message is IPCMessage {
+  if (!message || typeof message !== 'object') {
+    return false;
+  }
+
+  const candidate = message as Record<string, unknown>;
   return (
-    message &&
-    typeof message === 'object' &&
-    typeof message.id === 'string' &&
-    typeof message.channel === 'string' &&
-    typeof message.timestamp === 'string' &&
-    isValidChannel(message.channel)
+    typeof candidate.id === 'string' &&
+    typeof candidate.channel === 'string' &&
+    typeof candidate.timestamp === 'string' &&
+    isValidChannel(candidate.channel)
   );
 }
 
-// Response validation
-export function isValidResponse(response: any): response is IPCResponse {
-  return (
-    response &&
-    typeof response === 'object' &&
-    typeof response.success === 'boolean' &&
-    typeof response.timestamp === 'string'
-  );
+export function isValidResponse(response: unknown): response is IPCResponse {
+  if (!response || typeof response !== 'object') {
+    return false;
+  }
+
+  const candidate = response as Record<string, unknown>;
+  return typeof candidate.success === 'boolean' && typeof candidate.timestamp === 'string';
 }

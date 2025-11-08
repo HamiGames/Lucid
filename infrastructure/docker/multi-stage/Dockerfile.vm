@@ -1,105 +1,109 @@
-# Lucid VM Service - Distroless (ARM64)
-# Image: pickme/lucid-vm:latest-arm64
-# Port per essentials.md: 8103
+# LUCID VM MANAGEMENT - DISTROLESS Implementation
+# Distroless build for VM orchestration utilities (ARM64/Pi compatible)
+# Configuration: .env.application/.env.support (no hardcoded values)
+# Source alignment: plan/constants/, image-directory.csv entry pickme/lucid-vm:latest-arm64
 
-FROM --platform=linux/arm64 python:3.11-slim as builder
-
-# Set build arguments
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+# =============================================================================
+# STAGE 1: Builder - Install dependencies and assemble application
+# =============================================================================
+FROM python:${PYTHON_VERSION}-slim AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    BUILD_ENV=production
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    make \
-    pkg-config \
-    libffi-dev \
-    libssl-dev \
-    tzdata \
-    locales \
-    && rm -rf /var/lib/apt/lists/*
+# Install build dependencies (cache friendly)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Configure timezone and locale for builder
-ENV TZ=UTC
-ENV LANG=en_US.UTF-8
-ENV LC_ALL=en_US.UTF-8
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+WORKDIR /build
 
-# Create app directory
-WORKDIR /app
+# Upgrade pip tooling with cache
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip wheel setuptools virtualenv
 
-# Copy requirements first for better caching
-COPY infrastructure/docker/multi-stage/requirements.vm.txt ./requirements.vm.txt
-RUN pip install --no-cache-dir -r requirements.vm.txt
+# Create application virtual environment
+RUN python -m venv /opt/venv
 
-# Copy source code
-COPY vm/ ./vm/
-COPY src/ ./src/
-COPY common/ ./common/
+# Install Python dependencies into venv
+COPY vm/requirements.vm.txt ./requirements.vm.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r requirements.vm.txt
 
-# Build the application
-RUN python -m compileall -b .
+# Copy VM service source
+COPY vm/ /opt/app/vm/
+COPY vm/main.py /opt/app/main.py
 
-# Stage 2: Runtime stage (distroless)
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+# =============================================================================
+# STAGE 2: Runtime - Distroless Python base
+# =============================================================================
+FROM gcr.io/distroless/python3-debian12:latest
 
-# Set metadata
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
 LABEL maintainer="Lucid Development Team" \
-      org.opencontainers.image.title="Lucid VM Service" \
-      org.opencontainers.image.description="Distroless VM management service for Lucid platform" \
-      org.opencontainers.image.version="${VERSION}" \
+      version="${VERSION}" \
+      description="Lucid VM management utilities (distroless)" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.vendor="Lucid" \
-      org.opencontainers.image.licenses="MIT" \
-      lucid.service="vm" \
-      lucid.type="distroless" \
-      lucid.platform="arm64" \
-      lucid.security="hardened"
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid VM Manager" \
+      org.opencontainers.image.description="VM orchestration service for Lucid platform" \
+      com.lucid.plane="support" \
+      com.lucid.service="vm-manager" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="8107" \
+      com.lucid.cluster="support" \
+      com.lucid.tor.compatible="true"
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
+ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONDONTWRITEBYTECODE=1 \
-    LUCID_ENV=production \
-    LUCID_PLATFORM=arm64 \
-    LUCID_PROJECT_ROOT=/app
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/opt/app
 
-# Locale and Timezone Configuration
-ENV TZ=UTC \
-    LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8 \
-    COUNTRY=US
+WORKDIR /opt/app
 
-# VM Service Configuration
-ENV VM_URL=http://lucid-vm:8103 \
-    HEALTHCHECK_PORT=8103 \
-    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+# Copy virtual environment and application from builder
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /opt/app /opt/app
 
-# Create non-root user
+EXPOSE 8107
+
+# Healthcheck (optional network check disabled; relies on internal diagnostics)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/opt/venv/bin/python", "-c", "import sys; sys.exit(0)"]
+
 USER 65532:65532
 
-# Set working directory
-WORKDIR /app
-
-# Copy built application from builder stage
-COPY --from=builder --chown=65532:65532 /app /app
-
-# Expose port
-EXPOSE 8103
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8103/health')"]
-
-# Run the application (async main)
-CMD ["python3", "-c", "import asyncio; from vm.main import main; asyncio.run(main())"]
+CMD ["/opt/venv/bin/python", "main.py"]

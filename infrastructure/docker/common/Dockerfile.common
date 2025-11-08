@@ -9,19 +9,21 @@ ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 
-FROM alpine:3.19 AS builder
+FROM debian:12-slim AS builder
 
-RUN apk update && apk upgrade && \
-    apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         bash \
         curl \
         wget \
         jq \
-        yq \
-        bind-tools \
+        python3 \
+        python3-pip \
+        dnsutils \
+        iputils-ping \
+        inetutils-traceroute \
         netcat-openbsd \
         socat \
-        nmap-ncat \
+        nmap \
         tcpdump \
         iperf3 \
         openssl \
@@ -39,21 +41,26 @@ RUN apk update && apk upgrade && \
         vim \
         nano \
         tree \
-        mongodb-tools \
         util-linux \
-        su-exec \
-        python3 \
-        py3-pip && \
-    rm -rf /var/cache/apk/*
+        gosu \
+    && python3 -m pip install --no-cache-dir --upgrade pip yq \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN adduser -D -s /bin/bash lucid
+# MongoDB CLI tooling required by plan/constants deployment procedures
+RUN curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-org-7.0.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/mongodb-org-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
+        mongodb-mongosh \
+        mongodb-database-tools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN useradd --system --create-home --shell /bin/bash lucid
 
 RUN mkdir -p /opt/lucid/tools /opt/lucid/scripts /opt/lucid/logs && \
-    chown -R lucid:lucid /opt/lucid
-
-COPY infrastructure/docker/common/scripts/ /opt/lucid/scripts/
-
-RUN chmod -R 755 /opt/lucid/scripts
+    chown -R lucid:lucid /opt/lucid && \
+    chmod -R 755 /opt/lucid/scripts
 
 FROM gcr.io/distroless/base-debian12:latest
 
@@ -74,13 +81,10 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation,.env.core,.env.support" \
+      com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
-ENV PATH=/opt/lucid/scripts:/usr/local/bin:/usr/bin:/bin \
-    TOOLS_DIR=/opt/lucid/tools \
-    SCRIPTS_DIR=/opt/lucid/scripts \
-    LOG_DIR=/opt/lucid/logs
+ENV PATH=/opt/lucid/scripts:/usr/local/bin:/usr/bin:/bin
 
 COPY --from=builder /bin/bash /bin/bash
 COPY --from=builder /usr/bin /usr/bin
@@ -95,5 +99,8 @@ USER lucid:lucid
 
 CMD ["/bin/bash", "-c", "echo 'Lucid server tools ready. Scripts in /opt/lucid/scripts. Configure via .env.* on Pi console.'"]
 
-# Environment variables configurable via .env files:
-#   TOOLS_DIR, SCRIPTS_DIR, LOG_DIR, health targets, tor endpoints, etc.
+# =============================================================================
+# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# All configuration should come from .env.foundation, .env.core, .env.support,
+# and .env.server-tools via docker-compose env_file directives on the Pi console.
+# =============================================================================

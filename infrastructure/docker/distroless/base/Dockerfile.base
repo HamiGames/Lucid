@@ -1,9 +1,8 @@
 # LUCID DISTROLESS BASE IMAGE - SPEC-1B
 # Base distroless environment for Lucid ARM64 services with tor bootstrap utilities
-# Provides Python runtime with venv support and tor spin-up tooling
 # Build Context: . (project root)
 # Deployment: Pi console /mnt/myssd/Lucid/Lucid
-# All configuration via .env.foundation/.env.core/etc.
+# All configuration via .env.foundation/.env.core/.env.distroless/etc.
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -12,7 +11,7 @@ ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
-FROM python:3.11-slim-bookworm AS builder
+FROM python:${PYTHON_VERSION}-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -50,8 +49,8 @@ COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requiremen
 RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --prefer-binary -r requirements-minimal.txt
 
-# Build tor spin-up helper scripts (pi console orchestrated)
-COPY infrastructure/docker/distroless/base/scripts/ ./scripts/
+# Reserve scripts directory for Pi-mounted tor spin-up helpers
+RUN mkdir -p /opt/lucid-base/scripts
 
 FROM gcr.io/distroless/python3-debian12:latest
 
@@ -75,23 +74,25 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.tor.bootstrap="true" \
       com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation,.env.core" \
+      com.lucid.env.config=".env.foundation,.env.core,.env.distroless" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
-    LUCID_ENV=production \
-    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages
 
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /opt/scripts /opt/lucid-base/scripts
+COPY --from=builder /opt/lucid-base /opt/lucid-base
 
 USER 65532:65532
 
 CMD ["python3", "-c", "print('Lucid distroless base ready. Use tor spin-up scripts from /opt/lucid-base/scripts')"]
 
-# All runtime configuration via .env files injected by higher-level services
+# =============================================================================
+# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# All operational values must be supplied through .env.foundation, .env.core,
+# and .env.distroless via docker-compose env_file directives on the Pi console.
+# =============================================================================

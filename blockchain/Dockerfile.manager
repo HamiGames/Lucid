@@ -4,16 +4,13 @@
 # Security: LUCID-STRICT compliant with distroless base
 # Aligned with plan/constants/ requirements
 # Block Manager service (lucid-block-manager) - Port 8086
-# Image: pickme/lucid-block-manager:latest-arm64 (from essentials.md, path_plan.md line 33)
-# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
-# Configuration: All values from .env.core, .env.secrets, .env.foundation via docker-compose (no hardcoded secrets)
-# Build Context: blockchain/ (blockchain directory) - paths must be relative to blockchain directory
+# Image: pickme/lucid-block-manager:latest-arm64 (essentials.md, path_plan.md)
+# Tor-proxy compatible: Uses CMD (no ENTRYPOINT)
+# Configuration: All values from .env.core, .env.secrets, .env.foundation via docker-compose
+# Build Context: . (project root) - all COPY paths use blockchain/ prefix
 # Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
 # Env Files: /mnt/myssd/Lucid/Lucid/configs/environment/.env.core, .env.secrets, .env.foundation
 
-# =============================================================================
-# BUILD ARGUMENTS
-# =============================================================================
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
@@ -21,75 +18,63 @@ ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
-# =============================================================================
-# STAGE 1: Builder - Install dependencies and compile packages
-# =============================================================================
 FROM python:3.11-slim AS builder
 
-# Set build arguments
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-# Set environment variables for pip optimization (aligned with path_plan.md)
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
     PIP_PREFER_BINARY=1 \
     DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies with apt cache mount (BuildKit optimization)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    pkg-config \
-    curl \
-    ca-certificates \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Upgrade pip to latest version (faster builds, better wheel support for ARM64)
+WORKDIR /build
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip wheel setuptools
 
-# Set working directory
-WORKDIR /app
+COPY blockchain/requirements.txt ./requirements.txt
 
-# Copy requirements first for better layer caching
-COPY requirements.txt ./requirements.txt
-
-# Install Python dependencies with optimizations
-# PIP_PREFER_BINARY=1 forces use of pre-built wheels when available (critical for ARM64)
-# Cache mount speeds up subsequent builds (BuildKit feature)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary -r requirements.txt || \
     pip install --user --prefer-binary -r requirements.txt
 
-# Copy block manager source code
-COPY manager/ ./manager/
-COPY core/ ./core/
-COPY utils/ ./utils/
-COPY config/ ./config/
-COPY api/ ./api/
+COPY blockchain/manager/        ./manager/
+COPY blockchain/api/            ./api/
+COPY blockchain/core/           ./core/
+COPY blockchain/utils/          ./utils/
+COPY blockchain/config/         ./config/
+COPY blockchain/contracts/      ./contracts/
+COPY blockchain/deployment/     ./deployment/
+COPY blockchain/chain-client/   ./chain-client/
+COPY blockchain/evm/            ./evm/
+COPY blockchain/on_system_chain/ ./on_system_chain/
+COPY blockchain/scripts/        ./scripts/
+COPY blockchain/tests/          ./tests/
+COPY blockchain/*.py            ./
 
-# =============================================================================
-# STAGE 2: Runtime - Distroless Python base
-# =============================================================================
 FROM gcr.io/distroless/python3-debian12:latest
 
-# Build arguments
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
-# Metadata for professional container management (aligned with constants)
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
       description="Distroless Block Manager for Lucid blockchain support" \
@@ -110,68 +95,48 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.env.config=".env.core,.env.secrets,.env.foundation" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
-# Copy Python packages from builder to distroless location
-COPY --from=builder /root/.local /root/.local
-
-# Copy application code
-COPY --from=builder /app/manager /app/manager
-COPY --from=builder /app/core /app/core
-COPY --from=builder /app/utils /app/utils
-COPY --from=builder /app/config /app/config
-COPY --from=builder /app/api /app/api
-
-# =============================================================================
-# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-# All configuration should come from .env.core, .env.secrets, .env.foundation
-# via docker-compose env_file directive. These are fallback defaults only.
-# =============================================================================
-# Essential PATH for runtime (aligned with distroless best practices)
 ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 
-# Minimal runtime defaults (will be overridden by docker-compose env_file)
-# DO NOT hardcode production values here - use .env files on Pi console
-# All Block Manager configuration comes from docker-compose.yml environment section:
-#   - SERVICE_NAME (from docker-compose)
-#   - PORT (from docker-compose)
-#   - HOST (from docker-compose)
-#   - MONGODB_URI (from docker-compose via .env.secrets)
-#   - REDIS_URL (from docker-compose)
-#   - BLOCK_MANAGER_URL (from docker-compose)
-#   - BLOCK_MANAGER_HOST (from docker-compose)
-#   - BLOCKCHAIN_ENGINE_URL (from docker-compose)
-#   - LOG_LEVEL (from docker-compose)
-#   - DEBUG (from docker-compose)
-#   - ... (all other configuration from .env files)
-
-# Set working directory
 WORKDIR /app
 
-# Health check (aligned with essentials.md and Network_config_requirements.md)
-# Uses Python3 urllib.request (distroless-compatible)
+COPY --from=builder /root/.local /root/.local
+COPY --chown=65532:65532 --from=builder /build/manager        /app/manager
+COPY --chown=65532:65532 --from=builder /build/api            /app/api
+COPY --chown=65532:65532 --from=builder /build/core           /app/core
+COPY --chown=65532:65532 --from=builder /build/utils          /app/utils
+COPY --chown=65532:65532 --from=builder /build/config         /app/config
+COPY --chown=65532:65532 --from=builder /build/contracts      /app/contracts
+COPY --chown=65532:65532 --from=builder /build/deployment     /app/deployment
+COPY --chown=65532:65532 --from=builder /build/chain-client   /app/chain-client
+COPY --chown=65532:65532 --from=builder /build/evm           /app/evm
+COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/on_system_chain
+COPY --chown=65532:65532 --from=builder /build/scripts        /app/scripts
+COPY --chown=65532:65532 --from=builder /build/tests          /app/tests
+COPY --chown=65532:65532 --from=builder /build/*.py           /app/
+
+EXPOSE 8086
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8086/health').read(); exit(0)"]
 
-# Expose Block Manager port (aligned with essentials.md, Port-summary.md)
-EXPOSE 8086
-
-# Run as non-root user (distroless default: 65532:65532, aligned with docker-compose)
 USER 65532:65532
 
-# Default command (aligned with docker-compose.core.yml)
-# NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override entrypoint/command
-# This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
-# Command arguments come from docker-compose.yml environment section
 CMD ["python3", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8086"]
 
-# =============================================================================
-# CONFIGURATION NOTES
-# =============================================================================
-# All configuration values come from:
-#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-# These are loaded via docker-compose.core.yml env_file directive
-# No placeholders or hardcoded secrets in this Dockerfile
+# All runtime configuration sourced from:
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+# Build example:
+#   docker buildx build \
+#     --platform linux/arm64 \
+#     -t pickme/lucid-block-manager:latest-arm64 \
+#     -f blockchain/Dockerfile.manager \
+#     --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+#     --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+#     --build-arg VERSION=1.0.0 \
+#     --push \
+#     .

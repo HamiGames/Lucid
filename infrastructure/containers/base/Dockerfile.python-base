@@ -1,38 +1,84 @@
-# True Distroless Python Base - Minimal and Secure
-FROM python:3.11-slim as builder
+# LUCID PYTHON BASE - SPEC-1B Implementation
+# Distroless-ready Python base layer for Lucid services
+# Build context: project root (paths prefixed with infrastructure/containers/base/)
+# Target architecture: linux/arm64 (Pi console deployment)
 
-# Install only essential build tools
-RUN apt-get update && apt-get install -y \
-    gcc \
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+# =============================================================================
+# Stage 1: Python builder
+# =============================================================================
+FROM python:3.11-slim AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        curl \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy minimal requirements
-COPY requirements-minimal.txt /tmp/requirements.txt
+COPY infrastructure/containers/base/requirements-minimal.txt ./requirements-minimal.txt
 
-# Install only essential packages
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip wheel setuptools && \
+    pip install --user --prefer-binary -r requirements-minimal.txt
 
-# Runtime stage - True Distroless
-FROM gcr.io/distroless/python3-debian12
+# =============================================================================
+# Stage 2: Distroless runtime
+# =============================================================================
+FROM gcr.io/distroless/python3-debian12:latest
 
-# Copy only essential Python packages (minimal approach)
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
 
-# Copy only essential binaries
-COPY --from=builder /usr/local/bin /usr/local/bin
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Lucid distroless Python base runtime" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Python Base" \
+      org.opencontainers.image.description="Distroless Python base layer for Lucid services" \
+      com.lucid.plane="foundation" \
+      com.lucid.service="python-base" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.tor.compatible="true"
 
-# Set working directory
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/usr/local/lib/python3.11/site-packages
+
+COPY --from=builder /root/.local /usr/local
 WORKDIR /app
-
-# Set user to nonroot for security
 USER 65532:65532
 
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["python3", "-c", "import sys; sys.exit(0)"]
-
-# Default command
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Base image has no default command; downstream images supply CMD/ENTRYPOINT
+CMD ["python3", "-c", "print('Lucid Python base ready')"]

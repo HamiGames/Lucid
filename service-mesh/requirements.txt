@@ -1,0 +1,25 @@
+# FastAPI / ASGI
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+
+# Validation & settings
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Async I/O & HTTP
+aiofiles==23.2.1
+aiohttp==3.9.1
+httpx==0.25.2
+
+# Service mesh / Consul client
+python-consul2==0.1.5
+
+# Logging & observability
+python-json-logger==2.0.7
+structlog==23.2.0
+prometheus-client==0.19.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0

@@ -1,3 +1,4 @@
+// electron-gui/configs/docker.config.json
 {
   "enabled": true,
   "host": "192.168.0.75",
@@ -15,6 +16,7 @@
     "core": "docker-compose.core.yml",
     "application": "docker-compose.application.yml",
     "support": "docker-compose.support.yml",
+    "all": "docker-compose.all.yml",
     "master": "docker-compose.master.yml"
   },
   "services": {
@@ -51,17 +53,25 @@
       "lucid-wallet-manager",
       "lucid-usdt-manager",
       "lucid-trx-staking",
-      "lucid-payment-gateway"
+      "lucid-payment-gateway",
+      "lucid-gui"
     ]
   },
   "networks": {
     "lucid-pi-network": {
       "driver": "bridge",
-      "subnet": "172.20.0.0/16"
+      "subnet": "172.20.0.0/16",
+      "gateway": "172.20.0.1"
     },
     "lucid-tron-isolated": {
       "driver": "bridge",
-      "subnet": "172.21.0.0/16"
+      "subnet": "172.21.0.0/16",
+      "gateway": "172.21.0.1"
+    },
+    "lucid-gui-network": {
+      "driver": "bridge",
+      "subnet": "172.22.0.0/16",
+      "gateway": "172.22.0.1"
     }
   },
   "monitoring": {
