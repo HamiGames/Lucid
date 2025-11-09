@@ -17,8 +17,7 @@ pickme/lucid-node-management:latest-arm64,node/Dockerfile,done,2025-11-07
 pickme/lucid-admin-interface:latest-arm64,admin/Dockerfile,done,2025-11-07
 pickme/lucid-server-tools:latest-arm64,infrastructure/docker/common/Dockerfile.common,done,2025-11-07
 pickme/lucid-base:latest-arm64,infrastructure/docker/distroless/base/Dockerfile.base,done,2025-11-07
-
-image_name,dockerfile_path,build_status,Date_Built
+pickme/lucid-tor-proxy:latest-arm64,02-network-security/tor/Dockerfile,done,2025-11-07
 pickme/lucid-base:python-distroless-arm64,infrastructure/containers/base/Dockerfile.python-base,done,2025-11-07
 pickme/lucid-base:java-distroless-arm64,infrastructure/containers/base/Dockerfile.java-base,done,2025-11-07
 pickme/lucid-mongodb:latest-arm64,infrastructure/containers/storage/Dockerfile.mongodb,done,2025-11-07

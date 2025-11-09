@@ -164,7 +164,7 @@ export const useApiGet = <T = any>(
   const apiClient = new LucidAPIClient();
   
   return useApi<T>(
-    () => apiClient.client.get(url).then(response => response.data),
+    () => apiClient.get<T>(url),
     options
   );
 };
@@ -176,7 +176,7 @@ export const useApiPost = <T = any>(
   const apiClient = new LucidAPIClient();
   
   return useApi<T>(
-    (data: any) => apiClient.client.post(url, data).then(response => response.data),
+    (data: any) => apiClient.post<T>(url, data),
     options
   );
 };
@@ -188,7 +188,7 @@ export const useApiPut = <T = any>(
   const apiClient = new LucidAPIClient();
   
   return useApi<T>(
-    (data: any) => apiClient.client.put(url, data).then(response => response.data),
+    (data: any) => apiClient.put<T>(url, data),
     options
   );
 };
@@ -200,7 +200,7 @@ export const useApiDelete = <T = any>(
   const apiClient = new LucidAPIClient();
   
   return useApi<T>(
-    () => apiClient.client.delete(url).then(response => response.data),
+    () => apiClient.delete<T>(url),
     options
   );
 };

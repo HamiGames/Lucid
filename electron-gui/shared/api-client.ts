@@ -1,18 +1,17 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { 
-  User, 
-  Session, 
-  SessionCreateRequest, 
+import {
+  User,
+  Session,
+  SessionCreateRequest,
   SessionCreateResponse,
   Node,
   NodeRegistration,
   Block,
   Payout,
   LucidError,
-  API_ENDPOINTS,
-  LUCID_ERROR_CODES
 } from './types';
+import { API_ENDPOINTS, LUCID_ERROR_CODES, TOR_CONFIG } from './constants';
 
 // Service discovery helper function
 export function getServiceEndpoint(serviceName: string): string {
@@ -45,14 +44,16 @@ export function getServiceEndpoint(serviceName: string): string {
 }
 
 export class LucidAPIClient {
-  private client: AxiosInstance;
-  private torProxy: string = 'socks5://127.0.0.1:9050';
+  protected client: AxiosInstance;
   private baseURL: string;
-  
-  constructor(baseURL: string = API_ENDPOINTS.GATEWAY) {
+  private readonly torProxy: string;
+
+  constructor(baseURL: string = API_ENDPOINTS.API_GATEWAY) {
     this.baseURL = baseURL;
+    this.torProxy = `socks5://127.0.0.1:${TOR_CONFIG.SOCKS_PORT}`;
+
     const agent = new SocksProxyAgent(this.torProxy);
-    
+
     this.client = axios.create({
       baseURL,
       httpAgent: agent,
@@ -62,7 +63,7 @@ export class LucidAPIClient {
         'Content-Type': 'application/json',
       },
     });
-    
+
     // Request interceptor for auth tokens
     this.client.interceptors.request.use((config) => {
       const token = this.getAuthToken();
@@ -71,12 +72,48 @@ export class LucidAPIClient {
       }
       return config;
     });
-    
+
     // Response interceptor for error handling
     this.client.interceptors.response.use(
       (response) => response,
       (error) => this.handleAPIError(error)
     );
+  }
+
+  /**
+   * Returns the underlying Axios instance for advanced use cases.
+   * Prefer the helper HTTP methods whenever possible.
+   */
+  public getHttpClient(): AxiosInstance {
+    return this.client;
+  }
+
+  public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.get<T>(url, config);
+    return response.data;
+  }
+
+  public async post<T = unknown, D = unknown>(
+    url: string,
+    data?: D,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response = await this.client.post<T>(url, data, config);
+    return response.data;
+  }
+
+  public async put<T = unknown, D = unknown>(
+    url: string,
+    data?: D,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response = await this.client.put<T>(url, data, config);
+    return response.data;
+  }
+
+  public async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.delete<T>(url, config);
+    return response.data;
   }
   
   private getAuthToken(): string | null {

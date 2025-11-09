@@ -1,106 +1,155 @@
-# LUCID SERVER TOOLS DISTROLESS - SPEC-1B
-# Provides shared utilities for Lucid deployment diagnostics with configurable environment
-# Compatible with tor-proxy and cross-image usage
-# Build Context: . (project root)
+# infrastructure/docker/common/Dockerfile.common
+# -----------------------------------------------------------------------------
+# LUCID SERVER TOOLS - SPEC-1B Implementation
+# Distroless utility toolbox for Pi-side diagnostics and maintenance
+# Build context: project root
+#
+# Configuration is provided at runtime via .env files on the Pi console:
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+#   /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
+# -----------------------------------------------------------------------------
 
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION=1.0.0
-ARG TARGETPLATFORM=linux/arm64
-ARG BUILDPLATFORM=linux/amd64
+    ARG BUILD_DATE
+    ARG VCS_REF
+    ARG VERSION=1.0.0
+    ARG TARGETPLATFORM=linux/arm64
+    ARG BUILDPLATFORM=linux/amd64
+    # =============================================================================
+    # Stage 1: Builder – install diagnostic tooling
+    # =============================================================================
+    FROM debian:12-slim AS builder
+    
+    ARG BUILDPLATFORM
+    ARG TARGETPLATFORM
+    
+    ENV DEBIAN_FRONTEND=noninteractive
+    
+    RUN apt-get update && apt-get install -y --no-install-recommends \
+            bash \
+            curl \
+            wget \
+            jq \
+            python3 \
+            python3-venv \
+            python3-pip \
+            dnsutils \
+            iputils-ping \
+            inetutils-traceroute \
+            netcat-openbsd \
+            socat \
+            nmap \
+            tcpdump \
+            iperf3 \
+            openssl \
+            ca-certificates \
+            gnupg \
+            htop \
+            procps \
+            lsof \
+            strace \
+            rsync \
+            unzip \
+            tar \
+            gzip \
+            git \
+            vim \
+            nano \
+            tree \
+            util-linux \
+            gosu \
+            yq \
+        && curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-org-7.0.gpg \
+        && echo "deb [signed-by=/usr/share/keyrings/mongodb-org-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" \
+             > /etc/apt/sources.list.d/mongodb-org-7.0.list \
+        && apt-get update \
+        && apt-get install -y --no-install-recommends mongodb-mongosh mongodb-database-tools \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-FROM debian:12-slim AS builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        bash \
-        curl \
-        wget \
-        jq \
-        python3 \
-        python3-pip \
-        dnsutils \
-        iputils-ping \
-        inetutils-traceroute \
-        netcat-openbsd \
-        socat \
-        nmap \
-        tcpdump \
-        iperf3 \
-        openssl \
-        ca-certificates \
-        gnupg \
-        htop \
-        procps \
-        lsof \
-        strace \
-        rsync \
-        unzip \
-        tar \
-        gzip \
-        git \
-        vim \
-        nano \
-        tree \
-        util-linux \
-        gosu \
-    && python3 -m pip install --no-cache-dir --upgrade pip yq \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# MongoDB CLI tooling required by plan/constants deployment procedures
-RUN curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-org-7.0.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/mongodb-org-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
-    apt-get update && apt-get install -y --no-install-recommends \
-        mongodb-mongosh \
-        mongodb-database-tools \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN useradd --system --create-home --shell /bin/bash lucid
-
-RUN mkdir -p /opt/lucid/tools /opt/lucid/scripts /opt/lucid/logs && \
-    chown -R lucid:lucid /opt/lucid && \
-    chmod -R 755 /opt/lucid/scripts
-
-FROM gcr.io/distroless/base-debian12:latest
-
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION=1.0.0
-
-LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Distroless server tools for Lucid cross-image diagnostics" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.title="Lucid Server Tools" \
-      org.opencontainers.image.description="Distroless utility container for Lucid project" \
-      com.lucid.plane="ops" \
-      com.lucid.service="server-tools" \
-      com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools" \
-      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
-
-ENV PATH=/opt/lucid/scripts:/usr/local/bin:/usr/bin:/bin
-
-COPY --from=builder /bin/bash /bin/bash
-COPY --from=builder /usr/bin /usr/bin
-COPY --from=builder /usr/lib /usr/lib
-COPY --from=builder /lib /lib
-COPY --from=builder /lib64 /lib64
-COPY --from=builder /opt/lucid /opt/lucid
-
-WORKDIR /opt/lucid
-
-USER lucid:lucid
-
-CMD ["/bin/bash", "-c", "echo 'Lucid server tools ready. Scripts in /opt/lucid/scripts. Configure via .env.* on Pi console.'"]
-
-# =============================================================================
-# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-# All configuration should come from .env.foundation, .env.core, .env.support,
-# and .env.server-tools via docker-compose env_file directives on the Pi console.
-# =============================================================================
+# Normalise MongoDB toolchain layout for distroless stage
+RUN mkdir -p /opt/lucid/tools/mongodb-tools \
+        && for tool in bsondump mongodump mongorestore mongostat mongotop mongoexport mongoimport mongofiles; do \
+             if [ -x "/usr/bin/${tool}" ]; then \
+                 ln -sf "/usr/bin/${tool}" "/opt/lucid/tools/mongodb-tools/${tool}"; \
+             fi; \
+           done
+    
+    # Optional Python virtual environment warm-up (PEP 668 friendly)
+    RUN python3 -m venv /opt/lucid/tools/venv \
+        && /opt/lucid/tools/venv/bin/pip install --no-cache-dir --upgrade pip
+    
+    # Non-root user used in runtime (distroless stage will copy passwd/group)
+    RUN useradd --system --create-home --shell /bin/bash lucid
+    
+    # Create tooling directories with sane permissions
+    RUN mkdir -p /opt/lucid/scripts /opt/lucid/logs \
+        && chown -R lucid:lucid /opt/lucid \
+        && chmod -R 755 /opt/lucid/scripts
+    
+    # =============================================================================
+    # Stage 2: Distroless runtime
+    # =============================================================================
+    FROM gcr.io/distroless/base-debian12:latest
+    
+    ARG BUILD_DATE
+    ARG VCS_REF
+    ARG VERSION=1.0.0
+    
+    LABEL maintainer="Lucid Development Team" \
+          version="${VERSION}" \
+          description="Distroless server tooling image for Lucid Pi operations" \
+          org.opencontainers.image.created="${BUILD_DATE}" \
+          org.opencontainers.image.revision="${VCS_REF}" \
+          org.opencontainers.image.version="${VERSION}" \
+          org.opencontainers.image.title="Lucid Server Tools" \
+          org.opencontainers.image.description="Utility toolbox for Lucid deployment diagnostics" \
+          com.lucid.plane="ops" \
+          com.lucid.service="server-tools" \
+          com.lucid.platform="arm64" \
+          com.lucid.architecture="linux/arm64" \
+          com.lucid.security="distroless" \
+          com.lucid.vulnerabilities="zero" \
+          com.lucid.tor.compatible="true" \
+          com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools" \
+          com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
+    
+    # =============================================================================
+    # ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+    # All configuration values come from .env files on the Pi console via docker-compose.
+    # =============================================================================
+    ENV PATH=/opt/lucid/scripts:/usr/local/bin:/usr/bin:/bin \
+        SERVER_TOOLS_HOME=/opt/lucid \
+        SERVER_TOOLS_LOG_DIR=/opt/lucid/logs
+    
+    # Copy toolchain, libraries, user metadata, and optional venv from builder
+    COPY --from=builder /bin/bash /bin/bash
+    COPY --from=builder /usr/bin /usr/bin
+    COPY --from=builder /usr/lib /usr/lib
+    COPY --from=builder /lib /lib
+    COPY --from=builder /lib64 /lib64
+    COPY --from=builder /opt/lucid /opt/lucid
+    COPY --from=builder /etc/passwd /etc/passwd
+    COPY --from=builder /etc/group /etc/group
+    COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+    
+    WORKDIR /opt/lucid
+    
+    USER lucid:lucid
+    
+    # No ports exposed by default; this container is a toolbox controlled by compose.
+    CMD ["/bin/bash", "-c", "echo 'Lucid server tools ready. Configure via Pi .env files.' && tail -f /dev/null"]
+    
+    # -----------------------------------------------------------------------------
+    # Runtime configuration notes
+    # -----------------------------------------------------------------------------
+    # - All environment values are injected via docker-compose env_file entries on
+    #   the Pi console. This Dockerfile contains no deployment-specific secrets.
+    # - Expected env files (see plan/constants):
+    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+    #     /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
+    # - Compose definitions are responsible for mounting volumes, exposing any
+    #   ports, and orchestrating lifecycle with other Lucid services.

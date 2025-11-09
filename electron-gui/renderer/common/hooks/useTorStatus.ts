@@ -1,8 +1,9 @@
 // renderer/common/hooks/useTorStatus.ts - Tor status monitoring hook
 // Based on the electron-multi-gui-development.plan.md specifications
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TorStatus } from '../../../shared/tor-types';
+import { TOR_CONFIG } from '../../../shared/constants';
 import { MAIN_TO_RENDERER_CHANNELS, TorStatusMessage } from '../../../shared/ipc-channels';
 
 export interface UseTorStatusReturn {
@@ -28,99 +29,96 @@ export const useTorStatus = (): UseTorStatusReturn => {
   const bootstrapProgress = torStatus?.bootstrap_progress || 0;
   const circuitCount = torStatus?.circuits?.length || 0;
 
-  // IPC communication functions
-  const sendIpcMessage = useCallback(async (channel: string, data: any = {}) => {
-    try {
-      if (window.electronAPI && window.electronAPI.invoke) {
-        return await window.electronAPI.invoke(channel, data);
-      }
-      throw new Error('Electron API not available');
-    } catch (error) {
-      console.error(`IPC message failed for channel ${channel}:`, error);
-      throw error;
-    }
-  }, []);
+  const registeredListeners = useRef<Array<{ channel: string; handler: (payload: any) => void }>>([]);
+
+  const getTorBridge = useCallback(() => window.electronAPI?.tor ?? null, []);
+  const getEventBridge = useCallback(() => window.electronAPI?.events ?? null, []);
 
   // Listen for IPC messages from main process
   const listenForIpcMessages = useCallback(() => {
-    if (window.electronAPI && window.electronAPI.on) {
-      // Listen for Tor status updates
-      window.electronAPI.on(MAIN_TO_RENDERER_CHANNELS.TOR_STATUS_UPDATE, (message: TorStatusMessage) => {
-        setTorStatus(prev => ({
-          ...prev,
-          status: message.status,
-          bootstrap_progress: message.progress || 0,
-          circuits: prev?.circuits || [],
-          is_connected: message.status === 'connected',
-          error: message.error,
-        } as TorStatus));
-        
-        if (message.error) {
-          setTorError(message.error);
-        } else {
-          setTorError(null);
-        }
-      });
-
-      // Listen for Tor connection updates
-      window.electronAPI.on(MAIN_TO_RENDERER_CHANNELS.TOR_CONNECTION_UPDATE, (message: any) => {
-        setTorStatus(prev => ({
-          ...prev,
-          is_connected: message.connected,
-          status: message.connected ? 'connected' : 'disconnected',
-          last_connected: message.connected ? new Date().toISOString() : prev?.last_connected,
-          error: message.error,
-        } as TorStatus));
-        
-        if (message.error) {
-          setTorError(message.error);
-        }
-      });
-
-      // Listen for Tor bootstrap updates
-      window.electronAPI.on(MAIN_TO_RENDERER_CHANNELS.TOR_BOOTSTRAP_UPDATE, (message: any) => {
-        setTorStatus(prev => ({
-          ...prev,
-          bootstrap_progress: message.progress,
-          status: message.progress >= 1 ? 'connected' : 'connecting',
-          is_connected: message.progress >= 1,
-        } as TorStatus));
-      });
-
-      // Listen for Tor circuit updates
-      window.electronAPI.on(MAIN_TO_RENDERER_CHANNELS.TOR_CIRCUIT_UPDATE, (message: any) => {
-        setTorStatus(prev => {
-          if (!prev) return prev;
-          
-          const circuits = [...(prev.circuits || [])];
-          const existingIndex = circuits.findIndex(c => c.id === message.circuitId);
-          
-          if (existingIndex >= 0) {
-            circuits[existingIndex] = {
-              ...circuits[existingIndex],
-              status: message.status,
-              path: message.path,
-              age: message.age,
-            };
-          } else {
-            circuits.push({
-              id: message.circuitId,
-              path: message.path,
-              status: message.status,
-              age: message.age,
-              purpose: message.purpose || 'general',
-              flags: message.flags || [],
-            });
-          }
-          
-          return {
-            ...prev,
-            circuits,
-          };
-        });
-      });
+    const eventBridge = getEventBridge();
+    if (!eventBridge?.on) {
+      console.warn('Electron event bridge not available');
+      return;
     }
-  }, []);
+
+    const register = (channel: string, handler: (payload: any) => void) => {
+      eventBridge.on(channel, handler);
+      registeredListeners.current.push({ channel, handler });
+    };
+
+    register(MAIN_TO_RENDERER_CHANNELS.TOR_STATUS_UPDATE, (message: TorStatusMessage) => {
+      setTorStatus(prev => ({
+        ...prev,
+        status: message.status,
+        bootstrap_progress: message.progress || 0,
+        circuits: prev?.circuits || [],
+        is_connected: message.status === 'connected',
+        error: message.error,
+      } as TorStatus));
+
+      if (message.error) {
+        setTorError(message.error);
+      } else {
+        setTorError(null);
+      }
+    });
+
+    register(MAIN_TO_RENDERER_CHANNELS.TOR_CONNECTION_UPDATE, (message: any) => {
+      setTorStatus(prev => ({
+        ...prev,
+        is_connected: message.connected,
+        status: message.connected ? 'connected' : 'disconnected',
+        last_connected: message.connected ? new Date().toISOString() : prev?.last_connected,
+        error: message.error,
+      } as TorStatus));
+
+      if (message.error) {
+        setTorError(message.error);
+      }
+    });
+
+    register(MAIN_TO_RENDERER_CHANNELS.TOR_BOOTSTRAP_UPDATE, (message: any) => {
+      setTorStatus(prev => ({
+        ...prev,
+        bootstrap_progress: message.progress,
+        status: message.progress >= 1 ? 'connected' : 'connecting',
+        is_connected: message.progress >= 1,
+      } as TorStatus));
+    });
+
+    register(MAIN_TO_RENDERER_CHANNELS.TOR_CIRCUIT_UPDATE, (message: any) => {
+      setTorStatus(prev => {
+        if (!prev) return prev;
+
+        const circuits = [...(prev.circuits || [])];
+        const existingIndex = circuits.findIndex(c => c.id === message.circuitId);
+
+        if (existingIndex >= 0) {
+          circuits[existingIndex] = {
+            ...circuits[existingIndex],
+            status: message.status,
+            path: message.path,
+            age: message.age,
+          };
+        } else {
+          circuits.push({
+            id: message.circuitId,
+            path: message.path,
+            status: message.status,
+            age: message.age,
+            purpose: message.purpose || 'general',
+            flags: message.flags || [],
+          });
+        }
+
+        return {
+          ...prev,
+          circuits,
+        };
+      });
+    });
+  }, [getEventBridge]);
 
   // Get initial Tor status
   const getTorStatus = useCallback(async () => {
@@ -128,14 +126,19 @@ export const useTorStatus = (): UseTorStatusReturn => {
       setIsLoading(true);
       setTorError(null);
       
-      const response = await sendIpcMessage('TOR_GET_STATUS');
+      const torBridge = getTorBridge();
+      if (!torBridge?.getStatus) {
+        throw new Error('Tor bridge not available');
+      }
+
+      const response = await torBridge.getStatus();
       
       if (response && !response.error) {
         setTorStatus({
           is_connected: response.connected,
           bootstrap_progress: response.bootstrapProgress || 0,
           circuits: response.circuits || [],
-          proxy_port: response.proxyPort || 9050,
+          proxy_port: response.proxyPort || TOR_CONFIG.SOCKS_PORT,
           status: response.connected ? 'connected' : 'disconnected',
           last_connected: response.connected ? new Date().toISOString() : undefined,
         });
@@ -150,7 +153,7 @@ export const useTorStatus = (): UseTorStatusReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [sendIpcMessage]);
+  }, [getTorBridge]);
 
   // Start Tor
   const startTor = useCallback(async () => {
@@ -158,7 +161,12 @@ export const useTorStatus = (): UseTorStatusReturn => {
       setIsLoading(true);
       setTorError(null);
       
-      const response = await sendIpcMessage('TOR_START');
+      const torBridge = getTorBridge();
+      if (!torBridge?.start) {
+        throw new Error('Tor bridge not available');
+      }
+
+      const response = await torBridge.start();
       
       if (response && response.success) {
         // Status will be updated via IPC messages
@@ -172,7 +180,7 @@ export const useTorStatus = (): UseTorStatusReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [sendIpcMessage]);
+  }, [getTorBridge]);
 
   // Stop Tor
   const stopTor = useCallback(async () => {
@@ -180,7 +188,12 @@ export const useTorStatus = (): UseTorStatusReturn => {
       setIsLoading(true);
       setTorError(null);
       
-      const response = await sendIpcMessage('TOR_STOP');
+      const torBridge = getTorBridge();
+      if (!torBridge?.stop) {
+        throw new Error('Tor bridge not available');
+      }
+
+      const response = await torBridge.stop();
       
       if (response && response.success) {
         // Status will be updated via IPC messages
@@ -194,7 +207,7 @@ export const useTorStatus = (): UseTorStatusReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [sendIpcMessage]);
+  }, [getTorBridge]);
 
   // Restart Tor
   const restartTor = useCallback(async () => {
@@ -202,7 +215,12 @@ export const useTorStatus = (): UseTorStatusReturn => {
       setIsLoading(true);
       setTorError(null);
       
-      const response = await sendIpcMessage('TOR_RESTART');
+      const torBridge = getTorBridge();
+      if (!torBridge?.restart) {
+        throw new Error('Tor bridge not available');
+      }
+
+      const response = await torBridge.restart();
       
       if (response && response.success) {
         // Status will be updated via IPC messages
@@ -216,7 +234,7 @@ export const useTorStatus = (): UseTorStatusReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [sendIpcMessage]);
+  }, [getTorBridge]);
 
   // Refresh status
   const refreshStatus = useCallback(async () => {
@@ -240,8 +258,15 @@ export const useTorStatus = (): UseTorStatusReturn => {
     
     return () => {
       clearInterval(interval);
+      const eventBridge = getEventBridge();
+      if (eventBridge?.off) {
+        registeredListeners.current.forEach(({ channel, handler }) => {
+          eventBridge.off(channel, handler);
+        });
+        registeredListeners.current = [];
+      }
     };
-  }, [listenForIpcMessages, getTorStatus, isLoading]);
+  }, [listenForIpcMessages, getTorStatus, isLoading, getEventBridge]);
 
   // Handle window focus to refresh status
   useEffect(() => {

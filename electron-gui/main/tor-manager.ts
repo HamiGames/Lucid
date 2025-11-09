@@ -7,6 +7,7 @@ import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as net from 'net';
+import { TOR_CONFIG, PATHS } from '../shared/constants';
 
 export interface TorStatus {
   connected: boolean;
@@ -40,10 +41,12 @@ export class TorManager {
   private isInitialized = false;
 
   constructor() {
+    const dataDirectory = path.resolve(process.cwd(), TOR_CONFIG.DATA_DIR);
+
     this.config = {
-      socksPort: 9050,
-      controlPort: 9051,
-      dataDirectory: path.join(__dirname, '../data/tor'),
+      socksPort: TOR_CONFIG.SOCKS_PORT,
+      controlPort: TOR_CONFIG.CONTROL_PORT,
+      dataDirectory,
       logLevel: 'notice'
     };
 
@@ -260,32 +263,37 @@ export class TorManager {
   }
 
   private async checkTorBinary(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const torPath = this.getTorBinaryPath();
-      
-      fs.access(torPath, fs.constants.F_OK, (err) => {
-        if (err) {
-          reject(new Error(`Tor binary not found at: ${torPath}`));
-        } else {
-          console.log(`Tor binary found at: ${torPath}`);
-          resolve();
-        }
-      });
-    });
+    const torPath = this.getTorBinaryPath();
+
+    if (path.isAbsolute(torPath)) {
+      try {
+        await fs.promises.access(torPath, fs.constants.F_OK);
+        console.log(`Tor binary found at: ${torPath}`);
+      } catch (error) {
+        throw new Error(`Tor binary not found at: ${torPath}`);
+      }
+    } else {
+      console.log(`Using system Tor binary from PATH: ${torPath}`);
+    }
   }
 
   private getTorBinaryPath(): string {
     const platform = process.platform;
-    const arch = process.arch;
-    
-    // Try bundled Tor binary first
-    const bundledPath = path.join(__dirname, `../assets/tor/tor-${platform}-${arch}`);
-    
-    if (fs.existsSync(bundledPath)) {
-      return bundledPath;
+
+    const bundledRelative =
+      platform === 'win32'
+        ? PATHS.TOR_BINARY_WIN
+        : platform === 'darwin'
+          ? PATHS.TOR_BINARY_MAC
+          : PATHS.TOR_BINARY_LINUX;
+
+    if (bundledRelative) {
+      const bundledPath = path.resolve(process.cwd(), bundledRelative);
+      if (fs.existsSync(bundledPath)) {
+        return bundledPath;
+      }
     }
-    
-    // Fall back to system Tor
+
     switch (platform) {
       case 'win32':
         return 'tor.exe';
@@ -300,7 +308,7 @@ export class TorManager {
 
   private async loadConfiguration(): Promise<void> {
     try {
-      const configPath = path.join(this.config.dataDirectory, 'torrc');
+      const configPath = path.join(this.config.dataDirectory, TOR_CONFIG.CONFIG_FILE);
       
       if (fs.existsSync(configPath)) {
         const configContent = fs.readFileSync(configPath, 'utf8');
@@ -317,7 +325,7 @@ export class TorManager {
 
   private async createDefaultConfiguration(): Promise<void> {
     try {
-      const configPath = path.join(this.config.dataDirectory, 'torrc');
+      const configPath = path.join(this.config.dataDirectory, TOR_CONFIG.CONFIG_FILE);
       
       const configContent = `
 # LUCID Tor Configuration
@@ -350,7 +358,7 @@ ${this.config.allowSingleHopExits ? 'AllowSingleHopExits 1' : ''}
   private async startTorProcess(): Promise<void> {
     return new Promise((resolve, reject) => {
       const torPath = this.getTorBinaryPath();
-      const configPath = path.join(this.config.dataDirectory, 'torrc');
+      const configPath = path.join(this.config.dataDirectory, TOR_CONFIG.CONFIG_FILE);
       
       const args = ['-f', configPath];
       

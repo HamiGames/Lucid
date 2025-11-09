@@ -1,83 +1,174 @@
 # infrastructure/docker/distroless/gui/Dockerfile.gui
-# LUCID GUI SERVICES - SPEC-1B Implementation
-# Distroless Electron GUI utilities (ARM64 Raspberry Pi)
-# Build context: project root (paths prefixed with electron-gui/)
+# Lucid Electron GUI strap image – prepares a full GUI bundle that can be unpacked
+# and rebuilt on the Pi (with the correct .env files) before producing a runtime image.
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
+ARG NPM_INSTALL_FLAGS="--omit=dev"
+ARG STRAP_DIR="/opt/lucid/electron-gui"
+ARG BUNDLE_DIR="/opt/lucid/bundles"
 
-FROM node:20-bookworm AS builder
+# -----------------------------------------------------------------------------
+# Stage 1 – gather source + dependencies
+# -----------------------------------------------------------------------------
+FROM node:20-bookworm AS strapper
 
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
+ARG NPM_INSTALL_FLAGS
+WORKDIR /work/electron-gui
 
-ENV NODE_ENV=development \
-    npm_config_update_notifier=false \
-    npm_config_fund=false
-
-WORKDIR /build/gui
-
-# Install dependencies (dev + prod) for the build
+# Install dependencies (dev deps optional via NPM_INSTALL_FLAGS)
 COPY electron-gui/package*.json ./
-RUN npm install
+RUN npm install ${NPM_INSTALL_FLAGS}
 
-# Copy source tree and build the Electron bundles
+# Copy the entire GUI workspace (sources, configs, assets, etc.)
 COPY electron-gui/ ./
-RUN npm run build \
- && npm prune --omit=dev
 
-FROM gcr.io/distroless/nodejs20-debian12:latest
+# Trim npm metadata a little
+RUN npm dedupe && npm cache clean --force
+
+# Produce tarballs the Pi console can unpack later
+RUN mkdir -p /tmp/strap \
+ && tar --exclude-vcs \
+        --exclude=.turbo \
+        --exclude=.cache \
+        --exclude=dist \
+        --exclude=build \
+        --create \
+        --gzip \
+        --file=/tmp/strap/electron-gui-src.tar.gz \
+        . \
+ && if [ -d node_modules ]; then \
+        tar --create \
+            --gzip \
+            --file=/tmp/strap/electron-gui-node_modules.tar.gz \
+            node_modules; \
+    else \
+        echo "[strapper] node_modules directory missing; creating empty archive." \
+        && tar --create \
+               --gzip \
+               --file=/tmp/strap/electron-gui-node_modules.tar.gz \
+               --files-from=/dev/null; \
+    fi
+
+# -----------------------------------------------------------------------------
+# Stage 2 – prepare bundle using Debian (for shell utilities)
+# -----------------------------------------------------------------------------
+FROM debian:12-slim AS bundle-prep
+
+ARG STRAP_DIR
+ARG BUNDLE_DIR
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install tooling the final container will need (bash, tar, gzip, core libs)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      bash \
+      tar \
+      gzip \
+ && rm -rf /var/lib/apt/lists/*
+
+# Ensure /bin/sh points to bash before exporting binaries
+RUN ln -sf /bin/bash /bin/sh
+
+# Prepare bundle and strap directories
+RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
+
+# Copy tarballs from strapper
+COPY --from=strapper /tmp/strap/electron-gui-src.tar.gz "${BUNDLE_DIR}/electron-gui-src.tar.gz"
+COPY --from=strapper /tmp/strap/electron-gui-node_modules.tar.gz "${BUNDLE_DIR}/electron-gui-node_modules.tar.gz"
+
+# Install the helper script (uses bash provided above)
+COPY <<'EOF' /usr/local/bin/lucid-gui-strap
+#!/bin/bash
+set -euo pipefail
+
+STRAP_DIR="${STRAP_DIR:-/opt/lucid/electron-gui}"
+BUNDLE_DIR="${BUNDLE_DIR:-/opt/lucid/bundles}"
+
+echo "[lucid-gui-strap] Preparing Electron GUI bundle..."
+echo "  Target directory: ${STRAP_DIR}"
+echo "  Bundle archive  : ${BUNDLE_DIR}"
+
+if [ ! -d "${STRAP_DIR}" ]; then
+  mkdir -p "${STRAP_DIR}"
+fi
+
+if [ "$(ls -A "${STRAP_DIR}" 2>/dev/null)" ]; then
+  echo "[lucid-gui-strap] Target directory is not empty; skipping unpack."
+else
+  tar -xzf "${BUNDLE_DIR}/electron-gui-src.tar.gz" -C "${STRAP_DIR}"
+  tar -xzf "${BUNDLE_DIR}/electron-gui-node_modules.tar.gz" -C "${STRAP_DIR}" || true
+  echo "[lucid-gui-strap] Bundle unpacked into ${STRAP_DIR}"
+fi
+
+cat <<INFO
+
+Lucid Electron GUI bundle is available in ${STRAP_DIR}.
+Next steps on the Pi console:
+  1. Mount or copy your .env files (see plan/constants/env_file-names.md).
+  2. cd ${STRAP_DIR} && npm run build
+  3. Package / deploy a distroless runtime image once configuration is validated.
+
+INFO
+
+exec tail -f /dev/null
+EOF
+
+RUN chmod +x /usr/local/bin/lucid-gui-strap
+
+# -----------------------------------------------------------------------------
+# Stage 3 – final distroless bundle image
+# -----------------------------------------------------------------------------
+FROM gcr.io/distroless/base-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
+ARG STRAP_DIR
+ARG BUNDLE_DIR
+
+# Copy the strap artifacts, script, and required binaries/libs from bundle-prep
+COPY --from=bundle-prep "${BUNDLE_DIR}" "${BUNDLE_DIR}"
+COPY --from=bundle-prep "${STRAP_DIR}" "${STRAP_DIR}"
+COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap
+COPY --from=bundle-prep /bin/bash /bin/bash
+COPY --from=bundle-prep /bin/sh /bin/sh
+COPY --from=bundle-prep /bin/tar /bin/tar
+COPY --from=bundle-prep /bin/gzip /bin/gzip
+COPY --from=bundle-prep /usr/lib/*/libz.so.1 /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libbz2.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/liblzma.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libzstd.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libpthread.so.0 /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libc.so.6 /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libtinfo.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib*/ld-linux-*.so.* /usr/lib64/
 
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
-      description="Lucid GUI support services (distroless)" \
+      description="Lucid Electron GUI strap bundle (distroless configuration image)" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.title="Lucid GUI Services" \
-      org.opencontainers.image.description="Support utilities for Electron GUIs" \
+      org.opencontainers.image.title="Lucid Electron GUI Strap" \
+      org.opencontainers.image.description="Distroless GUI bundle for Pi console configuration" \
       com.lucid.plane="support" \
-      com.lucid.service="gui-services" \
+      com.lucid.service="gui-strap" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="8000" \
-      com.lucid.cluster="support" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.gui,.env.support,.env.core,.env.foundation"
+      com.lucid.tor.compatible="true"
 
-ENV PATH=/nodejs/bin:/usr/bin:/bin \
-    NODE_ENV=production \
-    LUCID_ENV=production \
-    LUCID_PLATFORM=arm64 \
-    ELECTRON_GUI_PORT=8000 \
-    ELECTRON_GUI_NETWORK=lucid-gui-network \
-    ELECTRON_GUI_API_BASE_URL=http://lucid-api-gateway:8080/api/v1 \
-    ELECTRON_GUI_CONFIG_DIR=/app/configs \
-    ELECTRON_GUI_ENV_FILES=.env.gui,.env.support,.env.core,.env.foundation
+ENV STRAP_DIR=${STRAP_DIR} \
+    BUNDLE_DIR=${BUNDLE_DIR} \
+    NODE_ENV=development \
+    LUCID_PLATFORM=arm64
 
-WORKDIR /app
+WORKDIR ${STRAP_DIR}
 
-COPY --from=builder /build/gui/package.json ./package.json
-COPY --from=builder /build/gui/node_modules ./node_modules
-COPY --from=builder /build/gui/dist ./dist
-COPY --from=builder /build/gui/assets ./assets
-COPY --from=builder /build/gui/configs ./configs
-COPY --from=builder /build/gui/shared ./shared
-
-EXPOSE 8000
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["node", "-e", "fetch('http://localhost:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-
-USER 65532:65532
-
-CMD ["node", "dist/main/index.js"]
+ENTRYPOINT ["/bin/bash","/usr/local/bin/lucid-gui-strap"]

@@ -13,6 +13,7 @@ import { ipcMain } from 'electron';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import path from 'path';
+import { DOCKER_CONFIG } from '../shared/constants';
 
 export interface DockerContainer {
   id: string;
@@ -525,10 +526,10 @@ export class DockerManager extends EventEmitter {
 
 // Default configuration for Raspberry Pi
 export const defaultPiConfig: PiConnectionConfig = {
-  host: '192.168.0.75',
-  user: 'pickme',
-  port: 22,
-  deployDir: '/opt/lucid/production'
+  host: DOCKER_CONFIG.PI_HOST,
+  user: DOCKER_CONFIG.SSH_USER,
+  port: DOCKER_CONFIG.SSH_PORT,
+  deployDir: DOCKER_CONFIG.DEPLOY_DIR
 };
 
 export default DockerManager;
