@@ -16,6 +16,7 @@
     ARG VERSION=1.0.0
     ARG TARGETPLATFORM=linux/arm64
     ARG BUILDPLATFORM=linux/amd64
+    
     # =============================================================================
     # Stage 1: Builder – install diagnostic tooling
     # =============================================================================
@@ -60,21 +61,13 @@
             util-linux \
             gosu \
             yq \
-        && curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-org-7.0.gpg \
-        && echo "deb [signed-by=/usr/share/keyrings/mongodb-org-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" \
-             > /etc/apt/sources.list.d/mongodb-org-7.0.list \
-        && apt-get update \
-        && apt-get install -y --no-install-recommends mongodb-mongosh mongodb-database-tools \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Normalise MongoDB toolchain layout for distroless stage
-RUN mkdir -p /opt/lucid/tools/mongodb-tools \
-        && for tool in bsondump mongodump mongorestore mongostat mongotop mongoexport mongoimport mongofiles; do \
-             if [ -x "/usr/bin/${tool}" ]; then \
-                 ln -sf "/usr/bin/${tool}" "/opt/lucid/tools/mongodb-tools/${tool}"; \
-             fi; \
-           done
+    
+    COPY artifacts/mongodb /tmp/mongodb-tools
+    RUN mkdir -p /opt/lucid/tools/mongodb-tools \
+        && cp -a /tmp/mongodb-tools/bin/. /opt/lucid/tools/mongodb-tools \
+        && rm -rf /tmp/mongodb-tools
     
     # Optional Python virtual environment warm-up (PEP 668 friendly)
     RUN python3 -m venv /opt/lucid/tools/venv \
