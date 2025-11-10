@@ -47,7 +47,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       lucid-pi-network:
-        ipv4_address: ${LUCID_BASE_IP:=172.20.0.20}
+        ipv4_address: ${LUCID_BASE_IP}
     command: ["/usr/local/bin/lucid-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/base:/var/log/lucid-base:rw
@@ -68,7 +68,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       lucid-pi-network:
-        ipv4_address: ${LUCID_BASE_PY_IP:=172.20.0.21}
+        ipv4_address: ${LUCID_BASE_PY_IP}
     command: ["/usr/local/bin/python-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/python-base:/var/log/python-base:rw
@@ -89,7 +89,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       lucid-pi-network:
-        ipv4_address: ${LUCID_BASE_JAVA_IP:=172.20.0.22}
+        ipv4_address: ${LUCID_BASE_JAVA_IP}
     command: ["/usr/local/bin/java-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/java-base:/var/log/java-base:rw
@@ -110,7 +110,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       lucid-pi-network:
-        ipv4_address: ${LUCID_SERVER_TOOLS_IP:=172.20.0.23}
+        ipv4_address: ${LUCID_SERVER_TOOLS_IP}
     command: ["/usr/local/bin/server-tools-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/server-tools:/var/log/server-tools:rw
@@ -131,7 +131,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       lucid-pi-network:
-        ipv4_address: ${LUCID_SERVICE_MESH_IP:=172.20.0.24}
+        ipv4_address: ${LUCID_SERVICE_MESH_IP}
     command: ["/usr/local/bin/service-mesh-controller"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/var/log/service-mesh:rw
