@@ -81,6 +81,21 @@
         && chown -R lucid:lucid /opt/lucid \
         && chmod -R 755 /opt/lucid/scripts
     
+    # Bootstrap script executed by docker-compose command
+    RUN mkdir -p /opt/lucid/bootstrap \
+        && cat <<'EOF' >/opt/lucid/bootstrap/server-tools-bootstrap.sh
+    #!/bin/bash
+    set -euo pipefail
+    
+    if [[ $# -gt 0 ]]; then
+        exec "$@"
+    fi
+    
+    echo "[lucid-server-tools] $(date -u +'%Y-%m-%dT%H:%M:%SZ') :: ready. Waiting for exec commands."
+    exec tail -f /dev/null
+    EOF
+    RUN chmod +x /opt/lucid/bootstrap/server-tools-bootstrap.sh
+    
     # =============================================================================
     # Stage 2: Distroless runtime
     # =============================================================================
@@ -116,12 +131,13 @@
         SERVER_TOOLS_HOME=/opt/lucid \
         SERVER_TOOLS_LOG_DIR=/opt/lucid/logs
     
-    # Copy toolchain, libraries, user metadata, and optional venv from builder
+    # Copy toolchain, libraries, bootstrap script, user metadata, optional venv
     COPY --from=builder /bin/bash /bin/bash
     COPY --from=builder /usr/bin /usr/bin
     COPY --from=builder /usr/lib /usr/lib
     COPY --from=builder /lib /lib
     COPY --from=builder /opt/lucid /opt/lucid
+    COPY --from=builder /opt/lucid/bootstrap/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
     COPY --from=builder /etc/passwd /etc/passwd
     COPY --from=builder /etc/group /etc/group
     COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -131,7 +147,7 @@
     USER lucid:lucid
     
     # No ports exposed by default; this container is a toolbox controlled by compose.
-    CMD ["/bin/bash", "-c", "echo 'Lucid server tools ready. Configure via Pi .env files.' && tail -f /dev/null"]
+    CMD ["/usr/local/bin/server-tools-bootstrap"]
     
     # -----------------------------------------------------------------------------
     # Runtime configuration notes
