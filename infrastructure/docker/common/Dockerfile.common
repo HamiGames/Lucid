@@ -94,7 +94,7 @@ fi
 echo "[lucid-server-tools] $(date -u +'%Y-%m-%dT%H:%M:%SZ') :: ready. Waiting for exec commands."
 exec tail -f /dev/null
 EOF
-COPY infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
+COPY /mnt/myssd/Lucid/Lucid/infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
 RUN chmod +x /usr/local/bin/service-mesh-bootstrap
 
 # =============================================================================
