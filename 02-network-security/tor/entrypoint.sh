@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Lucid Tor Proxy — robust entrypoint aligned with plan/constants/
 # Distroless-compatible, runs as debian-tor user
 

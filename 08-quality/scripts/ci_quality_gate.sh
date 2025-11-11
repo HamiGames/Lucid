@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # CI entrypoint for the project's unified quality gate.
 
 set -euo pipefail

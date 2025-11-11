@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 COOKIE="/var/lib/tor/control_auth_cookie"

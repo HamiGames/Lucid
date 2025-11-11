@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 DIR="${ONION_DIR:-/run/lucid/onion}"
 FILE="$DIR/tor_bootstrap.env"
