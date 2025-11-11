@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64

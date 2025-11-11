@@ -2,8 +2,6 @@
 # Integrates Electron GUI with Docker backend services
 # Step 33: GUI Environment Configuration from lucid-container-build-plan.plan.md
 
-version: "3.8"
-
 services:
   # ===========================================
   # GUI BACKEND SERVICES

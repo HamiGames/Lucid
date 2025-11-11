@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   tor-proxy:
     image: pickme/lucid-tor-proxy:latest-arm64

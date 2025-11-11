@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   admin-interface:
     image: pickme/lucid-admin-interface:latest-arm64

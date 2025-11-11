@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   api-gateway:
     image: pickme/lucid-api-gateway:latest-arm64
