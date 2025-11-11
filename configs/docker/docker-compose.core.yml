@@ -1,3 +1,4 @@
+name: lucid-core
 services:
   api-gateway:
     image: pickme/lucid-api-gateway:latest-arm64

@@ -1,3 +1,4 @@
+name: lucid-application
 services:
   session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64
