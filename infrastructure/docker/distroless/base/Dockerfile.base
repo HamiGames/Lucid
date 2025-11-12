@@ -51,8 +51,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Reserve scripts directory for Pi-mounted tor spin-up helpers
 RUN mkdir -p /opt/lucid-base/scripts
-# After copying /opt/venv and /opt/lucid-base, add:
-
 
 FROM gcr.io/distroless/python3-debian12:latest
 
@@ -84,10 +82,7 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages
 
-WORKDIR /app
-
 COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /opt/lucid-base /opt/lucid-base
 COPY --from=builder /opt/lucid-base /opt/lucid-base
 COPY infrastructure/docker/distroless/base/scripts/lucid-base-bootstrap.sh /usr/local/bin/lucid-base-bootstrap
 
@@ -96,9 +91,3 @@ USER 65532:65532
 
 ENTRYPOINT ["/usr/local/bin/lucid-base-bootstrap"]
 CMD []
-
-# =============================================================================
-# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-# All operational values must be supplied through .env.foundation, .env.core,
-# and .env.distroless via docker-compose env_file directives on the Pi console.
-# =============================================================================

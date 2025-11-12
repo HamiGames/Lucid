@@ -102,7 +102,7 @@ COPY --from=tor-builder /lib/*/libzstd.so.1 /lib/
 COPY --from=tor-builder /lib/*/liblzma.so.5 /lib/
 COPY --from=tor-builder /lib/*/libz.so.1 /lib/
 COPY --from=tor-builder /lib*/ld-linux-*.so.2 /lib64/
-COPY --from=tor-builder /lib/*/libtinfo.so.6 /
+COPY --from=tor-builder /lib/*/libtinfo.so.6 /lib/
 
 # Copy Tor system data and GeoIP databases
 COPY --from=tor-builder /usr/share/tor /usr/share/tor

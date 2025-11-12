@@ -73,6 +73,7 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_BASE_JAVA_IP}
+
     command: ["/usr/local/bin/java-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/java-base:/var/log/java-base:rw
