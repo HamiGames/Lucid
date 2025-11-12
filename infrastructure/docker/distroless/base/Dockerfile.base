@@ -88,11 +88,14 @@ WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/lucid-base /opt/lucid-base
+COPY --from=builder /opt/lucid-base /opt/lucid-base
 COPY infrastructure/docker/distroless/base/scripts/lucid-base-bootstrap.sh /usr/local/bin/lucid-base-bootstrap
 
+WORKDIR /app
 USER 65532:65532
 
-CMD ["python3", "-c", "print('Lucid distroless base ready. Use tor spin-up scripts from /opt/lucid-base/scripts')"]
+ENTRYPOINT ["/usr/local/bin/lucid-base-bootstrap"]
+CMD []
 
 # =============================================================================
 # ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
