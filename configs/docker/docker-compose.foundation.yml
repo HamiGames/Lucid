@@ -156,13 +156,14 @@ services:
         ipv4_address: 172.20.0.11
     ports:
       - "${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}"
+    entrypoint: []
     command:
-      - "/usr/bin/mongod"
-      - "--auth"
-      - "--bind_ip_all"
-      - "--dbpath=/data/db"
-      - "--logpath=/var/log/mongodb/mongod.log"
-      - "--logappend"
+      - /usr/bin/mongod
+      - --auth
+      - --bind_ip_all
+      - --dbpath=/data/db
+      - --logpath=/var/log/mongodb/mongod.log
+      - --logappend
     depends_on:
       tor-proxy:
         condition: service_started
@@ -210,17 +211,18 @@ services:
         ipv4_address: 172.20.0.12
     ports:
       - "${REDIS_PORT:-6379}:${REDIS_PORT:-6379}"
+    entrypoint: []
     command:
-      - "/usr/local/bin/redis-server"
-      - "--bind"
-      - "0.0.0.0"
-      - "--port"
+      - /usr/local/bin/redis-server
+      - --bind
+      - 0.0.0.0
+      - --port
       - "${REDIS_PORT:-6379}"
-      - "--requirepass"
+      - --requirepass
       - "${REDIS_PASSWORD}"
-      - "--dir"
-      - "/data"
-      - "--daemonize"
+      - --dir
+      - /data
+      - --daemonize
       - "no"
     depends_on:
       tor-proxy:
