@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libssl3 \
         libzstd1 \
         liblzma5 \
+        libtinfo6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
@@ -101,6 +102,7 @@ COPY --from=tor-builder /lib/*/libzstd.so.1 /lib/
 COPY --from=tor-builder /lib/*/liblzma.so.5 /lib/
 COPY --from=tor-builder /lib/*/libz.so.1 /lib/
 COPY --from=tor-builder /lib*/ld-linux-*.so.2 /lib64/
+COPY --from=tor-builder /lib/*/libtinfo.so.6 /
 
 # Copy Tor system data and GeoIP databases
 COPY --from=tor-builder /usr/share/tor /usr/share/tor

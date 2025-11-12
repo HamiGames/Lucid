@@ -77,6 +77,8 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONPATH=/usr/local/lib/python3.11/site-packages
 
 COPY --from=builder /root/.local /usr/local
+COPY infrastructure/docker/distroless/base/scripts/python-base-bootstrap.sh /usr/local/bin/python-base-bootstrap
+
 WORKDIR /app
 USER 65532:65532
 
