@@ -81,24 +81,15 @@
         && chown -R lucid:lucid /opt/lucid \
         && chmod -R 755 /opt/lucid/scripts
     
-    # Bootstrap script executed by docker-compose command
-    RUN mkdir -p /opt/lucid/bootstrap \
-        && cat <<'EOF' >/opt/lucid/bootstrap/server-tools-bootstrap.sh
-    #!/bin/bash
-    set -euo pipefail
-    
-    if [[ $# -gt 0 ]]; then
-        exec "$@"
-    fi
-    
-    echo "[lucid-server-tools] $(date -u +'%Y-%m-%dT%H:%M:%SZ') :: ready. Waiting for exec commands."
-    exec tail -f /dev/null
-    EOF
-    
-    RUN chmod +x /opt/lucid/bootstrap/server-tools-bootstrap.sh
-    
+    # -----------------------------------------------------------------------------
+    # Copy bootstrap scripts and ensure they are executable
+    # -----------------------------------------------------------------------------
+    COPY infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
     COPY infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
-    RUN chmod +x /usr/local/bin/service-mesh-bootstrap
+    RUN chmod +x /usr/local/bin/server-tools-bootstrap /usr/local/bin/service-mesh-bootstrap
+    
+    # Copy the rest of /opt/lucid tooling
+    COPY artifacts/mongodb /tmp/mongodb-tools
     
     # =============================================================================
     # Stage 2: Distroless runtime
@@ -129,7 +120,6 @@
     
     # =============================================================================
     # ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-    # All configuration values come from .env files on the Pi console via docker-compose.
     # =============================================================================
     ENV PATH=/opt/lucid/scripts:/usr/local/bin:/usr/bin:/bin \
         SERVER_TOOLS_HOME=/opt/lucid \
@@ -141,16 +131,15 @@
     COPY --from=builder /usr/lib /usr/lib
     COPY --from=builder /lib /lib
     COPY --from=builder /opt/lucid /opt/lucid
-    COPY --from=builder /opt/lucid/bootstrap/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+    COPY infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+    COPY infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
     COPY --from=builder /etc/passwd /etc/passwd
     COPY --from=builder /etc/group /etc/group
     COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
     
     WORKDIR /opt/lucid
-    
     USER lucid:lucid
     
-    # No ports exposed by default; this container is a toolbox controlled by compose.
     CMD ["/usr/local/bin/server-tools-bootstrap"]
     
     # -----------------------------------------------------------------------------
