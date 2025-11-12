@@ -155,7 +155,7 @@ services:
       lucid-pi-network:
         ipv4_address: 172.20.0.11
     ports:
-      - "${MONGODB_PORT:-27017}:${MONGODB_PORT:-27017}"
+      - "${MONGODB_PORT}:${MONGODB_PORT}"
     entrypoint: []
     command:
       - /usr/bin/mongod
@@ -204,7 +204,7 @@ services:
       lucid-pi-network:
         ipv4_address: 172.20.0.12
     ports:
-      - "${REDIS_PORT:6379}:${REDIS_PORT:6379}"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     entrypoint: []
     command:
       - /usr/local/bin/redis-server
