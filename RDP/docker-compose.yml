@@ -1,21 +1,19 @@
-# LUCID RDP SERVICES - Distroless Deployment
-# Phase 3: Application Services
-# Aligned with essentials.md Phase 3
-# Project Root: /mnt/myssd/Lucid/Lucid/
+# RDP/docker-compose.yml
+# Lucid RDP services (Phase 3) – aligned with foundation/core configs
 
-version: '3.8'
+version: "3.8"
 
 services:
-  # RDP Server Manager
   lucid-rdp-server-manager:
     image: pickme/lucid-rdp-server-manager:latest-arm64
     container_name: lucid-rdp-server-manager
     hostname: lucid-rdp-server-manager
-    platform: linux/arm64
     restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
       - ../configs/environment/.env.support
+      - ../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -24,13 +22,12 @@ services:
       - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
       - RDP_SERVER_MANAGER_HOST=172.20.0.21
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
       - API_GATEWAY_URL=http://lucid-api-gateway:8080
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
-      - /mnt/myssd/Lucid/Lucid/data/rdp-recordings:/data/recordings:rw
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
+      - rdp-sessions:/data/sessions
+      - rdp-recordings:/data/recordings
+      - rdp-server-manager-logs:/app/logs
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.21
@@ -46,10 +43,8 @@ services:
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
@@ -59,31 +54,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
     labels:
       - "lucid.service=rdp-server-manager"
       - "lucid.type=distroless"
       - "lucid.platform=arm64"
-      - "lucid.security=hardened"
       - "lucid.cluster=rdp"
 
-  # XRDP Integration
   lucid-rdp-xrdp:
     image: pickme/lucid-rdp-xrdp:latest-arm64
     container_name: lucid-rdp-xrdp
     hostname: lucid-rdp-xrdp
-    platform: linux/arm64
     restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
       - ../configs/environment/.env.support
+      - ../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -92,12 +78,11 @@ services:
       - XRDP_DISPLAY=:10
       - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
-      - /mnt/myssd/Lucid/Lucid/data/rdp-recordings:/data/recordings:rw
-      - /mnt/myssd/Lucid/Lucid/logs/xrdp:/app/logs:rw
+      - rdp-sessions:/data/sessions
+      - rdp-recordings:/data/recordings
+      - rdp-xrdp-logs:/app/logs
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.22
@@ -114,8 +99,7 @@ services:
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined
-    cap_drop:
-      - ALL
+    cap_drop: ["ALL"]
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
@@ -125,31 +109,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
     labels:
       - "lucid.service=rdp-xrdp"
       - "lucid.type=distroless"
       - "lucid.platform=arm64"
-      - "lucid.security=hardened"
       - "lucid.cluster=rdp"
 
-  # RDP Session Controller
   lucid-rdp-controller:
     image: pickme/lucid-rdp-controller:latest-arm64
     container_name: lucid-rdp-controller
     hostname: lucid-rdp-controller
-    platform: linux/arm64
     restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
       - ../configs/environment/.env.support
+      - ../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -158,12 +133,11 @@ services:
       - RDP_CONTROLLER_URL=http://lucid-rdp-controller:8092
       - RDP_CONTROLLER_HOST=172.20.0.23
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
       - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs:rw
+      - rdp-sessions:/data/sessions
+      - rdp-controller-logs:/app/logs
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.23
@@ -180,8 +154,7 @@ services:
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined
-    cap_drop:
-      - ALL
+    cap_drop: ["ALL"]
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
@@ -191,48 +164,40 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
     labels:
       - "lucid.service=rdp-controller"
       - "lucid.type=distroless"
       - "lucid.platform=arm64"
-      - "lucid.security=hardened"
       - "lucid.cluster=rdp"
 
-  # RDP Resource Monitor
   lucid-rdp-monitor:
     image: pickme/lucid-rdp-monitor:latest-arm64
     container_name: lucid-rdp-monitor
     hostname: lucid-rdp-monitor
-    platform: linux/arm64
     restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
       - ../configs/environment/.env.support
+      - ../configs/environment/.env.secrets
+      - ../configs/environment/.env.secure
+
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - RDP_MONITOR_PORT=8093
       - RDP_MONITOR_URL=http://lucid-rdp-monitor:8093
-      - RDP_MONITOR_HOST=172.20.0.24
+      - RDP_MONITOR_HOST=${RDP_MONITOR_HOST}
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
       - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:8081
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:ro
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-monitor:/app/logs:rw
+      - rdp-sessions:/data/sessions:ro
+      - rdp-monitor-logs:/app/logs
     networks:
       lucid-pi-network:
-        ipv4_address: 172.20.0.24
+        ipv4_address: ${RDP_MONITOR_HOST}
     depends_on:
       lucid-rdp-server-manager:
         condition: service_healthy
@@ -246,8 +211,7 @@ services:
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined
-    cap_drop:
-      - ALL
+    cap_drop: ["ALL"]
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
@@ -257,41 +221,27 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
     labels:
       - "lucid.service=rdp-monitor"
       - "lucid.type=distroless"
       - "lucid.platform=arm64"
-      - "lucid.security=hardened"
       - "lucid.cluster=rdp"
 
 networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
 
 volumes:
-  rdp_sessions_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/myssd/Lucid/Lucid/data/rdp-sessions
-  rdp_recordings_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /mnt/myssd/Lucid/Lucid/data/rdp-recordings
+  rdp-sessions:
+    name: lucid-rdp-sessions
+  rdp-recordings:
+    name: lucid-rdp-recordings
+  rdp-server-manager-logs:
+    name: lucid-rdp-server-manager-logs
+  rdp-xrdp-logs:
+    name: lucid-rdp-xrdp-logs
+  rdp-controller-logs:
+    name: lucid-rdp-controller-logs
+  rdp-monitor-logs:
+    name: lucid-rdp-monitor-logs
