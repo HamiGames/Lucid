@@ -1,19 +1,8 @@
-# LUCID BLOCKCHAIN ENGINE - distroless Implementation
-# Professional multi-platform Blockchain Engine service for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
-# Security: LUCID-STRICT compliant with distroless base
-# Aligned with plan/constants/ requirements
-# Blockchain Engine service (lucid-blockchain-engine) - Port 8084
-# Image: pickme/lucid-blockchain-engine:latest-arm64 (essentials.md, path_plan.md)
-# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
-# Configuration: All values from .env.core, .env.secrets, .env.foundation via docker-compose
-# Build Context: . (project root) - use blockchain/ prefix in COPY paths
-# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
-# Env Files: /mnt/myssd/Lucid/Lucid/configs/environment/.env.core, .env.secrets, .env.foundation
+# blockchain/Dockerfile.engine
+# LUCID BLOCKCHAIN ENGINE - SPEC-1B Implementation
+# Distroless FastAPI service providing core blockchain engine APIs
+# Build context: repository root
 
-# =============================================================================
-# BUILD ARGUMENTS
-# =============================================================================
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
@@ -21,25 +10,22 @@ ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
-# =============================================================================
-# STAGE 1: Builder - Install dependencies and compile packages
-# =============================================================================
-FROM python:3.11-slim AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
 
-# Build arguments for this stage
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-# Build-time environment configuration
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    BUILD_ENV=production
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies with cache mounts for faster builds
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -50,110 +36,74 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libssl-dev \
         pkg-config \
         curl \
+        ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Working directory for build artifacts
 WORKDIR /build
 
-# Pip optimization environment variables
-ENV PIP_NO_CACHE_DIR=1
-ENV PIP_PREFER_BINARY=1
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Upgrade pip tooling with cache mount
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip wheel setuptools
+    pip install --upgrade pip setuptools wheel
 
-# Copy requirements first (build context is project root)
 COPY blockchain/requirements.txt ./requirements.txt
 
-# Install Python dependencies to user site-packages (distroless-friendly)
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
-# Copy Blockchain Engine source code (only real directories/files)
-COPY blockchain/api/ ./api/
-COPY blockchain/core/ ./core/
-COPY blockchain/utils/ ./utils/
-COPY blockchain/config/ ./config/
-COPY blockchain/contracts/ ./contracts/
-COPY blockchain/deployment/ ./deployment/
-COPY blockchain/chain-client/ ./chain-client/
-COPY blockchain/evm/ ./evm/
-COPY blockchain/on_system_chain/ ./on_system_chain/
-COPY blockchain/scripts/ ./scripts/
-COPY blockchain/tests/ ./tests/
-COPY blockchain/*.py ./
+COPY blockchain/api/              ./api/
+COPY blockchain/core/             ./core/
+COPY blockchain/utils/            ./utils/
+COPY blockchain/config/           ./config/
+COPY blockchain/contracts/        ./contracts/
+COPY blockchain/deployment/       ./deployment/
+COPY blockchain/chain-client/     ./chain-client/
+COPY blockchain/evm/              ./evm/
+COPY blockchain/on_system_chain/  ./on_system_chain/
+COPY blockchain/scripts/          ./scripts/
+COPY blockchain/tests/            ./tests/
+COPY blockchain/*.py              ./
 
-# =============================================================================
-# STAGE 2: Runtime - Distroless Python base
-# =============================================================================
-FROM gcr.io/distroless/python3-debian12:latest
+############################
+# Stage 2 – Runtime
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-# Build arguments for metadata
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
-# Metadata for observability, traceability, and compliance
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Distroless Blockchain Engine for Lucid blockchain support" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Blockchain Engine" \
       org.opencontainers.image.description="Distroless blockchain engine service for Lucid project" \
-      com.lucid.plane="ops" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="blockchain-engine" \
       com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
-      com.lucid.security="distroless" \
-      com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="8084" \
       com.lucid.cluster="core" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.core,.env.secrets,.env.foundation" \
-      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
+      com.lucid.security="distroless"
 
-# =============================================================================
-# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-# All configuration should come from .env.core, .env.secrets, .env.foundation
-# via docker-compose env_file directive. These defaults are placeholders only.
-# =============================================================================
 ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 
-# No service configuration values are hardcoded here; everything comes from .env files on Pi console.
-
-# =============================================================================
-# Runtime setup
-# =============================================================================
 WORKDIR /app
 
-# Python packages from builder (installed under /root/.local)
 COPY --from=builder /root/.local /root/.local
-
-# Application code copied from builder (mirrors Stage 1 selections)
-COPY --chown=65532:65532 --from=builder /build/api /app/api
-COPY --chown=65532:65532 --from=builder /build/core /app/core
-COPY --chown=65532:65532 --from=builder /build/utils /app/utils
-COPY --chown=65532:65532 --from=builder /build/config /app/config
-COPY --chown=65532:65532 --from=builder /build/contracts /app/contracts
-COPY --chown=65532:65532 --from=builder /build/deployment /app/deployment
-COPY --chown=65532:65532 --from=builder /build/chain-client /app/chain-client
-COPY --chown=65532:65532 --from=builder /build/evm /app/evm
+COPY --chown=65532:65532 --from=builder /build/api           /app/api
+COPY --chown=65532:65532 --from=builder /build/core          /app/core
+COPY --chown=65532:65532 --from=builder /build/utils         /app/utils
+COPY --chown=65532:65532 --from=builder /build/config        /app/config
+COPY --chown=65532:65532 --from=builder /build/contracts     /app/contracts
+COPY --chown=65532:65532 --from=builder /build/deployment    /app/deployment
+COPY --chown=65532:65532 --from=builder /build/chain-client  /app/chain-client
+COPY --chown=65532:65532 --from=builder /build/evm           /app/evm
 COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/on_system_chain
-COPY --chown=65532:65532 --from=builder /build/scripts /app/scripts
-COPY --chown=65532:65532 --from=builder /build/tests /app/tests
-COPY --chown=65532:65532 --from=builder /build/*.py /app/
+COPY --chown=65532:65532 --from=builder /build/scripts       /app/scripts
+COPY --chown=65532:65532 --from=builder /build/tests         /app/tests
+COPY --chown=65532:65532 --from=builder /build/*.py          /app/
 
-# =============================================================================
-# Expose, healthcheck, user, and command
-# =============================================================================
 EXPOSE 8084
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -161,26 +111,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
-# Tor-proxy compatible (CMD only; docker-compose can override)
-CMD ["python3", "-m", "api.app.main"]
-
-# =============================================================================
-# CONFIGURATION NOTES
-# =============================================================================
-# All runtime configuration values are provided through environment files on the Pi console:
-#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-#   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-# Deployment example:
-#   docker-compose --env-file configs/environment/.env.core \
-#                  -f configs/docker/docker-compose.core.yml up -d
-# Build example:
-#   docker buildx build \
-#     --platform linux/arm64 \
-#     -t pickme/lucid-blockchain-engine:latest-arm64 \
-#     -f blockchain/Dockerfile.engine \
-#     --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-#     --build-arg VCS_REF=$(git rev-parse --short HEAD) \
-#     --build-arg VERSION=1.0.0 \
-#     --push \
-#     .
+CMD ["python3", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8084"]

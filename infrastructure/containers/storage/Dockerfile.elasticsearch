@@ -132,7 +132,8 @@ USER 65532:65532
 # This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
 # Command arguments come from docker-compose.foundation.yml environment section
 # Elasticsearch script is at bin/elasticsearch relative to WORKDIR
-CMD ["/usr/share/elasticsearch/bin/elasticsearch"]
+ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch"]
+CMD []
 
 # NOTE: All configuration values come from:
 #   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation

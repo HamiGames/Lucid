@@ -98,6 +98,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
-CMD ["python3", "-m", "main"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["-m", "main"]
 
 # All configuration comes from .env.application, .env.core, .env.secrets, .env.foundation

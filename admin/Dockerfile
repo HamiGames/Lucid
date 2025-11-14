@@ -99,6 +99,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER nonroot
 
-CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "admin.main:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]
+ENTRYPOINT ["/opt/venv/bin/python3"]
+CMD ["-m", "uvicorn", "admin.main:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]
 
 # All configuration values provided by .env.support, .env.core, .env.secrets, .env.foundation

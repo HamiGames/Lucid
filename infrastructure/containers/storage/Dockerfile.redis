@@ -129,7 +129,9 @@ USER 65532:65532
 # This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
 # Command arguments come from docker-compose.foundation.yml environment section
 # Docker-compose sets full command with password and configuration
-CMD ["/usr/local/bin/redis-server", "/etc/redis/redis.conf"]
+
+ENTRYPOINT ["/usr/local/bin/redis-server"]
+CMD ["/etc/redis/redis.conf"]
 
 # NOTE: All configuration values come from:
 #   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation

@@ -4,8 +4,6 @@
 # Network: lucid-pi-network (172.20.0.0/16), lucid-gui-network (172.22.0.0/16)
 # IP: 172.20.0.25 (main), 172.22.0.25 (GUI)
 
-version: "3.8"
-
 services:
   lucid-node-management:
     build:
@@ -151,12 +149,16 @@ services:
 
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.node
+      - ../configs/environment/.env.secrets
 
     environment:
       - MONGO_INITDB_ROOT_USERNAME=lucid
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-lucid-password}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - MONGO_INITDB_DATABASE=lucid_node_management
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid-password}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URI=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
 
     volumes:
       - mongodb-data:/data/db
@@ -210,6 +212,8 @@ services:
 
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.secrets
 
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-lucid-redis-password}
 
@@ -219,6 +223,7 @@ services:
       - REDIS_HOST=lucid-redis
       - REDIS_PORT=6379
       - REDIS_DB=0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
 
     volumes:
       - redis-data:/data
@@ -272,7 +277,7 @@ networks:
       config:
         - subnet: 172.20.0.0/16
           gateway: 172.20.0.1
-    external: false
+    external: true
 
   lucid-gui-network:
     name: lucid-gui-network

@@ -102,6 +102,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
-CMD ["python3", "-m", "processor.main"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["-m", "processor.main"]
 
 # All runtime configuration from .env.application, .env.core, .env.secrets, .env.foundation

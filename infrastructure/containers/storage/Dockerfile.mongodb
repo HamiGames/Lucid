@@ -139,8 +139,8 @@ USER 65532:65532
 # NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override command
 # This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
 # Command arguments come from docker-compose.foundation.yml environment section
-CMD ["/usr/bin/mongod", "--config", "/etc/mongod.conf"]
-
+ENTRYPOINT ["/usr/bin/mongod"]
+CMD ["--config", "/etc/mongod.conf"]
 # NOTE: All configuration values come from:
 #   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
 #   - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets

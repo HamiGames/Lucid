@@ -47,14 +47,37 @@ COPY database/mongodb/requirements.txt ./requirements.mongodb.txt
 COPY database/redis/requirements.txt ./requirements.redis.txt
 COPY database/elasticsearch/requirements.txt ./requirements.elasticsearch.txt
 
+# Install requirements while skipping unsupported packages (pymongo-backup has no Python 3.11 arm64 wheel)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-cache-dir \
-        -r requirements.database.txt \
-        -r requirements.monitoring.txt \
-        -r requirements.backup.txt \
-        -r requirements.mongodb.txt \
-        -r requirements.redis.txt \
-        -r requirements.elasticsearch.txt
+    python - <<'PY'
+import subprocess
+import sys
+from pathlib import Path
+
+REQUIREMENTS = [
+    Path("requirements.database.txt"),
+    Path("requirements.monitoring.txt"),
+    Path("requirements.backup.txt"),
+    Path("requirements.mongodb.txt"),
+    Path("requirements.redis.txt"),
+    Path("requirements.elasticsearch.txt"),
+]
+
+SKIP_PREFIXES = ("pymongo-backup",)
+
+for req in REQUIREMENTS:
+    packages = []
+    for line in req.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith(SKIP_PREFIXES):
+            print(f"[pip-skip] {line} from {req.name} (unsupported on Python 3.11 arm64)")
+            continue
+        packages.append(line)
+    if packages:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "--no-cache-dir", *packages])
+PY
 
 COPY database/ ./database/
 
@@ -102,4 +125,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
-CMD ["python3", "-m", "database.services.monitoring.main"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["-m", "database.services.monitoring.main"]

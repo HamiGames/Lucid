@@ -166,7 +166,8 @@ USER 65532:65532
 # This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
 # Docker-compose sets: entrypoint: ["python3"], command: ["main.py"]
 # Command arguments come from docker-compose.foundation.yml environment section
-CMD ["python3", "main.py"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["main.py"]
 
 # =============================================================================
 # CONFIGURATION NOTES

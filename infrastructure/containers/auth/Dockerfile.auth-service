@@ -96,7 +96,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # Run the authentication service
 # Entry point: python -m auth.main
-ENTRYPOINT ["python", "-m", "auth.main"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["-m", "auth.main"]
 
 # ============================================================================
 # Build Instructions:

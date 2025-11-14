@@ -179,6 +179,7 @@ USER 65532:65532
 # Command arguments come from docker-compose.yml environment section
 CMD ["python3", "-m", "api.app.main"]
 
+
 # =============================================================================
 # CONFIGURATION NOTES
 # =============================================================================

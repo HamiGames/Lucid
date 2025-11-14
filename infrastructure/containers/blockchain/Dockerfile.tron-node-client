@@ -54,4 +54,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 8030
 
 # Run application
-ENTRYPOINT ["python", "tron_node_client.py"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["-m", "tron_node_client"]

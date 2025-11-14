@@ -1,33 +1,20 @@
-# LUCID RDP SERVER MANAGER - SPEC-1B Implementation
-# Professional multi-platform RDP Server Manager service for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
-# Security: LUCID-STRICT compliant with distroless base
-# Aligned with plan/constants/ requirements
-# RDP Server Manager service (lucid-rdp-server-manager) - Ports 8081, 8090
-# Image: pickme/lucid-rdp-server-manager:latest-arm64 (essentials.md, path_plan.md)
-# Tor-proxy compatible: Uses CMD (no ENTRYPOINT)
-# Configuration: All values from .env.application, .env.core, .env.secrets, .env.foundation via docker-compose
-# Build Context: . (project root) - use RDP/ prefix in COPY paths
+# RDP/Dockerfile.server-manager
+# Lucid RDP Server Manager API
+# Image: pickme/lucid-rdp-server-manager:latest-arm64
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
-ARG PYTHON_VERSION=3.11
 
-FROM python:3.11-slim AS builder
-
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG PYTHON_VERSION
+FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+    PIP_PREFER_BINARY=1
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -38,80 +25,59 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libffi-dev \
         libssl-dev \
         pkg-config \
-        curl \
-        ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
+COPY RDP/requirements.server-manager.txt ./requirements.txt
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip wheel setuptools
+RUN python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --upgrade pip setuptools wheel \
+    && /opt/venv/bin/pip install -r requirements.txt
 
-COPY RDP/requirements.server-manager.txt ./requirements.server-manager.txt
+COPY RDP/server-manager/     ./app/server_manager/
+COPY RDP/server/             ./app/server/
+COPY RDP/session-controller/ ./app/session_controller/
+COPY RDP/protocol/           ./app/protocol/
+COPY RDP/common/             ./app/common/
+COPY RDP/client/             ./app/client/
+COPY RDP/resource-monitor/   ./app/resource_monitor/
+COPY RDP/__init__.py         ./app/__init__.py
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary -r requirements.server-manager.txt
-
-COPY RDP/server-manager/ ./server-manager/
-COPY RDP/server/ ./server/
-COPY RDP/common/ ./common/
-COPY RDP/protocol/ ./protocol/
-COPY RDP/client/ ./client/
-COPY RDP/resource-monitor/ ./resource-monitor/
-COPY RDP/session-controller/ ./session-controller/
-COPY RDP/__init__.py ./__init__.py
-
-FROM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:nonroot
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=1.0.0
+ARG VERSION
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Distroless RDP Server Manager for Lucid RDP support" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid RDP Server Manager" \
-      org.opencontainers.image.description="Distroless RDP server manager service for Lucid project" \
-      com.lucid.plane="ops" \
+      org.opencontainers.image.description="Service coordination layer for XRDP nodes" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="rdp-server-manager" \
-      com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
-      com.lucid.security="distroless" \
-      com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="8081,8090" \
-      com.lucid.cluster="application" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.application,.env.core,.env.secrets,.env.foundation" \
-      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
+      com.lucid.platform="arm64"
 
-ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
+    PYTHONPATH=/opt/lucid/app \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
+    SERVER_MANAGER_HOST=0.0.0.0 \
+    SERVER_MANAGER_PORT=8081 \
+    SERVER_MANAGER_METRICS_PORT=8090 \
+    XRDP_API_URL=http://lucid-rdp:8091 \
+    CONTROLLER_API_URL=http://lucid-rdp-controller:8092 \
+    MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid_rdp?authSource=admin \
+    REDIS_URL=redis://lucid-redis:6379/0 \
+    HEALTHCHECK_TIMEOUT=5
 
-WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /build/app /opt/lucid/app
 
-COPY --from=builder /root/.local /root/.local
-COPY --chown=65532:65532 --from=builder /build/server-manager /app/server-manager
-COPY --chown=65532:65532 --from=builder /build/server /app/server
-COPY --chown=65532:65532 --from=builder /build/common /app/common
-COPY --chown=65532:65532 --from=builder /build/protocol /app/protocol
-COPY --chown=65532:65532 --from=builder /build/client /app/client
-COPY --chown=65532:65532 --from=builder /build/resource-monitor /app/resource-monitor
-COPY --chown=65532:65532 --from=builder /build/session-controller /app/session-controller
-COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
-
+WORKDIR /opt/lucid/app
 EXPOSE 8081 8090
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/health').read(); exit(0)"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD ["python3","-c","import urllib.request; urllib.request.urlopen('http://127.0.0.1:'+str(${SERVER_MANAGER_PORT:-8081})+'/health', timeout=5)"]
 
-USER 65532:65532
-
-CMD ["python3", "-m", "uvicorn", "server-manager.main:app", "--host", "0.0.0.0", "--port", "8081"]
-
-# Configuration: .env.application, .env.core, .env.secrets, .env.foundation
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["-m", "uvicorn", "server_manager.main:app", "--host", "0.0.0.0", "--port", "8081"]
