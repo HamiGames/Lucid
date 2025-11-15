@@ -3,13 +3,13 @@
 # Production-ready configuration with all 35 distroless services
 # Uses path_plan.md network configurations
 
-version: '3.8'
+version: "3.8"
 
 services:
   # ============================================================================
   # PHASE 2: FOUNDATION SERVICES (4 images)
   # ============================================================================
-  
+
   lucid-mongodb:
     image: pickme/lucid-mongodb:latest-arm64
     container_name: lucid-mongodb
@@ -110,7 +110,7 @@ services:
   # ============================================================================
   # PHASE 3: CORE SERVICES (6 images)
   # ============================================================================
-  
+
   lucid-api-gateway:
     image: pickme/lucid-api-gateway:latest-arm64
     container_name: lucid-api-gateway
@@ -289,7 +289,7 @@ services:
   # ============================================================================
   # PHASE 4: APPLICATION SERVICES (10 images)
   # ============================================================================
-  
+
   lucid-session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64
     container_name: lucid-session-pipeline
@@ -558,7 +558,7 @@ services:
   # ============================================================================
   # PHASE 5: SUPPORT SERVICES (7 images)
   # ============================================================================
-  
+
   lucid-admin-interface:
     image: pickme/lucid-admin-interface:latest-arm64
     container_name: lucid-admin-interface
@@ -748,7 +748,7 @@ services:
   # ============================================================================
   # PHASE 6: SPECIALIZED SERVICES (5 images)
   # ============================================================================
-  
+
   lucid-gui:
     image: pickme/lucid-gui:latest-arm64
     container_name: lucid-gui
@@ -870,17 +870,17 @@ networks:
       config:
         - subnet: 172.20.0.0/16
           gateway: 172.20.0.1
-  
+
   # TRON Isolation Network (path_plan.md)
   lucid-tron-isolated:
     name: lucid-tron-isolated
     driver: bridge
-    internal: false  # Allow external TRON network access
+    internal: false # Allow external TRON network access
     ipam:
       config:
         - subnet: 172.21.0.0/16
           gateway: 172.21.0.1
-  
+
   # GUI Network (path_plan.md)
   lucid-gui-network:
     name: lucid-gui-network
@@ -907,7 +907,7 @@ volumes:
     driver: local
   auth_logs:
     driver: local
-  
+
   # Core Services
   api_logs:
     driver: local
@@ -933,7 +933,7 @@ volumes:
     driver: local
   data_chain_logs:
     driver: local
-  
+
   # Application Services
   session_pipeline_data:
     driver: local
@@ -975,7 +975,7 @@ volumes:
     driver: local
   node_management_logs:
     driver: local
-  
+
   # Support Services
   admin_interface_data:
     driver: local
@@ -1005,7 +1005,7 @@ volumes:
     driver: local
   payment_gateway_logs:
     driver: local
-  
+
   # Specialized Services
   gui_data:
     driver: local

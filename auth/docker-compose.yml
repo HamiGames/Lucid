@@ -1,126 +1,119 @@
-# Lucid Authentication Service - Docker Compose Configuration
-# Cluster 09: Authentication Service
+# Lucid Authentication Service – Standalone Compose aligned with foundation/core stack
 
-version: '3.8'
+version: "3.8"
 
 services:
-  auth-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: lucid-auth-service:latest
-    container_name: lucid-auth-service
+  lucid-auth-service-dev:
+    image: pickme/lucid-auth-service:latest-arm64
+    container_name: lucid-auth-service-dev
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.authentication
+      - ../configs/environment/.env.secrets
+      - ../configs/environment/.env.distroless
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.214
     ports:
-      - "8089:8089"
+      - "18089:8089"
+    working_dir: /app
+    entrypoint: ["python3"]
+    command: ["main.py"]
     environment:
-      # Service Configuration
-      - SERVICE_NAME=lucid-auth-service
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - AUTH_SERVICE_HOST=lucid-auth-service-dev
       - AUTH_SERVICE_PORT=8089
-      - ENVIRONMENT=${ENVIRONMENT:-production}
-      - DEBUG=${DEBUG:-false}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      
-      # JWT Configuration
+      - AUTH_SERVICE_URL=http://lucid-auth-service-dev:8089
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - CONSUL_HOST=service-mesh:8500
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=15
-      - REFRESH_TOKEN_EXPIRE_DAYS=7
-      
-      # Database Configuration
-      - MONGODB_URI=mongodb://mongodb:27017/lucid_auth
-      - MONGODB_DATABASE=lucid_auth
-      - REDIS_URI=redis://redis:6379/1
-      
-      # Security Configuration
-      - BCRYPT_ROUNDS=12
-      - MAX_LOGIN_ATTEMPTS=5
-      - LOGIN_COOLDOWN_MINUTES=15
-      
-      # Hardware Wallet Configuration
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
       - ENABLE_HARDWARE_WALLET=true
       - LEDGER_SUPPORTED=true
       - TREZOR_SUPPORTED=true
       - KEEPKEY_SUPPORTED=true
-      
-      # TRON Configuration
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
-      
-      # Rate Limiting
-      - RATE_LIMIT_ENABLED=true
-      - RATE_LIMIT_PUBLIC=100
-      - RATE_LIMIT_AUTHENTICATED=1000
-      - RATE_LIMIT_ADMIN=10000
-      
-      # CORS Configuration
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
-      
-      # Audit Logging
-      - AUDIT_LOG_ENABLED=true
-      - AUDIT_LOG_RETENTION_DAYS=90
-      
-      # Integration URLs
-      - API_GATEWAY_URL=http://api-gateway:8080
-      - CONSUL_HOST=consul:8500
-    
     depends_on:
-      - mongodb
-      - redis
-    
-    networks:
-      - lucid-network
-    
-    restart: unless-stopped
-    
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop: ["ALL"]
+    cap_add: ["NET_BIND_SERVICE"]
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/auth:/app/logs:rw
+      - auth-dev-cache:/tmp/auth
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8089/health\").read()' || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          'import urllib.request; urllib.request.urlopen("http://localhost:8089/health").read()',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
-    
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
+      start_period: 40s
 
-  # MongoDB for user data
-  mongodb:
+  # Optional local MongoDB for dev (renamed to avoid collisions)
+  lucid-auth-mongodb-dev:
     image: mongo:7.0
-    container_name: lucid-auth-mongodb
+    container_name: lucid-auth-mongodb-dev
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.215
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - MONGO_INITDB_DATABASE=lucid_auth
+    command: ["mongod", "--auth", "--bind_ip_all"]
     volumes:
-      - mongodb_data:/data/db
+      - mongodb-dev-data:/data/db
       - ./scripts/init-mongodb.js:/docker-entrypoint-initdb.d/init.js:ro
-    networks:
-      - lucid-network
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # Redis for session storage
-  redis:
+  # Optional local Redis for dev (renamed to avoid collisions)
+  lucid-auth-redis-dev:
     image: redis:7.0-alpine
-    container_name: lucid-auth-redis
+    container_name: lucid-auth-redis-dev
+    restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
     networks:
-      - lucid-network
-    restart: unless-stopped
+      lucid-pi-network:
+        ipv4_address: 172.20.0.216
+    ports:
+      - "6380:6379"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - redis-dev-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -128,13 +121,17 @@ services:
       retries: 3
 
 networks:
-  lucid-network:
-    name: lucid-network
-    driver: bridge
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
 
 volumes:
-  mongodb_data:
-    name: lucid-auth-mongodb-data
-  redis_data:
-    name: lucid-auth-redis-data
-
+  auth-dev-cache:
+    driver: local
+    name: lucid-auth-dev-cache
+  mongodb-dev-data:
+    driver: local
+    name: lucid-auth-dev-mongodb-data
+  redis-dev-data:
+    driver: local
+    name: lucid-auth-dev-redis-data

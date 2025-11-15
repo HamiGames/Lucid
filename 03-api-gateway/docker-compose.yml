@@ -1,167 +1,73 @@
-# Docker Compose Configuration for Lucid API Gateway
-# File: 03-api-gateway/docker-compose.yml
-# Purpose: Local development and production deployment setup
-# Note: TRON payment service is isolated from lucid_blocks blockchain
+# 03-api-gateway/docker-compose.yml
+# Lucid API Gateway – relies on foundation MongoDB/Redis
 
-
+version: "3.8"
 
 services:
-  api-gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BUILDPLATFORM: linux/amd64
-        TARGETPLATFORM: linux/amd64
-        BUILD_DATE: ${BUILD_DATE:-2025-01-10T00:00:00Z}
-        VERSION: ${VERSION:-1.0.0}
+  lucid-api-gateway:
     image: pickme/lucid-api-gateway:latest-arm64
-    platform: linux/arm64
     container_name: lucid-api-gateway
     restart: unless-stopped
-    
     env_file:
       - ../configs/environment/.env.foundation
       - ../configs/environment/.env.core
-    
+      - ../configs/environment/.env.secrets
     ports:
-      - "8080:8080"  # HTTP
-      - "8081:8081"  # HTTPS
-    
+      - "8080:8080"
     environment:
-      # Service Configuration
       - SERVICE_NAME=api-gateway
       - API_VERSION=v1
       - DEBUG=false
       - ENVIRONMENT=production
-      
-      # Port Configuration
       - HTTP_PORT=8080
-      - HTTPS_PORT=8081
-      
-      # Security Configuration
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
       - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
       - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
-      
-      # Database Configuration
-      - MONGODB_URI=mongodb://mongodb:27017/lucid_gateway
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_gateway?authSource=admin
       - MONGODB_DATABASE=lucid_gateway
-      - REDIS_URL=redis://redis:6379/0
-      
-      # Backend Service URLs
-      # Note: blockchain_core uses lucid_blocks (on-chain system)
-      - BLOCKCHAIN_CORE_URL=http://lucid-blocks:8084
-      - SESSION_MANAGEMENT_URL=http://session-management:8085
-      - AUTH_SERVICE_URL=http://auth-service:8086
-      # TRON is isolated payment service, NOT part of lucid_blocks
-      - TRON_PAYMENT_URL=http://tron-payment:8087
-      
-      # Rate Limiting Configuration
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
+      - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
+      - SESSION_MANAGEMENT_URL=http://lucid-session-api:8087
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - TRON_PAYMENT_URL=http://tron-client:8091
       - RATE_LIMIT_ENABLED=true
       - RATE_LIMIT_REQUESTS_PER_MINUTE=1000
       - RATE_LIMIT_BURST_SIZE=2000
-      
-      # SSL Configuration
-      - SSL_ENABLED=true
-      - SSL_CERT_PATH=/certs/api-gateway.crt
-      - SSL_KEY_PATH=/certs/api-gateway.key
-      
-      # CORS Configuration
+      - SSL_ENABLED=false
       - ALLOWED_HOSTS=api.lucid-blockchain.org,localhost
       - CORS_ORIGINS=https://app.lucid-blockchain.org,http://localhost:3000
-      
-      # Logging Configuration
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
-      
-      # Monitoring Configuration
       - METRICS_ENABLED=true
-      - HEALTH_CHECK_INTERVAL=30
-    
-    volumes:
-      - ./certs:/certs:ro
-      - ./logs:/app/logs
-    
-    depends_on:
-      - mongodb
-      - redis
-    
     networks:
-      - lucid-network
-    
+      lucid-pi-network:
+        ipv4_address: 172.20.0.18
+    volumes:
+      - api-gateway-certs:/certs:ro
+      - api-gateway-logs:/app/logs
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/v1/meta/health')"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/v1/meta/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 4G
-        reservations:
-          cpus: '1.0'
-          memory: 2G
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: lucid-mongodb
-    restart: unless-stopped
-    env_file:
-      - ../configs/environment/.env.foundation
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-      - MONGO_INITDB_DATABASE=lucid_gateway
-    volumes:
-      - mongodb_data:/data/db
-      - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
-    networks:
-      - lucid-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Redis Cache
-  redis:
-    image: redis:7.2-alpine
-    container_name: lucid-redis
-    restart: unless-stopped
-    env_file:
-      - ../configs/environment/.env.foundation
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    networks:
-      - lucid-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    # MongoDB/Redis are provided by the foundation stack; ensure those stacks are up first
+    depends_on: []
 
 networks:
-  lucid-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
 
 volumes:
-  mongodb_data:
-    driver: local
-  redis_data:
-    driver: local
-
+  api-gateway-certs:
+    name: lucid-api-gateway-certs
+  api-gateway-logs:
+    name: lucid-api-gateway-logs
