@@ -89,5 +89,6 @@ COPY infrastructure/docker/distroless/base/scripts/lucid-base-bootstrap.sh /usr/
 WORKDIR /app
 USER 65532:65532
 
+
 ENTRYPOINT ["/usr/local/bin/lucid-base-bootstrap"]
 CMD []
