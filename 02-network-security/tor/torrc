@@ -5,7 +5,11 @@ CookieAuthentication 1
 CookieAuthFileGroupReadable 1
 DataDirectory /var/lib/tor
 
-# Hidden Service (must match compose volume target)
+# Optional hidden-service mapping used by the entrypoint scripts
 HiddenServiceDir /var/lib/tor/hidden_service
 HiddenServiceVersion 3
 HiddenServicePort 80 lucid_api:8081
+
+# Allow the health-check/control helpers to read/write their state
+RunAsDaemon 0
+AvoidDiskWrites 0
