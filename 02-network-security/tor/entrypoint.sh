@@ -70,10 +70,13 @@ wait_for_bootstrap() {
   log "Waiting for Tor bootstrap to reach 100%..."
   local i=0 max_attempts=180
   while [ $i -lt "$max_attempts" ]; do
-    # Use busybox grep explicitly (distroless-compatible)
     local out
     out=$(ctl "GETINFO status/bootstrap-phase" 2>/dev/null || true)
-    if echo "$out" | /bin/busybox grep -q 'PROGRESS=100'; then
+    # Robust detection: strip CR/LF, normalize whitespace, check for PROGRESS=100
+    local cleaned
+    cleaned=$(echo "$out" | /bin/busybox tr -d '\r' | /bin/busybox tr '\n' ' ' | /bin/busybox sed 's/  */ /g')
+    # Check for PROGRESS=100 pattern (handles both "PROGRESS=100" and "250-status/bootstrap-phase=...PROGRESS=100")
+    if echo "$cleaned" | /bin/busybox grep -o 'PROGRESS=[0-9]*' | /bin/busybox grep -q 'PROGRESS=100'; then
       log "Bootstrap complete (100%)"
       return 0
     fi
