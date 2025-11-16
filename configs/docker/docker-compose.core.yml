@@ -297,6 +297,62 @@ services:
       tor-proxy:
         condition: service_started
 
+  lucid-tunnel-tools:
+    image: pickme/lucid-tunnel-tools:latest-arm64
+    container_name: lucid-tunnel-tools
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    networks:
+      - lucid-pi-network
+    ports:
+      - "7000:7000"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:ro
+      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:rw
+      - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
+      - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - CONTROL_HOST=tor-proxy
+      - CONTROL_PORT=9051
+      - COOKIE_FILE=/var/lib/tor/control_auth_cookie
+      - ONION_PORTS=80 lucid_api:8081
+      - WRITE_ENV=/app/scripts/.onion.env
+      - ROTATE_INTERVAL=0
+      - TUNNEL_PORT=7000
+      - TUNNEL_MODE=client
+      - TOR_PROXY=tor-proxy:9050
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s=socket.socket(); s.connect(('tor-proxy', 9051)); s.close(); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    depends_on:
+      tor-proxy:
+        condition: service_started
+
 networks:
   lucid-pi-network:
     external: true
