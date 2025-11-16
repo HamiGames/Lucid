@@ -1,9 +1,10 @@
-#!/bin/ba#!/bin/bash
+#!/bin/bash
 set -e
 
 COOKIE="/var/lib/tor/control_auth_cookie"
 CTRL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 CTRL_PORT="${TOR_CONTROL_PORT:-9051}"
+# Aligned with @constants: onion-state volume path
 OUTDIR="/run/lucid/onion"
 
 [ -s "$COOKIE" ] || { echo "[hc] cookie missing or empty at $COOKIE"; exit 1; }
@@ -17,9 +18,11 @@ fi
 REQ=$(printf 'AUTHENTICATE %s\r\nGETINFO status/bootstrap-phase\r\nGETINFO version\r\nQUIT\r\n' "$HEX")
 OUT="$(echo "$REQ" | nc -w 3 "$CTRL_HOST" "$CTRL_PORT" || true)"
 
+# Use busybox grep explicitly (distroless-compatible)
 echo "$OUT" | /bin/busybox grep -q "^250 OK" || { echo "[hc] auth failed"; exit 1; }
 echo "$OUT" | /bin/busybox grep -q "^250-status/bootstrap-phase=" || { echo "[hc] no bootstrap info"; exit 1; }
 
+# Use busybox sed explicitly (distroless-compatible)
 PHASE="$(echo "$OUT" | /bin/busybox sed -n 's/^250-status\/bootstrap-phase=//p')"
 VERSION="$(echo "$OUT" | /bin/busybox sed -n 's/^250-version=//p' | tr -d '\r')"
 
@@ -28,6 +31,7 @@ echo "$PHASE" | /bin/busybox grep -q "PROGRESS=100" || { echo "[hc] not bootstra
 PROGRESS=$(echo "$PHASE" | /bin/busybox sed -n 's/.*PROGRESS=\([0-9][0-9]*\).*/\1/p')
 TAG=$(echo "$PHASE" | /bin/busybox sed -n 's/.*TAG=\([A-Za-z0-9_-]*\).*/\1/p')
 SUMMARY=$(echo "$PHASE" | /bin/busybox sed -n 's/.*SUMMARY=\(.*\)$/\1/p')
+# Use busybox date explicitly (distroless-compatible)
 STAMP=$(/bin/busybox date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 mkdir -p "$OUTDIR"
