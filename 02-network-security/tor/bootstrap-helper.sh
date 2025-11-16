@@ -12,13 +12,11 @@ HOST_TOR_LOGS="/mnt/myssd/Lucid/Lucid/logs/tor"
 HOST_TOR_RUN="/mnt/myssd/Lucid/Lucid/data/tor-run"
 HOST_TOR_CONFIG="/mnt/myssd/Lucid/Lucid/config/tor"
 HOST_ONION_DIR="${HOST_TOR_RUN}/lucid/onion"
+COOKIE_FILE="${HOST_TOR_DATA}/control_auth_cookie"
 
 # Container paths (inside docker)
 CONTAINER_TOR_DATA="/var/lib/tor"
-CONTAINER_TOR_LOGS="/var/log/tor"
-CONTAINER_TOR_RUN="/run"
-CONTAINER_TOR_CONFIG="/etc/tor"
-CONTAINER_ONION_DIR="${CONTAINER_TOR_RUN}/lucid/onion"
+CONTAINER_COOKIE_FILE="${CONTAINER_TOR_DATA}/control_auth_cookie"
 
 IMAGE="pickme/lucid-tor-proxy:latest-arm64"
 
@@ -39,7 +37,21 @@ sudo chown -R "${TOR_UID}:${TOR_GID}" "$HOST_TOR_DATA" "$HOST_TOR_LOGS" "$HOST_T
 sudo chmod 700 "$HOST_TOR_DATA" || true
 sudo chmod 755 "$HOST_TOR_LOGS" "$HOST_TOR_RUN" || true
 
-# Run tor in temporary container
+# Check if cookie file exists, if not start Tor to create it
+if [ -s "$COOKIE_FILE" ]; then
+  log "Cookie file found at $COOKIE_FILE (reusing existing)"
+  # Verify cookie is readable
+  if [ -r "$COOKIE_FILE" ]; then
+    log "Cookie file is readable, proceeding..."
+  else
+    log "WARNING: Cookie file exists but not readable, will regenerate"
+    rm -f "$COOKIE_FILE" || true
+  fi
+else
+  log "Cookie file not found at $COOKIE_FILE - will start Tor to create it"
+fi
+
+# Run tor in temporary container (will create cookie if missing)
 log "Starting Tor in temporary container..."
 CONTAINER_ID=$(docker run -d --rm \
   --name tor-bootstrap-temp \
@@ -58,19 +70,67 @@ CONTAINER_ID=$(docker run -d --rm \
 
 log "Container started: $CONTAINER_ID"
 
-# Wait for cookie file
-log "Waiting for control cookie..."
-COOKIE_FILE="${HOST_TOR_DATA}/control_auth_cookie"
+# Wait for cookie file (check both host and container)
+log "Waiting for control cookie to be created..."
 for i in $(seq 1 120); do
-  [ -s "$COOKIE_FILE" ] && break
+  # Check container first (most reliable)
+  if docker exec tor-bootstrap-temp test -s "$CONTAINER_COOKIE_FILE" 2>/dev/null; then
+    log "Cookie found in container"
+    # Verify it's also visible on host
+    if [ -s "$COOKIE_FILE" ]; then
+      log "Cookie file seeded to host at $COOKIE_FILE"
+      break
+    else
+      log "Cookie exists in container but not on host - checking permissions..."
+      sleep 1
+    fi
+  fi
+  # Also check host directly
+  if [ -s "$COOKIE_FILE" ]; then
+    log "Cookie found on host at $COOKIE_FILE"
+    break
+  fi
   sleep 1
+  [ $((i % 10)) -eq 0 ] && log "  Still waiting... (${i}s)"
 done
-[ -s "$COOKIE_FILE" ] || { log "ERROR: Cookie not created"; docker rm -f tor-bootstrap-temp >/dev/null 2>&1 || true; exit 1; }
-log "Cookie found"
+
+# Final verification
+if [ -s "$COOKIE_FILE" ]; then
+  log "Cookie file verified at $COOKIE_FILE"
+  ls -lh "$COOKIE_FILE"
+elif docker exec tor-bootstrap-temp test -s "$CONTAINER_COOKIE_FILE" 2>/dev/null; then
+  log "Cookie exists in container but not accessible on host"
+  log "Attempting to copy from container..."
+  docker cp "tor-bootstrap-temp:${CONTAINER_COOKIE_FILE}" "$COOKIE_FILE" 2>/dev/null || {
+    log "ERROR: Failed to copy cookie from container"
+    docker logs --tail=50 tor-bootstrap-temp
+    docker rm -f tor-bootstrap-temp >/dev/null 2>&1 || true
+    exit 1
+  }
+  sudo chown "${TOR_UID}:${TOR_GID}" "$COOKIE_FILE" || true
+  log "Cookie file copied to host"
+else
+  log "ERROR: Cookie not created after 120s"
+  log "Container logs:"
+  docker logs --tail=50 tor-bootstrap-temp
+  log "Checking container state:"
+  docker exec tor-bootstrap-temp ls -la "$CONTAINER_TOR_DATA" 2>/dev/null || true
+  docker rm -f tor-bootstrap-temp >/dev/null 2>&1 || true
+  exit 1
+fi
+
+# Read cookie hex from inside container (uses container's xxd)
+log "Reading cookie..."
+HEX=$(docker exec tor-bootstrap-temp /usr/bin/xxd -p "$CONTAINER_COOKIE_FILE" 2>/dev/null | tr -d '\n' || {
+  log "WARNING: Failed to read cookie with xxd, trying alternative..."
+  docker exec tor-bootstrap-temp /bin/busybox hexdump -v -e '1/1 "%02x"' "$CONTAINER_COOKIE_FILE" 2>/dev/null | tr -d '\n'
+})
+
+[ -n "$HEX" ] || { log "ERROR: Cookie hex is empty"; docker rm -f tor-bootstrap-temp >/dev/null 2>&1 || true; exit 1; }
+log "Cookie read successfully (${#HEX} chars)"
 
 # Wait for bootstrap and create state file
 log "Waiting for bootstrap to reach 100%..."
-HEX=$(xxd -p "$COOKIE_FILE" | tr -d '\n')
 for i in $(seq 1 180); do
   REQ=$(printf 'AUTHENTICATE %s\r\nGETINFO status/bootstrap-phase\r\nGETINFO version\r\nQUIT\r\n' "$HEX")
   OUT=$(echo "$REQ" | docker exec -i tor-bootstrap-temp nc -w 3 127.0.0.1 9051 2>/dev/null || true)
@@ -102,6 +162,7 @@ TOR_BOOTSTRAP_AT=${STAMP}
 EOF
 
 log "Bootstrap state file created at $HOST_ONION_DIR/tor_bootstrap.env"
+log "Cookie file seeded at $COOKIE_FILE"
 log "Helper complete. You can now start tor-proxy container."
 log "Stopping temporary container..."
 docker rm -f tor-bootstrap-temp >/dev/null 2>&1 || true
