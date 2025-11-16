@@ -20,22 +20,17 @@ TOR_SOCKS_PORT=${TOR_SOCKS_PORT:-9050}
 TOR_DATA_DIR=${TOR_DATA_DIR:-/var/lib/tor}
 
 ensure_runtime() {
-  # Ensure runtime directories exist (already owned by debian-tor from Dockerfile)
   mkdir -p /run /var/lib/tor /var/log/tor || true
-  
-  # Only chown if needed (usually already correct from Dockerfile COPY --chown)
   if [ -d /var/lib/tor ] && [ "$(stat -c '%U:%G' /var/lib/tor 2>/dev/null)" != "debian-tor:debian-tor" ]; then
     chown -R debian-tor:debian-tor /var/lib/tor 2>/dev/null || true
   fi
-  
   chmod 700 /var/lib/tor 2>/dev/null || true
 }
 
 start_tor() {
   log "Starting Tor as debian-tor user..."
-  # Run tor directly - we're already debian-tor user (no su-exec needed)
   tor -f /etc/tor/torrc &
-  echo $! > "${TOR_DATA_DIR}/tor.pid" || true
+  echo $! > "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || true
   log "Tor started with PID: $(cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo 'unknown')"
 }
 
@@ -75,21 +70,15 @@ ctl() {
 resolve_upstream_ip() {
   local ip=""
   local service="$1"
-  
-  if [ -z "$service" ]; then
-    return 0
-  fi
-  
-  # Try getent first
+  [ -z "$service" ] && return 0
+
+  # getent/nslookup may not exist; best-effort resolve via busybox
   if command -v getent >/dev/null 2>&1; then
     ip=$(getent hosts "$service" 2>/dev/null | awk '{print $1}' | head -1 || true)
   fi
-  
-  # Fallback to nslookup
   if [ -z "$ip" ] && command -v nslookup >/dev/null 2>&1; then
     ip=$(nslookup -timeout=2 "$service" 2>/dev/null | awk '/^Address: /{print $2; exit}' || true)
   fi
-  
   printf '%s' "$ip"
 }
 
@@ -97,79 +86,54 @@ wait_for_bootstrap() {
   log "Waiting for Tor bootstrap to reach 100%..."
   local i=0
   local max_attempts=180
-  
   while [ $i -lt "$max_attempts" ]; do
     local status
-    status=$(ctl "GETINFO status/bootstrap-phase" 2>/dev/null | grep -o 'PROGRESS=100' || true)
-    
+    status=$(ctl "GETINFO status/bootstrap-phase" 2>/dev/null | /bin/busybox grep -o 'PROGRESS=100' || true)
     if [ -n "$status" ]; then
       log "Bootstrap complete (100%)"
       return 0
     fi
-    
     sleep 2
     i=$((i+1))
-    
-    # Log progress every 30 seconds
     if [ $((i % 15)) -eq 0 ]; then
       log "Bootstrap in progress... (attempt $i/$max_attempts)"
     fi
   done
-  
   log "WARNING: Tor bootstrap did not reach 100% within timeout"
   return 1
 }
 
 create_ephemeral_onion() {
-  # Skip if CREATE_ONION is disabled
   [ "$CREATE_ONION" = "1" ] || { log "CREATE_ONION=0 — skipping onion creation"; return 0; }
-  
-  # Skip if no upstream service configured (foundation phase)
   if [ -z "$UPSTREAM_SERVICE" ]; then
     log "No UPSTREAM_SERVICE configured — skipping onion creation (foundation phase)"
     return 0
   fi
-  
   log "Resolving upstream service: $UPSTREAM_SERVICE"
   local ip=""
   local tries=30
-  
   while [ $tries -gt 0 ]; do
     ip=$(resolve_upstream_ip "$UPSTREAM_SERVICE")
-    if [ -n "$ip" ]; then
-      log "Resolved $UPSTREAM_SERVICE to $ip"
-      break
-    fi
+    [ -n "$ip" ] && { log "Resolved $UPSTREAM_SERVICE to $ip"; break; }
     log "Waiting for DNS resolution... ($tries attempts remaining)"
     sleep 2
     tries=$((tries-1))
   done
-  
-  if [ -z "$ip" ]; then
-    log "ERROR: unable to resolve ${UPSTREAM_SERVICE} — skipping onion creation"
-    return 1
-  fi
-  
-  # Optional connectivity check
+  [ -z "$ip" ] && { log "ERROR: unable to resolve ${UPSTREAM_SERVICE} — skipping onion creation"; return 1; }
   if command -v nc >/dev/null 2>&1; then
-    nc -z -w 2 "$ip" "$UPSTREAM_PORT" >/dev/null 2>&1 || \
-      log "WARN: upstream $ip:$UPSTREAM_PORT not reachable yet"
+    nc -z -w 2 "$ip" "$UPSTREAM_PORT" >/dev/null 2>&1 || log "WARN: upstream $ip:$UPSTREAM_PORT not reachable yet"
   fi
-  
   local add_onion="ADD_ONION NEW:ED25519-V3 Port=80,${ip}:${UPSTREAM_PORT}"
   log "Creating ephemeral onion: 80 -> ${ip}:${UPSTREAM_PORT}"
-  
   local out
   out=$(ctl "$add_onion" 2>/dev/null || true)
-  
-  if echo "$out" | grep -q '250-ServiceID='; then
+  if echo "$out" | /bin/busybox grep -q '250-ServiceID='; then
     local onion
     onion=$(echo "$out" | awk -F= '/250-ServiceID=/{print $2}').onion
     log "ONION created: ${onion}"
     echo "ONION=${onion}" > /run/lucid/onion/current.onion 2>/dev/null || true
     return 0
   fi
-  
   log "ERROR creating onion"
   printf '%s\n' "$out" | head -5
   return 1
@@ -182,28 +146,22 @@ main() {
   log "SOCKS Port: ${TOR_SOCKS_PORT}"
   log "Control Port: ${CONTROL_PORT}"
   log "Upstream Service: ${UPSTREAM_SERVICE:-<not configured>}"
-  
+
   ensure_runtime
   start_tor
-  
+
   if ! wait_for_file "$COOKIE_FILE" 120; then
     log "FATAL: Tor control cookie not created"
     exit 1
   fi
-  
-  # Wait for bootstrap (non-fatal for foundation phase)
+
   wait_for_bootstrap || log "Continuing despite bootstrap warning..."
-  
-  # Create onion if configured (non-fatal)
   create_ephemeral_onion || log "Onion creation skipped or failed"
-  
+
   log "Tor proxy ready - waiting for process..."
-  
-  # Wait for tor process
   if [ -f "${TOR_DATA_DIR}/tor.pid" ]; then
     wait "$(cat "${TOR_DATA_DIR}/tor.pid")" 2>/dev/null || true
   else
-    # Fallback: wait for any tor process
     wait || true
   fi
 }
