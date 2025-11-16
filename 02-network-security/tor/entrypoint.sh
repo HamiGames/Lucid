@@ -35,8 +35,8 @@ start_tor() {
   log "Starting Tor as debian-tor user..."
   # Run tor directly - we're already debian-tor user (no su-exec needed)
   tor -f /etc/tor/torrc &
-  echo $! > /run/tor.pid || true
-  log "Tor started with PID: $(cat /run/tor.pid 2>/dev/null || echo 'unknown')"
+  echo $! > "${TOR_DATA_DIR}/tor.pid" || true
+  log "Tor started with PID: $(cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo 'unknown')"
 }
 
 wait_for_file() {
@@ -200,8 +200,8 @@ main() {
   log "Tor proxy ready - waiting for process..."
   
   # Wait for tor process
-  if [ -f /run/tor.pid ]; then
-    wait "$(cat /run/tor.pid)" 2>/dev/null || true
+  if [ -f "${TOR_DATA_DIR}/tor.pid" ]; then
+    wait "$(cat "${TOR_DATA_DIR}/tor.pid")" 2>/dev/null || true
   else
     # Fallback: wait for any tor process
     wait || true

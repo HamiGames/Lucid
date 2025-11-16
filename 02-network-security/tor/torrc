@@ -1,15 +1,17 @@
 Log notice stdout
 SocksPort 0.0.0.0:9050
-ControlPort 0.0.0.0:9051
+ControlPort 127.0.0.1:9051
 CookieAuthentication 1
+CookieAuthFile /var/lib/tor/control_auth_cookie
 CookieAuthFileGroupReadable 1
 DataDirectory /var/lib/tor
 
-# Optional hidden-service mapping used by the entrypoint scripts
-HiddenServiceDir /var/lib/tor/hidden_service
-HiddenServiceVersion 3
-HiddenServicePort 80 lucid_api:8081
+# Hidden service is disabled during foundation phase to avoid parse errors and
+# to rely on ephemeral onions created by the controller.
+# Uncomment and adjust only when the upstream is ready and reachable.
+#HiddenServiceDir /var/lib/tor/hidden_service
+#HiddenServiceVersion 3
+#HiddenServicePort 80 127.0.0.1:8081
 
-# Allow the health-check/control helpers to read/write their state
 RunAsDaemon 0
 AvoidDiskWrites 0

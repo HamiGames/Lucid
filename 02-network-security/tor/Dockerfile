@@ -43,7 +43,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
  && install -d -o debian-tor -g debian-tor -m 755 /run \
  && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion \
- && install -d -o root       -g root       -m 755 /usr/local/bin
+ && install -d -o root       -g root       -m 755 /usr/local/bin \
+ && install -d -o root       -g root       -m 755 /etc/tor
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
@@ -107,7 +108,15 @@ COPY --from=tor-builder /lib/*/libselinux.so.1  /lib/
 COPY --from=tor-builder /lib/*/libcap.so.2      /lib/
 COPY --from=tor-builder /lib/*/libnsl.so.1      /lib/
 COPY --from=tor-builder /lib/*/libcrypt.so.1    /lib/
-COPY --from=tor-builder /lib*/ld-linux-*.so.2   /lib64/
+# Dynamic linker and arch-specific libs for ARM64 (required by coreutils/tor)
+COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+COPY --from=tor-builder /lib/aarch64-linux-gnu     /lib/aarch64-linux-gnu
+
+# Bring in /usr/lib to satisfy Debian dynamic deps (libselinux, libcap, etc.)
+COPY --from=tor-builder /usr/lib /usr/lib
+
+# Ensure /etc/tor directory exists in runtime and is traversable
+COPY --from=tor-builder /etc/tor /etc/tor
 
 # Tor data/config and system files
 COPY --from=tor-builder /usr/share/tor                                 /usr/share/tor
