@@ -92,7 +92,10 @@ COPY --from=mongodb-builder /lib/*/libz.so.1 /lib/
 COPY --from=mongodb-builder /lib/*/libsnappy.so.1 /lib/
 COPY --from=mongodb-builder /lib/*/libzstd.so.1 /lib/
 COPY --from=mongodb-builder /lib/*/liblzma.so.5 /lib/
-
+COPY --from=mongodb-builder /lib/*/libcurl.so.4 /lib/
+COPY --from=mongodb-builder /usr/lib/*/libcurl.so.4 /usr/lib/
+COPY --from=mongodb-builder /lib/*/libnghttp2.so.14 /lib/ || true
+COPY --from=mongodb-builder /usr/lib/*/libnghttp2.so.14 /usr/lib/ || true
 # Copy dynamic linker (required for ARM64 execution)
 COPY --from=mongodb-builder /lib*/ld-linux-*.so.2 /lib64/
 

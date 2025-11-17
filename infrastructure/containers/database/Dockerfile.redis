@@ -25,7 +25,24 @@ FROM gcr.io/distroless/base-debian12:nonroot
 COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/redis-server
 COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli
 COPY --from=builder /etc/redis.conf /etc/redis.conf
+# Copy required libraries (ARM64-compatible pattern)
+COPY --from=builder /lib/*/libc.so.6 /lib/
+COPY --from=builder /lib/*/libm.so.6 /lib/
+COPY --from=builder /lib/*/libpthread.so.0 /lib/
+COPY --from=builder /lib/*/libdl.so.2 /lib/
+COPY --from=builder /lib/*/librt.so.1 /lib/
+COPY --from=builder /lib/*/libcrypt.so.1 /lib/
+COPY --from=builder /lib/*/libz.so.1 /lib/
+COPY --from=builder /lib/*/libssl.so.3 /lib/
+COPY --from=builder /lib/*/libcrypto.so.3 /lib/
+COPY --from=builder /lib/*/libzstd.so.1 /lib/
+COPY --from=builder /lib/*/liblzma.so.5 /lib/
 
+# Copy dynamic linker for ARM64
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+
+# Copy arch-specific libraries
+COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 # Set environment variables
 ENV REDIS_PASSWORD=lucid_redis_password
 
