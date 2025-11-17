@@ -10,7 +10,7 @@ OUTDIR="/run/lucid/onion"
 [ -s "$COOKIE" ] || { echo "[hc] cookie missing or empty at $COOKIE"; exit 1; }
 
 if command -v xxd >/dev/null 2>&1; then
-  HEX="$(xxd -p "$COOKIE" | tr -d '\n')"
+  HEX="$(xxd -p "$COOKIE" | /bin/busybox tr -d '\n')"
 else
   HEX="$(hexdump -v -e '1/1 "%02x"' "$COOKIE")"
 fi
@@ -24,7 +24,7 @@ echo "$OUT" | /bin/busybox grep -q "^250-status/bootstrap-phase=" || { echo "[hc
 
 # Use busybox sed explicitly (distroless-compatible)
 PHASE="$(echo "$OUT" | /bin/busybox sed -n 's/^250-status\/bootstrap-phase=//p')"
-VERSION="$(echo "$OUT" | /bin/busybox sed -n 's/^250-version=//p' | tr -d '\r')"
+VERSION="$(echo "$OUT" | /bin/busybox sed -n 's/^250-version=//p' | /bin/busybox tr -d '\r')"
 
 echo "$PHASE" | /bin/busybox grep -q "PROGRESS=100" || { echo "[hc] not bootstrapped yet"; exit 1; }
 
