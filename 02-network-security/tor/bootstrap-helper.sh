@@ -118,13 +118,13 @@ CONTAINER_ID=$(docker run -d --rm \
 
 log "Container started: $CONTAINER_ID"
 
-# Wait for Tor to create required files
+# Wait for Tor to create required files (use busybox test)
 log "Waiting for Tor to create required files..."
 MAX_WAIT=120
 for i in $(seq 1 $MAX_WAIT); do
   ALL_EXIST=true
   for file in "${TOR_FILES[@]}"; do
-    if ! docker exec tor-bootstrap-temp test -e "${CONTAINER_TOR_DATA}/${file}" 2>/dev/null; then
+    if ! docker exec tor-bootstrap-temp /bin/busybox test -e "${CONTAINER_TOR_DATA}/${file}" 2>/dev/null; then
       ALL_EXIST=false
       break
     fi
@@ -148,8 +148,8 @@ for file in "${TOR_FILES[@]}"; do
   CONTAINER_FILE="${CONTAINER_TOR_DATA}/${file}"
   HOST_FILE="${HOST_TOR_DATA}/${file}"
   
-  # Check if file exists in container
-  if docker exec tor-bootstrap-temp test -e "$CONTAINER_FILE" 2>/dev/null; then
+  # Check if file exists in container (use busybox test)
+  if docker exec tor-bootstrap-temp /bin/busybox test -e "$CONTAINER_FILE" 2>/dev/null; then
     # Check if file exists on host
     if [ -e "$HOST_FILE" ]; then
       log "  ✓ $file (exists on host)"
@@ -189,7 +189,7 @@ for file in "${CRITICAL_FILES[@]}"; do
     log "Container logs:"
     docker logs --tail=50 tor-bootstrap-temp
     log "Container directory contents:"
-    docker exec tor-bootstrap-temp ls -la "$CONTAINER_TOR_DATA" 2>/dev/null || true
+    docker exec tor-bootstrap-temp /bin/busybox ls -la "$CONTAINER_TOR_DATA" 2>/dev/null || true
     docker rm -f tor-bootstrap-temp >/dev/null 2>&1 || true
     exit 1
   fi
