@@ -92,10 +92,24 @@ COPY --from=mongodb-builder /lib/*/libz.so.1 /lib/
 COPY --from=mongodb-builder /lib/*/libsnappy.so.1 /lib/
 COPY --from=mongodb-builder /lib/*/libzstd.so.1 /lib/
 COPY --from=mongodb-builder /lib/*/liblzma.so.5 /lib/
-COPY --from=mongodb-builder /lib/*/libcurl.so.4 /lib/
-COPY --from=mongodb-builder /usr/lib/*/libcurl.so.4 /usr/lib/
-COPY --from=mongodb-builder /lib/*/libnghttp2.so.14 /lib/ || true
-COPY --from=mongodb-builder /usr/lib/*/libnghttp2.so.14 /usr/lib/ || true
+# Copy libcurl (both symlink and actual file, preserve arch directory)
+COPY --from=mongodb-builder /lib/aarch64-linux-gnu/libcurl.so.4* /lib/aarch64-linux-gnu/
+COPY --from=mongodb-builder /usr/lib/aarch64-linux-gnu/libcurl.so.4* /usr/lib/aarch64-linux-gnu/
+
+# Copy curl dependencies (libnghttp2 - required by libcurl)
+COPY --from=mongodb-builder /lib/aarch64-linux-gnu/libnghttp2.so.14* /lib/aarch64-linux-gnu/
+COPY --from=mongodb-builder /usr/lib/aarch64-linux-gnu/libnghttp2.so.14* /usr/lib/aarch64-linux-gnu/
+
+# =============================================================================
+# STAGE 1.5: Optional Brotli Libraries (handle files that may not exist)
+# =============================================================================
+FROM mongodb-builder AS brotli-optional
+RUN mkdir -p /tmp/brotli-libs && \
+    sh -c 'for lib in /lib/aarch64-linux-gnu/libbrotlidec.so.1* /lib/aarch64-linux-gnu/libbrotlienc.so.1*; do \
+        if [ -f "$lib" ] || [ -L "$lib" ]; then \
+            cp "$lib" /tmp/brotli-libs/ 2>/dev/null || true; \
+        fi \
+    done' || true
 # Copy dynamic linker (required for ARM64 execution)
 COPY --from=mongodb-builder /lib*/ld-linux-*.so.2 /lib64/
 

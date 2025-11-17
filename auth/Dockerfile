@@ -131,7 +131,22 @@ WORKDIR /app
 # =============================================================================
 # Copy Python packages from builder (distroless compatible location)
 COPY --from=builder /root/.local /root/.local
+# Copy required system libraries for compiled Python packages (cryptography, etc.)
+# ARM64-compatible pattern
+COPY --from=builder /lib/*/libssl.so.3 /lib/
+COPY --from=builder /lib/*/libcrypto.so.3 /lib/
+COPY --from=builder /lib/*/libffi.so.8 /lib/
+COPY --from=builder /lib/*/libc.so.6 /lib/
+COPY --from=builder /lib/*/libz.so.1 /lib/
 
+# Copy dynamic linker for ARM64
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+
+# Copy arch-specific libraries directory (includes all ARM64 libs)
+COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+
+# Copy CA certificates (for HTTPS/SSL connections)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # Copy application code (using full paths from project root - build context is project root)
 COPY --chown=65532:65532 auth/api/ ./api/
 COPY --chown=65532:65532 auth/middleware/ ./middleware/
