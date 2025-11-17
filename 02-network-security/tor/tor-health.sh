@@ -45,7 +45,7 @@ mkdir -p "$OUTDIR"
 } > "$OUTDIR/tor_bootstrap.env"
 
 SUM_ESC=$(printf "%s" "$SUMMARY" | /bin/busybox sed 's/\"/\\\"/g')
-cat > "$OUTDIR/tor_bootstrap.json" <<EOF
+/bin/busybox cat > "$OUTDIR/tor_bootstrap.json" <<EOF
 {
   "version": "$VERSION",
   "progress": ${PROGRESS:-0},
