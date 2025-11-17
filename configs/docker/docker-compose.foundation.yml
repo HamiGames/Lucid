@@ -236,10 +236,7 @@ services:
       - redis-cache:/var/cache/redis
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          'redis-cli -a "$REDIS_PASSWORD" -p ${REDIS_PORT:-6379} ping',
-        ]
+        ["CMD", "/usr/local/bin/redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
