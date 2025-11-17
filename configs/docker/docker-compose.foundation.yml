@@ -379,9 +379,11 @@ volumes:
   tor-config:
     driver: local
     name: lucid-tor-config
+    external: true
   onion-state:
     driver: local
     name: lucid-onion-state
+    external: true
 
 networks:
   lucid-pi-network:
