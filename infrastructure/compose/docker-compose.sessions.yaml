@@ -306,7 +306,7 @@ services:
       - AUTH_SERVICE_PORT=8089
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
       - AUTH_SERVICE_HOST=172.20.0.14
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_auth?authSource=admin
       - REDIS_URL=redis://lucid-redis:6379/0
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
