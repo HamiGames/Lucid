@@ -251,7 +251,10 @@ services:
     ports:
       - "${ELASTICSEARCH_HTTP_PORT:-9200}:${ELASTICSEARCH_HTTP_PORT:-9200}"
       - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:${ELASTICSEARCH_TRANSPORT_PORT:-9300}"
-
+    environment:
+      - "ES_JAVA_OPTS=-Xms${ES_JAVA_HEAP:-256m} -Xmx${ES_JAVA_HEAP:-256m}"
+      - "discovery.type=single-node"
+      - "xpack.security.enabled=false"
     depends_on:
       tor-proxy:
         condition: service_started
