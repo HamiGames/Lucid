@@ -64,6 +64,7 @@
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
     
+    # Bundle MongoDB CLI tools (requires artifacts/mongodb/bin/* in build context)
     COPY artifacts/mongodb /tmp/mongodb-tools
     RUN mkdir -p /opt/lucid/tools/mongodb-tools \
         && cp -a /tmp/mongodb-tools/bin/. /opt/lucid/tools/mongodb-tools \
@@ -87,9 +88,6 @@
     COPY infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
     COPY infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
     RUN chmod +x /usr/local/bin/server-tools-bootstrap /usr/local/bin/service-mesh-bootstrap
-    
-    # Copy the rest of /opt/lucid tooling
-    COPY artifacts/mongodb /tmp/mongodb-tools
     
     # =============================================================================
     # Stage 2: Distroless runtime

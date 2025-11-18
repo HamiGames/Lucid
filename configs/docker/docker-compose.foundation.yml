@@ -107,6 +107,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-redis:
+        condition: service_healthy
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_SERVER_TOOLS_IP}
