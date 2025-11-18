@@ -115,7 +115,6 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_SERVER_TOOLS_IP}
-    command: ["/usr/local/bin/server-tools-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/server-tools:/var/log/server-tools:rw
     labels:
@@ -136,7 +135,6 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_SERVICE_MESH_IP}
-    command: ["/usr/local/bin/service-mesh-controller"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/var/log/service-mesh:rw
     depends_on:
@@ -253,17 +251,7 @@ services:
     ports:
       - "${ELASTICSEARCH_HTTP_PORT:-9200}:${ELASTICSEARCH_HTTP_PORT:-9200}"
       - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:${ELASTICSEARCH_TRANSPORT_PORT:-9300}"
-    entrypoint: []
-    command:
-      - "/usr/bin/java"
-      - "-Xms${ES_JAVA_HEAP:-256m}"
-      - "-Xmx${ES_JAVA_HEAP:-256m}"
-      - "-Des.network.host=0.0.0.0"
-      - "-Des.discovery.type=single-node"
-      - "-Des.path.data=/usr/share/elasticsearch/data"
-      - "-Des.path.logs=/usr/share/elasticsearch/logs"
-      - "-jar"
-      - "/usr/share/elasticsearch/lib/${ES_MAIN_JAR}"
+
     depends_on:
       tor-proxy:
         condition: service_started
