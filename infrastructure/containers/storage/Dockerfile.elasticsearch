@@ -60,6 +60,9 @@ COPY --from=elasticsearch-builder /usr/share/elasticsearch/ /usr/share/elasticse
 # Runtime tools for healthchecks / startup scripts
 COPY --from=elasticsearch-builder /usr/bin/curl /usr/bin/curl
 COPY --from=elasticsearch-builder /bin/bash /bin/bash
+# Copy dirname utility needed by elasticsearch startup script
+COPY --from=elasticsearch-builder /usr/bin/dirname /usr/bin/dirname
+COPY --from=elasticsearch-builder /usr/share/elasticsearch/bin/elasticsearch-cli /usr/share/elasticsearch/bin/elasticsearch-cli
 
 # Required shared libs (arch-agnostic wildcards)
 COPY --from=elasticsearch-builder /lib/*/libc.so.6 /lib/
