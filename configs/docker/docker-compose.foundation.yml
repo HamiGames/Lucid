@@ -47,7 +47,6 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_BASE_IP}
-    command: ["/usr/local/bin/lucid-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/base:/var/log/lucid-base:rw
     labels:
@@ -68,7 +67,6 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_BASE_PY_IP}
-    command: ["/usr/local/bin/python-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/python-base:/var/log/python-base:rw
     labels:
@@ -89,7 +87,6 @@ services:
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_BASE_JAVA_IP}
-    command: ["/usr/local/bin/java-base-bootstrap"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/java-base:/var/log/java-base:rw
     labels:
