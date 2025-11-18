@@ -137,6 +137,12 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+    command:
+      [
+        "python3",
+        "-c",
+        "import asyncio; from controller.main import main; asyncio.run(main())",
+      ]
     labels:
       - "lucid.service=service-mesh-controller"
       - "lucid.type=distroless"
