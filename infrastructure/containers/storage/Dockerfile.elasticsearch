@@ -1,26 +1,15 @@
 # LUCID ELASTICSEARCH - SPEC-1B Implementation
-# Professional multi-platform Elasticsearch for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
-# Security: LUCID-STRICT compliant with distroless base
-# Aligned with plan/constants/ requirements
-# Full-text search and indexing engine (lucid-elasticsearch) - Ports 9200, 9300
-# Image: pickme/lucid-elasticsearch:latest-arm64 (from essentials.md line 158, path_plan.md line 25)
-# Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
-# Configuration: All values from .env.foundation, .env.secrets via docker-compose (no hardcoded secrets)
-# Build Context: . (project root) - paths must be relative to project root
+# Distroless Elasticsearch image for ARM64 (Pi) deployments
 
-# =============================================================================
-# BUILD ARGUMENTS
-# =============================================================================
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 
-# =============================================================================
-# STAGE 1: Elasticsearch Builder (Elasticsearch 8.11.0 with Java 17)
-# =============================================================================
+# -----------------------------------------------------------------------------
+# Stage 1 – build helper (pull binaries + curl + bash)
+# -----------------------------------------------------------------------------
 FROM elasticsearch:8.11.0 AS elasticsearch-builder
 
 ARG BUILDPLATFORM
@@ -31,22 +20,20 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 USER root
 
-# Install curl for healthcheck and keep base libs updated
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# =============================================================================
-# STAGE 2: Distroless Runtime with Java 17
-# =============================================================================
+# -----------------------------------------------------------------------------
+# Stage 2 – distroless runtime
+# -----------------------------------------------------------------------------
 FROM gcr.io/distroless/java17-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=1.0.0
+ARG VERSION
 
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
@@ -55,7 +42,7 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Elasticsearch" \
-      org.opencontainers.image.description="Distroless Elasticsearch search engine for Lucid project" \
+      org.opencontainers.image.description="Distroless Elasticsearch search engine" \
       com.lucid.plane="ops" \
       com.lucid.service="elasticsearch" \
       com.lucid.platform="arm64" \
@@ -67,42 +54,35 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="foundation" \
       com.lucid.tor.compatible="true"
 
-# Copy Elasticsearch installation
+# Elasticsearch files
 COPY --from=elasticsearch-builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
 
-# Copy curl
+# Runtime tools for healthchecks / startup scripts
 COPY --from=elasticsearch-builder /usr/bin/curl /usr/bin/curl
-
-# Copy bash so bin/elasticsearch (#!/bin/bash) works
 COPY --from=elasticsearch-builder /bin/bash /bin/bash
 
-# Copy required libraries for curl/bash
+# Required shared libs (arch-agnostic wildcards)
 COPY --from=elasticsearch-builder /lib/*/libc.so.6 /lib/
 COPY --from=elasticsearch-builder /lib/*/libssl.so.3 /lib/
 COPY --from=elasticsearch-builder /lib/*/libcrypto.so.3 /lib/
 COPY --from=elasticsearch-builder /lib/*/libz.so.1 /lib/
-COPY --from=elasticsearch-builder /lib/x86_64-linux-gnu/libtinfo.so.6 /lib/libtinfo.so.6
-COPY --from=elasticsearch-builder /lib/x86_64-linux-gnu/libncurses.so.6 /lib/libncurses.so.6
+COPY --from=elasticsearch-builder /lib/*/libtinfo.so.6 /lib/
+COPY --from=elasticsearch-builder /lib/*/libncurses.so.6 /lib/
 COPY --from=elasticsearch-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy CA certificates
+# CA certificates
 COPY --from=elasticsearch-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy Elasticsearch config
+# Lucid-specific configuration
 COPY infrastructure/containers/storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
-# =============================================================================
-# RUNTIME CONFIG
-# =============================================================================
 ENV PATH=/usr/share/elasticsearch/bin:/usr/bin:/bin
-
 WORKDIR /usr/share/elasticsearch
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD ["/usr/bin/curl", "-f", "http://localhost:9200/_cluster/health"]
 
 EXPOSE 9200 9300
-
 USER 65532:65532
 
 ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch"]
