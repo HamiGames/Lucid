@@ -29,9 +29,9 @@ ARG TARGETPLATFORM
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true
 
-# Install curl for healthcheck and ensure bash exists in the builder (already present in base Debian)
-# Also keep ca-certificates current
 USER root
+
+# Install curl for healthcheck and keep base libs updated
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
@@ -67,38 +67,37 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="foundation" \
       com.lucid.tor.compatible="true"
 
-# Copy Elasticsearch installation from builder
+# Copy Elasticsearch installation
 COPY --from=elasticsearch-builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
 
-# Copy curl for healthcheck (distroless-compatible)
+# Copy curl
 COPY --from=elasticsearch-builder /usr/bin/curl /usr/bin/curl
 
-# Copy bash so bin/elasticsearch (#!/bin/bash) can run inside distroless
+# Copy bash so bin/elasticsearch (#!/bin/bash) works
 COPY --from=elasticsearch-builder /bin/bash /bin/bash
 
-# Copy required libraries for curl and bash
+# Copy required libraries for curl/bash
 COPY --from=elasticsearch-builder /lib/*/libc.so.6 /lib/
 COPY --from=elasticsearch-builder /lib/*/libssl.so.3 /lib/
 COPY --from=elasticsearch-builder /lib/*/libcrypto.so.3 /lib/
 COPY --from=elasticsearch-builder /lib/*/libz.so.1 /lib/
-COPY --from=elasticsearch-builder /lib/*/libncurses*.so.* /lib/ || true
-COPY --from=elasticsearch-builder /lib/*/libtinfo*.so.* /lib/ || true
+COPY --from=elasticsearch-builder /lib/x86_64-linux-gnu/libtinfo.so.6 /lib/libtinfo.so.6
+COPY --from=elasticsearch-builder /lib/x86_64-linux-gnu/libncurses.so.6 /lib/libncurses.so.6
 COPY --from=elasticsearch-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy CA certificates (required for SSL/TLS connections)
+# Copy CA certificates
 COPY --from=elasticsearch-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy Elasticsearch configuration file (relative to repo root)
+# Copy Elasticsearch config
 COPY infrastructure/containers/storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 # =============================================================================
-# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
+# RUNTIME CONFIG
 # =============================================================================
 ENV PATH=/usr/share/elasticsearch/bin:/usr/bin:/bin
 
 WORKDIR /usr/share/elasticsearch
 
-# Health check uses curl
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD ["/usr/bin/curl", "-f", "http://localhost:9200/_cluster/health"]
 
@@ -106,6 +105,5 @@ EXPOSE 9200 9300
 
 USER 65532:65532
 
-# Use the Elasticsearch launch script (now functional because /bin/bash exists)
 ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch"]
 CMD []
