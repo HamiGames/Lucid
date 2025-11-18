@@ -328,7 +328,7 @@ services:
           "CMD",
           "python3",
           "-c",
-          'import urllib.request; urllib.request.urlopen(f"http://localhost:{${AUTH_SERVICE_PORT:-8089}}/health").read()',
+          'import os, urllib.request; port = os.getenv("AUTH_SERVICE_PORT", "8089"); urllib.request.urlopen(f"http://localhost:{port}/health").read()',
         ]
       interval: 30s
       timeout: 10s
