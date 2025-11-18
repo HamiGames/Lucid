@@ -274,7 +274,7 @@ services:
           "CMD",
           "python3",
           "-c",
-          'import urllib.request; urllib.request.urlopen(f"http://localhost:{${ELASTICSEARCH_HTTP_PORT:-9200}}/_cluster/health").read()',
+          'import os, urllib.request; port = os.getenv("ELASTICSEARCH_HTTP_PORT", "9200"); urllib.request.urlopen(f"http://localhost:{port}/_cluster/health").read()',
         ]
       interval: 30s
       timeout: 10s
