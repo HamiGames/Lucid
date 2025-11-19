@@ -85,9 +85,8 @@
     # -----------------------------------------------------------------------------
     # Copy bootstrap scripts and ensure they are executable
     # -----------------------------------------------------------------------------
-    COPY infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
-    COPY infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
-    RUN chmod +x /usr/local/bin/server-tools-bootstrap /usr/local/bin/service-mesh-bootstrap
+    COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+    COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
     
     # =============================================================================
     # Stage 2: Distroless runtime
@@ -129,8 +128,8 @@
     COPY --from=builder /usr/lib /usr/lib
     COPY --from=builder /lib /lib
     COPY --from=builder /opt/lucid /opt/lucid
-    COPY infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
-    COPY infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
+    COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+    COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
     COPY --from=builder /etc/passwd /etc/passwd
     COPY --from=builder /etc/group /etc/group
     COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
