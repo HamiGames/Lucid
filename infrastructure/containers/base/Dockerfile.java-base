@@ -13,7 +13,7 @@ ARG JAVA_VERSION=17
 # =============================================================================
 # Stage 1: Java builder
 # =============================================================================
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jdk-jammy AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -30,36 +30,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Create minimal Java wait program for base container
-RUN echo 'public class Wait {' > /build/Wait.java && \
-    echo '    public static void main(String[] args) {' >> /build/Wait.java && \
-    echo '        if (args.length > 0) {' >> /build/Wait.java && \
-    echo '            try {' >> /build/Wait.java && \
-    echo '                ProcessBuilder pb = new ProcessBuilder(args);' >> /build/Wait.java && \
-    echo '                pb.inheritIO();' >> /build/Wait.java && \
-    echo '                Process p = pb.start();' >> /build/Wait.java && \
-    echo '                p.waitFor();' >> /build/Wait.java && \
-    echo '                System.exit(p.exitValue());' >> /build/Wait.java && \
-    echo '            } catch (Exception e) {' >> /build/Wait.java && \
-    echo '                System.err.println("Error: " + e.getMessage());' >> /build/Wait.java && \
-    echo '                System.exit(1);' >> /build/Wait.java && \
-    echo '            }' >> /build/Wait.java && \
-    echo '        } else {' >> /build/Wait.java && \
-    echo '            try {' >> /build/Wait.java && \
-    echo '                Thread.sleep(Long.MAX_VALUE);' >> /build/Wait.java && \
-    echo '            } catch (InterruptedException e) {' >> /build/Wait.java && \
-    echo '                Thread.currentThread().interrupt();' >> /build/Wait.java && \
-    echo '            }' >> /build/Wait.java && \
-    echo '        }' >> /build/Wait.java && \
-    echo '    }' >> /build/Wait.java && \
-    echo '}' >> /build/Wait.java
+RUN cat <<'EOF' >/build/Wait.java
+public class Wait {
+    public static void main(String[] args) {
+        if (args.length > 0) {
+            try {
+                ProcessBuilder pb = new ProcessBuilder(args);
+                pb.inheritIO();
+                Process p = pb.start();
+                p.waitFor();
+                System.exit(p.exitValue());
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+                System.exit(1);
+            }
+        } else {
+            try {
+                Thread.sleep(Long.MAX_VALUE);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}
+EOF
 
-# Compile the wait program
-RUN javac /build/Wait.java
+# Compile the wait program (Java bytecode is platform-independent)
+RUN javac /build/Wait.java && ls -la /build/Wait.class
 
 # =============================================================================
 # Stage 2: Distroless runtime
 # =============================================================================
-FROM gcr.io/distroless/java17-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -81,15 +83,12 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.tor.compatible="true"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH=/usr/local/bin:/usr/bin:/bin
 
-# Copy compiled wait program from builder
-COPY --from=builder --chmod=755 /build/Wait.class /app/Wait.class
+COPY --from=builder /build/Wait.class /app/Wait.class
 
 WORKDIR /app
 USER 65532:65532
 
-# Use Java to run the wait program
 ENTRYPOINT ["java", "Wait"]
 CMD []

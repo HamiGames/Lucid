@@ -50,6 +50,8 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-redis:
+        condition: service_healthy
 
   blockchain-engine:
     image: pickme/lucid-blockchain-engine:latest-arm64
@@ -100,6 +102,8 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
 
   service-mesh:
     image: pickme/lucid-service-mesh-controller:latest-arm64
@@ -200,6 +204,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
 
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64
@@ -248,6 +256,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
 
   data-chain:
     image: pickme/lucid-data-chain:latest-arm64
@@ -296,7 +308,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
-
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
   lucid-tunnel-tools:
     image: pickme/lucid-tunnel-tools:latest-arm64
     container_name: lucid-tunnel-tools

@@ -90,6 +90,8 @@ if __name__ == "__main__":
         sys.exit(1)
 EOF
 
+RUN ls -la /opt/lucid-base/scripts/lucid_base_bootstrap.py
+
 FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
@@ -126,5 +128,5 @@ COPY --from=builder /opt/lucid-base /opt/lucid-base
 WORKDIR /app
 USER 65532:65532
 
-ENTRYPOINT ["/opt/venv/bin/python", "/opt/lucid-base/scripts/lucid_base_bootstrap.py"]
+ENTRYPOINT ["python3", "/opt/lucid-base/scripts/lucid_base_bootstrap.py"]
 CMD []
