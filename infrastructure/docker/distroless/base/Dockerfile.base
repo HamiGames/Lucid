@@ -49,8 +49,46 @@ COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requiremen
 RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --prefer-binary -r requirements-minimal.txt
 
-# Reserve scripts directory for Pi-mounted tor spin-up helpers
 RUN mkdir -p /opt/lucid-base/scripts
+
+RUN cat <<'EOF' > /opt/lucid-base/scripts/lucid_base_bootstrap.py
+#!/usr/bin/env python3
+import os
+import sys
+import time
+from pathlib import Path
+
+LOG_DIR = Path(os.getenv("LUCID_BASE_LOG_DIR", "/var/log/lucid-base"))
+LOG_FILE = LOG_DIR / "bootstrap.log"
+
+
+def log(level: str, message: str) -> None:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    line = f"[lucid-base][{level}] {message}\n"
+    with LOG_FILE.open("a", encoding="utf-8") as handle:
+        handle.write(line)
+    sys.stdout.write(line)
+    sys.stdout.flush()
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if args:
+        log("INFO", f"Custom command received: {' '.join(args)}")
+        os.execvp(args[0], args)
+
+    log("INFO", "Lucid base runtime ready. Sleeping indefinitely.")
+    while True:
+        time.sleep(3600)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        log("ERROR", f"Bootstrap failure: {exc}")
+        sys.exit(1)
+EOF
 
 FROM gcr.io/distroless/python3-debian12:latest
 
@@ -84,11 +122,9 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/lucid-base /opt/lucid-base
-COPY infrastructure/docker/distroless/base/scripts/lucid-base-bootstrap.sh /usr/local/bin/lucid-base-bootstrap
 
 WORKDIR /app
 USER 65532:65532
 
-
-ENTRYPOINT ["/usr/local/bin/lucid-base-bootstrap"]
+ENTRYPOINT ["/opt/venv/bin/python", "/opt/lucid-base/scripts/lucid_base_bootstrap.py"]
 CMD []
