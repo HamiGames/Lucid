@@ -52,6 +52,10 @@ services:
         condition: service_started
       lucid-redis:
         condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
 
   blockchain-engine:
     image: pickme/lucid-blockchain-engine:latest-arm64
@@ -104,6 +108,8 @@ services:
         condition: service_started
       lucid-mongodb:
         condition: service_healthy
+      lucid-redis:
+        condition: service_started
 
   service-mesh:
     image: pickme/lucid-service-mesh-controller:latest-arm64
@@ -153,6 +159,10 @@ services:
       - "lucid.cluster=core"
     depends_on:
       tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
         condition: service_started
 
   session-anchoring:
@@ -312,6 +322,7 @@ services:
         condition: service_healthy
       lucid-redis:
         condition: service_healthy
+
   lucid-tunnel-tools:
     image: pickme/lucid-tunnel-tools:latest-arm64
     container_name: lucid-tunnel-tools
