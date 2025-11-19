@@ -137,9 +137,9 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+    entrypoint: ["python3"]
     command:
       [
-        "python3",
         "-c",
         "import asyncio; from controller.main import main; asyncio.run(main())",
       ]
