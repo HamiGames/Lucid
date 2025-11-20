@@ -61,7 +61,7 @@ RUN javac /build/Wait.java && ls -la /build/Wait.class
 # =============================================================================
 # Stage 2: Distroless runtime
 # =============================================================================
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
+FROM gcr.io/distroless/java17-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF

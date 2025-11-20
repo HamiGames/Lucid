@@ -50,6 +50,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
 
   session-recorder:
     image: pickme/lucid-session-recorder:latest-arm64
@@ -102,6 +106,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
 
   session-processor:
     image: pickme/lucid-chunk-processor:latest-arm64
@@ -153,7 +161,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
-
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
   session-storage:
     image: pickme/lucid-session-storage:latest-arm64
     container_name: session-storage
@@ -204,7 +215,12 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
-
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      lucid-elasticsearch:
+        condition: service_started
   session-api:
     image: pickme/lucid-session-api:latest-arm64
     container_name: session-api
@@ -257,6 +273,14 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+      blockchain-engine:
         condition: service_started
 
   rdp-server-manager:
@@ -313,6 +337,14 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+      lucid-auth-service:
+        condition: service_healthy
 
   rdp-xrdp:
     image: pickme/lucid-rdp-xrdp:latest-arm64
@@ -362,6 +394,12 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      rdp-server-manager:
         condition: service_started
 
   rdp-controller:
@@ -413,7 +451,12 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
-
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      rdp-server-manager:
+        condition: service_started
   rdp-monitor:
     image: pickme/lucid-rdp-monitor:latest-arm64
     container_name: rdp-monitor
@@ -462,7 +505,10 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
-
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
   node-management:
     image: pickme/lucid-node-management:latest-arm64
     container_name: node-management
@@ -513,6 +559,14 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+      blockchain-engine:
         condition: service_started
 
 volumes:
