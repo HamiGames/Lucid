@@ -378,6 +378,8 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
+      api-gateway:
+        condition: service_started
 
 networks:
   lucid-pi-network:
