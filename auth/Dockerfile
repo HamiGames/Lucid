@@ -7,9 +7,8 @@
 # Image: pickme/lucid-auth-service:latest-arm64 (from essentials.md line 172, path_plan.md line 26)
 # Tor-proxy compatible: Uses CMD (no ENTRYPOINT), allows command override in compose
 # Configuration: All values from .env.foundation, .env.secrets via docker-compose (no hardcoded secrets)
-# Build Context: . (project root) - paths must be relative to project root
+# Build Context: . (project root)
 # Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
-# Env Files: /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation, .env.secrets
 
 # =============================================================================
 # BUILD ARGUMENTS
@@ -19,14 +18,16 @@ ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
+ARG CRYPTOGRAPHY_VERSION=41.0.7
 
 # =============================================================================
-# STAGE 1: Builder - Install dependencies and compile packages
+# STAGE 1: Builder
 # =============================================================================
 FROM python:3.11-slim AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
+ARG CRYPTOGRAPHY_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -49,15 +50,19 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install the dedicated authentication-service requirements (includes uvicorn)
 COPY auth/requirements.authentication-service.txt ./requirements.txt
-RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
+
+# Patch unavailable cryptography pin if necessary, then install deps
+RUN if grep -q "cryptography==41.0.8" requirements.txt; then \
+        sed -i "s/cryptography==41.0.8/cryptography==${CRYPTOGRAPHY_VERSION}/" requirements.txt; \
+    fi && \
+    pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --user --no-cache-dir -r requirements.txt
 
 RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography; print('✅ critical packages installed')"
 
 # =============================================================================
-# STAGE 2: Runtime - Distroless Python base
+# STAGE 2: Distroless runtime
 # =============================================================================
 FROM gcr.io/distroless/python3-debian12:latest
 
