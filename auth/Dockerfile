@@ -77,7 +77,8 @@ RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
     fi
 
 # Verify packages are installed and verify directory structure
-RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography; print('✅ critical packages installed')" && \
+# Verify packages are installed and verify directory structure
+RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58; print('✅ critical packages installed')" && \
     python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \

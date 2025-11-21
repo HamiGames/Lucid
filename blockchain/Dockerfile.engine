@@ -3,6 +3,8 @@
 # Distroless FastAPI service providing core blockchain engine APIs
 # Build context: repository root
 
+# syntax=docker/dockerfile:1.5
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
@@ -54,6 +56,21 @@ COPY blockchain/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
+# Create placeholder files in /root/.local directories (ensures directory structure exists)
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin && \
+    echo "" > /root/.local/lib/python3.11/site-packages/.keep && \
+    echo "" > /root/.local/bin/.keep && \
+    chown -R 65532:65532 /root/.local
+
+# Verify packages were installed
+RUN python3 -c "import uvicorn; import fastapi; import pydantic; print('Packages verified')" || \
+    (echo "ERROR: Required packages not installed" && ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && exit 1)
+
+# Verify directory structure exists
+RUN test -d /root/.local/lib/python3.11/site-packages || \
+    (echo "ERROR: /root/.local/lib/python3.11/site-packages does not exist" && exit 1)
+
 COPY blockchain/api/              ./api/
 COPY blockchain/core/             ./core/
 COPY blockchain/utils/            ./utils/
@@ -98,7 +115,17 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-COPY --from=builder /root/.local /root/.local
+# Create directory structure with placeholder files first (ensures directories exist before copying)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages/.keep /root/.local/lib/python3.11/site-packages/.keep
+COPY --from=builder --chown=65532:65532 /root/.local/bin/.keep /root/.local/bin/.keep
+
+# Now copy the actual packages (this will overwrite the .keep files with actual packages)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /root/.local/bin
+
+# Verify packages were copied (this will fail the build if packages are missing)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/root/.local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; print('Packages verified in runtime stage')"]
+
 COPY --chown=65532:65532 --from=builder /build/api           /app/api
 COPY --chown=65532:65532 --from=builder /build/core          /app/core
 COPY --chown=65532:65532 --from=builder /build/utils         /app/utils
