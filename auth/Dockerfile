@@ -99,9 +99,9 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="auth-service" \
       com.lucid.cluster="foundation"
 
-ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     SERVICE_NAME=lucid-auth-service
 
 WORKDIR /app
@@ -110,10 +110,8 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-# Copy Python packages - copy the entire .local directory structure
-# This ensures all subdirectories (lib/python3.11/site-packages, bin, etc.) are preserved
-COPY --from=builder /root/.local/lib /root/.local/lib
-COPY --from=builder /root/.local/bin /root/.local/bin
+# Copy Python packages to /usr/local (workaround for /root/.local empty directory issue)
+COPY --from=builder /root/.local /usr/local
 
 # Copy required libraries (ARM64-specific paths)
 COPY --from=builder /lib/aarch64-linux-gnu/libssl.so.3 /lib/libssl.so.3
