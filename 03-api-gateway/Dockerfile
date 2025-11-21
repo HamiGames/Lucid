@@ -58,7 +58,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 WORKDIR /build
 
 # Create placeholder files in system directories (ensures they're baked into image)
-RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+RUN mkdir -p /var/run /var/lib && \
+    echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 

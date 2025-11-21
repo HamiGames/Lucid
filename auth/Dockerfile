@@ -14,7 +14,7 @@ ARG BUILDPLATFORM=linux/amd64
 ARG CRYPTOGRAPHY_VERSION=41.0.7
 ARG PROTOBUF_VERSION=4.25.1
 
-FROM python:3.11-slim AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -74,7 +74,7 @@ RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
 
 RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography; print('✅ critical packages installed')"
 
-FROM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -101,13 +101,21 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 COPY --from=builder /root/.local /root/.local
-COPY --from=builder /lib/*/libssl.so.3 /lib/
-COPY --from=builder /lib/*/libcrypto.so.3 /lib/
-COPY --from=builder /lib/*/libffi.so.8 /lib/
-COPY --from=builder /lib/*/libc.so.6 /lib/
-COPY --from=builder /lib/*/libz.so.1 /lib/
-COPY --from=builder /lib/ld-linux-*.so.* /lib/
-COPY --from=builder /lib/*-linux-gnu /lib/
+
+# Copy required libraries (ARM64-specific paths)
+COPY --from=builder /lib/aarch64-linux-gnu/libssl.so.3 /lib/libssl.so.3
+COPY --from=builder /lib/aarch64-linux-gnu/libcrypto.so.3 /lib/libcrypto.so.3
+COPY --from=builder /lib/aarch64-linux-gnu/libffi.so.8 /lib/libffi.so.8
+COPY --from=builder /lib/aarch64-linux-gnu/libc.so.6 /lib/libc.so.6
+COPY --from=builder /lib/aarch64-linux-gnu/libz.so.1 /lib/libz.so.1
+
+# Copy dynamic linker for ARM64
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+
+# Copy arch-specific libraries directory
+COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+
+# Copy CA certificates
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 COPY --chown=65532:65532 auth/api/ ./api/
