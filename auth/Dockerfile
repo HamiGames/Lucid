@@ -65,6 +65,10 @@ RUN if grep -q "cryptography==41.0.7" requirements.base.txt || grep -q "cryptogr
         sed -i "s/cryptography==41.0.8/cryptography==${CRYPTOGRAPHY_VERSION}/g" requirements.hardware.txt; \
     fi
 
+# Ensure directory structure exists before pip install
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
+
 RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --user --no-cache-dir protobuf==${PROTOBUF_VERSION} && \
     pip install --user --no-cache-dir -r requirements.base.txt && \
@@ -72,7 +76,13 @@ RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
         pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt; \
     fi
 
-RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography; print('✅ critical packages installed')"
+# Verify packages are installed and verify directory structure
+RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography; print('✅ critical packages installed')" && \
+    python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
@@ -100,7 +110,10 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-COPY --from=builder /root/.local /root/.local
+# Copy Python packages - copy the entire .local directory structure
+# This ensures all subdirectories (lib/python3.11/site-packages, bin, etc.) are preserved
+COPY --from=builder /root/.local/lib /root/.local/lib
+COPY --from=builder /root/.local/bin /root/.local/bin
 
 # Copy required libraries (ARM64-specific paths)
 COPY --from=builder /lib/aarch64-linux-gnu/libssl.so.3 /lib/libssl.so.3
