@@ -42,6 +42,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 
+# Create placeholder files in system directories (ensures they're baked into image)
+RUN echo "" > /var/run/.keep && echo "" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
@@ -90,6 +94,10 @@ ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
 
 WORKDIR /app
+
+# Copy runtime directories from builder
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 COPY --from=builder /root/.local /root/.local
 COPY --chown=65532:65532 --from=builder /build/data          /app/data

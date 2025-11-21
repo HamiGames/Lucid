@@ -40,6 +40,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Set working directory
 WORKDIR /app
 
+# Create placeholder files in system directories (ensures they're baked into image)
+RUN echo "" > /var/run/.keep && echo "" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
 # Set pip environment variables for optimization
 ENV PIP_PREFER_BINARY=1
 
@@ -95,6 +99,10 @@ COPY --from=builder --chown=65532:65532 /app /app
 
 # Set working directory
 WORKDIR /app
+
+# Copy runtime directories from builder
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
 ENV TZ=UTC \

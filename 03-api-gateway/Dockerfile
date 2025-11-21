@@ -24,7 +24,7 @@ ARG PYTHON_VERSION=3.11
 # =============================================================================
 # STAGE 1: Builder - Install dependencies and compile packages
 # =============================================================================
-FROM python:3.11-slim AS builder
+FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
 
 # Set build arguments
 ARG BUILDPLATFORM
@@ -57,10 +57,31 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Set working directory
 WORKDIR /build
 
+# Create placeholder files in system directories (ensures they're baked into image)
+RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+# Create placeholder files for application directories (ensures COPY succeeds even if directories are empty)
+RUN mkdir -p ./api ./gateway ./scripts ./utils ./middleware ./endpoints && \
+    cat <<'EOF' > ./middleware/__init__.py
+"""
+Lucid API Gateway - Middleware Package
+Shared middleware utilities and configurations.
+
+This package provides middleware components for the Lucid API Gateway.
+Currently this is a placeholder for future shared middleware implementations.
+
+Note: Application-specific middleware is located in api/app/middleware/
+"""
+
+__version__ = "1.0.0"
+
+__all__ = []
+EOF
+
 # Set pip environment variables for optimization
-ENV PIP_NO_CACHE_DIR=1
 ENV PIP_PREFER_BINARY=1
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Upgrade pip to latest version with cache mount
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -70,10 +91,16 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Build context: project root, so use 03-api-gateway/ prefix
 COPY 03-api-gateway/requirements.txt ./requirements.txt
 
-# Install Python dependencies to user directory for distroless compatibility
+# Build wheels from requirements (pywheel pattern for better caching and faster installs)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --user --no-cache-dir -r requirements.txt
+    --mount=type=cache,target=/root/.cache/pip/wheels \
+    pip wheel -r requirements.txt -w ./wheels
+
+# Install Python dependencies from wheels (faster install, better caching, no network dependency)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/pip/wheels \
+    pip install --user --no-index --find-links ./wheels -r requirements.txt && \
+    rm -rf ./wheels
 
 # Copy source code (only existing directories - entrypoints/ does not exist)
 COPY 03-api-gateway/api/ ./api/
@@ -86,7 +113,7 @@ COPY 03-api-gateway/endpoints/ ./endpoints/
 # =============================================================================
 # STAGE 2: Runtime - Distroless Python base
 # =============================================================================
-FROM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 # Build arguments
 ARG BUILD_DATE
@@ -143,6 +170,10 @@ ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
 # Working Directory Setup
 # =============================================================================
 WORKDIR /app
+
+# Copy runtime directories from builder
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # =============================================================================
 # Copy Files from Builder Stage

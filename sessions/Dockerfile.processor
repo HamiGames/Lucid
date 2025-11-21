@@ -45,6 +45,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 
+# Create placeholder files in system directories (ensures they're baked into image)
+RUN echo "" > /var/run/.keep && echo "" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip wheel setuptools
 

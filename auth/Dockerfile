@@ -30,6 +30,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
+# Create placeholder files in system directories (ensures they're baked into image)
+RUN echo "LUCID_AUTH_SERVICE_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_AUTH_SERVICE_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gcc g++ make libffi-dev libssl-dev libpq-dev ca-certificates \
@@ -90,6 +95,10 @@ ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
     SERVICE_NAME=lucid-auth-service
 
 WORKDIR /app
+
+# Copy runtime directories from builder
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 COPY --from=builder /root/.local /root/.local
 COPY --from=builder /lib/*/libssl.so.3 /lib/
