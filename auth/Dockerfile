@@ -110,20 +110,14 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-# Copy Python packages to /usr/local (workaround for /root/.local empty directory issue)
-COPY --from=builder /root/.local /usr/local
-
-# Copy required libraries (ARM64-specific paths)
-COPY --from=builder /lib/aarch64-linux-gnu/libssl.so.3 /lib/libssl.so.3
-COPY --from=builder /lib/aarch64-linux-gnu/libcrypto.so.3 /lib/libcrypto.so.3
-COPY --from=builder /lib/aarch64-linux-gnu/libffi.so.8 /lib/libffi.so.8
-COPY --from=builder /lib/aarch64-linux-gnu/libc.so.6 /lib/libc.so.6
-COPY --from=builder /lib/aarch64-linux-gnu/libz.so.1 /lib/libz.so.1
+# Copy Python packages to /usr/local (SAME PATTERN AS ELASTICSEARCH - exact directory structure)
+COPY --from=builder /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /root/.local/bin /usr/local/bin
 
 # Copy dynamic linker for ARM64
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
-# Copy arch-specific libraries directory
+# Copy arch-specific libraries directory (SAME PATTERN AS ELASTICSEARCH - entire directory, not individual files)
 COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 
 # Copy CA certificates
