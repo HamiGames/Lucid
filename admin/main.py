@@ -29,8 +29,9 @@ try:
     project_root = get_safe_project_root()
     sys.path.append(project_root)
 except Exception as e:
-    logger.error(f"Failed to resolve project root: {e}")
+    logging.error(f"Failed to resolve project root: {e}")
     sys.exit(1)
+
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
