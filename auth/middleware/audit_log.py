@@ -11,7 +11,7 @@ import json
 from typing import Optional, Dict, Any
 import time
 
-from config import settings
+from ..config import settings
 
 logger = logging.getLogger(__name__)
 

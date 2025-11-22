@@ -24,7 +24,13 @@ import uvicorn
 
 from auth.user_manager import UserManager, UserRole, KYCStatus
 from auth.hardware_wallet import HardwareWalletManager, WalletType
-from admin.system.admin_controller import AdminController, AdminRole
+
+# Optional admin import - only if admin module is available
+try:
+    from admin.system.admin_controller import AdminController, AdminRole
+except ImportError:
+    AdminController = None
+    AdminRole = None
 
 # Configure logging
 logging.basicConfig(
@@ -86,7 +92,11 @@ class AuthenticationService:
             # Initialize managers
             self.user_manager = UserManager(db)
             self.hardware_wallet_manager = HardwareWalletManager()
-            self.admin_controller = AdminController()
+            if AdminController is not None:
+                self.admin_controller = AdminController()
+            else:
+                self.admin_controller = None
+                logger.warning("AdminController not available - admin features disabled")
             
             # Setup routes
             self._setup_routes()

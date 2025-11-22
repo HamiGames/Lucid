@@ -76,9 +76,13 @@ RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
         pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt; \
     fi
 
+# Create placeholder files with actual content (ensures directory structure is locked in)
+RUN echo "LUCID_AUTH_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_AUTH_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
 # Verify packages are installed and verify directory structure
-# Verify packages are installed and verify directory structure
-RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58; print('✅ critical packages installed')" && \
+RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58, async_timeout; print('✅ critical packages installed')" && \
     python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -112,8 +116,12 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Copy Python packages to /usr/local (SAME PATTERN AS ELASTICSEARCH - exact directory structure)
-COPY --from=builder /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /root/.local/bin /usr/local/bin
+# Directory already populated with packages + marker files from builder stage
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+
+# Verify packages were copied (this will fail the build if packages are missing)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; print('Packages verified in runtime stage')"]
 
 # Copy dynamic linker for ARM64
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1

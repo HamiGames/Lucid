@@ -29,15 +29,37 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 
-# Create placeholder files in system directories (ensures they're baked into image)
-RUN echo "" > /var/run/.keep && echo "" > /var/lib/.keep && \
+# Create placeholder files in system directories with actual content (ensures they're baked into image)
+RUN echo "LUCID_RDP_SERVER_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_RDP_SERVER_MANAGER_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 COPY RDP/requirements.server-manager.txt ./requirements.txt
 
-RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --upgrade pip setuptools wheel \
-    && /opt/venv/bin/pip install -r requirements.txt
+# Create virtual environment
+RUN python -m venv /opt/venv
+
+# Ensure directory structure exists before pip install
+RUN mkdir -p /opt/venv/lib/python3.11/site-packages && \
+    mkdir -p /opt/venv/bin
+
+# Install packages in venv
+RUN /opt/venv/bin/pip install --upgrade pip setuptools wheel && \
+    /opt/venv/bin/pip install -r requirements.txt
+
+# Create marker files with actual content (ensures directory structure is locked in)
+# CRITICAL: Must be AFTER pip install, with actual content (not empty)
+RUN echo "LUCID_RDP_SERVER_MANAGER_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_RDP_SERVER_MANAGER_BINARIES_INSTALLED_$(date +%s)" > /opt/venv/bin/.lucid-marker && \
+    chown -R 65532:65532 /opt/venv
+
+# Verify packages are installed and verify directory structure
+RUN /opt/venv/bin/python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
+    /opt/venv/bin/python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /opt/venv/lib/python3.11/site-packages && \
+    echo "Directory exists: /opt/venv/lib/python3.11/site-packages" && \
+    ls -la /opt/venv/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /opt/venv/lib/python3.11/site-packages/ | wc -l)"
 
 COPY RDP/server-manager/     ./app/server_manager/
 COPY RDP/server/             ./app/server/
@@ -75,8 +97,17 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     REDIS_URL=redis://lucid-redis:6379/0 \
     HEALTHCHECK_TIMEOUT=5
 
-COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /build/app /opt/lucid/app
+# Copy runtime directories from builder (directory already populated with .keep files)
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+
+# Copy entire venv (directory already populated with packages + marker files from builder stage)
+COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
+
+# Verify packages were copied (this will fail the build if packages are missing)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+
+COPY --from=builder --chown=65532:65532 /build/app /opt/lucid/app
 
 WORKDIR /opt/lucid/app
 EXPOSE 8081 8090

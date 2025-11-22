@@ -57,7 +57,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Set working directory
 WORKDIR /build
 
-# Create placeholder files in system directories (ensures they're baked into image)
+# Create placeholder files in system directories with actual content (ensures they're baked into image)
 RUN mkdir -p /var/run /var/lib && \
     echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
@@ -92,6 +92,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Build context: project root, so use 03-api-gateway/ prefix
 COPY 03-api-gateway/requirements.txt ./requirements.txt
 
+# Ensure directory structure exists before pip install
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
+
 # Build wheels from requirements (pywheel pattern for better caching and faster installs)
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
@@ -102,6 +106,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     pip install --user --no-index --find-links ./wheels -r requirements.txt && \
     rm -rf ./wheels
+
+# Create marker files with actual content (ensures directory structure is locked in)
+# CRITICAL: Must be AFTER pip install, with actual content (not empty)
+RUN echo "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Verify packages are installed and verify directory structure
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx; print('✅ critical packages installed')" && \
+    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Copy source code (only existing directories - entrypoints/ does not exist)
 COPY 03-api-gateway/api/ ./api/
@@ -172,15 +190,19 @@ ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
 # =============================================================================
 WORKDIR /app
 
-# Copy runtime directories from builder
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
-
 # =============================================================================
 # Copy Files from Builder Stage
 # =============================================================================
-# Copy Python packages from builder (distroless compatible location)
-COPY --from=builder /root/.local /root/.local
+# Copy runtime directories from builder (directory already populated with .keep files)
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+
+# Copy Python packages (directory already populated with packages + marker files from builder stage)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /root/.local/bin
+
+# Verify packages were copied (this will fail the build if packages are missing)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/root/.local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
 # Copy application code (only directories that were copied in builder stage)
 COPY --chown=65532:65532 --from=builder /build/api /app/api

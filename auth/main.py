@@ -28,7 +28,7 @@ except ImportError as e:
 from middleware import AuthMiddleware, RateLimitMiddleware, AuditLogMiddleware
 from authentication_service import AuthenticationService
 from user_manager import UserManager
-from hardware_wallet import HardwareWalletService
+from hardware_wallet import HardwareWalletManager
 from session_manager import SessionManager
 from permissions import RBACManager
 
@@ -70,15 +70,10 @@ app.add_middleware(
 
 # Initialize services
 user_manager = UserManager()
-hardware_wallet_service = HardwareWalletService()
+hardware_wallet_service = HardwareWalletManager()
 session_manager = SessionManager()
 rbac_manager = RBACManager()
-auth_service = AuthenticationService(
-    user_manager=user_manager,
-    hardware_wallet_service=hardware_wallet_service,
-    session_manager=session_manager,
-    rbac_manager=rbac_manager
-)
+auth_service = AuthenticationService()
 
 # Add custom middleware
 app.add_middleware(AuditLogMiddleware)
