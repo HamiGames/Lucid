@@ -68,7 +68,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r requirements.txt
 
 # Create marker files with actual content (ensures directory structure is locked in)
-# CRITICAL: Must be AFTER pip install, with actual content (not empty)
 RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
@@ -77,9 +76,9 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/
 RUN python3 -c "import grpcio, aiohttp, python_consul, pydantic, cryptography; print('✅ critical packages installed')" && \
     python3 -c "import grpcio; print('grpcio location:', grpcio.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    echo 'Directory exists: /root/.local/lib/python3.11/site-packages' && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
+    echo 'Package count:' $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)
 
 # Copy service mesh controller source code
 COPY controller/ ./controller/
@@ -87,6 +86,14 @@ COPY sidecar/ ./sidecar/
 COPY discovery/ ./discovery/
 COPY communication/ ./communication/
 COPY security/ ./security/
+
+# Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
+RUN echo "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /app/controller/.lucid-source-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > /app/sidecar/.lucid-sidecar-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > /app/discovery/.lucid-discovery-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > /app/communication/.lucid-communication-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > /app/security/.lucid-security-marker && \
+    chown -R 65532:65532 /app
 
 # Build the application
 RUN python -m compileall -b .
@@ -110,8 +117,9 @@ LABEL maintainer="Lucid Development Team" \
       phase="2" \
       cluster="10-cross-cluster-integration"
 
-# Copy application code
+# Copy application code and verify controller module exists
 COPY --from=builder --chown=65532:65532 /app /app
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
 
 # Set working directory
 WORKDIR /app
@@ -121,12 +129,11 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
-# Note: controller uses /usr/local path structure (different from blockchain services)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'grpcio')), 'grpcio not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'python_consul')) or os.path.exists(os.path.join(site_packages, 'consul')), 'consul package not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import sys, os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'grpcio')), 'grpcio not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'python_consul')) or os.path.exists(os.path.join(site_packages, 'consul')), 'consul package not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
 ENV TZ=UTC \
