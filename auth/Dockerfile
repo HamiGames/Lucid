@@ -89,6 +89,29 @@ RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
+# Copy auth source code to builder stage
+COPY auth/api/ ./auth/api/
+COPY auth/middleware/ ./auth/middleware/
+COPY auth/models/ ./auth/models/
+COPY auth/utils/ ./auth/utils/
+COPY auth/__init__.py ./auth/__init__.py
+COPY auth/main.py ./auth/main.py
+COPY auth/config.py ./auth/config.py
+COPY auth/authentication_service.py ./auth/authentication_service.py
+COPY auth/user_manager.py ./auth/user_manager.py
+COPY auth/hardware_wallet.py ./auth/hardware_wallet.py
+COPY auth/session_manager.py ./auth/session_manager.py
+COPY auth/permissions.py ./auth/permissions.py
+COPY auth/healthcheck.py ./auth/healthcheck.py
+
+# Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
+RUN echo "LUCID_AUTH_SOURCE_API_$(date +%s)" > ./auth/api/.lucid-api-marker && \
+    echo "LUCID_AUTH_SOURCE_MIDDLEWARE_$(date +%s)" > ./auth/middleware/.lucid-middleware-marker && \
+    echo "LUCID_AUTH_SOURCE_MODELS_$(date +%s)" > ./auth/models/.lucid-models-marker && \
+    echo "LUCID_AUTH_SOURCE_UTILS_$(date +%s)" > ./auth/utils/.lucid-utils-marker && \
+    echo "LUCID_AUTH_MAIN_$(date +%s)" > ./auth/main.py.lucid-marker && \
+    chown -R 65532:65532 ./auth
+
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
@@ -132,19 +155,23 @@ COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 # Copy CA certificates
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-COPY --chown=65532:65532 auth/api/ ./api/
-COPY --chown=65532:65532 auth/middleware/ ./middleware/
-COPY --chown=65532:65532 auth/models/ ./models/
-COPY --chown=65532:65532 auth/utils/ ./utils/
-COPY --chown=65532:65532 auth/__init__.py ./__init__.py
-COPY --chown=65532:65532 auth/main.py ./main.py
-COPY --chown=65532:65532 auth/config.py ./config.py
-COPY --chown=65532:65532 auth/authentication_service.py ./authentication_service.py
-COPY --chown=65532:65532 auth/user_manager.py ./user_manager.py
-COPY --chown=65532:65532 auth/hardware_wallet.py ./hardware_wallet.py
-COPY --chown=65532:65532 auth/session_manager.py ./session_manager.py
-COPY --chown=65532:65532 auth/permissions.py ./permissions.py
-COPY --chown=65532:65532 auth/healthcheck.py ./healthcheck.py
+# Copy auth source code from builder (directory already populated with source + marker files)
+COPY --from=builder --chown=65532:65532 /build/auth/api ./api
+COPY --from=builder --chown=65532:65532 /build/auth/middleware ./middleware
+COPY --from=builder --chown=65532:65532 /build/auth/models ./models
+COPY --from=builder --chown=65532:65532 /build/auth/utils ./utils
+COPY --from=builder --chown=65532:65532 /build/auth/__init__.py ./__init__.py
+COPY --from=builder --chown=65532:65532 /build/auth/main.py ./main.py
+COPY --from=builder --chown=65532:65532 /build/auth/config.py ./config.py
+COPY --from=builder --chown=65532:65532 /build/auth/authentication_service.py ./authentication_service.py
+COPY --from=builder --chown=65532:65532 /build/auth/user_manager.py ./user_manager.py
+COPY --from=builder --chown=65532:65532 /build/auth/hardware_wallet.py ./hardware_wallet.py
+COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./session_manager.py
+COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./permissions.py
+COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./healthcheck.py
+
+# Verify source code was copied (this will fail the build if files are missing)
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/main.py'), 'main.py missing'; assert os.path.exists('/app/api'), 'api directory missing'; assert os.path.exists('/app/middleware'), 'middleware directory missing'; assert os.path.exists('/app/models'), 'models directory missing'; assert os.path.exists('/app/utils'), 'utils directory missing'; assert importlib.util.find_spec('main', package=None), 'main module not importable'; print('Auth source code verified in runtime stage')"]
 
 EXPOSE 8089
 

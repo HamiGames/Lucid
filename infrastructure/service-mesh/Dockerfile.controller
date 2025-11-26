@@ -73,12 +73,13 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import grpcio, aiohttp, python_consul, pydantic, cryptography; print('✅ critical packages installed')" && \
-    python3 -c "import grpcio; print('grpcio location:', grpcio.__file__)" && \
-    test -d /root/.local/lib/python3.11/site-packages && \
-    echo 'Directory exists: /root/.local/lib/python3.11/site-packages' && \
+# Verify packages are installed and verify directory structure
+RUN test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo 'Package count:' $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 -c "import grpcio, aiohttp, python_consul, pydantic, cryptography; print('✅ critical packages installed')" && \
+    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 -c "import grpcio; print('grpcio location:', grpcio.__file__)"
 
 # Copy service mesh controller source code
 COPY controller/ ./controller/
