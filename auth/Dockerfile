@@ -1,184 +1,230 @@
-# LUCID AUTH SERVICE - SPEC-1B Implementation
-# Professional multi-platform Auth service for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
-# Security: LUCID-STRICT compliant with distroless base
-# Authentication and authorization service (lucid-auth-service) - Port 8089
-# Build context: project root (./)
-# Deployment path: /mnt/myssd/Lucid/Lucid/
+# Multi-stage distroless build for Lucid Service Mesh Controller
+# Step 32: Phase 2 Container Builds - Core Services
+# Aligned with essentials.md: pickme/lucid-service-mesh-controller:latest-arm64, ports 8500,8501,8502,8600,8088, IP 172.20.0.19
+# Network Configuration: lucid-pi-network (172.20.0.0/16)
+# Fully aligned with plan/constants/ directory requirements
 
+# Stage 1: Builder (use TARGETPLATFORM for cross-platform ARM64 builds with QEMU emulation)
+FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
+
+# Set build arguments (aligned with path_plan.md)
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM=linux/arm64
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-ARG TARGETPLATFORM=linux/arm64
-ARG BUILDPLATFORM=linux/amd64
-ARG CRYPTOGRAPHY_VERSION=41.0.7
-ARG PROTOBUF_VERSION=4.25.1
+ARG GIT_COMMIT=unknown
+ARG PYTHON_VERSION=3.11
 
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
-
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-ARG CRYPTOGRAPHY_VERSION
-ARG PROTOBUF_VERSION
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
+# Set environment variables for pip optimization (aligned with path_plan.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    BUILD_ENV=production
+    PIP_DEFAULT_TIMEOUT=100
 
-WORKDIR /build
+# Install build dependencies with apt cache mount (BuildKit optimization)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    pkg-config \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create placeholder files in system directories (ensures they're baked into image)
-RUN echo "LUCID_AUTH_SERVICE_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_AUTH_SERVICE_LIB_DIRECTORY" > /var/lib/.keep && \
+# Set working directory
+WORKDIR /app
+
+# Create placeholder files in system directories with actual content (ensures they're baked into image)
+RUN echo "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        gcc g++ make libffi-dev libssl-dev libpq-dev ca-certificates \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Upgrade pip to latest version
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip wheel setuptools
 
-COPY auth/requirements.authentication-service.txt ./requirements.txt
-
-RUN python - <<'PY'
-from pathlib import Path
-src = Path("requirements.txt").read_text().splitlines()
-base, hw = [], []
-current = base
-for line in src:
-    stripped = line.strip()
-    if stripped.startswith("# Hardware wallet support"):
-        current = hw
-        continue
-    if stripped.startswith("# TRON blockchain integration"):
-        current = base
-    if stripped and not stripped.startswith("#"):
-        current.append(stripped)
-Path("requirements.base.txt").write_text("\n".join(base) + "\n")
-Path("requirements.hardware.txt").write_text("\n".join(hw) + "\n")
-PY
-
-RUN if grep -q "cryptography==41.0.7" requirements.base.txt || grep -q "cryptography==41.0.7" requirements.hardware.txt; then \
-        sed -i "s/cryptography==41.0.8/cryptography==${CRYPTOGRAPHY_VERSION}/g" requirements.base.txt; \
-        sed -i "s/cryptography==41.0.8/cryptography==${CRYPTOGRAPHY_VERSION}/g" requirements.hardware.txt; \
-    fi
+# Copy requirements and install dependencies
+COPY infrastructure/service-mesh/requirements.txt ./requirements.txt
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
-RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --user --no-cache-dir protobuf==${PROTOBUF_VERSION} && \
-    pip install --user --no-cache-dir -r requirements.base.txt && \
-    if [ -s requirements.hardware.txt ]; then \
-        pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt; \
-    fi
+# Install Python dependencies with cache mount and optimizations
+# Note: Removed --prefer-binary to allow source builds for ARM64 if wheels unavailable
+# This ensures grpcio and other native extensions can be built from source
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/pip/wheels \
+    pip install --user \
+    --no-warn-script-location \
+    -r requirements.txt
 
 # Create placeholder files with actual content (ensures directory structure is locked in)
-RUN echo "LUCID_AUTH_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_AUTH_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+# CRITICAL: Must be AFTER pip install, with actual content (not empty)
+RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
-RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58, async_timeout; print('✅ critical packages installed')" && \
-    python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+# Following Dockerfile-copy-pattern.md Step 3: Verify Packages (Builder Stage)
+RUN python -c "import grpcio, aiohttp, python_consul, pydantic, cryptography; print('✅ critical packages installed')" && \
+    python -c "import grpcio; print('grpcio location:', grpcio.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
-# Copy auth source code to builder stage
-COPY auth/api/ ./auth/api/
-COPY auth/middleware/ ./auth/middleware/
-COPY auth/models/ ./auth/models/
-COPY auth/utils/ ./auth/utils/
-COPY auth/__init__.py ./auth/__init__.py
-COPY auth/main.py ./auth/main.py
-COPY auth/config.py ./auth/config.py
-COPY auth/authentication_service.py ./auth/authentication_service.py
-COPY auth/user_manager.py ./auth/user_manager.py
-COPY auth/hardware_wallet.py ./auth/hardware_wallet.py
-COPY auth/session_manager.py ./auth/session_manager.py
-COPY auth/permissions.py ./auth/permissions.py
-COPY auth/healthcheck.py ./auth/healthcheck.py
+# Copy service mesh controller source code to builder stage
+# CRITICAL: Use full path from build context root (build context is .)
+COPY infrastructure/service-mesh/controller/ ./controller/
+COPY infrastructure/service-mesh/sidecar/ ./sidecar/
+COPY infrastructure/service-mesh/discovery/ ./discovery/
+COPY infrastructure/service-mesh/communication/ ./communication/
+COPY infrastructure/service-mesh/security/ ./security/
 
 # Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
-RUN echo "LUCID_AUTH_SOURCE_API_$(date +%s)" > ./auth/api/.lucid-api-marker && \
-    echo "LUCID_AUTH_SOURCE_MIDDLEWARE_$(date +%s)" > ./auth/middleware/.lucid-middleware-marker && \
-    echo "LUCID_AUTH_SOURCE_MODELS_$(date +%s)" > ./auth/models/.lucid-models-marker && \
-    echo "LUCID_AUTH_SOURCE_UTILS_$(date +%s)" > ./auth/utils/.lucid-utils-marker && \
-    echo "LUCID_AUTH_MAIN_$(date +%s)" > ./auth/main.py.lucid-marker && \
-    chown -R 65532:65532 ./auth
+# CRITICAL: Create marker files with actual content AFTER copying source code
+RUN echo "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /app/controller/.lucid-source-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > /app/sidecar/.lucid-sidecar-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > /app/discovery/.lucid-discovery-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > /app/communication/.lucid-communication-marker && \
+    echo "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > /app/security/.lucid-security-marker && \
+    chown -R 65532:65532 /app
 
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+# Build the application
+RUN python -m compileall -b .
 
+# Stage 2: Runtime (Distroless) - use TARGETPLATFORM for final image
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12
+
+# Set build arguments for labels
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
 
+# Set metadata labels (aligned with essentials.md)
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Distroless Auth Service for Lucid authentication support" \
+      org.opencontainers.image.title="Lucid Service Mesh Controller" \
+      org.opencontainers.image.description="Distroless service mesh controller for Lucid platform" \
+      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
-      com.lucid.service="auth-service" \
-      com.lucid.cluster="foundation"
+      org.opencontainers.image.vendor="Lucid" \
+      org.opencontainers.image.licenses="MIT" \
+      lucid.service="service-mesh-controller" \
+      lucid.type="distroless" \
+      lucid.platform="arm64" \
+      lucid.security="hardened" \
+      phase="2" \
+      cluster="10-cross-cluster-integration"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    SERVICE_NAME=lucid-auth-service
-
+# Set working directory
 WORKDIR /app
 
-# Copy runtime directories from builder
+# Copy runtime directories from builder (directory already populated with .keep files)
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
+# Copy dynamic linker for ARM64 (required for native extensions like grpcio, cryptography)
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+
+# Copy arch-specific libraries directory (SAME PATTERN AS ELASTICSEARCH - entire directory, not individual files)
+# Required for ARM64 native extensions and shared libraries
+COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+
+# Copy CA certificates (required for SSL/TLS operations)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
 # Copy Python packages to /usr/local (SAME PATTERN AS ELASTICSEARCH - exact directory structure)
 # Directory already populated with packages + marker files from builder stage
+# Following Dockerfile-copy-pattern.md Step 4: Copy to Runtime Stage
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; print('Packages verified in runtime stage')"]
+# Following Dockerfile-copy-pattern.md Step 5: Verify in Runtime Stage (CRITICAL)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; assert os.path.exists(os.path.join(site_packages, 'grpcio')), 'grpcio not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'python_consul')) or os.path.exists(os.path.join(site_packages, 'consul')), 'consul package not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'cryptography not found'; print('Packages verified in runtime stage')"]
 
-# Copy dynamic linker for ARM64
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+# Copy application code from builder (directory already populated with source + marker files)
+COPY --from=builder --chown=65532:65532 /app /app
 
-# Copy arch-specific libraries directory (SAME PATTERN AS ELASTICSEARCH - entire directory, not individual files)
-COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+# Verify controller module exists (this will fail the build if module is missing)
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'controller marker file missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
 
-# Copy CA certificates
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
+ENV TZ=UTC \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    COUNTRY=US
 
-# Copy auth source code from builder (directory already populated with source + marker files)
-COPY --from=builder --chown=65532:65532 /build/auth/api ./api
-COPY --from=builder --chown=65532:65532 /build/auth/middleware ./middleware
-COPY --from=builder --chown=65532:65532 /build/auth/models ./models
-COPY --from=builder --chown=65532:65532 /build/auth/utils ./utils
-COPY --from=builder --chown=65532:65532 /build/auth/__init__.py ./__init__.py
-COPY --from=builder --chown=65532:65532 /build/auth/main.py ./main.py
-COPY --from=builder --chown=65532:65532 /build/auth/config.py ./config.py
-COPY --from=builder --chown=65532:65532 /build/auth/authentication_service.py ./authentication_service.py
-COPY --from=builder --chown=65532:65532 /build/auth/user_manager.py ./user_manager.py
-COPY --from=builder --chown=65532:65532 /build/auth/hardware_wallet.py ./hardware_wallet.py
-COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./session_manager.py
-COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./permissions.py
-COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./healthcheck.py
+# Set Python path and environment (packages already copied above)
+ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PATH=/usr/local/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LUCID_ENV=production \
+    LUCID_PLATFORM=arm64 \
+    LUCID_ARCHITECTURE=linux/arm64
 
-# Verify source code was copied (this will fail the build if files are missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/main.py'), 'main.py missing'; assert os.path.exists('/app/api'), 'api directory missing'; assert os.path.exists('/app/middleware'), 'middleware directory missing'; assert os.path.exists('/app/models'), 'models directory missing'; assert os.path.exists('/app/utils'), 'utils directory missing'; assert importlib.util.find_spec('main', package=None), 'main module not importable'; print('Auth source code verified in runtime stage')"]
+# Service Configuration (per essentials.md and Network_conig_requirements.md lines 307-360)
+ENV SERVICE_NAME=service-mesh-controller \
+    CONTAINER_NAME=lucid-service-mesh-controller \
+    HOSTNAME=lucid-service-mesh-controller
 
-EXPOSE 8089
+# Port Configuration
+ENV PORT=8500 \
+    SERVICE_MESH_CONTROLLER_PORT=8500 \
+    HEALTHCHECK_PORT=8500 \
+    HEALTHCHECK_PATH=/v1/status/leader
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read(); exit(0)"]
+# Network Configuration (per Network_conig_requirements.md lines 334-341)
+ENV SERVICE_MESH_CONTROLLER_HOST=172.20.0.19 \
+    SERVICE_DISCOVERY_URL=http://lucid-service-mesh-controller:8500 \
+    SERVICE_MESH_ENABLED=true
 
+# Consul Configuration (per Network_conig_requirements.md lines 334-341)
+ENV CONSUL_PORT=8500 \
+    CONSUL_DATACENTER=lucid-dc \
+    CONSUL_BOOTSTRAP_EXPECT=1 \
+    CONSUL_UI_ENABLED=true \
+    CONSUL_CONNECT_ENABLED=true \
+    CONSUL_NODE_NAME=lucid-service-mesh-controller
+
+# Database Configuration (per Network_conig_requirements.md - if needed)
+# Note: MONGODB_PASSWORD will be provided via .env files at runtime
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-changeme}@lucid-mongodb:27017/lucid?authSource=admin \
+    REDIS_URL=redis://lucid-redis:6379/0
+
+# Project Configuration (per path_plan.md)
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
+    PROJECT_NAME=Lucid \
+    PROJECT_VERSION=0.1.0
+
+# Logging Configuration (per path_plan.md)
+ENV LOG_LEVEL=INFO \
+    DEBUG=false \
+    LOG_FORMAT=json
+
+# Network Configuration (per network_defs.md)
+ENV LUCID_PI_NETWORK=lucid-pi-network \
+    LUCID_PI_SUBNET=172.20.0.0/16 \
+    LUCID_PI_GATEWAY=172.20.0.1
+
+# Use nonroot user (distroless default)
 USER 65532:65532
 
-ENTRYPOINT ["/usr/bin/python3"]
-CMD ["main.py"]
+# Health check (aligned with essentials.md and Network_conig_requirements.md: healthcheck_port=8500, healthcheck_path=/v1/status/leader)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8500/v1/status/leader')"]
+
+# Expose ports (aligned with essentials.md and Network_conig_requirements.md: 8500,8501,8502,8600,8088)
+EXPOSE 8500 8501 8502 8600 8088
+
+# Start application (async main in controller.main) - NOT FastAPI, uses asyncio.run(main())
+CMD ["python3", "-c", "import asyncio; from controller.main import main; asyncio.run(main())"]

@@ -4,8 +4,8 @@
 # Network Configuration: lucid-pi-network (172.20.0.0/16)
 # Fully aligned with plan/constants/ directory requirements
 
-# Stage 1: Builder
-FROM --platform=linux/arm64 python:3.11-slim AS builder
+# Stage 1: Builder (use TARGETPLATFORM for cross-platform ARM64 builds with QEMU emulation)
+FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
 
 # Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
@@ -60,6 +60,7 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
 # Install Python dependencies with cache mount and optimizations
+# Note: For cross-platform builds, packages will be built for TARGETPLATFORM
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     pip install --user \
@@ -68,6 +69,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r requirements.txt
 
 # Create marker files with actual content (ensures directory structure is locked in)
+# CRITICAL: Must be AFTER pip install, with actual content (not empty)
 RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
@@ -80,7 +82,8 @@ RUN test -d /root/.local/lib/python3.11/site-packages && \
     PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 -c "import grpcio, aiohttp, python_consul, pydantic, cryptography; print('✅ critical packages installed')" && \
     PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 -c "import grpcio; print('grpcio location:', grpcio.__file__)"
 
-# Copy service mesh controller source code
+# Copy service mesh controller source code to builder stage
+# CRITICAL: Use full path from build context root (build context is .)
 COPY infrastructure/service-mesh/controller/ ./controller/
 COPY infrastructure/service-mesh/sidecar/ ./sidecar/
 COPY infrastructure/service-mesh/discovery/ ./discovery/
@@ -88,6 +91,7 @@ COPY infrastructure/service-mesh/communication/ ./communication/
 COPY infrastructure/service-mesh/security/ ./security/
 
 # Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
+# CRITICAL: Create marker files with actual content AFTER copying source code
 RUN echo "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /app/controller/.lucid-source-marker && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > /app/sidecar/.lucid-sidecar-marker && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > /app/discovery/.lucid-discovery-marker && \
@@ -98,13 +102,14 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /app/controller/.l
 # Build the application
 RUN python -m compileall -b .
 
-# Stage 2: Runtime (Distroless)
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+# Stage 2: Runtime (Distroless) - use TARGETPLATFORM for final image
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12
 
 # Set build arguments for labels
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
 
 # Set metadata labels (aligned with essentials.md)
 LABEL maintainer="Lucid Development Team" \
@@ -132,15 +137,24 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+# Copy dynamic linker for ARM64 (required for native extensions like grpcio)
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
+# Copy arch-specific libraries directory (required for ARM64 native extensions)
+COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+
+# Copy CA certificates (required for SSL/TLS operations)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Verify packages were copied (this will fail the build if packages are missing)
 # Verify packages were copied (this will fail the build if packages are missing)
 RUN ["/usr/bin/python3.11", "-c", "import sys, os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'grpcio')), 'grpcio not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'python_consul')) or os.path.exists(os.path.join(site_packages, 'consul')), 'consul package not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
-# Copy application code from builder
+# Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app
 
 # Verify controller module exists (this will fail the build if module is missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'controller marker file missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
 ENV TZ=UTC \
@@ -182,7 +196,8 @@ ENV CONSUL_PORT=8500 \
     CONSUL_NODE_NAME=lucid-service-mesh-controller
 
 # Database Configuration (per Network_conig_requirements.md - if needed)
-ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin \
+# Note: MONGODB_PASSWORD will be provided via .env files at runtime
+ENV MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-changeme}@lucid-mongodb:27017/lucid?authSource=admin \
     REDIS_URL=redis://lucid-redis:6379/0
 
 # Project Configuration (per path_plan.md)
