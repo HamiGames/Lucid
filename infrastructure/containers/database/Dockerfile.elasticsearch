@@ -1,6 +1,6 @@
 # LUCID Elasticsearch Container - SPEC-1B Implementation
 # Distroless container for Elasticsearch search engine
-# Fixed: Added missing basename, dirname, and required shared libraries
+# CRITICAL: Follows Dockerfile-copy-pattern.md with runtime verification
 
 # syntax=docker/dockerfile:1.7
 
@@ -38,6 +38,7 @@ RUN apt-get update && \
 USER elasticsearch
 
 # Create custom Elasticsearch configuration with actual content
+# Following Dockerfile-copy-pattern.md: Create files with actual content
 RUN echo "cluster.name: lucid-cluster
 node.name: lucid-node
 discovery.type: single-node
@@ -51,15 +52,17 @@ network.host: 0.0.0.0
 http.port: 9200
 transport.port: 9300" > /usr/share/elasticsearch/config/elasticsearch.yml
 
-# Verify Elasticsearch files exist
+# Following Dockerfile-copy-pattern.md Step 3: Verify in Builder Stage
 RUN test -f /usr/share/elasticsearch/bin/elasticsearch && \
     test -f /usr/share/elasticsearch/config/elasticsearch.yml && \
+    ls -la /usr/share/elasticsearch/bin/elasticsearch && \
+    head -1 /usr/share/elasticsearch/bin/elasticsearch && \
     echo "✅ Elasticsearch files verified in builder stage"
 
 # =============================================================================
 # Stage 2: Runtime - Distroless with Java
 # =============================================================================
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:nonroot
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -91,11 +94,11 @@ ENV ES_HOME=/usr/share/elasticsearch \
 # Set working directory
 WORKDIR /usr/share/elasticsearch
 
+# Following Dockerfile-copy-pattern.md Step 4: Copy entire directories
 # Copy Elasticsearch files (directory already populated with config + binaries)
 COPY --from=builder --chown=65532:65532 /usr/share/elasticsearch /usr/share/elasticsearch
 
 # Copy runtime utilities required by Elasticsearch startup scripts
-# CRITICAL: basename is required by elasticsearch-env script (line 30)
 COPY --from=builder /usr/bin/basename /usr/bin/basename
 COPY --from=builder /usr/bin/dirname /usr/bin/dirname
 COPY --from=builder /usr/bin/curl /usr/bin/curl
@@ -104,19 +107,33 @@ COPY --from=builder /bin/bash /bin/bash
 # Copy Elasticsearch CLI (if exists)
 COPY --from=builder /usr/share/elasticsearch/bin/elasticsearch-cli /usr/share/elasticsearch/bin/elasticsearch-cli
 
-# Copy dynamic linker for ARM64 (required for all native binaries)
+# Copy dynamic linker for ARM64
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
-# Copy arch-specific libraries directory (entire directory for ARM64 native extensions)
-# Required for basename, dirname, bash, curl, and Elasticsearch native libraries
+# Copy arch-specific libraries directory (entire directory)
 COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 
-# Copy CA certificates (required for SSL/TLS operations and health checks)
+# Copy CA certificates
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Verify critical files were copied (this will fail the build if files are missing)
-RUN ["/usr/bin/java", "-version"] && \
-    echo "✅ Java runtime verified"
+# Following Dockerfile-copy-pattern.md Step 5: Verify in Runtime Stage (CRITICAL)
+# Create a Java verification class that checks file existence
+# This will FAIL THE BUILD if files are missing (catches silent COPY failures)
+RUN echo 'public class Verify { public static void main(String[] args) { \
+java.nio.file.Path esBin = java.nio.file.Paths.get("/usr/share/elasticsearch/bin/elasticsearch"); \
+java.nio.file.Path esConfig = java.nio.file.Paths.get("/usr/share/elasticsearch/config/elasticsearch.yml"); \
+java.nio.file.Path bash = java.nio.file.Paths.get("/bin/bash"); \
+java.nio.file.Path basename = java.nio.file.Paths.get("/usr/bin/basename"); \
+if (!java.nio.file.Files.exists(esBin)) throw new RuntimeException("CRITICAL: elasticsearch binary missing"); \
+if (!java.nio.file.Files.exists(esConfig)) throw new RuntimeException("CRITICAL: elasticsearch config missing"); \
+if (!java.nio.file.Files.exists(bash)) throw new RuntimeException("CRITICAL: bash missing"); \
+if (!java.nio.file.Files.exists(basename)) throw new RuntimeException("CRITICAL: basename missing"); \
+System.out.println("✅ All critical files verified in runtime stage"); \
+} }' > /tmp/Verify.java && \
+    /usr/bin/javac /tmp/Verify.java && \
+    /usr/bin/java -cp /tmp Verify && \
+    rm /tmp/Verify.java /tmp/Verify.class && \
+    echo "✅ Runtime verification complete"
 
 # Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
@@ -125,8 +142,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # Expose ports
 EXPOSE 9200 9300
 
-# Use non-root user (UID 65532 from distroless nonroot)
-USER nonroot:nonroot
+# Use non-root user (UID 65532 from distroless)
+USER 65532:65532
 
 # Run Elasticsearch
 ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch"]
