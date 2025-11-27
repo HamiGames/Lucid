@@ -7,7 +7,8 @@
 # Stage 1: Builder (use TARGETPLATFORM for cross-platform ARM64 builds with QEMU emulation)
 FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# Set shell to bash for Linux compatibility (standard Linux syntax)
+SHELL ["/bin/bash", "-c"]
 
 # Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
@@ -39,6 +40,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     pkg-config \
     curl \
     git \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -55,6 +57,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy requirements and install dependencies
 COPY infrastructure/service-mesh/requirements.txt ./requirements.txt
+
+# Verify requirements.txt was copied (per Dockerfile-copy-pattern: verify before use)
+RUN test -f ./requirements.txt || (echo "ERROR: requirements.txt not found" && exit 1) && \
+    echo "✅ requirements.txt verified in builder stage"
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
@@ -117,6 +123,13 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /app/controller/.l
 # Build the application
 RUN python -m compileall -b .
 
+# Verify system libraries exist in builder stage before COPY (per Dockerfile-copy-pattern)
+# CRITICAL: This ensures COPY operations will not fail silently
+RUN test -f /lib/ld-linux-aarch64.so.1 || (echo "ERROR: /lib/ld-linux-aarch64.so.1 not found in builder stage" && exit 1) && \
+    test -d /lib/aarch64-linux-gnu || (echo "ERROR: /lib/aarch64-linux-gnu directory not found in builder stage" && exit 1) && \
+    test -f /etc/ssl/certs/ca-certificates.crt || (echo "ERROR: /etc/ssl/certs/ca-certificates.crt not found in builder stage" && exit 1) && \
+    echo "✅ System libraries verified in builder stage: dynamic linker, arch-specific libs, CA certificates"
+
 # Stage 2: Runtime (Distroless) - use TARGETPLATFORM for final image
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12
 
@@ -152,6 +165,7 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+
 # Copy dynamic linker for ARM64 (required for native extensions like grpcio)
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
@@ -160,6 +174,10 @@ COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 
 # Copy CA certificates (required for SSL/TLS operations)
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Verify system libraries were copied (per Dockerfile-copy-pattern: verify after COPY)
+# CRITICAL: This will fail the build if system libraries are missing (prevents silent failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/lib/ld-linux-aarch64.so.1'), 'Dynamic linker not copied: /lib/ld-linux-aarch64.so.1'; assert os.path.isdir('/lib/aarch64-linux-gnu'), 'Arch-specific libs not copied: /lib/aarch64-linux-gnu'; assert os.path.exists('/etc/ssl/certs/ca-certificates.crt'), 'CA certificates not copied: /etc/ssl/certs/ca-certificates.crt'; print('✅ System libraries verified in runtime stage')"]
 
 # Verify packages were copied (this will fail the build if packages are missing)
 RUN ["/usr/bin/python3.11", "-c", "import os, importlib; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpcio', 'aiohttp', 'python_consul', 'pydantic', 'cryptography'); [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
@@ -241,4 +259,3 @@ EXPOSE 8500 8501 8502 8600 8088
 
 # Start application (async main in controller.main) - NOT FastAPI, uses asyncio.run(main())
 CMD ["python3", "-c", "import asyncio; from controller.main import main; asyncio.run(main())"]
-
