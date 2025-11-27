@@ -7,6 +7,8 @@
 # Stage 1: Builder (use TARGETPLATFORM for cross-platform ARM64 builds with QEMU emulation)
 FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Set build arguments (aligned with path_plan.md)
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM=linux/arm64
@@ -17,7 +19,8 @@ ARG GIT_COMMIT=unknown
 ARG PYTHON_VERSION=3.11
 
 # Set environment variables for pip optimization (aligned with path_plan.md)
-ENV PYTHONUNBUFFERED=1 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -35,6 +38,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libssl-dev \
     pkg-config \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -45,12 +49,9 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
-# Set pip environment variables for optimization
-ENV PIP_PREFER_BINARY=1
-
-# Upgrade pip to latest version
+# Upgrade pip tooling to latest versions so binary wheels resolve properly
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip wheel setuptools
+    python -m pip install --upgrade pip wheel setuptools
 
 # Copy requirements and install dependencies
 COPY infrastructure/service-mesh/requirements.txt ./requirements.txt
@@ -60,13 +61,22 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
 # Install Python dependencies with cache mount and optimizations
-# Note: For cross-platform builds, packages will be built for TARGETPLATFORM
+# Explicitly install core runtime packages even if requirements.txt omits them.
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
-    pip install --user \
-    --prefer-binary \
-    --no-warn-script-location \
-    -r requirements.txt
+    python -m pip install --user \
+        --prefer-binary \
+        --no-warn-script-location \
+        -r requirements.txt && \
+    python -m pip install --user \
+        --prefer-binary \
+        --no-warn-script-location \
+        grpcio \
+        aiohttp \
+        python-consul \
+        pydantic \
+        cryptography && \
+    python -m pip check
 
 # Create marker files with actual content (ensures directory structure is locked in)
 # CRITICAL: Must be AFTER pip install, with actual content (not empty)
@@ -79,8 +89,13 @@ RUN test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
-    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 -c "import grpcio, aiohttp, python_consul, pydantic, cryptography; print('✅ critical packages installed')" && \
-    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 -c "import grpcio; print('grpcio location:', grpcio.__file__)"
+    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - <<'PY'
+from importlib import import_module
+required = ("grpcio", "aiohttp", "python_consul", "pydantic", "cryptography")
+for module in required:
+    import_module(module)
+print("✅ critical packages installed and importable")
+PY
 
 # Copy service mesh controller source code to builder stage
 # CRITICAL: Use full path from build context root (build context is .)
@@ -147,8 +162,7 @@ COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Verify packages were copied (this will fail the build if packages are missing)
-# Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys, os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'grpcio')), 'grpcio not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'python_consul')) or os.path.exists(os.path.join(site_packages, 'consul')), 'consul package not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpcio', 'aiohttp', 'python_consul', 'pydantic', 'cryptography'); [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
 # Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app
@@ -227,3 +241,4 @@ EXPOSE 8500 8501 8502 8600 8088
 
 # Start application (async main in controller.main) - NOT FastAPI, uses asyncio.run(main())
 CMD ["python3", "-c", "import asyncio; from controller.main import main; asyncio.run(main())"]
+

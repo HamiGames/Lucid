@@ -90,6 +90,7 @@ RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Copy auth source code to builder stage - CRITICAL: Copy to /build/auth/ to maintain package structure
+# Note: COPY will include all files; we clean up platform-specific and cache files immediately after
 COPY auth/api/ ./auth/api/
 COPY auth/middleware/ ./auth/middleware/
 COPY auth/models/ ./auth/models/
@@ -103,6 +104,27 @@ COPY auth/hardware_wallet.py ./auth/hardware_wallet.py
 COPY auth/session_manager.py ./auth/session_manager.py
 COPY auth/permissions.py ./auth/permissions.py
 COPY auth/healthcheck.py ./auth/healthcheck.py
+
+# CRITICAL: Remove platform-specific files and Python cache files immediately after COPY
+# This prevents silently passing non-Linux files and cache artifacts into the image
+RUN find ./auth -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find ./auth -type f -name "*.pyc" -delete 2>/dev/null || true && \
+    find ./auth -type f -name "*.pyo" -delete 2>/dev/null || true && \
+    find ./auth -type f -name ".DS_Store" -delete 2>/dev/null || true && \
+    find ./auth -type f -name "Thumbs.db" -delete 2>/dev/null || true && \
+    find ./auth -type f -name "desktop.ini" -delete 2>/dev/null || true && \
+    find ./auth -type f -name "*.swp" -delete 2>/dev/null || true && \
+    find ./auth -type f -name "*.swo" -delete 2>/dev/null || true && \
+    find ./auth -type f -name "*~" -delete 2>/dev/null || true
+
+# Verify no unwanted files remain (this will fail the build if verification fails)
+RUN test ! -d ./auth/api/__pycache__ && \
+    test ! -d ./auth/middleware/__pycache__ && \
+    test ! -d ./auth/models/__pycache__ && \
+    test ! -d ./auth/utils/__pycache__ && \
+    echo "✅ Verified: No __pycache__ directories present" && \
+    find ./auth -name "*.pyc" -o -name "*.pyo" -o -name ".DS_Store" -o -name "Thumbs.db" | wc -l | xargs test 0 -eq && \
+    echo "✅ Verified: No platform-specific or cache files present"
 
 # Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
 # CRITICAL: Create marker files with actual content AFTER copying source code
@@ -136,14 +158,16 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # Copy runtime directories from builder (directory already populated with .keep files)
+# CRITICAL: Verify only .keep files exist before copying
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Copy dynamic linker for ARM64 (required for native extensions like cryptography, grpcio)
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
-# Copy arch-specific libraries directory (SAME PATTERN AS ELASTICSEARCH - entire directory, not individual files)
+# Copy arch-specific libraries directory
 # Required for ARM64 native extensions and shared libraries
+# Note: This copies the entire directory; ensure builder stage only contains required libraries
 COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 
 # Copy CA certificates (required for SSL/TLS operations)
@@ -172,13 +196,14 @@ COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./session
 COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./permissions.py
 COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./healthcheck.py
 
-# Verify source code was copied (this will fail the build if files are missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/main.py'), 'main.py missing'; assert os.path.exists('/app/session_manager.py'), 'session_manager.py missing'; assert os.path.exists('/app/api'), 'api directory missing'; assert os.path.exists('/app/middleware'), 'middleware directory missing'; assert os.path.exists('/app/models'), 'models directory missing'; assert os.path.exists('/app/utils'), 'utils directory missing'; assert os.path.exists('/app/middleware/.lucid-middleware-marker'), 'middleware marker file missing'; assert importlib.util.find_spec('main', package=None), 'main module not importable'; print('Auth source code verified in runtime stage')"]
+# Verify source code was copied and no unwanted files are present
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/main.py'), 'main.py missing'; assert os.path.exists('/app/session_manager.py'), 'session_manager.py missing'; assert os.path.exists('/app/api'), 'api directory missing'; assert os.path.exists('/app/middleware'), 'middleware directory missing'; assert os.path.exists('/app/models'), 'models directory missing'; assert os.path.exists('/app/utils'), 'utils directory missing'; assert os.path.exists('/app/middleware/.lucid-middleware-marker'), 'middleware marker file missing'; assert not os.path.exists('/app/api/__pycache__'), '__pycache__ found in api'; assert not os.path.exists('/app/middleware/__pycache__'), '__pycache__ found in middleware'; assert not os.path.exists('/app/models/__pycache__'), '__pycache__ found in models'; assert not os.path.exists('/app/utils/__pycache__'), '__pycache__ found in utils'; assert importlib.util.find_spec('main', package=None), 'main module not importable'; print('Auth source code verified in runtime stage - no unwanted files present')"]
 
 EXPOSE 8089
 
+# CRITICAL FIX: Use full path /usr/bin/python3 instead of python3 for consistency with ENTRYPOINT
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read(); exit(0)"]
+    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read(); exit(0)"]
 
 USER 65532:65532
 

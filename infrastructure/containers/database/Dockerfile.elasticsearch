@@ -39,7 +39,8 @@ USER elasticsearch
 
 # Create custom Elasticsearch configuration with actual content
 # Following Dockerfile-copy-pattern.md: Create files with actual content
-RUN echo "cluster.name: lucid-cluster
+RUN cat > /usr/share/elasticsearch/config/elasticsearch.yml <<'EOFCONFIG'
+cluster.name: lucid-cluster
 node.name: lucid-node
 discovery.type: single-node
 xpack.security.enabled: false
@@ -47,17 +48,25 @@ xpack.security.enrollment.enabled: false
 xpack.security.http.ssl.enabled: false
 xpack.security.transport.ssl.enabled: false
 bootstrap.memory_lock: true
-ES_JAVA_OPTS: \"-Xms512m -Xmx512m\"
+ES_JAVA_OPTS: "-Xms512m -Xmx512m"
 network.host: 0.0.0.0
 http.port: 9200
-transport.port: 9300" > /usr/share/elasticsearch/config/elasticsearch.yml
+transport.port: 9300
+EOFCONFIG
 
 # Following Dockerfile-copy-pattern.md Step 3: Verify in Builder Stage
 RUN test -f /usr/share/elasticsearch/bin/elasticsearch && \
     test -f /usr/share/elasticsearch/config/elasticsearch.yml && \
+    test -f /usr/bin/basename && \
+    test -f /usr/bin/dirname && \
+    test -f /usr/bin/curl && \
+    test -f /bin/bash && \
+    test -f /lib/ld-linux-aarch64.so.1 && \
+    test -d /lib/aarch64-linux-gnu && \
+    test -f /etc/ssl/certs/ca-certificates.crt && \
     ls -la /usr/share/elasticsearch/bin/elasticsearch && \
     head -1 /usr/share/elasticsearch/bin/elasticsearch && \
-    echo "✅ Elasticsearch files verified in builder stage"
+    echo "✅ Elasticsearch files and dependencies verified in builder stage"
 
 # =============================================================================
 # Stage 2: Runtime - Distroless with Java
@@ -104,8 +113,11 @@ COPY --from=builder /usr/bin/dirname /usr/bin/dirname
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /bin/bash /bin/bash
 
-# Copy Elasticsearch CLI (if exists)
-COPY --from=builder /usr/share/elasticsearch/bin/elasticsearch-cli /usr/share/elasticsearch/bin/elasticsearch-cli
+# Distroless lacks any default shell; point RUN to the copied bash binary
+SHELL ["/bin/bash", "-c"]
+
+# Note: elasticsearch-cli is included automatically via the directory copy above
+# It will be verified conditionally in the verification step below
 
 # Copy dynamic linker for ARM64
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
@@ -117,23 +129,26 @@ COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Following Dockerfile-copy-pattern.md Step 5: Verify in Runtime Stage (CRITICAL)
-# Create a Java verification class that checks file existence
-# This will FAIL THE BUILD if files are missing (catches silent COPY failures)
-RUN echo 'public class Verify { public static void main(String[] args) { \
-java.nio.file.Path esBin = java.nio.file.Paths.get("/usr/share/elasticsearch/bin/elasticsearch"); \
-java.nio.file.Path esConfig = java.nio.file.Paths.get("/usr/share/elasticsearch/config/elasticsearch.yml"); \
-java.nio.file.Path bash = java.nio.file.Paths.get("/bin/bash"); \
-java.nio.file.Path basename = java.nio.file.Paths.get("/usr/bin/basename"); \
-if (!java.nio.file.Files.exists(esBin)) throw new RuntimeException("CRITICAL: elasticsearch binary missing"); \
-if (!java.nio.file.Files.exists(esConfig)) throw new RuntimeException("CRITICAL: elasticsearch config missing"); \
-if (!java.nio.file.Files.exists(bash)) throw new RuntimeException("CRITICAL: bash missing"); \
-if (!java.nio.file.Files.exists(basename)) throw new RuntimeException("CRITICAL: basename missing"); \
-System.out.println("✅ All critical files verified in runtime stage"); \
-} }' > /tmp/Verify.java && \
-    /usr/bin/javac /tmp/Verify.java && \
-    /usr/bin/java -cp /tmp Verify && \
-    rm /tmp/Verify.java /tmp/Verify.class && \
-    echo "✅ Runtime verification complete"
+# Use bash to verify all critical files exist - FAILS BUILD if any are missing
+# This catches silent COPY failures that would otherwise pass undetected
+RUN /bin/bash -c ' \
+    test -d /usr/share/elasticsearch || { echo "CRITICAL: elasticsearch directory missing"; exit 1; } && \
+    test -f /usr/share/elasticsearch/bin/elasticsearch || { echo "CRITICAL: elasticsearch binary missing"; exit 1; } && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.yml || { echo "CRITICAL: elasticsearch config missing"; exit 1; } && \
+    test -f /bin/bash || { echo "CRITICAL: bash missing"; exit 1; } && \
+    test -f /usr/bin/basename || { echo "CRITICAL: basename missing"; exit 1; } && \
+    test -f /usr/bin/dirname || { echo "CRITICAL: dirname missing"; exit 1; } && \
+    test -f /usr/bin/curl || { echo "CRITICAL: curl missing"; exit 1; } && \
+    test -f /lib/ld-linux-aarch64.so.1 || { echo "CRITICAL: dynamic linker missing"; exit 1; } && \
+    test -d /lib/aarch64-linux-gnu || { echo "CRITICAL: arch libraries directory missing"; exit 1; } && \
+    test -f /etc/ssl/certs/ca-certificates.crt || { echo "CRITICAL: CA certificates missing"; exit 1; } && \
+    if [ -f /usr/share/elasticsearch/bin/elasticsearch-cli ]; then \
+        echo "✅ elasticsearch-cli present"; \
+    else \
+        echo "ℹ️  elasticsearch-cli not present (optional)"; \
+    fi && \
+    echo "✅ All critical files verified in runtime stage" \
+    '
 
 # Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
