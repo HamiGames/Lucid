@@ -54,11 +54,20 @@ http.port: 9200
 transport.port: 9300
 EOFCONFIG
 
+# CRITICAL FIX: Create Elasticsearch keystore during build to prevent runtime creation
+# This is the permanent fix for "Read-only file system" errors in distroless containers
+# Elasticsearch will use this pre-created keystore instead of trying to create it at runtime
+RUN /usr/share/elasticsearch/bin/elasticsearch-keystore create && \
+    chown elasticsearch:elasticsearch /usr/share/elasticsearch/config/elasticsearch.keystore && \
+    echo "✅ Elasticsearch keystore created during build"
+
 # Following Dockerfile-copy-pattern.md Step 3: Verify in Builder Stage
 RUN test -f /usr/share/elasticsearch/bin/elasticsearch && \
     test -f /usr/share/elasticsearch/config/elasticsearch.yml && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.keystore && \
     test -f /usr/bin/basename && \
     test -f /usr/bin/dirname && \
+    test -f /usr/bin/uname && \
     test -f /usr/bin/curl && \
     test -f /bin/bash && \
     test -f /lib/ld-linux-aarch64.so.1 && \
@@ -104,12 +113,13 @@ ENV ES_HOME=/usr/share/elasticsearch \
 WORKDIR /usr/share/elasticsearch
 
 # Following Dockerfile-copy-pattern.md Step 4: Copy entire directories
-# Copy Elasticsearch files (directory already populated with config + binaries)
+# Copy Elasticsearch files (directory already populated with config + binaries + keystore)
 COPY --from=builder --chown=65532:65532 /usr/share/elasticsearch /usr/share/elasticsearch
 
 # Copy runtime utilities required by Elasticsearch startup scripts
 COPY --from=builder /usr/bin/basename /usr/bin/basename
 COPY --from=builder /usr/bin/dirname /usr/bin/dirname
+COPY --from=builder /usr/bin/uname /usr/bin/uname
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /bin/bash /bin/bash
 
@@ -135,9 +145,11 @@ RUN /bin/bash -c ' \
     test -d /usr/share/elasticsearch || { echo "CRITICAL: elasticsearch directory missing"; exit 1; } && \
     test -f /usr/share/elasticsearch/bin/elasticsearch || { echo "CRITICAL: elasticsearch binary missing"; exit 1; } && \
     test -f /usr/share/elasticsearch/config/elasticsearch.yml || { echo "CRITICAL: elasticsearch config missing"; exit 1; } && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.keystore || { echo "CRITICAL: keystore missing"; exit 1; } && \
     test -f /bin/bash || { echo "CRITICAL: bash missing"; exit 1; } && \
     test -f /usr/bin/basename || { echo "CRITICAL: basename missing"; exit 1; } && \
     test -f /usr/bin/dirname || { echo "CRITICAL: dirname missing"; exit 1; } && \
+    test -f /usr/bin/uname || { echo "CRITICAL: uname missing"; exit 1; } && \
     test -f /usr/bin/curl || { echo "CRITICAL: curl missing"; exit 1; } && \
     test -f /lib/ld-linux-aarch64.so.1 || { echo "CRITICAL: dynamic linker missing"; exit 1; } && \
     test -d /lib/aarch64-linux-gnu || { echo "CRITICAL: arch libraries directory missing"; exit 1; } && \
