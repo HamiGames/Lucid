@@ -97,9 +97,19 @@ RUN test -d /root/.local/lib/python3.11/site-packages && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
     PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - <<'PY'
 from importlib import import_module
+import sys
 required = ("grpcio", "aiohttp", "python_consul", "pydantic", "cryptography")
+failed = []
 for module in required:
-    import_module(module)
+    try:
+        import_module(module)
+        print(f"✅ {module} imported successfully")
+    except ImportError as e:
+        print(f"❌ {module} import failed: {e}", file=sys.stderr)
+        failed.append(module)
+if failed:
+    print(f"ERROR: Failed to import: {', '.join(failed)}", file=sys.stderr)
+    sys.exit(1)
 print("✅ critical packages installed and importable")
 PY
 
@@ -110,6 +120,15 @@ COPY infrastructure/service-mesh/sidecar/ ./sidecar/
 COPY infrastructure/service-mesh/discovery/ ./discovery/
 COPY infrastructure/service-mesh/communication/ ./communication/
 COPY infrastructure/service-mesh/security/ ./security/
+
+# Verify source code directories were copied (per Dockerfile-copy-pattern: verify after COPY)
+# CRITICAL: This prevents silent COPY failures for source code
+RUN test -d ./controller || (echo "ERROR: controller directory not copied" && exit 1) && \
+    test -d ./sidecar || (echo "ERROR: sidecar directory not copied" && exit 1) && \
+    test -d ./discovery || (echo "ERROR: discovery directory not copied" && exit 1) && \
+    test -d ./communication || (echo "ERROR: communication directory not copied" && exit 1) && \
+    test -d ./security || (echo "ERROR: security directory not copied" && exit 1) && \
+    echo "✅ Source code directories verified in builder stage"
 
 # Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
 # CRITICAL: Create marker files with actual content AFTER copying source code
@@ -162,6 +181,9 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
+# Verify runtime directories were copied (per Dockerfile-copy-pattern: verify after COPY)
+RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/var/run/.keep'), 'Runtime directory not copied: /var/run'; assert os.path.exists('/var/lib/.keep'), 'Lib directory not copied: /var/lib'; print('✅ Runtime directories verified in runtime stage')"]
+
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
@@ -180,13 +202,13 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/lib/ld-linux-aarch64.so.1'), 'Dynamic linker not copied: /lib/ld-linux-aarch64.so.1'; assert os.path.isdir('/lib/aarch64-linux-gnu'), 'Arch-specific libs not copied: /lib/aarch64-linux-gnu'; assert os.path.exists('/etc/ssl/certs/ca-certificates.crt'), 'CA certificates not copied: /etc/ssl/certs/ca-certificates.crt'; print('✅ System libraries verified in runtime stage')"]
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpcio', 'aiohttp', 'python_consul', 'pydantic', 'cryptography'); [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpcio', 'aiohttp', 'python_consul', 'pydantic', 'cryptography'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'Packages not found: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
 # Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app
 
 # Verify controller module exists (this will fail the build if module is missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'controller marker file missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'controller marker file missing'; assert os.path.exists('/app/sidecar'), 'sidecar directory missing'; assert os.path.exists('/app/discovery'), 'discovery directory missing'; assert os.path.exists('/app/communication'), 'communication directory missing'; assert os.path.exists('/app/security'), 'security directory missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
 ENV TZ=UTC \
