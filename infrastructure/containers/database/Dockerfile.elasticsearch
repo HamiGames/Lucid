@@ -102,7 +102,6 @@ LABEL maintainer="Lucid Development Team" \
 # Set environment variables
 ENV ES_HOME=/usr/share/elasticsearch \
     PATH=/usr/share/elasticsearch/bin:/usr/bin:/bin \
-    ES_JAVA_OPTS="-Xms512m -Xmx512m" \
     CLUSTER_NAME=lucid-cluster \
     NODE_NAME=lucid-node \
     DISCOVERY_TYPE=single-node \

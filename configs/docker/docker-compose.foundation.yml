@@ -269,7 +269,7 @@ services:
     cap_add: ["NET_BIND_SERVICE"]
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,size=200m
+      - /tmp:size=200m # REMOVED noexec,nosuid - allows native library execution
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
@@ -280,7 +280,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s # INCREASED from 60s to 120s for Pi startup time
     labels:
       - "lucid.service=elasticsearch"
       - "lucid.type=distroless"
