@@ -178,7 +178,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 def main():
     """Run the application"""
     uvicorn.run(
-        "auth.main:app",
+        app,  # Use app object directly instead of "auth.main:app" (files are at /app/ root, not /app/auth/)
         host="0.0.0.0",
         port=settings.AUTH_SERVICE_PORT,
         reload=settings.DEBUG,
