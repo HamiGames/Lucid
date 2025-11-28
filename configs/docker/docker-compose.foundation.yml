@@ -276,12 +276,7 @@ services:
       - elasticsearch-cache:/tmp/elasticsearch
     healthcheck:
       test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          'import os, urllib.request; port = os.getenv("ELASTICSEARCH_HTTP_PORT", "9200"); urllib.request.urlopen(f"http://localhost:{port}/_cluster/health").read()',
-        ]
+        ["CMD", "/usr/bin/curl", "-f", "http://localhost:9200/_cluster/health"]
       interval: 30s
       timeout: 10s
       retries: 3
