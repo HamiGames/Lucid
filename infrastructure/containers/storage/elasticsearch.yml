@@ -26,8 +26,9 @@ path.logs: /usr/share/elasticsearch/logs
 
 # ----------------------------------- Memory -----------------------------------
 # Lock the memory on startup to prevent swapping (disabled for Pi)
-# Memory settings controlled via ES_JAVA_OPTS in docker-compose:
-# ES_JAVA_OPTS=-Xms256m -Xmx256m
+# Memory settings controlled via ES_JAVA_OPTS environment variable in docker-compose
+# ES_JAVA_OPTS is NOT a config setting - it must be set as an environment variable
+# Example: ES_JAVA_OPTS=-Xms256m -Xmx256m (set in docker-compose.foundation.yml)
 bootstrap.memory_lock: false
 
 # ---------------------------------- Network -----------------------------------
@@ -42,7 +43,7 @@ transport.port: 9300
 
 # --------------------------------- Discovery ----------------------------------
 # Single-node discovery for Raspberry Pi deployment
-# Aligned with docker-compose.core.yaml configuration
+# Aligned with docker-compose.foundation.yml configuration
 discovery.type: single-node
 
 # For future cluster mode (when multiple nodes are deployed):
@@ -54,8 +55,11 @@ discovery.type: single-node
 gateway.recover_after_nodes: 1
 
 # ---------------------------------- Security ----------------------------------
-# Disable X-Pack security for development (aligned with docker-compose.core.yaml)
+# Disable X-Pack security for development (aligned with docker-compose.foundation.yml)
 xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
 
 # Disable other X-Pack features for resource efficiency on Pi
 xpack.monitoring.enabled: false
@@ -91,6 +95,6 @@ thread_pool.bulk.queue_size: 1000
 # - Container: lucid-elasticsearch
 # - Platform: linux/arm64 (Raspberry Pi)
 # - Network: lucid-pi-network (172.20.0.13)
-# - Memory: 512M limit (256M reservation)
+# - Memory: Controlled via ES_JAVA_OPTS environment variable (set in docker-compose)
 # - Environment: ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
 # - Health Check: http://localhost:9200/_cluster/health

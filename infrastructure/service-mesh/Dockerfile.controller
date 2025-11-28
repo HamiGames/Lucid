@@ -67,7 +67,7 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
 # Install Python dependencies with cache mount and optimizations
-# Explicitly install core runtime packages even if requirements.txt omits them.
+# Note: grpcio is already in requirements.txt, so we don't need to install it again
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     python -m pip install --user \
@@ -77,7 +77,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --user \
         --prefer-binary \
         --no-warn-script-location \
-        grpcio \
         aiohttp \
         python-consul \
         pydantic \
@@ -91,6 +90,7 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
+# CRITICAL: Use correct import names (grpc not grpcio, consul not python_consul)
 RUN test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
@@ -98,7 +98,8 @@ RUN test -d /root/.local/lib/python3.11/site-packages && \
     PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - <<'PY'
 from importlib import import_module
 import sys
-required = ("grpcio", "aiohttp", "python_consul", "pydantic", "cryptography")
+# Note: grpcio package imports as 'grpc', python-consul package imports as 'consul'
+required = ("grpc", "aiohttp", "consul", "pydantic", "cryptography")
 failed = []
 for module in required:
     try:
@@ -202,7 +203,8 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/lib/ld-linux-aarch64.so.1'), 'Dynamic linker not copied: /lib/ld-linux-aarch64.so.1'; assert os.path.isdir('/lib/aarch64-linux-gnu'), 'Arch-specific libs not copied: /lib/aarch64-linux-gnu'; assert os.path.exists('/etc/ssl/certs/ca-certificates.crt'), 'CA certificates not copied: /etc/ssl/certs/ca-certificates.crt'; print('✅ System libraries verified in runtime stage')"]
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpcio', 'aiohttp', 'python_consul', 'pydantic', 'cryptography'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'Packages not found: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+# CRITICAL: Use correct import names (grpc not grpcio, consul not python_consul)
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'Packages not found: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
 # Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app

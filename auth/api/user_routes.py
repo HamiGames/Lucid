@@ -4,7 +4,7 @@ GET /users/{user_id}, PUT /users/{user_id}, etc.
 """
 
 from fastapi import APIRouter, HTTPException, status
-from ..models.user import UserResponse, UserUpdate
+from models.user import UserResponse, UserUpdate
 import logging
 
 logger = logging.getLogger(__name__)

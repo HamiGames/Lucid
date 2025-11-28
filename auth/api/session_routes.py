@@ -5,7 +5,7 @@ GET /sessions, DELETE /sessions/{session_id}, etc.
 
 from fastapi import APIRouter, HTTPException, status
 from typing import List
-from ..models.session import SessionResponse
+from models.session import SessionResponse
 import logging
 
 logger = logging.getLogger(__name__)
