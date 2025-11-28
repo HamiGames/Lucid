@@ -31,17 +31,20 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Install build dependencies with apt cache mount (BuildKit optimization)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    pkg-config \
-    curl \
-    git \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    (apt-get update || (echo "ERROR: apt-get update failed" && exit 1)) && \
+    (apt-get install -y \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        git \
+        ca-certificates || (echo "ERROR: apt-get install failed" && exit 1)) && \
+    rm -rf /var/lib/apt/lists/* && \
+    test -f /usr/bin/gcc || (echo "ERROR: gcc not installed" && exit 1) && \
+    test -f /usr/bin/g++ || (echo "ERROR: g++ not installed" && exit 1)
 
 # Set working directory
 WORKDIR /app
@@ -49,11 +52,13 @@ WORKDIR /app
 # Create placeholder files in system directories with actual content (ensures they're baked into image)
 RUN echo "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+    test -f /var/run/.keep || (echo "ERROR: Failed to create /var/run/.keep" && exit 1) && \
+    test -f /var/lib/.keep || (echo "ERROR: Failed to create /var/lib/.keep" && exit 1) && \
+    chown -R 65532:65532 /var/run /var/lib || (echo "ERROR: Failed to chown runtime directories" && exit 1)
 
 # Upgrade pip tooling to latest versions so binary wheels resolve properly
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip wheel setuptools
+    python -m pip install --upgrade pip wheel setuptools || (echo "ERROR: pip upgrade failed" && exit 1)
 
 # Copy requirements and install dependencies
 COPY infrastructure/service-mesh/requirements.txt ./requirements.txt
@@ -64,54 +69,78 @@ RUN test -f ./requirements.txt || (echo "ERROR: requirements.txt not found" && e
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
-    mkdir -p /root/.local/bin
+    mkdir -p /root/.local/bin && \
+    test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: Failed to create site-packages directory" && exit 1) && \
+    test -d /root/.local/bin || (echo "ERROR: Failed to create bin directory" && exit 1)
 
 # Install Python dependencies with cache mount and optimizations
 # Note: grpcio is already in requirements.txt, so we don't need to install it again
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
-    python -m pip install --user \
+    (python -m pip install --user \
         --prefer-binary \
         --no-warn-script-location \
-        -r requirements.txt && \
-    python -m pip install --user \
+        -r requirements.txt || (echo "ERROR: requirements.txt installation failed" && exit 1)) && \
+    (python -m pip install --user \
         --prefer-binary \
         --no-warn-script-location \
         aiohttp \
         python-consul \
         pydantic \
-        cryptography && \
-    python -m pip check
+        cryptography || (echo "ERROR: additional packages installation failed" && exit 1)) && \
+    (python -m pip check || (echo "ERROR: pip dependency check failed" && exit 1))
 
 # Create marker files with actual content (ensures directory structure is locked in)
-# CRITICAL: Must be AFTER pip install, with actual content (not empty)
-RUN echo "LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_SERVICE_MESH_CONTROLLER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
-    chown -R 65532:65532 /root/.local
+# CRITICAL: Must be AFTER pip install, with actual content (not empty) per Dockerfile-copy-pattern
+RUN test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: site-packages directory does not exist" && exit 1) && \
+    test -d /root/.local/bin || (echo "ERROR: bin directory does not exist" && exit 1) && \
+    marker_content_packages="LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" && \
+    marker_content_binaries="LUCID_SERVICE_MESH_CONTROLLER_BINARIES_INSTALLED_$(date +%s)" && \
+    echo "$marker_content_packages" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "$marker_content_binaries" > /root/.local/bin/.lucid-marker && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker || (echo "ERROR: Failed to create packages marker file" && exit 1) && \
+    test -f /root/.local/bin/.lucid-marker || (echo "ERROR: Failed to create binaries marker file" && exit 1) && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker || (echo "ERROR: Packages marker file is empty" && exit 1) && \
+    test -s /root/.local/bin/.lucid-marker || (echo "ERROR: Binaries marker file is empty" && exit 1) && \
+    chown -R 65532:65532 /root/.local || (echo "ERROR: Failed to chown /root/.local" && exit 1)
 
 # Verify packages are installed and verify directory structure
 # CRITICAL: Use correct import names (grpc not grpcio, consul not python_consul)
-RUN test -d /root/.local/lib/python3.11/site-packages && \
+# CRITICAL: Verify both package directories exist AND packages can be imported (per Dockerfile-copy-pattern)
+RUN test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: site-packages directory missing" && exit 1) && \
+    test -d /root/.local/bin || (echo "ERROR: bin directory missing" && exit 1) && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    package_count=$(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l) && \
+    test "$package_count" -gt 0 || (echo "ERROR: No packages found in site-packages" && exit 1) && \
+    echo "Package count: $package_count" && \
     PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - <<'PY'
 from importlib import import_module
 import sys
+import os
 # Note: grpcio package imports as 'grpc', python-consul package imports as 'consul'
-required = ("grpc", "aiohttp", "consul", "pydantic", "cryptography")
-failed = []
-for module in required:
+required = {"grpc": "grpc", "aiohttp": "aiohttp", "consul": "consul", "pydantic": "pydantic", "cryptography": "cryptography"}
+site_packages = "/root/.local/lib/python3.11/site-packages"
+failed_imports = []
+failed_dirs = []
+for pkg_name, import_name in required.items():
+    pkg_dir = os.path.join(site_packages, pkg_name)
+    if not os.path.exists(pkg_dir):
+        print(f"❌ {pkg_name} directory not found: {pkg_dir}", file=sys.stderr)
+        failed_dirs.append(pkg_name)
     try:
-        import_module(module)
-        print(f"✅ {module} imported successfully")
+        import_module(import_name)
+        print(f"✅ {import_name} imported successfully")
     except ImportError as e:
-        print(f"❌ {module} import failed: {e}", file=sys.stderr)
-        failed.append(module)
-if failed:
-    print(f"ERROR: Failed to import: {', '.join(failed)}", file=sys.stderr)
+        print(f"❌ {import_name} import failed: {e}", file=sys.stderr)
+        failed_imports.append(import_name)
+if failed_dirs:
+    print(f"ERROR: Package directories not found: {', '.join(failed_dirs)}", file=sys.stderr)
     sys.exit(1)
-print("✅ critical packages installed and importable")
+if failed_imports:
+    print(f"ERROR: Failed to import: {', '.join(failed_imports)}", file=sys.stderr)
+    sys.exit(1)
+print("✅ critical packages installed and importable: all directories exist and imports work")
 PY
 
 # Copy service mesh controller source code to builder stage
@@ -138,10 +167,24 @@ RUN echo "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /app/controller/.l
     echo "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > /app/discovery/.lucid-discovery-marker && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > /app/communication/.lucid-communication-marker && \
     echo "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > /app/security/.lucid-security-marker && \
-    chown -R 65532:65532 /app
+    test -f /app/controller/.lucid-source-marker || (echo "ERROR: Failed to create controller marker" && exit 1) && \
+    test -f /app/sidecar/.lucid-sidecar-marker || (echo "ERROR: Failed to create sidecar marker" && exit 1) && \
+    test -f /app/discovery/.lucid-discovery-marker || (echo "ERROR: Failed to create discovery marker" && exit 1) && \
+    test -f /app/communication/.lucid-communication-marker || (echo "ERROR: Failed to create communication marker" && exit 1) && \
+    test -f /app/security/.lucid-security-marker || (echo "ERROR: Failed to create security marker" && exit 1) && \
+    chown -R 65532:65532 /app || (echo "ERROR: Failed to chown /app" && exit 1)
 
-# Build the application
-RUN python -m compileall -b .
+# Build the application (fail on compilation errors)
+# CRITICAL: compileall returns non-zero on errors, verify compilation succeeded
+RUN python -m compileall -b . > /tmp/compile.log 2>&1; \
+    compile_exit=$?; \
+    if [ $compile_exit -ne 0 ]; then \
+        echo "ERROR: Python compilation failed (exit code: $compile_exit)" && \
+        cat /tmp/compile.log && \
+        exit 1; \
+    fi && \
+    test -d ./controller || (echo "ERROR: controller directory missing after compilation" && exit 1) && \
+    echo "✅ Python compilation successful"
 
 # Verify system libraries exist in builder stage before COPY (per Dockerfile-copy-pattern)
 # CRITICAL: This ensures COPY operations will not fail silently
@@ -183,11 +226,14 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Verify runtime directories were copied (per Dockerfile-copy-pattern: verify after COPY)
-RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/var/run/.keep'), 'Runtime directory not copied: /var/run'; assert os.path.exists('/var/lib/.keep'), 'Lib directory not copied: /var/lib'; print('✅ Runtime directories verified in runtime stage')"]
+# CRITICAL: Verify both marker files AND directory structure (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os, sys; assert os.path.exists('/var/run/.keep'), 'ERROR: Runtime directory marker not copied: /var/run/.keep'; assert os.path.exists('/var/lib/.keep'), 'ERROR: Lib directory marker not copied: /var/lib/.keep'; assert os.path.isdir('/var/run'), 'ERROR: /var/run is not a directory'; assert os.path.isdir('/var/lib'), 'ERROR: /var/lib is not a directory'; assert os.path.isfile('/var/run/.keep'), 'ERROR: /var/run/.keep is not a file'; assert os.path.isfile('/var/lib/.keep'), 'ERROR: /var/lib/.keep is not a file'; print('✅ Runtime directories verified in runtime stage: markers and structure confirmed')"]
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+# CRITICAL: Use /root/.local path (not /usr/local) for distroless Python compatibility
+# CRITICAL: Copy entire directories (not individual files) per Dockerfile-copy-pattern
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /root/.local/bin
 
 # Copy dynamic linker for ARM64 (required for native extensions like grpcio)
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
@@ -200,17 +246,21 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 
 # Verify system libraries were copied (per Dockerfile-copy-pattern: verify after COPY)
 # CRITICAL: This will fail the build if system libraries are missing (prevents silent failures)
-RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/lib/ld-linux-aarch64.so.1'), 'Dynamic linker not copied: /lib/ld-linux-aarch64.so.1'; assert os.path.isdir('/lib/aarch64-linux-gnu'), 'Arch-specific libs not copied: /lib/aarch64-linux-gnu'; assert os.path.exists('/etc/ssl/certs/ca-certificates.crt'), 'CA certificates not copied: /etc/ssl/certs/ca-certificates.crt'; print('✅ System libraries verified in runtime stage')"]
+# CRITICAL: Verify file types and sizes to ensure complete copy (not empty or partial)
+RUN ["/usr/bin/python3.11", "-c", "import os, sys; linker = '/lib/ld-linux-aarch64.so.1'; lib_dir = '/lib/aarch64-linux-gnu'; certs = '/etc/ssl/certs/ca-certificates.crt'; assert os.path.exists(linker), f'ERROR: Dynamic linker not copied: {linker}'; assert os.path.isfile(linker), f'ERROR: {linker} is not a file'; assert os.path.getsize(linker) > 0, f'ERROR: {linker} is empty'; assert os.path.isdir(lib_dir), f'ERROR: Arch-specific libs not copied: {lib_dir}'; assert len(os.listdir(lib_dir)) > 0, f'ERROR: {lib_dir} is empty'; assert os.path.exists(certs), f'ERROR: CA certificates not copied: {certs}'; assert os.path.isfile(certs), f'ERROR: {certs} is not a file'; assert os.path.getsize(certs) > 0, f'ERROR: {certs} is empty'; print('✅ System libraries verified in runtime stage: all files exist, have correct types, and are non-empty')"]
 
 # Verify packages were copied (this will fail the build if packages are missing)
 # CRITICAL: Use correct import names (grpc not grpcio, consul not python_consul)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'Packages not found: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+# CRITICAL: Use /root/.local path (not /usr/local) for distroless Python compatibility
+# CRITICAL: Verify both package directories exist AND packages can be imported AND marker file has content (per Dockerfile-copy-pattern)
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util, sys; site_packages = '/root/.local/lib/python3.11/site-packages'; bin_dir = '/root/.local/bin'; assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'grpc')), 'ERROR: grpc directory not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'ERROR: aiohttp directory not found'; assert os.path.exists(os.path.join(site_packages, 'consul')), 'ERROR: consul directory not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'ERROR: pydantic directory not found'; assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'ERROR: cryptography directory not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; print('✅ Packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
 
 # Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app
 
 # Verify controller module exists (this will fail the build if module is missing)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/controller'), 'controller directory missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'controller marker file missing'; assert os.path.exists('/app/sidecar'), 'sidecar directory missing'; assert os.path.exists('/app/discovery'), 'discovery directory missing'; assert os.path.exists('/app/communication'), 'communication directory missing'; assert os.path.exists('/app/security'), 'security directory missing'; assert importlib.util.find_spec('controller.main', package=None), 'controller.main not found'; print('controller package verified in runtime stage')"]
+# CRITICAL: Verify all source directories AND marker files AND module can be imported (per Dockerfile-copy-pattern)
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util, sys; assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package verified in runtime stage: all directories, markers, and module imports verified')"]
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
 ENV TZ=UTC \
@@ -219,8 +269,9 @@ ENV TZ=UTC \
     COUNTRY=US
 
 # Set Python path and environment (packages already copied above)
-ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
-    PATH=/usr/local/bin:$PATH \
+# CRITICAL: Use /root/.local path (not /usr/local) for distroless Python compatibility
+ENV PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages \
+    PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     LUCID_ENV=production \
