@@ -20,11 +20,11 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
-log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_detail() { echo -e "${CYAN}[DETAIL]${NC} $1"; }
+log_info() { echo -e "${BLUE}[INFO]${NC} $1" >&2; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1" >&2; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1" >&2; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
+log_detail() { echo -e "${CYAN}[DETAIL]${NC} $1" >&2; }
 
 # =============================================================================
 # DATA STRUCTURES
@@ -56,22 +56,38 @@ parse_reference_file() {
     local in_table=false
     local line_num=0
     local vars_parsed=0
+    local total_lines=$(wc -l < "$PROJECT_ROOT/$REFERENCE_FILE" 2>/dev/null || echo "0")
+    
+    # Test file read
+    if [[ ! -r "$PROJECT_ROOT/$REFERENCE_FILE" ]]; then
+        log_error "Cannot read reference file"
+        return 1
+    fi
+    
+    log_info "Total lines to process: $total_lines"
+    echo ""
     
     while IFS= read -r line || [[ -n "$line" ]]; do
         ((line_num++))
+        
+        # Show progress every 10 lines with percentage
+        if (( line_num % 10 == 0 )) || (( line_num == 1 )); then
+            local percent=$(( line_num * 100 / total_lines ))
+            printf "\r${BLUE}[INFO]${NC} Processing: %3d%% (%d/%d lines) - Found %d variables..." "$percent" "$line_num" "$total_lines" "$vars_parsed" >&2
+        fi
         
         # Detect file section (e.g., ### `.env.foundation` or ### `.env.foundation` (Phase 1: ...))
         if [[ "$line" =~ ^###[[:space:]]+\`\.env\.([^\`]+)\` ]]; then
             current_file=".env.${BASH_REMATCH[1]}"
             in_table=false
-            log_detail "Found section: $current_file (line $line_num)"
+            printf "\n${GREEN}[INFO]${NC} Found section: $current_file (line $line_num)\n" >&2
             continue
         fi
         
-        # Detect table start (header row)
-        if [[ "$line" =~ ^\|[[:space:]]*Variable[[:space:]]+Name.*\| ]]; then
+        # Detect table start (header row) - more flexible pattern
+        if [[ "$line" =~ ^\|.*Variable.*Name.*Format ]]; then
             in_table=true
-            log_detail "Table started for $current_file (line $line_num)"
+            printf "${CYAN}[DETAIL]${NC} Table started for $current_file (line $line_num)\n" >&2
             continue
         fi
         
@@ -118,6 +134,11 @@ parse_reference_file() {
                 fi
                 
                 ((vars_parsed++))
+                
+                # Show first 10 variables parsed, then every 20th
+                if [[ $vars_parsed -le 10 ]] || (( vars_parsed % 20 == 0 )); then
+                    printf "${CYAN}[DETAIL]${NC}   Parsed variable #%d: $var_name -> $current_file\n" "$vars_parsed" >&2
+                fi
             fi
         fi
         
@@ -125,20 +146,27 @@ parse_reference_file() {
         if [[ "$in_table" == true ]]; then
             if [[ "$line" =~ ^--- ]] || [[ "$line" =~ ^##[^#] ]]; then
                 in_table=false
+                if [[ -n "$current_file" ]]; then
+                    printf "${CYAN}[DETAIL]${NC} Ended table for $current_file (line $line_num, $vars_parsed vars total)\n" >&2
+                fi
                 current_file=""
             fi
         fi
-        
-        # Progress indicator every 100 lines
-        if (( line_num % 100 == 0 )); then
-            log_detail "Processed $line_num lines, parsed $vars_parsed variables..."
-        fi
     done < "$PROJECT_ROOT/$REFERENCE_FILE"
+    
+    # Clear progress line and show final status
+    printf "\r${GREEN}[SUCCESS]${NC} Parsing complete: 100%% (%d/%d lines) - Found %d variables                    \n" "$line_num" "$total_lines" "$vars_parsed" >&2
     
     if [[ $vars_parsed -eq 0 ]]; then
         log_error "No variables parsed from reference file! Check regex patterns."
         log_error "Last file section: $current_file"
         log_error "Last line processed: $line_num"
+        log_error "in_table status: $in_table"
+        # Show sample lines for debugging
+        log_error "Sample lines from file:"
+        head -n 35 "$PROJECT_ROOT/$REFERENCE_FILE" | tail -n 5 | while IFS= read -r sample_line; do
+            log_error "  $sample_line"
+        done
         return 1
     fi
     
@@ -150,18 +178,27 @@ parse_reference_file() {
 # =============================================================================
 
 scan_env_files() {
+    echo ""
     log_info "Scanning existing .env.* files..."
     
     local files_found=0
     local vars_found=0
+    local file_list=()
     
-    # Find all .env files
+    # Collect all .env files first
     while IFS= read -r file; do
-        [[ ! -f "$file" ]] && continue
-        
+        [[ -f "$file" ]] && file_list+=("$file")
+    done < <(find "$ENV_DIR" -maxdepth 1 -name ".env.*" -type f 2>/dev/null | sort)
+    
+    local total_files=${#file_list[@]}
+    log_info "Found $total_files .env.* files to scan"
+    echo ""
+    
+    # Process each file
+    for file in "${file_list[@]}"; do
         ((files_found++))
         local file_basename=$(basename "$file")
-        log_detail "Scanning: $file_basename"
+        printf "\r${BLUE}[INFO]${NC} Scanning file %d/%d: $file_basename..." "$files_found" "$total_files" >&2
         
         # Read variables from file
         while IFS= read -r line || [[ -n "$line" ]]; do
@@ -193,9 +230,10 @@ scan_env_files() {
                 ((vars_found++))
             fi
         done < "$file"
-    done < <(find "$ENV_DIR" -maxdepth 1 -name ".env.*" -type f 2>/dev/null | sort)
+    done
     
-    log_success "Scanned $files_found files, found $vars_found variable definitions"
+    printf "\r${GREEN}[SUCCESS]${NC} Scanned $files_found files, found $vars_found variable definitions                    \n" >&2
+    echo ""
 }
 
 # =============================================================================
@@ -203,13 +241,26 @@ scan_env_files() {
 # =============================================================================
 
 validate_variables() {
+    echo ""
     log_info "Validating variables against reference..."
     
     local missing_count=0
     local found_count=0
     local empty_count=0
+    local total_vars=${#VAR_METADATA[@]}
+    local processed=0
+    
+    log_info "Validating $total_vars variables..."
+    echo ""
     
     for var_name in "${!VAR_METADATA[@]}"; do
+        ((processed++))
+        
+        # Show progress every 10 variables or at milestones
+        if (( processed % 10 == 0 )) || (( processed == 1 )) || (( processed == total_vars )); then
+            local percent=$(( processed * 100 / total_vars ))
+            printf "\r${BLUE}[INFO]${NC} Validating: %3d%% (%d/%d variables) - Found: %d, Missing: %d..." "$percent" "$processed" "$total_vars" "$found_count" "$missing_count" >&2
+        fi
         local metadata="${VAR_METADATA[$var_name]}"
         local format=$(echo "$metadata" | cut -d'|' -f1)
         local expected_file=$(echo "$metadata" | cut -d'|' -f2)
@@ -247,7 +298,8 @@ validate_variables() {
         fi
     done
     
-    log_info "Validation complete: $found_count found, $missing_count missing, $empty_count empty"
+    printf "\r${GREEN}[SUCCESS]${NC} Validation complete: 100%% (%d/%d variables) - Found: %d, Missing: %d, Empty: %d                    \n" "$processed" "$total_vars" "$found_count" "$missing_count" "$empty_count" >&2
+    echo ""
 }
 
 # =============================================================================
@@ -255,13 +307,26 @@ validate_variables() {
 # =============================================================================
 
 check_consistency() {
+    echo ""
     log_info "Checking for value inconsistencies across files..."
     
     local inconsistent_count=0
+    local total_values=${#VAR_VALUES[@]}
+    local processed=0
+    
+    log_info "Checking $total_values variable values for consistency..."
+    echo ""
     
     # Group variables by name
     declare -A var_files
     for key in "${!VAR_VALUES[@]}"; do
+        ((processed++))
+        
+        # Show progress every 50 values
+        if (( processed % 50 == 0 )) || (( processed == 1 )); then
+            local percent=$(( processed * 100 / total_values ))
+            printf "\r${BLUE}[INFO]${NC} Checking consistency: %3d%% (%d/%d values) - Inconsistencies: %d..." "$percent" "$processed" "$total_values" "$inconsistent_count" >&2
+        fi
         local var_name=$(echo "$key" | cut -d'|' -f2)
         local file=$(echo "$key" | cut -d'|' -f1)
         
@@ -305,11 +370,14 @@ check_consistency() {
         fi
     done
     
+    printf "\r${GREEN}[SUCCESS]${NC} Consistency check complete: 100%% (%d/%d values checked)                    \n" "$processed" "$total_values" >&2
+    
     if [[ $inconsistent_count -gt 0 ]]; then
         log_warning "Found $inconsistent_count variables with inconsistent values across files"
     else
         log_success "All variables are consistent across files"
     fi
+    echo ""
 }
 
 # =============================================================================
@@ -317,6 +385,7 @@ check_consistency() {
 # =============================================================================
 
 categorize_by_action() {
+    echo ""
     log_info "Categorizing missing variables by required action..."
     
     declare -A create_vars
@@ -325,7 +394,22 @@ categorize_by_action() {
     declare -A wrong_file_vars
     declare -A empty_vars
     
+    local total_missing=${#MISSING_VARS[@]}
+    local processed=0
+    
+    if [[ $total_missing -gt 0 ]]; then
+        log_info "Categorizing $total_missing missing variables..."
+        echo ""
+    fi
+    
     for var_name in "${!MISSING_VARS[@]}"; do
+        ((processed++))
+        
+        # Show progress every 10 or at milestones
+        if [[ $total_missing -gt 0 ]] && (( processed % 10 == 0 || processed == 1 || processed == total_missing )); then
+            local percent=$(( processed * 100 / total_missing ))
+            printf "\r${BLUE}[INFO]${NC} Categorizing: %3d%% (%d/%d variables)..." "$percent" "$processed" "$total_missing" >&2
+        fi
         local info="${MISSING_VARS[$var_name]}"
         local expected_file=$(echo "$info" | cut -d'|' -f1)
         local format=$(echo "$info" | cut -d'|' -f2)
@@ -361,6 +445,13 @@ categorize_by_action() {
     CATEGORIZED_MANUAL=("${!manual_vars[@]}")
     CATEGORIZED_WRONG_FILE=("${!wrong_file_vars[@]}")
     CATEGORIZED_EMPTY=("${!empty_vars[@]}")
+    
+    if [[ $total_missing -gt 0 ]]; then
+        printf "\r${GREEN}[SUCCESS]${NC} Categorization complete: 100%% (%d/%d variables)                    \n" "$processed" "$total_missing" >&2
+    else
+        log_success "No missing variables to categorize"
+    fi
+    echo ""
 }
 
 # =============================================================================
@@ -368,7 +459,11 @@ categorize_by_action() {
 # =============================================================================
 
 generate_report() {
+    echo ""
     log_info "Generating validation report..."
+    
+    local total_vars=${#VAR_METADATA[@]}
+    local processed=0
     
     {
         echo "# Environment Variables Validation Report"
@@ -534,6 +629,8 @@ generate_report() {
     } > "$REPORT_FILE"
     
     log_success "Report generated: $REPORT_FILE"
+    log_info "Report contains $(wc -l < "$REPORT_FILE" 2>/dev/null || echo "0") lines"
+    echo ""
 }
 
 # =============================================================================
