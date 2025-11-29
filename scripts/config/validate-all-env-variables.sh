@@ -64,37 +64,23 @@ parse_reference_file() {
     log_info "Total lines to process: $total_lines"
     echo ""
     
-    # Extract all section headers using grep and sed
-    log_info "Extracting section headers..."
-    local section_count=0
-    while IFS= read -r section_line; do
-        ((section_count++))
-        # Extract .env.xxx from ### `.env.xxx` using sed
-        local current_file=$(echo "$section_line" | sed -n "s/^###[[:space:]]*\`\.env\.\([^\`]*\)\`.*$/.env.\1/p")
-        if [[ -n "$current_file" ]]; then
-            printf "${GREEN}[INFO]${NC} Found section: $current_file\n" >&2
-        fi
-    done < <(grep "^###[[:space:]]*\`\.env\." "$PROJECT_ROOT/$REFERENCE_FILE")
-    
-    log_info "Found $section_count sections"
-    echo ""
-    
-    # Process each section
+    # Process file directly
     local current_file=""
     local line_num=0
     
     while IFS= read -r line || [[ -n "$line" ]]; do
         ((line_num++))
         
-        # Show progress every 50 lines
-        if (( line_num % 50 == 0 )) || (( line_num == 1 )); then
+        # Show progress every 10 lines for better visibility
+        if (( line_num % 10 == 0 )) || (( line_num == 1 )) || (( line_num <= 5 )); then
             local percent=$(( line_num * 100 / total_lines ))
             printf "\r${BLUE}[INFO]${NC} Processing: %3d%% (%d/%d lines) - Found %d variables..." "$percent" "$line_num" "$total_lines" "$vars_parsed" >&2
         fi
         
-        # Detect file section using grep pattern
-        if echo "$line" | grep -q "^###[[:space:]]*\`\.env\."; then
-            current_file=$(echo "$line" | sed -n "s/^###[[:space:]]*\`\.env\.\([^\`]*\)\`.*$/.env.\1/p")
+        # Detect file section: ### `.env.xxx`
+        if [[ "${line:0:4}" == "### " ]] && echo "$line" | grep -q "\.env\."; then
+            # Extract .env.xxx using sed
+            current_file=$(echo "$line" | sed -n 's/.*`\(\.env\.[^`]*\)`.*/\1/p')
             if [[ -n "$current_file" ]]; then
                 printf "\n${GREEN}[INFO]${NC} Processing section: $current_file (line $line_num)\n" >&2
             fi
@@ -107,9 +93,9 @@ parse_reference_file() {
         fi
         
         # Parse table rows: | `VAR_NAME` | FORMAT | DESCRIPTION |
-        if echo "$line" | grep -q "^|[[:space:]]*\`"; then
+        if [[ "${line:0:1}" == "|" ]] && echo "$line" | grep -q "`"; then
             # Extract variable name using sed (between backticks in first field)
-            local var_name=$(echo "$line" | sed -n "s/^|[[:space:]]*\`\([^\`]*\)\`.*/\1/p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            local var_name=$(echo "$line" | sed -n 's/.*`\([^`]*\)`.*/\1/p' | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
             # Extract format (second field after |)
             local format=$(echo "$line" | sed 's/^[^|]*|//' | sed 's/|.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
