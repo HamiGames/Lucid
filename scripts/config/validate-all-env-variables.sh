@@ -60,14 +60,14 @@ parse_reference_file() {
         ((line_num++))
         
         # Detect file section (e.g., ### `.env.foundation`)
-        if [[ "$line" =~ ^###\s+`\.env\.([^`]+)` ]]; then
+        if [[ "$line" =~ ^###[[:space:]]+\`\.env\.([^\`]+)\` ]]; then
             current_file=".env.${BASH_REMATCH[1]}"
             in_table=false
             continue
         fi
         
         # Detect table start
-        if [[ "$line" =~ ^\|.*Variable\s+Name.*Format ]]; then
+        if [[ "$line" =~ ^\|.*Variable[[:space:]]+Name.*Format ]]; then
             in_table=true
             continue
         fi
@@ -78,7 +78,7 @@ parse_reference_file() {
         fi
         
         # Parse table row: | VAR_NAME | FORMAT | DESCRIPTION |
-        if [[ "$in_table" == true && "$line" =~ ^\|[[:space:]]*`([^`]+)`[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\| ]]; then
+        if [[ "$in_table" == true && "$line" =~ ^\|[[:space:]]*\`([^\`]+)\`[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\| ]]; then
             local var_name="${BASH_REMATCH[1]}"
             local format="${BASH_REMATCH[2]// /}"
             local description="${BASH_REMATCH[3]// /}"
@@ -242,7 +242,7 @@ check_consistency() {
         if [[ -z "${var_files[$var_name]:-}" ]]; then
             var_files["$var_name"]="$file"
         else
-            var_files["$var_name"]"]="${var_files[$var_name]},$file"
+            var_files["$var_name"]="${var_files[$var_name]},$file"
         fi
     done
     
