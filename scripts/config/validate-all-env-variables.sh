@@ -52,9 +52,6 @@ declare -A INCONSISTENT_VARS
 parse_reference_file() {
     log_info "Parsing environment-variables-reference.md..."
     
-    local current_file=""
-    local in_table=false
-    local line_num=0
     local vars_parsed=0
     local total_lines=$(wc -l < "$PROJECT_ROOT/$REFERENCE_FILE" 2>/dev/null || echo "0")
     
@@ -67,60 +64,84 @@ parse_reference_file() {
     log_info "Total lines to process: $total_lines"
     echo ""
     
+    # Extract all section headers using grep and sed
+    log_info "Extracting section headers..."
+    local section_count=0
+    while IFS= read -r section_line; do
+        ((section_count++))
+        # Extract .env.xxx from ### `.env.xxx` using sed
+        local current_file=$(echo "$section_line" | sed -n "s/^###[[:space:]]*\`\.env\.\([^\`]*\)\`.*$/.env.\1/p")
+        if [[ -n "$current_file" ]]; then
+            printf "${GREEN}[INFO]${NC} Found section: $current_file\n" >&2
+        fi
+    done < <(grep "^###[[:space:]]*\`\.env\." "$PROJECT_ROOT/$REFERENCE_FILE")
+    
+    log_info "Found $section_count sections"
+    echo ""
+    
+    # Process each section
+    local current_file=""
+    local line_num=0
+    
     while IFS= read -r line || [[ -n "$line" ]]; do
         ((line_num++))
         
-        # Show progress every 10 lines with percentage
-        if (( line_num % 10 == 0 )) || (( line_num == 1 )); then
+        # Show progress every 50 lines
+        if (( line_num % 50 == 0 )) || (( line_num == 1 )); then
             local percent=$(( line_num * 100 / total_lines ))
             printf "\r${BLUE}[INFO]${NC} Processing: %3d%% (%d/%d lines) - Found %d variables..." "$percent" "$line_num" "$total_lines" "$vars_parsed" >&2
         fi
         
-        # Detect file section (e.g., ### `.env.foundation` or ### `.env.foundation` (Phase 1: ...))
-        if [[ "$line" =~ ^###[[:space:]]+\`\.env\.([^\`]+)\` ]]; then
-            current_file=".env.${BASH_REMATCH[1]}"
-            in_table=false
-            printf "\n${GREEN}[INFO]${NC} Found section: $current_file (line $line_num)\n" >&2
+        # Detect file section using grep pattern
+        if echo "$line" | grep -q "^###[[:space:]]*\`\.env\."; then
+            current_file=$(echo "$line" | sed -n "s/^###[[:space:]]*\`\.env\.\([^\`]*\)\`.*$/.env.\1/p")
+            if [[ -n "$current_file" ]]; then
+                printf "\n${GREEN}[INFO]${NC} Processing section: $current_file (line $line_num)\n" >&2
+            fi
             continue
         fi
         
-        # Detect table start (header row) - more flexible pattern
-        if [[ "$line" =~ ^\|.*Variable.*Name.*Format ]]; then
-            in_table=true
-            printf "${CYAN}[DETAIL]${NC} Table started for $current_file (line $line_num)\n" >&2
+        # Skip table header and separator lines
+        if echo "$line" | grep -q "^|.*Variable.*Name.*Format" || echo "$line" | grep -q "^|[-:[:space:]]*|"; then
             continue
         fi
         
-        # Skip table separator
-        if [[ "$line" =~ ^\|[-:[:space:]]+\| ]]; then
-            continue
-        fi
-        
-        # Parse table row: | `VAR_NAME` | FORMAT | DESCRIPTION |
-        # Match: | `VAR` | FORMAT | DESC | (with optional trailing content)
-        if [[ "$in_table" == true && "$line" =~ ^\|[[:space:]]*\`([^\`]+)\`[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\|[[:space:]]*([^|]+) ]]; then
-            local var_name="${BASH_REMATCH[1]}"
-            local format="${BASH_REMATCH[2]}"
-            local description="${BASH_REMATCH[3]}"
+        # Parse table rows: | `VAR_NAME` | FORMAT | DESCRIPTION |
+        if echo "$line" | grep -q "^|[[:space:]]*\`"; then
+            # Extract variable name using sed (between backticks in first field)
+            local var_name=$(echo "$line" | sed -n "s/^|[[:space:]]*\`\([^\`]*\)\`.*/\1/p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
-            # Trim whitespace
-            format="${format#"${format%%[![:space:]]*}"}"
-            format="${format%"${format##*[![:space:]]}"}"
-            description="${description#"${description%%[![:space:]]*}"}"
-            description="${description%"${description##*[![:space:]]}"}"
+            # Extract format (second field after |)
+            local format=$(echo "$line" | sed 's/^[^|]*|//' | sed 's/|.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
-            if [[ -n "$current_file" && -n "$var_name" ]]; then
+            # Extract description (third field after |)
+            local description=$(echo "$line" | sed 's/^[^|]*|[^|]*|//' | sed 's/|.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            
+            if [[ -n "$current_file" ]] && [[ -n "$var_name" ]]; then
                 # Determine action needed
                 local action="MANUAL"
-                if [[ "$format" == "BASE64" ]] || [[ "$format" == "HEX" ]] || [[ "$var_name" =~ (SECRET|PASSWORD|KEY|PRIVATE) ]]; then
-                    if [[ "$current_file" == ".env.secrets" ]] || [[ "$var_name" =~ (MONGODB_PASSWORD|REDIS_PASSWORD|ELASTICSEARCH_PASSWORD|JWT_SECRET|JWT_SECRET_KEY|ENCRYPTION_KEY|TOR_PASSWORD|TOR_CONTROL_PASSWORD) ]]; then
+                
+                # Check format using grep
+                if echo "$format" | grep -qE "^(BASE64|HEX)$"; then
+                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -qE "(PASSWORD|SECRET|ENCRYPTION_KEY|TOR_PASSWORD)"; then
                         action="SEED"
                     else
                         action="CREATE"
                     fi
-                elif [[ "$var_name" =~ (HOST|PORT|URL|URI|ONION) ]] && [[ "$current_file" != ".env.secrets" ]]; then
-                    action="SEED"
-                elif [[ "$var_name" =~ (TRON_PRIVATE_KEY|TRON_WALLET_ADDRESS) ]]; then
+                # Check var_name for keywords using grep
+                elif echo "$var_name" | grep -qE "(SECRET|PASSWORD|KEY|PRIVATE)"; then
+                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -qE "(MONGODB_PASSWORD|REDIS_PASSWORD|ELASTICSEARCH_PASSWORD|JWT_SECRET|ENCRYPTION_KEY|TOR_PASSWORD)"; then
+                        action="SEED"
+                    else
+                        action="CREATE"
+                    fi
+                # Check for HOST, PORT, URL, URI, ONION
+                elif echo "$var_name" | grep -qE "(HOST|PORT|URL|URI|ONION)"; then
+                    if [[ "$current_file" != ".env.secrets" ]]; then
+                        action="SEED"
+                    fi
+                # Check for TRON variables
+                elif echo "$var_name" | grep -qE "(TRON_PRIVATE_KEY|TRON_WALLET_ADDRESS)"; then
                     action="SEED"
                 fi
                 
@@ -142,15 +163,9 @@ parse_reference_file() {
             fi
         fi
         
-        # Stop at end of table or section
-        if [[ "$in_table" == true ]]; then
-            if [[ "$line" =~ ^--- ]] || [[ "$line" =~ ^##[^#] ]]; then
-                in_table=false
-                if [[ -n "$current_file" ]]; then
-                    printf "${CYAN}[DETAIL]${NC} Ended table for $current_file (line $line_num, $vars_parsed vars total)\n" >&2
-                fi
-                current_file=""
-            fi
+        # Stop at section boundaries (--- or ## but not ###)
+        if echo "$line" | grep -qE "^(---|##[^#])"; then
+            current_file=""
         fi
     done < "$PROJECT_ROOT/$REFERENCE_FILE"
     
@@ -200,22 +215,22 @@ scan_env_files() {
         local file_basename=$(basename "$file")
         printf "\r${BLUE}[INFO]${NC} Scanning file %d/%d: $file_basename..." "$files_found" "$total_files" >&2
         
-        # Read variables from file
+        # Read variables from file using grep and sed
         while IFS= read -r line || [[ -n "$line" ]]; do
-            # Skip comments and empty lines
-            [[ "$line" =~ ^[[:space:]]*# ]] && continue
+            # Skip comments and empty lines using grep
+            echo "$line" | grep -q "^[[:space:]]*#" && continue
             [[ -z "${line// /}" ]] && continue
             
-            # Parse VAR_NAME=value
-            if [[ "$line" =~ ^([A-Z_][A-Z0-9_]*)=(.*)$ ]]; then
-                local var_name="${BASH_REMATCH[1]}"
-                local value="${BASH_REMATCH[2]}"
+            # Parse VAR_NAME=value using sed
+            if echo "$line" | grep -q "="; then
+                local var_name=$(echo "$line" | sed 's/=.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                local value=$(echo "$line" | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
                 
-                # Remove quotes
-                value="${value#\"}"
-                value="${value%\"}"
-                value="${value#\'}"
-                value="${value%\'}"
+                # Validate var_name is uppercase with underscores using grep
+                echo "$var_name" | grep -qE "^[A-Z_][A-Z0-9_]*$" || continue
+                
+                # Remove quotes using sed
+                value=$(echo "$value" | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
                 
                 # Store value
                 VAR_VALUES["$file_basename|$var_name"]="$value"
