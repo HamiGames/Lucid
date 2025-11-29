@@ -55,39 +55,49 @@ parse_reference_file() {
     local current_file=""
     local in_table=false
     local line_num=0
+    local vars_parsed=0
     
     while IFS= read -r line || [[ -n "$line" ]]; do
         ((line_num++))
         
-        # Detect file section (e.g., ### `.env.foundation`)
+        # Detect file section (e.g., ### `.env.foundation` or ### `.env.foundation` (Phase 1: ...))
         if [[ "$line" =~ ^###[[:space:]]+\`\.env\.([^\`]+)\` ]]; then
             current_file=".env.${BASH_REMATCH[1]}"
             in_table=false
+            log_detail "Found section: $current_file (line $line_num)"
             continue
         fi
         
-        # Detect table start
-        if [[ "$line" =~ ^\|.*Variable[[:space:]]+Name.*Format ]]; then
+        # Detect table start (header row)
+        if [[ "$line" =~ ^\|[[:space:]]*Variable[[:space:]]+Name.*\| ]]; then
             in_table=true
+            log_detail "Table started for $current_file (line $line_num)"
             continue
         fi
         
         # Skip table separator
-        if [[ "$line" =~ ^\|[-:]+\| ]]; then
+        if [[ "$line" =~ ^\|[-:[:space:]]+\| ]]; then
             continue
         fi
         
-        # Parse table row: | VAR_NAME | FORMAT | DESCRIPTION |
-        if [[ "$in_table" == true && "$line" =~ ^\|[[:space:]]*\`([^\`]+)\`[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\| ]]; then
+        # Parse table row: | `VAR_NAME` | FORMAT | DESCRIPTION |
+        # Match: | `VAR` | FORMAT | DESC | (with optional trailing content)
+        if [[ "$in_table" == true && "$line" =~ ^\|[[:space:]]*\`([^\`]+)\`[[:space:]]*\|[[:space:]]*([^|]+)[[:space:]]*\|[[:space:]]*([^|]+) ]]; then
             local var_name="${BASH_REMATCH[1]}"
-            local format="${BASH_REMATCH[2]// /}"
-            local description="${BASH_REMATCH[3]// /}"
+            local format="${BASH_REMATCH[2]}"
+            local description="${BASH_REMATCH[3]}"
+            
+            # Trim whitespace
+            format="${format#"${format%%[![:space:]]*}"}"
+            format="${format%"${format##*[![:space:]]}"}"
+            description="${description#"${description%%[![:space:]]*}"}"
+            description="${description%"${description##*[![:space:]]}"}"
             
             if [[ -n "$current_file" && -n "$var_name" ]]; then
                 # Determine action needed
                 local action="MANUAL"
                 if [[ "$format" == "BASE64" ]] || [[ "$format" == "HEX" ]] || [[ "$var_name" =~ (SECRET|PASSWORD|KEY|PRIVATE) ]]; then
-                    if [[ "$current_file" == ".env.secrets" ]] || [[ "$var_name" =~ (MONGODB_PASSWORD|REDIS_PASSWORD|ELASTICSEARCH_PASSWORD|JWT_SECRET|ENCRYPTION_KEY|TOR_PASSWORD) ]]; then
+                    if [[ "$current_file" == ".env.secrets" ]] || [[ "$var_name" =~ (MONGODB_PASSWORD|REDIS_PASSWORD|ELASTICSEARCH_PASSWORD|JWT_SECRET|JWT_SECRET_KEY|ENCRYPTION_KEY|TOR_PASSWORD|TOR_CONTROL_PASSWORD) ]]; then
                         action="SEED"
                     else
                         action="CREATE"
@@ -106,17 +116,33 @@ parse_reference_file() {
                 else
                     VAR_LOCATIONS["$var_name"]="${VAR_LOCATIONS[$var_name]},$current_file"
                 fi
+                
+                ((vars_parsed++))
             fi
         fi
         
         # Stop at end of table or section
-        if [[ "$in_table" == true && "$line" =~ ^--- ]] || [[ "$line" =~ ^##[^#] ]]; then
-            in_table=false
-            current_file=""
+        if [[ "$in_table" == true ]]; then
+            if [[ "$line" =~ ^--- ]] || [[ "$line" =~ ^##[^#] ]]; then
+                in_table=false
+                current_file=""
+            fi
+        fi
+        
+        # Progress indicator every 100 lines
+        if (( line_num % 100 == 0 )); then
+            log_detail "Processed $line_num lines, parsed $vars_parsed variables..."
         fi
     done < "$PROJECT_ROOT/$REFERENCE_FILE"
     
-    log_success "Parsed $(echo "${!VAR_METADATA[@]}" | wc -w) variables from reference file"
+    if [[ $vars_parsed -eq 0 ]]; then
+        log_error "No variables parsed from reference file! Check regex patterns."
+        log_error "Last file section: $current_file"
+        log_error "Last line processed: $line_num"
+        return 1
+    fi
+    
+    log_success "Parsed $vars_parsed variables from reference file (processed $line_num lines)"
 }
 
 # =============================================================================
@@ -525,14 +551,26 @@ main() {
     # Check reference file exists
     if [[ ! -f "$PROJECT_ROOT/$REFERENCE_FILE" ]]; then
         log_error "Reference file not found: $REFERENCE_FILE"
+        log_error "Full path: $PROJECT_ROOT/$REFERENCE_FILE"
         exit 1
     fi
+    
+    # Verify file is readable
+    if [[ ! -r "$PROJECT_ROOT/$REFERENCE_FILE" ]]; then
+        log_error "Reference file is not readable: $REFERENCE_FILE"
+        exit 1
+    fi
+    
+    log_info "Reference file: $PROJECT_ROOT/$REFERENCE_FILE"
+    log_info "File size: $(wc -l < "$PROJECT_ROOT/$REFERENCE_FILE") lines"
     
     # Check environment directory exists
     if [[ ! -d "$ENV_DIR" ]]; then
         log_error "Environment directory not found: $ENV_DIR"
         exit 1
     fi
+    
+    log_info "Environment directory: $ENV_DIR"
     
     # Initialize arrays
     CATEGORIZED_CREATE=()
