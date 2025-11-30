@@ -121,25 +121,31 @@ parse_reference_file() {
                     else
                         action="CREATE"
                     fi
-                # Check var_name for keywords using grep
-                elif echo "$var_name" | grep -q "SECRET\|PASSWORD\|KEY\|PRIVATE"; then
-                    local has_seed=$(echo "$var_name" | grep -c "MONGODB_PASSWORD\|REDIS_PASSWORD\|ELASTICSEARCH_PASSWORD\|JWT_SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD" 2>/dev/null)
-                    if [[ -z "$has_seed" ]]; then
-                        has_seed=0
-                    fi
-                    if [[ "$current_file" == ".env.secrets" ]] || [[ "$has_seed" -gt 0 ]]; then
-                        action="SEED"
+                else
+                    # Check var_name for keywords using grep
+                    local check_secret=$(echo "$var_name" | grep -c "SECRET\|PASSWORD\|KEY\|PRIVATE" 2>/dev/null || echo "0")
+                    if [[ "$check_secret" -gt 0 ]]; then
+                        local has_seed=$(echo "$var_name" | grep -c "MONGODB_PASSWORD\|REDIS_PASSWORD\|ELASTICSEARCH_PASSWORD\|JWT_SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD" 2>/dev/null || echo "0")
+                        if [[ "$current_file" == ".env.secrets" ]] || [[ "$has_seed" -gt 0 ]]; then
+                            action="SEED"
+                        else
+                            action="CREATE"
+                        fi
                     else
-                        action="CREATE"
+                        # Check for HOST, PORT, URL, URI, ONION
+                        local check_host=$(echo "$var_name" | grep -c "HOST\|PORT\|URL\|URI\|ONION" 2>/dev/null || echo "0")
+                        if [[ "$check_host" -gt 0 ]]; then
+                            if [[ "$current_file" != ".env.secrets" ]]; then
+                                action="SEED"
+                            fi
+                        else
+                            # Check for TRON variables
+                            local check_tron=$(echo "$var_name" | grep -c "TRON_PRIVATE_KEY\|TRON_WALLET_ADDRESS" 2>/dev/null || echo "0")
+                            if [[ "$check_tron" -gt 0 ]]; then
+                                action="SEED"
+                            fi
+                        fi
                     fi
-                # Check for HOST, PORT, URL, URI, ONION
-                elif echo "$var_name" | grep -q "HOST\|PORT\|URL\|URI\|ONION"; then
-                    if [[ "$current_file" != ".env.secrets" ]]; then
-                        action="SEED"
-                    fi
-                # Check for TRON variables
-                elif echo "$var_name" | grep -q "TRON_PRIVATE_KEY\|TRON_WALLET_ADDRESS"; then
-                    action="SEED"
                 fi
                 
                 VAR_METADATA["$var_name"]="$format|$current_file|$description|$action"
@@ -156,7 +162,7 @@ parse_reference_file() {
                 # Show first 10 variables parsed, then every 20th
                 if [[ $vars_parsed -le 10 ]] || (( vars_parsed % 20 == 0 )); then
                     printf "${CYAN}[DETAIL]${NC}   Parsed variable #%d: $var_name -> $current_file\n" "$vars_parsed" >&2
-               
+                fi
             fi
         fi
         
