@@ -107,27 +107,27 @@ parse_reference_file() {
                 # Determine action needed
                 local action="MANUAL"
                 
-                # Check format using grep
-                if echo "$format" | grep -qE "^(BASE64|HEX)$"; then
-                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -qE "(PASSWORD|SECRET|ENCRYPTION_KEY|TOR_PASSWORD)"; then
+                # Check format using simple string comparison
+                if [[ "$format" == "BASE64" ]] || [[ "$format" == "HEX" ]]; then
+                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -q "PASSWORD\|SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD"; then
                         action="SEED"
                     else
                         action="CREATE"
                     fi
                 # Check var_name for keywords using grep
-                elif echo "$var_name" | grep -qE "(SECRET|PASSWORD|KEY|PRIVATE)"; then
-                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -qE "(MONGODB_PASSWORD|REDIS_PASSWORD|ELASTICSEARCH_PASSWORD|JWT_SECRET|ENCRYPTION_KEY|TOR_PASSWORD)"; then
+                elif echo "$var_name" | grep -q "SECRET\|PASSWORD\|KEY\|PRIVATE"; then
+                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -q "MONGODB_PASSWORD\|REDIS_PASSWORD\|ELASTICSEARCH_PASSWORD\|JWT_SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD"; then
                         action="SEED"
                     else
                         action="CREATE"
                     fi
                 # Check for HOST, PORT, URL, URI, ONION
-                elif echo "$var_name" | grep -qE "(HOST|PORT|URL|URI|ONION)"; then
+                elif echo "$var_name" | grep -q "HOST\|PORT\|URL\|URI\|ONION"; then
                     if [[ "$current_file" != ".env.secrets" ]]; then
                         action="SEED"
                     fi
                 # Check for TRON variables
-                elif echo "$var_name" | grep -qE "(TRON_PRIVATE_KEY|TRON_WALLET_ADDRESS)"; then
+                elif echo "$var_name" | grep -q "TRON_PRIVATE_KEY\|TRON_WALLET_ADDRESS"; then
                     action="SEED"
                 fi
                 
