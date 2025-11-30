@@ -156,7 +156,7 @@ parse_reference_file() {
                 # Show first 10 variables parsed, then every 20th
                 if [[ $vars_parsed -le 10 ]] || (( vars_parsed % 20 == 0 )); then
                     printf "${CYAN}[DETAIL]${NC}   Parsed variable #%d: $var_name -> $current_file\n" "$vars_parsed" >&2
-                fi
+               
             fi
         fi
         
