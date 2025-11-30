@@ -160,7 +160,7 @@ parse_reference_file() {
                 ((vars_parsed++))
                 
                 # Show first 10 variables parsed, then every 20th
-                if [[ $vars_parsed -le 10 ]] || (( vars_parsed % 20 == 0 )); then
+                if [[ $vars_parsed -le 10 ]] || [[ $(( vars_parsed % 20 )) -eq 0 ]]; then
                     printf "${CYAN}[DETAIL]${NC}   Parsed variable #%d: $var_name -> $current_file\n" "$vars_parsed" >&2
                 fi
             fi
@@ -249,10 +249,12 @@ scan_env_files() {
                 # Track location
                 if [[ -z "${VAR_LOCATIONS[$var_name]:-}" ]]; then
                     VAR_LOCATIONS["$var_name"]="$file_basename"
-                elif echo "${VAR_LOCATIONS[$var_name]}" | grep -q "$file_basename"; then
-                    : # Already in list
                 else
-                    VAR_LOCATIONS["$var_name"]="${VAR_LOCATIONS[$var_name]},$file_basename"
+                    if echo "${VAR_LOCATIONS[$var_name]}" | grep -q "$file_basename"; then
+                        : # Already in list
+                    else
+                        VAR_LOCATIONS["$var_name"]="${VAR_LOCATIONS[$var_name]},$file_basename"
+                    fi
                 fi
                 
                 ((vars_found++))
@@ -551,14 +553,24 @@ generate_report() {
                 
                 # Determine source file
                 local source_file=".env.foundation"
-                if echo "$var_name" | grep -q "SECRET\|PASSWORD\|KEY" && [[ "$expected_file" != ".env.secrets" ]]; then
+                local check_secret=$(echo "$var_name" | grep -c "SECRET\|PASSWORD\|KEY" 2>/dev/null || echo "0")
+                if [[ "$check_secret" -gt 0 ]] && [[ "$expected_file" != ".env.secrets" ]]; then
                     source_file=".env.secrets"
-                elif echo "$var_name" | grep -q "TRON_"; then
-                    source_file=".env.support"
-                elif echo "$var_name" | grep -q "BLOCKCHAIN_"; then
-                    source_file=".env.core"
-                elif echo "$var_name" | grep -q "SESSION_"; then
-                    source_file=".env.application"
+                else
+                    local check_tron=$(echo "$var_name" | grep -c "TRON_" 2>/dev/null || echo "0")
+                    if [[ "$check_tron" -gt 0 ]]; then
+                        source_file=".env.support"
+                    else
+                        local check_blockchain=$(echo "$var_name" | grep -c "BLOCKCHAIN_" 2>/dev/null || echo "0")
+                        if [[ "$check_blockchain" -gt 0 ]]; then
+                            source_file=".env.core"
+                        else
+                            local check_session=$(echo "$var_name" | grep -c "SESSION_" 2>/dev/null || echo "0")
+                            if [[ "$check_session" -gt 0 ]]; then
+                                source_file=".env.application"
+                            fi
+                        fi
+                    fi
                 fi
                 
                 echo "| \`$var_name\` | \`$expected_file\` | $format | \`$source_file\` | $description |"
