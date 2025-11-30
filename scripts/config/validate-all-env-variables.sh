@@ -150,7 +150,7 @@ parse_reference_file() {
         fi
         
         # Stop at section boundaries (--- or ## but not ###)
-        if echo "$line" | grep -qE "^(---|##[^#])"; then
+        if [[ "${line:0:3}" == "---" ]] || ([[ "${line:0:2}" == "##" ]] && [[ "${line:0:3}" != "###" ]]); then
             current_file=""
         fi
     done < "$PROJECT_ROOT/$REFERENCE_FILE"
@@ -212,8 +212,11 @@ scan_env_files() {
                 local var_name=$(echo "$line" | sed 's/=.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
                 local value=$(echo "$line" | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
                 
-                # Validate var_name is uppercase with underscores using grep
-                echo "$var_name" | grep -qE "^[A-Z_][A-Z0-9_]*$" || continue
+                # Validate var_name is uppercase with underscores (simple check - no regex)
+                # Must start with A-Z or _, and contain only A-Z, 0-9, _
+                if [[ "${var_name:0:1}" != [A-Z_] ]] || echo "$var_name" | grep -q "[^A-Z0-9_]"; then
+                    continue
+                fi
                 
                 # Remove quotes using sed
                 value=$(echo "$value" | sed 's/^"//;s/"$//' | sed "s/^'//;s/'$//")
