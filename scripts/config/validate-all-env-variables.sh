@@ -72,7 +72,18 @@ parse_reference_file() {
         ((line_num++))
         
         # Show progress every 10 lines for better visibility
-        if (( line_num % 10 == 0 )) || (( line_num == 1 )) || (( line_num <= 5 )); then
+        local show_line_progress=0
+        local mod_line=$(( line_num % 10 ))
+        if [[ $mod_line -eq 0 ]]; then
+            show_line_progress=1
+        fi
+        if [[ $line_num -eq 1 ]]; then
+            show_line_progress=1
+        fi
+        if [[ $line_num -le 5 ]]; then
+            show_line_progress=1
+        fi
+        if [[ $show_line_progress -eq 1 ]]; then
             local percent=$(( line_num * 100 / total_lines ))
             printf "\r${BLUE}[INFO]${NC} Processing: %3d%% (%d/%d lines) - Found %d variables..." "$percent" "$line_num" "$total_lines" "$vars_parsed" >&2
         fi
@@ -160,7 +171,17 @@ parse_reference_file() {
                 ((vars_parsed++))
                 
                 # Show first 10 variables parsed, then every 20th
-                if [[ $vars_parsed -le 10 ]] || [[ $(( vars_parsed % 20 )) -eq 0 ]]; then
+                local show_detail=0
+                if [[ $vars_parsed -le 10 ]]; then
+                    show_detail=1
+                fi
+                if [[ $show_detail -eq 0 ]]; then
+                    local mod_result=$(( vars_parsed % 20 ))
+                    if [[ $mod_result -eq 0 ]]; then
+                        show_detail=1
+                    fi
+                fi
+                if [[ $show_detail -eq 1 ]]; then
                     printf "${CYAN}[DETAIL]${NC}   Parsed variable #%d: $var_name -> $current_file\n" "$vars_parsed" >&2
                 fi
             fi
@@ -287,7 +308,18 @@ validate_variables() {
         ((processed++))
         
         # Show progress every 10 variables or at milestones
-        if (( processed % 10 == 0 )) || (( processed == 1 )) || (( processed == total_vars )); then
+        local show_validate_progress=0
+        local mod_processed=$(( processed % 10 ))
+        if [[ $mod_processed -eq 0 ]]; then
+            show_validate_progress=1
+        fi
+        if [[ $processed -eq 1 ]]; then
+            show_validate_progress=1
+        fi
+        if [[ $processed -eq $total_vars ]]; then
+            show_validate_progress=1
+        fi
+        if [[ $show_validate_progress -eq 1 ]]; then
             local percent=$(( processed * 100 / total_vars ))
             printf "\r${BLUE}[INFO]${NC} Validating: %3d%% (%d/%d variables) - Found: %d, Missing: %d..." "$percent" "$processed" "$total_vars" "$found_count" "$missing_count" >&2
         fi
@@ -353,7 +385,15 @@ check_consistency() {
         ((processed++))
         
         # Show progress every 50 values
-        if (( processed % 50 == 0 )) || (( processed == 1 )); then
+        local show_consistency_progress=0
+        local mod_consistency=$(( processed % 50 ))
+        if [[ $mod_consistency -eq 0 ]]; then
+            show_consistency_progress=1
+        fi
+        if [[ $processed -eq 1 ]]; then
+            show_consistency_progress=1
+        fi
+        if [[ $show_consistency_progress -eq 1 ]]; then
             local percent=$(( processed * 100 / total_values ))
             printf "\r${BLUE}[INFO]${NC} Checking consistency: %3d%% (%d/%d values) - Inconsistencies: %d..." "$percent" "$processed" "$total_values" "$inconsistent_count" >&2
         fi
@@ -436,7 +476,20 @@ categorize_by_action() {
         ((processed++))
         
         # Show progress every 10 or at milestones
-        if [[ $total_missing -gt 0 ]] && (( processed % 10 == 0 || processed == 1 || processed == total_missing )); then
+        local show_progress=0
+        if [[ $total_missing -gt 0 ]]; then
+            local mod_result=$(( processed % 10 ))
+            if [[ $mod_result -eq 0 ]]; then
+                show_progress=1
+            fi
+            if [[ $processed -eq 1 ]]; then
+                show_progress=1
+            fi
+            if [[ $processed -eq $total_missing ]]; then
+                show_progress=1
+            fi
+        fi
+        if [[ $show_progress -eq 1 ]]; then
             local percent=$(( processed * 100 / total_missing ))
             printf "\r${BLUE}[INFO]${NC} Categorizing: %3d%% (%d/%d variables)..." "$percent" "$processed" "$total_missing" >&2
         fi
