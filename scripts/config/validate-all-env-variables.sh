@@ -93,7 +93,10 @@ parse_reference_file() {
         fi
         
         # Parse table rows: | `VAR_NAME` | FORMAT | DESCRIPTION |
-        if [[ "${line:0:1}" == "|" ]] && echo "$line" | grep -q "`"; then
+        if [[ "${line:0:1}" == "|" ]]; then
+            if ! echo "$line" | grep -q "`"; then
+                continue
+            fi
             # Extract variable name using sed (between backticks in first field)
             local var_name=$(echo "$line" | sed -n 's/.*`\([^`]*\)`.*/\1/p' | head -n 1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
@@ -109,14 +112,22 @@ parse_reference_file() {
                 
                 # Check format using simple string comparison
                 if [[ "$format" == "BASE64" ]] || [[ "$format" == "HEX" ]]; then
-                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -q "PASSWORD\|SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD"; then
+                    local has_secret=$(echo "$var_name" | grep -c "PASSWORD\|SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD" 2>/dev/null)
+                    if [[ -z "$has_secret" ]]; then
+                        has_secret=0
+                    fi
+                    if [[ "$current_file" == ".env.secrets" ]] || [[ "$has_secret" -gt 0 ]]; then
                         action="SEED"
                     else
                         action="CREATE"
                     fi
                 # Check var_name for keywords using grep
                 elif echo "$var_name" | grep -q "SECRET\|PASSWORD\|KEY\|PRIVATE"; then
-                    if [[ "$current_file" == ".env.secrets" ]] || echo "$var_name" | grep -q "MONGODB_PASSWORD\|REDIS_PASSWORD\|ELASTICSEARCH_PASSWORD\|JWT_SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD"; then
+                    local has_seed=$(echo "$var_name" | grep -c "MONGODB_PASSWORD\|REDIS_PASSWORD\|ELASTICSEARCH_PASSWORD\|JWT_SECRET\|ENCRYPTION_KEY\|TOR_PASSWORD" 2>/dev/null)
+                    if [[ -z "$has_seed" ]]; then
+                        has_seed=0
+                    fi
+                    if [[ "$current_file" == ".env.secrets" ]] || [[ "$has_seed" -gt 0 ]]; then
                         action="SEED"
                     else
                         action="CREATE"
@@ -150,7 +161,9 @@ parse_reference_file() {
         fi
         
         # Stop at section boundaries (--- or ## but not ###)
-        if [[ "${line:0:3}" == "---" ]] || ([[ "${line:0:2}" == "##" ]] && [[ "${line:0:3}" != "###" ]]); then
+        if [[ "${line:0:3}" == "---" ]]; then
+            current_file=""
+        elif [[ "${line:0:2}" == "##" ]] && [[ "${line:0:3}" != "###" ]]; then
             current_file=""
         fi
     done < "$PROJECT_ROOT/$REFERENCE_FILE"
@@ -159,10 +172,9 @@ parse_reference_file() {
     printf "\r${GREEN}[SUCCESS]${NC} Parsing complete: 100%% (%d/%d lines) - Found %d variables                    \n" "$line_num" "$total_lines" "$vars_parsed" >&2
     
     if [[ $vars_parsed -eq 0 ]]; then
-        log_error "No variables parsed from reference file! Check regex patterns."
+        log_error "No variables parsed from reference file!"
         log_error "Last file section: $current_file"
         log_error "Last line processed: $line_num"
-        log_error "in_table status: $in_table"
         # Show sample lines for debugging
         log_error "Sample lines from file:"
         head -n 35 "$PROJECT_ROOT/$REFERENCE_FILE" | tail -n 5 | while IFS= read -r sample_line; do
@@ -212,9 +224,13 @@ scan_env_files() {
                 local var_name=$(echo "$line" | sed 's/=.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
                 local value=$(echo "$line" | sed 's/^[^=]*=//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
                 
-                # Validate var_name is uppercase with underscores (simple check - no regex)
+                # Validate var_name is uppercase with underscores (using grep - no regex)
                 # Must start with A-Z or _, and contain only A-Z, 0-9, _
-                if [[ "${var_name:0:1}" != [A-Z_] ]] || echo "$var_name" | grep -q "[^A-Z0-9_]"; then
+                local first_char="${var_name:0:1}"
+                if ! echo "$first_char" | grep -q "^[A-Z_]$"; then
+                    continue
+                fi
+                if echo "$var_name" | grep -q "[^A-Z0-9_]"; then
                     continue
                 fi
                 
@@ -227,7 +243,9 @@ scan_env_files() {
                 # Track location
                 if [[ -z "${VAR_LOCATIONS[$var_name]:-}" ]]; then
                     VAR_LOCATIONS["$var_name"]="$file_basename"
-                elif [[ ! "${VAR_LOCATIONS[$var_name]}" =~ $file_basename ]]; then
+                elif echo "${VAR_LOCATIONS[$var_name]}" | grep -q "$file_basename"; then
+                    : # Already in list
+                else
                     VAR_LOCATIONS["$var_name"]="${VAR_LOCATIONS[$var_name]},$file_basename"
                 fi
                 
@@ -279,7 +297,7 @@ validate_variables() {
             # Check if it exists in any file
             local found_in=""
             for file_key in "${!VAR_VALUES[@]}"; do
-                if [[ "$file_key" =~ \|$var_name$ ]]; then
+                if echo "$file_key" | grep -q "|$var_name$"; then
                     found_in=$(echo "$file_key" | cut -d'|' -f1)
                     break
                 fi
@@ -527,13 +545,13 @@ generate_report() {
                 
                 # Determine source file
                 local source_file=".env.foundation"
-                if [[ "$var_name" =~ (SECRET|PASSWORD|KEY) ]] && [[ "$expected_file" != ".env.secrets" ]]; then
+                if echo "$var_name" | grep -q "SECRET\|PASSWORD\|KEY" && [[ "$expected_file" != ".env.secrets" ]]; then
                     source_file=".env.secrets"
-                elif [[ "$var_name" =~ (TRON_) ]]; then
+                elif echo "$var_name" | grep -q "TRON_"; then
                     source_file=".env.support"
-                elif [[ "$var_name" =~ (BLOCKCHAIN_) ]]; then
+                elif echo "$var_name" | grep -q "BLOCKCHAIN_"; then
                     source_file=".env.core"
-                elif [[ "$var_name" =~ (SESSION_) ]]; then
+                elif echo "$var_name" | grep -q "SESSION_"; then
                     source_file=".env.application"
                 fi
                 
