@@ -129,6 +129,8 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    environment:
+      - PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
     networks:
       lucid-pi-network:
         ipv4_address: ${LUCID_SERVICE_MESH_IP}
@@ -137,11 +139,11 @@ services:
     depends_on:
       tor-proxy:
         condition: service_started
-    entrypoint: ["python3"]
+    entrypoint: ["/usr/bin/python3"]
     command:
       [
         "-c",
-        "import asyncio; from controller.main import main; asyncio.run(main())",
+        "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); sys.path.insert(0, '/app'); import asyncio; from controller.main import main; asyncio.run(main())",
       ]
     labels:
       - "lucid.service=service-mesh-controller"

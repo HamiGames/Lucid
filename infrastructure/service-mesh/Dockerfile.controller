@@ -74,9 +74,14 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     test -d /root/.local/bin || (echo "ERROR: Failed to create bin directory" && exit 1)
 
 # Install Python dependencies with cache mount and optimizations
+# CRITICAL: Install PyYAML FIRST explicitly to ensure it's present before other packages
 # Note: grpcio is already in requirements.txt, so we don't need to install it again
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
+    (python -m pip install --user \
+        --prefer-binary \
+        --no-warn-script-location \
+        PyYAML==6.0.1 || (echo "ERROR: PyYAML installation failed" && exit 1)) && \
     (python -m pip install --user \
         --prefer-binary \
         --no-warn-script-location \
@@ -91,7 +96,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     (python -m pip check || (echo "ERROR: pip dependency check failed" && exit 1)) && \
     (python -m pip list | grep -i "yaml\|PyYAML" || (echo "ERROR: PyYAML not found in pip list" && exit 1)) && \
     (test -d /root/.local/lib/python3.11/site-packages/yaml || test -f /root/.local/lib/python3.11/site-packages/yaml.py || (echo "ERROR: yaml package not found in site-packages" && exit 1)) && \
-    (python -c "import yaml; print('✅ PyYAML verified:', yaml.__file__)" || (echo "ERROR: yaml import failed" && exit 1))
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import yaml; print('✅ PyYAML verified:', yaml.__file__)" || (echo "ERROR: yaml import failed" && exit 1))
 
 # Create marker files with actual content (ensures directory structure is locked in)
 # CRITICAL: Must be AFTER pip install, with actual content (not empty) per Dockerfile-copy-pattern
@@ -339,4 +344,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 8500 8501 8502 8600 8088
 
 # Start application (async main in controller.main) - NOT FastAPI, uses asyncio.run(main())
-CMD ["python3", "-c", "import asyncio; from controller.main import main; asyncio.run(main())"]
+# CRITICAL: Set sys.path before importing to ensure packages are found in distroless
+CMD ["python3", "-c", "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); sys.path.insert(0, '/app'); import asyncio; from controller.main import main; asyncio.run(main())"]
