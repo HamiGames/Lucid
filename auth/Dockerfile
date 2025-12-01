@@ -82,7 +82,8 @@ RUN echo "LUCID_AUTH_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
-RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58, async_timeout; print('✅ critical packages installed')" && \
+# CRITICAL: Import all packages used in the codebase to catch missing dependencies during build
+RUN python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58, async_timeout, starlette, pydantic, pydantic_settings, tronpy, requests; print('✅ critical packages installed')" && \
     python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -179,7 +180,8 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'redis')) or os.path.exists(os.path.join(site_packages, 'redis/__init__.py')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; print('Packages verified in runtime stage')"]
+# CRITICAL: Check all critical packages used in the codebase to catch COPY failures
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; import importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; required = ('fastapi', 'uvicorn', 'motor', 'pymongo', 'cryptography', 'redis', 'jwt', 'bcrypt', 'eth_account', 'web3', 'base58', 'async_timeout', 'starlette', 'pydantic', 'pydantic_settings', 'tronpy', 'requests'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'redis')) or os.path.exists(os.path.join(site_packages, 'redis/__init__.py')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; print('✅ All critical packages verified in runtime stage')"]
 
 # Copy auth source code from builder - CRITICAL: Copy files to /app/ root level for proper imports
 COPY --from=builder --chown=65532:65532 /build/auth/api ./api
