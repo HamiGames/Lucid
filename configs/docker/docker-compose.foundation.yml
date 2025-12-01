@@ -48,7 +48,7 @@ services:
       lucid-pi-network:
         ipv4_address: ${LUCID_BASE_IP}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/base:/var/log/lucid-base:rw
+      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
     labels:
       - "lucid.service=base-core"
       - "lucid.type=distroless"
