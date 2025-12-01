@@ -13,7 +13,7 @@ ARG BUILDPLATFORM=linux/amd64
 ARG CRYPTOGRAPHY_VERSION=41.0.7
 ARG PROTOBUF_VERSION=4.25.1
 
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
+FROM python:3.11-slim AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -68,13 +68,22 @@ RUN if grep -q "cryptography==41.0.7" requirements.base.txt || grep -q "cryptogr
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
-RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --user --no-cache-dir protobuf==${PROTOBUF_VERSION} && \
-    pip install --user --no-cache-dir -r requirements.base.txt && \
+RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel || (echo "ERROR: pip upgrade failed" && exit 1) && \
+    pip install --user --no-cache-dir protobuf==${PROTOBUF_VERSION} || (echo "ERROR: protobuf installation failed" && exit 1) && \
+    pip install --user --no-cache-dir -r requirements.base.txt || (echo "ERROR: requirements.base.txt installation failed" && exit 1) && \
     (python -m pip check || (echo "ERROR: pip dependency check failed after base requirements" && exit 1)) && \
-    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58, async_timeout, starlette, pydantic, pydantic_settings, tronpy, requests; print('✅ All critical packages verified after base installation')" || (echo "ERROR: Critical package import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import fastapi; print('✅ fastapi')" || (echo "ERROR: fastapi import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import uvicorn; print('✅ uvicorn')" || (echo "ERROR: uvicorn import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import motor, pymongo; print('✅ database packages')" || (echo "ERROR: database packages import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import cryptography, redis; print('✅ crypto/redis packages')" || (echo "ERROR: crypto/redis packages import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import jwt; print('✅ jwt')" || (echo "ERROR: jwt import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import bcrypt; print('✅ bcrypt')" || (echo "ERROR: bcrypt import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import eth_account, web3, base58; print('✅ blockchain packages')" || (echo "ERROR: blockchain packages import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import async_timeout, starlette; print('✅ async packages')" || (echo "ERROR: async packages import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import pydantic, pydantic_settings; print('✅ pydantic packages')" || (echo "ERROR: pydantic packages import failed" && exit 1)) && \
+    (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import tronpy, requests; print('✅ All critical packages verified after base installation')" || (echo "ERROR: tronpy/requests import failed" && exit 1)) && \
     if [ -s requirements.hardware.txt ]; then \
-        pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt; \
+        pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt || (echo "ERROR: hardware wallet requirements installation failed" && exit 1); \
     fi
 
 # Create placeholder files with actual content (ensures directory structure is locked in)
@@ -142,7 +151,7 @@ RUN echo "LUCID_AUTH_SOURCE_API_$(date +%s)" > ./auth/api/.lucid-api-marker && \
     echo "LUCID_AUTH_MAIN_$(date +%s)" > ./auth/main.py.lucid-marker && \
     chown -R 65532:65532 ./auth
 
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
