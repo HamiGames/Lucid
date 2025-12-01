@@ -89,7 +89,13 @@ parse_reference_file() {
         fi
         
         # Detect file section: ### `.env.xxx`
-        if [[ "${line:0:4}" == "### " ]] && echo "$line" | grep -q "\.env\."; then
+        local check_section=0
+        if [[ "${line:0:4}" == "### " ]]; then
+            if echo "$line" | grep -q "\.env\."; then
+                check_section=1
+            fi
+        fi
+        if [[ $check_section -eq 1 ]]; then
             # Extract .env.xxx using sed
             current_file=$(echo "$line" | sed -n 's/.*`\(\.env\.[^`]*\)`.*/\1/p')
             if [[ -n "$current_file" ]]; then
@@ -99,7 +105,16 @@ parse_reference_file() {
         fi
         
         # Skip table header and separator lines
-        if echo "$line" | grep -q "^|.*Variable.*Name.*Format" || echo "$line" | grep -q "^|[-:[:space:]]*|"; then
+        local skip_line=0
+        if echo "$line" | grep -q "^|.*Variable.*Name.*Format"; then
+            skip_line=1
+        fi
+        if [[ $skip_line -eq 0 ]]; then
+            if echo "$line" | grep -q "^|[-:[:space:]]*|"; then
+                skip_line=1
+            fi
+        fi
+        if [[ $skip_line -eq 1 ]]; then
             continue
         fi
         
@@ -117,7 +132,8 @@ parse_reference_file() {
             # Extract description (third field after |)
             local description=$(echo "$line" | sed 's/^[^|]*|[^|]*|//' | sed 's/|.*$//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             
-            if [[ -n "$current_file" ]] && [[ -n "$var_name" ]]; then
+            if [[ -n "$current_file" ]]; then
+                if [[ -n "$var_name" ]]; then
                 # Determine action needed
                 local action="MANUAL"
                 
@@ -184,14 +200,19 @@ parse_reference_file() {
                 if [[ $show_detail -eq 1 ]]; then
                     printf "${CYAN}[DETAIL]${NC}   Parsed variable #%d: $var_name -> $current_file\n" "$vars_parsed" >&2
                 fi
+                fi
             fi
         fi
         
         # Stop at section boundaries (--- or ## but not ###)
         if [[ "${line:0:3}" == "---" ]]; then
             current_file=""
-        elif [[ "${line:0:2}" == "##" ]] && [[ "${line:0:3}" != "###" ]]; then
-            current_file=""
+        else
+            if [[ "${line:0:2}" == "##" ]]; then
+                if [[ "${line:0:3}" != "###" ]]; then
+                    current_file=""
+                fi
+            fi
         fi
     done < "$PROJECT_ROOT/$REFERENCE_FILE"
     
@@ -607,8 +628,25 @@ generate_report() {
                 # Determine source file
                 local source_file=".env.foundation"
                 local check_secret=$(echo "$var_name" | grep -c "SECRET\|PASSWORD\|KEY" 2>/dev/null || echo "0")
-                if [[ "$check_secret" -gt 0 ]] && [[ "$expected_file" != ".env.secrets" ]]; then
-                    source_file=".env.secrets"
+                if [[ "$check_secret" -gt 0 ]]; then
+                    if [[ "$expected_file" != ".env.secrets" ]]; then
+                        source_file=".env.secrets"
+                    else
+                        local check_tron=$(echo "$var_name" | grep -c "TRON_" 2>/dev/null || echo "0")
+                        if [[ "$check_tron" -gt 0 ]]; then
+                            source_file=".env.support"
+                        else
+                            local check_blockchain=$(echo "$var_name" | grep -c "BLOCKCHAIN_" 2>/dev/null || echo "0")
+                            if [[ "$check_blockchain" -gt 0 ]]; then
+                                source_file=".env.core"
+                            else
+                                local check_session=$(echo "$var_name" | grep -c "SESSION_" 2>/dev/null || echo "0")
+                                if [[ "$check_session" -gt 0 ]]; then
+                                    source_file=".env.application"
+                                fi
+                            fi
+                        fi
+                    fi
                 else
                     local check_tron=$(echo "$var_name" | grep -c "TRON_" 2>/dev/null || echo "0")
                     if [[ "$check_tron" -gt 0 ]]; then
