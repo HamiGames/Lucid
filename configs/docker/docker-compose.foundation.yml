@@ -255,8 +255,7 @@ services:
       - "${ELASTICSEARCH_HTTP_PORT:-9200}:${ELASTICSEARCH_HTTP_PORT:-9200}"
       - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:${ELASTICSEARCH_TRANSPORT_PORT:-9300}"
     environment:
-      # DO NOT set ES_JAVA_OPTS here; it becomes an unknown ES setting in this image
-      - "ES_JAVA_OPTS="
+      # DO NOT define ES_JAVA_OPTS here; it becomes an unknown ES setting in this image
       - "discovery.type=single-node"
       - "xpack.security.enabled=false"
     depends_on:

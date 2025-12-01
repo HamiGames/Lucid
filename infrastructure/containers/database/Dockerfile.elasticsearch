@@ -170,6 +170,8 @@ EXPOSE 9200 9300
 # Use non-root user (UID 65532 from distroless)
 USER 65532:65532
 
-# Run Elasticsearch
-ENTRYPOINT ["/usr/share/elasticsearch/bin/elasticsearch"]
+# Run Elasticsearch, ensuring ES_JAVA_OPTS is not present in the environment
+# ES 8.x treats any ES_* env var as a setting when run directly, so we must
+# clear ES_JAVA_OPTS (inherited from the base image) before starting.
+ENTRYPOINT ["/bin/bash", "-c", "unset ES_JAVA_OPTS; exec /usr/share/elasticsearch/bin/elasticsearch"]
 CMD []
