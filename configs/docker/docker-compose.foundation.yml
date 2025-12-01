@@ -48,7 +48,7 @@ services:
       lucid-pi-network:
         ipv4_address: ${LUCID_BASE_IP}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/logs/base:/var/log/lucid-base:rw
     labels:
       - "lucid.service=base-core"
       - "lucid.type=distroless"
@@ -133,7 +133,7 @@ services:
       lucid-pi-network:
         ipv4_address: ${LUCID_SERVICE_MESH_IP}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/var/log/service-mesh:rw
+      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
     depends_on:
       tor-proxy:
         condition: service_started
