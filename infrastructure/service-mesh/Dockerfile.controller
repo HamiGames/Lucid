@@ -88,7 +88,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         python-consul \
         pydantic \
         cryptography || (echo "ERROR: additional packages installation failed" && exit 1)) && \
-    (python -m pip check || (echo "ERROR: pip dependency check failed" && exit 1))
+    (python -m pip check || (echo "ERROR: pip dependency check failed" && exit 1)) && \
+    (python -m pip list | grep -i "yaml\|PyYAML" || (echo "ERROR: PyYAML not found in pip list" && exit 1)) && \
+    (test -d /root/.local/lib/python3.11/site-packages/yaml || test -f /root/.local/lib/python3.11/site-packages/yaml.py || (echo "ERROR: yaml package not found in site-packages" && exit 1)) && \
+    (python -c "import yaml; print('✅ PyYAML verified:', yaml.__file__)" || (echo "ERROR: yaml import failed" && exit 1))
 
 # Create marker files with actual content (ensures directory structure is locked in)
 # CRITICAL: Must be AFTER pip install, with actual content (not empty) per Dockerfile-copy-pattern
@@ -125,8 +128,10 @@ failed_imports = []
 failed_dirs = []
 for pkg_name, import_name in required.items():
     pkg_dir = os.path.join(site_packages, pkg_name)
-    if not os.path.exists(pkg_dir):
-        print(f"❌ {pkg_name} directory not found: {pkg_dir}", file=sys.stderr)
+    pkg_file = os.path.join(site_packages, f"{pkg_name}.py")
+    # Check for both directory and .py file (PyYAML might install as either)
+    if not os.path.exists(pkg_dir) and not os.path.exists(pkg_file):
+        print(f"❌ {pkg_name} not found (checked {pkg_dir} and {pkg_file})", file=sys.stderr)
         failed_dirs.append(pkg_name)
     try:
         import_module(import_name)

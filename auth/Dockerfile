@@ -73,7 +73,9 @@ RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --user --no-cache-dir -r requirements.base.txt && \
     if [ -s requirements.hardware.txt ]; then \
         pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt; \
-    fi
+    fi && \
+    (python -m pip check || (echo "ERROR: pip dependency check failed" && exit 1)) && \
+    (python -c "import fastapi, uvicorn, motor, pymongo, cryptography, redis, jwt, bcrypt, eth_account, web3, base58, async_timeout, starlette, pydantic, pydantic_settings, tronpy, requests; print('✅ All critical packages verified after installation')" || (echo "ERROR: Critical package import failed" && exit 1))
 
 # Create placeholder files with actual content (ensures directory structure is locked in)
 # CRITICAL: Must be AFTER pip install, with actual content (not empty)
