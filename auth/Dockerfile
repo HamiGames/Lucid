@@ -27,6 +27,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive \
     BUILD_ENV=production
 
+# CRITICAL: Explicitly create build directory before WORKDIR (per Dockerfile-copy-pattern.md)
+RUN mkdir -p /build
 WORKDIR /build
 
 # Create placeholder files in system directories (ensures they're baked into image)
@@ -39,30 +41,18 @@ RUN apt-get update && \
         gcc g++ make libffi-dev libssl-dev libpq-dev ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY auth/requirements.authentication-service.txt ./requirements.txt
+# Copy pre-split requirements files (simpler and more maintainable)
+COPY auth/requirements.base.txt /build/requirements.base.txt
+COPY auth/requirements.hardware.txt /build/requirements.hardware.txt
 
-RUN python - <<'PY'
-from pathlib import Path
-src = Path("requirements.txt").read_text().splitlines()
-base, hw = [], []
-current = base
-for line in src:
-    stripped = line.strip()
-    if stripped.startswith("# Hardware wallet support"):
-        current = hw
-        continue
-    if stripped.startswith("# TRON blockchain integration"):
-        current = base
-    if stripped and not stripped.startswith("#"):
-        current.append(stripped)
-Path("requirements.base.txt").write_text("\n".join(base) + "\n")
-Path("requirements.hardware.txt").write_text("\n".join(hw) + "\n")
-PY
-
-RUN if grep -q "cryptography==41.0.7" requirements.base.txt || grep -q "cryptography==41.0.7" requirements.hardware.txt; then \
-        sed -i "s/cryptography==41.0.8/cryptography==${CRYPTOGRAPHY_VERSION}/g" requirements.base.txt; \
-        sed -i "s/cryptography==41.0.8/cryptography==${CRYPTOGRAPHY_VERSION}/g" requirements.hardware.txt; \
-    fi
+# Verify requirements files exist and normalize cryptography version
+RUN test -f /build/requirements.base.txt || (echo "ERROR: requirements.base.txt not found" && exit 1) && \
+    test -f /build/requirements.hardware.txt || (echo "ERROR: requirements.hardware.txt not found" && exit 1) && \
+    # Normalize cryptography version to match build arg (replace any version with CRYPTOGRAPHY_VERSION)
+    sed -i "s/cryptography==[0-9.]*/cryptography==${CRYPTOGRAPHY_VERSION}/g" /build/requirements.base.txt || (echo "ERROR: sed failed on requirements.base.txt" && exit 1) && \
+    sed -i "s/cryptography==[0-9.]*/cryptography==${CRYPTOGRAPHY_VERSION}/g" /build/requirements.hardware.txt || (echo "ERROR: sed failed on requirements.hardware.txt" && exit 1) && \
+    # Verify the replacement worked
+    (grep -q "cryptography==${CRYPTOGRAPHY_VERSION}" /build/requirements.base.txt || echo "WARNING: cryptography version not found in requirements.base.txt")
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
@@ -70,7 +60,7 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
 
 RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel || (echo "ERROR: pip upgrade failed" && exit 1) && \
     pip install --user --no-cache-dir protobuf==${PROTOBUF_VERSION} || (echo "ERROR: protobuf installation failed" && exit 1) && \
-    pip install --user --no-cache-dir -r requirements.base.txt || (echo "ERROR: requirements.base.txt installation failed" && exit 1) && \
+    pip install --user --no-cache-dir -r /build/requirements.base.txt || (echo "ERROR: requirements.base.txt installation failed" && exit 1) && \
     (python -m pip check || (echo "ERROR: pip dependency check failed after base requirements" && exit 1)) && \
     (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import fastapi; print('✅ fastapi')" || (echo "ERROR: fastapi import failed" && exit 1)) && \
     (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import uvicorn; print('✅ uvicorn')" || (echo "ERROR: uvicorn import failed" && exit 1)) && \
@@ -82,8 +72,8 @@ RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel || (echo "E
     (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import async_timeout, starlette; print('✅ async packages')" || (echo "ERROR: async packages import failed" && exit 1)) && \
     (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import pydantic, pydantic_settings; print('✅ pydantic packages')" || (echo "ERROR: pydantic packages import failed" && exit 1)) && \
     (python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import tronpy, requests; print('✅ All critical packages verified after base installation')" || (echo "ERROR: tronpy/requests import failed" && exit 1)) && \
-    if [ -s requirements.hardware.txt ]; then \
-        pip install --user --no-cache-dir --no-deps -r requirements.hardware.txt || (echo "ERROR: hardware wallet requirements installation failed" && exit 1); \
+    if [ -s /build/requirements.hardware.txt ]; then \
+        pip install --user --no-cache-dir --no-deps -r /build/requirements.hardware.txt || (echo "ERROR: hardware wallet requirements installation failed" && exit 1); \
     fi
 
 # Create placeholder files with actual content (ensures directory structure is locked in)
