@@ -217,4 +217,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER 65532:65532
 
 ENTRYPOINT ["/usr/bin/python3"]
-CMD ["main.py"]
+CMD ["-m", "auth.main"]
