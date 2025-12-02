@@ -191,19 +191,19 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; import importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; bin_dir = '/usr/local/bin'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; required = ('fastapi', 'uvicorn', 'motor', 'pymongo', 'cryptography', 'redis', 'jwt', 'bcrypt', 'eth_account', 'web3', 'base58', 'async_timeout', 'starlette', 'pydantic', 'pydantic_settings', 'tronpy', 'requests'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'ERROR: uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'redis')) or os.path.exists(os.path.join(site_packages, 'redis/__init__.py')), 'ERROR: redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'ERROR: async_timeout not found'; print('✅ All critical packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
 
 # Copy auth source code from builder - CRITICAL: Copy files to /app/ root level for proper imports
-COPY --from=builder --chown=65532:65532 /build/auth/api ./api
-COPY --from=builder --chown=65532:65532 /build/auth/middleware ./middleware
-COPY --from=builder --chown=65532:65532 /build/auth/models ./models
-COPY --from=builder --chown=65532:65532 /build/auth/utils ./utils
-COPY --from=builder --chown=65532:65532 /build/auth/__init__.py ./__init__.py
-COPY --from=builder --chown=65532:65532 /build/auth/main.py ./main.py
-COPY --from=builder --chown=65532:65532 /build/auth/config.py ./config.py
-COPY --from=builder --chown=65532:65532 /build/auth/authentication_service.py ./authentication_service.py
-COPY --from=builder --chown=65532:65532 /build/auth/user_manager.py ./user_manager.py
-COPY --from=builder --chown=65532:65532 /build/auth/hardware_wallet.py ./hardware_wallet.py
-COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./session_manager.py
-COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./permissions.py
-COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./healthcheck.py
+COPY --from=builder --chown=65532:65532 /build/auth/api ./auth/api
+COPY --from=builder --chown=65532:65532 /build/auth/middleware ./auth/middleware
+COPY --from=builder --chown=65532:65532 /build/auth/models ./auth/models
+COPY --from=builder --chown=65532:65532 /build/auth/utils ./auth/utils
+COPY --from=builder --chown=65532:65532 /build/auth/__init__.py ./auth/__init__.py
+COPY --from=builder --chown=65532:65532 /build/auth/main.py ./auth/main.py
+COPY --from=builder --chown=65532:65532 /build/auth/config.py ./auth/config.py
+COPY --from=builder --chown=65532:65532 /build/auth/authentication_service.py ./auth/authentication_service.py
+COPY --from=builder --chown=65532:65532 /build/auth/user_manager.py ./auth/user_manager.py
+COPY --from=builder --chown=65532:65532 /build/auth/hardware_wallet.py ./auth/hardware_wallet.py
+COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./auth/session_manager.py
+COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./auth/permissions.py
+COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./auth/healthcheck.py
 
 # Verify source code was copied and no unwanted files are present
 RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/main.py'), 'main.py missing'; assert os.path.exists('/app/session_manager.py'), 'session_manager.py missing'; assert os.path.exists('/app/api'), 'api directory missing'; assert os.path.exists('/app/middleware'), 'middleware directory missing'; assert os.path.exists('/app/models'), 'models directory missing'; assert os.path.exists('/app/utils'), 'utils directory missing'; assert os.path.exists('/app/middleware/.lucid-middleware-marker'), 'middleware marker file missing'; assert not os.path.exists('/app/api/__pycache__'), '__pycache__ found in api'; assert not os.path.exists('/app/middleware/__pycache__'), '__pycache__ found in middleware'; assert not os.path.exists('/app/models/__pycache__'), '__pycache__ found in models'; assert not os.path.exists('/app/utils/__pycache__'), '__pycache__ found in utils'; assert importlib.util.find_spec('main', package=None), 'main module not importable'; print('Auth source code verified in runtime stage - no unwanted files present')"]

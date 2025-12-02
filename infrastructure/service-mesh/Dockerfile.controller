@@ -231,6 +231,9 @@ LABEL maintainer="Lucid Development Team" \
 # Set working directory
 WORKDIR /app
 
+# Create site-packages directory before COPY (distroless doesn't have it)
+RUN ["/usr/bin/python3.11", "-c", "import os; os.makedirs('/root/.local/lib/python3.11/site-packages', exist_ok=True); os.makedirs('/root/.local/bin', exist_ok=True); print('✅ Created site-packages directories')"]
+
 # Copy runtime directories from builder (directory already populated with .keep files)
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
