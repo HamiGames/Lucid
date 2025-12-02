@@ -1,0 +1,218 @@
+# Lucid XRDP Integration - XRDP Configuration
+# Optional YAML configuration for XRDP service
+# File: RDP/config/xrdp-config.yaml
+# Purpose: Define XRDP protocol settings, display configuration, and session management
+
+# Global XRDP Configuration
+global:
+  service_name: "lucid-rdp-xrdp"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  xrdp_port: 3389
+  xrdp_display: ":10"
+
+# XRDP Server Configuration
+xrdp_server:
+  # Network Configuration
+  network:
+    bind_address: "0.0.0.0"
+    port: 3389
+    tcp_nodelay: true
+    tcp_keepalive: true
+    tcp_keepalive_interval: 30
+  
+  # Security Configuration
+  security:
+    crypt_level: "high"  # Options: none, low, medium, high
+    ssl_protocols: "TLSv1.2,TLSv1.3"
+    certificate_path: "/etc/xrdp/cert.pem"
+    key_path: "/etc/xrdp/key.pem"
+    allow_root_login: false
+    max_login_attempts: 3
+    login_timeout: 60
+  
+  # Performance Configuration
+  performance:
+    bitmap_cache: true
+    bitmap_compression: true
+    max_bpp: 24  # Bits per pixel: 8, 15, 16, 24, 32
+    use_fastpath: "both"  # Options: input, output, both, none
+    bulk_compression: true
+    jpeg_quality: 80
+    h264_codec: true
+  
+  # Channel Configuration
+  channels:
+    rdpdr: true  # Device redirection
+    rdpsnd: true  # Sound redirection
+    drdynvc: true  # Dynamic virtual channels
+    cliprdr: true  # Clipboard redirection
+    rail: true  # Remote application integration
+    rdpgfx: true  # Graphics acceleration
+
+# Display Configuration
+display:
+  default_display: ":10"
+  display_resolution: "1920x1080"
+  color_depth: 24  # Options: 8, 15, 16, 24, 32
+  dpi: 96
+  
+  # Multi-display Support
+  multi_display:
+    enabled: false
+    max_displays: 2
+    display_layout: "horizontal"  # Options: horizontal, vertical, custom
+
+# Session Configuration
+session:
+  session_type: "Xorg"  # Options: Xorg, Xvnc, X11rdp
+  session_startup_script: "/etc/xrdp/startwm.sh"
+  session_shutdown_script: "/etc/xrdp/stopwm.sh"
+  session_timeout_seconds: 7200  # 2 hours
+  idle_timeout_seconds: 1800  # 30 minutes
+  max_sessions_per_user: 5
+  max_concurrent_sessions: 50
+
+# Audio Configuration
+audio:
+  enabled: true
+  audio_output: true
+  audio_input: true
+  audio_quality: "high"  # Options: low, medium, high
+  audio_codec: "opus"
+  sample_rate: 48000
+  channels: 2
+
+# Clipboard Configuration
+clipboard:
+  enabled: true
+  sync_direction: "bidirectional"  # Options: client_to_server, server_to_client, bidirectional
+  max_clipboard_size_mb: 10
+  clipboard_formats:
+    - "text/plain"
+    - "text/html"
+    - "image/png"
+    - "image/jpeg"
+
+# File Transfer Configuration
+file_transfer:
+  enabled: true
+  max_file_size_mb: 100
+  allowed_extensions: []  # Empty = all extensions allowed
+  blocked_extensions:
+    - ".exe"
+    - ".bat"
+    - ".cmd"
+    - ".scr"
+  transfer_timeout_seconds: 300
+
+# Printing Configuration
+printing:
+  enabled: false
+  printer_redirection: false
+  default_printer: null
+
+# Performance Optimization
+performance:
+  # Compression
+  compression:
+    enabled: true
+    level: 6
+    algorithm: "zlib"  # Options: zlib, rfx, h264
+  
+  # Caching
+  caching:
+    enabled: true
+    bitmap_cache_size_mb: 100
+    glyph_cache_size_mb: 50
+    brush_cache_size_mb: 10
+  
+  # Bandwidth Management
+  bandwidth:
+    enabled: true
+    max_bandwidth_mbps: 10
+    adaptive_quality: true
+    quality_adjustment_interval_seconds: 30
+
+# Logging Configuration
+logging:
+  enabled: true
+  log_level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: "/app/logs/xrdp.log"
+  log_max_size_mb: 100
+  log_backup_count: 5
+  log_connections: true
+  log_disconnections: true
+  log_errors: true
+
+# Integration Configuration
+integration:
+  # Server Manager Integration
+  server_manager:
+    enabled: true
+    manager_url: "http://rdp-server-manager:8081"
+    timeout_seconds: 30
+    auto_register: true
+  
+  # Session Controller Integration
+  session_controller:
+    enabled: true
+    controller_url: "http://rdp-controller:8092"
+    timeout_seconds: 30
+    report_sessions: true
+  
+  # Resource Monitor Integration
+  resource_monitor:
+    enabled: true
+    monitor_url: "http://rdp-monitor:8093"
+    report_interval_seconds: 30
+
+# Database Configuration
+database:
+  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_rdp"
+  redis_url: "redis://lucid-redis:6379/0"
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+  
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    restart_on_failure: true
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  connection_security:
+    require_tls: true
+    validate_certificates: true
+    encryption_level: "high"
+  
+  audit:
+    enabled: true
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+

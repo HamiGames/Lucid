@@ -1,0 +1,188 @@
+# Lucid RDP Server Manager - Server Management Configuration
+# Optional YAML configuration for RDP server management
+# File: RDP/config/server-manager-config.yaml
+# Purpose: Define server templates, port management, and connection policies
+
+# Global Server Manager Configuration
+global:
+  service_name: "lucid-rdp-server-manager"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8081
+  monitoring_port: 8090
+
+# Server Configuration Templates
+server_templates:
+  default:
+    name: "default"
+    description: "Default RDP server configuration"
+    rdp_port: 3389
+    max_connections: 10
+    connection_timeout_seconds: 300
+    idle_timeout_seconds: 1800
+    quality_settings:
+      color_depth: 24
+      resolution: "1920x1080"
+      compression: true
+      bandwidth_limit_mbps: 10
+  
+  high_performance:
+    name: "high_performance"
+    description: "High performance RDP server configuration"
+    rdp_port: 3389
+    max_connections: 20
+    connection_timeout_seconds: 600
+    idle_timeout_seconds: 3600
+    quality_settings:
+      color_depth: 32
+      resolution: "2560x1440"
+      compression: true
+      bandwidth_limit_mbps: 50
+  
+  low_bandwidth:
+    name: "low_bandwidth"
+    description: "Low bandwidth optimized RDP server configuration"
+    rdp_port: 3389
+    max_connections: 5
+    connection_timeout_seconds: 300
+    idle_timeout_seconds: 1800
+    quality_settings:
+      color_depth: 16
+      resolution: "1280x720"
+      compression: true
+      bandwidth_limit_mbps: 2
+
+# Port Management
+port_management:
+  enabled: true
+  port_range_start: 3390
+  port_range_end: 3499
+  port_allocation_strategy: "sequential"  # Options: sequential, random, round_robin
+  port_reuse_delay_seconds: 60
+  max_ports_per_user: 5
+  port_health_check: true
+  port_health_check_interval_seconds: 30
+
+# Connection Management
+connection_management:
+  max_concurrent_connections: 100
+  max_connections_per_user: 10
+  max_connections_per_ip: 5
+  connection_timeout_seconds: 300
+  idle_timeout_seconds: 1800
+  keepalive_interval_seconds: 30
+  
+  # Connection Pooling
+  connection_pool:
+    enabled: true
+    pool_size: 50
+    max_overflow: 20
+    pool_timeout_seconds: 30
+
+# XRDP Integration
+xrdp_integration:
+  enabled: true
+  xrdp_service_url: "http://rdp-xrdp:3389"
+  xrdp_config_path: "/etc/xrdp"
+  xrdp_sessions_path: "/var/lib/xrdp/sessions"
+  xrdp_log_path: "/var/log/xrdp"
+  
+  # XRDP Configuration
+  xrdp_config:
+    port: 3389
+    crypt_level: "high"
+    bitmap_cache: true
+    bitmap_compression: true
+    max_bpp: 24
+    use_fastpath: "both"
+    ssl_protocols: "TLSv1.2,TLSv1.3"
+    allow_root_login: false
+    max_login_attempts: 3
+    login_timeout: 60
+
+# Session Controller Integration
+session_controller:
+  enabled: true
+  controller_url: "http://rdp-controller:8092"
+  timeout_seconds: 30
+  retry_attempts: 3
+  auto_register_sessions: true
+
+# Resource Monitoring
+resource_monitoring:
+  enabled: true
+  monitor_url: "http://rdp-monitor:8093"
+  monitoring_interval_seconds: 30
+  resource_thresholds:
+    cpu_percent: 80
+    memory_percent: 80
+    disk_percent: 85
+    network_bandwidth_mbps: 100
+  
+  alerts:
+    enabled: true
+    alert_on_threshold_exceeded: true
+    alert_channels:
+      - "log"
+      - "metrics"
+
+# Security Configuration
+security:
+  # Access Control
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+    ip_whitelist: []
+    ip_blacklist: []
+  
+  # Connection Security
+  connection_security:
+    require_tls: true
+    tls_version: "1.2"  # Options: 1.2, 1.3
+    certificate_validation: true
+    encryption_level: "high"
+  
+  # Audit Logging
+  audit:
+    enabled: true
+    log_connections: true
+    log_disconnections: true
+    log_errors: true
+    log_admin_actions: true
+    retention_days: 90
+
+# Database Configuration
+database:
+  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_rdp"
+  redis_url: "redis://lucid-redis:6379/0"
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    recreate_failed_servers: true
+

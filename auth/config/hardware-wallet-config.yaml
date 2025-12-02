@@ -1,0 +1,246 @@
+# Lucid Authentication Service - Hardware Wallet Configuration
+# Optional YAML configuration for hardware wallet device settings
+# File: auth/config/hardware-wallet-config.yaml
+# Purpose: Configure hardware wallet device support, paths, and capabilities
+
+# Global Hardware Wallet Settings
+global:
+  enabled: true
+  auto_discover: true
+  discovery_interval_seconds: 30
+  connection_timeout_seconds: 30
+  default_derivation_path: "m/44'/195'/0'/0/0"  # TRON BIP44 path
+  supported_networks:
+    - "mainnet"
+    - "testnet"
+    - "nile"
+    - "shasta"
+
+# Ledger Configuration
+ledger:
+  enabled: true
+  supported_models:
+    - "Nano S"
+    - "Nano S Plus"
+    - "Nano X"
+    - "Stax"
+  
+  app_requirements:
+    tron_app:
+      minimum_version: "1.6.0"
+      required: true
+    ethereum_app:
+      minimum_version: "1.9.0"
+      required: false
+  
+  device_paths:
+    linux: "/dev/hidraw*"
+    windows: "HID\\*"
+    macos: "/dev/cu.usbmodem*"
+  
+  connection:
+    timeout_seconds: 30
+    retry_attempts: 3
+    retry_delay_seconds: 2
+  
+  capabilities:
+    - "tron_signing"
+    - "message_signing"
+    - "address_derivation"
+    - "secure_storage"
+    - "multi_account"
+  
+  security:
+    require_user_confirmation: true
+    require_pin_verification: true
+    allow_unsigned_apps: false
+
+# Trezor Configuration
+trezor:
+  enabled: true
+  supported_models:
+    - "Trezor One"
+    - "Trezor Model T"
+  
+  bridge:
+    enabled: true
+    url: "http://127.0.0.1:21325"
+    timeout_seconds: 30
+    auto_start: true
+  
+  firmware_requirements:
+    minimum_version: "1.11.0"
+    recommended_version: "2.5.0"
+  
+  connection:
+    timeout_seconds: 30
+    retry_attempts: 3
+    retry_delay_seconds: 2
+  
+  capabilities:
+    - "tron_signing"
+    - "message_signing"
+    - "address_derivation"
+    - "secure_storage"
+    - "passphrase_protection"
+    - "multi_account"
+  
+  security:
+    require_user_confirmation: true
+    require_passphrase: false  # Optional
+    allow_unsigned_firmware: false
+
+# KeepKey Configuration
+keepkey:
+  enabled: true
+  supported_models:
+    - "KeepKey"
+  
+  device_paths:
+    linux: "/dev/hidraw*"
+    windows: "HID\\*"
+    macos: "/dev/cu.usbmodem*"
+  
+  firmware_requirements:
+    minimum_version: "7.0.0"
+    recommended_version: "7.6.0"
+  
+  connection:
+    timeout_seconds: 30
+    retry_attempts: 3
+    retry_delay_seconds: 2
+  
+  capabilities:
+    - "tron_signing"
+    - "message_signing"
+    - "address_derivation"
+    - "secure_storage"
+  
+  security:
+    require_user_confirmation: true
+    require_pin_verification: true
+    allow_unsigned_firmware: false
+
+# TRON Network Configuration
+tron_networks:
+  mainnet:
+    enabled: true
+    node_url: "https://api.trongrid.io"
+    chain_id: 1
+    address_prefix: "T"
+    derivation_path: "m/44'/195'/0'/0/0"
+  
+  testnet:
+    enabled: true
+    node_url: "https://api.shasta.trongrid.io"
+    chain_id: 2
+    address_prefix: "T"
+    derivation_path: "m/44'/195'/0'/0/0"
+  
+  nile:
+    enabled: true
+    node_url: "https://api.nileex.io"
+    chain_id: 3
+    address_prefix: "T"
+    derivation_path: "m/44'/195'/0'/0/0"
+  
+  shasta:
+    enabled: true
+    node_url: "https://api.shasta.trongrid.io"
+    chain_id: 201910292
+    address_prefix: "T"
+    derivation_path: "m/44'/195'/0'/0/0"
+
+# Message Signing Configuration
+message_signing:
+  enabled: true
+  message_format: "Sign this message to authenticate with Lucid: {timestamp}"
+  include_timestamp: true
+  timestamp_format: "ISO8601"
+  signature_encoding: "base58"
+  verification:
+    enabled: true
+    strict_mode: true
+    allow_replay_attacks: false
+    max_message_age_seconds: 300  # 5 minutes
+
+# Address Derivation
+address_derivation:
+  default_path: "m/44'/195'/0'/0/0"
+  supported_paths:
+    - "m/44'/195'/0'/0/0"  # Default account
+    - "m/44'/195'/0'/0/1"   # Second account
+    - "m/44'/195'/0'/0/2"   # Third account
+  max_accounts: 10
+  account_naming: "Account {index}"
+
+# Security Settings
+security:
+  require_hardware_wallet_for_admin: false
+  require_hardware_wallet_for_payouts: true
+  require_hardware_wallet_for_node_registration: true
+  allow_software_wallet_fallback: false
+  device_verification:
+    enabled: true
+    verify_device_id: true
+    verify_firmware_version: true
+    verify_app_version: true
+
+# Device Management
+device_management:
+  auto_reconnect: true
+  reconnect_delay_seconds: 5
+  max_reconnect_attempts: 3
+  device_cache_ttl_seconds: 300
+  cleanup_disconnected_devices: true
+  cleanup_interval_seconds: 60
+
+# Error Handling
+error_handling:
+  device_not_found:
+    retry: true
+    retry_attempts: 3
+    retry_delay_seconds: 2
+    error_code: "HW_ERR_1001"
+  
+  device_locked:
+    retry: false
+    error_code: "HW_ERR_1002"
+    message: "Device is locked. Please unlock and try again."
+  
+  user_rejected:
+    retry: false
+    error_code: "HW_ERR_1003"
+    message: "Transaction rejected by user on device."
+  
+  connection_timeout:
+    retry: true
+    retry_attempts: 3
+    retry_delay_seconds: 2
+    error_code: "HW_ERR_1004"
+  
+  invalid_firmware:
+    retry: false
+    error_code: "HW_ERR_1005"
+    message: "Device firmware version is not supported."
+
+# Logging and Monitoring
+logging:
+  enabled: true
+  log_level: "INFO"
+  log_device_connections: true
+  log_device_disconnections: true
+  log_signature_attempts: true
+  log_errors: true
+  sensitive_data_masking: true
+
+monitoring:
+  enabled: true
+  metrics:
+    - "device_connections"
+    - "device_disconnections"
+    - "signature_attempts"
+    - "signature_successes"
+    - "signature_failures"
+    - "connection_errors"
+

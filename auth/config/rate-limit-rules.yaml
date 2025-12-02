@@ -1,0 +1,208 @@
+# Lucid Authentication Service - Rate Limiting Rules Configuration
+# Optional YAML configuration for advanced rate limiting
+# File: auth/config/rate-limit-rules.yaml
+# Purpose: Define rate limiting rules, tiers, and endpoint-specific limits
+
+# Global Rate Limiting Configuration
+global:
+  enabled: true
+  strategy: "sliding_window"  # Options: sliding_window, token_bucket, fixed_window
+  redis_key_prefix: "ratelimit:auth"
+  default_limit: 100  # requests per minute
+  default_burst: 20
+
+# Rate Limit Tiers
+tiers:
+  public:
+    description: "Unauthenticated users"
+    requests_per_minute: 100
+    burst_limit: 20
+    window_seconds: 60
+    penalty_seconds: 60  # Additional wait time after limit exceeded
+
+  authenticated:
+    description: "Authenticated regular users"
+    requests_per_minute: 1000
+    burst_limit: 50
+    window_seconds: 60
+    penalty_seconds: 30
+
+  node_operator:
+    description: "Node operators"
+    requests_per_minute: 5000
+    burst_limit: 100
+    window_seconds: 60
+    penalty_seconds: 15
+
+  admin:
+    description: "Administrators"
+    requests_per_minute: 10000
+    burst_limit: 200
+    window_seconds: 60
+    penalty_seconds: 0  # No penalty for admins
+
+  super_admin:
+    description: "Super administrators"
+    requests_per_minute: -1  # Unlimited
+    burst_limit: -1
+    window_seconds: 60
+    penalty_seconds: 0
+
+# Endpoint-Specific Rate Limits
+endpoints:
+  # Authentication Endpoints
+  "/auth/login":
+    tier: "public"
+    requests_per_minute: 10  # Stricter limit for login
+    burst_limit: 3
+    window_seconds: 60
+    block_after_exceeded: true
+    block_duration_seconds: 300  # 5 minutes
+
+  "/auth/register":
+    tier: "public"
+    requests_per_minute: 5  # Very strict for registration
+    burst_limit: 2
+    window_seconds: 60
+    block_after_exceeded: true
+    block_duration_seconds: 600  # 10 minutes
+
+  "/auth/refresh":
+    tier: "authenticated"
+    requests_per_minute: 30
+    burst_limit: 5
+    window_seconds: 60
+
+  "/auth/logout":
+    tier: "authenticated"
+    requests_per_minute: 60
+    burst_limit: 10
+    window_seconds: 60
+
+  "/auth/verify":
+    tier: "authenticated"
+    requests_per_minute: 200
+    burst_limit: 20
+    window_seconds: 60
+
+  # Hardware Wallet Endpoints
+  "/hw/discover":
+    tier: "authenticated"
+    requests_per_minute: 20
+    burst_limit: 5
+    window_seconds: 60
+
+  "/hw/connect":
+    tier: "authenticated"
+    requests_per_minute: 10
+    burst_limit: 3
+    window_seconds: 60
+
+  "/hw/sign":
+    tier: "authenticated"
+    requests_per_minute: 30
+    burst_limit: 5
+    window_seconds: 60
+
+  # User Management Endpoints
+  "/users/me":
+    tier: "authenticated"
+    requests_per_minute: 300
+    burst_limit: 30
+    window_seconds: 60
+
+  "/users/{user_id}":
+    tier: "admin"
+    requests_per_minute: 500
+    burst_limit: 50
+    window_seconds: 60
+
+  # Session Management Endpoints
+  "/sessions":
+    tier: "authenticated"
+    requests_per_minute: 200
+    burst_limit: 20
+    window_seconds: 60
+
+  "/sessions/{session_id}":
+    tier: "authenticated"
+    requests_per_minute: 100
+    burst_limit: 10
+    window_seconds: 60
+
+  # Health and Info Endpoints (No limits)
+  "/health":
+    tier: "public"
+    requests_per_minute: -1  # Unlimited
+    burst_limit: -1
+
+  "/meta/info":
+    tier: "public"
+    requests_per_minute: 1000
+    burst_limit: 100
+    window_seconds: 60
+
+# IP-Based Rate Limiting
+ip_limits:
+  enabled: true
+  default_limit: 200  # requests per minute per IP
+  default_burst: 40
+  whitelist:
+    - "127.0.0.1"
+    - "::1"
+    - "172.20.0.0/16"  # Internal network
+  blacklist: []  # Blocked IPs
+
+# User-Based Rate Limiting
+user_limits:
+  enabled: true
+  default_limit: 1000  # requests per minute per user
+  default_burst: 100
+  per_role_limits:
+    USER: 1000
+    NODE_OPERATOR: 5000
+    ADMIN: 10000
+    SUPER_ADMIN: -1  # Unlimited
+
+# Rate Limit Headers
+headers:
+  enabled: true
+  include_limit: true
+  include_remaining: true
+  include_reset: true
+  include_retry_after: true
+
+# Rate Limit Response Configuration
+response:
+  status_code: 429
+  error_code: "LUCID_ERR_3001"
+  message_template: "Rate limit exceeded. Maximum {limit} requests per {window} allowed."
+  include_details: true
+  include_retry_after: true
+
+# Bypass Rules
+bypass:
+  enabled: true
+  conditions:
+    - type: "ip_whitelist"
+      values: ["127.0.0.1", "::1"]
+    - type: "role"
+      values: ["SUPER_ADMIN"]
+    - type: "endpoint"
+      values: ["/health", "/meta/info"]
+
+# Monitoring and Alerting
+monitoring:
+  enabled: true
+  log_exceeded: true
+  alert_threshold: 0.8  # Alert when 80% of limit reached
+  alert_channels:
+    - "log"
+    - "metrics"
+
+# Rate Limit Storage
+storage:
+  backend: "redis"  # Options: redis, memory
+  key_ttl_seconds: 120  # TTL for rate limit keys
+  cleanup_interval_seconds: 300  # Cleanup expired keys every 5 minutes
+

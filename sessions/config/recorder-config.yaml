@@ -1,0 +1,152 @@
+# Lucid Session Recorder - Recording Configuration
+# Optional YAML configuration for session recording service
+# File: sessions/config/recorder-config.yaml
+# Purpose: Define recording parameters, hardware acceleration, and chunk generation
+
+# Global Recording Configuration
+global:
+  service_name: "lucid-session-recorder"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  recording_path: "/app/recordings"
+  chunk_output_path: "/app/chunks"
+
+# Recording Configuration
+recording:
+  # Video Configuration
+  video:
+    enabled: true
+    codec: "h264_v4l2m2m"  # Hardware-accelerated for Pi 5
+    frame_rate: 30
+    resolution: "1920x1080"
+    bitrate: "2000k"
+    quality: "high"  # Options: low, medium, high, ultra
+    hardware_acceleration: true
+    acceleration_method: "v4l2m2m"  # Video4Linux2 memory-to-memory
+  
+  # Audio Configuration
+  audio:
+    enabled: true
+    codec: "opus"
+    sample_rate: 48000
+    channels: 2
+    bitrate: "128k"
+  
+  # Display Configuration
+  display:
+    xrdp_display: ":10"
+    capture_method: "x11grab"  # Options: x11grab, wayland, framebuffer
+    capture_area: "fullscreen"  # Options: fullscreen, window, region
+    cursor_capture: true
+    cursor_size: 32
+  
+  # Chunk Generation
+  chunk_generation:
+    enabled: true
+    chunk_size_mb: 10
+    chunk_duration_seconds: 300  # 5 minutes
+    compression_level: 6
+    compression_algorithm: "gzip"  # Options: gzip, zstd, lz4
+    generate_metadata: true
+    include_timestamps: true
+
+# Hardware Acceleration (Pi 5 specific)
+hardware_acceleration:
+  enabled: true
+  device: "/dev/video10"  # Video4Linux2 device
+  encoder: "h264_v4l2m2m"
+  decoder: "h264_v4l2m2m"
+  fallback_to_software: true
+  validate_hardware: true
+
+# FFmpeg Configuration
+ffmpeg:
+  path: "/usr/bin/ffmpeg"
+  log_level: "warning"
+  timeout_seconds: 30
+  max_retries: 3
+  retry_delay_seconds: 5
+  
+  # FFmpeg Options
+  options:
+    - "-f", "x11grab"
+    - "-framerate", "30"
+    - "-video_size", "1920x1080"
+    - "-i", ":10"
+    - "-c:v", "h264_v4l2m2m"
+    - "-b:v", "2000k"
+    - "-c:a", "opus"
+    - "-b:a", "128k"
+    - "-f", "mp4"
+
+# Session Management
+session_management:
+  max_concurrent_recordings: 10
+  session_timeout_seconds: 7200  # 2 hours
+  auto_stop_on_idle: false
+  idle_timeout_seconds: 300  # 5 minutes
+  cleanup_interval_seconds: 3600  # 1 hour
+
+# Storage Configuration
+storage:
+  recordings_path: "/app/recordings"
+  chunks_path: "/app/chunks"
+  max_storage_size_gb: 500
+  retention_days: 30
+  auto_cleanup: true
+  compression_enabled: true
+  encryption_enabled: false
+
+# Quality Control
+quality_control:
+  enabled: true
+  min_quality_score: 0.7
+  validate_chunks: true
+  validate_audio_sync: true
+  validate_video_integrity: true
+  auto_adjust_quality: false
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "recording_count"
+    - "recording_duration"
+    - "chunk_count"
+    - "storage_usage"
+    - "quality_scores"
+    - "error_count"
+  
+  health_check:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 10
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 60
+    preserve_partial_recordings: true
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  data_privacy:
+    encrypt_recordings: false
+    mask_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+

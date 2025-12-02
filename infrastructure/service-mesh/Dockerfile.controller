@@ -347,5 +347,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 8500 8501 8502 8600 8088
 
 # Start application (async main in controller.main) - NOT FastAPI, uses asyncio.run(main())
+# CRITICAL: Use /usr/bin/python3.11 (not python3) for distroless compatibility
 # CRITICAL: Set sys.path and import yaml BEFORE controller.main to ensure packages are found in distroless
-CMD ["python3", "-c", "import sys, os; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); sys.path.insert(0, '/app'); os.environ['PYTHONPATH'] = '/app:/root/.local/lib/python3.11/site-packages'; import yaml; import asyncio; from controller.main import main; asyncio.run(main())"]
+# CRITICAL: Verify yaml import works before proceeding (fails fast if package missing)
+CMD ["/usr/bin/python3.11", "-c", "import sys, os; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); sys.path.insert(0, '/app'); os.environ['PYTHONPATH'] = '/app:/root/.local/lib/python3.11/site-packages'; import yaml; print('✅ yaml module loaded:', yaml.__file__); import asyncio; from controller.main import main; asyncio.run(main())"]

@@ -1,0 +1,252 @@
+# Lucid Node Management - Node Management Configuration
+# Optional YAML configuration for node management service
+# File: node/config/node-management-config.yaml
+# Purpose: Define node pool management, PoOT consensus, and payout policies
+
+# Global Node Management Configuration
+global:
+  service_name: "lucid-node-management"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8095
+  staging_port: 8099
+
+# Node Pool Configuration
+node_pool:
+  # Pool Limits
+  limits:
+    max_nodes_per_pool: 100
+    min_nodes_per_pool: 1
+    max_pools: 10
+  
+  # Pool Management
+  management:
+    auto_join_enabled: true
+    auto_leave_enabled: false
+    pool_health_check_interval_seconds: 120
+    pool_sync_interval_seconds: 30
+    pool_join_timeout_seconds: 60
+  
+  # Pool Selection
+  selection:
+    strategy: "round_robin"  # Options: round_robin, least_loaded, random, geographic
+    consider_load: true
+    consider_uptime: true
+    consider_reputation: true
+
+# PoOT (Proof of Operational Time) Configuration
+poot:
+  enabled: true
+  calculation_interval_seconds: 300  # 5 minutes
+  score_threshold: 0.5
+  history_days: 30
+  
+  # PoOT Factors
+  factors:
+    operational_time_weight: 0.4
+    stake_amount_weight: 0.3
+    reputation_score_weight: 0.2
+    network_contribution_weight: 0.1
+  
+  # Operational Time Calculation
+  operational_time:
+    min_uptime_percentage: 0.95  # 95% uptime required
+    measurement_interval_seconds: 60
+    history_retention_days: 30
+  
+  # Validation
+  validation:
+    enabled: true
+    validate_uptime: true
+    validate_stake: true
+    validate_reputation: true
+    validation_interval_seconds: 300
+
+# Work Credits System
+work_credits:
+  enabled: true
+  credit_earn_rate: 1.0  # Credits per second of operational time
+  credit_decay_rate: 0.01  # Credits decay per day
+  min_credits_for_validation: 100
+  max_credits: 10000
+  credit_history_days: 30
+
+# Staking Configuration
+staking:
+  enabled: true
+  minimum_stake_amount: 1000  # Minimum TRX or tokens required
+  staking_period_days: 30
+  unstaking_cooldown_days: 7
+  reward_distribution:
+    method: "proportional"  # Options: proportional, fixed, performance_based
+    distribution_interval_blocks: 100
+    reward_per_block: 10
+
+# Payout Configuration
+payout:
+  enabled: true
+  processing_interval_seconds: 3600  # 1 hour
+  minimum_amount_usdt: 10.0
+  batch_size: 10
+  payout_method: "tron"  # Options: tron, ethereum, manual
+  
+  # Payout Processing
+  processing:
+    enabled: true
+    auto_process: true
+    require_confirmation: true
+    confirmation_blocks: 6
+    max_retries: 3
+    retry_delay_seconds: 60
+  
+  # Payout Thresholds
+  thresholds:
+    minimum_usdt: 10.0
+    maximum_usdt: 10000.0
+    daily_limit_usdt: 1000.0
+    monthly_limit_usdt: 30000.0
+
+# Node Registration
+registration:
+  enabled: true
+  require_kyc: false
+  require_stake: false
+  require_reputation: false
+  registration_fee_usdt: 0.0
+  registration_timeout_seconds: 300
+  
+  # Registration Validation
+  validation:
+    validate_tron_address: true
+    validate_node_capabilities: true
+    validate_resource_availability: true
+    validate_network_connectivity: true
+
+# Resource Monitoring
+resource_monitoring:
+  enabled: true
+  monitoring_interval_seconds: 30
+  thresholds:
+    cpu_percent: 80.0
+    memory_percent: 80.0
+    disk_percent: 85.0
+    network_bandwidth_mbps: 100.0
+  
+  # Resource Requirements
+  requirements:
+    min_cpu_cores: 2
+    min_memory_gb: 4
+    min_disk_gb: 50
+    min_network_mbps: 10
+
+# Reputation System
+reputation:
+  enabled: true
+  initial_reputation: 0.5
+  max_reputation: 1.0
+  min_reputation: 0.0
+  
+  # Reputation Factors
+  factors:
+    uptime_weight: 0.4
+    performance_weight: 0.3
+    reliability_weight: 0.2
+    community_contribution_weight: 0.1
+  
+  # Reputation Updates
+  updates:
+    update_interval_seconds: 3600  # 1 hour
+    history_retention_days: 90
+    decay_rate: 0.01  # Reputation decays 1% per day if inactive
+
+# Network Configuration
+network:
+  tron_network: "mainnet"  # Options: mainnet, testnet, nile, shasta
+  tron_api_url: "https://api.trongrid.io"
+  tron_api_key: null  # Set via environment variable
+  tron_contract_address: null
+  
+  # Peer Discovery
+  peer_discovery:
+    enabled: true
+    discovery_interval_seconds: 60
+    max_peers: 50
+    min_peers: 5
+
+# Database Configuration
+database:
+  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_node_management"
+  redis_url: "redis://lucid-redis:6379/0"
+  
+  # Collections
+  collections:
+    nodes: "nodes"
+    pools: "pools"
+    payouts: "payouts"
+    poot_scores: "poot_scores"
+    work_credits: "work_credits"
+
+# API Gateway Integration
+api_gateway:
+  enabled: true
+  gateway_url: "http://api-gateway:8080"
+  timeout_seconds: 30
+  retry_attempts: 3
+
+# Blockchain Integration
+blockchain:
+  enabled: true
+  blockchain_engine_url: "http://blockchain-engine:8084"
+  timeout_seconds: 60
+  retry_attempts: 3
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  logging:
+    enabled: true
+    format: "json"
+    level: "INFO"
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  node_authentication:
+    require_node_signature: true
+    validate_node_identity: true
+    node_certificate_validation: false
+  
+  audit:
+    enabled: true
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+

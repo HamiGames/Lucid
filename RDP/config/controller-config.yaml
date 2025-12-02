@@ -1,0 +1,199 @@
+# Lucid RDP Controller - Session Controller Configuration
+# Optional YAML configuration for RDP session controller
+# File: RDP/config/controller-config.yaml
+# Purpose: Define session control policies, connection management, and state transitions
+
+# Global Controller Configuration
+global:
+  service_name: "lucid-rdp-controller"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8092
+
+# Session Control Configuration
+session_control:
+  # Session Lifecycle
+  lifecycle:
+    states:
+      - "created"
+      - "connecting"
+      - "connected"
+      - "active"
+      - "idle"
+      - "paused"
+      - "disconnecting"
+      - "disconnected"
+      - "terminated"
+      - "error"
+    
+    state_transitions:
+      - from: "created"
+        to: ["connecting", "terminated"]
+      - from: "connecting"
+        to: ["connected", "error", "terminated"]
+      - from: "connected"
+        to: ["active", "idle", "disconnecting", "error"]
+      - from: "active"
+        to: ["idle", "paused", "disconnecting", "error"]
+      - from: "idle"
+        to: ["active", "disconnecting", "terminated"]
+      - from: "paused"
+        to: ["active", "disconnecting", "terminated"]
+      - from: "disconnecting"
+        to: ["disconnected", "error"]
+      - from: "disconnected"
+        to: ["terminated"]
+      - from: "error"
+        to: ["terminated"]
+  
+  # Session Limits
+  limits:
+    max_concurrent_sessions: 100
+    max_sessions_per_user: 10
+    max_sessions_per_ip: 5
+    session_timeout_seconds: 7200  # 2 hours
+    idle_timeout_seconds: 1800  # 30 minutes
+    connection_timeout_seconds: 300  # 5 minutes
+
+# Connection Management
+connection_management:
+  # Connection Pooling
+  connection_pool:
+    enabled: true
+    pool_size: 50
+    max_overflow: 20
+    pool_timeout_seconds: 30
+  
+  # Connection Health
+  health_check:
+    enabled: true
+    check_interval_seconds: 30
+    timeout_seconds: 10
+    unhealthy_threshold: 3
+    healthy_threshold: 2
+  
+  # Connection Retry
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+
+# Server Manager Integration
+server_manager:
+  enabled: true
+  manager_url: "http://rdp-server-manager:8081"
+  timeout_seconds: 30
+  retry_attempts: 3
+  auto_register: true
+  health_check_interval_seconds: 60
+
+# XRDP Integration
+xrdp:
+  enabled: true
+  xrdp_url: "http://rdp-xrdp:3389"
+  timeout_seconds: 30
+  retry_attempts: 3
+  connection_pool_size: 20
+
+# Resource Monitor Integration
+resource_monitor:
+  enabled: true
+  monitor_url: "http://rdp-monitor:8093"
+  monitoring_interval_seconds: 30
+  resource_thresholds:
+    cpu_percent: 80
+    memory_percent: 80
+    disk_percent: 85
+    network_bandwidth_mbps: 100
+
+# Quality Control
+quality_control:
+  enabled: true
+  min_quality_score: 0.7
+  quality_check_interval_seconds: 60
+  auto_adjust_quality: false
+  quality_metrics:
+    - "latency"
+    - "bandwidth"
+    - "frame_rate"
+    - "packet_loss"
+
+# Session Policies
+session_policies:
+  # Access Policies
+  access:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+    ip_whitelist: []
+    ip_blacklist: []
+  
+  # Time Policies
+  time:
+    max_session_duration_hours: 24
+    max_idle_time_minutes: 30
+    session_extension_allowed: true
+    max_extensions: 3
+  
+  # Resource Policies
+  resources:
+    max_cpu_percent: 80
+    max_memory_mb: 2048
+    max_disk_gb: 10
+    max_bandwidth_mbps: 10
+
+# Database Configuration
+database:
+  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_rdp"
+  redis_url: "redis://lucid-redis:6379/0"
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  logging:
+    enabled: true
+    format: "json"
+    level: "INFO"
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    reconnect_on_failure: true
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  audit:
+    enabled: true
+    log_connections: true
+    log_disconnections: true
+    log_state_changes: true
+    log_errors: true
+    audit_log_retention_days: 90
+
