@@ -305,9 +305,6 @@ services:
         ipv4_address: 172.20.0.14
     ports:
       - "${AUTH_SERVICE_PORT:-8089}:${AUTH_SERVICE_PORT:-8089}"
-    working_dir: /app
-    entrypoint: ["python3"]
-    command: ["main.py"]
     depends_on:
       tor-proxy:
         condition: service_started
@@ -330,7 +327,7 @@ services:
     healthcheck:
       test: [
           "CMD",
-          "python3",
+          "/usr/bin/python3",
           "-c",
           'import os, urllib.request, sys; port = os.getenv("AUTH_SERVICE_PORT", "8089"); \
           try: \
