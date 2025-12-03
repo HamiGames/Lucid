@@ -5,7 +5,7 @@ Supports Ledger, Trezor, and KeepKey
 """
 
 from fastapi import APIRouter, HTTPException, status
-from models.hardware_wallet import (
+from auth.models.hardware_wallet import (
     HardwareWalletConnect,
     HardwareWalletConnectResponse,
     HardwareWalletSign,

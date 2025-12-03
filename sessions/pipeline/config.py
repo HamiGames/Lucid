@@ -7,7 +7,8 @@ Configuration management for session processing pipelines
 import os
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
-from pydantic import BaseSettings, validator
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -123,27 +124,31 @@ class PipelineSettings(BaseSettings):
     DEFAULT_RESOLUTION: str = "1920x1080"
     QUALITY_THRESHOLD: float = 0.8
     
-    @validator('CHUNK_SIZE_MB')
+    @field_validator('CHUNK_SIZE_MB')
+    @classmethod
     def validate_chunk_size(cls, v):
         if v < 1 or v > 100:
             raise ValueError('Chunk size must be between 1 and 100 MB')
         return v
     
-    @validator('COMPRESSION_LEVEL')
+    @field_validator('COMPRESSION_LEVEL')
+    @classmethod
     def validate_compression_level(cls, v):
         if v < 1 or v > 9:
             raise ValueError('Compression level must be between 1 and 9')
         return v
     
-    @validator('MAX_CONCURRENT_SESSIONS')
+    @field_validator('MAX_CONCURRENT_SESSIONS')
+    @classmethod
     def validate_max_sessions(cls, v):
         if v < 1 or v > 1000:
             raise ValueError('Max concurrent sessions must be between 1 and 1000')
         return v
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True
+    }
 
 class PipelineConfig:
     """

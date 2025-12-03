@@ -12,7 +12,7 @@ This module provides Pydantic models for:
 - PoOT validation
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, timezone
 from enum import Enum
@@ -42,7 +42,8 @@ class HardwareInfo(BaseModel):
     gpu: Optional[Dict[str, Any]] = Field(None, description="GPU information")
     network: List[Dict[str, Any]] = Field(default_factory=list, description="Network interfaces")
     
-    @validator('cpu')
+    @field_validator('cpu')
+    @classmethod
     def validate_cpu(cls, v):
         required_fields = ['cores', 'frequency_mhz', 'architecture']
         for field in required_fields:
@@ -50,7 +51,8 @@ class HardwareInfo(BaseModel):
                 raise ValueError(f"CPU {field} is required")
         return v
     
-    @validator('memory')
+    @field_validator('memory')
+    @classmethod
     def validate_memory(cls, v):
         required_fields = ['total_bytes', 'type']
         for field in required_fields:
@@ -58,7 +60,8 @@ class HardwareInfo(BaseModel):
                 raise ValueError(f"Memory {field} is required")
         return v
     
-    @validator('storage')
+    @field_validator('storage')
+    @classmethod
     def validate_storage(cls, v):
         required_fields = ['total_bytes', 'type', 'interface']
         for field in required_fields:
@@ -74,7 +77,8 @@ class NodeLocation(BaseModel):
     timezone: str = Field(..., description="Timezone")
     coordinates: Optional[Dict[str, float]] = Field(None, description="Latitude and longitude")
     
-    @validator('country')
+    @field_validator('country')
+    @classmethod
     def validate_country(cls, v):
         if len(v) != 2:
             raise ValueError("Country must be 2-character ISO code")
@@ -87,7 +91,8 @@ class ResourceLimits(BaseModel):
     disk_bytes: int = Field(..., ge=0, description="Disk limit in bytes")
     network_mbps: float = Field(..., ge=0, description="Network bandwidth limit in Mbps")
     
-    @validator('cpu_percent')
+    @field_validator('cpu_percent')
+    @classmethod
     def validate_cpu_percent(cls, v):
         if v < 1 or v > 100:
             raise ValueError("CPU percent must be between 1 and 100")
@@ -100,7 +105,8 @@ class NodeConfiguration(BaseModel):
     auto_scaling: bool = Field(default=False, description="Enable auto-scaling")
     maintenance_window: Optional[Dict[str, int]] = Field(None, description="Maintenance window settings")
     
-    @validator('max_sessions')
+    @field_validator('max_sessions')
+    @classmethod
     def validate_max_sessions(cls, v):
         if v < 1 or v > 1000:
             raise ValueError("Max sessions must be between 1 and 1000")
@@ -121,19 +127,22 @@ class Node(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Creation timestamp")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
     
-    @validator('node_id')
+    @field_validator('node_id')
+    @classmethod
     def validate_node_id(cls, v):
         if not re.match(r'^node_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node ID must match pattern: ^node_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node name must contain only alphanumeric characters, hyphens, and underscores")
         return v
     
-    @validator('poot_score')
+    @field_validator('poot_score')
+    @classmethod
     def validate_poot_score(cls, v):
         if v is not None and (v < 0 or v > 100):
             raise ValueError("PoOT score must be between 0 and 100")
@@ -148,7 +157,8 @@ class NodeCreateRequest(BaseModel):
     initial_pool_id: Optional[str] = Field(None, description="Initial pool assignment", regex="^pool_[a-zA-Z0-9_-]+$")
     configuration: Optional[NodeConfiguration] = Field(None, description="Node configuration")
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node name must contain only alphanumeric characters, hyphens, and underscores")
@@ -162,7 +172,8 @@ class NodeUpdateRequest(BaseModel):
     status: Optional[NodeStatus] = Field(None, description="Node status")
     configuration: Optional[NodeConfiguration] = Field(None, description="Node configuration")
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if v is not None and not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node name must contain only alphanumeric characters, hyphens, and underscores")
@@ -270,7 +281,8 @@ class PoOTValidationRequest(BaseModel):
     timestamp: datetime = Field(..., description="Output timestamp")
     nonce: str = Field(..., description="Nonce for validation")
     
-    @validator('output_data')
+    @field_validator('output_data')
+    @classmethod
     def validate_output_data(cls, v):
         try:
             import base64

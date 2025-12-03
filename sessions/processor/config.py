@@ -10,7 +10,8 @@ import os
 import logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
-from pydantic import BaseSettings, validator
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -155,12 +156,14 @@ class ChunkProcessorConfig(BaseSettings):
     blockchain_service_url: str = "http://blockchain-core:8084"
     api_gateway_url: str = "http://api-gateway:8080"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        env_prefix = "CHUNK_PROCESSOR_"
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True,
+        "env_prefix": "CHUNK_PROCESSOR_"
+    }
     
-    @validator('encryption_key', pre=True)
+    @field_validator('encryption_key', mode='before')
+    @classmethod
     def validate_encryption_key(cls, v):
         """Validate encryption key format."""
         if v is None:
@@ -173,21 +176,24 @@ class ChunkProcessorConfig(BaseSettings):
         
         return v
     
-    @validator('max_workers')
+    @field_validator('max_workers')
+    @classmethod
     def validate_max_workers(cls, v):
         """Validate max workers setting."""
         if v < 1 or v > 50:
             raise ValueError("Max workers must be between 1 and 50")
         return v
     
-    @validator('max_chunk_size')
+    @field_validator('max_chunk_size')
+    @classmethod
     def validate_max_chunk_size(cls, v):
         """Validate max chunk size setting."""
         if v < 1024 or v > 100 * 1024 * 1024:  # 1KB to 100MB
             raise ValueError("Max chunk size must be between 1KB and 100MB")
         return v
     
-    @validator('storage_path')
+    @field_validator('storage_path')
+    @classmethod
     def validate_storage_path(cls, v):
         """Validate storage path."""
         path = Path(v)
@@ -199,7 +205,8 @@ class ChunkProcessorConfig(BaseSettings):
                 logger.warning(f"Could not create storage directory {path}: {e}")
         return str(path)
     
-    @validator('log_level')
+    @field_validator('log_level')
+    @classmethod
     def validate_log_level(cls, v):
         """Validate log level."""
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -207,7 +214,8 @@ class ChunkProcessorConfig(BaseSettings):
             raise ValueError(f"Log level must be one of: {valid_levels}")
         return v.upper()
     
-    @validator('allowed_origins', pre=True)
+    @field_validator('allowed_origins', mode='before')
+    @classmethod
     def parse_allowed_origins(cls, v):
         """Parse allowed origins from string or list."""
         if isinstance(v, str):

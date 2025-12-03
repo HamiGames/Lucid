@@ -12,7 +12,7 @@ This module provides Pydantic models for:
 - Auto-scaling configuration
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from enum import Enum
@@ -26,21 +26,24 @@ class ScalingPolicy(BaseModel):
     max_nodes: int = Field(..., ge=1, description="Maximum number of nodes")
     cooldown_minutes: int = Field(..., ge=1, description="Cooldown period in minutes")
     
-    @validator('scale_up_threshold')
+    @field_validator('scale_up_threshold')
+    @classmethod
     def validate_scale_up_threshold(cls, v):
         if v < 50 or v > 95:
             raise ValueError("Scale up threshold must be between 50 and 95")
         return v
     
-    @validator('scale_down_threshold')
+    @field_validator('scale_down_threshold')
+    @classmethod
     def validate_scale_down_threshold(cls, v):
         if v < 10 or v > 50:
             raise ValueError("Scale down threshold must be between 10 and 50")
         return v
     
-    @validator('max_nodes')
-    def validate_max_nodes(cls, v, values):
-        if 'min_nodes' in values and v < values['min_nodes']:
+    @field_validator('max_nodes')
+    @classmethod
+    def validate_max_nodes(cls, v, info):
+        if hasattr(info, 'data') and 'min_nodes' in info.data and v < info.data['min_nodes']:
             raise ValueError("Max nodes must be greater than or equal to min nodes")
         return v
 
@@ -52,7 +55,8 @@ class AutoScalingConfig(BaseModel):
     scale_up_cooldown: int = Field(default=5, ge=1, description="Scale up cooldown in minutes")
     scale_down_cooldown: int = Field(default=10, ge=1, description="Scale down cooldown in minutes")
     
-    @validator('target_cpu_percent')
+    @field_validator('target_cpu_percent')
+    @classmethod
     def validate_target_cpu_percent(cls, v):
         if v < 30 or v > 90:
             raise ValueError("Target CPU percent must be between 30 and 90")
@@ -71,27 +75,31 @@ class NodePool(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Creation timestamp")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
     
-    @validator('pool_id')
+    @field_validator('pool_id')
+    @classmethod
     def validate_pool_id(cls, v):
         if not re.match(r'^pool_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool ID must match pattern: ^pool_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool name must contain only alphanumeric characters, hyphens, and underscores")
         return v
     
-    @validator('max_nodes')
+    @field_validator('max_nodes')
+    @classmethod
     def validate_max_nodes(cls, v):
         if v < 1 or v > 1000:
             raise ValueError("Max nodes must be between 1 and 1000")
         return v
     
-    @validator('node_count')
-    def validate_node_count(cls, v, values):
-        if 'max_nodes' in values and v > values['max_nodes']:
+    @field_validator('node_count')
+    @classmethod
+    def validate_node_count(cls, v, info):
+        if hasattr(info, 'data') and 'max_nodes' in info.data and v > info.data['max_nodes']:
             raise ValueError("Node count cannot exceed max nodes")
         return v
 
@@ -104,13 +112,15 @@ class NodePoolCreateRequest(BaseModel):
     auto_scaling: Optional[AutoScalingConfig] = Field(None, description="Auto-scaling configuration")
     pricing: Optional[Dict[str, Any]] = Field(None, description="Pricing information")
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool name must contain only alphanumeric characters, hyphens, and underscores")
         return v
     
-    @validator('max_nodes')
+    @field_validator('max_nodes')
+    @classmethod
     def validate_max_nodes(cls, v):
         if v < 1 or v > 1000:
             raise ValueError("Max nodes must be between 1 and 1000")
@@ -125,13 +135,15 @@ class NodePoolUpdateRequest(BaseModel):
     auto_scaling: Optional[AutoScalingConfig] = Field(None, description="Auto-scaling configuration")
     pricing: Optional[Dict[str, Any]] = Field(None, description="Pricing information")
     
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if v is not None and not re.match(r'^[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool name must contain only alphanumeric characters, hyphens, and underscores")
         return v
     
-    @validator('max_nodes')
+    @field_validator('max_nodes')
+    @classmethod
     def validate_max_nodes(cls, v):
         if v is not None and (v < 1 or v > 1000):
             raise ValueError("Max nodes must be between 1 and 1000")
@@ -145,19 +157,22 @@ class PoolNode(BaseModel):
     assigned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Assignment timestamp")
     status: str = Field(default="active", description="Node status in pool")
     
-    @validator('node_id')
+    @field_validator('node_id')
+    @classmethod
     def validate_node_id(cls, v):
         if not re.match(r'^node_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node ID must match pattern: ^node_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('pool_id')
+    @field_validator('pool_id')
+    @classmethod
     def validate_pool_id(cls, v):
         if not re.match(r'^pool_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool ID must match pattern: ^pool_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('priority')
+    @field_validator('priority')
+    @classmethod
     def validate_priority(cls, v):
         if v < 1 or v > 100:
             raise ValueError("Priority must be between 1 and 100")
@@ -175,13 +190,15 @@ class PoolScalingEvent(BaseModel):
     completed_at: Optional[datetime] = Field(None, description="Completion timestamp")
     status: str = Field(default="pending", description="Event status")
     
-    @validator('pool_id')
+    @field_validator('pool_id')
+    @classmethod
     def validate_pool_id(cls, v):
         if not re.match(r'^pool_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool ID must match pattern: ^pool_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('event_type')
+    @field_validator('event_type')
+    @classmethod
     def validate_event_type(cls, v):
         if v not in ['scale_up', 'scale_down']:
             raise ValueError("Event type must be 'scale_up' or 'scale_down'")
@@ -198,14 +215,16 @@ class PoolMetrics(BaseModel):
     total_sessions: int = Field(..., ge=0, description="Total active sessions")
     throughput_mbps: float = Field(..., ge=0, description="Network throughput in Mbps")
     
-    @validator('pool_id')
+    @field_validator('pool_id')
+    @classmethod
     def validate_pool_id(cls, v):
         if not re.match(r'^pool_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Pool ID must match pattern: ^pool_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('active_nodes')
-    def validate_active_nodes(cls, v, values):
-        if 'total_nodes' in values and v > values['total_nodes']:
+    @field_validator('active_nodes')
+    @classmethod
+    def validate_active_nodes(cls, v, info):
+        if hasattr(info, 'data') and 'total_nodes' in info.data and v > info.data['total_nodes']:
             raise ValueError("Active nodes cannot exceed total nodes")
         return v

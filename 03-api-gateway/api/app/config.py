@@ -11,7 +11,8 @@ Architecture Notes:
 
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, validator, Field
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
@@ -69,28 +70,32 @@ class Settings(BaseSettings):
     METRICS_ENABLED: bool = Field(default=True, env="METRICS_ENABLED")
     HEALTH_CHECK_INTERVAL: int = Field(default=30, env="HEALTH_CHECK_INTERVAL")
     
-    @validator('ALLOWED_HOSTS', pre=True)
+    @field_validator('ALLOWED_HOSTS', mode='before')
+    @classmethod
     def parse_allowed_hosts(cls, v):
         """Parse comma-separated allowed hosts"""
         if isinstance(v, str):
             return [host.strip() for host in v.split(',')]
         return v
     
-    @validator('CORS_ORIGINS', pre=True)
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
     def parse_cors_origins(cls, v):
         """Parse comma-separated CORS origins"""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(',')]
         return v
     
-    @validator('JWT_SECRET_KEY')
+    @field_validator('JWT_SECRET_KEY')
+    @classmethod
     def validate_jwt_secret(cls, v):
         """Validate JWT secret key length"""
         if len(v) < 32:
             raise ValueError('JWT_SECRET_KEY must be at least 32 characters long')
         return v
     
-    @validator('BLOCKCHAIN_CORE_URL')
+    @field_validator('BLOCKCHAIN_CORE_URL')
+    @classmethod
     def validate_blockchain_url(cls, v):
         """Validate blockchain core URL (should point to lucid_blocks)"""
         if not v:
@@ -104,7 +109,8 @@ class Settings(BaseSettings):
             )
         return v
     
-    @validator('TRON_PAYMENT_URL')
+    @field_validator('TRON_PAYMENT_URL')
+    @classmethod
     def validate_tron_url(cls, v):
         """Validate TRON payment URL (should be isolated service)"""
         if not v:
@@ -118,10 +124,10 @@ class Settings(BaseSettings):
             )
         return v
     
-    class Config:
-        """Pydantic config"""
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True
+    }
 
 
 @lru_cache()

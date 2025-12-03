@@ -4,8 +4,8 @@ POST /auth/login, /auth/register, /auth/refresh, /auth/logout
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from models.user import LoginRequest, LoginResponse, UserCreate, UserResponse
-from models.session import RefreshTokenRequest, RefreshTokenResponse
+from auth.models.user import LoginRequest, LoginResponse, UserCreate, UserResponse
+from auth.models.session import RefreshTokenRequest, RefreshTokenResponse
 from datetime import datetime
 import logging
 

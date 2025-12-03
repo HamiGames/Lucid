@@ -12,7 +12,7 @@ This module provides Pydantic models for:
 - TRON integration
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from enum import Enum
@@ -58,28 +58,32 @@ class Payout(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Creation timestamp")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
     
-    @validator('payout_id')
+    @field_validator('payout_id')
+    @classmethod
     def validate_payout_id(cls, v):
         if not re.match(r'^payout_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Payout ID must match pattern: ^payout_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('node_id')
+    @field_validator('node_id')
+    @classmethod
     def validate_node_id(cls, v):
         if not re.match(r'^node_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node ID must match pattern: ^node_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('amount')
+    @field_validator('amount')
+    @classmethod
     def validate_amount(cls, v):
         if v <= 0:
             raise ValueError("Payout amount must be greater than 0")
         return v
     
-    @validator('wallet_address')
-    def validate_wallet_address(cls, v, values):
-        if 'currency' in values:
-            currency = values['currency']
+    @field_validator('wallet_address')
+    @classmethod
+    def validate_wallet_address(cls, v, info):
+        if hasattr(info, 'data') and 'currency' in info.data:
+            currency = info.data['currency']
             if currency == Currency.USDT:
                 if not re.match(r'^[a-zA-Z0-9]{34}$', v):
                     raise ValueError("Invalid TRON wallet address format")
@@ -88,9 +92,10 @@ class Payout(BaseModel):
                     raise ValueError("Invalid LUCID wallet address format")
         return v
     
-    @validator('retry_count')
-    def validate_retry_count(cls, v, values):
-        if 'max_retries' in values and v > values['max_retries']:
+    @field_validator('retry_count')
+    @classmethod
+    def validate_retry_count(cls, v, info):
+        if hasattr(info, 'data') and 'max_retries' in info.data and v > info.data['max_retries']:
             raise ValueError("Retry count cannot exceed max retries")
         return v
 
@@ -103,22 +108,25 @@ class PayoutRequest(BaseModel):
     priority: PayoutPriority = Field(default=PayoutPriority.NORMAL, description="Processing priority")
     scheduled_at: Optional[datetime] = Field(None, description="Scheduled execution time")
     
-    @validator('node_id')
+    @field_validator('node_id')
+    @classmethod
     def validate_node_id(cls, v):
         if not re.match(r'^node_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Node ID must match pattern: ^node_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('amount')
+    @field_validator('amount')
+    @classmethod
     def validate_amount(cls, v):
         if v <= 0:
             raise ValueError("Payout amount must be greater than 0")
         return v
     
-    @validator('wallet_address')
-    def validate_wallet_address(cls, v, values):
-        if 'currency' in values:
-            currency = values['currency']
+    @field_validator('wallet_address')
+    @classmethod
+    def validate_wallet_address(cls, v, info):
+        if hasattr(info, 'data') and 'currency' in info.data:
+            currency = info.data['currency']
             if currency == Currency.USDT:
                 if not re.match(r'^[a-zA-Z0-9]{34}$', v):
                     raise ValueError("Invalid TRON wallet address format")
@@ -135,13 +143,15 @@ class BatchPayoutRequest(BaseModel):
     scheduled_at: Optional[datetime] = Field(None, description="Scheduled execution time")
     notification_url: Optional[str] = Field(None, description="Webhook URL for batch completion notification")
     
-    @validator('batch_id')
+    @field_validator('batch_id')
+    @classmethod
     def validate_batch_id(cls, v):
         if not re.match(r'^batch_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Batch ID must match pattern: ^batch_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('payout_requests')
+    @field_validator('payout_requests')
+    @classmethod
     def validate_payout_requests(cls, v):
         if not v or len(v) == 0:
             raise ValueError("Batch must contain at least one payout request")
@@ -164,21 +174,24 @@ class PayoutBatch(BaseModel):
     completed_at: Optional[datetime] = Field(None, description="Completion time")
     error_message: Optional[str] = Field(None, description="Error message if failed")
     
-    @validator('batch_id')
+    @field_validator('batch_id')
+    @classmethod
     def validate_batch_id(cls, v):
         if not re.match(r'^batch_[a-zA-Z0-9_-]+$', v):
             raise ValueError("Batch ID must match pattern: ^batch_[a-zA-Z0-9_-]+$")
         return v
     
-    @validator('completed_payouts')
-    def validate_completed_payouts(cls, v, values):
-        if 'total_payouts' in values and v > values['total_payouts']:
+    @field_validator('completed_payouts')
+    @classmethod
+    def validate_completed_payouts(cls, v, info):
+        if hasattr(info, 'data') and 'total_payouts' in info.data and v > info.data['total_payouts']:
             raise ValueError("Completed payouts cannot exceed total payouts")
         return v
     
-    @validator('failed_payouts')
-    def validate_failed_payouts(cls, v, values):
-        if 'total_payouts' in values and v > values['total_payouts']:
+    @field_validator('failed_payouts')
+    @classmethod
+    def validate_failed_payouts(cls, v, info):
+        if hasattr(info, 'data') and 'total_payouts' in info.data and v > info.data['total_payouts']:
             raise ValueError("Failed payouts cannot exceed total payouts")
         return v
 
@@ -196,19 +209,22 @@ class PayoutStatistics(BaseModel):
     currency_breakdown: Dict[str, int] = Field(..., description="Payout count by currency")
     priority_breakdown: Dict[str, int] = Field(..., description="Payout count by priority")
     
-    @validator('completed_payouts')
-    def validate_completed_payouts(cls, v, values):
-        if 'total_payouts' in values and v > values['total_payouts']:
+    @field_validator('completed_payouts')
+    @classmethod
+    def validate_completed_payouts(cls, v, info):
+        if hasattr(info, 'data') and 'total_payouts' in info.data and v > info.data['total_payouts']:
             raise ValueError("Completed payouts cannot exceed total payouts")
         return v
     
-    @validator('failed_payouts')
-    def validate_failed_payouts(cls, v, values):
-        if 'total_payouts' in values and v > values['total_payouts']:
+    @field_validator('failed_payouts')
+    @classmethod
+    def validate_failed_payouts(cls, v, info):
+        if hasattr(info, 'data') and 'total_payouts' in info.data and v > info.data['total_payouts']:
             raise ValueError("Failed payouts cannot exceed total payouts")
         return v
     
-    @validator('success_rate')
+    @field_validator('success_rate')
+    @classmethod
     def validate_success_rate(cls, v):
         if v < 0 or v > 100:
             raise ValueError("Success rate must be between 0 and 100")
@@ -224,13 +240,15 @@ class PayoutQueue(BaseModel):
     oldest_payout: Optional[datetime] = Field(None, description="Oldest payout in queue")
     newest_payout: Optional[datetime] = Field(None, description="Newest payout in queue")
     
-    @validator('queue_length')
+    @field_validator('queue_length')
+    @classmethod
     def validate_queue_length(cls, v):
         if v < 0:
             raise ValueError("Queue length cannot be negative")
         return v
     
-    @validator('estimated_wait_time')
+    @field_validator('estimated_wait_time')
+    @classmethod
     def validate_estimated_wait_time(cls, v):
         if v < 0:
             raise ValueError("Estimated wait time cannot be negative")

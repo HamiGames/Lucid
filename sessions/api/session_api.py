@@ -6,16 +6,18 @@ REST API for session management operations
 
 import asyncio
 import logging
+import os
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from pathlib import Path
+from enum import Enum
 import json
 
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
