@@ -18,19 +18,20 @@ import logging
 from datetime import datetime
 import sys
 
+# Import configuration and components from the auth package
 try:
-    from config import settings
+    from auth.config import settings
 except ImportError as e:
-    import logging
     logger = logging.getLogger(__name__)
     logger.error(f"Failed to import config: {e}")
     sys.exit(1)
-from middleware import AuthMiddleware, RateLimitMiddleware, AuditLogMiddleware
-from authentication_service import AuthenticationService
-from user_manager import UserManager
-from hardware_wallet import HardwareWalletManager
-from session_manager import SessionManager
-from permissions import RBACManager
+
+from auth.middleware import AuthMiddleware, RateLimitMiddleware, AuditLogMiddleware
+from auth.authentication_service import AuthenticationService
+from auth.user_manager import UserManager
+from auth.hardware_wallet import HardwareWalletManager
+from auth.session_manager import SessionManager
+from auth.permissions import RBACManager
 
 # Configure logging with safe level validation
 def get_safe_log_level(log_level_str: str) -> int:
@@ -149,8 +150,8 @@ async def service_info():
     }
 
 
-# Import and include routers
-from api import auth_router, users_router, sessions_router, hardware_wallet_router
+# Import and include routers from the auth package
+from auth.api import auth_router, users_router, sessions_router, hardware_wallet_router
 
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
