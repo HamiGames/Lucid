@@ -10,9 +10,9 @@ from typing import Optional
 from datetime import datetime
 import logging
 
-from session_manager import SessionManager
-from models.session import TokenType
-from utils.exceptions import TokenExpiredError, InvalidTokenError
+from auth.session_manager import SessionManager
+from auth.models.session import TokenType
+from auth.utils.exceptions import TokenExpiredError, InvalidTokenError
 
 logger = logging.getLogger(__name__)
 

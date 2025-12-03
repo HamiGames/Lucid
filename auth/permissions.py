@@ -5,8 +5,8 @@ Lucid Authentication Service - RBAC (Role-Based Access Control)
 
 from enum import Enum
 from typing import List, Dict, Set, Optional
-from models.permissions import Role, Permission
-from user_manager import UserManager
+from auth.models.permissions import Role, Permission
+from auth.user_manager import UserManager
 import logging
 
 logger = logging.getLogger(__name__)

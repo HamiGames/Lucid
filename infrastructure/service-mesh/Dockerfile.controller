@@ -160,6 +160,7 @@ COPY infrastructure/service-mesh/sidecar/ ./sidecar/
 COPY infrastructure/service-mesh/discovery/ ./discovery/
 COPY infrastructure/service-mesh/communication/ ./communication/
 COPY infrastructure/service-mesh/security/ ./security/
+COPY infrastructure/service-mesh/entrypoint.py ./entrypoint.py
 
 # Verify source code directories were copied (per Dockerfile-copy-pattern: verify after COPY)
 # CRITICAL: This prevents silent COPY failures for source code
@@ -168,6 +169,8 @@ RUN test -d ./controller || (echo "ERROR: controller directory not copied" && ex
     test -d ./discovery || (echo "ERROR: discovery directory not copied" && exit 1) && \
     test -d ./communication || (echo "ERROR: communication directory not copied" && exit 1) && \
     test -d ./security || (echo "ERROR: security directory not copied" && exit 1) && \
+    test -f ./entrypoint.py || (echo "ERROR: entrypoint.py not copied" && exit 1) && \
+    chmod +x ./entrypoint.py && \
     echo "✅ Source code directories verified in builder stage"
 
 # Lock in source directory structure with marker files (per Dockerfile-copy-pattern)
@@ -272,9 +275,9 @@ RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util, sys; si
 # Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app
 
-# Verify controller module exists (this will fail the build if module is missing)
+# Verify controller module and entrypoint exist (this will fail the build if missing)
 # CRITICAL: Verify all source directories AND marker files AND module can be imported (per Dockerfile-copy-pattern)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util, sys; assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package verified in runtime stage: all directories, markers, and module imports verified')"]
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util, sys; assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py missing'; assert os.path.isfile('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py is not a file'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package and entrypoint verified in runtime stage: all directories, markers, and module imports verified')"]
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
 ENV TZ=UTC \
@@ -346,8 +349,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose ports (aligned with essentials.md and Network_conig_requirements.md: 8500,8501,8502,8600,8088)
 EXPOSE 8500 8501 8502 8600 8088
 
-# Start application (async main in controller.main) - NOT FastAPI, uses asyncio.run(main())
+# Start application using entrypoint script (more reliable than inline CMD)
 # CRITICAL: Use /usr/bin/python3.11 (not python3) for distroless compatibility
-# CRITICAL: Set sys.path and import yaml BEFORE controller.main to ensure packages are found in distroless
-# CRITICAL: Verify yaml import works before proceeding (fails fast if package missing)
-CMD ["/usr/bin/python3.11", "-c", "import sys, os; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); sys.path.insert(0, '/app'); os.environ['PYTHONPATH'] = '/app:/root/.local/lib/python3.11/site-packages'; import yaml; print('✅ yaml module loaded:', yaml.__file__); import asyncio; from controller.main import main; asyncio.run(main())"]
+# CRITICAL: Entrypoint script handles Python path setup and yaml verification
+# CRITICAL: PYTHONPATH is already set in ENV (line 287), entrypoint ensures sys.path is correct
+CMD ["/usr/bin/python3.11", "/app/entrypoint.py"]
