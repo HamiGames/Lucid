@@ -1,0 +1,188 @@
+# Lucid TRON Wallet Manager - Wallet Manager Configuration
+# Optional YAML configuration for wallet manager service
+# File: payment-systems/tron/config/wallet-manager-config.yaml
+# Purpose: Define wallet management, encryption, and backup policies
+
+# Global Wallet Manager Configuration
+global:
+  service_name: "lucid-tron-wallet-manager"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8093
+
+# Wallet Configuration
+wallet:
+  # Wallet Types
+  types:
+    hot:
+      enabled: true
+      description: "Hot wallet for frequent transactions"
+      encryption_required: true
+    
+    cold:
+      enabled: true
+      description: "Cold wallet for secure storage"
+      encryption_required: true
+    
+    multisig:
+      enabled: false
+      description: "Multi-signature wallet"
+      encryption_required: true
+      min_signatures: 2
+      max_signatures: 5
+    
+    hardware:
+      enabled: false
+      description: "Hardware wallet integration"
+      encryption_required: false
+  
+  # Wallet Limits
+  limits:
+    max_wallets_per_user: 10
+    max_wallets_total: 1000
+    wallet_name_max_length: 100
+    wallet_description_max_length: 500
+  
+  # Wallet Operations
+  operations:
+    create: true
+    read: true
+    update: true
+    delete: true
+    list: true
+    get_balance: true
+    get_transaction_history: true
+
+# Encryption Configuration
+encryption:
+  enabled: true
+  algorithm: "AES-256-GCM"
+  key_size: 32  # 256 bits
+  nonce_size: 12  # 96 bits
+  tag_size: 16  # 128 bits
+  salt_size: 32  # 256 bits
+  pbkdf2_iterations: 100000
+  key_rotation_interval_seconds: 3600  # 1 hour
+  
+  # Key Management
+  key_management:
+    storage_backend: "environment"  # Options: environment, vault, file
+    key_path: null  # Set if using file backend
+    vault_url: null  # Set if using vault backend
+
+# Backup Configuration
+backup:
+  enabled: true
+  backup_interval_seconds: 3600  # 1 hour
+  backup_retention_days: 30
+  backup_location: "/data/wallets/backups"
+  backup_encryption: true
+  backup_compression: true
+  
+  # Backup Types
+  types:
+    full:
+      enabled: true
+      schedule: "0 2 * * *"  # Daily at 2 AM
+      retention_days: 30
+    
+    incremental:
+      enabled: true
+      schedule: "0 */6 * * *"  # Every 6 hours
+      retention_days: 7
+
+# TRON Network Integration
+tron:
+  network_type: "mainnet"
+  tron_client_url: "http://tron-client:8091"
+  timeout_seconds: 30
+  retry_attempts: 3
+  
+  # Account Operations
+  account_operations:
+    get_balance: true
+    get_account_info: true
+    get_transaction_history: true
+    get_resource_info: true
+
+# Database Configuration
+database:
+  mongodb:
+    url: "mongodb://lucid-mongodb:27017/lucid_payments"
+    database: "lucid_payments"
+    collections:
+      wallets: "wallets"
+      wallet_transactions: "wallet_transactions"
+      wallet_backups: "wallet_backups"
+  
+  redis:
+    url: "redis://lucid-redis:6379/0"
+    cache_ttl_seconds: 300
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  wallet_access:
+    require_password: true
+    password_min_length: 12
+    max_login_attempts: 5
+    lockout_duration_minutes: 30
+  
+  private_key_handling:
+    encrypt_at_rest: true
+    never_log_private_keys: true
+    secure_deletion: true
+  
+  audit:
+    enabled: true
+    log_wallet_operations: true
+    log_balance_queries: true
+    log_transaction_history: true
+    audit_log_retention_days: 90
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  wallet_metrics:
+    enabled: true
+    track_wallet_count: true
+    track_balance_changes: true
+    track_transaction_count: true
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    backup_restore_enabled: true
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+  burst_size: 200
+  window_seconds: 60
+

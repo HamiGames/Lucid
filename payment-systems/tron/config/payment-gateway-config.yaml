@@ -1,0 +1,199 @@
+# Lucid TRON Payment Gateway - Payment Gateway Configuration
+# Optional YAML configuration for payment gateway service
+# File: payment-systems/tron/config/payment-gateway-config.yaml
+# Purpose: Define payment orchestration, processing workflows, and gateway policies
+
+# Global Payment Gateway Configuration
+global:
+  service_name: "lucid-tron-payment-gateway"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8097
+
+# Payment Configuration
+payment:
+  # Payment Types
+  types:
+    trx:
+      enabled: true
+      description: "TRX payment"
+      min_amount: 0.000001  # 1 SUN
+      max_amount: 1000000.0
+      confirmation_blocks: 20
+    
+    usdt:
+      enabled: true
+      description: "USDT payment"
+      min_amount: 0.000001  # 1 micro-USDT
+      max_amount: 1000000.0
+      confirmation_blocks: 20
+  
+  # Payment Status
+  status:
+    - "pending"
+    - "processing"
+    - "completed"
+    - "failed"
+    - "cancelled"
+    - "expired"
+    - "refunded"
+  
+  # Payment Limits
+  limits:
+    min_payment_amount: 0.01
+    max_payment_amount: 10000.0
+    daily_payment_limit: 100000.0
+    monthly_payment_limit: 3000000.0
+    max_payments_per_user_per_day: 100
+  
+  # Payment Processing
+  processing:
+    timeout_seconds: 300
+    max_retries: 3
+    retry_delay_seconds: 5
+    auto_retry_failed: true
+    require_confirmation: true
+    confirmation_blocks: 20
+
+# Gateway Orchestration
+orchestration:
+  enabled: true
+  
+  # Service Integration
+  services:
+    tron_client:
+      url: "http://tron-client:8091"
+      timeout_seconds: 30
+      retry_attempts: 3
+    
+    wallet_manager:
+      url: "http://tron-wallet-manager:8093"
+      timeout_seconds: 30
+      retry_attempts: 3
+    
+    usdt_manager:
+      url: "http://tron-usdt-manager:8094"
+      timeout_seconds: 30
+      retry_attempts: 3
+    
+    payout_router:
+      url: "http://tron-payout-router:8092"
+      timeout_seconds: 30
+      retry_attempts: 3
+  
+  # Payment Workflow
+  workflow:
+    steps:
+      - name: "validate_payment"
+        service: "payment_gateway"
+        timeout_seconds: 10
+      
+      - name: "check_balance"
+        service: "wallet_manager"
+        timeout_seconds: 30
+      
+      - name: "process_transaction"
+        service: "tron_client"
+        timeout_seconds: 60
+      
+      - name: "confirm_transaction"
+        service: "tron_client"
+        timeout_seconds: 300
+      
+      - name: "update_payment_status"
+        service: "payment_gateway"
+        timeout_seconds: 10
+
+# Database Configuration
+database:
+  mongodb:
+    url: "mongodb://lucid-mongodb:27017/lucid_payments"
+    database: "lucid_payments"
+    collections:
+      payments: "payments"
+      payment_transactions: "payment_transactions"
+      payment_stats: "payment_stats"
+  
+  redis:
+    url: "redis://lucid-redis:6379/0"
+    cache_ttl_seconds: 300
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  payment_metrics:
+    enabled: true
+    track_payments: true
+    track_processing_time: true
+    track_success_rate: true
+    track_failure_rate: true
+    track_payment_amounts: true
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  payment_validation:
+    validate_amounts: true
+    validate_recipients: true
+    validate_limits: true
+    require_confirmation: true
+  
+  failure_handling:
+    log_failures: true
+    notify_on_failure: false
+    queue_failed_payments: true
+    retry_failed_payments: true
+    max_retry_attempts: 5
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  payment_validation:
+    validate_amounts: true
+    validate_recipients: true
+    validate_limits: true
+    require_approval: false
+  
+  audit:
+    enabled: true
+    log_payments: true
+    log_transactions: true
+    log_payment_status_changes: true
+    audit_log_retention_days: 90
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+  burst_size: 200
+  window_seconds: 60
+  per_endpoint_limits:
+    "/api/v1/payments":
+      requests_per_minute: 50
+      burst_size: 10
+    "/api/v1/payments/{payment_id}/process":
+      requests_per_minute: 20
+      burst_size: 5
+

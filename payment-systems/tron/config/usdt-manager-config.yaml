@@ -1,0 +1,170 @@
+# Lucid TRON USDT Manager - USDT Manager Configuration
+# Optional YAML configuration for USDT manager service
+# File: payment-systems/tron/config/usdt-manager-config.yaml
+# Purpose: Define USDT-TRC20 token operations and contract management
+
+# Global USDT Manager Configuration
+global:
+  service_name: "lucid-tron-usdt-manager"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8094
+
+# USDT Configuration
+usdt:
+  # Contract Configuration
+  contract:
+    address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"  # Mainnet USDT
+    decimals: 6
+    symbol: "USDT"
+    name: "Tether USD"
+  
+  # Network-specific Contracts
+  contracts:
+    mainnet:
+      address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+      decimals: 6
+    
+    testnet:
+      address: "TG3XXyExBkPJ4D8sYv7cL6Lf4n9W4iZ1C"
+      decimals: 6
+    
+    shasta:
+      address: "TG3XXyExBkPJ4D8sYv7cL6Lf4n9W4iZ1C"
+      decimals: 6
+  
+  # Transfer Configuration
+  transfer:
+    min_amount: 0.000001  # Minimum USDT amount (1 micro-USDT)
+    max_amount: 1000000.0  # Maximum USDT amount
+    default_gas_limit: 100000
+    default_gas_price: 1000000  # SUN per energy unit
+    confirmation_blocks: 20
+    timeout_seconds: 300
+  
+  # Balance Operations
+  balance:
+    cache_ttl_seconds: 60
+    refresh_interval_seconds: 30
+    max_accounts_per_request: 100
+
+# Token Management
+token:
+  # Supported Tokens
+  supported_tokens:
+    - symbol: "USDT"
+      name: "Tether USD"
+      contract_address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+      decimals: 6
+      enabled: true
+  
+  # Token Operations
+  operations:
+    register_token: true
+    get_token_info: true
+    get_token_balance: true
+    transfer_token: true
+    list_tokens: true
+  
+  # Token Limits
+  limits:
+    max_tokens_per_user: 10
+    max_token_name_length: 100
+    max_token_symbol_length: 10
+
+# TRON Network Integration
+tron:
+  network_type: "mainnet"
+  tron_client_url: "http://tron-client:8091"
+  wallet_manager_url: "http://tron-wallet-manager:8093"
+  timeout_seconds: 30
+  retry_attempts: 3
+  
+  # Contract Interaction
+  contract_interaction:
+    call_timeout_seconds: 60
+    max_retries: 3
+    retry_delay_seconds: 5
+
+# Database Configuration
+database:
+  mongodb:
+    url: "mongodb://lucid-mongodb:27017/lucid_payments"
+    database: "lucid_payments"
+    collections:
+      usdt_transactions: "usdt_transactions"
+      token_registrations: "token_registrations"
+      token_balances: "token_balances"
+  
+  redis:
+    url: "redis://lucid-redis:6379/0"
+    cache_ttl_seconds: 300
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  usdt_metrics:
+    enabled: true
+    track_transfers: true
+    track_balances: true
+    track_transaction_count: true
+    track_success_rate: true
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  transaction_validation:
+    validate_addresses: true
+    validate_amounts: true
+    validate_contract: true
+    require_confirmation: true
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  transfer_validation:
+    validate_recipients: true
+    validate_amounts: true
+    validate_limits: true
+    require_approval: false
+  
+  audit:
+    enabled: true
+    log_transfers: true
+    log_balance_queries: true
+    log_token_registrations: true
+    audit_log_retention_days: 90
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+  burst_size: 200
+  window_seconds: 60
+  per_endpoint_limits:
+    "/api/v1/tokens/transfer":
+      requests_per_minute: 50
+      burst_size: 10
+
