@@ -10,11 +10,19 @@ Dependencies: asyncio, yaml, consul
 
 import asyncio
 import logging
-import yaml
 import os
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
+
+# Import yaml with error handling (entrypoint.py ensures it's available, but be defensive)
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError as e:
+    YAML_AVAILABLE = False
+    logging.error(f"Failed to import yaml module: {e}")
+    raise ImportError("yaml module is required but not available. Ensure PyYAML is installed.") from e
 
 logger = logging.getLogger(__name__)
 
