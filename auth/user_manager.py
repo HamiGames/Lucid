@@ -257,6 +257,10 @@ class UserManager:
             logger.error(f"Failed to get user by ID: {e}")
             return None
     
+    async def get_user(self, user_id: str) -> Optional[UserProfile]:
+        """Get user by user ID (alias for get_user_by_id for compatibility)"""
+        return await self.get_user_by_id(user_id)
+    
     async def update_user(self, user: UserProfile) -> bool:
         """Update user profile"""
         try:

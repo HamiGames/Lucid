@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from datetime import datetime
 import sys
+from motor.motor_asyncio import AsyncIOMotorClient
 
 # Import configuration and components from the auth package
 try:
@@ -69,8 +70,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize services
-user_manager = UserManager()
+# Initialize MongoDB client (will be connected in startup)
+mongodb_client: AsyncIOMotorClient = None
+mongodb_db = None
+
+# Initialize services (will be fully initialized in startup)
+user_manager: UserManager = None
 hardware_wallet_service = HardwareWalletManager()
 session_manager = SessionManager()
 rbac_manager = RBACManager()
@@ -84,39 +89,90 @@ app.add_middleware(RateLimitMiddleware)
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
+    global mongodb_client, mongodb_db, user_manager
+    
     logger.info("Starting Lucid Authentication Service")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Port: {settings.AUTH_SERVICE_PORT}")
     
-    # Initialize database connections
-    await user_manager.initialize()
-    logger.info("Database connections initialized")
+    # Initialize MongoDB connection
+    try:
+        mongodb_client = AsyncIOMotorClient(
+            settings.MONGODB_URI,
+            maxPoolSize=settings.MONGODB_MAX_POOL_SIZE,
+            minPoolSize=settings.MONGODB_MIN_POOL_SIZE
+        )
+        mongodb_db = mongodb_client[settings.MONGODB_DATABASE]
+        
+        # Test connection
+        await mongodb_client.admin.command('ping')
+        logger.info("MongoDB connection established")
+        
+        # Initialize UserManager with database
+        user_manager = UserManager(mongodb_db)
+        logger.info("UserManager initialized")
+        
+        # Initialize RBACManager with UserManager
+        rbac_manager.user_manager = user_manager
+        logger.info("RBACManager initialized")
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize MongoDB connection: {e}")
+        raise
+    
+    # Initialize session manager
+    await session_manager.initialize()
+    logger.info("Session manager initialized")
     
     # Initialize hardware wallet support
     if settings.ENABLE_HARDWARE_WALLET:
         await hardware_wallet_service.initialize()
         logger.info("Hardware wallet support initialized")
+    
+    logger.info("All services initialized successfully")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
+    global mongodb_client
+    
     logger.info("Shutting down Lucid Authentication Service")
-    await user_manager.close()
+    
+    # Close session manager
+    await session_manager.close()
+    
+    # Close hardware wallet service
     await hardware_wallet_service.close()
+    
+    # Close MongoDB connection
+    if mongodb_client:
+        mongodb_client.close()
+        logger.info("MongoDB connection closed")
+    
+    logger.info("Shutdown complete")
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    # Check database health
+    db_healthy = False
+    if mongodb_client:
+        try:
+            await mongodb_client.admin.command('ping')
+            db_healthy = True
+        except Exception:
+            db_healthy = False
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if db_healthy else "degraded",
         "service": "auth-service",
         "version": "1.0.0",
         "timestamp": datetime.utcnow().isoformat(),
         "environment": settings.ENVIRONMENT,
         "dependencies": {
-            "database": await user_manager.health_check(),
+            "database": db_healthy,
             "redis": await session_manager.health_check(),
             "hardware_wallet": hardware_wallet_service.is_available() if settings.ENABLE_HARDWARE_WALLET else "disabled"
         }
