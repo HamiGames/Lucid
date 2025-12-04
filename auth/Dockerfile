@@ -148,6 +148,12 @@ RUN echo "LUCID_AUTH_SOURCE_API_$(date +%s)" > ./auth/api/.lucid-api-marker && \
     echo "LUCID_AUTH_MAIN_$(date +%s)" > ./auth/main.py.lucid-marker && \
     chown -R 65532:65532 ./auth
 
+# Copy verification script for runtime stage (maintainable alternative to long inline Python)
+# Note: This script is only executed in the runtime stage, not in builder
+COPY auth/verify_runtime.py ./verify_runtime.py
+RUN chmod +x ./verify_runtime.py && \
+    echo "✅ Verification script copied to builder stage (will be used in runtime stage)"
+
 FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
@@ -212,11 +218,15 @@ COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./auth/se
 COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./auth/permissions.py
 COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./auth/healthcheck.py
 
+# Copy verification script from builder stage
+COPY --from=builder --chown=65532:65532 /build/verify_runtime.py ./verify_runtime.py
+
 # Verify source code was copied and no unwanted files are present
 # CRITICAL: Files are copied to /app/auth/ not /app/ root - verify correct paths
 # CRITICAL: Also verify imports are correct to catch Docker cache issues
 # CRITICAL: Check ALL route files for correct imports (auth.models.* not models.*)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib.util; assert os.path.exists('/app/auth/main.py'), 'auth/main.py missing'; assert os.path.exists('/app/auth/session_manager.py'), 'auth/session_manager.py missing'; assert os.path.exists('/app/auth/api'), 'auth/api directory missing'; assert os.path.exists('/app/auth/middleware'), 'auth/middleware directory missing'; assert os.path.exists('/app/auth/models'), 'auth/models directory missing'; assert os.path.exists('/app/auth/utils'), 'auth/utils directory missing'; assert os.path.exists('/app/auth/middleware/.lucid-middleware-marker'), 'middleware marker file missing'; assert not os.path.exists('/app/auth/api/__pycache__'), '__pycache__ found in api'; assert not os.path.exists('/app/auth/middleware/__pycache__'), '__pycache__ found in middleware'; assert not os.path.exists('/app/auth/models/__pycache__'), '__pycache__ found in models'; assert not os.path.exists('/app/auth/utils/__pycache__'), '__pycache__ found in utils'; importlib.util.find_spec('auth.main', package=None) or (print('ERROR: auth.main module not importable') or exit(1)); route_files = ['/app/auth/api/auth_routes.py', '/app/auth/api/user_routes.py', '/app/auth/api/session_routes.py', '/app/auth/api/hardware_wallet_routes.py']; for route_file in route_files: assert os.path.exists(route_file), f'ERROR: Route file missing: {route_file}'; content = open(route_file, 'r').read(); assert 'from auth.models.' in content or 'from auth.' in content, f'ERROR: {route_file} missing auth.models.* or auth.* imports'; assert 'from models.' not in content, f'ERROR: {route_file} contains incorrect import from models.* (should be from auth.models.*)'; assert 'import models' not in content, f'ERROR: {route_file} contains incorrect import models (should be auth.models)'; print(f'✅ Verified imports in {os.path.basename(route_file)}'); print('✅ Auth source code verified in runtime stage - correct imports and no unwanted files present')"]
+# Using dedicated verification script for maintainability and easier debugging
+RUN ["/usr/bin/python3.11", "./verify_runtime.py"]
 
 EXPOSE 8089
 
