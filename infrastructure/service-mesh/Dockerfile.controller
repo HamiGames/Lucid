@@ -235,7 +235,8 @@ LABEL maintainer="Lucid Development Team" \
 WORKDIR /app
 
 # Create site-packages directory before COPY (distroless doesn't have it)
-RUN ["/usr/bin/python3.11", "-c", "import os; os.makedirs('/root/.local/lib/python3.11/site-packages', exist_ok=True); os.makedirs('/root/.local/bin', exist_ok=True); print('✅ Created site-packages directories')"]
+# CRITICAL: Use /usr/local (SAME PATTERN AS auth/Dockerfile - standard location for distroless)
+RUN ["/usr/bin/python3.11", "-c", "import os; os.makedirs('/usr/local/lib/python3.11/site-packages', exist_ok=True); os.makedirs('/usr/local/bin', exist_ok=True); print('✅ Created site-packages directories')"]
 
 # Copy runtime directories from builder (directory already populated with .keep files)
 COPY --from=builder --chown=65532:65532 /var/run /var/run
@@ -246,10 +247,10 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; assert os.path.exists('/var/run/.keep'), 'ERROR: Runtime directory marker not copied: /var/run/.keep'; assert os.path.exists('/var/lib/.keep'), 'ERROR: Lib directory marker not copied: /var/lib/.keep'; assert os.path.isdir('/var/run'), 'ERROR: /var/run is not a directory'; assert os.path.isdir('/var/lib'), 'ERROR: /var/lib is not a directory'; assert os.path.isfile('/var/run/.keep'), 'ERROR: /var/run/.keep is not a file'; assert os.path.isfile('/var/lib/.keep'), 'ERROR: /var/lib/.keep is not a file'; print('✅ Runtime directories verified in runtime stage: markers and structure confirmed')"]
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
-# CRITICAL: Use /root/.local path (not /usr/local) for distroless Python compatibility
+# CRITICAL: Copy to /usr/local (SAME PATTERN AS auth/Dockerfile line 184 - standard location for distroless)
 # CRITICAL: Copy entire directories (not individual files) per Dockerfile-copy-pattern
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /root/.local/bin
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Copy dynamic linker for ARM64 (required for native extensions like grpcio)
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
@@ -267,10 +268,10 @@ RUN ["/usr/bin/python3.11", "-c", "import os, sys; linker = '/lib/ld-linux-aarch
 
 # Verify packages were copied (this will fail the build if packages are missing)
 # CRITICAL: Use correct import names (grpc not grpcio, consul not python_consul)
-# CRITICAL: Use /root/.local path (not /usr/local) for distroless Python compatibility
+# CRITICAL: Use /usr/local path (SAME PATTERN AS auth/Dockerfile line 191 - standard location)
 # CRITICAL: Verify both package directories exist AND packages can be imported AND marker file has content (per Dockerfile-copy-pattern)
-# CRITICAL: Add site-packages to sys.path before importing (distroless Python doesn't include /root/.local by default)
-RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util, sys; site_packages = '/root/.local/lib/python3.11/site-packages'; bin_dir = '/root/.local/bin'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography', 'yaml'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'grpc')), 'ERROR: grpc directory not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'ERROR: aiohttp directory not found'; assert os.path.exists(os.path.join(site_packages, 'consul')), 'ERROR: consul directory not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'ERROR: pydantic directory not found'; assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'ERROR: cryptography directory not found'; assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'ERROR: yaml not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; print('✅ Packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
+# CRITICAL: Add site-packages to sys.path before importing (distroless Python doesn't include /usr/local by default)
+RUN ["/usr/bin/python3.11", "-c", "import os, importlib, importlib.util, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; bin_dir = '/usr/local/bin'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography', 'yaml'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'grpc')), 'ERROR: grpc directory not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'ERROR: aiohttp directory not found'; assert os.path.exists(os.path.join(site_packages, 'consul')), 'ERROR: consul directory not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'ERROR: pydantic directory not found'; assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'ERROR: cryptography directory not found'; assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'ERROR: yaml not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; print('✅ Packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
 
 # Copy application code from builder (directory already populated with source + marker files)
 COPY --from=builder --chown=65532:65532 /app /app
@@ -286,9 +287,9 @@ ENV TZ=UTC \
     COUNTRY=US
 
 # Set Python path and environment (packages already copied above)
-# CRITICAL: Use /root/.local path (not /usr/local) for distroless Python compatibility
-ENV PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages \
-    PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+# CRITICAL: Use /usr/local path (SAME PATTERN AS auth/Dockerfile - standard location)
+ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PATH=/usr/local/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     LUCID_ENV=production \

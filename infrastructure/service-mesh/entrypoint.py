@@ -8,8 +8,8 @@ import sys
 import os
 import importlib.util
 
-# Set up Python path explicitly (distroless doesn't include /root/.local by default)
-site_packages = '/root/.local/lib/python3.11/site-packages'
+# Set up Python path explicitly (packages are in /usr/local per Dockerfile - standard location)
+site_packages = '/usr/local/lib/python3.11/site-packages'
 app_path = '/app'
 
 # Add to sys.path if not already present
