@@ -53,24 +53,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Lucid Authentication Service",
-    description="TRON-based authentication with hardware wallet support",
-    version="1.0.0",
-    docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None
-)
-
-# CORS Configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Initialize MongoDB client (will be connected in startup)
 mongodb_client: AsyncIOMotorClient = None
 mongodb_db = None
@@ -82,16 +64,13 @@ session_manager = SessionManager()
 rbac_manager = RBACManager()
 auth_service = AuthenticationService()
 
-# Add custom middleware
-app.add_middleware(AuditLogMiddleware)
-app.add_middleware(RateLimitMiddleware)
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown (distroless-compatible)"""
     global mongodb_client, mongodb_db, user_manager
     
+    # Startup
     logger.info("Starting Lucid Authentication Service")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Port: {settings.AUTH_SERVICE_PORT}")
@@ -131,13 +110,10 @@ async def startup_event():
         logger.info("Hardware wallet support initialized")
     
     logger.info("All services initialized successfully")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    global mongodb_client
     
+    yield  # Application runs here
+    
+    # Shutdown
     logger.info("Shutting down Lucid Authentication Service")
     
     # Close session manager
@@ -152,6 +128,30 @@ async def shutdown_event():
         logger.info("MongoDB connection closed")
     
     logger.info("Shutdown complete")
+
+
+# Initialize FastAPI app with lifespan context manager (distroless-compatible)
+app = FastAPI(
+    title="Lucid Authentication Service",
+    description="TRON-based authentication with hardware wallet support",
+    version="1.0.0",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    lifespan=lifespan
+)
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add custom middleware
+app.add_middleware(AuditLogMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 
 @app.get("/health")
