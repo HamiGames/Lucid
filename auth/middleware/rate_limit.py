@@ -12,7 +12,6 @@ from typing import Optional
 import logging
 
 from auth.config import settings
-from auth.api.endpoint_config import get_endpoint_config
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, redis_client: Optional[redis.Redis] = None):
         super().__init__(app)
         self.redis_client = redis_client
+        # Lazy import to avoid circular dependency with auth.main
+        # Import here instead of module level to break: main -> middleware -> api -> main cycle
+        from auth.api.endpoint_config import get_endpoint_config
         self.endpoint_config = get_endpoint_config()
         
         # Get rate limiting config from endpoint config
