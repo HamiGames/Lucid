@@ -221,7 +221,7 @@ EXPOSE 8080 8081
 # Health check (aligned with docker-compose and Network_config_requirements.md)
 # Uses Python3 urllib.request (distroless-compatible, no curl available)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read(); exit(0)"]
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/v1/meta/health').read(); exit(0)"]
 
 # Run as non-root user (distroless default: 65532:65532, aligned with docker-compose)
 USER 65532:65532
