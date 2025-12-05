@@ -126,7 +126,7 @@ services:
     restart: unless-stopped
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     environment:
