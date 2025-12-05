@@ -10,9 +10,10 @@ Dependencies: asyncio, logging, config_manager, policy_engine, health_checker
 
 import asyncio
 import logging
+import os
 import signal
 import sys
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from datetime import datetime
 
 from .config_manager import ConfigManager
@@ -41,6 +42,7 @@ class ServiceMeshController:
         
         self.running = False
         self.tasks: Dict[str, asyncio.Task] = {}
+        self.http_server: Optional[Any] = None  # HTTPServer instance
         
     async def initialize(self):
         """Initialize service mesh controller components."""
@@ -58,6 +60,19 @@ class ServiceMeshController:
             # Initialize health checker
             await self.health_checker.initialize()
             logger.info("Health checker initialized")
+            
+            # Initialize HTTP server
+            try:
+                from .http_server import HTTPServer
+                http_port = int(os.getenv('HTTP_PORT', '8088'))
+                self.http_server = HTTPServer(self, port=http_port)
+                logger.info(f"HTTP server initialized on port {http_port}")
+            except ImportError as e:
+                logger.warning(f"HTTP server not available (FastAPI not installed): {e}")
+                self.http_server = None
+            except Exception as e:
+                logger.error(f"Failed to initialize HTTP server: {e}")
+                self.http_server = None
             
             logger.info("Service Mesh Controller initialized successfully")
             
@@ -81,6 +96,18 @@ class ServiceMeshController:
             self.tasks["config_watcher"] = asyncio.create_task(
                 self._config_watcher_loop()
             )
+            
+            # Start HTTP server if available
+            if self.http_server:
+                try:
+                    await self.http_server.start()
+                    self.tasks["http_server"] = asyncio.create_task(
+                        self._http_server_keepalive()
+                    )
+                    logger.info("HTTP server started")
+                except Exception as e:
+                    logger.error(f"Failed to start HTTP server: {e}")
+                    self.http_server = None
             
             logger.info("Service Mesh Controller started")
             
@@ -110,6 +137,13 @@ class ServiceMeshController:
                 except asyncio.CancelledError:
                     pass
                     
+        # Stop HTTP server
+        if self.http_server:
+            try:
+                await self.http_server.stop()
+            except Exception as e:
+                logger.error(f"Error stopping HTTP server: {e}")
+        
         # Cleanup components
         await self.health_checker.cleanup()
         await self.policy_engine.cleanup()
@@ -152,6 +186,16 @@ class ServiceMeshController:
             except Exception as e:
                 logger.error(f"Config watcher error: {e}")
                 await asyncio.sleep(30)  # Wait longer on error
+    
+    async def _http_server_keepalive(self):
+        """Keep HTTP server running."""
+        try:
+            while self.running:
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"HTTP server keepalive error: {e}")
                 
     def get_status(self) -> Dict[str, Any]:
         """Get controller status."""

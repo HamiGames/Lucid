@@ -8,6 +8,10 @@ aiohttp==3.9.1
 python-consul==1.1.0
 aiodns==3.1.1
 
+# HTTP Server dependencies
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+
 # gRPC dependencies
 grpcio==1.59.3
 grpcio-tools==1.59.3

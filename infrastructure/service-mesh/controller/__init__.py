@@ -22,6 +22,13 @@ __all__ = [
     'HealthChecker'
 ]
 
+# HTTP server is conditionally available (requires FastAPI)
+try:
+    from .http_server import HTTPServer
+    __all__.append('HTTPServer')
+except ImportError:
+    pass
+
 __version__ = "1.0.0"
 __cluster__ = "infrastructure"
 __port__ = 8090

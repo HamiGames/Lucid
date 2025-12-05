@@ -305,8 +305,9 @@ ENV SERVICE_NAME=service-mesh-controller \
 # Port Configuration
 ENV PORT=8500 \
     SERVICE_MESH_CONTROLLER_PORT=8500 \
-    HEALTHCHECK_PORT=8500 \
-    HEALTHCHECK_PATH=/v1/status/leader
+    HTTP_PORT=8088 \
+    HEALTHCHECK_PORT=8088 \
+    HEALTHCHECK_PATH=/health
 
 # Network Configuration (per Network_conig_requirements.md lines 334-341)
 ENV SERVICE_MESH_CONTROLLER_HOST=172.20.0.19 \
@@ -344,9 +345,10 @@ ENV LUCID_PI_NETWORK=lucid-pi-network \
 # Use nonroot user (distroless default)
 USER 65532:65532
 
-# Health check (aligned with essentials.md and Network_conig_requirements.md: healthcheck_port=8500, healthcheck_path=/v1/status/leader)
+# Health check (aligned with HTTP endpoint on port 8088)
+# CRITICAL: Uses HTTP endpoint /health for Docker healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8500/v1/status/leader')"]
+    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health').read(); exit(0)"]
 
 # Expose ports (aligned with essentials.md and Network_conig_requirements.md: 8500,8501,8502,8600,8088)
 EXPOSE 8500 8501 8502 8600 8088
