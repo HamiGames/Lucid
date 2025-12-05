@@ -352,7 +352,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 EXPOSE 8500 8501 8502 8600 8088
 
 # Start application using entrypoint script (more reliable than inline CMD)
-# CRITICAL: Use /usr/bin/python3 (not python3.11) for distroless compatibility
+# CRITICAL: Use ENTRYPOINT + CMD pattern (same as auth/Dockerfile) for distroless compatibility
 # CRITICAL: Entrypoint script handles Python path setup and yaml verification
 # CRITICAL: PYTHONPATH is already set in ENV (line 287), entrypoint ensures sys.path is correct
-CMD ["/usr/bin/python3", "/app/entrypoint.py"]
+ENTRYPOINT ["/usr/bin/python3"]
+CMD ["/app/entrypoint.py"]

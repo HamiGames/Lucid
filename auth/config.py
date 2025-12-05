@@ -27,9 +27,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
     
     # Database Configuration
+    # CRITICAL: Default URI assumes no auth for development only
+    # Production MUST set MONGODB_URI with credentials via environment variable
+    # Format: mongodb://username:password@host:port/database?authSource=admin
     MONGODB_URI: str = Field(
         default="mongodb://mongodb:27017/lucid_auth",
-        env="MONGODB_URI"
+        env="MONGODB_URI",
+        description="MongoDB connection URI. Must include credentials in production: mongodb://lucid:PASSWORD@lucid-mongodb:27017/lucid_auth?authSource=admin"
     )
     MONGODB_DATABASE: str = Field(default="lucid_auth", env="MONGODB_DATABASE")
     MONGODB_MAX_POOL_SIZE: int = Field(default=100, env="MONGODB_MAX_POOL_SIZE")

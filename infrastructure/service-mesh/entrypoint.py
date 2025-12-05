@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """
 Lucid Service Mesh Controller - Entrypoint Script
 Distroless-compatible entrypoint that ensures proper Python path setup
