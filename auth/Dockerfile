@@ -231,8 +231,9 @@ RUN ["/usr/bin/python3.11", "./verify_runtime.py"]
 EXPOSE 8089
 
 # CRITICAL FIX: Use full path /usr/bin/python3 instead of python3 for consistency with ENTRYPOINT
+# CRITICAL: Use environment variable AUTH_SERVICE_PORT with fallback to 8089 for consistency with docker-compose
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8089/health').read(); exit(0)"]
+    CMD ["/usr/bin/python3", "-c", "import os, urllib.request, sys; port = os.getenv('AUTH_SERVICE_PORT', '8089'); resp = urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5); sys.exit(0 if resp.getcode() == 200 else 1)"]
 
 USER 65532:65532
 

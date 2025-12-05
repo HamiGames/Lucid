@@ -515,7 +515,7 @@ Copyright © 2025 Lucid Development Team. All rights reserved.
 
 ## Support
 
-**Documentation**: See `/docs` directory  
+**Documentation**: See `auth/docs/` directory for all build documentation  
 **Issues**: GitHub Issues  
 **Security**: security@lucid.onion  
 

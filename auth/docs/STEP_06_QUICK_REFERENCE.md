@@ -40,8 +40,8 @@ curl http://localhost:8089/meta/info
 | `infrastructure/containers/auth/.dockerignore` | Build optimization | ~180 lines |
 | `auth/Dockerfile` | Enhanced primary Dockerfile | ~150 lines |
 | `auth/.dockerignore` | Build optimization | ~110 lines |
-| `auth/STEP_06_COMPLETION_SUMMARY.md` | Full documentation | ~800 lines |
-| `auth/STEP_06_QUICK_REFERENCE.md` | This file | ~100 lines |
+| `auth/docs/STEP_06_COMPLETION_SUMMARY.md` | Full documentation | ~800 lines |
+| `auth/docs/STEP_06_QUICK_REFERENCE.md` | This file | ~100 lines |
 
 ---
 

@@ -98,16 +98,16 @@ check_files_exist() {
     fi
     
     # Check completion summary
-    print_check "Checking auth/STEP_06_COMPLETION_SUMMARY.md exists"
-    if [ -f "auth/STEP_06_COMPLETION_SUMMARY.md" ]; then
+    print_check "Checking auth/docs/STEP_06_COMPLETION_SUMMARY.md exists"
+    if [ -f "auth/docs/STEP_06_COMPLETION_SUMMARY.md" ]; then
         print_pass "Completion summary exists"
     else
         print_fail "Completion summary not found"
     fi
     
     # Check quick reference
-    print_check "Checking auth/STEP_06_QUICK_REFERENCE.md exists"
-    if [ -f "auth/STEP_06_QUICK_REFERENCE.md" ]; then
+    print_check "Checking auth/docs/STEP_06_QUICK_REFERENCE.md exists"
+    if [ -f "auth/docs/STEP_06_QUICK_REFERENCE.md" ]; then
         print_pass "Quick reference exists"
     else
         print_fail "Quick reference not found"

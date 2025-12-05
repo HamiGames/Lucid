@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 from datetime import datetime
+import os
 import sys
 from motor.motor_asyncio import AsyncIOMotorClient
 

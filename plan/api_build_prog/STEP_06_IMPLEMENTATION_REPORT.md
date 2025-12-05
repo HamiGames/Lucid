@@ -22,8 +22,8 @@ Step 6 focused on creating the container infrastructure for the Authentication S
 2. **Infrastructure .dockerignore** - `infrastructure/containers/auth/.dockerignore`
 3. **Enhanced Auth Dockerfile** - `auth/Dockerfile` (updated)
 4. **Auth .dockerignore** - `auth/.dockerignore` (created)
-5. **Completion Documentation** - `auth/STEP_06_COMPLETION_SUMMARY.md`
-6. **Quick Reference Guide** - `auth/STEP_06_QUICK_REFERENCE.md`
+5. **Completion Documentation** - `auth/docs/STEP_06_COMPLETION_SUMMARY.md`
+6. **Quick Reference Guide** - `auth/docs/STEP_06_QUICK_REFERENCE.md`
 7. **Validation Script** - `scripts/validation/validate-step-06.sh`
 
 ---
@@ -38,8 +38,8 @@ Step 6 focused on creating the container infrastructure for the Authentication S
 | `auth/.dockerignore` | Created | ✅ | ~110 | Build context optimization |
 | `auth/env.example` | Created | ✅ | ~200 | Environment variables template |
 | `auth/README.md` | Created | ✅ | ~600 | Complete service documentation |
-| `auth/STEP_06_COMPLETION_SUMMARY.md` | Created | ✅ | ~800 | Comprehensive documentation |
-| `auth/STEP_06_QUICK_REFERENCE.md` | Created | ✅ | ~100 | Quick reference guide |
+| `auth/docs/STEP_06_COMPLETION_SUMMARY.md` | Created | ✅ | ~800 | Comprehensive documentation |
+| `auth/docs/STEP_06_QUICK_REFERENCE.md` | Created | ✅ | ~100 | Quick reference guide |
 | `scripts/validation/validate-step-06.sh` | Created | ✅ | ~350 | Validation script |
 | `STEP_06_IMPLEMENTATION_REPORT.md` | Created | ✅ | ~400 | This report |
 
@@ -319,8 +319,8 @@ A comprehensive validation script has been created at `scripts/validation/valida
 
 ### Step 6 Documentation
 
-- [auth/STEP_06_COMPLETION_SUMMARY.md](auth/STEP_06_COMPLETION_SUMMARY.md) - Full documentation
-- [auth/STEP_06_QUICK_REFERENCE.md](auth/STEP_06_QUICK_REFERENCE.md) - Quick reference
+- [auth/docs/STEP_06_COMPLETION_SUMMARY.md](auth/docs/STEP_06_COMPLETION_SUMMARY.md) - Full documentation
+- [auth/docs/STEP_06_QUICK_REFERENCE.md](auth/docs/STEP_06_QUICK_REFERENCE.md) - Quick reference
 - [scripts/validation/validate-step-06.sh](scripts/validation/validate-step-06.sh) - Validation script
 
 ---

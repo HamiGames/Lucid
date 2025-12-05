@@ -134,7 +134,7 @@ RUN /tmp/build-env.sh
 ### Documentation Files
 
 #### 5. Step 6 Completion Summary
-**Path**: `auth/STEP_06_COMPLETION_SUMMARY.md`  
+**Path**: `auth/docs/STEP_06_COMPLETION_SUMMARY.md`  
 **Lines**: ~850  
 **Status**: ✅ NEW
 
@@ -164,7 +164,7 @@ RUN /tmp/build-env.sh
 ---
 
 #### 6. Step 6 Quick Reference
-**Path**: `auth/STEP_06_QUICK_REFERENCE.md`  
+**Path**: `auth/docs/STEP_06_QUICK_REFERENCE.md`  
 **Lines**: ~350  
 **Status**: ✅ NEW
 
@@ -199,7 +199,7 @@ docker-compose up -d auth-service
 ---
 
 #### 7. Step 6 Final Summary
-**Path**: `auth/STEP_06_FINAL_SUMMARY.md`  
+**Path**: `auth/docs/STEP_06_FINAL_SUMMARY.md`  
 **Lines**: ~900  
 **Status**: ✅ NEW
 
@@ -381,8 +381,8 @@ GET  /api/v1/hardware-wallets
    infrastructure/containers/auth/.dockerignore
    
    # Documentation
-   auth/STEP_06_COMPLETION_SUMMARY.md
-   auth/STEP_06_QUICK_REFERENCE.md
+   auth/docs/STEP_06_COMPLETION_SUMMARY.md
+   auth/docs/STEP_06_QUICK_REFERENCE.md
    auth/env.example
    auth/README.md
    ```
@@ -462,9 +462,9 @@ Overall Validation:             ✅ PASSED (34/34)
 | infrastructure/containers/auth/Dockerfile.auth-service | Infrastructure deployment | ✅ Created |
 | auth/.dockerignore | Build context optimization | ✅ Created |
 | infrastructure/containers/auth/.dockerignore | Infrastructure optimization | ✅ Created |
-| auth/STEP_06_COMPLETION_SUMMARY.md | Comprehensive documentation | ✅ Created |
-| auth/STEP_06_QUICK_REFERENCE.md | Quick reference guide | ✅ Created |
-| auth/STEP_06_FINAL_SUMMARY.md | Final summary | ✅ Created |
+| auth/docs/STEP_06_COMPLETION_SUMMARY.md | Comprehensive documentation | ✅ Created |
+| auth/docs/STEP_06_QUICK_REFERENCE.md | Quick reference guide | ✅ Created |
+| auth/docs/STEP_06_FINAL_SUMMARY.md | Final summary | ✅ Created |
 | auth/env.example | Environment configuration | ✅ Created |
 | auth/README.md | Service documentation | ✅ Created |
 | scripts/validation/validate-step-06.sh | Validation automation | ✅ Created |
@@ -1042,9 +1042,9 @@ All required files for Step 6 were created successfully. The authentication cont
 - `infrastructure/containers/auth/Dockerfile.auth-service` - Infrastructure deployment
 - `auth/.dockerignore` - Build context optimization
 - `infrastructure/containers/auth/.dockerignore` - Infrastructure optimization
-- `auth/STEP_06_COMPLETION_SUMMARY.md` - Comprehensive documentation
-- `auth/STEP_06_QUICK_REFERENCE.md` - Quick reference guide
-- `auth/STEP_06_FINAL_SUMMARY.md` - Final summary
+- `auth/docs/STEP_06_COMPLETION_SUMMARY.md` - Comprehensive documentation
+- `auth/docs/STEP_06_QUICK_REFERENCE.md` - Quick reference guide
+- `auth/docs/STEP_06_FINAL_SUMMARY.md` - Final summary
 - `auth/env.example` - Environment configuration
 - `auth/README.md` - Service documentation
 - `scripts/validation/validate-step-06.sh` - Validation automation

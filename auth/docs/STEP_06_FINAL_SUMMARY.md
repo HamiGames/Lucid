@@ -66,14 +66,14 @@
    - Security checklist
    - Monitoring setup
 
-7. **`auth/STEP_06_COMPLETION_SUMMARY.md`** (~800 lines)
+7. **`auth/docs/STEP_06_COMPLETION_SUMMARY.md`** (~800 lines)
    - Detailed completion documentation
    - Technical specifications
    - Integration points
    - Testing strategies
    - Next steps outlined
 
-8. **`auth/STEP_06_QUICK_REFERENCE.md`** (~100 lines)
+8. **`auth/docs/STEP_06_QUICK_REFERENCE.md`** (~100 lines)
    - Quick start commands
    - Common operations
    - Troubleshooting tips
