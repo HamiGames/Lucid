@@ -208,12 +208,33 @@ async def service_info():
 
 
 # Import and include routers from the auth package
-from auth.api import auth_router, users_router, sessions_router, hardware_wallet_router
+from auth.api import auth_router, users_router, sessions_router, hardware_wallet_router, orchestration_router
+from auth.api.endpoint_config import get_endpoint_config
 
-app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
-app.include_router(users_router, prefix="/users", tags=["Users"])
-app.include_router(sessions_router, prefix="/sessions", tags=["Sessions"])
-app.include_router(hardware_wallet_router, prefix="/hw", tags=["Hardware Wallet"])
+# Get endpoint configuration
+endpoint_config = get_endpoint_config()
+
+# Include routers only if endpoints are enabled (customizable)
+if endpoint_config.is_endpoint_enabled("auth"):
+    app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+    logger.info("Authentication endpoints enabled")
+
+if endpoint_config.is_endpoint_enabled("users"):
+    app.include_router(users_router, prefix="/users", tags=["Users"])
+    logger.info("User management endpoints enabled")
+
+if endpoint_config.is_endpoint_enabled("sessions"):
+    app.include_router(sessions_router, prefix="/sessions", tags=["Sessions"])
+    logger.info("Session management endpoints enabled")
+
+if endpoint_config.is_endpoint_enabled("hardware_wallet"):
+    app.include_router(hardware_wallet_router, prefix="/hw", tags=["Hardware Wallet"])
+    logger.info("Hardware wallet endpoints enabled")
+
+# Include orchestration router if orchestration is enabled
+if os.getenv("ENABLE_SERVICE_ORCHESTRATION", "false").lower() == "true":
+    app.include_router(orchestration_router, prefix="/orchestrate", tags=["Service Orchestration"])
+    logger.info("Service orchestration endpoints enabled")
 
 
 @app.exception_handler(Exception)

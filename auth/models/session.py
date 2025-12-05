@@ -104,8 +104,10 @@ class SessionResponse(BaseModel):
     expires_at: datetime
     last_activity_at: datetime
     is_active: bool
+    revoked: bool = Field(default=False, description="Session revoked status")
     device_type: Optional[str] = None
     location: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Session metadata")
     
     class Config:
         json_schema_extra = {
@@ -116,7 +118,11 @@ class SessionResponse(BaseModel):
                 "expires_at": "2025-01-08T00:00:00Z",
                 "last_activity_at": "2025-01-01T00:00:00Z",
                 "is_active": True,
-                "device_type": "desktop"
+                "revoked": False,
+                "device_type": "desktop",
+                "metadata": {
+                    "login_method": "tron_signature"
+                }
             }
         }
 

@@ -84,7 +84,13 @@ class RBACManager:
             Permission.VIEW_SYSTEM_METRICS,
             Permission.ACCESS_ADMIN_DASHBOARD,
             Permission.VIEW_AUDIT_LOGS,
-            Permission.MANAGE_TRUST_POLICIES
+            Permission.MANAGE_TRUST_POLICIES,
+            # Service Orchestration permissions (ADMIN can spawn services)
+            Permission.SPAWN_SERVICES,
+            Permission.MANAGE_MONGODB_INSTANCES,
+            Permission.CLONE_SERVICES,
+            Permission.MANAGE_SERVICE_LIFECYCLE,
+            Permission.VIEW_SPAWNED_SERVICES
         },
         Role.SUPER_ADMIN: set(Permission)  # All permissions
     }

@@ -12,6 +12,7 @@ from typing import Optional
 import logging
 
 from auth.config import settings
+from auth.api.endpoint_config import get_endpoint_config
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, redis_client: Optional[redis.Redis] = None):
         super().__init__(app)
         self.redis_client = redis_client
-        self.enabled = settings.RATE_LIMIT_ENABLED
+        self.endpoint_config = get_endpoint_config()
         
-        # Rate limits (requests per minute)
+        # Get rate limiting config from endpoint config
+        rate_limiting_config = self.endpoint_config.get_rate_limiting_config()
+        self.enabled = rate_limiting_config.get("enabled", True) and settings.RATE_LIMIT_ENABLED
+        
+        # Rate limits (requests per minute) - use endpoint config defaults if available
+        default_limit = rate_limiting_config.get("default_limit", 60)
         self.limits = {
             "public": settings.RATE_LIMIT_PUBLIC,
             "authenticated": settings.RATE_LIMIT_AUTHENTICATED,
@@ -113,8 +119,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return f"ip:{client_ip}"
     
     def get_rate_limit(self, request: Request) -> int:
-        """Determine rate limit based on authentication status and role"""
+        """Determine rate limit based on authentication status, role, and endpoint configuration"""
         
+        # Try to get endpoint-specific rate limit from config
+        path = request.url.path
+        endpoint_name = self._get_endpoint_name_from_path(path)
+        
+        if endpoint_name:
+            endpoint_limit = self.endpoint_config.get_endpoint_rate_limit(endpoint_name)
+            if endpoint_limit:
+                return endpoint_limit
+        
+        # Fall back to tiered limits
         # Check if user is authenticated
         if not hasattr(request.state, "authenticated") or not request.state.authenticated:
             return self.limits["public"]
@@ -125,6 +141,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return self.limits["admin"]
         
         return self.limits["authenticated"]
+    
+    def _get_endpoint_name_from_path(self, path: str) -> Optional[str]:
+        """Extract endpoint name from request path"""
+        if path.startswith("/auth"):
+            return "auth"
+        elif path.startswith("/users"):
+            return "users"
+        elif path.startswith("/sessions"):
+            return "sessions"
+        elif path.startswith("/hw"):
+            return "hardware_wallet"
+        elif path.startswith("/health"):
+            return "health"
+        elif path.startswith("/meta"):
+            return "meta"
+        return None
     
     async def check_rate_limit(self, client_id: str, limit: int) -> tuple:
         """

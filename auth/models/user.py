@@ -138,6 +138,7 @@ class UserResponse(BaseModel):
     kyc_verified: bool
     hardware_wallet_type: Optional[str] = None
     created_at: datetime
+    updated_at: datetime
     last_login_at: Optional[datetime] = None
     
     class Config:
@@ -152,7 +153,8 @@ class UserResponse(BaseModel):
                 "is_verified": False,
                 "kyc_verified": False,
                 "hardware_wallet_type": "ledger",
-                "created_at": "2025-01-01T00:00:00Z"
+                "created_at": "2025-01-01T00:00:00Z",
+                "updated_at": "2025-01-01T00:00:00Z"
             }
         }
 

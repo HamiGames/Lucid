@@ -93,6 +93,14 @@ class Permission(str, Enum):
     VIEW_AUDIT_LOGS = "view_audit_logs"
     MANAGE_SYSTEM_CONFIG = "manage_system_config"
     
+    # Service Orchestration Permissions
+    SPAWN_SERVICES = "spawn_services"
+    MANAGE_MONGODB_INSTANCES = "manage_mongodb_instances"
+    ORCHESTRATE_CONTAINERS = "orchestrate_containers"
+    CLONE_SERVICES = "clone_services"
+    MANAGE_SERVICE_LIFECYCLE = "manage_service_lifecycle"
+    VIEW_SPAWNED_SERVICES = "view_spawned_services"
+    
     # Emergency Controls
     EMERGENCY_LOCKDOWN = "emergency_lockdown"
     EMERGENCY_SHUTDOWN = "emergency_shutdown"
@@ -152,6 +160,13 @@ PERMISSION_DESCRIPTIONS = {
     Permission.VIEW_SYSTEM_METRICS: "View system metrics",
     Permission.VIEW_AUDIT_LOGS: "View audit logs",
     Permission.MANAGE_SYSTEM_CONFIG: "Manage system configuration",
+    
+    Permission.SPAWN_SERVICES: "Spawn new service instances",
+    Permission.MANAGE_MONGODB_INSTANCES: "Manage MongoDB instances and clones",
+    Permission.ORCHESTRATE_CONTAINERS: "Orchestrate Docker containers",
+    Permission.CLONE_SERVICES: "Clone existing services",
+    Permission.MANAGE_SERVICE_LIFECYCLE: "Manage service lifecycle (start/stop/restart)",
+    Permission.VIEW_SPAWNED_SERVICES: "View spawned service instances",
     
     Permission.EMERGENCY_LOCKDOWN: "Trigger emergency lockdown",
     Permission.EMERGENCY_SHUTDOWN: "Trigger emergency shutdown",

@@ -1,0 +1,132 @@
+# Lucid Authentication Service - Service Orchestration Configuration
+# Optional YAML configuration for service orchestration capabilities
+# File: auth/config/orchestration-config.yaml
+# Purpose: Configure service spawning, cloning, and orchestration
+
+# Orchestration Global Settings
+orchestration:
+  enabled: false  # Set to true to enable service orchestration (requires Docker socket access)
+  docker_socket: "/var/run/docker.sock"  # Docker socket path
+  docker_api_version: "1.40"
+  default_network: "lucid-pi-network"
+  
+  # Security Settings
+  security:
+    require_admin_role: true  # Require ADMIN or SUPER_ADMIN role
+    audit_all_operations: true  # Log all orchestration operations
+    max_concurrent_spawns: 10  # Maximum concurrent service spawns
+    resource_limits_enforced: true  # Enforce resource limits on spawned services
+  
+  # Resource Limits (default for spawned services)
+  default_resource_limits:
+    memory: "512m"
+    cpu: "0.5"
+    max_memory: "2g"  # Maximum memory per service
+    max_cpu: "2.0"  # Maximum CPU per service
+
+# MongoDB Clone Configuration
+mongodb_clones:
+  enabled: false  # Enable MongoDB clone spawning
+  default_image: "pickme/lucid-mongodb:latest-arm64"
+  default_port_range: "27018-27099"  # Port range for node MongoDB instances
+  default_memory: "256m"  # Smaller for node instances
+  default_cpu: "0.25"
+  
+  # MongoDB Configuration
+  mongodb_config:
+    replica_set_enabled: false  # Enable replica sets (requires multiple instances)
+    auth_enabled: true
+    database_prefix: "lucid_node_"  # Database name prefix: lucid_node_{node_id}
+    auto_index_creation: true
+    
+  # Node MongoDB Collections
+  collections:
+    - name: "node_data"
+      indexes:
+        - field: "node_id"
+          unique: true
+    - name: "node_sessions"
+      indexes:
+        - field: "session_id"
+    - name: "node_work_credits"
+      indexes:
+        - field: "node_id"
+    - name: "node_metadata"
+      indexes:
+        - field: "node_id"
+          unique: true
+
+# Service Lifecycle Management
+lifecycle:
+  auto_cleanup: true  # Automatically cleanup stopped services
+  cleanup_interval_minutes: 60  # Cleanup interval
+  max_idle_time_hours: 24  # Maximum idle time before cleanup
+  health_check_interval_seconds: 30  # Health check interval
+  
+  # Service Status Tracking
+  status_tracking:
+    enabled: true
+    retention_days: 30  # Retain status history for 30 days
+    log_all_events: true
+
+# Network Configuration
+networking:
+  default_network: "lucid-pi-network"
+  ip_allocation:
+    strategy: "dynamic"  # Options: dynamic, static
+    ip_range: "172.20.0.100-172.20.0.200"  # IP range for spawned services
+    static_ips: {}  # Map of node_id -> ip_address for static allocation
+  
+  # Port Management
+  port_allocation:
+    strategy: "dynamic"  # Options: dynamic, static
+    port_range: "27018-27099"  # Port range for MongoDB clones
+    reserved_ports: []  # List of reserved ports
+
+# Monitoring and Observability
+monitoring:
+  enabled: true
+  metrics_collection: true
+  health_check_enabled: true
+  alert_on_failure: true
+  
+  # Metrics
+  metrics:
+    - "spawned_services_count"
+    - "active_services_count"
+    - "failed_spawns_count"
+    - "resource_usage_total"
+    - "average_service_uptime"
+
+# Audit and Logging
+audit:
+  enabled: true
+  log_all_operations: true
+  log_spawn_requests: true
+  log_service_lifecycle: true
+  retention_days: 90
+  
+  # Audit Events
+  events:
+    - "service_spawned"
+    - "service_stopped"
+    - "service_removed"
+    - "mongodb_clone_created"
+    - "mongodb_clone_removed"
+    - "resource_limit_exceeded"
+    - "permission_denied"
+
+# Rate Limiting for Orchestration
+rate_limiting:
+  enabled: true
+  max_spawns_per_minute: 5  # Maximum spawns per minute per user
+  max_spawns_per_hour: 20  # Maximum spawns per hour per user
+  max_total_services: 50  # Maximum total spawned services
+
+# Error Handling
+error_handling:
+  retry_on_failure: true
+  max_retry_attempts: 3
+  retry_delay_seconds: 5
+  fail_fast: false  # Continue on errors or fail fast
+
