@@ -163,7 +163,7 @@ services:
     entrypoint: []
     command:
       - /usr/bin/mongod
-      - --auth
+      #- --auth
       - --bind_ip_all
       - --dbpath=/data/db
       - --logpath=/var/log/mongodb/mongod.log
