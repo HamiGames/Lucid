@@ -155,6 +155,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+    environment:
+      # CRITICAL: MongoDB initialization credentials (only used on first run if database is empty)
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+      - MONGO_INITDB_DATABASE=lucid
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.11
