@@ -19,6 +19,7 @@ import logging
 from datetime import datetime
 import os
 import sys
+import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # Import configuration and components from the auth package
@@ -78,16 +79,44 @@ async def lifespan(app: FastAPI):
     
     # Initialize MongoDB connection
     try:
+        # Log connection attempt (without password for security)
+        mongo_uri_safe = settings.MONGODB_URI
+        if '@' in mongo_uri_safe:
+            # Mask password in logs
+            parts = mongo_uri_safe.split('@')
+            if '://' in parts[0]:
+                auth_part = parts[0].split('://')[1]
+                if ':' in auth_part:
+                    user = auth_part.split(':')[0]
+                    mongo_uri_safe = mongo_uri_safe.replace(f':{auth_part.split(":")[1]}', ':****')
+        logger.info(f"Connecting to MongoDB: {mongo_uri_safe.split('@')[0]}@...")
+        logger.debug(f"Full MongoDB URI: {mongo_uri_safe}")
+        
         mongodb_client = AsyncIOMotorClient(
             settings.MONGODB_URI,
             maxPoolSize=settings.MONGODB_MAX_POOL_SIZE,
-            minPoolSize=settings.MONGODB_MIN_POOL_SIZE
+            minPoolSize=settings.MONGODB_MIN_POOL_SIZE,
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
+            socketTimeoutMS=10000
         )
         mongodb_db = mongodb_client[settings.MONGODB_DATABASE]
         
-        # Test connection
-        await mongodb_client.admin.command('ping')
-        logger.info("MongoDB connection established")
+        # Test connection with retry logic
+        max_retries = 3
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                await mongodb_client.admin.command('ping')
+                logger.info("MongoDB connection established successfully")
+                break
+            except Exception as ping_error:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    logger.error(f"MongoDB ping failed after {max_retries} attempts: {ping_error}")
+                    raise
+                logger.warning(f"MongoDB ping attempt {retry_count} failed, retrying...: {ping_error}")
+                await asyncio.sleep(2)
         
         # Initialize UserManager with database
         user_manager = UserManager(mongodb_db)
@@ -98,7 +127,17 @@ async def lifespan(app: FastAPI):
         logger.info("RBACManager initialized")
         
     except Exception as e:
-        logger.error(f"Failed to initialize MongoDB connection: {e}")
+        error_msg = str(e)
+        # Provide more helpful error messages
+        if "Authentication failed" in error_msg or "authentication failed" in error_msg.lower():
+            logger.error("MongoDB authentication failed. Check:")
+            logger.error("  1. MONGODB_URI environment variable is set correctly")
+            logger.error("  2. Password in connection string matches MongoDB user password")
+            logger.error("  3. User 'lucid' exists in MongoDB admin database")
+            logger.error(f"  4. Connection URI format: mongodb://lucid:PASSWORD@lucid-mongodb:27017/lucid_auth?authSource=admin")
+        else:
+            logger.error(f"Failed to initialize MongoDB connection: {e}")
+        logger.error(f"Full error details: {type(e).__name__}: {error_msg}")
         raise
     
     # Initialize session manager
