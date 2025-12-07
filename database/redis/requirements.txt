@@ -18,7 +18,7 @@ structlog==23.2.0
 colorama==0.4.6
 
 # Security and encryption
-cryptography==41.0.8
+cryptography==41.0.7
 bcrypt==4.1.2
 
 # Network and connectivity
