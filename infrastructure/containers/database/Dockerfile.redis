@@ -23,6 +23,14 @@ COPY database/redis/requirements.txt /tmp/requirements.txt
 RUN pip3 install --user --break-system-packages --no-cache-dir -r /tmp/requirements.txt && \
     rm -f /tmp/requirements.txt
 
+# Create marker files with actual content (ensures directory structure is locked in per copy-pattern)
+RUN echo "LUCID_REDIS_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Verify packages are installed
+RUN python3 -c "import redis, hiredis; print('✅ critical packages installed')" && \
+    test -d /root/.local/lib/python3.11/site-packages
+
 # Copy template Redis configuration (without hardcoded password)
 COPY configs/database/redis/redis.conf /etc/redis.conf.template
 
@@ -47,7 +55,10 @@ COPY --from=builder /usr/local/bin/start-redis.py /usr/local/bin/start-redis.py
 
 # Copy Python site-packages (for redis module used in healthcheck)
 # Packages installed with --user go to /root/.local/lib/python3.11/site-packages
-COPY --from=builder /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+# Verify packages were copied (fails build if missing)
+RUN ["/usr/bin/python3", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), 'site_packages missing'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; print('Packages verified')"]
 
 # Copy required libraries (ARM64-compatible pattern)
 COPY --from=builder /lib/*/libc.so.6 /lib/
