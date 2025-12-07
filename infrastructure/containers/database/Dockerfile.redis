@@ -18,9 +18,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies for entrypoint script
+# Install Python dependencies for entrypoint script (using --user to avoid PEP 668 error)
 COPY database/redis/requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && \
+RUN pip3 install --user --no-cache-dir -r /tmp/requirements.txt && \
     rm -f /tmp/requirements.txt
 
 # Copy template Redis configuration (without hardcoded password)
@@ -46,8 +46,8 @@ COPY --from=builder /etc/redis.conf.template /etc/redis.conf.template
 COPY --from=builder /usr/local/bin/start-redis.py /usr/local/bin/start-redis.py
 
 # Copy Python site-packages (for redis module used in healthcheck)
-COPY --from=builder /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
-COPY --from=builder /usr/lib/python3.11 /usr/lib/python3.11
+# Packages installed with --user go to /root/.local/lib/python3.11/site-packages
+COPY --from=builder /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
 # Copy required libraries (ARM64-compatible pattern)
 COPY --from=builder /lib/*/libc.so.6 /lib/
