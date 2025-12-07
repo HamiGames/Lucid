@@ -1,5 +1,6 @@
 # LUCID Redis Container - SPEC-1B Implementation
 # Distroless container for Redis cache
+# FIXED: All hardcoded passwords removed - uses environment variables from .env.* files
 
 # syntax=docker/dockerfile:1.7
 
@@ -10,21 +11,44 @@ FROM redis:7.2 AS builder
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-# Install additional tools for customization
+# Install additional tools for customization and Python for entrypoint script
 RUN apt-get update && apt-get install -y \
     curl \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Create custom Redis configuration
-RUN echo "port 6379\nbind 0.0.0.0\nprotected-mode yes\nrequirepass lucid_redis_password\nmaxmemory 512mb\nmaxmemory-policy allkeys-lru\nsave 900 1\nsave 300 10\nsave 60 10000\nappendonly yes\nappendfsync everysec\nno-appendfsync-on-rewrite no\nauto-aof-rewrite-percentage 100\nauto-aof-rewrite-min-size 64mb\nlua-time-limit 5000\nslowlog-log-slower-than 10000\nslowlog-max-len 128\nnotify-keyspace-events Ex" > /etc/redis.conf
+# Install Python dependencies for entrypoint script
+COPY database/redis/requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && \
+    rm -f /tmp/requirements.txt
 
-# Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/base-debian12:nonroot
+# Copy template Redis configuration (without hardcoded password)
+COPY configs/database/redis/redis.conf /etc/redis.conf.template
+
+# Copy entrypoint script
+COPY database/redis/start-redis.py /usr/local/bin/start-redis.py
+RUN chmod +x /usr/local/bin/start-redis.py
+
+# Copy healthcheck script
+COPY database/redis/healthcheck.py /usr/local/bin/redis-healthcheck.py
+RUN chmod +x /usr/local/bin/redis-healthcheck.py
+
+# Stage 2: Runtime (Distroless with Python)
+FROM gcr.io/distroless/python3-debian12:nonroot
 
 # Copy Redis binary and configuration
 COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/redis-server
 COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli
-COPY --from=builder /etc/redis.conf /etc/redis.conf
+COPY --from=builder /etc/redis.conf.template /etc/redis.conf.template
+
+# Copy entrypoint script
+COPY --from=builder /usr/local/bin/start-redis.py /usr/local/bin/start-redis.py
+
+# Copy Python site-packages (for redis module used in healthcheck)
+COPY --from=builder /usr/local/lib/python3.11/dist-packages /usr/local/lib/python3.11/dist-packages
+COPY --from=builder /usr/lib/python3.11 /usr/lib/python3.11
+
 # Copy required libraries (ARM64-compatible pattern)
 COPY --from=builder /lib/*/libc.so.6 /lib/
 COPY --from=builder /lib/*/libm.so.6 /lib/
@@ -43,8 +67,13 @@ COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
 # Copy arch-specific libraries
 COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-# Set environment variables
-ENV REDIS_PASSWORD=lucid_redis_password
+
+# Set environment variables (defaults, overridden by docker-compose env_file)
+ENV REDIS_PASSWORD=""
+ENV REDIS_MAX_MEMORY="512mb"
+ENV REDIS_MAX_MEMORY_POLICY="allkeys-lru"
+ENV REDIS_PORT="6379"
+ENV REDIS_HOST="0.0.0.0"
 
 # Set working directory
 WORKDIR /data
@@ -52,12 +81,15 @@ WORKDIR /data
 # Create non-root user
 USER nonroot
 
-# Health check
+# Copy healthcheck script
+COPY --from=builder /usr/local/bin/redis-healthcheck.py /usr/local/bin/healthcheck.py
+
+# Health check using Python script that reads REDIS_PASSWORD from environment
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/usr/local/bin/redis-cli", "-a", "lucid_redis_password", "ping"]
+    CMD ["/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
 
 # Expose port
 EXPOSE 6379
 
-# Run Redis
-ENTRYPOINT ["/usr/local/bin/redis-server", "/etc/redis.conf"]
+# Run Redis via Python entrypoint script (reads REDIS_PASSWORD from environment)
+ENTRYPOINT ["/usr/bin/python3", "/usr/local/bin/start-redis.py"]

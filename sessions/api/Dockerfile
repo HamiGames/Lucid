@@ -54,8 +54,9 @@ ENV LUCID_MAX_SESSIONS=1000
 ENV LUCID_CLEANUP_INTERVAL_HOURS=24
 ENV LUCID_BACKUP_ENABLED=true
 ENV LUCID_BACKUP_RETENTION_DAYS=7
-ENV MONGO_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid
-ENV REDIS_URL=redis://lucid_redis:6379/0
+# MONGO_URL and REDIS_URL must be set via docker-compose environment variables
+# from .env.secrets file (no hardcoded passwords)
+# These will be overridden by docker-compose.yml environment section
 
 # Create data directories
 USER root

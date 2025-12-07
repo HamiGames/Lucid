@@ -225,9 +225,14 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/redis:/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
       - redis-cache:/var/cache/redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=0.0.0.0
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_MAX_MEMORY=${REDIS_MAX_MEMORY:-512mb}
+      - REDIS_MAX_MEMORY_POLICY=${REDIS_MAX_MEMORY_POLICY:-allkeys-lru}
     healthcheck:
-      test:
-        ["CMD", "/usr/local/bin/redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "/usr/bin/python3.11", "/usr/local/bin/healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3

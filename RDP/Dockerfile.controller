@@ -89,8 +89,8 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     CONTROLLER_PORT=8092 \
     XRDP_HOST=lucid-rdp \
     XRDP_API_URL=http://lucid-rdp:8091 \
-    MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid_rdp?authSource=admin \
-    REDIS_URL=redis://lucid-redis:6379/0 \
+    # MONGODB_URI and REDIS_URL must be set via docker-compose environment variables
+    # from .env.secrets file (no hardcoded passwords) \
     MAX_PENDING_REQUESTS=256
 
 # Copy runtime directories from builder (directory already populated with .keep files)

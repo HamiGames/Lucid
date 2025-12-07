@@ -2,6 +2,7 @@
 """
 Redis Distroless Startup Script
 Handles Redis initialization and configuration for distroless container
+FIXED: Uses REDIS_PASSWORD from environment variables (no hardcoded passwords)
 """
 
 import os
@@ -34,14 +35,26 @@ class RedisDistroless:
             sys.exit(1)
     
     def get_redis_command(self):
-        """Build Redis command with security and performance settings"""
-        password = os.getenv('REDIS_PASSWORD', 'changeme')
+        """Build Redis command with security and performance settings from environment"""
+        # CRITICAL: Read password from environment variable (from .env.* files)
+        password = os.getenv('REDIS_PASSWORD', '')
+        if not password:
+            logger.error("REDIS_PASSWORD environment variable is not set!")
+            logger.error("Please ensure REDIS_PASSWORD is set in .env.secrets or docker-compose environment")
+            sys.exit(1)
+        
         max_memory = os.getenv('REDIS_MAX_MEMORY', '512mb')
         max_memory_policy = os.getenv('REDIS_MAX_MEMORY_POLICY', 'allkeys-lru')
+        port = os.getenv('REDIS_PORT', '6379')
+        host = os.getenv('REDIS_HOST', '0.0.0.0')
         
+        # Build command using template config and override with command-line args
         cmd = [
-            '/usr/bin/redis-server',
-            '--requirepass', password,
+            '/usr/local/bin/redis-server',
+            '/etc/redis.conf.template',  # Use template config
+            '--port', port,
+            '--bind', host,
+            '--requirepass', password,  # Password from environment
             '--maxmemory', max_memory,
             '--maxmemory-policy', max_memory_policy,
             '--save', '900', '1',
@@ -50,8 +63,13 @@ class RedisDistroless:
             '--appendonly', 'yes',
             '--appendfsync', 'everysec',
             '--dir', str(self.data_dir),
-            '--daemonize', 'no'
+            '--daemonize', 'no',
+            '--protected-mode', 'yes'  # Enable protected mode with password
         ]
+        
+        logger.info(f"Redis will start on {host}:{port} with password authentication enabled")
+        # Don't log the actual password
+        logger.info(f"REDIS_PASSWORD is {'*' * min(len(password), 8)} (hidden)")
         
         return cmd
     
@@ -59,18 +77,17 @@ class RedisDistroless:
         """Start Redis with proper configuration"""
         try:
             cmd = self.get_redis_command()
-            logger.info(f"Starting Redis with command: {' '.join(cmd)}")
+            logger.info(f"Starting Redis server...")
             
-            # Start Redis process
+            # Start Redis process (foreground, no daemonize)
             self.redis_process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                preexec_fn=os.setsid
+                stdout=sys.stdout,
+                stderr=sys.stderr
             )
             
             # Wait for Redis to start
-            time.sleep(3)
+            time.sleep(2)
             
             if self.redis_process.poll() is None:
                 logger.info("Redis started successfully")
@@ -81,6 +98,8 @@ class RedisDistroless:
                 
         except Exception as e:
             logger.error(f"Failed to start Redis: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def signal_handler(self, signum, frame):
@@ -88,7 +107,11 @@ class RedisDistroless:
         logger.info(f"Received signal {signum}, shutting down Redis...")
         if self.redis_process:
             self.redis_process.terminate()
-            self.redis_process.wait(timeout=30)
+            try:
+                self.redis_process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                logger.warning("Redis did not terminate gracefully, forcing...")
+                self.redis_process.kill()
         sys.exit(0)
     
     def run(self):
@@ -105,13 +128,12 @@ class RedisDistroless:
             logger.error("Failed to start Redis")
             sys.exit(1)
         
-        # Keep running
+        # Keep running and forward output
         try:
-            while True:
-                if self.redis_process and self.redis_process.poll() is not None:
-                    logger.error("Redis process died unexpectedly")
-                    sys.exit(1)
-                time.sleep(1)
+            # Wait for process to exit
+            exit_code = self.redis_process.wait()
+            logger.error(f"Redis process exited with code {exit_code}")
+            sys.exit(exit_code)
         except KeyboardInterrupt:
             logger.info("Received interrupt, shutting down...")
             self.signal_handler(signal.SIGTERM, None)

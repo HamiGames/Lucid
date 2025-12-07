@@ -28,9 +28,16 @@ logger = logging.getLogger(__name__)
 # Configuration from environment
 SERVICE_NAME = os.getenv("SERVICE_NAME", "rdp-server-manager")
 SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8090"))
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
-REDIS_URL = os.getenv("REDIS_URL", "redis://lucid_redis:6379/0")
+MONGODB_URL = os.getenv("MONGODB_URL", "")
+REDIS_URL = os.getenv("REDIS_URL", "")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8089")
+
+# CRITICAL: MONGODB_URL and REDIS_URL must be set via docker-compose environment variables
+# from .env.secrets file. Defaults are empty strings to fail fast if not configured.
+if not MONGODB_URL:
+    raise ValueError("MONGODB_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+if not REDIS_URL:
+    raise ValueError("REDIS_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
 
 # Port allocation range
 PORT_RANGE_START = int(os.getenv("PORT_RANGE_START", "13389"))
