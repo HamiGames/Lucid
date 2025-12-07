@@ -19,7 +19,8 @@ def check_redis_health():
     """Check Redis health using redis-py"""
     try:
         # Get connection parameters from environment (from .env.* files)
-        host = os.getenv('REDIS_HOST', 'localhost')
+        # Use localhost for healthcheck connections (REDIS_HOST is for binding, not connecting)
+        host = '127.0.0.1'
         port = int(os.getenv('REDIS_PORT', '6379'))
         password = os.getenv('REDIS_PASSWORD', '')
         
