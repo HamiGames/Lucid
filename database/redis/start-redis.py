@@ -29,6 +29,11 @@ class RedisDistroless:
         """Create necessary directories with proper permissions"""
         try:
             self.data_dir.mkdir(parents=True, exist_ok=True)
+            # Ensure directory is writable by nonroot user (65532)
+            try:
+                os.chmod(str(self.data_dir), 0o755)
+            except PermissionError:
+                logger.warning(f"Could not set permissions on {self.data_dir}, may cause issues")
             logger.info(f"Created directory: {self.data_dir}")
         except Exception as e:
             logger.error(f"Failed to create directory: {e}")
@@ -63,8 +68,8 @@ class RedisDistroless:
             '--appendonly', 'yes',
             '--appendfsync', 'everysec',
             '--dir', str(self.data_dir),
-            '--daemonize', 'no',
-            '--protected-mode', 'yes'  # Enable protected mode with password
+            '--daemonize', 'no'
+            # protected-mode handled by config file (no/yes based on password)
         ]
         
         logger.info(f"Redis will start on {host}:{port} with password authentication enabled")
