@@ -18,9 +18,9 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies for entrypoint script (using --user to avoid PEP 668 error)
+# Install Python dependencies for entrypoint script (using --user and --break-system-packages for PEP 668 compliance in Docker)
 COPY database/redis/requirements.txt /tmp/requirements.txt
-RUN pip3 install --user --no-cache-dir -r /tmp/requirements.txt && \
+RUN pip3 install --user --break-system-packages --no-cache-dir -r /tmp/requirements.txt && \
     rm -f /tmp/requirements.txt
 
 # Copy template Redis configuration (without hardcoded password)
