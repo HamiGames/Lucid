@@ -85,9 +85,9 @@ ENV REDIS_MAX_MEMORY="512mb"
 ENV REDIS_MAX_MEMORY_POLICY="allkeys-lru"
 ENV REDIS_PORT="6379"
 ENV REDIS_HOST="0.0.0.0"
-# Fix locale warnings in distroless
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+# Fix locale warnings in distroless (use C instead of C.UTF-8 for distroless compatibility)
+ENV LANG=C
+ENV LC_ALL=C
 
 # Set working directory
 WORKDIR /data
