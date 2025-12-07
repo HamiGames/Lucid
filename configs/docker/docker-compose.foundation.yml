@@ -232,7 +232,7 @@ services:
       - REDIS_MAX_MEMORY=${REDIS_MAX_MEMORY:-512mb}
       - REDIS_MAX_MEMORY_POLICY=${REDIS_MAX_MEMORY_POLICY:-allkeys-lru}
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "/usr/local/bin/healthcheck.py"]
+      test: ["CMD", "/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3
