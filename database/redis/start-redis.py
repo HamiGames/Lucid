@@ -86,15 +86,33 @@ class RedisDistroless:
                 stderr=sys.stderr
             )
             
-            # Wait for Redis to start
-            time.sleep(2)
+            # Wait for Redis to start and verify it's listening
+            import socket
+            port = int(os.getenv('REDIS_PORT', '6379'))
+            max_attempts = 10
+            for attempt in range(max_attempts):
+                time.sleep(1)
+                
+                # Check if process died
+                if self.redis_process.poll() is not None:
+                    exit_code = self.redis_process.returncode
+                    logger.error(f"Redis process exited with code {exit_code}")
+                    return False
+                
+                # Check if Redis is listening on port
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1)
+                    result = sock.connect_ex(('127.0.0.1', port))
+                    sock.close()
+                    if result == 0:
+                        logger.info(f"Redis started successfully and is listening on port {port}")
+                        return True
+                except Exception as e:
+                    logger.debug(f"Connection check attempt {attempt + 1} failed: {e}")
             
-            if self.redis_process.poll() is None:
-                logger.info("Redis started successfully")
-                return True
-            else:
-                logger.error("Redis failed to start")
-                return False
+            logger.error(f"Redis did not start within {max_attempts} seconds")
+            return False
                 
         except Exception as e:
             logger.error(f"Failed to start Redis: {e}")
