@@ -88,6 +88,8 @@ ENV REDIS_HOST="0.0.0.0"
 # Fix locale warnings in distroless (use C instead of C.UTF-8 for distroless compatibility)
 ENV LANG=C
 ENV LC_ALL=C
+# Set PYTHONPATH so Python can find packages in /usr/local/lib/python3.11/site-packages
+ENV PYTHONPATH=/usr/local/lib/python3.11/site-packages
 
 # Set working directory
 WORKDIR /data
