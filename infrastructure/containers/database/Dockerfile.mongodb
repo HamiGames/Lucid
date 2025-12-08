@@ -74,15 +74,24 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="foundation" \
       com.lucid.tor.compatible="true"
 
-# Copy MongoDB binary from builder
+# Copy MongoDB binaries from builder
 COPY --from=mongodb-builder /usr/bin/mongod /usr/bin/mongod
+COPY --from=mongodb-builder /usr/bin/mongosh /usr/bin/mongosh
 
-# Copy Python3 for healthcheck (distroless-compatible)
+# Copy Python3 for healthcheck and entrypoint script (distroless-compatible)
 COPY --from=mongodb-builder /usr/bin/python3 /usr/bin/python3
 COPY --from=mongodb-builder /usr/lib/python3.* /usr/lib/
 
 # Copy MongoDB configuration file (from build context)
 COPY mongod.conf /etc/mongod.conf
+
+# Copy MongoDB entrypoint script (handles user initialization)
+COPY database/mongodb/start-mongodb.py /usr/local/bin/start-mongodb.py
+RUN chmod +x /usr/local/bin/start-mongodb.py
+
+# Copy MongoDB healthcheck script (handles authentication)
+COPY database/mongodb/healthcheck.py /usr/local/bin/healthcheck.py
+RUN chmod +x /usr/local/bin/healthcheck.py
 
 # Copy required libraries explicitly (platform-agnostic pattern - handles ARM64)
 COPY --from=mongodb-builder /lib/*/libc.so.6 /lib/
@@ -142,10 +151,10 @@ ENV PROJECT_NAME=Lucid \
 # MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD} (from .env.secrets - Network_config_requirements.md line 67)
 # MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin (from .env.secrets - Network_config_requirements.md line 65)
 
-# Health check (aligned with docker-compose.foundation.yml lines 101-112 and deployment-factors.md line 320)
-# Uses Python3 socket check (distroless-compatible) - matches docker-compose.foundation.yml
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 27017)); s.close(); exit(0)"]
+# Health check (aligned with docker-compose.foundation.yml - uses Python script for authentication)
+# Note: Uses Python script that reads MONGODB_PASSWORD from environment
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
 
 # Expose MongoDB port (aligned with essentials.md line 134 and Port-summary.md)
 EXPOSE 27017
@@ -156,7 +165,9 @@ WORKDIR /data/db
 # Run as non-root user (distroless default: 65532:65532)
 USER 65532:65532
 
-# Default command (aligned with essentials.md: auth enabled via env vars)
-# NOTE: Uses CMD (not ENTRYPOINT) to allow docker-compose.yml to override command
-# This ensures tor-proxy compatibility: compose can set depends_on: tor-proxy: condition: service_started
-CMD ["/usr/bin/mongod", "--config", "/etc/mongod.conf"]
+# Entrypoint script handles MongoDB initialization and user creation
+# The script will:
+# 1. Check if MongoDB data is empty (first run)
+# 2. Start without auth if no users exist, create admin user, then restart with auth
+# 3. Handle graceful shutdown
+ENTRYPOINT ["/usr/bin/python3", "/usr/local/bin/start-mongodb.py"]

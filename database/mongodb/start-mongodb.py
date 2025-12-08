@@ -2,6 +2,8 @@
 """
 MongoDB Distroless Startup Script
 Handles MongoDB initialization and configuration for distroless container
+CRITICAL: Automatically creates admin user on first run if users don't exist
+FIXED: Uses MONGODB_PASSWORD from environment variables (no hardcoded passwords)
 """
 
 import os
@@ -10,6 +12,7 @@ import subprocess
 import signal
 import time
 import logging
+import socket
 from pathlib import Path
 
 # Configure logging
@@ -23,104 +26,345 @@ class MongoDBDistroless:
     def __init__(self):
         self.mongod_process = None
         self.data_dir = Path('/data/db')
-        self.config_dir = Path('/data/configdb')
+        self.log_dir = Path('/var/log/mongodb')
         
     def setup_directories(self):
         """Create necessary directories with proper permissions"""
         try:
             self.data_dir.mkdir(parents=True, exist_ok=True)
-            self.config_dir.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Created directories: {self.data_dir}, {self.config_dir}")
+            self.log_dir.mkdir(parents=True, exist_ok=True)
+            # Ensure directories are writable by nonroot user (65532)
+            try:
+                os.chmod(str(self.data_dir), 0o755)
+                os.chmod(str(self.log_dir), 0o755)
+            except PermissionError:
+                logger.warning(f"Could not set permissions on directories, may cause issues")
+            logger.info(f"Created directories: {self.data_dir}, {self.log_dir}")
         except Exception as e:
             logger.error(f"Failed to create directories: {e}")
             sys.exit(1)
     
-    def get_mongod_command(self):
-        """Build MongoDB command with security and performance settings"""
-        cmd = [
-            '/usr/bin/mongod',
-            '--auth',
-            '--bind_ip_all',
-            '--replSet', 'rs0',
-            '--oplogSize', '128',
-            '--wiredTigerCacheSizeGB', '0.5',
-            '--dbpath', str(self.data_dir),
-            '--configdb', str(self.config_dir),
-            '--logpath', '/var/log/mongodb/mongod.log',
-            '--fork'
-        ]
-        
-        # Add environment-based configuration
-        if os.getenv('MONGODB_REPLICA_SET_ENABLED', 'true').lower() == 'true':
-            cmd.extend(['--replSet', os.getenv('MONGODB_REPLICA_SET', 'rs0')])
-        
-        return cmd
-    
-    def start_mongodb(self):
-        """Start MongoDB with proper configuration"""
+    def is_data_directory_empty(self):
+        """Check if MongoDB data directory is empty (first run)"""
         try:
-            cmd = self.get_mongod_command()
-            logger.info(f"Starting MongoDB with command: {' '.join(cmd)}")
-            
-            # Start MongoDB process
-            self.mongod_process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                preexec_fn=os.setsid
-            )
-            
-            # Wait for MongoDB to start
-            time.sleep(5)
-            
-            if self.mongod_process.poll() is None:
-                logger.info("MongoDB started successfully")
+            if not self.data_dir.exists():
                 return True
-            else:
-                logger.error("MongoDB failed to start")
-                return False
-                
+            # Check if directory has any files (ignore .keep or similar markers)
+            contents = list(self.data_dir.iterdir())
+            # If only hidden/system files, consider it empty
+            meaningful_files = [f for f in contents if not f.name.startswith('.')]
+            return len(meaningful_files) == 0
         except Exception as e:
-            logger.error(f"Failed to start MongoDB: {e}")
+            logger.warning(f"Error checking data directory: {e}")
             return False
     
-    def initialize_replica_set(self):
-        """Initialize MongoDB replica set if needed"""
-        try:
-            # Wait for MongoDB to be ready
-            time.sleep(10)
+    def wait_for_mongodb(self, max_attempts=30, require_auth=False):
+        """Wait for MongoDB to be ready and accepting connections"""
+        password = os.getenv('MONGODB_PASSWORD', '')
+        
+        for attempt in range(max_attempts):
+            time.sleep(1)
             
-            # Initialize replica set
-            init_script = """
-            rs.initiate({
-                _id: "rs0",
-                members: [
-                    { _id: 0, host: "localhost:27017" }
-                ]
-            })
-            """
+            # Check if process died
+            if self.mongod_process and self.mongod_process.poll() is not None:
+                exit_code = self.mongod_process.returncode
+                logger.error(f"MongoDB process exited with code {exit_code}")
+                return False
+            
+            # Try to connect with mongosh
+            try:
+                if require_auth and password:
+                    # Connect with authentication
+                    cmd = [
+                        '/usr/bin/mongosh',
+                        '--quiet',
+                        '--eval', 'db.runCommand({ ping: 1 })',
+                        '-u', 'lucid',
+                        '-p', password,
+                        '--authenticationDatabase', 'admin'
+                    ]
+                else:
+                    # Connect without authentication
+                    cmd = [
+                        '/usr/bin/mongosh',
+                        '--quiet',
+                        '--eval', 'db.runCommand({ ping: 1 })'
+                    ]
+                
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                
+                if result.returncode == 0:
+                    logger.info("MongoDB is ready and accepting connections")
+                    return True
+                    
+            except subprocess.TimeoutExpired:
+                logger.debug(f"Connection attempt {attempt + 1} timed out")
+            except Exception as e:
+                logger.debug(f"Connection attempt {attempt + 1} failed: {e}")
+        
+        logger.warning(f"MongoDB did not become ready within {max_attempts} seconds")
+        return False
+    
+    def check_user_exists(self):
+        """Check if admin user exists in MongoDB"""
+        try:
+            # Try to list users (without auth first, then with auth)
+            cmd = [
+                '/usr/bin/mongosh',
+                '--quiet',
+                '--eval', "db.getSiblingDB('admin').getUsers().length",
+                'admin'
+            ]
             
             result = subprocess.run(
-                ['/usr/bin/mongosh', '--eval', init_script],
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            
+            if result.returncode == 0:
+                user_count = int(result.stdout.strip())
+                logger.info(f"Found {user_count} user(s) in admin database")
+                return user_count > 0
+            return False
+        except Exception as e:
+            logger.debug(f"Error checking users: {e}")
+            return False
+    
+    def create_admin_user(self):
+        """Create admin user from environment variables"""
+        password = os.getenv('MONGODB_PASSWORD', '')
+        if not password:
+            logger.error("MONGODB_PASSWORD environment variable is not set!")
+            logger.error("Please ensure MONGODB_PASSWORD is set in .env.secrets or docker-compose environment")
+            return False
+        
+        logger.info("Creating admin user 'lucid' in admin database...")
+        
+        # Escape single quotes in password for JavaScript
+        escaped_password = password.replace("'", "\\'").replace("\\", "\\\\")
+        
+        init_script = f"""
+        try {{
+            db = db.getSiblingDB('admin');
+            
+            // Check if user already exists
+            var existingUser = db.getUser('lucid');
+            if (existingUser) {{
+                print('ℹ️ User lucid already exists, updating password...');
+                db.changeUserPassword('lucid', '{escaped_password}');
+                print('✅ User lucid password updated');
+            }} else {{
+                db.createUser({{
+                    user: 'lucid',
+                    pwd: '{escaped_password}',
+                    roles: [
+                        {{ role: 'userAdminAnyDatabase', db: 'admin' }},
+                        {{ role: 'readWriteAnyDatabase', db: 'admin' }},
+                        {{ role: 'dbAdminAnyDatabase', db: 'admin' }},
+                        {{ role: 'clusterAdmin', db: 'admin' }}
+                    ]
+                }});
+                print('✅ User lucid created successfully');
+            }}
+        }} catch (e) {{
+            print('❌ Error creating/updating user: ' + e.message);
+            quit(1);
+        }}
+        """
+        
+        try:
+            result = subprocess.run(
+                ['/usr/bin/mongosh', '--quiet', '--eval', init_script],
                 capture_output=True,
                 text=True,
                 timeout=30
             )
             
             if result.returncode == 0:
-                logger.info("Replica set initialized successfully")
+                logger.info("Admin user created/updated successfully")
+                if result.stdout:
+                    logger.info(result.stdout.strip())
+                return True
             else:
-                logger.warning(f"Replica set initialization warning: {result.stderr}")
+                logger.error(f"Failed to create admin user: {result.stderr}")
+                return False
+        except Exception as e:
+            logger.error(f"Exception while creating admin user: {e}")
+            return False
+    
+    def get_mongod_command(self, use_auth=True):
+        """Build MongoDB command with security and performance settings"""
+        cmd = [
+            '/usr/bin/mongod',
+            '--bind_ip_all',
+            '--dbpath', str(self.data_dir),
+            '--logpath', str(self.log_dir / 'mongod.log'),
+            '--logappend'
+        ]
+        
+        if use_auth:
+            cmd.append('--auth')
+        
+        # Add replica set if enabled
+        if os.getenv('MONGODB_REPLICA_SET_ENABLED', 'true').lower() == 'true':
+            repl_set = os.getenv('MONGODB_REPLICA_SET', 'lucid-rs')
+            cmd.extend(['--replSet', repl_set])
+        
+        return cmd
+    
+    def start_mongodb(self, use_auth=True):
+        """Start MongoDB with proper configuration"""
+        try:
+            cmd = self.get_mongod_command(use_auth=use_auth)
+            auth_status = "with authentication" if use_auth else "without authentication (initialization mode)"
+            logger.info(f"Starting MongoDB {auth_status}...")
+            logger.debug(f"Command: {' '.join(cmd)}")
+            
+            # Start MongoDB process (foreground, no fork)
+            self.mongod_process = subprocess.Popen(
+                cmd,
+                stdout=sys.stdout,
+                stderr=sys.stderr
+            )
+            
+            # Wait for MongoDB to be ready
+            if not self.wait_for_mongodb(require_auth=use_auth):
+                logger.error("MongoDB failed to become ready")
+                return False
+            
+            logger.info("MongoDB started successfully")
+            return True
                 
         except Exception as e:
-            logger.warning(f"Replica set initialization failed: {e}")
+            logger.error(f"Failed to start MongoDB: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def stop_mongodb(self, timeout=30):
+        """Stop MongoDB gracefully"""
+        if not self.mongod_process:
+            return True
+        
+        logger.info("Stopping MongoDB...")
+        try:
+            # Send SIGTERM to mongod process
+            self.mongod_process.terminate()
+            
+            # Wait for process to terminate
+            try:
+                self.mongod_process.wait(timeout=timeout)
+                logger.info("MongoDB stopped gracefully")
+                return True
+            except subprocess.TimeoutExpired:
+                logger.warning("MongoDB did not stop within timeout, forcing...")
+                self.mongod_process.kill()
+                self.mongod_process.wait()
+                return True
+        except Exception as e:
+            logger.error(f"Error stopping MongoDB: {e}")
+            return False
+    
+    def initialize_mongodb(self):
+        """Initialize MongoDB: check if users exist, create if needed, restart with auth"""
+        # Check if this is a fresh installation
+        is_empty = self.is_data_directory_empty()
+        logger.info(f"MongoDB data directory is {'empty' if is_empty else 'populated'}")
+        
+        # If data is empty, we need to create the user
+        if is_empty:
+            logger.info("First run detected - initializing MongoDB with admin user...")
+            
+            # Start MongoDB without auth
+            if not self.start_mongodb(use_auth=False):
+                logger.error("Failed to start MongoDB without auth for initialization")
+                return False
+            
+            # Wait a bit more to ensure MongoDB is fully ready
+            time.sleep(2)
+            
+            # Create admin user
+            if not self.create_admin_user():
+                logger.error("Failed to create admin user")
+                self.stop_mongodb()
+                return False
+            
+            # Stop MongoDB
+            logger.info("Stopping MongoDB to restart with authentication...")
+            if not self.stop_mongodb():
+                logger.error("Failed to stop MongoDB after initialization")
+                return False
+            
+            # Wait for process to fully stop
+            time.sleep(2)
+            self.mongod_process = None
+            
+            # Restart MongoDB with auth
+            logger.info("Restarting MongoDB with authentication enabled...")
+            return self.start_mongodb(use_auth=True)
+        
+        else:
+            # Data exists - check if users exist
+            logger.info("Existing data detected - checking if users exist...")
+            
+            # Try starting with auth first
+            if self.start_mongodb(use_auth=True):
+                # Check if we can connect (users exist)
+                time.sleep(2)
+                if self.check_user_exists():
+                    logger.info("Users exist - MongoDB started successfully with authentication")
+                    return True
+                else:
+                    logger.warning("No users found in existing data - initializing users...")
+                    # Stop and restart without auth to create users
+                    self.stop_mongodb()
+                    time.sleep(2)
+                    self.mongod_process = None
+                    
+                    # Start without auth
+                    if not self.start_mongodb(use_auth=False):
+                        return False
+                    
+                    # Create user
+                    if not self.create_admin_user():
+                        self.stop_mongodb()
+                        return False
+                    
+                    # Restart with auth
+                    self.stop_mongodb()
+                    time.sleep(2)
+                    self.mongod_process = None
+                    return self.start_mongodb(use_auth=True)
+            else:
+                # Couldn't start with auth - maybe no users exist
+                logger.warning("Failed to start with auth - trying without auth to check/create users...")
+                
+                # Start without auth to check/create users
+                if not self.start_mongodb(use_auth=False):
+                    return False
+                
+                # Create/update user
+                if not self.create_admin_user():
+                    self.stop_mongodb()
+                    return False
+                
+                # Restart with auth
+                self.stop_mongodb()
+                time.sleep(2)
+                self.mongod_process = None
+                return self.start_mongodb(use_auth=True)
     
     def signal_handler(self, signum, frame):
         """Handle shutdown signals gracefully"""
         logger.info(f"Received signal {signum}, shutting down MongoDB...")
-        if self.mongod_process:
-            self.mongod_process.terminate()
-            self.mongod_process.wait(timeout=30)
+        self.stop_mongodb()
         sys.exit(0)
     
     def run(self):
@@ -132,21 +376,17 @@ class MongoDBDistroless:
         # Setup directories
         self.setup_directories()
         
-        # Start MongoDB
-        if not self.start_mongodb():
-            logger.error("Failed to start MongoDB")
+        # Initialize MongoDB (create users if needed)
+        if not self.initialize_mongodb():
+            logger.error("Failed to initialize MongoDB")
             sys.exit(1)
         
-        # Initialize replica set
-        self.initialize_replica_set()
-        
-        # Keep running
+        # Keep running and forward output
         try:
-            while True:
-                if self.mongod_process and self.mongod_process.poll() is not None:
-                    logger.error("MongoDB process died unexpectedly")
-                    sys.exit(1)
-                time.sleep(1)
+            # Wait for process to exit
+            exit_code = self.mongod_process.wait()
+            logger.error(f"MongoDB process exited with code {exit_code}")
+            sys.exit(exit_code)
         except KeyboardInterrupt:
             logger.info("Received interrupt, shutting down...")
             self.signal_handler(signal.SIGTERM, None)

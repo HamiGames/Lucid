@@ -160,14 +160,8 @@ services:
         ipv4_address: 172.20.0.11
     ports:
       - "${MONGODB_PORT}:${MONGODB_PORT}"
-    entrypoint: []
-    command:
-      - /usr/bin/mongod
-      - --auth
-      - --bind_ip_all
-      - --dbpath=/data/db
-      - --logpath=/var/log/mongodb/mongod.log
-      - --logappend
+    # Entrypoint script handles MongoDB initialization and user creation
+    # No need to override command - script manages mongod startup
     depends_on:
       tor-proxy:
         condition: service_started
@@ -185,11 +179,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
       - mongodb-cache:/var/cache/mongodb
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"]
+      test: ["CMD", "/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     labels:
       - "lucid.service=mongodb"
       - "lucid.type=distroless"
