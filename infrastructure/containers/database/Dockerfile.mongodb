@@ -44,6 +44,17 @@ RUN apt-get update && \
     && dpkg --configure -a --force-unsafe-io --no-triggers 2>/dev/null || true \
     && rm -rf /var/lib/dpkg/triggers/* 2>/dev/null || true
 
+# Copy MongoDB entrypoint and healthcheck scripts to builder stage
+COPY database/mongodb/start-mongodb.py /usr/local/bin/start-mongodb.py
+# Verify file was copied (fails build if missing - prevents silent COPY failures)
+RUN test -f /usr/local/bin/start-mongodb.py || (echo "ERROR: start-mongodb.py not found in build context!" && exit 1)
+RUN chmod +x /usr/local/bin/start-mongodb.py
+
+COPY database/mongodb/healthcheck.py /usr/local/bin/healthcheck.py
+# Verify file was copied (fails build if missing - prevents silent COPY failures)
+RUN test -f /usr/local/bin/healthcheck.py || (echo "ERROR: healthcheck.py not found in build context!" && exit 1)
+RUN chmod +x /usr/local/bin/healthcheck.py
+
 # =============================================================================
 # STAGE 2: Distroless Runtime
 # =============================================================================
@@ -85,13 +96,15 @@ COPY --from=mongodb-builder /usr/lib/python3.* /usr/lib/
 # Copy MongoDB configuration file (from build context)
 COPY mongod.conf /etc/mongod.conf
 
-# Copy MongoDB entrypoint script (handles user initialization)
-COPY database/mongodb/start-mongodb.py /usr/local/bin/start-mongodb.py
-RUN chmod +x /usr/local/bin/start-mongodb.py
+# Copy MongoDB entrypoint script from builder (already executable)
+COPY --from=mongodb-builder /usr/local/bin/start-mongodb.py /usr/local/bin/start-mongodb.py
+# Verify script was copied from builder stage (fails build if missing)
+RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/usr/local/bin/start-mongodb.py'), 'start-mongodb.py missing from builder stage'; print('✅ start-mongodb.py verified')"]
 
-# Copy MongoDB healthcheck script (handles authentication)
-COPY database/mongodb/healthcheck.py /usr/local/bin/healthcheck.py
-RUN chmod +x /usr/local/bin/healthcheck.py
+# Copy MongoDB healthcheck script from builder (already executable)
+COPY --from=mongodb-builder /usr/local/bin/healthcheck.py /usr/local/bin/healthcheck.py
+# Verify script was copied from builder stage (fails build if missing)
+RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/usr/local/bin/healthcheck.py'), 'healthcheck.py missing from builder stage'; print('✅ healthcheck.py verified')"]
 
 # Copy required libraries explicitly (platform-agnostic pattern - handles ARM64)
 COPY --from=mongodb-builder /lib/*/libc.so.6 /lib/
