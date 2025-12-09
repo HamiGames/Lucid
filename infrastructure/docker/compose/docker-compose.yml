@@ -27,12 +27,14 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=lucid
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-lucid}
       - MONGO_INITDB_DATABASE=lucid
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD:-lucid}
+      - MONGODB_PORT=27017
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping')"]
+      test: ["CMD", "/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   lucid-redis:
     image: pickme/lucid-redis:latest-arm64

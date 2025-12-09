@@ -55,6 +55,13 @@ COPY database/mongodb/healthcheck.py /usr/local/bin/healthcheck.py
 RUN test -f /usr/local/bin/healthcheck.py || (echo "ERROR: healthcheck.py not found in build context!" && exit 1)
 RUN chmod +x /usr/local/bin/healthcheck.py
 
+# Copy MongoDB configuration file to builder stage for verification
+# NOTE: The startup script (start-mongodb.py) builds mongod command manually and does not use this config file
+# This file is kept for reference/documentation. To use it, modify start-mongodb.py to add --config /etc/mongod.conf
+COPY mongod.conf /tmp/mongod.conf
+# Verify file was copied (fails build if missing - prevents silent COPY failures)
+RUN test -f /tmp/mongod.conf || (echo "ERROR: mongod.conf not found in build context!" && exit 1)
+
 # =============================================================================
 # STAGE 2: Distroless Runtime
 # =============================================================================
@@ -93,8 +100,12 @@ COPY --from=mongodb-builder /usr/bin/mongosh /usr/bin/mongosh
 COPY --from=mongodb-builder /usr/bin/python3 /usr/bin/python3
 COPY --from=mongodb-builder /usr/lib/python3.* /usr/lib/
 
-# Copy MongoDB configuration file (from build context)
-COPY mongod.conf /etc/mongod.conf
+# Copy MongoDB configuration file from builder stage (already verified)
+# NOTE: The startup script (start-mongodb.py) builds mongod command manually and does not use this config file
+# This file is kept for reference/documentation. To use it, modify start-mongodb.py to add --config /etc/mongod.conf
+COPY --from=mongodb-builder /tmp/mongod.conf /etc/mongod.conf
+# Verify file was copied from builder stage (fails build if missing)
+RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/etc/mongod.conf'), 'mongod.conf missing from builder stage'; print('✅ mongod.conf verified')"]
 
 # Copy MongoDB entrypoint script from builder (already executable)
 COPY --from=mongodb-builder /usr/local/bin/start-mongodb.py /usr/local/bin/start-mongodb.py

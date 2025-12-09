@@ -89,9 +89,13 @@ class MongoDBDistroless:
             logger.warning(f"Error checking data directory: {e}")
             return False
     
-    def wait_for_mongodb(self, max_attempts=30, require_auth=False):
+    def wait_for_mongodb(self, max_attempts=60, require_auth=False):
         """Wait for MongoDB to be ready and accepting connections"""
         password = os.getenv('MONGODB_PASSWORD', '')
+        host = '127.0.0.1'
+        port = int(os.getenv('MONGODB_PORT', '27017'))
+        
+        logger.info(f"Waiting for MongoDB to be ready (max {max_attempts}s, auth={require_auth})...")
         
         for attempt in range(max_attempts):
             time.sleep(1)
@@ -102,52 +106,87 @@ class MongoDBDistroless:
                 logger.error(f"MongoDB process exited with code {exit_code}")
                 return False
             
-            # Try to connect with mongosh
+            # First check if port is listening (MongoDB process is running)
+            if not self.is_port_listening(host=host, port=port):
+                if attempt % 10 == 0:  # Log every 10 seconds
+                    logger.debug(f"Waiting for MongoDB port {port} to be listening... (attempt {attempt + 1}/{max_attempts})")
+                continue  # Port not listening yet, keep waiting
+            
+            # Port is listening, now try to connect
             try:
                 if require_auth and password:
-                    # Connect with authentication
-                    cmd = [
-                        '/usr/bin/mongosh',
-                        '--quiet',
-                        '--eval', 'db.runCommand({ ping: 1 })',
-                        '-u', 'lucid',
-                        '-p', password,
-                        '--authenticationDatabase', 'admin'
-                    ]
+                    # Try multiple users (root first, then lucid) - consistent with healthcheck
+                    users = ['root', 'lucid']
+                    for user in users:
+                        try:
+                            cmd = [
+                                '/usr/bin/mongosh',
+                                '--quiet',
+                                '--host', host,
+                                '--port', str(port),
+                                '--eval', 'db.runCommand({ ping: 1 })',
+                                '-u', user,
+                                '-p', password,
+                                '--authenticationDatabase', 'admin'
+                            ]
+                            
+                            result = subprocess.run(
+                                cmd,
+                                capture_output=True,
+                                text=True,
+                                timeout=5
+                            )
+                            
+                            if result.returncode == 0:
+                                logger.info(f"MongoDB is ready and accepting connections (user: {user})")
+                                return True
+                        except Exception as e:
+                            logger.debug(f"Auth attempt with user {user} failed: {e}")
+                            continue  # Try next user
                 else:
                     # Connect without authentication
                     cmd = [
                         '/usr/bin/mongosh',
                         '--quiet',
+                        '--host', host,
+                        '--port', str(port),
                         '--eval', 'db.runCommand({ ping: 1 })'
                     ]
-                
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=5
-                )
-                
-                if result.returncode == 0:
-                    logger.info("MongoDB is ready and accepting connections")
-                    return True
                     
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    
+                    if result.returncode == 0:
+                        logger.info("MongoDB is ready and accepting connections")
+                        return True
+                        
             except subprocess.TimeoutExpired:
                 logger.debug(f"Connection attempt {attempt + 1} timed out")
             except Exception as e:
                 logger.debug(f"Connection attempt {attempt + 1} failed: {e}")
         
-        logger.warning(f"MongoDB did not become ready within {max_attempts} seconds")
+        logger.error(f"MongoDB did not become ready within {max_attempts} seconds")
+        if require_auth and password:
+            logger.error("MongoDB may require authentication - check that users exist and password is correct")
         return False
     
     def check_user_exists(self):
-        """Check if admin user exists in MongoDB"""
+        """Check if admin user exists in MongoDB (works with or without auth)"""
+        password = os.getenv('MONGODB_PASSWORD', '')
+        host = '127.0.0.1'
+        port = int(os.getenv('MONGODB_PORT', '27017'))
+        
+        # First try without auth (if MongoDB was started without --auth)
         try:
-            # Try to list users (without auth first, then with auth)
             cmd = [
                 '/usr/bin/mongosh',
                 '--quiet',
+                '--host', host,
+                '--port', str(port),
                 '--eval', "db.getSiblingDB('admin').getUsers().length",
                 'admin'
             ]
@@ -163,71 +202,157 @@ class MongoDBDistroless:
                 user_count = int(result.stdout.strip())
                 logger.info(f"Found {user_count} user(s) in admin database")
                 return user_count > 0
-            return False
         except Exception as e:
-            logger.debug(f"Error checking users: {e}")
-            return False
+            logger.debug(f"Check users without auth failed: {e}")
+        
+        # If that failed, try with auth (MongoDB was started with --auth)
+        if password:
+            users = ['root', 'lucid']
+            for user in users:
+                try:
+                    cmd = [
+                        '/usr/bin/mongosh',
+                        '--quiet',
+                        '--host', host,
+                        '--port', str(port),
+                        '--eval', "db.getSiblingDB('admin').getUsers().length",
+                        'admin',
+                        '-u', user,
+                        '-p', password,
+                        '--authenticationDatabase', 'admin'
+                    ]
+                    
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    
+                    if result.returncode == 0:
+                        user_count = int(result.stdout.strip())
+                        logger.info(f"Found {user_count} user(s) in admin database (via user: {user})")
+                        return user_count > 0
+                except Exception as e:
+                    logger.debug(f"Check users with auth (user: {user}) failed: {e}")
+                    continue
+        
+        return False
     
     def create_admin_user(self):
-        """Create admin user from environment variables"""
+        """Create admin users (both root and lucid) and ensure lucid_auth database exists"""
         password = os.getenv('MONGODB_PASSWORD', '')
         if not password:
             logger.error("MONGODB_PASSWORD environment variable is not set!")
             logger.error("Please ensure MONGODB_PASSWORD is set in .env.secrets or docker-compose environment")
             return False
         
-        logger.info("Creating admin user 'lucid' in admin database...")
+        host = '127.0.0.1'
+        port = int(os.getenv('MONGODB_PORT', '27017'))
+        
+        logger.info("Creating admin users (root and lucid) in admin database...")
         
         # Escape single quotes in password for JavaScript
         escaped_password = password.replace("'", "\\'").replace("\\", "\\\\")
         
+        # Create script that creates both root and lucid users, and ensures lucid_auth database exists
         init_script = f"""
         try {{
             db = db.getSiblingDB('admin');
             
-            // Check if user already exists
-            var existingUser = db.getUser('lucid');
-            if (existingUser) {{
-                print('ℹ️ User lucid already exists, updating password...');
-                db.changeUserPassword('lucid', '{escaped_password}');
-                print('✅ User lucid password updated');
-            }} else {{
-                db.createUser({{
-                    user: 'lucid',
-                    pwd: '{escaped_password}',
-                    roles: [
-                        {{ role: 'userAdminAnyDatabase', db: 'admin' }},
-                        {{ role: 'readWriteAnyDatabase', db: 'admin' }},
-                        {{ role: 'dbAdminAnyDatabase', db: 'admin' }},
-                        {{ role: 'clusterAdmin', db: 'admin' }}
-                    ]
-                }});
-                print('✅ User lucid created successfully');
+            // Create/update 'root' user (for consistency with healthcheck that tries root first)
+            try {{
+                var existingRoot = db.getUser('root');
+                if (existingRoot) {{
+                    print('ℹ️ User root already exists, updating password...');
+                    db.changeUserPassword('root', '{escaped_password}');
+                    print('✅ User root password updated');
+                }} else {{
+                    db.createUser({{
+                        user: 'root',
+                        pwd: '{escaped_password}',
+                        roles: [
+                            {{ role: 'root', db: 'admin' }}
+                        ]
+                    }});
+                    print('✅ User root created successfully');
+                }}
+            }} catch (rootError) {{
+                // If root user creation fails, try updating password
+                try {{
+                    db.changeUserPassword('root', '{escaped_password}');
+                    print('✅ User root password updated (recovered)');
+                }} catch (updateError) {{
+                    print('⚠️ Could not create/update root user: ' + rootError.message);
+                }}
             }}
+            
+            // Create/update 'lucid' user (primary user for applications)
+            try {{
+                var existingLucid = db.getUser('lucid');
+                if (existingLucid) {{
+                    print('ℹ️ User lucid already exists, updating password...');
+                    db.changeUserPassword('lucid', '{escaped_password}');
+                    print('✅ User lucid password updated');
+                }} else {{
+                    db.createUser({{
+                        user: 'lucid',
+                        pwd: '{escaped_password}',
+                        roles: [
+                            {{ role: 'userAdminAnyDatabase', db: 'admin' }},
+                            {{ role: 'readWriteAnyDatabase', db: 'admin' }},
+                            {{ role: 'dbAdminAnyDatabase', db: 'admin' }},
+                            {{ role: 'clusterAdmin', db: 'admin' }}
+                        ]
+                    }});
+                    print('✅ User lucid created successfully');
+                }}
+            }} catch (lucidError) {{
+                print('❌ Error creating/updating lucid user: ' + lucidError.message);
+                quit(1);
+            }}
+            
+            // Ensure lucid_auth database exists (required by lucid-auth-service)
+            // MongoDB creates databases automatically on first write, but we'll create it explicitly
+            db = db.getSiblingDB('lucid_auth');
+            // Create a dummy collection to ensure database exists
+            db.dummy_collection.insertOne({{ _id: 'init', created: new Date() }});
+            // Remove the dummy document
+            db.dummy_collection.deleteOne({{ _id: 'init' }});
+            print('✅ Database lucid_auth ensured to exist');
+            
         }} catch (e) {{
-            print('❌ Error creating/updating user: ' + e.message);
+            print('❌ Error in initialization script: ' + e.message);
             quit(1);
         }}
         """
         
         try:
             result = subprocess.run(
-                ['/usr/bin/mongosh', '--quiet', '--eval', init_script],
+                [
+                    '/usr/bin/mongosh',
+                    '--quiet',
+                    '--host', host,
+                    '--port', str(port),
+                    '--eval', init_script
+                ],
                 capture_output=True,
                 text=True,
                 timeout=30
             )
             
             if result.returncode == 0:
-                logger.info("Admin user created/updated successfully")
+                logger.info("Admin users created/updated successfully")
                 if result.stdout:
                     logger.info(result.stdout.strip())
                 return True
             else:
-                logger.error(f"Failed to create admin user: {result.stderr}")
+                logger.error(f"Failed to create admin users: {result.stderr}")
+                if result.stdout:
+                    logger.error(f"stdout: {result.stdout}")
                 return False
         except Exception as e:
-            logger.error(f"Exception while creating admin user: {e}")
+            logger.error(f"Exception while creating admin users: {e}")
             return False
     
     def get_mongod_command(self, use_auth=True, bypass_localhost=False):
