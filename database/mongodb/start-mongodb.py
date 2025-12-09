@@ -14,6 +14,7 @@ import time
 import logging
 import socket
 from pathlib import Path
+import errno
 
 # Configure logging
 logging.basicConfig(
@@ -28,6 +29,36 @@ class MongoDBDistroless:
         self.data_dir = Path('/data/db')
         self.log_dir = Path('/var/log/mongodb')
         
+    def is_port_listening(self, host='127.0.0.1', port=27017, timeout=1):
+        """Check if a TCP port is accepting connections"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(timeout)
+                result = sock.connect_ex((host, port))
+                return result == 0
+        except Exception:
+            return False
+
+    def cleanup_stale_locks(self):
+        """Remove stale mongod locks if no mongod is running"""
+        lock_files = [
+            self.data_dir / 'mongod.lock',
+            self.data_dir / 'WiredTiger.lock'
+        ]
+
+        if self.is_port_listening():
+            # Another mongod is already listening; do not remove locks
+            logger.info("Detected mongod already listening on port 27017; skipping lock cleanup")
+            return
+
+        for lock_file in lock_files:
+            try:
+                if lock_file.exists():
+                    lock_file.unlink()
+                    logger.warning(f"Removed stale lock file: {lock_file}")
+            except Exception as e:
+                logger.warning(f"Could not remove lock file {lock_file}: {e}")
+
     def setup_directories(self):
         """Create necessary directories with proper permissions"""
         try:
@@ -229,6 +260,9 @@ class MongoDBDistroless:
     def start_mongodb(self, use_auth=True, bypass_localhost=False):
         """Start MongoDB with proper configuration"""
         try:
+            # Ensure no stale locks block startup
+            self.cleanup_stale_locks()
+
             cmd = self.get_mongod_command(use_auth=use_auth, bypass_localhost=bypass_localhost)
             if bypass_localhost and not use_auth:
                 auth_status = "without authentication (localhost bypass for recovery)"
