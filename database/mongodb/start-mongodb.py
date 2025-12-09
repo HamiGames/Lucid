@@ -212,8 +212,11 @@ class MongoDBDistroless:
         if use_auth:
             cmd.append('--auth')
         
-        # Add replica set if enabled
-        if os.getenv('MONGODB_REPLICA_SET_ENABLED', 'true').lower() == 'true':
+        # Add replica set if enabled (default: false for single-node deployments)
+        # MongoDB requires keyFile when using auth + replica sets, which adds complexity
+        # For single-node foundation deployments, replica sets are disabled by default
+        # For multi-node deployments, enable via MONGODB_REPLICA_SET_ENABLED=true
+        if os.getenv('MONGODB_REPLICA_SET_ENABLED', 'false').lower() == 'true':
             repl_set = os.getenv('MONGODB_REPLICA_SET', 'lucid-rs')
             cmd.extend(['--replSet', repl_set])
         
