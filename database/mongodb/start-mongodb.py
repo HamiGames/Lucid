@@ -62,17 +62,73 @@ class MongoDBDistroless:
     def setup_directories(self):
         """Create necessary directories with proper permissions"""
         try:
+            current_uid = os.getuid()
+            current_gid = os.getgid()
+            
+            # Create directories
             self.data_dir.mkdir(parents=True, exist_ok=True)
             self.log_dir.mkdir(parents=True, exist_ok=True)
-            # Ensure directories are writable by nonroot user (65532)
+            
+            # Try to fix permissions - chmod works even if we don't own the file
+            try:
+                os.chmod(str(self.data_dir), 0o777)  # Most permissive to allow writes
+                os.chmod(str(self.log_dir), 0o777)
+            except:
+                pass
+            
+            # Test write permissions and fix if needed
+            test_file = self.data_dir / '.write_test'
+            try:
+                test_file.touch()
+                test_file.unlink()
+                logger.info("Data directory is writable")
+            except (PermissionError, OSError) as e:
+                logger.warning(f"Data directory not writable, attempting to fix...")
+                # Try to make it world-writable
+                try:
+                    os.chmod(str(self.data_dir), 0o777)
+                    # Try again
+                    test_file.touch()
+                    test_file.unlink()
+                    logger.info("Fixed data directory permissions")
+                except:
+                    # Last resort: try to use a subdirectory we can create
+                    fallback_dir = self.data_dir / 'mongodb_data'
+                    fallback_dir.mkdir(parents=True, exist_ok=True)
+                    os.chmod(str(fallback_dir), 0o777)
+                    self.data_dir = fallback_dir
+                    logger.warning(f"Using fallback data directory: {self.data_dir}")
+            
+            # Same for log directory
+            test_file = self.log_dir / '.write_test'
+            try:
+                test_file.touch()
+                test_file.unlink()
+                logger.info("Log directory is writable")
+            except (PermissionError, OSError) as e:
+                logger.warning(f"Log directory not writable, attempting to fix...")
+                try:
+                    os.chmod(str(self.log_dir), 0o777)
+                    test_file.touch()
+                    test_file.unlink()
+                    logger.info("Fixed log directory permissions")
+                except:
+                    # Use /tmp for logs if we can't write to /var/log/mongodb
+                    self.log_dir = Path('/tmp/mongodb_logs')
+                    self.log_dir.mkdir(parents=True, exist_ok=True)
+                    os.chmod(str(self.log_dir), 0o777)
+                    logger.warning(f"Using fallback log directory: {self.log_dir}")
+            
+            # Ensure final permissions (more secure, but still writable)
             try:
                 os.chmod(str(self.data_dir), 0o755)
                 os.chmod(str(self.log_dir), 0o755)
-            except PermissionError:
-                logger.warning(f"Could not set permissions on directories, may cause issues")
-            logger.info(f"Created directories: {self.data_dir}, {self.log_dir}")
+            except:
+                pass
+                
+            logger.info(f"Using directories: data={self.data_dir}, logs={self.log_dir}")
         except Exception as e:
-            logger.error(f"Failed to create directories: {e}")
+            logger.error(f"Failed to setup directories: {e}")
             sys.exit(1)
     
     def is_data_directory_empty(self):
@@ -448,8 +504,20 @@ class MongoDBDistroless:
                 stderr=sys.stderr
             )
             
+            # Check immediately if process crashed
+            time.sleep(0.5)
+            if self.mongod_process.poll() is not None:
+                exit_code = self.mongod_process.returncode
+                logger.error(f"MongoDB crashed immediately with exit code {exit_code}")
+                logger.error("This usually means permissions issue or missing files")
+                return False
+            
             # Wait for MongoDB to be ready
             if not self.wait_for_mongodb(require_auth=use_auth):
+                # Check if process died during wait
+                if self.mongod_process.poll() is not None:
+                    exit_code = self.mongod_process.returncode
+                    logger.error(f"MongoDB process exited with code {exit_code} during startup")
                 logger.error("MongoDB failed to become ready")
                 return False
             
