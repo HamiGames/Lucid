@@ -199,7 +199,7 @@ class MongoDBDistroless:
             logger.error(f"Exception while creating admin user: {e}")
             return False
     
-    def get_mongod_command(self, use_auth=True):
+    def get_mongod_command(self, use_auth=True, bypass_localhost=False):
         """Build MongoDB command with security and performance settings"""
         cmd = [
             '/usr/bin/mongod',
@@ -211,6 +211,10 @@ class MongoDBDistroless:
         
         if use_auth:
             cmd.append('--auth')
+
+        if bypass_localhost:
+            # Allow localhost bypass temporarily to reset credentials
+            cmd.extend(['--setParameter', 'enableLocalhostAuthBypass=true'])
         
         # Add replica set if enabled (default: false for single-node deployments)
         # MongoDB requires keyFile when using auth + replica sets, which adds complexity
@@ -222,11 +226,16 @@ class MongoDBDistroless:
         
         return cmd
     
-    def start_mongodb(self, use_auth=True):
+    def start_mongodb(self, use_auth=True, bypass_localhost=False):
         """Start MongoDB with proper configuration"""
         try:
-            cmd = self.get_mongod_command(use_auth=use_auth)
-            auth_status = "with authentication" if use_auth else "without authentication (initialization mode)"
+            cmd = self.get_mongod_command(use_auth=use_auth, bypass_localhost=bypass_localhost)
+            if bypass_localhost and not use_auth:
+                auth_status = "without authentication (localhost bypass for recovery)"
+            elif use_auth:
+                auth_status = "with authentication"
+            else:
+                auth_status = "without authentication (initialization mode)"
             logger.info(f"Starting MongoDB {auth_status}...")
             logger.debug(f"Command: {' '.join(cmd)}")
             
@@ -346,14 +355,15 @@ class MongoDBDistroless:
                     self.mongod_process = None
                     return self.start_mongodb(use_auth=True)
             else:
-                # Couldn't start with auth - maybe no users exist
-                logger.warning("Failed to start with auth - trying without auth to check/create users...")
+                # Couldn't start with auth - likely password mismatch in existing data
+                logger.warning("Failed to start with auth - attempting recovery with localhost bypass...")
                 
-                # Start without auth to check/create users
-                if not self.start_mongodb(use_auth=False):
+                # Start without auth and with localhost bypass to reset password
+                if not self.start_mongodb(use_auth=False, bypass_localhost=True):
+                    logger.error("Recovery start without auth (localhost bypass) failed")
                     return False
                 
-                # Create/update user
+                # Create/update user password from MONGODB_PASSWORD
                 if not self.create_admin_user():
                     self.stop_mongodb()
                     return False
