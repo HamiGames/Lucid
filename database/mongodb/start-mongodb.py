@@ -97,6 +97,10 @@ class MongoDBDistroless:
         
         logger.info(f"Waiting for MongoDB to be ready (max {max_attempts}s, auth={require_auth})...")
         
+        # Track consecutive auth failures for early abort
+        consecutive_auth_failures = 0
+        max_auth_failures = 5  # Abort after 5 consecutive failures to trigger recovery faster
+        
         for attempt in range(max_attempts):
             time.sleep(1)
             
@@ -110,6 +114,8 @@ class MongoDBDistroless:
             if not self.is_port_listening(host=host, port=port):
                 if attempt % 10 == 0:  # Log every 10 seconds
                     logger.info(f"Waiting for MongoDB port {port} to be listening... (attempt {attempt + 1}/{max_attempts})")
+                # Reset auth failure counter when port is not listening (MongoDB not started yet)
+                consecutive_auth_failures = 0
                 continue  # Port not listening yet, keep waiting
             
             # Port is listening, now try to connect
@@ -123,6 +129,7 @@ class MongoDBDistroless:
                     
                     # Try multiple users (root first, then lucid) - consistent with healthcheck
                     users = ['root', 'lucid']
+                    auth_succeeded = False
                     for user in users:
                         try:
                             cmd = [
@@ -160,9 +167,16 @@ class MongoDBDistroless:
                                 logger.warning(f"Auth attempt with user {user} failed: {e}")
                             continue  # Try next user
                     
-                    # If we get here, all auth attempts failed - continue loop to retry
+                    # If we get here, all auth attempts failed
+                    consecutive_auth_failures += 1
+                    if consecutive_auth_failures >= max_auth_failures:
+                        logger.error(f"Authentication failed {consecutive_auth_failures} times in a row - password mismatch detected")
+                        logger.error("MongoDB is running but authentication is failing. This usually means the existing data has a different password.")
+                        logger.error("Aborting early to trigger recovery mode to reset password...")
+                        return False  # Abort early to trigger recovery
+                    
                     if attempt % 10 == 0:
-                        logger.warning(f"All authentication attempts failed, retrying... (attempt {attempt + 1}/{max_attempts})")
+                        logger.warning(f"All authentication attempts failed, retrying... (attempt {attempt + 1}/{max_attempts}, failures: {consecutive_auth_failures}/{max_auth_failures})")
                 else:
                     # Connect without authentication
                     cmd = [
@@ -182,6 +196,8 @@ class MongoDBDistroless:
                     
                     if result.returncode == 0:
                         logger.info("MongoDB is ready and accepting connections")
+                        # Reset auth failure counter on successful connection
+                        consecutive_auth_failures = 0
                         return True
                     else:
                         # Log connection failure details
@@ -542,7 +558,9 @@ class MongoDBDistroless:
                     return self.start_mongodb(use_auth=True)
             else:
                 # Couldn't start with auth - likely password mismatch in existing data
-                logger.warning("Failed to start with auth - attempting recovery with localhost bypass...")
+                logger.warning("Failed to start with auth - authentication failures detected")
+                logger.warning("This usually means the existing data has a different password than MONGODB_PASSWORD")
+                logger.warning("Attempting recovery with localhost bypass to reset password...")
                 
                 # Start without auth and with localhost bypass to reset password
                 if not self.start_mongodb(use_auth=False, bypass_localhost=True):
@@ -550,11 +568,14 @@ class MongoDBDistroless:
                     return False
                 
                 # Create/update user password from MONGODB_PASSWORD
+                logger.info("Resetting user passwords to match MONGODB_PASSWORD environment variable...")
                 if not self.create_admin_user():
+                    logger.error("Failed to reset user passwords during recovery")
                     self.stop_mongodb()
                     return False
                 
                 # Restart with auth
+                logger.info("Restarting MongoDB with authentication enabled after password reset...")
                 self.stop_mongodb()
                 time.sleep(2)
                 self.mongod_process = None
