@@ -58,7 +58,7 @@ RUN chmod +x /usr/local/bin/healthcheck.py
 # Copy MongoDB configuration file to builder stage for verification
 # NOTE: The startup script (start-mongodb.py) builds mongod command manually and does not use this config file
 # This file is kept for reference/documentation. To use it, modify start-mongodb.py to add --config /etc/mongod.conf
-COPY mongod.conf /tmp/mongod.conf
+COPY infrastructure/containers/database/mongod.conf /tmp/mongod.conf
 # Verify file was copied (fails build if missing - prevents silent COPY failures)
 RUN test -f /tmp/mongod.conf || (echo "ERROR: mongod.conf not found in build context!" && exit 1)
 

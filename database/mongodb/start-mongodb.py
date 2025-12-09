@@ -109,12 +109,18 @@ class MongoDBDistroless:
             # First check if port is listening (MongoDB process is running)
             if not self.is_port_listening(host=host, port=port):
                 if attempt % 10 == 0:  # Log every 10 seconds
-                    logger.debug(f"Waiting for MongoDB port {port} to be listening... (attempt {attempt + 1}/{max_attempts})")
+                    logger.info(f"Waiting for MongoDB port {port} to be listening... (attempt {attempt + 1}/{max_attempts})")
                 continue  # Port not listening yet, keep waiting
             
             # Port is listening, now try to connect
             try:
-                if require_auth and password:
+                if require_auth:
+                    if not password:
+                        logger.warning("MongoDB requires authentication but MONGODB_PASSWORD is not set")
+                        if attempt % 10 == 0:  # Log warning every 10 seconds
+                            logger.warning("Waiting for MONGODB_PASSWORD to be set...")
+                        continue
+                    
                     # Try multiple users (root first, then lucid) - consistent with healthcheck
                     users = ['root', 'lucid']
                     for user in users:
@@ -140,9 +146,23 @@ class MongoDBDistroless:
                             if result.returncode == 0:
                                 logger.info(f"MongoDB is ready and accepting connections (user: {user})")
                                 return True
-                        except Exception as e:
-                            logger.debug(f"Auth attempt with user {user} failed: {e}")
+                            else:
+                                # Log authentication failure details
+                                if attempt % 10 == 0:  # Log every 10 seconds to avoid spam
+                                    error_msg = result.stderr.strip() if result.stderr else result.stdout.strip()
+                                    logger.warning(f"Auth failed for user '{user}': {error_msg}")
+                        except subprocess.TimeoutExpired:
+                            if attempt % 10 == 0:
+                                logger.warning(f"Auth attempt with user {user} timed out")
                             continue  # Try next user
+                        except Exception as e:
+                            if attempt % 10 == 0:
+                                logger.warning(f"Auth attempt with user {user} failed: {e}")
+                            continue  # Try next user
+                    
+                    # If we get here, all auth attempts failed - continue loop to retry
+                    if attempt % 10 == 0:
+                        logger.warning(f"All authentication attempts failed, retrying... (attempt {attempt + 1}/{max_attempts})")
                 else:
                     # Connect without authentication
                     cmd = [
@@ -163,11 +183,18 @@ class MongoDBDistroless:
                     if result.returncode == 0:
                         logger.info("MongoDB is ready and accepting connections")
                         return True
+                    else:
+                        # Log connection failure details
+                        if attempt % 10 == 0:  # Log every 10 seconds to avoid spam
+                            error_msg = result.stderr.strip() if result.stderr else result.stdout.strip()
+                            logger.warning(f"Connection failed: {error_msg}")
                         
             except subprocess.TimeoutExpired:
-                logger.debug(f"Connection attempt {attempt + 1} timed out")
+                if attempt % 10 == 0:
+                    logger.warning(f"Connection attempt {attempt + 1} timed out")
             except Exception as e:
-                logger.debug(f"Connection attempt {attempt + 1} failed: {e}")
+                if attempt % 10 == 0:
+                    logger.warning(f"Connection attempt {attempt + 1} failed: {e}")
         
         logger.error(f"MongoDB did not become ready within {max_attempts} seconds")
         if require_auth and password:
