@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DatabaseConfig:
     """Database configuration"""
-    mongodb_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true"
+    mongodb_uri: str = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or ""
     mongodb_database: str = "lucid"
     redis_url: str = "redis://redis-distroless:6379/0"
     elasticsearch_url: str = "http://elasticsearch-distroless:9200"
@@ -209,7 +209,7 @@ class AdminConfig:
         # Validate database URIs
         if not self.database.mongodb_uri or not self.database.mongodb_uri.startswith(("mongodb://", "mongodb+srv://")):
             logger.warning("Invalid MongoDB URI format, using default")
-            self.database.mongodb_uri = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true"
+            self.database.mongodb_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or ""
         
         if not self.database.redis_url.startswith(("redis://", "rediss://")):
             raise ValueError("Invalid Redis URL format")

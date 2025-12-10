@@ -63,7 +63,9 @@ async def lifespan(app: FastAPI):
         )
         
         # Initialize storage services
-        mongo_url = os.getenv("MONGO_URL", "mongodb://lucid:lucid@localhost:27017/lucid")
+        mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+        if not mongo_url:
+            raise RuntimeError("MONGODB_URL/MONGO_URL not set for session-storage")
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         
         session_storage = SessionStorage(storage_config, mongo_url, redis_url)

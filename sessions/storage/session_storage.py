@@ -60,7 +60,7 @@ class SessionStorage:
     def __init__(
         self,
         storage_config: StorageConfig,
-        mongo_url: str = "mongodb://lucid:lucid@localhost:27017/lucid",
+        mongo_url: str | None = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL"),
         redis_url: str = "redis://localhost:6379/0"
     ):
         self.config = storage_config

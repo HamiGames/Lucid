@@ -23,7 +23,7 @@ services:
       - ADMIN_INTERFACE_HOST=admin-interface
       - ADMIN_INTERFACE_PORT=8083
       - ADMIN_INTERFACE_URL=http://admin-interface:8083
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
     user: "65532:65532"
@@ -81,7 +81,7 @@ services:
       - TRON_NODE_URL=${TRON_NODE_URL}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -137,7 +137,7 @@ services:
       - TRON_NODE_URL=${TRON_NODE_URL}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -191,7 +191,7 @@ services:
       - TRON_NODE_URL=${TRON_NODE_URL}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -247,7 +247,7 @@ services:
       - TRON_ADDRESS=${TRON_ADDRESS}
       - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
       - USDT_DECIMALS=${USDT_DECIMALS}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -301,7 +301,7 @@ services:
       - TRON_NODE_URL=${TRON_NODE_URL}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -357,7 +357,7 @@ services:
       - TRON_ADDRESS=${TRON_ADDRESS}
       - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
       - USDT_DECIMALS=${USDT_DECIMALS}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:

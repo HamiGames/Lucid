@@ -143,7 +143,7 @@ class LucidSettings(BaseSettings):
     rdp_port: int = 3389
     
     # Database settings
-    mongodb_url: str = "mongodb://lucid:lucid@localhost:27017/lucid?authSource=admin"
+    mongodb_url: str = Field(default_factory=lambda: os.getenv("MONGODB_URL") or os.getenv("MONGO_URL") or "")
     redis_url: str = "redis://localhost:6379/0"
     
     # Security settings
@@ -169,6 +169,8 @@ class LucidSettings(BaseSettings):
     def validate_environment(cls, v):
         if v not in [e.value for e in Environment]:
             raise ValueError(f"Invalid environment: {v}")
+        if not v:
+            raise ValueError("MONGODB_URL/MONGO_URL must be set")
         return v
     
     @validator('secret_key')

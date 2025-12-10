@@ -21,7 +21,7 @@ services:
       - OPENAPI_GATEWAY_PORT=8095
       - OPENAPI_SERVER_URL=http://lucid-openapi-server:8096
       - API_GATEWAY_URL=http://lucid-api-gateway:8080
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URL=redis://lucid-redis:6379/0
     user: "65532:65532"
     security_opt:

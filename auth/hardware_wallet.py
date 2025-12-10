@@ -70,6 +70,28 @@ class HardwareWalletManager:
             WalletType.TREZOR: TrezorWalletHandler(),
             WalletType.KEEPKEY: KeepKeyWalletHandler()
         }
+
+    async def initialize(self) -> bool:
+        """Initialize hardware wallet subsystem (no-op placeholder for startup)."""
+        try:
+            await self.discover()  # best-effort discovery; ignore failures
+        except Exception as e:
+            logger.warning(f"Hardware wallet init warning: {e}")
+        return True
+
+    def is_available(self) -> bool:
+        """Report availability (stubbed as True)."""
+        return True
+
+    async def close(self) -> bool:
+        """Cleanup/disconnect all wallets (best-effort)."""
+        try:
+            tasks = [self.disconnect_wallet(dev_id) for dev_id in list(self.connected_wallets.keys())]
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+        except Exception as e:
+            logger.warning(f"Hardware wallet close warning: {e}")
+        return True
     
     async def discover_wallets(self) -> List[HardwareWalletInfo]:
         """Discover available hardware wallets"""

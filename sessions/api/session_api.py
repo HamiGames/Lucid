@@ -156,7 +156,7 @@ class SessionAPI:
     
     def __init__(
         self,
-        mongo_url: str = "mongodb://lucid:lucid@localhost:27017/lucid",
+        mongo_url: str | None = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL"),
         redis_url: str = "redis://localhost:6379/0"
     ):
         self.mongo_client = MongoClient(mongo_url)

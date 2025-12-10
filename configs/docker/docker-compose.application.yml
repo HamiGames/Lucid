@@ -23,7 +23,7 @@ services:
       - SESSION_PIPELINE_HOST=session-pipeline
       - SESSION_PIPELINE_PORT=8087
       - SESSION_PIPELINE_URL=http://session-pipeline:8087
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
     user: "65532:65532"
@@ -79,7 +79,7 @@ services:
       - SESSION_RECORDER_HOST=session-recorder
       - SESSION_RECORDER_PORT=8090
       - SESSION_RECORDER_URL=http://session-recorder:8090
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
     user: "65532:65532"
@@ -134,7 +134,7 @@ services:
       - SESSION_PROCESSOR_HOST=session-processor
       - SESSION_PROCESSOR_PORT=8091
       - SESSION_PROCESSOR_URL=http://session-processor:8091
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
     user: "65532:65532"
@@ -188,7 +188,7 @@ services:
       - SESSION_STORAGE_HOST=session-storage
       - SESSION_STORAGE_PORT=8082
       - SESSION_STORAGE_URL=http://session-storage:8082
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
     user: "65532:65532"
@@ -243,7 +243,7 @@ services:
       - SESSION_API_HOST=session-api
       - SESSION_API_PORT=8087
       - SESSION_API_URL=http://session-api:8087
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
       - API_GATEWAY_URL=${API_GATEWAY_URL}
@@ -307,7 +307,7 @@ services:
       - RDP_SERVER_MANAGER_HOST=rdp-server-manager
       - RDP_SERVER_MANAGER_PORT=8081
       - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8081
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - API_GATEWAY_URL=${API_GATEWAY_URL}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
@@ -369,7 +369,7 @@ services:
       - RDP_XRDP_HOST=rdp-xrdp
       - XRDP_PORT=3389
       - RDP_XRDP_URL=http://rdp-xrdp:3389
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -425,7 +425,7 @@ services:
       - RDP_CONTROLLER_HOST=rdp-controller
       - RDP_CONTROLLER_PORT=8092
       - RDP_CONTROLLER_URL=http://rdp-controller:8092
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -479,7 +479,7 @@ services:
       - RDP_MONITOR_HOST=rdp-monitor
       - RDP_MONITOR_PORT=8093
       - RDP_MONITOR_URL=http://rdp-monitor:8093
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -532,7 +532,7 @@ services:
       - NODE_MANAGEMENT_HOST=node-management
       - NODE_MANAGEMENT_PORT=8095
       - NODE_MANAGEMENT_URL=http://node-management:8095
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - API_GATEWAY_URL=${API_GATEWAY_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}

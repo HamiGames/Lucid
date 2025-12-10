@@ -22,7 +22,7 @@ services:
       - API_GATEWAY_PORT=8080
       - API_GATEWAY_URL=http://api-gateway:8080
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -84,7 +84,7 @@ services:
       - BLOCKCHAIN_ENGINE_HOST=blockchain-engine
       - BLOCKCHAIN_ENGINE_PORT=8084
       - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -146,7 +146,7 @@ services:
       - SERVICE_MESH_PORT=8500
       - SERVICE_MESH_URL=http://service-mesh:8500
       - HTTP_PORT=8088
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
     security_opt:
@@ -207,7 +207,7 @@ services:
       - SESSION_ANCHORING_HOST=session-anchoring
       - SESSION_ANCHORING_PORT=8085
       - SESSION_ANCHORING_URL=http://session-anchoring:8085
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
     user: "65532:65532"
@@ -269,7 +269,7 @@ services:
       - BLOCK_MANAGER_HOST=block-manager
       - BLOCK_MANAGER_PORT=8086
       - BLOCK_MANAGER_URL=http://block-manager:8086
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
     user: "65532:65532"
@@ -328,7 +328,7 @@ services:
       - DATA_CHAIN_HOST=data-chain
       - DATA_CHAIN_PORT=8087
       - DATA_CHAIN_URL=http://data-chain:8087
-      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
     user: "65532:65532"

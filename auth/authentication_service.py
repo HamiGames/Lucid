@@ -85,7 +85,9 @@ class AuthenticationService:
         """Initialize the authentication service"""
         try:
             # Initialize database connection
-            mongo_uri = os.getenv("MONGO_URI", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin")
+            mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI")
+            if not mongo_uri:
+                raise RuntimeError("MONGO_URI/MONGODB_URI not set (required for authentication service)")
             self.db_client = AsyncIOMotorClient(mongo_uri)
             db = self.db_client.lucid
             

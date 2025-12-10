@@ -27,7 +27,7 @@ services:
       - BLOCK_INTERVAL=10
       - TRON_NETWORK=mainnet
       - TRON_RPC_URL=https://api.trongrid.io
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URL=redis://lucid-redis:6379/0
       - API_GATEWAY_URL=http://lucid-api-gateway:8080
     user: "65532:65532"
