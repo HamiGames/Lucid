@@ -96,6 +96,13 @@ LABEL maintainer="Lucid Development Team" \
 COPY --from=mongodb-builder /usr/bin/mongod /usr/bin/mongod
 COPY --from=mongodb-builder /usr/bin/mongosh /usr/bin/mongosh
 
+# Copy MongoDB WiredTiger and other MongoDB libraries (CRITICAL - mongod won't start without these)
+# MongoDB 7.0 stores libraries in /usr/lib/mongodb/ or architecture-specific directories
+COPY --from=mongodb-builder /usr/lib/mongodb /usr/lib/mongodb 2>/dev/null || true
+# Also copy any MongoDB libraries in architecture-specific directories
+COPY --from=mongodb-builder /usr/lib/aarch64-linux-gnu/mongodb /usr/lib/aarch64-linux-gnu/mongodb 2>/dev/null || true
+COPY --from=mongodb-builder /usr/lib/x86_64-linux-gnu/mongodb /usr/lib/x86_64-linux-gnu/mongodb 2>/dev/null || true
+
 # Copy Python3 for healthcheck and entrypoint script (distroless-compatible)
 COPY --from=mongodb-builder /usr/bin/python3 /usr/bin/python3
 COPY --from=mongodb-builder /usr/lib/python3.* /usr/lib/

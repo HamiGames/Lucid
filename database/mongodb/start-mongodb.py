@@ -145,6 +145,55 @@ class MongoDBDistroless:
             logger.warning(f"Error checking data directory: {e}")
             return False
     
+    def detect_old_no_auth_data(self):
+        """Detect if existing data was created by old no-auth image that needs migration"""
+        try:
+            if not self.data_dir.exists():
+                return False
+            
+            # Check for MongoDB data files (indicates data exists)
+            has_mongo_data = False
+            mongo_indicators = ['WiredTiger', 'storage.bson', 'journal', 'diagnostic.data', 'mongod.lock']
+            
+            for item in self.data_dir.iterdir():
+                if item.name in mongo_indicators or item.is_dir():
+                    has_mongo_data = True
+                    break
+            
+            if not has_mongo_data:
+                return False  # No MongoDB data, not old data
+            
+            # Try to start MongoDB without auth to check if users exist
+            logger.info("Detecting old no-auth data - checking for existing users...")
+            
+            # Start MongoDB temporarily without auth to check users
+            if not self.start_mongodb(use_auth=False, bypass_localhost=True):
+                logger.warning("Could not start MongoDB to check for old data")
+                return False
+            
+            # Wait for MongoDB to be ready
+            time.sleep(2)
+            
+            # Check if users exist
+            users_exist = self.check_user_exists()
+            
+            # Stop MongoDB
+            self.stop_mongodb()
+            time.sleep(1)
+            self.mongod_process = None
+            
+            # If data exists but no users, this is old no-auth data that needs migration
+            if not users_exist:
+                logger.warning("⚠️ OLD NO-AUTH DATA DETECTED: Data exists but no users found")
+                logger.warning("This data was created by an old image that allowed no-auth")
+                logger.warning("Migration will be performed to add users with MONGODB_PASSWORD")
+                return True
+            
+            return False  # Users exist, not old no-auth data
+        except Exception as e:
+            logger.warning(f"Error detecting old no-auth data: {e}")
+            return False
+    
     def wait_for_mongodb(self, max_attempts=60, require_auth=False):
         """Wait for MongoDB to be ready and accepting connections"""
         password = os.getenv('MONGODB_PASSWORD', '')
@@ -593,16 +642,59 @@ class MongoDBDistroless:
             return self.start_mongodb(use_auth=True)
         
         else:
-            # Data exists - check if users exist
-            logger.info("Existing data detected - checking if users exist...")
+            # Data exists - check if this is old no-auth data that needs migration
+            logger.info("Existing data detected - checking if migration is needed...")
+            
+            # CRITICAL: Detect old no-auth data BEFORE trying to start with auth
+            # This prevents authentication failures and ensures migration runs properly
+            is_old_no_auth_data = self.detect_old_no_auth_data()
+            
+            if is_old_no_auth_data:
+                # MIGRATION PATH: Old no-auth data detected - migrate to auth-enabled
+                logger.info("🔄 MIGRATION: Old no-auth data detected - migrating to auth-enabled...")
+                logger.info("This data was created by an old image that allowed no-auth")
+                logger.info("Migration will create users with MONGODB_PASSWORD from environment")
+                
+                # Start MongoDB without auth (bypass_localhost for recovery)
+                if not self.start_mongodb(use_auth=False, bypass_localhost=True):
+                    logger.error("Migration failed: Could not start MongoDB without auth")
+                    return False
+                
+                # Wait for MongoDB to be ready
+                time.sleep(2)
+                
+                # Create/update users with MONGODB_PASSWORD
+                logger.info("Creating/updating users with MONGODB_PASSWORD...")
+                if not self.create_admin_user():
+                    logger.error("Migration failed: Could not create/update users")
+                    self.stop_mongodb()
+                    return False
+                
+                # Stop MongoDB
+                logger.info("Stopping MongoDB to restart with authentication after migration...")
+                self.stop_mongodb()
+                time.sleep(2)
+                self.mongod_process = None
+                
+                # Restart with auth enabled
+                logger.info("✅ Migration complete - restarting MongoDB with authentication enabled...")
+                return self.start_mongodb(use_auth=True)
+            
+            # Not old no-auth data - try normal startup with auth
+            logger.info("Existing data appears to have users - attempting normal startup with auth...")
             
             # Try starting with auth first
             if self.start_mongodb(use_auth=True):
-                # Check if we can connect (users exist)
+                # Check if we can connect (users exist and password is correct)
                 time.sleep(2)
                 if self.check_user_exists():
-                    logger.info("Users exist - MongoDB started successfully with authentication")
-                    return True
+                    # Verify authentication works
+                    if self.wait_for_mongodb(max_attempts=10, require_auth=True):
+                        logger.info("✅ Users exist and authentication successful - MongoDB started")
+                        return True
+                    else:
+                        logger.warning("Users exist but authentication failed - password mismatch detected")
+                        # Fall through to recovery
                 else:
                     logger.warning("No users found in existing data - initializing users...")
                     # Stop and restart without auth to create users
@@ -624,30 +716,30 @@ class MongoDBDistroless:
                     time.sleep(2)
                     self.mongod_process = None
                     return self.start_mongodb(use_auth=True)
-            else:
-                # Couldn't start with auth - likely password mismatch in existing data
-                logger.warning("Failed to start with auth - authentication failures detected")
-                logger.warning("This usually means the existing data has a different password than MONGODB_PASSWORD")
-                logger.warning("Attempting recovery with localhost bypass to reset password...")
-                
-                # Start without auth and with localhost bypass to reset password
-                if not self.start_mongodb(use_auth=False, bypass_localhost=True):
-                    logger.error("Recovery start without auth (localhost bypass) failed")
-                    return False
-                
-                # Create/update user password from MONGODB_PASSWORD
-                logger.info("Resetting user passwords to match MONGODB_PASSWORD environment variable...")
-                if not self.create_admin_user():
-                    logger.error("Failed to reset user passwords during recovery")
-                    self.stop_mongodb()
-                    return False
-                
-                # Restart with auth
-                logger.info("Restarting MongoDB with authentication enabled after password reset...")
+            
+            # Couldn't start with auth - likely password mismatch in existing data
+            logger.warning("Failed to start with auth - authentication failures detected")
+            logger.warning("This usually means the existing data has a different password than MONGODB_PASSWORD")
+            logger.warning("Attempting recovery with localhost bypass to reset password...")
+            
+            # Start without auth and with localhost bypass to reset password
+            if not self.start_mongodb(use_auth=False, bypass_localhost=True):
+                logger.error("Recovery start without auth (localhost bypass) failed")
+                return False
+            
+            # Create/update user password from MONGODB_PASSWORD
+            logger.info("Resetting user passwords to match MONGODB_PASSWORD environment variable...")
+            if not self.create_admin_user():
+                logger.error("Failed to reset user passwords during recovery")
                 self.stop_mongodb()
-                time.sleep(2)
-                self.mongod_process = None
-                return self.start_mongodb(use_auth=True)
+                return False
+            
+            # Restart with auth
+            logger.info("Restarting MongoDB with authentication enabled after password reset...")
+            self.stop_mongodb()
+            time.sleep(2)
+            self.mongod_process = None
+            return self.start_mongodb(use_auth=True)
     
     def signal_handler(self, signum, frame):
         """Handle shutdown signals gracefully"""
