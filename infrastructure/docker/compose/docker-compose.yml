@@ -3,8 +3,6 @@
 # Production-ready configuration with all 35 distroless services
 # Uses path_plan.md network configurations
 
-version: "3.8"
-
 services:
   # ============================================================================
   # PHASE 2: FOUNDATION SERVICES (4 images)
@@ -25,9 +23,9 @@ services:
         ipv4_address: 172.20.0.11
     environment:
       - MONGO_INITDB_ROOT_USERNAME=lucid
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-lucid}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
       - MONGO_INITDB_DATABASE=lucid
-      - MONGODB_PASSWORD=${MONGODB_PASSWORD:-lucid}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
       - MONGODB_PORT=27017
     healthcheck:
       test: ["CMD", "/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
@@ -92,7 +90,7 @@ services:
       lucid-pi-network:
         ipv4_address: 172.20.0.14
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=HS256
