@@ -84,8 +84,9 @@ WORKDIR /app
 # Copy application code from repository
 COPY ../../../auth/ /app/auth/
 
-# Create necessary directories for runtime
-RUN ["/busybox/mkdir", "-p", "/app/logs", "/app/data"]
+# Create necessary directories for runtime using Python (distroless-compatible)
+# Distroless has Python but no shell utilities like mkdir
+RUN ["/usr/bin/python3", "-c", "import os; os.makedirs('/app/logs', exist_ok=True); os.makedirs('/app/data', exist_ok=True)"]
 
 # Expose service port
 EXPOSE 8089

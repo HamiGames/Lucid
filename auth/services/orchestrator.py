@@ -113,7 +113,9 @@ class ServiceOrchestrator:
                 }
             
             # MongoDB environment variables
-            mongodb_password = os.getenv("MONGODB_PASSWORD", "lucid")
+            mongodb_password = os.getenv("MONGODB_PASSWORD")
+            if not mongodb_password:
+                raise RuntimeError("MONGODB_PASSWORD environment variable is required")
             env_vars = {
                 "MONGO_INITDB_ROOT_USERNAME": "lucid",
                 "MONGO_INITDB_ROOT_PASSWORD": mongodb_password,

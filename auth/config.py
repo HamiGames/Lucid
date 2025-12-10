@@ -7,7 +7,10 @@ from pydantic_settings import BaseSettings
 from pydantic import Field, validator
 from typing import List, Optional
 import os
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -27,22 +30,24 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
     
     # Database Configuration
-    # CRITICAL: Default URI assumes no auth for development only
-    # Production MUST set MONGODB_URI with credentials via environment variable
+    # CRITICAL: Production MUST set MONGODB_URI with credentials via environment variable
     # Format: mongodb://username:password@host:port/database?authSource=admin
     MONGODB_URI: str = Field(
-        default="mongodb://mongodb:27017/lucid_auth",
+        ...,
         env="MONGODB_URI",
-        description="MongoDB connection URI. Must include credentials in production: mongodb://lucid:PASSWORD@lucid-mongodb:27017/lucid_auth?authSource=admin"
+        description="MongoDB connection URI. Must include credentials: mongodb://lucid:PASSWORD@lucid-mongodb:27017/lucid_auth?authSource=admin"
     )
     MONGODB_DATABASE: str = Field(default="lucid_auth", env="MONGODB_DATABASE")
     MONGODB_MAX_POOL_SIZE: int = Field(default=100, env="MONGODB_MAX_POOL_SIZE")
     MONGODB_MIN_POOL_SIZE: int = Field(default=10, env="MONGODB_MIN_POOL_SIZE")
     
     # Redis Configuration
+    # CRITICAL: Production MUST set REDIS_URI with credentials via environment variable
+    # Format: redis://:password@host:port/db or redis://host:port/db
     REDIS_URI: str = Field(
-        default="redis://redis:6379/1",
-        env="REDIS_URI"
+        ...,
+        env="REDIS_URI",
+        description="Redis connection URI. Must include credentials in production: redis://:PASSWORD@lucid-redis:6379/0"
     )
     REDIS_MAX_CONNECTIONS: int = Field(default=50, env="REDIS_MAX_CONNECTIONS")
     REDIS_DECODE_RESPONSES: bool = Field(default=True, env="REDIS_DECODE_RESPONSES")
@@ -95,9 +100,11 @@ class Settings(BaseSettings):
     SESSION_IDLE_TIMEOUT_MINUTES: int = Field(default=30, env="SESSION_IDLE_TIMEOUT_MINUTES")
     
     # API Gateway Integration
+    # CRITICAL: Production MUST set API_GATEWAY_URL via environment variable
     API_GATEWAY_URL: str = Field(
-        default="http://api-gateway:8080",
-        env="API_GATEWAY_URL"
+        ...,
+        env="API_GATEWAY_URL",
+        description="API Gateway URL. Must be set via environment variable: http://api-gateway:8080"
     )
     
     # Service Mesh Integration
@@ -181,6 +188,9 @@ def validate_settings():
     
     if not settings.REDIS_URI:
         errors.append("REDIS_URI is required")
+    
+    if not settings.API_GATEWAY_URL:
+        errors.append("API_GATEWAY_URL is required")
     
     # Check port ranges
     if not (1024 <= settings.AUTH_SERVICE_PORT <= 65535):

@@ -90,12 +90,15 @@ class MongoDBCloneManager:
             await self._configure_node_mongodb(service_info, node_id, node_tron_address)
             
             # Store clone information
+            mongodb_password = os.getenv("MONGODB_PASSWORD")
+            if not mongodb_password:
+                raise RuntimeError("MONGODB_PASSWORD environment variable is required")
             clone_info = {
                 "clone_id": service_info["service_id"],
                 "node_id": node_id,
                 "node_tron_address": node_tron_address,
                 "instance_name": instance_name,
-                "mongodb_uri": f"mongodb://lucid:{os.getenv('MONGODB_PASSWORD', 'lucid')}@{service_info.get('ip_address', 'localhost')}:{service_info.get('port', 27017)}/lucid_node_{node_id}?authSource=admin",
+                "mongodb_uri": f"mongodb://lucid:{mongodb_password}@{service_info.get('ip_address', 'localhost')}:{service_info.get('port', 27017)}/lucid_node_{node_id}?authSource=admin",
                 "database_name": f"lucid_node_{node_id}",
                 "status": ServiceStatus.RUNNING.value,
                 "created_at": datetime.utcnow().isoformat(),
@@ -122,7 +125,10 @@ class MongoDBCloneManager:
         Returns:
             True if ready, False otherwise
         """
-        mongodb_uri = f"mongodb://lucid:{os.getenv('MONGODB_PASSWORD', 'lucid')}@{service_info.get('ip_address', 'localhost')}:{service_info.get('port', 27017)}/admin?authSource=admin"
+        mongodb_password = os.getenv("MONGODB_PASSWORD")
+        if not mongodb_password:
+            raise RuntimeError("MONGODB_PASSWORD environment variable is required")
+        mongodb_uri = f"mongodb://lucid:{mongodb_password}@{service_info.get('ip_address', 'localhost')}:{service_info.get('port', 27017)}/admin?authSource=admin"
         
         for attempt in range(max_attempts):
             try:
@@ -152,7 +158,10 @@ class MongoDBCloneManager:
             node_tron_address: Node's TRON address
         """
         try:
-            mongodb_uri = f"mongodb://lucid:{os.getenv('MONGODB_PASSWORD', 'lucid')}@{service_info.get('ip_address', 'localhost')}:{service_info.get('port', 27017)}/admin?authSource=admin"
+            mongodb_password = os.getenv("MONGODB_PASSWORD")
+            if not mongodb_password:
+                raise RuntimeError("MONGODB_PASSWORD environment variable is required")
+            mongodb_uri = f"mongodb://lucid:{mongodb_password}@{service_info.get('ip_address', 'localhost')}:{service_info.get('port', 27017)}/admin?authSource=admin"
             
             client = AsyncIOMotorClient(mongodb_uri)
             db = client[f"lucid_node_{node_id}"]
