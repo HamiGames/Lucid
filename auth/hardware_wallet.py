@@ -74,7 +74,7 @@ class HardwareWalletManager:
     async def initialize(self) -> bool:
         """Initialize hardware wallet subsystem (no-op placeholder for startup)."""
         try:
-            await self.discover()  # best-effort discovery; ignore failures
+            await self.discover_wallets()  # best-effort discovery; ignore failures
         except Exception as e:
             logger.warning(f"Hardware wallet init warning: {e}")
         return True
