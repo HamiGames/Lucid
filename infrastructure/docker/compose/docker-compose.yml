@@ -866,12 +866,8 @@ services:
 networks:
   # Primary Network - All services (path_plan.md)
   lucid-pi-network:
+    external: true
     name: lucid-pi-network
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
 
   # TRON Isolation Network (path_plan.md)
   lucid-tron-isolated:
