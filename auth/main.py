@@ -196,7 +196,7 @@ app.add_middleware(RateLimitMiddleware)
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint - always returns HTTP 200, even if dependencies are degraded"""
     # Check database health
     db_healthy = False
     if mongodb_client:
@@ -206,16 +206,41 @@ async def health_check():
         except Exception:
             db_healthy = False
     
+    # Check Redis health with exception handling
+    redis_healthy = False
+    try:
+        redis_healthy = await session_manager.health_check()
+    except Exception as e:
+        logger.warning(f"Redis health check failed: {e}")
+        redis_healthy = False
+    
+    # Check hardware wallet availability with exception handling
+    hw_available = False
+    hw_status = "disabled"
+    if settings.ENABLE_HARDWARE_WALLET:
+        try:
+            hw_available = hardware_wallet_service.is_available()
+            hw_status = "available" if hw_available else "unavailable"
+        except Exception as e:
+            logger.warning(f"Hardware wallet health check failed: {e}")
+            hw_available = False
+            hw_status = "error"
+    else:
+        hw_status = "disabled"
+    
+    # Determine overall status (healthy if all critical dependencies are up)
+    overall_healthy = db_healthy and redis_healthy
+    
     return {
-        "status": "healthy" if db_healthy else "degraded",
+        "status": "healthy" if overall_healthy else "degraded",
         "service": "auth-service",
         "version": "1.0.0",
         "timestamp": datetime.utcnow().isoformat(),
         "environment": settings.ENVIRONMENT,
         "dependencies": {
             "database": db_healthy,
-            "redis": await session_manager.health_check(),
-            "hardware_wallet": hardware_wallet_service.is_available() if settings.ENABLE_HARDWARE_WALLET else "disabled"
+            "redis": redis_healthy,
+            "hardware_wallet": hw_status
         }
     }
 
