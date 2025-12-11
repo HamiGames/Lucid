@@ -17,9 +17,10 @@ def _get_client() -> AsyncIOMotorClient:
     global _client, _db
     if _client is None:
         settings = get_settings()
-        _client = AsyncIOMotorClient(settings.MONGO_URI)
-        _db = _client[settings.MONGO_DB]
-        _logger.info("Mongo connected db=%s", settings.MONGO_DB)
+        # Use DATABASE_URL and DATABASE_NAME from settings (aligned with config.py)
+        _client = AsyncIOMotorClient(settings.DATABASE_URL)
+        _db = _client[settings.DATABASE_NAME]
+        _logger.info("Mongo connected db=%s", settings.DATABASE_NAME)
     return _client
 
 

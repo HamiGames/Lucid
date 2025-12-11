@@ -28,17 +28,27 @@ class DatabaseConnection:
         try:
             logger.info(f"Connecting to MongoDB database: {self.database_name}")
             
-            # Create client with connection options
+            # Get connection pool settings from environment variables
+            server_selection_timeout_ms = int(os.getenv("MONGODB_SERVER_SELECTION_TIMEOUT_MS", "5000"))
+            connect_timeout_ms = int(os.getenv("MONGODB_CONNECT_TIMEOUT_MS", "10000"))
+            socket_timeout_ms = int(os.getenv("MONGODB_SOCKET_TIMEOUT_MS", "20000"))
+            max_pool_size = int(os.getenv("MONGODB_MAX_POOL_SIZE", "50"))
+            min_pool_size = int(os.getenv("MONGODB_MIN_POOL_SIZE", "5"))
+            max_idle_time_ms = int(os.getenv("MONGODB_MAX_IDLE_TIME_MS", "30000"))
+            retry_writes = os.getenv("MONGODB_RETRY_WRITES", "true").lower() in ("true", "1", "yes")
+            retry_reads = os.getenv("MONGODB_RETRY_READS", "true").lower() in ("true", "1", "yes")
+            
+            # Create client with connection options from environment
             self.client = AsyncIOMotorClient(
                 self.connection_string,
-                serverSelectionTimeoutMS=5000,  # 5 second timeout
-                connectTimeoutMS=10000,         # 10 second connection timeout
-                socketTimeoutMS=20000,          # 20 second socket timeout
-                maxPoolSize=50,                 # Maximum connection pool size
-                minPoolSize=5,                  # Minimum connection pool size
-                maxIdleTimeMS=30000,           # 30 second max idle time
-                retryWrites=True,              # Enable retryable writes
-                retryReads=True                # Enable retryable reads
+                serverSelectionTimeoutMS=server_selection_timeout_ms,
+                connectTimeoutMS=connect_timeout_ms,
+                socketTimeoutMS=socket_timeout_ms,
+                maxPoolSize=max_pool_size,
+                minPoolSize=min_pool_size,
+                maxIdleTimeMS=max_idle_time_ms,
+                retryWrites=retry_writes,
+                retryReads=retry_reads
             )
             
             # Get database reference
@@ -178,14 +188,13 @@ async def get_database_connection() -> DatabaseConnection:
     global _db_connection
     
     if _db_connection is None:
-        # Get connection details from environment
-        connection_string = os.getenv(
-            "MONGODB_URI", 
-            "mongodb://localhost:27017"
-        )
+        # Get connection details from environment (required)
+        connection_string = os.getenv("MONGODB_URI") or os.getenv("MONGODB_URL")
+        if not connection_string:
+            raise RuntimeError("MONGODB_URI or MONGODB_URL environment variable not set")
         database_name = os.getenv(
-            "BLOCKCHAIN_DB_NAME", 
-            "lucid_blocks"
+            "BLOCKCHAIN_DB_NAME",
+            os.getenv("DATABASE_NAME", os.getenv("MONGO_DB", "lucid_blockchain"))
         )
         
         _db_connection = DatabaseConnection(connection_string, database_name)

@@ -445,7 +445,11 @@ if __name__ == "__main__":
         from motor.motor_asyncio import AsyncIOMotorClient
         
         # Connect to MongoDB
-        client = AsyncIOMotorClient("mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
+        import os
+        mongo_uri = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")
+        if not mongo_uri:
+            raise RuntimeError("MONGO_URL or MONGODB_URL environment variable must be set")
+        client = AsyncIOMotorClient(mongo_uri)
         db = client["lucid_test"]
         
         # Create manifest manager

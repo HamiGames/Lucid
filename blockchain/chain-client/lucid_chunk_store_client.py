@@ -173,13 +173,16 @@ class LucidChunkStoreClient:
     def __init__(
         self,
         contract_address: str = LUCID_CHUNK_STORE_CONTRACT_ADDRESS,
-        rpc_url: str = "http://on-chain-distroless:8545",
+        rpc_url: Optional[str] = None,
         private_key: Optional[str] = None,
         output_dir: str = "/data/chunk-store"
     ):
         """Initialize Lucid Chunk Store client"""
+        import os
         self.contract_address = contract_address
-        self.rpc_url = rpc_url
+        self.rpc_url = rpc_url or os.getenv("ON_SYSTEM_CHAIN_RPC") or os.getenv("ON_SYSTEM_CHAIN_RPC_URL")
+        if not self.rpc_url:
+            raise RuntimeError("rpc_url must be provided or ON_SYSTEM_CHAIN_RPC/ON_SYSTEM_CHAIN_RPC_URL environment variable must be set")
         self.private_key = private_key
         self.output_dir = Path(output_dir)
         
@@ -821,7 +824,7 @@ def get_chunk_store_client() -> Optional[LucidChunkStoreClient]:
 
 def create_chunk_store_client(
     contract_address: str = LUCID_CHUNK_STORE_CONTRACT_ADDRESS,
-    rpc_url: str = "http://on-chain-distroless:8545",
+    rpc_url: Optional[str] = None,
     private_key: Optional[str] = None,
     output_dir: str = "/data/chunk-store"
 ) -> LucidChunkStoreClient:

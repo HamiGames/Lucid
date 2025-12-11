@@ -26,10 +26,14 @@ logger = logging.getLogger(__name__)
 # ON-SYSTEM DATA CHAIN CONFIGURATION (R-MUST-016)
 # =============================================================================
 
-ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC", "http://on-chain-distroless:8545")
+ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC") or os.getenv("ON_SYSTEM_CHAIN_RPC_URL")
+if not ON_SYSTEM_CHAIN_RPC:
+    raise RuntimeError("ON_SYSTEM_CHAIN_RPC or ON_SYSTEM_CHAIN_RPC_URL environment variable not set")
 LUCID_ANCHORS_ADDRESS = os.getenv("LUCID_ANCHORS_ADDRESS", "")
 LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
+MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")
+if not MONGO_URL:
+    raise RuntimeError("MONGO_URL or MONGODB_URL environment variable not set")
 
 # =============================================================================
 # PAYMENT SERVICE INTEGRATION (R-MUST-015, R-MUST-018) - ISOLATED

@@ -35,14 +35,28 @@ class ConsensusService:
     @staticmethod
     async def list_participants() -> Dict[str, Any]:
         """Returns a list of nodes participating in consensus."""
+        import os
         logger.info("Listing consensus participants")
         
+        # Get configuration from environment (no hardcoded defaults)
+        blockchain_engine_url = os.getenv("BLOCKCHAIN_ENGINE_URL")
+        if not blockchain_engine_url:
+            # Construct from host and port if URL not provided
+            blockchain_engine_host = os.getenv("BLOCKCHAIN_ENGINE_HOST", "blockchain-engine")
+            default_port = os.getenv("BLOCKCHAIN_ENGINE_PORT", "8084")
+            blockchain_engine_url = f"http://{blockchain_engine_host}:{default_port}"
+        else:
+            default_port = os.getenv("BLOCKCHAIN_ENGINE_PORT", "8084")
+        
+        peer_base_address = os.getenv("PEER_BASE_ADDRESS", os.getenv("BLOCKCHAIN_ENGINE_HOST", "blockchain-engine"))
+        
         # Placeholder implementation
+        # In production, this would query actual consensus participants from database
         participants = []
         for i in range(25):  # Mock data
             participants.append({
                 "node_id": f"node_{i:03d}",
-                "address": f"192.168.1.{100 + i}:8084",
+                "address": f"{peer_base_address}:{default_port}",
                 "status": "active" if i < 23 else "standby",
                 "stake": 40000.0 + i * 1000.0,
                 "last_activity": datetime.now().isoformat()

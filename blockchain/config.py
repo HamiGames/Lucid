@@ -11,7 +11,7 @@ class ChainConfig:
 
     network_id: str = os.getenv("LUCID_NETWORK_ID", "lucid-dev")
     block_time_secs: int = int(os.getenv("LUCID_BLOCK_TIME", "5"))
-    db_url: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+    db_url: str = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL", "")
     db_name: str = os.getenv("MONGO_DB", "lucid")
 
     # Simplified PoA-ish

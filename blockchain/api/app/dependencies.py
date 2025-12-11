@@ -41,17 +41,53 @@ class RedisClient:
 
 # In-memory storage for demo purposes
 # In production, use proper database and Redis connections
-USERS_DB = {
-    "blockchain_user": User("user_001", "blockchain_user", ["read", "write", "admin"]),
-    "api_user": User("user_002", "api_user", ["read", "write"]),
-    "readonly_user": User("user_003", "readonly_user", ["read"])
-}
+# NOTE: These are placeholders - should be loaded from environment or database
+import os
 
-API_KEYS = {
-    "VALID_BLOCKCHAIN_API_TOKEN": "blockchain_user",
-    "VALID_API_KEY": "api_user",
-    "READONLY_API_KEY": "readonly_user"
-}
+def _load_users_from_env():
+    """Load users from environment variables."""
+    users = {}
+    
+    # Load users from environment (optional - can be overridden by database)
+    blockchain_user_id = os.getenv("USER_BLOCKCHAIN_ID", "user_001")
+    blockchain_username = os.getenv("USER_BLOCKCHAIN_USERNAME", "blockchain_user")
+    blockchain_perms = os.getenv("USER_BLOCKCHAIN_PERMISSIONS", "read,write,admin").split(",")
+    users["blockchain_user"] = User(blockchain_user_id, blockchain_username, blockchain_perms)
+    
+    api_user_id = os.getenv("USER_API_ID", "user_002")
+    api_username = os.getenv("USER_API_USERNAME", "api_user")
+    api_perms = os.getenv("USER_API_PERMISSIONS", "read,write").split(",")
+    users["api_user"] = User(api_user_id, api_username, api_perms)
+    
+    readonly_user_id = os.getenv("USER_READONLY_ID", "user_003")
+    readonly_username = os.getenv("USER_READONLY_USERNAME", "readonly_user")
+    readonly_perms = os.getenv("USER_READONLY_PERMISSIONS", "read").split(",")
+    users["readonly_user"] = User(readonly_user_id, readonly_username, readonly_perms)
+    
+    return users
+
+def _load_api_keys_from_env():
+    """Load API keys from environment variables."""
+    api_keys = {}
+    
+    # Load API keys from environment
+    # Format: API_KEY_<name>=<key_value> maps to user_id
+    blockchain_key = os.getenv("API_KEY_BLOCKCHAIN", "")
+    if blockchain_key:
+        api_keys[blockchain_key] = os.getenv("API_KEY_BLOCKCHAIN_USER", "blockchain_user")
+    
+    api_key = os.getenv("API_KEY_API", "")
+    if api_key:
+        api_keys[api_key] = os.getenv("API_KEY_API_USER", "api_user")
+    
+    readonly_key = os.getenv("API_KEY_READONLY", "")
+    if readonly_key:
+        api_keys[readonly_key] = os.getenv("API_KEY_READONLY_USER", "readonly_user")
+    
+    return api_keys
+
+USERS_DB = _load_users_from_env()
+API_KEYS = _load_api_keys_from_env()
 
 def get_database() -> Database:
     """Get database connection."""
@@ -94,11 +130,20 @@ def get_current_user(
     # Try JWT token
     if credentials:
         token = credentials.credentials
-        # In production, validate JWT token
-        if token == "VALID_BLOCKCHAIN_API_TOKEN":
-            return USERS_DB["blockchain_user"]
-        elif token == "VALID_JWT_TOKEN":
-            return USERS_DB["api_user"]
+        # In production, validate JWT token using SecurityManager
+        # This is a placeholder - should use proper JWT validation
+        from ..security import SecurityManager
+        from ..config import settings
+        
+        try:
+            security_manager = SecurityManager(settings.SECRET_KEY, settings.ALGORITHM)
+            payload = security_manager.verify_token(token)
+            if payload:
+                user_id = payload.get("user_id")
+                if user_id and user_id in USERS_DB:
+                    return USERS_DB[user_id]
+        except Exception as e:
+            logger.debug(f"JWT token validation failed: {e}")
     
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

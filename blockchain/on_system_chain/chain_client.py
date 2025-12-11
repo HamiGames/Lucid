@@ -77,8 +77,10 @@ class OnSystemChainClient:
         output_dir: str = "/data/chain",
         contract_addresses: Optional[Dict[str, str]] = None
     ):
-        # Use environment variables or defaults
-        self.rpc_url = rpc_url or os.getenv("ON_SYSTEM_CHAIN_RPC", "http://on-chain-distroless:8545")
+        # Use environment variables (required)
+        self.rpc_url = rpc_url or os.getenv("ON_SYSTEM_CHAIN_RPC") or os.getenv("ON_SYSTEM_CHAIN_RPC_URL")
+        if not self.rpc_url:
+            raise RuntimeError("rpc_url must be provided or ON_SYSTEM_CHAIN_RPC/ON_SYSTEM_CHAIN_RPC_URL environment variable must be set")
         self.chain_id = chain_id
         self.private_key = private_key
         self.output_dir = Path(output_dir)
@@ -625,7 +627,7 @@ async def main():
     parser.add_argument("--session-id", required=True, help="Session ID")
     parser.add_argument("--owner-address", required=True, help="Owner address")
     parser.add_argument("--merkle-root", required=True, help="Merkle root hash")
-    parser.add_argument("--rpc-url", default="http://on-chain-distroless:8545", help="RPC URL")
+    parser.add_argument("--rpc-url", default=None, help="RPC URL (or set ON_SYSTEM_CHAIN_RPC/ON_SYSTEM_CHAIN_RPC_URL env var)")
     parser.add_argument("--output-dir", default="/data/chain", help="Output directory")
     
     args = parser.parse_args()

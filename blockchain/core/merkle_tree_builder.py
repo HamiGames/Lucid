@@ -77,7 +77,9 @@ class MerkleTreeBuilder:
     
     def __init__(self, db: AsyncIOMotorDatabase, storage_path: Optional[str] = None):
         self.db = db
-        self.storage_path = storage_path or "/data/merkle"
+        # Use environment variable for storage path, fallback to default
+        import os
+        self.storage_path = storage_path or os.getenv("MERKLE_STORAGE_PATH", "/data/merkle")
         
         # Tree cache for recent trees
         self.tree_cache: Dict[str, MerkleTree] = {}

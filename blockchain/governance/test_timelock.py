@@ -15,9 +15,11 @@ Version: 1.0.0
 import asyncio
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from typing import Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from timelock import (
@@ -44,8 +46,10 @@ logger = logging.getLogger(__name__)
 class TimelockTester:
     """Timelock governance system tester"""
     
-    def __init__(self, mongo_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin"):
-        self.mongo_uri = mongo_uri
+    def __init__(self, mongo_uri: Optional[str] = None):
+        self.mongo_uri = mongo_uri or os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")
+        if not self.mongo_uri:
+            raise RuntimeError("mongo_uri must be provided or MONGO_URL/MONGODB_URL environment variable must be set")
         self.client: AsyncIOMotorClient = None
         self.timelock: TimelockGovernance = None
         self.test_results = []

@@ -85,30 +85,47 @@ class AuthMiddleware(BaseHTTPMiddleware):
     
     async def _authenticate_api_key(self, api_key: str) -> Optional[dict]:
         """Authenticate API key."""
+        import os
         try:
-            # In production, validate against database
-            # For now, use placeholder validation
-            if api_key == "VALID_BLOCKCHAIN_API_TOKEN":
+            # Get API keys from environment variables
+            # Format: API_KEY_<name>=<key_value> or API_KEY_<name>_USER=<user_id>
+            # Example: API_KEY_BLOCKCHAIN=your-key-here, API_KEY_BLOCKCHAIN_USER=blockchain_user
+            
+            # Check environment for API key mappings
+            # In production, this should query a database or use a proper API key service
+            valid_api_keys = {}
+            
+            # Load API keys from environment (optional - can be overridden by database)
+            env_api_keys = {
+                os.getenv("API_KEY_BLOCKCHAIN", ""): {
+                    "user_id": os.getenv("API_KEY_BLOCKCHAIN_USER", "blockchain_user"),
+                    "username": os.getenv("API_KEY_BLOCKCHAIN_USERNAME", "blockchain_user"),
+                    "permissions": os.getenv("API_KEY_BLOCKCHAIN_PERMISSIONS", "read,write,admin").split(",")
+                },
+                os.getenv("API_KEY_READONLY", ""): {
+                    "user_id": os.getenv("API_KEY_READONLY_USER", "readonly_user"),
+                    "username": os.getenv("API_KEY_READONLY_USERNAME", "readonly_user"),
+                    "permissions": os.getenv("API_KEY_READONLY_PERMISSIONS", "read").split(",")
+                }
+            }
+            
+            # Remove empty keys
+            valid_api_keys = {k: v for k, v in env_api_keys.items() if k}
+            
+            # Check if API key is valid
+            if api_key in valid_api_keys:
+                user_info = valid_api_keys[api_key]
                 return {
-                    "user_id": "blockchain_user",
-                    "username": "blockchain_user",
-                    "permissions": ["read", "write", "admin"],
+                    "user_id": user_info["user_id"],
+                    "username": user_info["username"],
+                    "permissions": user_info["permissions"],
                     "auth_method": "api_key"
                 }
-            elif api_key == "VALID_API_KEY":
-                return {
-                    "user_id": "api_user",
-                    "username": "api_user",
-                    "permissions": ["read", "write"],
-                    "auth_method": "api_key"
-                }
-            elif api_key == "READONLY_API_KEY":
-                return {
-                    "user_id": "readonly_user",
-                    "username": "readonly_user",
-                    "permissions": ["read"],
-                    "auth_method": "api_key"
-                }
+            
+            # TODO: In production, query database for API key validation
+            # This is a placeholder - should be replaced with database lookup
+            logger.warning(f"API key authentication attempted but key not found in environment")
+            
         except Exception as e:
             logger.error(f"API key authentication failed: {e}")
         

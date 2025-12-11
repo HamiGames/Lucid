@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import secrets
 import time
 import json
@@ -25,8 +26,10 @@ import aiofiles
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-ON_SYSTEM_CHAIN_RPC_URL = "http://on-chain-distroless:8545"
+# Configuration from environment (required)
+ON_SYSTEM_CHAIN_RPC_URL = os.getenv("ON_SYSTEM_CHAIN_RPC") or os.getenv("ON_SYSTEM_CHAIN_RPC_URL")
+if not ON_SYSTEM_CHAIN_RPC_URL:
+    raise RuntimeError("ON_SYSTEM_CHAIN_RPC or ON_SYSTEM_CHAIN_RPC_URL environment variable not set")
 ON_SYSTEM_CHAIN_ID = 1337
 LUCID_ANCHORS_CONTRACT_ADDRESS = "0x1234567890123456789012345678901234567890"
 LUCID_CHUNK_STORE_CONTRACT_ADDRESS = "0x2345678901234567890123456789012345678901"

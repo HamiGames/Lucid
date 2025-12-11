@@ -120,31 +120,33 @@ class RateLimiterManager:
     """Rate limiter manager for different endpoint categories."""
     
     def __init__(self):
+        import os
+        # Load rate limit configurations from environment variables
         self.limiters: Dict[str, Dict[str, Any]] = {
             "blockchain_queries": {
-                "limit": 500,
-                "window": 60,
-                "type": "sliding_window"
+                "limit": int(os.getenv("RATE_LIMIT_BLOCKCHAIN_QUERIES", "500")),
+                "window": int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+                "type": os.getenv("RATE_LIMIT_TYPE", "sliding_window")
             },
             "transaction_submission": {
-                "limit": 100,
-                "window": 60,
-                "type": "sliding_window"
+                "limit": int(os.getenv("RATE_LIMIT_TRANSACTION_SUBMISSION", "100")),
+                "window": int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+                "type": os.getenv("RATE_LIMIT_TYPE", "sliding_window")
             },
             "session_anchoring": {
-                "limit": 50,
-                "window": 60,
-                "type": "sliding_window"
+                "limit": int(os.getenv("RATE_LIMIT_SESSION_ANCHORING", "50")),
+                "window": int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+                "type": os.getenv("RATE_LIMIT_TYPE", "sliding_window")
             },
             "consensus_operations": {
-                "limit": 200,
-                "window": 60,
-                "type": "sliding_window"
+                "limit": int(os.getenv("RATE_LIMIT_CONSENSUS_OPERATIONS", "200")),
+                "window": int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+                "type": os.getenv("RATE_LIMIT_TYPE", "sliding_window")
             },
             "merkle_operations": {
-                "limit": 300,
-                "window": 60,
-                "type": "sliding_window"
+                "limit": int(os.getenv("RATE_LIMIT_MERKLE_OPERATIONS", "300")),
+                "window": int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+                "type": os.getenv("RATE_LIMIT_TYPE", "sliding_window")
             }
         }
         
@@ -159,10 +161,11 @@ class RateLimiterManager:
                 self.client_limiters[client_id] = {}
             
             if category not in self.client_limiters[client_id]:
+                import os
                 config = self.limiters.get(category, {
-                    "limit": 100,
-                    "window": 60,
-                    "type": "sliding_window"
+                    "limit": int(os.getenv("RATE_LIMIT_DEFAULT", "100")),
+                    "window": int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")),
+                    "type": os.getenv("RATE_LIMIT_TYPE", "sliding_window")
                 })
                 
                 if config["type"] == "token_bucket":

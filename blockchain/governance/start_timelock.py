@@ -48,11 +48,14 @@ class TimelockService:
     
     def __init__(
         self,
-        mongo_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin",
+        mongo_uri: Optional[str] = None,
         output_dir: str = "/data/timelock",
         config: Optional[TimelockConfig] = None
     ):
-        self.mongo_uri = mongo_uri
+        import os
+        self.mongo_uri = mongo_uri or os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")
+        if not self.mongo_uri:
+            raise RuntimeError("mongo_uri must be provided or MONGO_URL/MONGODB_URL environment variable must be set")
         self.output_dir = Path(output_dir)
         self.config = config
         self.client: Optional[AsyncIOMotorClient] = None
@@ -192,10 +195,7 @@ async def main():
     parser.add_argument(
         "--mongo-uri",
         type=str,
-        default=os.getenv(
-            "MONGO_URI",
-            "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin"
-        ),
+        default=os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("MONGO_URI"),
         help="MongoDB connection URI"
     )
     

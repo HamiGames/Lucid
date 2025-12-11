@@ -33,8 +33,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
+# Configuration from environment (required)
+MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+if not MONGODB_URL:
+    raise RuntimeError("MONGODB_URL or MONGO_URL environment variable not set")
 CONTRACT_ARTIFACTS_PATH = Path(os.getenv("CONTRACT_ARTIFACTS_PATH", "/data/contracts"))
 DEPLOYMENT_LOG_PATH = Path(os.getenv("DEPLOYMENT_LOG_PATH", "/data/logs"))
 

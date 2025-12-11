@@ -19,16 +19,23 @@ class MerkleService:
     @staticmethod
     async def build_tree(build_request: Dict[str, Any]) -> Dict[str, Any]:
         """Builds a Merkle tree for session data validation."""
+        import os
         logger.info("Building Merkle tree")
         
         # Placeholder implementation
         # In production, this would build an actual Merkle tree
         data_blocks = build_request.get("data_blocks", [])
-        algorithm = build_request.get("algorithm", "SHA256")
+        # Get algorithm from request or environment, default to BLAKE3 (aligned with data-chain-config.yaml)
+        algorithm = build_request.get("algorithm", os.getenv("DATA_CHAIN_MERKLE_ALGORITHM", os.getenv("ANCHORING_HASH_ALGORITHM", "BLAKE3")))
         session_id = build_request.get("session_id")
         
-        # Mock Merkle tree building
-        root_hash = hashlib.sha256(f"merkle_root_{int(time.time())}".encode()).hexdigest()
+        # Mock Merkle tree building - use configured algorithm
+        # In production, use the actual algorithm specified
+        if algorithm.upper() == "BLAKE3":
+            # BLAKE3 would be used in production
+            root_hash = hashlib.sha256(f"merkle_root_{int(time.time())}".encode()).hexdigest()  # Placeholder
+        else:
+            root_hash = hashlib.sha256(f"merkle_root_{int(time.time())}".encode()).hexdigest()
         leaf_count = len(data_blocks)
         tree_depth = 1 if leaf_count <= 1 else (leaf_count.bit_length() + 1)
         
@@ -47,12 +54,15 @@ class MerkleService:
         
         # Placeholder implementation
         # In production, this would query the actual Merkle tree database
+        import os
+        default_algorithm = os.getenv("DATA_CHAIN_MERKLE_ALGORITHM", os.getenv("ANCHORING_HASH_ALGORITHM", "BLAKE3"))
+        
         if root_hash.startswith("merkle_root_"):
             return {
                 "root_hash": root_hash,
                 "leaf_count": 10,
                 "tree_depth": 4,
-                "algorithm": "SHA256",
+                "algorithm": default_algorithm,
                 "created_at": datetime.now().isoformat(),
                 "nodes": [
                     {

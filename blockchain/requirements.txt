@@ -8,6 +8,15 @@ pydantic>=2.5.0
 sqlalchemy>=2.0.0
 alembic>=1.13.0
 psycopg2-binary>=2.9.0
+motor>=3.3.0
+pymongo>=4.6.0
+
+# Blockchain & Crypto
+blake3>=0.3.0
+web3>=6.15.0
+
+# Cache & Session
+redis>=5.0.0
 
 # Security
 cryptography>=41.0.0
@@ -17,10 +26,18 @@ passlib[bcrypt]>=1.7.4
 # HTTP client
 httpx>=0.25.0
 requests>=2.31.0
+aiohttp>=3.9.0
 
 # Async support
 asyncio-mqtt>=0.16.0
 aiofiles>=23.2.0
+
+# Configuration
+pyyaml>=6.0.0
+
+# Compression (optional, for data chain)
+lz4>=4.3.0
+zstandard>=0.22.0
 
 # Monitoring
 prometheus-client>=0.19.0

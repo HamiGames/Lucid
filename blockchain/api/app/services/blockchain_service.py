@@ -82,16 +82,30 @@ class BlockchainService:
     @staticmethod
     async def get_network_info() -> Dict[str, Any]:
         """Get information about the lucid_blocks network topology and peers."""
+        import os
         logger.info("Fetching network topology")
         
+        # Get configuration from environment (no hardcoded defaults)
+        blockchain_engine_url = os.getenv("BLOCKCHAIN_ENGINE_URL")
+        if not blockchain_engine_url:
+            # Construct from host and port if URL not provided
+            blockchain_engine_host = os.getenv("BLOCKCHAIN_ENGINE_HOST", "blockchain-engine")
+            default_port = os.getenv("BLOCKCHAIN_ENGINE_PORT", "8084")
+            blockchain_engine_url = f"http://{blockchain_engine_host}:{default_port}"
+        else:
+            default_port = os.getenv("BLOCKCHAIN_ENGINE_PORT", "8084")
+        
+        peer_base_address = os.getenv("PEER_BASE_ADDRESS", os.getenv("BLOCKCHAIN_ENGINE_HOST", "blockchain-engine"))
+        
         # Placeholder implementation
+        # In production, this would query actual network peers from database
         return {
             "total_peers": 15,
             "active_peers": 12,
             "peer_list": [
                 {
                     "peer_id": "peer_001",
-                    "address": "192.168.1.100:8084",
+                    "address": f"{peer_base_address}:{default_port}",
                     "status": "connected",
                     "last_seen": datetime.now().isoformat(),
                     "version": "1.0.0",
@@ -99,7 +113,7 @@ class BlockchainService:
                 },
                 {
                     "peer_id": "peer_002", 
-                    "address": "192.168.1.101:8084",
+                    "address": f"{peer_base_address}:{default_port}",
                     "status": "connected",
                     "last_seen": datetime.now().isoformat(),
                     "version": "1.0.0",

@@ -39,12 +39,14 @@ chunk_management:
     max_parallel_requests: 10
 
 # Merkle Tree Configuration
+# ALIGNED WITH: blockchain/core/merkle_tree_builder.py, blockchain/utils/crypto.py
 merkle_tree:
   enabled: true
-  algorithm: "SHA256"  # Options: SHA256, SHA3-256, Blake3
+  algorithm: "blake3"  # ALIGNED: blockchain/core/merkle_tree_builder.py:32 (HASH_ALGORITHM = "blake3")
   tree_type: "binary"  # Options: binary, ternary, k_ary
   leaf_hash_size_bytes: 32
   node_hash_size_bytes: 32
+  max_tree_height: 20  # ALIGNED: blockchain/core/merkle_tree_builder.py:31 (MERKLE_TREE_HEIGHT_MAX = 20)
   
   # Tree Construction
   construction:
@@ -81,7 +83,7 @@ integrity:
     verify_chunk_hashes: true
     verify_merkle_root: true
     verify_proof_paths: true
-    hash_algorithm: "SHA256"
+    hash_algorithm: "blake3"  # ALIGNED: blockchain/utils/crypto.py:28 (HASH_ALGORITHM = "blake3")
     verification_on_retrieval: true
     verification_on_storage: true
 
@@ -114,7 +116,7 @@ chunk_linking:
 deduplication:
   enabled: true
   method: "content_hash"  # Options: content_hash, semantic_hash
-  hash_algorithm: "SHA256"
+  hash_algorithm: "blake3"  # ALIGNED: blockchain/utils/crypto.py:28 (HASH_ALGORITHM = "blake3")
   store_references: true
   reference_counting: true
   garbage_collection_enabled: true

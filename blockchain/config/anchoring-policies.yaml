@@ -43,11 +43,12 @@ anchoring_rules:
     verify_chunk_integrity: true
 
   # Merkle Tree Anchoring
+  # ALIGNED WITH: blockchain/core/merkle_tree_builder.py, blockchain/utils/crypto.py
   merkle_tree:
     enabled: true
-    tree_depth: 10
-    leaf_hash_algorithm: "SHA256"
-    root_hash_algorithm: "SHA256"
+    tree_depth: 20  # ALIGNED: blockchain/core/merkle_tree_builder.py:31 (MERKLE_TREE_HEIGHT_MAX = 20)
+    leaf_hash_algorithm: "blake3"  # ALIGNED: blockchain/core/merkle_tree_builder.py:32
+    root_hash_algorithm: "blake3"  # ALIGNED: blockchain/utils/crypto.py:28
     anchor_root_only: true
     include_proof_paths: true
     proof_verification_enabled: true
@@ -75,12 +76,13 @@ verification:
 # Data Integrity Checks
 integrity_checks:
   # Hash Verification
+  # ALIGNED WITH: blockchain/utils/crypto.py
   hash_verification:
     enabled: true
     verify_chunk_hashes: true
     verify_merkle_root: true
     verify_session_metadata_hash: true
-    hash_algorithm: "SHA256"
+    hash_algorithm: "blake3"  # ALIGNED: blockchain/utils/crypto.py:28 (HASH_ALGORITHM = "blake3")
 
   # Signature Verification
   signature_verification:
@@ -111,13 +113,14 @@ batching:
 # Storage Configuration
 storage:
   # On-Chain Storage
+  # ALIGNED WITH: blockchain/blockchain_anchor.py
   on_chain:
     enabled: true
     store_metadata: true
     store_merkle_root: true
     store_chunk_hashes: false  # Only store root, not individual hashes
-    gas_limit_per_anchor: 100000
-    max_gas_price: 1000000000  # 1 Gwei
+    gas_limit_per_anchor: 90000  # ALIGNED: blockchain/blockchain_anchor.py:99 (0x15F90 = 90000)
+    max_gas_price: 1000000000  # 1 Gwei (ALIGNED: blockchain/blockchain_anchor.py:100, blockchain/on_system_chain/chain_client.py:108)
 
   # Off-Chain Storage
   off_chain:

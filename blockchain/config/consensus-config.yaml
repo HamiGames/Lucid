@@ -4,22 +4,36 @@
 # Purpose: Define consensus parameters, block creation rules, and validation policies
 
 # PoOT (Proof of Operational Time) Consensus Configuration
+# ALIGNED WITH: blockchain/core/blockchain_engine.py, blockchain/core/poot_consensus.py
 consensus:
   algorithm: "PoOT"  # Proof of Operational Time
   enabled: true
   
+  # Immutable Consensus Parameters (Spec-1b)
+  # These values are fixed per Spec-1b and should not be changed
+  immutable_parameters:
+    slot_duration_sec: 120  # Fixed, immutable per Spec-1b line 170 (ALIGNED: blockchain/core/blockchain_engine.py:43)
+    slot_timeout_ms: 5000   # 5s leader timeout (ALIGNED: blockchain/core/blockchain_engine.py:44)
+    cooldown_slots: 16      # 16 slot cooldown (ALIGNED: blockchain/core/blockchain_engine.py:45)
+    leader_window_days: 7    # 7-day PoOT window (ALIGNED: blockchain/core/blockchain_engine.py:46)
+    d_min: 0.2              # Minimum density threshold (ALIGNED: blockchain/core/blockchain_engine.py:47)
+    base_mb_per_session: 5  # 5MB base unit (ALIGNED: blockchain/core/blockchain_engine.py:48)
+  
   # Block Creation Parameters
   block_creation:
-    block_time_seconds: 10
+    block_time_seconds: 120  # ALIGNED: Matches SLOT_DURATION_SEC (blockchain/core/blockchain_engine.py:43)
     max_transactions_per_block: 1000
     min_transactions_per_block: 1
     block_size_limit_bytes: 1048576  # 1MB
     gas_limit_per_block: 8000000
     
   # Leader Selection
+  # ALIGNED WITH: blockchain/core/leader_selection.py, blockchain/core/poot_consensus.py
   leader_selection:
-    method: "weighted_random"  # Options: weighted_random, round_robin, highest_stake
-    selection_interval_seconds: 10
+    method: "work_credits_ranking"  # ALIGNED: PoOT uses work credits ranking (not weighted_random)
+    selection_interval_seconds: 120  # ALIGNED: Matches SLOT_DURATION_SEC
+    # PoOT leader selection is based on work credits ranking with cooldown
+    # See blockchain/core/leader_selection.py for implementation
     weight_factors:
       operational_time: 0.4
       stake_amount: 0.3
@@ -67,6 +81,7 @@ block_validation:
     validate_merkle_proofs: true
 
 # Network Configuration
+# ALIGNED WITH: blockchain/core/poot_consensus.py
 network:
   # Peer Discovery
   peer_discovery:
@@ -74,6 +89,10 @@ network:
     discovery_interval_seconds: 60
     max_peers: 50
     min_peers: 5
+  # Epoch Configuration
+  epoch:
+    duration_hours: 24  # ALIGNED: blockchain/core/poot_consensus.py:38 (EPOCH_DURATION_HOURS = 24)
+    # Daily epochs for work credits calculation
     
   # Block Propagation
   block_propagation:
@@ -101,12 +120,19 @@ staking:
     reward_per_block: 10
 
 # Work Credits System
+# ALIGNED WITH: blockchain/core/work_credits.py, blockchain/core/models.py
 work_credits:
   enabled: true
   credit_earn_rate: 1.0  # Credits per second of operational time
   credit_decay_rate: 0.01  # Credits decay per day
   min_credits_for_validation: 100
   max_credits: 10000
+  # Immutable parameters (Spec-1b)
+  leader_window_days: 7    # ALIGNED: blockchain/core/work_credits.py:35
+  base_mb_per_session: 5  # ALIGNED: blockchain/core/work_credits.py:36
+  d_min: 0.2              # ALIGNED: blockchain/core/work_credits.py:37
+  # Formula: W_t = max(S_t, ceil(B_t / BASE_MB_PER_SESSION))
+  # Where BASE_MB_PER_SESSION = 5MB (ALIGNED: blockchain/core/models.py:468)
 
 # Security Configuration
 security:

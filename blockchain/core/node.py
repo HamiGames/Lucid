@@ -1,9 +1,9 @@
-# Path: blockchain/node.py
+# Path: blockchain/core/node.py
 
 from __future__ import annotations
 from typing import Optional, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from blockchain.core.storage import Storage
+from .storage import Storage
 
 
 class Node:

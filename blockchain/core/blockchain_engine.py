@@ -32,7 +32,7 @@ from .models import (
     SessionAnchor, TaskProof, WorkCreditsTally, LeaderSchedule,
     ChunkMetadata, SessionManifest, generate_session_id, calculate_work_credits_formula
 )
-from ..on_system_chain.chain_client import OnSystemChainClient
+from ..on_system_chain.chain_client import OnSystemChainClient, AnchorStatus
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,15 @@ BASE_MB_PER_SESSION = 5  # 5MB base unit
 # ON-SYSTEM DATA CHAIN CONFIGURATION (R-MUST-016)
 # =============================================================================
 
-ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC", "http://on-chain-distroless:8545")
+def _required_env(keys: list[str]) -> str:
+    """Return first available env var from keys or raise."""
+    for k in keys:
+        v = os.getenv(k)
+        if v:
+            return v
+    raise RuntimeError(f"Missing required environment variable (one of {keys})")
+
+ON_SYSTEM_CHAIN_RPC = _required_env(["ON_SYSTEM_CHAIN_RPC", "ON_SYSTEM_CHAIN_RPC_URL"])
 LUCID_ANCHORS_ADDRESS = os.getenv("LUCID_ANCHORS_ADDRESS", "")
 LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
 
@@ -64,7 +72,7 @@ LUCID_CHUNK_STORE_ADDRESS = os.getenv("LUCID_CHUNK_STORE_ADDRESS", "")
 # MONGODB CONFIGURATION (R-MUST-019)
 # =============================================================================
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
+MONGO_URI = _required_env(["MONGODB_URL", "MONGO_URI"])
 
 # =============================================================================
 # ENHANCED ON-SYSTEM CHAIN CLIENT (PRIMARY BLOCKCHAIN)
@@ -99,8 +107,12 @@ class EnhancedOnSystemChainClient:
     async def start(self) -> bool:
         """Start the chain client"""
         try:
-            # Start the underlying chain client
-            return await self.chain_client.start()
+            # OnSystemChainClient doesn't require explicit start
+            # Connection is established in __init__
+            if not self.chain_client.w3.is_connected():
+                raise ConnectionError("On-System Chain client not connected")
+            logger.info("On-System Chain client started")
+            return True
         except Exception as e:
             logger.error(f"Failed to start chain client: {e}")
             return False
@@ -108,8 +120,10 @@ class EnhancedOnSystemChainClient:
     async def stop(self) -> None:
         """Stop the chain client"""
         try:
-            await self.chain_client.stop()
+            # OnSystemChainClient doesn't require explicit stop
+            # Just close HTTP session if needed
             await self.session.aclose()
+            logger.info("On-System Chain client stopped")
         except Exception as e:
             logger.error(f"Failed to stop chain client: {e}")
     
@@ -160,20 +174,31 @@ class EnhancedOnSystemChainClient:
     async def get_transaction_status(self, txid: str) -> Tuple[str, Optional[int]]:
         """Get On-System Chain transaction confirmation status"""
         try:
-            # Use the chain client to get transaction status
-            anchor_tx = await self.chain_client.get_session_anchor_status(txid)
-            if anchor_tx:
-                if anchor_tx.status.value == "confirmed":
-                    return "confirmed", anchor_tx.block_number
-                elif anchor_tx.status.value == "failed":
-                    return "failed", None
+            # Verify transaction on chain using Web3
+            receipt = self.chain_client.w3.eth.get_transaction_receipt(txid)
+            if receipt:
+                if receipt.status == 1:  # 1 = success
+                    return "confirmed", receipt.blockNumber
                 else:
-                    return "pending", None
+                    return "failed", None
             else:
-                return "unknown", None
+                return "pending", None
                 
         except Exception as e:
             logger.error(f"Failed to get transaction status: {e}")
+            # Try to get anchor by searching sessions
+            try:
+                # Search through anchor transactions by transaction hash
+                for session_id, anchor_tx in self.chain_client._anchor_transactions.items():
+                    if anchor_tx.transaction_hash == txid:
+                        if anchor_tx.status == AnchorStatus.CONFIRMED:
+                            return "confirmed", anchor_tx.block_number
+                        elif anchor_tx.status == AnchorStatus.FAILED:
+                            return "failed", None
+                        else:
+                            return "pending", None
+            except Exception:
+                pass
             return "unknown", None
     
     async def store_chunk_metadata(self, session_id: str, chunk_idx: int, metadata: Dict[str, Any]) -> str:

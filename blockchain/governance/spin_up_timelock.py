@@ -43,7 +43,7 @@ class TimelockSpinUp:
     def _load_config(self) -> Dict[str, Any]:
         """Load spin-up configuration"""
         default_config = {
-            "mongo_uri": "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin",
+            "mongo_uri": os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or "",
             "output_dir": "/data/timelock",
             "config_file": "timelock_config.json",
             "create_sample_data": True,

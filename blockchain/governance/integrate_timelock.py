@@ -38,8 +38,11 @@ logger = logging.getLogger(__name__)
 class TimelockIntegrator:
     """Timelock governance system integrator"""
     
-    def __init__(self, mongo_uri: str = "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin"):
-        self.mongo_uri = mongo_uri
+    def __init__(self, mongo_uri: Optional[str] = None):
+        import os
+        self.mongo_uri = mongo_uri or os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")
+        if not self.mongo_uri:
+            raise RuntimeError("mongo_uri must be provided or MONGO_URL/MONGODB_URL environment variable must be set")
         self.client: AsyncIOMotorClient = None
         self.timelock: TimelockGovernance = None
     

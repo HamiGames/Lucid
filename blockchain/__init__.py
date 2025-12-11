@@ -53,17 +53,26 @@ except ImportError:
     OnSystemChainClient = None
 
 # Chain client components
+# Note: chain-client directory name contains hyphen, so we import from files directly
 try:
-    import importlib
-    chain_client_module = importlib.import_module('blockchain.chain-client')
-    ManifestManager = chain_client_module.ManifestManager
-    ManifestStatus = chain_client_module.ManifestStatus
-    ChunkStatus = chain_client_module.ChunkStatus
-    ChunkInfo = chain_client_module.ChunkInfo
-    get_manifest_manager = chain_client_module.get_manifest_manager
-    create_manifest_manager = chain_client_module.create_manifest_manager
-    cleanup_manifest_manager = chain_client_module.cleanup_manifest_manager
-except ImportError:
+    import sys
+    from pathlib import Path
+    # Add chain-client directory to path for import
+    chain_client_path = Path(__file__).parent / "chain-client"
+    if str(chain_client_path) not in sys.path:
+        sys.path.insert(0, str(chain_client_path))
+    
+    from manifest_manager import (
+        ManifestManager,
+        ManifestStatus,
+        ChunkStatus,
+        ChunkInfo,
+        get_manifest_manager,
+        create_manifest_manager,
+        cleanup_manifest_manager
+    )
+except (ImportError, Exception) as e:
+    # Chain client is optional, set to None if import fails
     ManifestManager = None
     ManifestStatus = None
     ChunkStatus = None
