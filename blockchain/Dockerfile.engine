@@ -31,9 +31,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
-    apt-get update --allow-releaseinfo-change --allow-insecure-repositories 2>&1 || \
-    (apt-get update --allow-releaseinfo-change 2>&1 || true) && \
-    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
@@ -97,15 +96,15 @@ RUN cp -r ./blockchain-src/api ./api && \
     cp -r ./blockchain-src/chain-client ./chain-client && \
     cp -r ./blockchain-src/evm ./evm && \
     cp -r ./blockchain-src/on_system_chain ./on_system_chain && \
-    cp ./blockchain-src/*.py ./ 2>/dev/null || true
+    cp ./blockchain-src/*.py ./
 
 # Copy optional directories (scripts and tests) if they exist and have content
 # Following Dockerfile-copy-pattern.md: directories already exist with placeholder files
 RUN if [ -d "./blockchain-src/scripts" ] && [ "$(find ./blockchain-src/scripts -type f ! -name '*.ps1' 2>/dev/null | head -1)" ]; then \
-        find ./blockchain-src/scripts -type f ! -name '*.ps1' -exec cp {} ./scripts/ \; 2>/dev/null || true; \
+        find ./blockchain-src/scripts -type f ! -name '*.ps1' -exec cp {} ./scripts/ \; ; \
     fi && \
     if [ -d "./blockchain-src/tests" ] && [ "$(ls -A ./blockchain-src/tests 2>/dev/null)" ]; then \
-        cp -r ./blockchain-src/tests/* ./tests/ 2>/dev/null || true; \
+        cp -r ./blockchain-src/tests/* ./tests/ ; \
     fi && \
     rm -rf ./blockchain-src
 
