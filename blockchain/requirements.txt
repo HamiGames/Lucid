@@ -14,7 +14,7 @@ pymongo>=4.6.0
 # Blockchain & Crypto
 blake3>=0.3.0
 web3>=6.15.0
-
+PyYAML
 # Cache & Session
 redis>=5.0.0
 
