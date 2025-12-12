@@ -174,4 +174,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 CMD ["py
 
 USER 65532:65532
 
-CMD ["python3", "-c", "import os; import uvicorn; port = int(os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084')); host = os.getenv('BLOCKCHAIN_ENGINE_HOST', '0.0.0.0'); uvicorn.run('api.app.main:app', host=host, port=port)"]
+CMD ["python3", "/app/api/app/entrypoint.py"]
