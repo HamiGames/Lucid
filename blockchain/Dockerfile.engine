@@ -75,18 +75,36 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, sqlalchemy, cryptography, htt
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
-COPY blockchain/api/              ./api/
-COPY blockchain/core/             ./core/
-COPY blockchain/utils/            ./utils/
-COPY blockchain/config/           ./config/
-COPY blockchain/contracts/        ./contracts/
-COPY blockchain/deployment/       ./deployment/
-COPY blockchain/chain-client/     ./chain-client/
-COPY blockchain/evm/              ./evm/
-COPY blockchain/on_system_chain/  ./on_system_chain/
-COPY blockchain/scripts/          ./scripts/
-COPY blockchain/tests/            ./tests/
-COPY blockchain/*.py              ./
+# Create directories for optional content with placeholder files (ensures they exist before COPY)
+# Following Dockerfile-copy-pattern.md: create directories with actual content before copying
+RUN mkdir -p ./scripts ./tests && \
+    echo "LUCID_BLOCKCHAIN_ENGINE_SCRIPTS_DIRECTORY_$(date +%s)" > ./scripts/.lucid-keep && \
+    echo "LUCID_BLOCKCHAIN_ENGINE_TESTS_DIRECTORY_$(date +%s)" > ./tests/.lucid-keep
+
+# Copy all blockchain source files to temporary location first
+COPY blockchain/ ./blockchain-src/
+
+# Copy required directories
+RUN cp -r ./blockchain-src/api ./api && \
+    cp -r ./blockchain-src/core ./core && \
+    cp -r ./blockchain-src/utils ./utils && \
+    cp -r ./blockchain-src/config ./config && \
+    cp -r ./blockchain-src/contracts ./contracts && \
+    cp -r ./blockchain-src/deployment ./deployment && \
+    cp -r ./blockchain-src/chain-client ./chain-client && \
+    cp -r ./blockchain-src/evm ./evm && \
+    cp -r ./blockchain-src/on_system_chain ./on_system_chain && \
+    cp ./blockchain-src/*.py ./ 2>/dev/null || true
+
+# Copy optional directories (scripts and tests) if they exist and have content
+# Following Dockerfile-copy-pattern.md: directories already exist with placeholder files
+RUN if [ -d "./blockchain-src/scripts" ] && [ "$(find ./blockchain-src/scripts -type f ! -name '*.ps1' 2>/dev/null | head -1)" ]; then \
+        find ./blockchain-src/scripts -type f ! -name '*.ps1' -exec cp {} ./scripts/ \; 2>/dev/null || true; \
+    fi && \
+    if [ -d "./blockchain-src/tests" ] && [ "$(ls -A ./blockchain-src/tests 2>/dev/null)" ]; then \
+        cp -r ./blockchain-src/tests/* ./tests/ 2>/dev/null || true; \
+    fi && \
+    rm -rf ./blockchain-src
 
 ############################
 # Stage 2 – Runtime
