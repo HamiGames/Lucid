@@ -58,10 +58,13 @@ docs/
 README*
 
 # Tests (optional - remove if tests are needed in image)
+# Exclude root-level tests/ but allow blockchain/tests/ and blockchain/scripts/ for Dockerfile builds
 tests/
 **/test_*.py
 **/*_test.py
 **/tests/
+!blockchain/tests/
+!blockchain/scripts/
 
 # Node modules (if any)
 node_modules/
