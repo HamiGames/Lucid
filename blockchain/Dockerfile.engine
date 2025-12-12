@@ -141,13 +141,8 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-# Copy dynamic linker for ARM64 (required for native extensions like cryptography)
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-
-# Copy arch-specific libraries directory (required for ARM64 native extensions and shared libraries)
-COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-
-# Copy CA certificates (required for SSL/TLS operations)
+# Distroless base already includes the correct ARM64 runtime and linker.
+# Only copy CA certificates from builder.
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
