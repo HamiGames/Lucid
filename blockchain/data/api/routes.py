@@ -225,7 +225,8 @@ async def verify_merkle_proof(
     Verifies that a leaf hash is included in the Merkle tree with the given root hash.
     """
     try:
-        from ....core.merkle_tree_builder import MerkleProof
+        # Use package-level import; three dots moves from blockchain.data.api -> blockchain.core
+        from ...core.merkle_tree_builder import MerkleProof
         
         proof = MerkleProof(
             leaf_hash=request.leaf_hash,
