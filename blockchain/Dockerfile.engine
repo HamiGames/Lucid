@@ -150,7 +150,7 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /root/.local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/root/.local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, f'marker file is empty: {marker_path}'; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/root/.local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('Packages verified in runtime stage')"]
 
 COPY --chown=65532:65532 --from=builder /build/api           /app/api
 COPY --chown=65532:65532 --from=builder /build/core          /app/core
@@ -167,8 +167,7 @@ COPY --chown=65532:65532 --from=builder /build/*.py          /app/
 
 EXPOSE 8084
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 CMD ["/usr/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'); urllib.request.urlopen('http://localhost:' + port + '/health', timeout=5).read(); exit(0)"]
 
 USER 65532:65532
 

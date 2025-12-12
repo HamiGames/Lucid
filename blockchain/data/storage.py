@@ -27,11 +27,11 @@ except ImportError:
     logger.warning("lz4 not available, lz4 compression will be disabled")
 
 try:
-    import zstd
+    import zstandard as zstd
     ZSTD_AVAILABLE = True
 except ImportError:
     ZSTD_AVAILABLE = False
-    logger.warning("zstd not available, zstd compression will be disabled")
+    logger.warning("zstandard not available, zstd compression will be disabled")
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from ..config.config import get_blockchain_config

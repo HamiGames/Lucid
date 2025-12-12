@@ -39,7 +39,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/usr/bin/python3",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5).read(); exit(0)",
         ]
@@ -169,7 +169,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/usr/bin/python3",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8088/health', timeout=5).read(); exit(0)",
         ]
@@ -229,7 +229,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/usr/bin/python3",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8085/health', timeout=5).read(); exit(0)",
         ]
@@ -291,7 +291,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/usr/bin/python3",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8086/health', timeout=5).read(); exit(0)",
         ]
@@ -350,7 +350,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/usr/bin/python3",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8087/health', timeout=5).read(); exit(0)",
         ]
@@ -418,7 +418,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/usr/bin/python3",
           "-c",
           "import socket; s=socket.socket(); s.connect(('tor-proxy', 9051)); s.close(); exit(0)",
         ]
