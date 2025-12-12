@@ -70,7 +70,7 @@ RUN echo "LUCID_BLOCKCHAIN_ENGINE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, sqlalchemy, cryptography, httpx, motor, pymongo, blake3, web3, aiohttp, redis, aiofiles, pyyaml; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, sqlalchemy, cryptography, httpx, motor, pymongo, blake3, web3, aiohttp, redis, aiofiles, yaml; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
