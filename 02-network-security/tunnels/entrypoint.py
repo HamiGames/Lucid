@@ -18,8 +18,8 @@ from typing import List, Tuple
 CONTROL_HOST = os.getenv("CONTROL_HOST", "tor-proxy")
 CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
 COOKIE_FILE = Path(os.getenv("COOKIE_FILE", "/var/lib/tor/control_auth_cookie"))
-ONION_PORTS = os.getenv("ONION_PORTS", "80 lucid_api:8081")
-WRITE_ENV = Path(os.getenv("WRITE_ENV", "/app/scripts/.onion.env"))
+ONION_PORTS = os.getenv("ONION_PORTS", "80 api-gateway:8080")
+WRITE_ENV = Path(os.getenv("WRITE_ENV", "/run/lucid/onion/.onion.env"))
 ROTATE_INTERVAL = int(os.getenv("ROTATE_INTERVAL", "0"))  # minutes; 0 = create once
 
 LOG_PREFIX = "[tunnel-tools]"
@@ -118,8 +118,13 @@ def create_onion(cookie_hex: str) -> str:
         if line.startswith("250-ServiceID="):
             onion = line.split("=", 1)[1].strip() + ".onion"
             log(f"Created onion: {onion}")
-            WRITE_ENV.parent.mkdir(parents=True, exist_ok=True)
-            WRITE_ENV.write_text(f"ONION={onion}\n")
+            try:
+                WRITE_ENV.parent.mkdir(parents=True, exist_ok=True)
+                WRITE_ENV.write_text(f"ONION={onion}\n")
+                log(f"Wrote onion address to {WRITE_ENV}")
+            except (OSError, PermissionError) as exc:
+                log(f"WARNING: Failed to write onion address to {WRITE_ENV}: {exc}")
+                log(f"Onion address: {onion} (please save manually)")
             return onion
 
     die(f"ADD_ONION failed: {lines}")

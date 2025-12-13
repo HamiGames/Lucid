@@ -397,8 +397,8 @@ services:
       - CONTROL_HOST=tor-proxy
       - CONTROL_PORT=9051
       - COOKIE_FILE=/var/lib/tor/control_auth_cookie
-      - ONION_PORTS=80 lucid_api:8081
-      - WRITE_ENV=/app/scripts/.onion.env
+      - ONION_PORTS=80 api-gateway:8080
+      - WRITE_ENV=/run/lucid/onion/.onion.env
       - ROTATE_INTERVAL=0
       - TUNNEL_PORT=7000
       - TUNNEL_MODE=client

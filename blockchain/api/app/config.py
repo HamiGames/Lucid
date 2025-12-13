@@ -7,11 +7,7 @@ Includes database connections, Redis settings, and other configuration options.
 
 import os
 from typing import Optional
-try:
-    from pydantic_settings import BaseSettings
-except ImportError:
-    # Fallback for older pydantic versions
-    from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """Application settings."""
