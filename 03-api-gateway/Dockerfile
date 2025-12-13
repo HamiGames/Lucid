@@ -166,10 +166,10 @@ LABEL maintainer="Lucid Development Team" \
 # via docker-compose env_file directive. These are fallback defaults only.
 # =============================================================================
 # Essential PATH for runtime (aligned with distroless best practices)
-ENV PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/root/.local/lib/python3.11/site-packages
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages
 
 # Minimal runtime defaults (will be overridden by docker-compose env_file)
 # DO NOT hardcode production values here - use .env files on Pi console
@@ -198,11 +198,13 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /root/.local/bin
+# Following Dockerfile-copy-pattern.md: copy to /usr/local for better distroless compatibility
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/root/.local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+# Following Dockerfile-copy-pattern.md: verify in runtime stage with correct path
+RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, f'marker file is empty: {marker_path}'; print('Packages verified in runtime stage')"]
 
 # Copy application code (only directories that were copied in builder stage)
 COPY --chown=65532:65532 --from=builder /build/api /app/api

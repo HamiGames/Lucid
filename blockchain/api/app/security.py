@@ -10,7 +10,7 @@ import hashlib
 import hmac
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from passlib.hash import bcrypt

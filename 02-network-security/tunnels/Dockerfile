@@ -40,7 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Create application and data directories with proper ownership
+# Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
 RUN mkdir -p /app/scripts /var/lib/tunnel /var/log/tunnel /run \
+    && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)" > /app/scripts/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_LIB_DIRECTORY_$(date +%s)" > /var/lib/tunnel/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_LOG_DIRECTORY_$(date +%s)" > /var/log/tunnel/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_RUN_DIRECTORY_$(date +%s)" > /run/.lucid-keep \
     && chown -R 65532:65532 /app /var/lib/tunnel /var/log/tunnel /run
 
 # Copy tunnel application files
@@ -49,7 +54,8 @@ COPY 02-network-security/tunnels/entrypoint.py /app/entrypoint.py
 COPY 02-network-security/tunnels/scripts/ /app/scripts/
 
 RUN chmod +x /app/entrypoint.py || true \
-    && chmod +x /app/scripts/*.sh || true
+    && chmod +x /app/scripts/*.sh || true \
+    && echo "LUCID_TUNNEL_TOOLS_ENTRYPOINT_$(date +%s)" > /app/.lucid-entrypoint-marker
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Python3 (Debian 12)
@@ -98,6 +104,11 @@ COPY --from=tunnel-builder --chown=65532:65532 /run /run
 # ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
 # All configuration should come from .env.tunnel-tools, .env.secrets, .env.foundation
 # via docker-compose env_file directive. These are fallback defaults only.
+# NOTE: These defaults align with tor-proxy service from docker-compose.foundation.yml:
+#   - tor-proxy container_name: tor-proxy (line 5)
+#   - TOR_CONTROL_PORT: 9051 (line 16)
+#   - TOR_PROXY_SOCKS_PORT: 9050 (line 15)
+# These values are overridden by docker-compose.core.yml environment section (lines 394-405)
 # =============================================================================
 ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
@@ -112,8 +123,9 @@ ENV CONTROL_HOST=tor-proxy \
     LUCID_PLATFORM=arm64
 
 # Health check: control port reachability (matches distroless capabilities)
+# Uses CONTROL_HOST and CONTROL_PORT environment variables (aligned with tor-proxy service)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
-    CMD ["python3", "-c", "import socket; s=socket.socket(); s.connect(('tor-proxy', 9051)); s.close(); exit(0)"]
+    CMD ["python3", "-c", "import os, socket; host = os.getenv('CONTROL_HOST', 'tor-proxy'); port = int(os.getenv('CONTROL_PORT', '9051')); s = socket.socket(); s.connect((host, port)); s.close(); exit(0)"]
 
 EXPOSE 7000
 
