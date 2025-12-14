@@ -12,7 +12,9 @@ import sys
 
 if __name__ == "__main__":
     port = int(os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'))
-    host = os.getenv('BLOCKCHAIN_ENGINE_HOST', '0.0.0.0')
+    # Always bind to 0.0.0.0 to allow healthchecks and external access
+    # This ensures the service is accessible from localhost inside the container
+    host = '0.0.0.0'
     
     import uvicorn
     uvicorn.run('api.app.main:app', host=host, port=port)

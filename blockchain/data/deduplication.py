@@ -19,9 +19,9 @@ from ..config.config import get_blockchain_config
 logger = logging.getLogger(__name__)
 
 # Environment variable configuration (required, no hardcoded defaults)
-MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")
+MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI")
 if not MONGO_URL:
-    raise RuntimeError("MONGO_URL or MONGODB_URL environment variable not set")
+    raise RuntimeError("MONGO_URL, MONGODB_URL, or MONGODB_URI environment variable not set")
 
 # Deduplication configuration from environment
 DEDUPLICATION_ENABLED = os.getenv("DATA_CHAIN_DEDUPLICATION_ENABLED", "true").lower() in ("true", "1", "yes")
