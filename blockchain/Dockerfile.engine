@@ -172,7 +172,8 @@ COPY --chown=65532:65532 --from=builder /build/*.py          /app/
 
 EXPOSE 8084
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 CMD ["python3", "-c", "import os; import urllib.request; port = os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'); urllib.request.urlopen('http://localhost:' + port + '/health', timeout=5).read(); exit(0)"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["python3", "-c", "import urllib.request; r = urllib.request.urlopen('http://localhost:8084/health', timeout=5); exit(0 if r.getcode() == 200 else 1)"]
 
 USER 65532:65532
 
