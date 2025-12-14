@@ -75,19 +75,22 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, sqlalchemy, cryptography, htt
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
-COPY blockchain/data/             ./data/
-COPY blockchain/api/              ./api/
-COPY blockchain/core/             ./core/
-COPY blockchain/utils/            ./utils/
-COPY blockchain/config/           ./config/
-COPY blockchain/contracts/        ./contracts/
-COPY blockchain/deployment/       ./deployment/
-COPY blockchain/chain-client/     ./chain-client/
-COPY blockchain/evm/              ./evm/
-COPY blockchain/on_system_chain/  ./on_system_chain/
-COPY blockchain/scripts/          ./scripts/
-COPY blockchain/tests/            ./tests/
-COPY blockchain/*.py              ./
+# Copy blockchain source to staging area first
+COPY blockchain/ ./blockchain-src/
+
+# Copy required directories (scripts and tests are deployment tools, not needed in distroless runtime)
+RUN cp -r ./blockchain-src/data ./data && \
+    cp -r ./blockchain-src/api ./api && \
+    cp -r ./blockchain-src/core ./core && \
+    cp -r ./blockchain-src/utils ./utils && \
+    cp -r ./blockchain-src/config ./config && \
+    cp -r ./blockchain-src/contracts ./contracts && \
+    cp -r ./blockchain-src/deployment ./deployment && \
+    cp -r ./blockchain-src/chain-client ./chain-client && \
+    cp -r ./blockchain-src/evm ./evm && \
+    cp -r ./blockchain-src/on_system_chain ./on_system_chain && \
+    cp ./blockchain-src/*.py ./ 2>/dev/null || true && \
+    rm -rf ./blockchain-src
 
 ############################
 # Stage 2 – Runtime
@@ -149,8 +152,7 @@ COPY --chown=65532:65532 --from=builder /build/deployment      /app/blockchain/d
 COPY --chown=65532:65532 --from=builder /build/chain-client    /app/blockchain/chain-client
 COPY --chown=65532:65532 --from=builder /build/evm             /app/blockchain/evm
 COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/blockchain/on_system_chain
-COPY --chown=65532:65532 --from=builder /build/scripts         /app/blockchain/scripts
-COPY --chown=65532:65532 --from=builder /build/tests           /app/blockchain/tests
+# Note: scripts/ and tests/ are deployment tools, not needed in distroless runtime container
 COPY --chown=65532:65532 --from=builder /build/*.py            /app/blockchain/
 
 # Verify data-chain entrypoint exists and is correct (CRITICAL: fail build if wrong)
