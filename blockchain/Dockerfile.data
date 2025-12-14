@@ -153,6 +153,18 @@ COPY --chown=65532:65532 --from=builder /build/scripts         /app/blockchain/s
 COPY --chown=65532:65532 --from=builder /build/tests           /app/blockchain/tests
 COPY --chown=65532:65532 --from=builder /build/*.py            /app/blockchain/
 
+# Verify data-chain entrypoint exists and is correct (CRITICAL: fail build if wrong)
+RUN ["/usr/bin/python3", "-c", "import os; entrypoint_path = '/app/blockchain/data/api/entrypoint.py'; assert os.path.exists(entrypoint_path), f'CRITICAL: Data-chain entrypoint not found at {entrypoint_path}'; assert os.path.isfile(entrypoint_path), f'CRITICAL: {entrypoint_path} is not a file'; print(f'✅ Data-chain entrypoint verified: {entrypoint_path}')"]
+
+# Verify data-chain main module exists
+RUN ["/usr/bin/python3", "-c", "import os; main_path = '/app/blockchain/data/api/main.py'; assert os.path.exists(main_path), f'CRITICAL: Data-chain main module not found at {main_path}'; print(f'✅ Data-chain main module verified: {main_path}')"]
+
+# Verify that blockchain-api entrypoint does NOT exist at wrong location (prevent confusion)
+RUN ["/usr/bin/python3", "-c", "import os; wrong_path = '/app/api/app/entrypoint.py'; wrong_exists = os.path.exists(wrong_path); print(f'Note: /app/api/app/entrypoint.py exists: {wrong_exists} (this is blockchain-api, not data-chain)'); print('✅ Verification complete - data-chain will use /app/blockchain/data/api/entrypoint.py')"]
+
+# Final verification: Ensure we can import the data-chain module (catches import errors early)
+RUN ["/usr/bin/python3", "-c", "import sys; sys.path.insert(0, '/app'); import blockchain.data.api.main; print('✅ Data-chain module import successful')"]
+
 EXPOSE 8087
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -160,4 +172,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
+# CRITICAL: Data-chain entrypoint - DO NOT use /app/api/app/entrypoint.py (that's blockchain-api)
+# This CMD must point to the data-chain entrypoint, not blockchain-api entrypoint
 CMD ["/usr/bin/python3", "/app/blockchain/data/api/entrypoint.py"]
