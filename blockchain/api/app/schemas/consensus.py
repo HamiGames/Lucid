@@ -47,7 +47,7 @@ class ConsensusParticipants(BaseModel):
 class ConsensusVoteRequest(BaseModel):
     """Request for submitting a consensus vote."""
     node_id: str = Field(..., description="Node identifier")
-    block_hash: str = Field(..., description="Block hash to vote on", regex=r'^[a-fA-F0-9]{64}$')
+    block_hash: str = Field(..., description="Block hash to vote on", pattern=r'^[a-fA-F0-9]{64}$')
     vote: str = Field(..., description="Vote decision", enum=["approve", "reject"])
     signature: str = Field(..., description="Vote signature")
     timestamp: datetime = Field(..., description="Vote timestamp")

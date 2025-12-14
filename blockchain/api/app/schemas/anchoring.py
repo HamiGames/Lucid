@@ -19,9 +19,9 @@ from datetime import datetime
 
 class SessionAnchoringRequest(BaseModel):
     """Request for anchoring a session manifest to the blockchain."""
-    session_id: str = Field(..., description="Session UUID", regex=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+    session_id: str = Field(..., description="Session UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
     manifest_data: Dict[str, Any] = Field(..., description="Session manifest data")
-    merkle_root: str = Field(..., description="Merkle tree root hash", regex=r'^[a-fA-F0-9]{64}$')
+    merkle_root: str = Field(..., description="Merkle tree root hash", pattern=r'^[a-fA-F0-9]{64}$')
     user_signature: Optional[str] = Field(None, description="User signature for the session")
 
 
@@ -47,8 +47,8 @@ class SessionAnchoringStatus(BaseModel):
 
 class AnchoringVerificationRequest(BaseModel):
     """Request for verifying session anchoring."""
-    session_id: str = Field(..., description="Session UUID", regex=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
-    merkle_root: str = Field(..., description="Merkle tree root hash", regex=r'^[a-fA-F0-9]{64}$')
+    session_id: str = Field(..., description="Session UUID", pattern=r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+    merkle_root: str = Field(..., description="Merkle tree root hash", pattern=r'^[a-fA-F0-9]{64}$')
 
 
 class AnchoringVerificationResponse(BaseModel):

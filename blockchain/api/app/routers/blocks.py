@@ -31,7 +31,7 @@ async def list_blocks(
     limit: int = Query(20, ge=1, le=100, description="Number of blocks per page"),
     height_from: Optional[int] = Query(None, ge=0, description="Minimum block height"),
     height_to: Optional[int] = Query(None, ge=0, description="Maximum block height"),
-    sort: str = Query("height_desc", regex="^(height|timestamp)_(asc|desc)$", description="Sort order"),
+    sort: str = Query("height_desc", pattern="^(height|timestamp)_(asc|desc)$", description="Sort order"),
     user = Depends(require_read_permission)
 ):
     """

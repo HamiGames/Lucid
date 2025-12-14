@@ -26,7 +26,7 @@ class MerkleTreeBuildRequest(BaseModel):
 
 class MerkleTreeResponse(BaseModel):
     """Response after building a Merkle tree."""
-    root_hash: str = Field(..., description="Merkle tree root hash", regex=r'^[a-fA-F0-9]{64}$')
+    root_hash: str = Field(..., description="Merkle tree root hash", pattern=r'^[a-fA-F0-9]{64}$')
     leaf_count: int = Field(..., description="Number of leaves in the tree")
     tree_depth: int = Field(..., description="Depth of the Merkle tree")
     build_time: float = Field(..., description="Time taken to build the tree in seconds")
@@ -54,8 +54,8 @@ class MerkleTreeDetails(BaseModel):
 
 class MerkleProofVerificationRequest(BaseModel):
     """Request for verifying a Merkle tree proof."""
-    root_hash: str = Field(..., description="Merkle tree root hash", regex=r'^[a-fA-F0-9]{64}$')
-    leaf_hash: str = Field(..., description="Leaf hash to verify", regex=r'^[a-fA-F0-9]{64}$')
+    root_hash: str = Field(..., description="Merkle tree root hash", pattern=r'^[a-fA-F0-9]{64}$')
+    leaf_hash: str = Field(..., description="Leaf hash to verify", pattern=r'^[a-fA-F0-9]{64}$')
     proof_path: List[str] = Field(..., description="Merkle proof path", min_items=1)
     leaf_index: int = Field(..., description="Index of the leaf in the tree", ge=0)
 
