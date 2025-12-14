@@ -22,6 +22,8 @@ spec.loader.exec_module(database_module)
 # Export the functions
 init_database = database_module.init_database
 close_database = database_module.close_database
+get_database = database_module.get_database
+get_collection = database_module.get_collection
 
 __all__ = [
     'DatabaseConnection',
@@ -30,5 +32,7 @@ __all__ = [
     'TransactionRepository', 
     'AnchoringRepository',
     'init_database',
-    'close_database'
+    'close_database',
+    'get_database',
+    'get_collection'
 ]
