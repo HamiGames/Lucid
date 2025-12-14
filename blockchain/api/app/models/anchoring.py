@@ -224,7 +224,8 @@ class AnchorResponse(BaseModel):
     timestamp: Optional[datetime] = Field(None, description="Confirmation timestamp")
     message: Optional[str] = Field(None, description="Status message")
     
-    @validator('merkle_root', 'block_hash')
+    @field_validator('merkle_root', 'block_hash')
+    @classmethod
     def validate_optional_hashes(cls, v):
         if v is not None:
             if not isinstance(v, str) or len(v) != 64:
@@ -276,7 +277,8 @@ class AnchorVerificationResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if verification failed")
     verified_at: Optional[datetime] = Field(None, description="Verification timestamp")
     
-    @validator('merkle_root', 'block_hash')
+    @field_validator('merkle_root', 'block_hash')
+    @classmethod
     def validate_optional_hashes(cls, v):
         if v is not None:
             if not isinstance(v, str) or len(v) != 64:
