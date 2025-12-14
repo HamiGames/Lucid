@@ -35,6 +35,9 @@ aiofiles>=23.2.0
 # Configuration
 pyyaml>=6.0.0
 
+# Logging
+structlog>=23.0.0
+
 # Compression (optional, for data chain)
 lz4>=4.3.0
 zstandard>=0.22.0
