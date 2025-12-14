@@ -6,7 +6,7 @@ Pydantic models for session anchoring, Merkle trees, and related structures.
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class AnchorStatus(str, Enum):
@@ -27,7 +27,8 @@ class MerkleNode(BaseModel):
     is_leaf: bool = Field(default=False, description="Whether this is a leaf node")
     data: Optional[str] = Field(None, description="Original data (for leaf nodes)")
     
-    @validator('hash')
+    @field_validator('hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
@@ -37,13 +38,12 @@ class MerkleNode(BaseModel):
             raise ValueError('Hash must be a valid hexadecimal string')
         return v.lower()
         
-    class Config:
-        # Allow self-referencing models
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True
+    )
 
 
-# Update forward reference
-MerkleNode.model_rebuild()
+# Update forward reference (not needed in Pydantic V2, but keeping for compatibility)
 
 
 class MerkleTree(BaseModel):
@@ -54,7 +54,8 @@ class MerkleTree(BaseModel):
     height: int = Field(..., ge=0, description="Height of the tree")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Tree creation time")
     
-    @validator('leaves')
+    @field_validator('leaves')
+    @classmethod
     def validate_leaves(cls, v):
         if not v:
             raise ValueError('Tree must have at least one leaf')
@@ -68,10 +69,11 @@ class MerkleTree(BaseModel):
         """Get the number of leaves in the tree."""
         return len(self.leaves)
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class MerkleProofElement(BaseModel):
@@ -80,7 +82,8 @@ class MerkleProofElement(BaseModel):
     hash: str = Field(..., description="Hash value")
     position: str = Field(..., description="Position relative to sibling (left/right)")
     
-    @validator('hash')
+    @field_validator('hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
@@ -90,7 +93,8 @@ class MerkleProofElement(BaseModel):
             raise ValueError('Hash must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('position')
+    @field_validator('position')
+    @classmethod
     def validate_position(cls, v):
         if v not in ['left', 'right']:
             raise ValueError('Position must be either "left" or "right"')
@@ -105,7 +109,8 @@ class MerkleProof(BaseModel):
     path: List[MerkleProofElement] = Field(..., description="Proof path from leaf to root")
     root_hash: str = Field(..., description="Expected root hash")
     
-    @validator('leaf_hash', 'root_hash')
+    @field_validator('leaf_hash', 'root_hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
@@ -115,7 +120,8 @@ class MerkleProof(BaseModel):
             raise ValueError('Hash must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('path')
+    @field_validator('path')
+    @classmethod
     def validate_path(cls, v):
         if not v:
             raise ValueError('Proof path cannot be empty')
@@ -144,7 +150,8 @@ class SessionAnchor(BaseModel):
     error_message: Optional[str] = Field(None, description="Error message if failed")
     retry_count: int = Field(default=0, ge=0, description="Number of retry attempts")
     
-    @validator('merkle_root')
+    @field_validator('merkle_root')
+    @classmethod
     def validate_merkle_root(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Merkle root must be a 64-character hexadecimal string')
@@ -154,7 +161,8 @@ class SessionAnchor(BaseModel):
             raise ValueError('Merkle root must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('block_hash', 'transaction_hash')
+    @field_validator('block_hash', 'transaction_hash')
+    @classmethod
     def validate_optional_hashes(cls, v):
         if v is not None:
             if not isinstance(v, str) or len(v) != 64:
@@ -174,10 +182,11 @@ class SessionAnchor(BaseModel):
         """Check if anchor is in a final state."""
         return self.status in [AnchorStatus.CONFIRMED, AnchorStatus.FAILED, AnchorStatus.EXPIRED]
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class AnchorRequest(BaseModel):
@@ -188,7 +197,8 @@ class AnchorRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     priority: int = Field(default=0, ge=0, le=10, description="Anchoring priority (0-10)")
     
-    @validator('chunk_hashes')
+    @field_validator('chunk_hashes')
+    @classmethod
     def validate_chunk_hashes(cls, v):
         if not v:
             raise ValueError('At least one chunk hash is required')
@@ -226,10 +236,11 @@ class AnchorResponse(BaseModel):
             return v.lower()
         return v
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class AnchorVerificationRequest(BaseModel):
@@ -238,7 +249,8 @@ class AnchorVerificationRequest(BaseModel):
     session_id: str = Field(..., description="ID of session to verify")
     chunk_hashes: List[str] = Field(..., description="List of chunk hashes to verify against")
     
-    @validator('chunk_hashes')
+    @field_validator('chunk_hashes')
+    @classmethod
     def validate_chunk_hashes(cls, v):
         if not v:
             raise ValueError('At least one chunk hash is required')
@@ -272,10 +284,11 @@ class AnchorVerificationResponse(BaseModel):
             return v.lower()
         return v
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class AnchoringStats(BaseModel):
@@ -290,7 +303,8 @@ class AnchoringStats(BaseModel):
     total_chunks_anchored: int = Field(..., ge=0, description="Total chunks anchored")
     last_updated: datetime = Field(..., description="When stats were last updated")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )

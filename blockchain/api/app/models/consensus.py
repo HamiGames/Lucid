@@ -6,7 +6,7 @@ Pydantic models for PoOT consensus, voting, and validator operations.
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 
 class ConsensusState(str, Enum):
@@ -50,7 +50,8 @@ class ConsensusVote(BaseModel):
     voting_power: float = Field(default=1.0, ge=0, description="Voting power weight")
     justification: Optional[str] = Field(None, description="Vote justification")
     
-    @validator('block_hash')
+    @field_validator('block_hash')
+    @classmethod
     def validate_block_hash(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Block hash must be a 64-character hexadecimal string')
@@ -60,16 +61,18 @@ class ConsensusVote(BaseModel):
             raise ValueError('Block hash must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('signature')
+    @field_validator('signature')
+    @classmethod
     def validate_signature(cls, v):
         if not isinstance(v, str) or len(v) < 64:
             raise ValueError('Signature must be at least 64 characters')
         return v
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ConsensusRound(BaseModel):
@@ -97,7 +100,8 @@ class ConsensusRound(BaseModel):
     winning_vote_count: int = Field(default=0, ge=0, description="Number of winning votes")
     total_voting_power: float = Field(default=0.0, ge=0, description="Total voting power")
     
-    @validator('block_hash')
+    @field_validator('block_hash')
+    @classmethod
     def validate_block_hash(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Block hash must be a 64-character hexadecimal string')
@@ -107,7 +111,8 @@ class ConsensusRound(BaseModel):
             raise ValueError('Block hash must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('participants')
+    @field_validator('participants')
+    @classmethod
     def validate_participants(cls, v):
         if not v:
             raise ValueError('At least one participant is required')
@@ -131,10 +136,11 @@ class ConsensusRound(BaseModel):
         """Check if voting deadline has passed."""
         return datetime.utcnow() > self.voting_deadline
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class PoOTScore(BaseModel):
@@ -152,7 +158,8 @@ class PoOTScore(BaseModel):
     block_height: int = Field(..., ge=0, description="Block height when calculated")
     verification_hash: str = Field(..., description="Hash for score verification")
     
-    @validator('verification_hash')
+    @field_validator('verification_hash')
+    @classmethod
     def validate_verification_hash(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Verification hash must be a 64-character hexadecimal string')
@@ -162,19 +169,18 @@ class PoOTScore(BaseModel):
             raise ValueError('Verification hash must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('final_score')
-    def validate_final_score(cls, v, values):
-        base_score = values.get('base_score', 0)
-        multiplier = values.get('multiplier', 1.0)
-        expected_score = base_score * multiplier
-        if abs(v - expected_score) > 0.001:  # Allow small floating point differences
+    @model_validator(mode='after')
+    def validate_final_score(self):
+        expected_score = self.base_score * self.multiplier
+        if abs(self.final_score - expected_score) > 0.001:  # Allow small floating point differences
             raise ValueError('Final score must equal base_score * multiplier')
-        return v
+        return self
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ValidatorInfo(BaseModel):
@@ -201,7 +207,8 @@ class ValidatorInfo(BaseModel):
     last_active: datetime = Field(default_factory=datetime.utcnow, description="Last activity time")
     last_vote_block: Optional[int] = Field(None, ge=0, description="Last block voted on")
     
-    @validator('public_key')
+    @field_validator('public_key')
+    @classmethod
     def validate_public_key(cls, v):
         if not isinstance(v, str) or len(v) < 64:
             raise ValueError('Public key must be at least 64 characters')
@@ -217,10 +224,11 @@ class ValidatorInfo(BaseModel):
         """Check if validator is currently active."""
         return self.status == ValidatorStatus.ACTIVE
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ConsensusConfig(BaseModel):
@@ -266,7 +274,8 @@ class ConsensusStats(BaseModel):
             return 0.0
         return self.successful_rounds / self.total_rounds
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )

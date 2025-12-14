@@ -5,7 +5,7 @@ Pydantic models for blockchain blocks and related structures.
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class BlockHeader(BaseModel):
@@ -20,7 +20,8 @@ class BlockHeader(BaseModel):
     difficulty: float = Field(default=1.0, ge=0, description="Mining difficulty")
     transaction_count: int = Field(..., ge=0, description="Number of transactions in block")
     
-    @validator('hash', 'previous_hash', 'merkle_root')
+    @field_validator('hash', 'previous_hash', 'merkle_root')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
@@ -30,10 +31,11 @@ class BlockHeader(BaseModel):
             raise ValueError('Hash must be a valid hexadecimal string')
         return v.lower()
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class Block(BaseModel):
@@ -54,7 +56,8 @@ class Block(BaseModel):
     validator_signature: Optional[str] = Field(None, description="Validator signature for PoOT")
     consensus_round: Optional[str] = Field(None, description="Consensus round ID")
     
-    @validator('hash', 'previous_hash', 'merkle_root')
+    @field_validator('hash', 'previous_hash', 'merkle_root')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
@@ -64,7 +67,8 @@ class Block(BaseModel):
             raise ValueError('Hash must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('transactions')
+    @field_validator('transactions')
+    @classmethod
     def validate_transactions(cls, v):
         if not isinstance(v, list):
             raise ValueError('Transactions must be a list')
@@ -88,10 +92,11 @@ class Block(BaseModel):
             transaction_count=self.transaction_count
         )
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class BlockSummary(BaseModel):
@@ -104,16 +109,18 @@ class BlockSummary(BaseModel):
     size_bytes: int = Field(..., ge=0, description="Block size in bytes")
     previous_hash: str = Field(..., description="Previous block hash")
     
-    @validator('hash', 'previous_hash')
+    @field_validator('hash', 'previous_hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
         return v.lower()
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class BlockInfo(BaseModel):
@@ -126,7 +133,8 @@ class BlockInfo(BaseModel):
     total_fees: float = Field(default=0.0, ge=0, description="Total transaction fees")
     reward: float = Field(default=0.0, ge=0, description="Block reward")
     
-    @validator('next_block_hash')
+    @field_validator('next_block_hash')
+    @classmethod
     def validate_next_hash_format(cls, v):
         if v is not None:
             if not isinstance(v, str) or len(v) != 64:
@@ -138,10 +146,11 @@ class BlockInfo(BaseModel):
             return v.lower()
         return v
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class GenesisBlock(Block):
@@ -166,7 +175,8 @@ class BlockValidationResult(BaseModel):
     block_hash: str = Field(..., description="Hash of validated block")
     validation_time_ms: float = Field(..., ge=0, description="Validation time in milliseconds")
     
-    @validator('block_hash')
+    @field_validator('block_hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Block hash must be a 64-character hexadecimal string')
@@ -185,13 +195,15 @@ class BlockStats(BaseModel):
     total_transactions: int = Field(..., ge=0, description="Total transactions across all blocks")
     last_updated: datetime = Field(..., description="When stats were last updated")
     
-    @validator('latest_hash')
+    @field_validator('latest_hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Latest hash must be a 64-character hexadecimal string')
         return v.lower()
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )

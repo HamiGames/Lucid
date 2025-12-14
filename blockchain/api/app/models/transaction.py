@@ -6,7 +6,7 @@ Pydantic models for blockchain transactions and related structures.
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class TransactionStatus(str, Enum):
@@ -59,21 +59,24 @@ class Transaction(BaseModel):
     confirmations: int = Field(default=0, ge=0, description="Number of confirmations")
     error_message: Optional[str] = Field(None, description="Error message if failed")
     
-    @validator('hash', 'signature', 'public_key')
-    def validate_hex_fields(cls, v, field):
+    @field_validator('hash', 'signature', 'public_key')
+    @classmethod
+    def validate_hex_fields(cls, v, info):
+        field_name = info.field_name
         if not isinstance(v, str):
-            raise ValueError(f'{field.name} must be a string')
-        if field.name == 'hash' and len(v) != 64:
+            raise ValueError(f'{field_name} must be a string')
+        if field_name == 'hash' and len(v) != 64:
             raise ValueError('Transaction hash must be 64 characters')
-        if field.name in ['signature', 'public_key'] and len(v) < 64:
-            raise ValueError(f'{field.name} must be at least 64 characters')
+        if field_name in ['signature', 'public_key'] and len(v) < 64:
+            raise ValueError(f'{field_name} must be at least 64 characters')
         try:
             int(v, 16)
         except ValueError:
-            raise ValueError(f'{field.name} must be a valid hexadecimal string')
+            raise ValueError(f'{field_name} must be a valid hexadecimal string')
         return v.lower()
         
-    @validator('block_hash')
+    @field_validator('block_hash')
+    @classmethod
     def validate_block_hash(cls, v):
         if v is not None:
             if not isinstance(v, str) or len(v) != 64:
@@ -85,7 +88,8 @@ class Transaction(BaseModel):
             return v.lower()
         return v
         
-    @validator('from_address', 'to_address')
+    @field_validator('from_address', 'to_address')
+    @classmethod
     def validate_addresses(cls, v):
         if not isinstance(v, str) or len(v) < 20:
             raise ValueError('Address must be at least 20 characters')
@@ -103,10 +107,11 @@ class Transaction(BaseModel):
             TransactionStatus.REJECTED
         ]
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class TransactionSummary(BaseModel):
@@ -123,13 +128,15 @@ class TransactionSummary(BaseModel):
     block_hash: Optional[str] = Field(None, description="Block hash if confirmed")
     block_height: Optional[int] = Field(None, ge=0, description="Block height if confirmed")
     
-    @validator('hash')
+    @field_validator('hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Transaction hash must be a 64-character hexadecimal string')
         return v.lower()
         
-    @validator('block_hash')
+    @field_validator('block_hash')
+    @classmethod
     def validate_block_hash(cls, v):
         if v is not None:
             if not isinstance(v, str) or len(v) != 64:
@@ -137,10 +144,11 @@ class TransactionSummary(BaseModel):
             return v.lower()
         return v
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class TransactionInput(BaseModel):
@@ -155,7 +163,8 @@ class TransactionInput(BaseModel):
     data: Optional[Dict[str, Any]] = Field(None, description="Transaction-specific data")
     gas_limit: int = Field(default=21000, ge=0, description="Gas limit")
     
-    @validator('from_address', 'to_address')
+    @field_validator('from_address', 'to_address')
+    @classmethod
     def validate_addresses(cls, v):
         if not isinstance(v, str) or len(v) < 20:
             raise ValueError('Address must be at least 20 characters')
@@ -176,16 +185,18 @@ class TransactionReceipt(BaseModel):
     logs: List[Dict[str, Any]] = Field(default_factory=list, description="Transaction logs")
     created_at: datetime = Field(..., description="Receipt creation time")
     
-    @validator('transaction_hash', 'block_hash')
+    @field_validator('transaction_hash', 'block_hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Hash must be a 64-character hexadecimal string')
         return v.lower()
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class TransactionValidationResult(BaseModel):
@@ -198,7 +209,8 @@ class TransactionValidationResult(BaseModel):
     estimated_gas: int = Field(..., ge=0, description="Estimated gas usage")
     validation_time_ms: float = Field(..., ge=0, description="Validation time in milliseconds")
     
-    @validator('transaction_hash')
+    @field_validator('transaction_hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Transaction hash must be a 64-character hexadecimal string')
@@ -218,10 +230,11 @@ class TransactionStats(BaseModel):
     transactions_per_second: float = Field(..., ge=0, description="Current TPS")
     last_updated: datetime = Field(..., description="When stats were last updated")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class MempoolInfo(BaseModel):
@@ -236,10 +249,11 @@ class MempoolInfo(BaseModel):
     fee_percentiles: Dict[str, float] = Field(default_factory=dict, description="Fee percentiles")
     last_updated: datetime = Field(..., description="When info was last updated")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class SessionAnchorTransaction(Transaction):
@@ -255,7 +269,8 @@ class SessionAnchorTransaction(Transaction):
         data['type'] = TransactionType.SESSION_ANCHOR
         super().__init__(**data)
         
-    @validator('merkle_root')
+    @field_validator('merkle_root')
+    @classmethod
     def validate_merkle_root(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Merkle root must be a 64-character hexadecimal string')

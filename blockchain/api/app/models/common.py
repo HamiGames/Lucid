@@ -6,8 +6,7 @@ Shared Pydantic models used across blockchain API components.
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Generic, TypeVar
 from enum import Enum
-from pydantic import BaseModel, Field, validator
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 T = TypeVar('T')
 
@@ -34,7 +33,8 @@ class ChainInfo(BaseModel):
     status: NetworkStatus = Field(..., description="Current network status")
     timestamp: datetime = Field(..., description="Information timestamp")
     
-    @validator('latest_block_hash')
+    @field_validator('latest_block_hash')
+    @classmethod
     def validate_block_hash(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Block hash must be a 64-character hexadecimal string')
@@ -44,10 +44,11 @@ class ChainInfo(BaseModel):
             raise ValueError('Block hash must be a valid hexadecimal string')
         return v.lower()
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class PaginationParams(BaseModel):
@@ -58,14 +59,15 @@ class PaginationParams(BaseModel):
     order_by: str = Field(default="timestamp", description="Field to order by")
     order_direction: str = Field(default="desc", description="Order direction (asc/desc)")
     
-    @validator('order_direction')
+    @field_validator('order_direction')
+    @classmethod
     def validate_order_direction(cls, v):
         if v.lower() not in ['asc', 'desc']:
             raise ValueError('Order direction must be "asc" or "desc"')
         return v.lower()
 
 
-class PaginatedResponse(GenericModel, Generic[T]):
+class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response."""
     
     items: List[T] = Field(..., description="List of items")
@@ -94,7 +96,8 @@ class ChunkMetadata(BaseModel):
     encryption: Optional[str] = Field(None, description="Encryption algorithm used")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Chunk creation time")
     
-    @validator('hash')
+    @field_validator('hash')
+    @classmethod
     def validate_hash_format(cls, v):
         if not isinstance(v, str) or len(v) != 64:
             raise ValueError('Chunk hash must be a 64-character hexadecimal string')
@@ -104,10 +107,11 @@ class ChunkMetadata(BaseModel):
             raise ValueError('Chunk hash must be a valid hexadecimal string')
         return v.lower()
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class SessionManifest(BaseModel):
@@ -125,7 +129,8 @@ class SessionManifest(BaseModel):
     compression_ratio: Optional[float] = Field(None, ge=0, description="Compression ratio achieved")
     encryption_enabled: bool = Field(default=True, description="Whether encryption was used")
     
-    @validator('chunks')
+    @field_validator('chunks')
+    @classmethod
     def validate_chunks(cls, v):
         if not v:
             raise ValueError('Session must have at least one chunk')
@@ -147,10 +152,11 @@ class SessionManifest(BaseModel):
         """Get list of all chunk hashes in order."""
         return [chunk.hash for chunk in sorted(self.chunks, key=lambda c: c.index)]
         
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class HealthCheckResult(BaseModel):
@@ -171,10 +177,11 @@ class HealthCheckResult(BaseModel):
     response_time_ms: Optional[float] = Field(None, ge=0, description="Response time in milliseconds")
     uptime_seconds: Optional[float] = Field(None, ge=0, description="Service uptime in seconds")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ErrorResponse(BaseModel):
@@ -186,10 +193,11 @@ class ErrorResponse(BaseModel):
     request_id: Optional[str] = Field(None, description="Request identifier for tracking")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class SuccessResponse(BaseModel):
@@ -200,10 +208,11 @@ class SuccessResponse(BaseModel):
     data: Optional[Dict[str, Any]] = Field(None, description="Response data")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Response timestamp")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class APIVersion(BaseModel):
@@ -214,10 +223,11 @@ class APIVersion(BaseModel):
     commit: Optional[str] = Field(None, description="Git commit hash")
     build_date: Optional[datetime] = Field(None, description="Build date")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ServiceInfo(BaseModel):
@@ -231,10 +241,11 @@ class ServiceInfo(BaseModel):
     dependencies: List[str] = Field(default_factory=list, description="Service dependencies")
     started_at: datetime = Field(default_factory=datetime.utcnow, description="Service start time")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class RateLimitInfo(BaseModel):
@@ -245,10 +256,11 @@ class RateLimitInfo(BaseModel):
     reset_time: datetime = Field(..., description="When the rate limit resets")
     window_seconds: int = Field(..., ge=1, description="Rate limit window in seconds")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class SearchRequest(BaseModel):
@@ -258,7 +270,8 @@ class SearchRequest(BaseModel):
     filters: Optional[Dict[str, Any]] = Field(None, description="Search filters")
     pagination: PaginationParams = Field(default_factory=PaginationParams, description="Pagination parameters")
     
-    @validator('query')
+    @field_validator('query')
+    @classmethod
     def validate_query(cls, v):
         # Basic query validation
         if len(v.strip()) == 0:
@@ -266,7 +279,7 @@ class SearchRequest(BaseModel):
         return v.strip()
 
 
-class SearchResponse(GenericModel, Generic[T]):
+class SearchResponse(BaseModel, Generic[T]):
     """Generic search response."""
     
     results: List[T] = Field(..., description="Search results")
@@ -275,7 +288,8 @@ class SearchResponse(GenericModel, Generic[T]):
     search_time_ms: float = Field(..., ge=0, description="Search execution time")
     pagination: PaginationParams = Field(..., description="Pagination used")
     
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
