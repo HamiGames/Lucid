@@ -336,7 +336,7 @@ services:
       - DATA_CHAIN_URL=http://data-chain:8087
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
-      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+      - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
