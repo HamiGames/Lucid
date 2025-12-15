@@ -15,7 +15,9 @@ import sys
 if __name__ == "__main__":
     # Get configuration from environment variables (defaults match Dockerfile ENV)
     port_str = os.getenv('DATA_CHAIN_PORT', '8087')
-    host = os.getenv('DATA_CHAIN_HOST', '0.0.0.0')
+    # Always bind to 0.0.0.0 to allow healthchecks and external access
+    # This ensures the service is accessible from localhost inside the container
+    host = '0.0.0.0'
     
     try:
         port = int(port_str)

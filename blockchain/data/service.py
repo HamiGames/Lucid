@@ -28,9 +28,13 @@ MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("MON
 if not MONGO_URL:
     raise RuntimeError("MONGO_URL, MONGODB_URL, or MONGODB_URI environment variable not set")
 
+# BLOCKCHAIN_ENGINE_URL is optional - data-chain is a storage service that doesn't directly call blockchain-engine
+# The blockchain-engine would call data-chain, not the other way around
 BLOCKCHAIN_ENGINE_URL = os.getenv("BLOCKCHAIN_ENGINE_URL")
-if not BLOCKCHAIN_ENGINE_URL:
-    raise RuntimeError("BLOCKCHAIN_ENGINE_URL environment variable not set")
+if BLOCKCHAIN_ENGINE_URL:
+    logger.info(f"Blockchain engine URL configured: {BLOCKCHAIN_ENGINE_URL}")
+else:
+    logger.warning("BLOCKCHAIN_ENGINE_URL not set - data-chain will operate in standalone mode")
 
 # Data chain configuration from environment
 DATA_CHAIN_PORT = int(os.getenv("DATA_CHAIN_PORT", "8087"))
@@ -361,6 +365,20 @@ class DataChainService:
                 "error": str(e)
             }
     
+    async def check_mongodb_connection(self) -> bool:
+        """
+        Check MongoDB connection health.
+        
+        Returns:
+            True if MongoDB is accessible, False otherwise
+        """
+        try:
+            await self.mongo_client.admin.command('ping')
+            return True
+        except Exception as e:
+            logger.error(f"MongoDB connection check failed: {e}")
+            return False
+    
     async def get_service_status(self) -> Dict[str, Any]:
         """
         Get data chain service status.
@@ -369,6 +387,17 @@ class DataChainService:
             Dictionary with service status information
         """
         try:
+            # Verify MongoDB connection
+            mongodb_healthy = await self.check_mongodb_connection()
+            
+            if not mongodb_healthy:
+                return {
+                    "status": "unhealthy",
+                    "service": "data-chain",
+                    "error": "MongoDB connection failed",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            
             # Get deduplication stats
             dedup_stats = await self.deduplication_manager.get_deduplication_stats()
             
@@ -379,6 +408,7 @@ class DataChainService:
             return {
                 "status": "healthy",
                 "service": "data-chain",
+                "mongodb": "connected",
                 "total_chunks": total_chunks,
                 "deduplication": dedup_stats,
                 "timestamp": datetime.now(timezone.utc).isoformat()

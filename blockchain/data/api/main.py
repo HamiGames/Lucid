@@ -76,21 +76,42 @@ app.include_router(router, prefix="/api/v1", tags=["Data Chain"])
 # Health check endpoint
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """Health check endpoint."""
+    """
+    Health check endpoint.
+    
+    Verifies:
+    - Service is running
+    - MongoDB connection is healthy
+    - Service can perform basic operations
+    """
     try:
         service = await get_data_chain_service()
         status_info = await service.get_service_status()
-        return {
-            "status": "healthy",
-            "service": "data-chain",
-            "details": status_info
-        }
+        
+        # Determine HTTP status based on service status
+        if status_info.get("status") == "healthy":
+            return {
+                "status": "healthy",
+                "service": "data-chain",
+                "details": status_info
+            }
+        else:
+            # Service is unhealthy (e.g., MongoDB connection failed)
+            return JSONResponse(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                content={
+                    "status": "unhealthy",
+                    "service": "data-chain",
+                    "details": status_info
+                }
+            )
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={
                 "status": "unhealthy",
+                "service": "data-chain",
                 "error": str(e)
             }
         )
@@ -114,9 +135,17 @@ async def startup_event():
     logger.info(f"Starting {API_TITLE} v{API_VERSION}")
     logger.info(f"Listening on {DATA_CHAIN_HOST}:{DATA_CHAIN_PORT}")
     
-    # Initialize service
+    # Initialize service and verify dependencies
     try:
         service = await get_data_chain_service()
+        
+        # Verify MongoDB connection before accepting requests
+        logger.info("Verifying MongoDB connection...")
+        mongodb_healthy = await service.check_mongodb_connection()
+        if not mongodb_healthy:
+            raise RuntimeError("MongoDB connection verification failed - service cannot start")
+        
+        logger.info("MongoDB connection verified successfully")
         logger.info("Data chain service initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize data chain service: {e}")
