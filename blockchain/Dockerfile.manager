@@ -54,7 +54,7 @@ RUN echo "LUCID_BLOCK_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY blockchain/requirements.txt ./requirements.txt
+COPY blockchain/manager/requirements.txt ./requirements.txt
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
@@ -69,10 +69,13 @@ RUN echo "LUCID_BLOCK_MANAGER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib
     echo "LUCID_BLOCK_MANAGER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, blake3, web3, aiohttp, redis, aiofiles; print('✅ critical packages installed')" && \
+# Builder-stage verification (per Dockerfile-copy-pattern.md Step 3)
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, blake3, web3, aiohttp, redis, aiofiles, async_timeout; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
-    test -d /root/.local/lib/python3.11/site-packages
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Application source COPY
 COPY blockchain/ ./blockchain-src/
@@ -129,28 +132,13 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 # Distroless base already has correct linker/runtime; only copy CA certs
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Python packages (per COPY pattern guide)
+# Python packages (per COPY pattern guide - directory already populated with packages + marker files)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages
-RUN ["python3", "-c", "import sys; import os; \
-site_packages = '/usr/local/lib/python3.11/site-packages'; \
-assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
-assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
-assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
-assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; \
-assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; \
-assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
-assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
-marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-print('Packages verified in runtime stage')"]
+# Runtime verification of packages (per Dockerfile-copy-pattern.md Step 5)
+# Uses /usr/bin/python3.11 for distroless compatibility
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, f'marker file is empty: {marker_path}'; print('Packages verified in runtime stage')"]
 
 # Application layout COPY
 COPY --chown=65532:65532 --from=builder /build/manager      /app/manager
@@ -168,11 +156,11 @@ COPY --chown=65532:65532 --from=builder /build/*.py         /app/
 EXPOSE 8086
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ["python3", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8086)); s.close(); exit(0 if result == 0 else 1)"]
+    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8086)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 # Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
 
-CMD ["python3", "/app/api/app/entrypoint_manager.py"]
+CMD ["/usr/bin/python3.11", "/app/api/app/entrypoint_manager.py"]
