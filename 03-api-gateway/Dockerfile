@@ -75,14 +75,10 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, crypto
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
-# Application source COPY
+# Application source COPY (only directories that exist with content)
 COPY 03-api-gateway/api/ ./api/
 COPY 03-api-gateway/gateway/ ./gateway/
 COPY 03-api-gateway/config/ ./config/
-COPY 03-api-gateway/utils/ ./utils/
-COPY 03-api-gateway/middleware/ ./middleware/
-COPY 03-api-gateway/endpoints/ ./endpoints/
-COPY 03-api-gateway/scripts/ ./scripts/
 
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
@@ -145,14 +141,10 @@ marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 print('Packages verified in runtime stage')"]
 
-# Application layout COPY
+# Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
-COPY --chown=65532:65532 --from=builder /build/utils /app/utils
-COPY --chown=65532:65532 --from=builder /build/middleware /app/middleware
-COPY --chown=65532:65532 --from=builder /build/endpoints /app/endpoints
-COPY --chown=65532:65532 --from=builder /build/scripts /app/scripts
 
 # Verify app directories were copied (fails build if missing)
 RUN ["python3", "-c", "import os; \
