@@ -96,6 +96,11 @@ class BlockchainConfig:
             required=False,
             context=context
         )
+        self._configs['block_manager'] = load_yaml_config(
+            self.config_dir / 'block-manager-config.yaml',
+            required=False,
+            context=context
+        )
     
     def get_anchoring_config(self) -> Dict[str, Any]:
         """Get anchoring policies configuration."""
@@ -112,6 +117,10 @@ class BlockchainConfig:
     def get_data_chain_config(self) -> Dict[str, Any]:
         """Get data chain configuration."""
         return self._configs.get('data_chain', {})
+    
+    def get_block_manager_config(self) -> Dict[str, Any]:
+        """Get block manager configuration."""
+        return self._configs.get('block_manager', {})
     
     def get_all_configs(self) -> Dict[str, Any]:
         """Get all configurations."""

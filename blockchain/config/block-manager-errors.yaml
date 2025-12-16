@@ -1,0 +1,139 @@
+# Block Manager Error Handling Configuration
+# Purpose: Define error handling policies and recovery strategies
+
+error_handling:
+  # Retry Policies
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+    backoff_multiplier: 2
+    max_backoff_seconds: 60
+  
+  # MongoDB Connection Errors
+  mongodb:
+    connection_timeout_seconds: 10
+    operation_timeout_seconds: 30
+    retry_on_connection_error: true
+    retry_on_timeout: true
+    max_connection_retries: 5
+  
+  # Blockchain Engine Communication Errors
+  blockchain_engine:
+    request_timeout_seconds: 30
+    retry_on_timeout: true
+    retry_on_5xx: true
+    max_retries: 3
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_calls: 3
+  
+  # Block Storage Errors
+  block_storage:
+    retry_on_write_failure: true
+    retry_on_read_failure: true
+    max_storage_retries: 3
+    verify_after_write: true
+    verify_after_read: false
+  
+  # Synchronization Errors
+  synchronization:
+    retry_on_sync_failure: true
+    max_sync_retries: 5
+    sync_backoff_seconds: 5
+    continue_on_partial_failure: true
+    log_failed_blocks: true
+  
+  # Validation Errors
+  validation:
+    strict_mode: false
+    log_validation_errors: true
+    reject_invalid_blocks: true
+    quarantine_invalid_blocks: true
+    quarantine_path: /app/data/quarantine
+  
+  # Recovery Actions
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 300
+    verify_integrity_on_recovery: true
+    rebuild_indexes_on_recovery: true
+    notify_on_critical_error: false
+  
+  # Error Reporting
+  reporting:
+    log_all_errors: true
+    log_error_stack_traces: true
+    error_summary_interval_seconds: 300
+    max_errors_per_summary: 100
+  
+  # Graceful Degradation
+  degradation:
+    enabled: true
+    read_only_mode_on_critical_error: false
+    disable_sync_on_engine_error: false
+    cache_only_mode_on_storage_error: false
+
+# Error Codes and Messages
+error_codes:
+  # Block Management Errors (BM_xxx)
+  BM_001: "Block not found"
+  BM_002: "Block validation failed"
+  BM_003: "Block storage failed"
+  BM_004: "Block retrieval failed"
+  BM_005: "Invalid block height"
+  BM_006: "Block hash mismatch"
+  
+  # Storage Errors (ST_xxx)
+  ST_001: "Storage backend unavailable"
+  ST_002: "Storage write failed"
+  ST_003: "Storage read failed"
+  ST_004: "Storage quota exceeded"
+  ST_005: "Storage permission denied"
+  
+  # Synchronization Errors (SYNC_xxx)
+  SYNC_001: "Synchronization failed"
+  SYNC_002: "Remote chain state unavailable"
+  SYNC_003: "Block fetch failed"
+  SYNC_004: "Chain height mismatch"
+  SYNC_005: "Synchronization timeout"
+  
+  # Validation Errors (VAL_xxx)
+  VAL_001: "Block structure invalid"
+  VAL_002: "Block signature invalid"
+  VAL_003: "Merkle root invalid"
+  VAL_004: "Transaction validation failed"
+  VAL_005: "Block timestamp invalid"
+
+# Error Severity Levels
+severity:
+  critical:
+    - BM_003
+    - ST_001
+    - ST_002
+    - SYNC_001
+    - SYNC_002
+  
+  error:
+    - BM_001
+    - BM_002
+    - BM_004
+    - ST_003
+    - SYNC_003
+    - VAL_001
+    - VAL_002
+  
+  warning:
+    - BM_005
+    - BM_006
+    - ST_004
+    - SYNC_004
+    - SYNC_005
+    - VAL_003
+    - VAL_004
+    - VAL_005
+

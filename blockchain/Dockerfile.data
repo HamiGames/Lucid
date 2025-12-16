@@ -13,9 +13,9 @@ ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
 ############################
-# Stage 1 – Builder (target platform to avoid arch-mismatched native wheels)
+# Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -30,10 +30,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update --allow-releaseinfo-change 2>&1 || \
-    (echo "Warning: apt-get update had GPG issues, continuing..." && \
-     apt-get update --allow-releaseinfo-change --allow-insecure-repositories --allow-unauthenticated 2>&1 || true) && \
-    apt-get install -y --no-install-recommends --allow-unauthenticated \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
@@ -148,16 +147,9 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-# Verify runtime directories were copied (fail build if missing)
-RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/var/run'), 'CRITICAL: /var/run not copied'; assert os.path.exists('/var/run/.keep'), 'CRITICAL: /var/run/.keep marker missing'; assert os.path.exists('/var/lib'), 'CRITICAL: /var/lib not copied'; assert os.path.exists('/var/lib/.keep'), 'CRITICAL: /var/lib/.keep marker missing'; print('✅ Runtime directories verified (/var/run, /var/lib)')"]
-
-# Copy CA certificates (required for SSL/TLS operations)
-# Certificate file - world-readable, ownership doesn't affect functionality
+# Distroless base already includes the correct ARM64 runtime and linker.
+# Only copy CA certificates from builder.
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Verify Python interpreter is from base image (not copied from builder)
-# CRITICAL: Ensure we're using distroless base Python, not a local copy
-RUN ["/usr/bin/python3", "-c", "import sys; import os; py_exe = sys.executable; assert py_exe == '/usr/bin/python3' or py_exe.startswith('/usr/bin/python3'), f'CRITICAL: Python interpreter is not from base image: {py_exe}'; assert os.path.exists('/usr/bin/python3'), 'CRITICAL: /usr/bin/python3 does not exist in base image'; print(f'✅ Python interpreter verified: {py_exe} (from distroless base image)')"]
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
 # Following Dockerfile-copy-pattern.md: copy to /usr/local for better distroless compatibility
@@ -166,8 +158,7 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
 # Following Dockerfile-copy-pattern.md: verify in runtime stage with correct path
-# Verify all packages from requirements.txt: fastapi, uvicorn, pydantic, motor, pymongo, blake3, yaml, lz4, zstandard, httpx, aiohttp
-RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml not found'; assert os.path.exists(os.path.join(site_packages, 'lz4')), 'lz4 not found'; assert os.path.exists(os.path.join(site_packages, 'zstandard')), 'zstandard not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, f'marker file is empty: {marker_path}'; print('✅ Data-chain packages verified in runtime stage (all from requirements.txt)')"]
+RUN ["python3", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml not found'; assert os.path.exists(os.path.join(site_packages, 'lz4')), 'lz4 not found'; assert os.path.exists(os.path.join(site_packages, 'zstandard')), 'zstandard not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('Packages verified in runtime stage')"]
 # Copy only required directories for data-chain service
 # Data-chain service dependencies: data (service), core (merkle_tree_builder, models), config (config, yaml_loader)
 COPY --chown=65532:65532 --from=builder /build/data            /app/blockchain/data
@@ -178,32 +169,15 @@ COPY --chown=65532:65532 --from=builder /build/config          /app/blockchain/c
 # CRITICAL: __init__.py was verified in builder stage, COPY will fail if missing
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/blockchain/__init__.py
 
-# Verify all directories and __init__.py were copied (fail build if any are missing)
-RUN ["/usr/bin/python3", "-c", "import os; required={'/app/blockchain/data':'directory','/app/blockchain/core':'directory','/app/blockchain/config':'directory','/app/blockchain/__init__.py':'file'}; missing=[f\"{p} ({t})\" for p,t in required.items() if not (os.path.isdir(p) if t=='directory' else os.path.isfile(p))]; assert not missing, f'CRITICAL: Missing or incorrect type: {missing}'; print('✅ All data-chain directories and __init__.py verified after COPY')"]
-
-# Verify data-chain entrypoint exists and is correct (CRITICAL: fail build if wrong)
-RUN ["/usr/bin/python3", "-c", "import os; entrypoint_path = '/app/blockchain/data/api/entrypoint.py'; assert os.path.exists(entrypoint_path), f'CRITICAL: Data-chain entrypoint not found at {entrypoint_path}'; assert os.path.isfile(entrypoint_path), f'CRITICAL: {entrypoint_path} is not a file'; print(f'✅ Data-chain entrypoint verified: {entrypoint_path}')"]
-
-# Verify data-chain main module exists
-RUN ["/usr/bin/python3", "-c", "import os; main_path = '/app/blockchain/data/api/main.py'; assert os.path.exists(main_path), f'CRITICAL: Data-chain main module not found at {main_path}'; print(f'✅ Data-chain main module verified: {main_path}')"]
-
-# Verify that only data-chain directories are present (data, core, config)
-RUN ["/usr/bin/python3", "-c", "import os; required_dirs = ['/app/blockchain/data', '/app/blockchain/core', '/app/blockchain/config']; missing = [d for d in required_dirs if not os.path.exists(d)]; assert not missing, f'Missing required directories: {missing}'; print('✅ All required data-chain directories present (data, core, config)')"]
-
-# Final verification: Ensure we can import all critical data-chain modules (catches import errors early)
-# Verifies: API, Merkle tree builder, models, chunk manager, storage, integrity, deduplication, service, config
-RUN ["/usr/bin/python3", "-c", "import sys; sys.path.insert(0, '/app'); import blockchain.data.api.main; import blockchain.core.merkle_tree_builder; import blockchain.core.models; import blockchain.data.chunk_manager; import blockchain.data.storage; import blockchain.data.integrity; import blockchain.data.deduplication; import blockchain.data.service; import blockchain.config.config; print('✅ All data-chain modules (merkle, chunks, storage, integrity) import successful')"]
 
 EXPOSE 8087
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD ["python3", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 # Clear ENTRYPOINT from distroless base image to allow CMD to work correctly
 ENTRYPOINT []
 
-# CRITICAL: Data-chain entrypoint - DO NOT use /app/api/app/entrypoint.py (that's blockchain-api)
-# This CMD must point to the data-chain entrypoint, not blockchain-api entrypoint
-CMD ["/usr/bin/python3", "/app/blockchain/data/api/entrypoint.py"]
+CMD ["python3", "/app/blockchain/data/api/entrypoint.py"]

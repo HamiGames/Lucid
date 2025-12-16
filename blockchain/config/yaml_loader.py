@@ -163,6 +163,7 @@ def load_all_configs(context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]
         'block_storage': load_yaml_config(config_dir / 'block-storage-policies.yaml', required=False, context=context),
         'consensus': load_yaml_config(config_dir / 'consensus-config.yaml', required=False, context=context),
         'data_chain': load_yaml_config(config_dir / 'data-chain-config.yaml', required=False, context=context),
+        'block_manager': load_yaml_config(config_dir / 'block-manager-config.yaml', required=False, context=context),
     }
     
     return configs
