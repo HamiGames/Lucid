@@ -13,9 +13,9 @@ ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
 ############################
-# Stage 1 – Builder
+# Stage 1 – Builder (target platform to avoid arch-mismatched native wheels)
 ############################
-FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM

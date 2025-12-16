@@ -4,11 +4,11 @@
 # LUCID-MULTISTAGE Mode: Enhanced build optimization with minimal runtime footprint
 
 # syntax=docker/dockerfile:1.7
-FROM python:3.11-slim-bookworm AS blockchain-builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} python:3.11-slim-bookworm AS blockchain-builder
 
-# Build arguments for multi-platform support and build optimization
+# Build arguments for multi-platform support and build optimization (default arm64 target)
 ARG BUILDPLATFORM
-ARG TARGETPLATFORM
+ARG TARGETPLATFORM=linux/arm64
 ARG TARGETOS
 ARG TARGETARCH
 ARG BUILD_DATE
@@ -44,7 +44,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_INDEX_URL=https://pypi.org/simple/ \
     PIP_EXTRA_INDEX_URL=""
 
-# Install comprehensive build dependencies for blockchain operations
+# Install comprehensive build dependencies for blockchain operations (Linux/arm64 only; no Windows tooling)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
@@ -156,7 +156,15 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
         "celery>=5.3.0" \
         "kombu>=5.3.0" \
         "billiard>=4.2.0" \
-        "vine>=5.1.0"
+        "vine>=5.1.0" \
+    && echo "LUCID_BLOCKCHAIN_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker \
+    && echo "LUCID_BLOCKCHAIN_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.lucid-marker \
+    && chown -R root:root /usr/local/lib/python3.11/site-packages /usr/local/bin
+
+# Verify critical packages exist in builder stage (fail fast)
+RUN python -c "import fastapi, uvicorn, pydantic, httpx, aiofiles, cryptography, web3, motor, pymongo, redis, aiohttp, structlog, prometheus_client, grpc, google.protobuf, zmq, psutil; print('✅ blockchain packages present')" \
+    && test -f /usr/local/lib/python3.11/site-packages/.lucid-marker \
+    && test -f /usr/local/bin/.lucid-marker
 
 # Copy and install blockchain-specific requirements
 COPY blockchain/requirements.txt* /tmp/
@@ -170,13 +178,18 @@ COPY --chown=blockchain:blockchain src/blockchain/ /app/src/blockchain/
 COPY --chown=blockchain:blockchain src/common/ /app/src/common/
 COPY --chown=blockchain:blockchain common/ /app/common/
 
-# Create comprehensive service directories
+# Create comprehensive service directories (with marker content to lock structure)
 RUN mkdir -p \
         /var/lib/lucid/blockchain/{data,wallet,keys,backups,contracts} \
         /var/log/lucid/blockchain \
         /etc/lucid/blockchain \
         /var/cache/lucid/blockchain \
         /var/tmp/lucid/blockchain \
+    && echo "LUCID_BLOCKCHAIN_DATA_DIR" > /var/lib/lucid/blockchain/.lucid-marker \
+    && echo "LUCID_BLOCKCHAIN_LOG_DIR" > /var/log/lucid/blockchain/.lucid-marker \
+    && echo "LUCID_BLOCKCHAIN_ETC_DIR" > /etc/lucid/blockchain/.lucid-marker \
+    && echo "LUCID_BLOCKCHAIN_CACHE_DIR" > /var/cache/lucid/blockchain/.lucid-marker \
+    && echo "LUCID_BLOCKCHAIN_TMP_DIR" > /var/tmp/lucid/blockchain/.lucid-marker \
     && chown -R blockchain:blockchain /var/lib/lucid /var/log/lucid /etc/lucid /var/cache/lucid /var/tmp/lucid
 
 # Copy blockchain configuration files
@@ -296,7 +309,7 @@ EOF
 RUN chmod +x /usr/local/bin/health-check.sh
 
 # Stage 2: Production runtime with optimized base image
-FROM ${BASE_IMAGE} AS blockchain-runtime
+FROM --platform=${TARGETPLATFORM:-linux/arm64} ${BASE_IMAGE} AS blockchain-runtime
 
 # Build arguments for runtime
 ARG BUILD_DATE
@@ -320,7 +333,10 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}"
 
-# Copy Python installation and packages from builder
+# Ensure target directories exist before COPY to avoid silent copy issues
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin /app /var/lib/lucid/blockchain /var/log/lucid/blockchain /etc/lucid/blockchain /var/cache/lucid/blockchain /var/tmp/lucid/blockchain
+
+# Copy Python installation and packages from builder (includes marker files)
 COPY --from=blockchain-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=blockchain-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
 COPY --from=blockchain-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
@@ -366,7 +382,7 @@ COPY --from=blockchain-builder /etc/group /etc/group
 COPY --from=blockchain-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=blockchain-builder /usr/share/zoneinfo /usr/share/zoneinfo
 
-# Copy application and configuration
+# Copy application and configuration (directories already created)
 COPY --from=blockchain-builder --chown=nonroot:nonroot /app /app
 COPY --from=blockchain-builder --chown=nonroot:nonroot /var/lib/lucid/blockchain /var/lib/lucid/blockchain
 COPY --from=blockchain-builder --chown=nonroot:nonroot /var/log/lucid/blockchain /var/log/lucid/blockchain
@@ -377,6 +393,9 @@ COPY --from=blockchain-builder --chown=nonroot:nonroot /var/tmp/lucid/blockchain
 # Copy startup and health check scripts
 COPY --from=blockchain-builder /usr/local/bin/start-blockchain.sh /usr/local/bin/start-blockchain.sh
 COPY --from=blockchain-builder /usr/local/bin/health-check.sh /usr/local/bin/health-check.sh
+
+# Verify packages were copied (fail fast, prevents silent COPY errors)
+RUN ["/usr/local/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} missing'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), '.lucid-marker missing'; assert os.path.exists('/usr/local/bin/.lucid-marker'), '/usr/local/bin/.lucid-marker missing'; import fastapi, uvicorn, pydantic, httpx, aiofiles, cryptography, web3, motor, pymongo, redis, aiohttp, structlog, prometheus_client, grpc, google.protobuf, zmq, psutil; print('✅ runtime packages verified')"]
 
 # Production runtime environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
