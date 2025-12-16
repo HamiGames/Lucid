@@ -46,6 +46,8 @@ services:
     volumes:
       - api-gateway-certs:/certs:ro
       - api-gateway-logs:/app/logs
+      - ./config/rate-limit-config.yaml:/app/config/rate-limit-config.yaml:ro
+      - ./config/routing-config.yaml:/app/config/routing-config.yaml:ro
     healthcheck:
       test:
         [

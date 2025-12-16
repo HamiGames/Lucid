@@ -96,6 +96,12 @@ app.add_middleware(LoggingMiddleware)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(AuthMiddleware)
 
+# Root health endpoint (for docker-compose healthcheck at /health)
+@app.get("/health", tags=["Health"])
+async def root_health():
+    """Root health check endpoint for container orchestration"""
+    return {"status": "healthy", "service": "api-gateway"}
+
 # Include routers
 app.include_router(meta.router, prefix="/api/v1/meta", tags=["Meta"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])

@@ -62,7 +62,7 @@ class ServiceInfo(BaseModel):
 
 class HealthStatus(BaseModel):
     """Health status response"""
-    status: str = Field(..., regex="^(healthy|unhealthy|degraded)$")
+    status: str = Field(..., pattern="^(healthy|unhealthy|degraded)$")
     timestamp: datetime = Field(...)
     service: str = Field(..., example="api-gateway")
     version: str = Field(..., example="1.0.0")

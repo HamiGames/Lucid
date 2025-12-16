@@ -7,6 +7,7 @@ services:
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       - lucid-pi-network
     ports:
@@ -14,6 +15,8 @@ services:
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
       - /mnt/myssd/Lucid/Lucid/data/api-gateway/cache:/app/cache:rw
+      - /mnt/myssd/Lucid/Lucid/configs/api-gateway:/app/config:ro
+      - /mnt/myssd/Lucid/Lucid/certs/api-gateway:/certs:ro
       - api-gateway-tmp:/tmp/api
     environment:
       - LUCID_ENV=production
@@ -24,6 +27,10 @@ services:
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
+      - SESSION_MANAGEMENT_URL=http://session-anchoring:8085
+      - TRON_PAYMENT_URL=http://tron-client:8091
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
