@@ -35,10 +35,16 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15, env="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
     
-    # Database Configuration
-    MONGODB_URI: str = Field(..., env="MONGODB_URI")
-    MONGODB_DATABASE: str = Field(default="lucid_gateway", env="MONGODB_DATABASE")
-    REDIS_URL: str = Field(..., env="REDIS_URL")
+    # Database Configuration (accepts MONGODB_URI or MONGODB_URL)
+    MONGODB_URI: str = Field(default="", validation_alias="MONGODB_URI")
+    MONGODB_URL: str = Field(default="", validation_alias="MONGODB_URL")
+    MONGODB_DATABASE: str = Field(default="lucid_gateway")
+    REDIS_URL: str = Field(...)
+    
+    @property
+    def mongodb_connection_string(self) -> str:
+        """Get MongoDB connection string (supports both URI and URL env vars)"""
+        return self.MONGODB_URI or self.MONGODB_URL
     
     # Backend Service URLs
     # lucid_blocks = on-chain blockchain system
@@ -67,8 +73,21 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = Field(default="json", env="LOG_FORMAT")
     
     # Monitoring Configuration
-    METRICS_ENABLED: bool = Field(default=True, env="METRICS_ENABLED")
-    HEALTH_CHECK_INTERVAL: int = Field(default=30, env="HEALTH_CHECK_INTERVAL")
+    METRICS_ENABLED: bool = Field(default=True)
+    HEALTH_CHECK_INTERVAL: str = Field(default="30")
+    
+    @field_validator('HEALTH_CHECK_INTERVAL', mode='before')
+    @classmethod
+    def parse_health_check_interval(cls, v):
+        """Parse health check interval, stripping 's' suffix if present"""
+        if isinstance(v, str):
+            return v.rstrip('s')
+        return str(v)
+    
+    @property
+    def health_check_interval_seconds(self) -> int:
+        """Get health check interval as integer seconds"""
+        return int(self.HEALTH_CHECK_INTERVAL)
     
     @field_validator('ALLOWED_HOSTS', mode='before')
     @classmethod

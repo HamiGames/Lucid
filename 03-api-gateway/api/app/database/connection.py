@@ -24,9 +24,10 @@ async def init_database() -> None:
     global _mongodb_client, _redis_client
     
     try:
-        # Initialize MongoDB
-        logger.info(f"Connecting to MongoDB: {settings.MONGODB_URI}")
-        _mongodb_client = AsyncIOMotorClient(settings.MONGODB_URI)
+        # Initialize MongoDB (supports both MONGODB_URI and MONGODB_URL)
+        mongodb_uri = settings.mongodb_connection_string
+        logger.info(f"Connecting to MongoDB: {mongodb_uri[:50]}...")
+        _mongodb_client = AsyncIOMotorClient(mongodb_uri)
         
         # Verify MongoDB connection
         await _mongodb_client.admin.command('ping')
