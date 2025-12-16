@@ -24,13 +24,13 @@ services:
       - API_GATEWAY_HOST=api-gateway
       - API_GATEWAY_PORT=8080
       - API_GATEWAY_URL=http://api-gateway:8080
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
       - SESSION_MANAGEMENT_URL=http://session-anchoring:8085
-      - TRON_PAYMENT_URL=http://tron-client:8091
+      - TRON_PAYMENT_URL=${TRON_PAYMENT_URL:-http://tron-client:8091}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -279,7 +279,7 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - BLOCK_MANAGER_HOST=block-manager
+      - BLOCK_MANAGER_HOST=0.0.0.0
       - BLOCK_MANAGER_PORT=8086
       - BLOCK_MANAGER_URL=http://block-manager:8086
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
