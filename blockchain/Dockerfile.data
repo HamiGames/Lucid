@@ -151,20 +151,9 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 # Verify runtime directories were copied (fail build if missing)
 RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/var/run'), 'CRITICAL: /var/run not copied'; assert os.path.exists('/var/run/.keep'), 'CRITICAL: /var/run/.keep marker missing'; assert os.path.exists('/var/lib'), 'CRITICAL: /var/lib not copied'; assert os.path.exists('/var/lib/.keep'), 'CRITICAL: /var/lib/.keep marker missing'; print('✅ Runtime directories verified (/var/run, /var/lib)')"]
 
-# Copy dynamic linker for ARM64 (required for native extensions like cryptography)
-# System library - world-readable, ownership doesn't affect functionality
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-
-# Copy arch-specific libraries directory (required for ARM64 native extensions and shared libraries)
-# System libraries - world-readable, ownership doesn't affect functionality
-COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-
 # Copy CA certificates (required for SSL/TLS operations)
 # Certificate file - world-readable, ownership doesn't affect functionality
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Verify system libraries were copied (fail build if missing - critical for ARM64 native extensions)
-RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/lib/ld-linux-aarch64.so.1'), 'CRITICAL: ARM64 dynamic linker not copied'; assert os.path.exists('/lib/aarch64-linux-gnu'), 'CRITICAL: ARM64 libraries directory not copied'; assert os.path.exists('/etc/ssl/certs/ca-certificates.crt'), 'CRITICAL: CA certificates not copied'; print('✅ System libraries verified (ld-linux, aarch64-linux-gnu, ca-certificates)')"]
 
 # Verify Python interpreter is from base image (not copied from builder)
 # CRITICAL: Ensure we're using distroless base Python, not a local copy
