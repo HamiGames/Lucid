@@ -13,11 +13,10 @@ import logging
 from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Dict, Any
 
-from ..service import DataChainService
 from .routes import router
+from .dependencies import get_data_chain_service, shutdown_data_chain_service
 
 # Configure logging
 logging.basicConfig(
@@ -52,22 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Global service instance
-_data_chain_service: DataChainService | None = None
-
-
-async def get_data_chain_service() -> DataChainService:
-    """Dependency to get data chain service instance."""
-    global _data_chain_service
-    
-    if _data_chain_service is None:
-        mongo_client = AsyncIOMotorClient(MONGO_URL)
-        _data_chain_service = DataChainService(mongo_client)
-        await _data_chain_service.start()
-    
-    return _data_chain_service
-
 
 # Include routes
 app.include_router(router, prefix="/api/v1", tags=["Data Chain"])
@@ -157,11 +140,7 @@ async def startup_event():
 async def shutdown_event():
     """Application shutdown event."""
     logger.info("Shutting down data chain service")
-    
-    global _data_chain_service
-    if _data_chain_service:
-        await _data_chain_service.stop()
-        _data_chain_service = None
+    await shutdown_data_chain_service()
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Body, Query
 from pydantic import BaseModel, Field
 
 from ..service import DataChainService
-from .main import get_data_chain_service
+from .dependencies import get_data_chain_service
 
 logger = logging.getLogger(__name__)
 
