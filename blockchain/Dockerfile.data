@@ -179,26 +179,7 @@ COPY --chown=65532:65532 --from=builder /build/config          /app/blockchain/c
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/blockchain/__init__.py
 
 # Verify all directories and __init__.py were copied (fail build if any are missing)
-RUN /usr/bin/python3 - <<'PY'
-import os
-
-required = {
-    '/app/blockchain/data': 'directory',
-    '/app/blockchain/core': 'directory',
-    '/app/blockchain/config': 'directory',
-    '/app/blockchain/__init__.py': 'file',
-}
-
-missing = []
-for path, path_type in required.items():
-    exists = os.path.exists(path)
-    is_correct = os.path.isdir(path) if path_type == 'directory' else os.path.isfile(path)
-    if not (exists and is_correct):
-        missing.append(f'{path} ({path_type})')
-
-assert not missing, f'CRITICAL: Missing or incorrect type: {missing}'
-print('✅ All data-chain directories and __init__.py verified after COPY')
-PY
+RUN ["/usr/bin/python3", "-c", "import os; required={'/app/blockchain/data':'directory','/app/blockchain/core':'directory','/app/blockchain/config':'directory','/app/blockchain/__init__.py':'file'}; missing=[f\"{p} ({t})\" for p,t in required.items() if not (os.path.isdir(p) if t=='directory' else os.path.isfile(p))]; assert not missing, f'CRITICAL: Missing or incorrect type: {missing}'; print('✅ All data-chain directories and __init__.py verified after COPY')"]
 
 # Verify data-chain entrypoint exists and is correct (CRITICAL: fail build if wrong)
 RUN ["/usr/bin/python3", "-c", "import os; entrypoint_path = '/app/blockchain/data/api/entrypoint.py'; assert os.path.exists(entrypoint_path), f'CRITICAL: Data-chain entrypoint not found at {entrypoint_path}'; assert os.path.isfile(entrypoint_path), f'CRITICAL: {entrypoint_path} is not a file'; print(f'✅ Data-chain entrypoint verified: {entrypoint_path}')"]
