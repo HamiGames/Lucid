@@ -413,6 +413,16 @@ class LeaderSchedule:
 # =============================================================================
 
 @dataclass
+class Transaction:
+    """Simplified transaction model used by Merkle tree builder."""
+    id: str
+    from_address: str
+    to_address: str
+    value: Any
+    timestamp: Optional[datetime] = None
+
+
+@dataclass
 class TransactionStatus:
     """Generic transaction status"""
     txid: str
