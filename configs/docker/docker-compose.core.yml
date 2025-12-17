@@ -143,6 +143,7 @@ services:
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.service-mesh
     networks:
       - lucid-pi-network
     ports:
