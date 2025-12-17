@@ -87,8 +87,6 @@ COPY blockchain/deployment/        ./deployment/
 COPY blockchain/chain-client/      ./chain-client/
 COPY blockchain/evm/               ./evm/
 COPY blockchain/on_system_chain/   ./on_system_chain/
-COPY blockchain/scripts/           ./scripts/
-COPY blockchain/tests/             ./tests/
 COPY blockchain/*.py               ./
 
 ############################
@@ -166,8 +164,6 @@ COPY --chown=65532:65532 --from=builder /build/deployment /app/deployment
 COPY --chown=65532:65532 --from=builder /build/chain-client /app/chain-client
 COPY --chown=65532:65532 --from=builder /build/evm       /app/evm
 COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/on_system_chain
-COPY --chown=65532:65532 --from=builder /build/scripts   /app/scripts
-COPY --chown=65532:65532 --from=builder /build/tests     /app/tests
 COPY --chown=65532:65532 --from=builder /build/*.py      /app/
 
 EXPOSE 8085
