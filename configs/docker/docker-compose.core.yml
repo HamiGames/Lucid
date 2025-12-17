@@ -209,6 +209,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-anchoring
     networks:
       - lucid-pi-network
     ports:
@@ -218,11 +219,6 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw
       - session-anchoring-cache:/tmp/anchoring
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - SESSION_ANCHORING_HOST=session-anchoring
-      - SESSION_ANCHORING_PORT=8085
-      - SESSION_ANCHORING_URL=http://session-anchoring:8085
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
