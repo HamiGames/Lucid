@@ -337,7 +337,7 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - DATA_CHAIN_HOST=data-chain
+      - DATA_CHAIN_HOST=0.0.0.0
       - DATA_CHAIN_PORT=8087
       - DATA_CHAIN_URL=http://data-chain:8087
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
@@ -356,14 +356,14 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8087/health', timeout=5).read(); exit(0)",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     labels:
       - "lucid.service=data-chain"
       - "lucid.type=distroless"
