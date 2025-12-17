@@ -137,7 +137,7 @@ services:
         condition: service_healthy
 
   service-mesh:
-    image: pickme/lucid-service-mesh-controller:latest-arm64
+    image: pickme/lucid-service-mesh:latest-arm64
     container_name: service-mesh
     restart: unless-stopped
     env_file:
