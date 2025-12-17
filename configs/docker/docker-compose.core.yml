@@ -152,6 +152,8 @@ services:
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
       - /mnt/myssd/Lucid/Lucid/data/service-mesh/config:/app/config:rw
+      - /mnt/myssd/Lucid/Lucid/data/service-mesh/certificates:/app/certificates:rw
+      - /mnt/myssd/Lucid/Lucid/data/service-mesh/envoy-configs:/app/envoy-configs:rw
       - service-mesh-cache:/tmp/mesh
     environment:
       - LUCID_ENV=production
