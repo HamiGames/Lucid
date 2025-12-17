@@ -59,12 +59,20 @@ SESSION_ANCHORINGS_COLLECTION=session_anchorings
 MONGODB_DATABASE_NAME=lucid
 
 # =============================================================================
-# REDIS CONFIGURATION
+# REDIS CONFIGURATION - REQUIRED
 # =============================================================================
 REDIS_URL=redis://lucid-redis:6379/0
 REDIS_HOST=lucid-redis
 REDIS_PORT=6379
 REDIS_DB=0
+
+# =============================================================================
+# SECURITY CONFIGURATION - REQUIRED
+# =============================================================================
+# Secret key for JWT tokens and encryption - REQUIRED
+# Alternative: BLOCKCHAIN_SECRET_KEY (if SECRET_KEY is not set)
+SECRET_KEY=${JWT_SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-your-secret-key-change-in-production}}
+BLOCKCHAIN_SECRET_KEY=${SECRET_KEY}
 
 # =============================================================================
 # DEPENDENCY SERVICE CONFIGURATION

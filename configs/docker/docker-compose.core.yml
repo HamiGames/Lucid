@@ -220,8 +220,9 @@ services:
       - session-anchoring-cache:/tmp/anchoring
     environment:
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+      - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -235,14 +236,14 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8085/health', timeout=5).read(); exit(0)",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8085)); s.close(); exit(0 if result == 0 else 1)",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     labels:
       - "lucid.service=session-anchoring"
       - "lucid.type=distroless"
@@ -356,7 +357,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "python3",
           "-c",
           "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)",
         ]
