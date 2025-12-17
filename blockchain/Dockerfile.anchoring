@@ -15,7 +15,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -30,7 +30,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
@@ -68,7 +70,7 @@ RUN echo "LUCID_SESSION_ANCHORING_PACKAGES_INSTALLED_$(date +%s)" > /root/.local
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, sqlalchemy, cryptography, httpx, motor, pymongo, blake3, web3, aiohttp, redis, aiofiles, pyyaml; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, sqlalchemy, cryptography, httpx, motor, pymongo, blake3, web3, aiohttp, redis, aiofiles, pyyaml, async_timeout; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -113,6 +115,9 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     SESSION_ANCHORING_PORT=8085 \
     SESSION_ANCHORING_HOST=0.0.0.0
 
@@ -122,13 +127,8 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-# Copy dynamic linker for ARM64 (required for native extensions like cryptography)
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-
-# Copy arch-specific libraries directory (required for ARM64 native extensions and shared libraries)
-COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-
 # Copy CA certificates (required for SSL/TLS operations)
+# Distroless base already has correct linker/runtime; only copy CA certs
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
@@ -138,7 +138,24 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
 # Following Dockerfile-copy-pattern.md: verify in runtime stage with correct path
-RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, f'marker file is empty: {marker_path}'; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
+assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
+assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
+assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+print('Packages verified in runtime stage')"]
+
 COPY --chown=65532:65532 --from=builder /build/anchoring /app/anchoring
 COPY --chown=65532:65532 --from=builder /build/api       /app/api
 COPY --chown=65532:65532 --from=builder /build/core      /app/core
@@ -155,9 +172,12 @@ COPY --chown=65532:65532 --from=builder /build/*.py      /app/
 
 EXPOSE 8085
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('SESSION_ANCHORING_PORT', '8085'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8085)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
-CMD ["/usr/bin/python3", "/app/api/app/entrypoint_anchoring.py"]
+# Clear base ENTRYPOINT so CMD works as expected
+ENTRYPOINT []
+
+CMD ["/usr/bin/python3.11", "/app/api/app/entrypoint_anchoring.py"]

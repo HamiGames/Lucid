@@ -178,9 +178,39 @@ class AnchoringStorage:
                 "confirmed_at": {"$gte": today_start}
             })
             
-            # Calculate average confirmation time (simplified)
-            # In production, calculate from submitted_at to confirmed_at
-            avg_confirmation_time = 30.0  # Placeholder
+            # Calculate average confirmation time from submitted_at to confirmed_at
+            avg_confirmation_time = 0.0
+            confirmed_records = await self.collection.find({
+                "status": "confirmed",
+                "submitted_at": {"$exists": True},
+                "confirmed_at": {"$exists": True, "$ne": None}
+            }).to_list(length=1000)
+            
+            if confirmed_records:
+                total_seconds = 0.0
+                valid_count = 0
+                for record in confirmed_records:
+                    submitted_at = record.get("submitted_at")
+                    confirmed_at = record.get("confirmed_at")
+                    if submitted_at and confirmed_at:
+                        if isinstance(submitted_at, str):
+                            try:
+                                submitted_at = datetime.fromisoformat(submitted_at.replace('Z', '+00:00'))
+                            except (ValueError, AttributeError):
+                                continue
+                        if isinstance(confirmed_at, str):
+                            try:
+                                confirmed_at = datetime.fromisoformat(confirmed_at.replace('Z', '+00:00'))
+                            except (ValueError, AttributeError):
+                                continue
+                        if isinstance(submitted_at, datetime) and isinstance(confirmed_at, datetime):
+                            delta = (confirmed_at - submitted_at).total_seconds()
+                            if delta > 0:
+                                total_seconds += delta
+                                valid_count += 1
+                
+                if valid_count > 0:
+                    avg_confirmation_time = total_seconds / valid_count
             
             return {
                 "pending": pending,
