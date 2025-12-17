@@ -1,0 +1,72 @@
+{
+  "mtls": {
+    "enabled": "${MTLS_ENABLED:-true}",
+    "mode": "${MTLS_MODE:-STRICT}",
+    "certificate_authority": {
+      "validity_days": "${CA_VALIDITY_DAYS:-365}",
+      "key_size": "${CERT_KEY_SIZE:-2048}",
+      "algorithm": "${CERT_ALGORITHM:-RSA}",
+      "hash_algorithm": "${CERT_HASH_ALGORITHM:-SHA256}",
+      "subject": {
+        "country": "${CERT_COUNTRY:-US}",
+        "state": "${CERT_STATE:-California}",
+        "locality": "${CERT_LOCALITY:-San Francisco}",
+        "organization": "${CERT_ORGANIZATION:-Lucid}",
+        "organizational_unit": "${CERT_ORG_UNIT:-Service Mesh}",
+        "common_name": "${CA_COMMON_NAME:-Lucid CA}"
+      }
+    },
+    "service_certificates": {
+      "validity_days": "${CERT_VALIDITY_DAYS:-90}",
+      "key_size": "${CERT_KEY_SIZE:-2048}",
+      "algorithm": "${CERT_ALGORITHM:-RSA}",
+      "hash_algorithm": "${CERT_HASH_ALGORITHM:-SHA256}",
+      "auto_rotate": "${CERT_AUTO_ROTATE:-true}",
+      "rotation_threshold_days": "${CERT_ROTATION_THRESHOLD:-30}",
+      "san_dns_suffix": "${CERT_SAN_DNS_SUFFIX:-.lucid.local}"
+    },
+    "tls_config": {
+      "min_protocol_version": "${TLS_MIN_PROTOCOL:-TLSv1.2}",
+      "max_protocol_version": "${TLS_MAX_PROTOCOL:-TLSv1.3}",
+      "cipher_suites": [
+        "${TLS_CIPHER_1:-TLS_AES_256_GCM_SHA384}",
+        "${TLS_CIPHER_2:-TLS_AES_128_GCM_SHA256}",
+        "${TLS_CIPHER_3:-TLS_CHACHA20_POLY1305_SHA256}",
+        "${TLS_CIPHER_4:-ECDHE-RSA-AES256-GCM-SHA384}",
+        "${TLS_CIPHER_5:-ECDHE-RSA-AES128-GCM-SHA256}"
+      ],
+      "ecdh_curves": [
+        "${ECDH_CURVE_1:-X25519}",
+        "${ECDH_CURVE_2:-P-256}",
+        "${ECDH_CURVE_3:-P-384}"
+      ]
+    },
+    "paths": {
+      "ca_cert": "${CA_CERT_PATH:-/app/certificates/ca.crt}",
+      "ca_key": "${CA_KEY_PATH:-/app/certificates/ca.key}",
+      "certificates_dir": "${CERTIFICATES_PATH:-/app/certificates}"
+    }
+  },
+  "service_mtls_config": {
+    "api-gateway": {
+      "mode": "${API_GATEWAY_MTLS_MODE:-STRICT}",
+      "require_client_cert": "${API_GATEWAY_REQUIRE_CLIENT_CERT:-true}"
+    },
+    "auth-service": {
+      "mode": "${AUTH_MTLS_MODE:-STRICT}",
+      "require_client_cert": "${AUTH_REQUIRE_CLIENT_CERT:-true}"
+    },
+    "blockchain-engine": {
+      "mode": "${BLOCKCHAIN_ENGINE_MTLS_MODE:-STRICT}",
+      "require_client_cert": "${BLOCKCHAIN_ENGINE_REQUIRE_CLIENT_CERT:-true}"
+    },
+    "lucid-mongodb": {
+      "mode": "${MONGODB_MTLS_MODE:-PERMISSIVE}",
+      "require_client_cert": "${MONGODB_REQUIRE_CLIENT_CERT:-false}"
+    },
+    "lucid-redis": {
+      "mode": "${REDIS_MTLS_MODE:-PERMISSIVE}",
+      "require_client_cert": "${REDIS_REQUIRE_CLIENT_CERT:-false}"
+    }
+  }
+}

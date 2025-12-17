@@ -1,0 +1,417 @@
+# =============================================================================
+# Lucid Service Mesh Controller - Environment Variables Template
+# =============================================================================
+# File: service-mesh/config/env-service-mesh.template
+# Purpose: Template for all configurable environment variables
+# Usage: Copy to configs/environment/.env.service-mesh and customize values
+# =============================================================================
+
+# =============================================================================
+# SERVICE MESH CONTROLLER SETTINGS
+# =============================================================================
+SERVICE_MESH_NAME=lucid-service-mesh
+SERVICE_MESH_VERSION=1.0.0
+SERVICE_NAME=service-mesh-controller
+SERVICE_MESH_HOST=0.0.0.0
+SERVICE_MESH_PORT=8500
+HTTP_PORT=8088
+LUCID_NAMESPACE=lucid
+LUCID_CLUSTER=core
+LUCID_PLATFORM=arm64
+LUCID_ENV=production
+
+# =============================================================================
+# CONSUL CONFIGURATION
+# =============================================================================
+CONSUL_HOST=localhost
+CONSUL_PORT=8500
+CONSUL_DATACENTER=lucid-dc
+CONSUL_NODE_NAME=lucid-service-mesh-controller
+CONSUL_BOOTSTRAP_EXPECT=1
+CONSUL_UI_ENABLED=true
+CONSUL_CONNECT_ENABLED=true
+CONSUL_SERVER=true
+CONSUL_DATA_DIR=/tmp/consul
+CONSUL_BIND_ADDR=0.0.0.0
+CONSUL_CLIENT_ADDR=0.0.0.0
+CONSUL_ADVERTISE_ADDR=
+CONSUL_HTTP_PORT=8500
+CONSUL_HTTPS_PORT=8501
+CONSUL_GRPC_PORT=8502
+CONSUL_DNS_PORT=8600
+CONSUL_ACL_ENABLED=false
+CONSUL_ACL_DEFAULT_POLICY=allow
+CONSUL_ACL_TOKEN_PERSISTENCE=true
+CONSUL_VERIFY_INCOMING=false
+CONSUL_VERIFY_OUTGOING=false
+CONSUL_VERIFY_SERVER_HOSTNAME=false
+CONSUL_LEAVE_ON_TERMINATE=true
+CONSUL_REJOIN_AFTER_LEAVE=true
+CONSUL_LOCAL_SCRIPT_CHECKS=true
+CONSUL_DISABLE_UPDATE_CHECK=true
+
+# =============================================================================
+# DISCOVERY SETTINGS
+# =============================================================================
+DISCOVERY_BACKEND=consul
+SERVICE_TTL=60
+HEALTH_CHECK_INTERVAL=30
+DEREGISTER_CRITICAL_AFTER=90s
+
+# =============================================================================
+# ENVOY SIDECAR CONFIGURATION
+# =============================================================================
+ENVOY_ADMIN_PORT=9901
+ENVOY_PROXY_PORT=15001
+ENVOY_CONFIG_PATH=/app/envoy-configs
+ENVOY_LOG_LEVEL=info
+ENVOY_CLUSTER_NAME=lucid-service-mesh
+ENVOY_NODE_ID=service-mesh-sidecar
+ENVOY_ADMIN_BIND_ADDR=0.0.0.0
+ENVOY_LISTENER_BIND_ADDR=0.0.0.0
+ENVOY_UPSTREAM_HOST=127.0.0.1
+ENVOY_UPSTREAM_PORT=8080
+ENVOY_CONNECT_TIMEOUT=5s
+ENVOY_ROUTE_TIMEOUT=30s
+ENVOY_LB_POLICY=ROUND_ROBIN
+ENVOY_RETRY_ON=connect-failure,refused-stream,unavailable,cancelled,retriable-4xx,reset
+ENVOY_NUM_RETRIES=3
+ENVOY_PER_TRY_TIMEOUT=10s
+ENVOY_HEALTH_CHECK_PATH=/health
+ENVOY_HEALTH_CHECK_INTERVAL=10s
+ENVOY_HEALTH_CHECK_TIMEOUT=5s
+ENVOY_UNHEALTHY_THRESHOLD=3
+ENVOY_HEALTHY_THRESHOLD=2
+ENVOY_MAX_CONNECTIONS=1000
+ENVOY_MAX_PENDING_REQUESTS=1000
+ENVOY_MAX_REQUESTS=1000
+ENVOY_MAX_RETRIES=3
+ENVOY_CONNECTION_LIMIT=10000
+ENVOY_GLOBAL_MAX_CONNECTIONS=50000
+
+# =============================================================================
+# mTLS / CERTIFICATE CONFIGURATION
+# =============================================================================
+MTLS_ENABLED=true
+MTLS_MODE=STRICT
+MTLS_DEFAULT_MODE=STRICT
+MTLS_PERMISSIVE_MODE=PERMISSIVE
+MTLS_MIN_PROTOCOL=TLSv1_2
+MTLS_PERMISSIVE_MIN_PROTOCOL=TLSv1_2
+CERT_VALIDITY_DAYS=90
+CA_VALIDITY_DAYS=365
+CERT_KEY_SIZE=2048
+CERT_ALGORITHM=RSA
+CERT_HASH_ALGORITHM=SHA256
+CERT_AUTO_ROTATE=true
+CERT_ROTATION_THRESHOLD=30
+CERT_COUNTRY=US
+CERT_STATE=California
+CERT_LOCALITY=San Francisco
+CERT_ORGANIZATION=Lucid
+CERT_ORG_UNIT=Service Mesh
+CA_COMMON_NAME=Lucid CA
+CERT_SAN_DNS_SUFFIX=.lucid.local
+CERTIFICATES_PATH=/app/certificates
+CA_CERT_PATH=/app/certificates/ca.crt
+CA_KEY_PATH=/app/certificates/ca.key
+TLS_MIN_PROTOCOL=TLSv1.2
+TLS_MAX_PROTOCOL=TLSv1.3
+TLS_CIPHER_1=TLS_AES_256_GCM_SHA384
+TLS_CIPHER_2=TLS_AES_128_GCM_SHA256
+TLS_CIPHER_3=TLS_CHACHA20_POLY1305_SHA256
+TLS_CIPHER_4=ECDHE-RSA-AES256-GCM-SHA384
+TLS_CIPHER_5=ECDHE-RSA-AES128-GCM-SHA256
+ECDH_CURVE_1=X25519
+ECDH_CURVE_2=P-256
+ECDH_CURVE_3=P-384
+
+# =============================================================================
+# NETWORKING CONFIGURATION
+# =============================================================================
+DEFAULT_TIMEOUT=30
+RETRY_ATTEMPTS=3
+RETRY_DELAY=1
+CIRCUIT_BREAKER_ENABLED=true
+CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+CIRCUIT_BREAKER_RECOVERY_TIMEOUT=30
+CIRCUIT_BREAKER_HALF_OPEN_REQUESTS=3
+LOAD_BALANCING_POLICY=ROUND_ROBIN
+LB_HEALTH_CHECK_INTERVAL=10
+
+# Network
+LUCID_PI_NETWORK=lucid-pi-network
+LUCID_PI_SUBNET=172.20.0.0/16
+LUCID_PI_GATEWAY=172.20.0.1
+NETWORK_DRIVER=bridge
+IPAM_DRIVER=default
+
+# DNS
+DNS_ENABLED=true
+DNS_DOMAIN=lucid.local
+DNS_UPSTREAM_1=8.8.8.8
+DNS_UPSTREAM_2=8.8.4.4
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_OUTPUT=stdout
+LOG_FILE_PATH=/app/logs/service-mesh.log
+LOG_MAX_SIZE_MB=100
+LOG_MAX_BACKUPS=5
+DEBUG=false
+
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# RETRY POLICIES
+# =============================================================================
+RETRY_MAX_ATTEMPTS=3
+RETRY_BACKOFF_MULTIPLIER=2
+RETRY_INITIAL_DELAY_MS=100
+RETRY_MAX_DELAY_MS=10000
+RETRY_DEFAULT_MAX_ATTEMPTS=3
+RETRY_DEFAULT_PER_TRY_TIMEOUT=10s
+RETRY_DEFAULT_BASE_INTERVAL=100ms
+RETRY_DEFAULT_MAX_INTERVAL=10s
+RETRY_CRITICAL_MAX_ATTEMPTS=5
+RETRY_CRITICAL_PER_TRY_TIMEOUT=30s
+RETRY_CRITICAL_BASE_INTERVAL=500ms
+RETRY_CRITICAL_MAX_INTERVAL=30s
+
+# =============================================================================
+# TIMEOUT POLICIES
+# =============================================================================
+CONNECT_TIMEOUT_MS=5000
+REQUEST_TIMEOUT_MS=30000
+IDLE_TIMEOUT_MS=300000
+TIMEOUT_DEFAULT_CONNECT=5s
+TIMEOUT_DEFAULT_REQUEST=30s
+TIMEOUT_DEFAULT_IDLE=300s
+TIMEOUT_DATABASE_CONNECT=10s
+TIMEOUT_DATABASE_REQUEST=60s
+TIMEOUT_DATABASE_IDLE=600s
+TIMEOUT_STREAMING_CONNECT=5s
+TIMEOUT_STREAMING_REQUEST=0s
+TIMEOUT_STREAMING_IDLE=3600s
+
+# =============================================================================
+# CIRCUIT BREAKER POLICIES
+# =============================================================================
+CB_CONSECUTIVE_FAILURES=5
+CB_INTERVAL_SECONDS=10
+CB_BASE_EJECTION_TIME=30
+CB_MAX_EJECTION_PERCENT=50
+CB_DEFAULT_GATEWAY_FAILURE=5
+CB_DEFAULT_5XX=5
+CB_DEFAULT_INTERVAL=10s
+CB_DEFAULT_EJECTION_TIME=30s
+CB_DEFAULT_MAX_EJECTION=50
+CB_STRICT_GATEWAY_FAILURE=3
+CB_STRICT_5XX=3
+CB_STRICT_INTERVAL=5s
+CB_STRICT_EJECTION_TIME=60s
+CB_STRICT_MAX_EJECTION=100
+
+# =============================================================================
+# RATE LIMITING POLICIES
+# =============================================================================
+RATE_LIMIT_DEFAULT_REQUESTS=1000
+RATE_LIMIT_DEFAULT_UNIT=MINUTE
+RATE_LIMIT_GATEWAY_REQUESTS=10000
+RATE_LIMIT_GATEWAY_UNIT=MINUTE
+RATE_LIMIT_AUTH_REQUESTS=100
+RATE_LIMIT_AUTH_UNIT=MINUTE
+
+# =============================================================================
+# LOAD BALANCING POLICIES
+# =============================================================================
+LB_DEFAULT_POLICY=ROUND_ROBIN
+LB_STICKY_POLICY=RING_HASH
+LB_STICKY_HASH_KEY=x-session-id
+LB_LEAST_CONN_POLICY=LEAST_REQUEST
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+HEALTH_CHECK_DEFAULT_PATH=/health
+HEALTH_CHECK_DEFAULT_INTERVAL=30s
+HEALTH_CHECK_DEFAULT_TIMEOUT=10s
+HEALTH_CHECK_UNHEALTHY_THRESHOLD=3
+HEALTH_CHECK_HEALTHY_THRESHOLD=2
+HEALTH_CHECK_TCP_INTERVAL=30s
+HEALTH_CHECK_TCP_TIMEOUT=10s
+HEALTH_CHECK_TCP_UNHEALTHY_THRESHOLD=3
+HEALTH_CHECK_TCP_HEALTHY_THRESHOLD=2
+HEALTH_CHECK_GRPC_INTERVAL=30s
+HEALTH_CHECK_GRPC_TIMEOUT=10s
+HEALTH_CHECK_GRPC_UNHEALTHY_THRESHOLD=3
+HEALTH_CHECK_GRPC_HEALTHY_THRESHOLD=2
+HEALTH_CHECK_GRPC_SERVICE_NAME=
+
+# =============================================================================
+# ALERTING CONFIGURATION
+# =============================================================================
+ALERTING_ENABLED=true
+ALERTING_CONSECUTIVE_FAILURES=3
+ALERTING_RECOVERY=true
+
+# =============================================================================
+# SERVICE IPs (lucid-pi-network)
+# =============================================================================
+TOR_IP=172.20.0.10
+MONGODB_IP=172.20.0.11
+REDIS_IP=172.20.0.12
+ELASTICSEARCH_IP=172.20.0.13
+API_GATEWAY_IP=172.20.0.14
+AUTH_IP=172.20.0.15
+BLOCKCHAIN_ENGINE_IP=172.20.0.16
+SESSION_ANCHORING_IP=172.20.0.17
+BLOCK_MANAGER_IP=172.20.0.18
+SERVICE_MESH_CONTROLLER_IP=172.20.0.19
+DATA_CHAIN_IP=172.20.0.20
+
+# =============================================================================
+# SERVICE HOSTS
+# =============================================================================
+TOR_HOST=tor-proxy
+MONGODB_HOST=lucid-mongodb
+REDIS_HOST=lucid-redis
+API_GATEWAY_HOST=api-gateway
+AUTH_HOST=auth-service
+BLOCKCHAIN_ENGINE_HOST=blockchain-engine
+SESSION_ANCHORING_HOST=session-anchoring
+BLOCK_MANAGER_HOST=block-manager
+DATA_CHAIN_HOST=data-chain
+
+# =============================================================================
+# SERVICE PORTS
+# =============================================================================
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+TOR_DNS_PORT=9053
+MONGODB_PORT=27017
+REDIS_PORT=6379
+ELASTICSEARCH_HTTP_PORT=9200
+ELASTICSEARCH_TRANSPORT_PORT=9300
+API_GATEWAY_PORT=8080
+API_GATEWAY_HTTPS_PORT=8443
+AUTH_PORT=8084
+BLOCKCHAIN_ENGINE_PORT=8082
+SESSION_ANCHORING_PORT=8085
+BLOCK_MANAGER_PORT=8086
+DATA_CHAIN_PORT=8087
+
+# =============================================================================
+# SERVICE NAMES
+# =============================================================================
+TOR_SERVICE_NAME=tor-proxy
+MONGODB_SERVICE_NAME=lucid-mongodb
+REDIS_SERVICE_NAME=lucid-redis
+API_GATEWAY_SERVICE_NAME=api-gateway
+AUTH_SERVICE_NAME=auth-service
+BLOCKCHAIN_ENGINE_SERVICE_NAME=blockchain-engine
+SESSION_ANCHORING_SERVICE_NAME=session-anchoring
+BLOCK_MANAGER_SERVICE_NAME=block-manager
+DATA_CHAIN_SERVICE_NAME=data-chain
+SERVICE_MESH_SERVICE_NAME=service-mesh
+
+# =============================================================================
+# SERVICE HEALTH PATHS
+# =============================================================================
+API_GATEWAY_HEALTH_PATH=/health
+AUTH_HEALTH_PATH=/health
+BLOCKCHAIN_ENGINE_HEALTH_PATH=/health
+SESSION_ANCHORING_HEALTH_PATH=/health
+BLOCK_MANAGER_HEALTH_PATH=/health
+DATA_CHAIN_HEALTH_PATH=/health
+SERVICE_MESH_HEALTH_PATH=/health
+
+# =============================================================================
+# SERVICE HEALTH CHECK INTERVALS
+# =============================================================================
+API_GATEWAY_HEALTH_CHECK_INTERVAL=30s
+API_GATEWAY_HEALTH_CHECK_TIMEOUT=10s
+AUTH_HEALTH_CHECK_INTERVAL=30s
+AUTH_HEALTH_CHECK_TIMEOUT=10s
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_INTERVAL=30s
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_TIMEOUT=10s
+SESSION_ANCHORING_HEALTH_CHECK_INTERVAL=30s
+SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10s
+BLOCK_MANAGER_HEALTH_CHECK_INTERVAL=30s
+BLOCK_MANAGER_HEALTH_CHECK_TIMEOUT=10s
+DATA_CHAIN_HEALTH_CHECK_INTERVAL=30s
+DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10s
+MONGODB_HEALTH_CHECK_INTERVAL=30s
+MONGODB_HEALTH_CHECK_TIMEOUT=10s
+REDIS_HEALTH_CHECK_INTERVAL=30s
+REDIS_HEALTH_CHECK_TIMEOUT=10s
+TOR_HEALTH_CHECK_INTERVAL=30s
+TOR_HEALTH_CHECK_TIMEOUT=10s
+SERVICE_MESH_HEALTH_CHECK_INTERVAL=30s
+SERVICE_MESH_HEALTH_CHECK_TIMEOUT=10s
+
+# =============================================================================
+# SERVICE-SPECIFIC POLICY ASSIGNMENTS
+# =============================================================================
+API_GATEWAY_RETRY_POLICY=default
+API_GATEWAY_TIMEOUT_POLICY=default
+API_GATEWAY_CB_POLICY=default
+API_GATEWAY_RATE_LIMIT_POLICY=api_gateway
+API_GATEWAY_LB_POLICY=default
+API_GATEWAY_MTLS_POLICY=default
+API_GATEWAY_MTLS_MODE=STRICT
+API_GATEWAY_REQUIRE_CLIENT_CERT=true
+
+AUTH_RETRY_POLICY=critical_services
+AUTH_TIMEOUT_POLICY=default
+AUTH_CB_POLICY=strict
+AUTH_RATE_LIMIT_POLICY=auth_service
+AUTH_LB_POLICY=default
+AUTH_MTLS_POLICY=default
+AUTH_MTLS_MODE=STRICT
+AUTH_REQUIRE_CLIENT_CERT=true
+
+MONGODB_RETRY_POLICY=critical_services
+MONGODB_TIMEOUT_POLICY=database
+MONGODB_CB_POLICY=default
+MONGODB_LB_POLICY=default
+MONGODB_MTLS_POLICY=permissive
+MONGODB_MTLS_MODE=PERMISSIVE
+MONGODB_REQUIRE_CLIENT_CERT=false
+
+REDIS_RETRY_POLICY=default
+REDIS_TIMEOUT_POLICY=default
+REDIS_CB_POLICY=default
+REDIS_LB_POLICY=default
+REDIS_MTLS_POLICY=permissive
+REDIS_MTLS_MODE=PERMISSIVE
+REDIS_REQUIRE_CLIENT_CERT=false
+
+BLOCKCHAIN_ENGINE_RETRY_POLICY=critical_services
+BLOCKCHAIN_ENGINE_TIMEOUT_POLICY=default
+BLOCKCHAIN_ENGINE_CB_POLICY=strict
+BLOCKCHAIN_ENGINE_LB_POLICY=default
+BLOCKCHAIN_ENGINE_MTLS_POLICY=default
+BLOCKCHAIN_ENGINE_MTLS_MODE=STRICT
+BLOCKCHAIN_ENGINE_REQUIRE_CLIENT_CERT=true
+
+# =============================================================================
+# CLUSTER DESCRIPTIONS
+# =============================================================================
+FOUNDATION_CLUSTER_DESC=Foundation infrastructure services
+FOUNDATION_HEALTH_CHECK_INTERVAL=30
+CORE_CLUSTER_DESC=Core application services
+CORE_HEALTH_CHECK_INTERVAL=30
+APPLICATION_CLUSTER_DESC=Application layer services
+APPLICATION_HEALTH_CHECK_INTERVAL=30
+SUPPORT_CLUSTER_DESC=Support and monitoring services
+SUPPORT_HEALTH_CHECK_INTERVAL=60
+

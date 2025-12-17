@@ -1,0 +1,54 @@
+{
+  "datacenter": "${CONSUL_DATACENTER:-lucid-dc}",
+  "data_dir": "${CONSUL_DATA_DIR:-/tmp/consul}",
+  "log_level": "${LOG_LEVEL:-INFO}",
+  "node_name": "${CONSUL_NODE_NAME:-lucid-service-mesh-controller}",
+  "server": "${CONSUL_SERVER:-true}",
+  "bootstrap_expect": "${CONSUL_BOOTSTRAP_EXPECT:-1}",
+  "bind_addr": "${CONSUL_BIND_ADDR:-0.0.0.0}",
+  "client_addr": "${CONSUL_CLIENT_ADDR:-0.0.0.0}",
+  "advertise_addr": "${CONSUL_ADVERTISE_ADDR:-}",
+  "ui_config": {
+    "enabled": "${CONSUL_UI_ENABLED:-true}"
+  },
+  "connect": {
+    "enabled": "${CONSUL_CONNECT_ENABLED:-true}"
+  },
+  "ports": {
+    "http": "${CONSUL_HTTP_PORT:-8500}",
+    "https": "${CONSUL_HTTPS_PORT:-8501}",
+    "grpc": "${CONSUL_GRPC_PORT:-8502}",
+    "dns": "${CONSUL_DNS_PORT:-8600}"
+  },
+  "dns_config": {
+    "allow_stale": "${CONSUL_DNS_ALLOW_STALE:-true}",
+    "max_stale": "${CONSUL_DNS_MAX_STALE:-87600h}",
+    "node_ttl": "${CONSUL_DNS_NODE_TTL:-30s}",
+    "service_ttl": {
+      "*": "${CONSUL_DNS_SERVICE_TTL:-30s}"
+    }
+  },
+  "performance": {
+    "raft_multiplier": "${CONSUL_RAFT_MULTIPLIER:-1}"
+  },
+  "telemetry": {
+    "prometheus_retention_time": "${CONSUL_PROMETHEUS_RETENTION:-60s}",
+    "disable_hostname": "${CONSUL_DISABLE_HOSTNAME:-true}"
+  },
+  "acl": {
+    "enabled": "${CONSUL_ACL_ENABLED:-false}",
+    "default_policy": "${CONSUL_ACL_DEFAULT_POLICY:-allow}",
+    "enable_token_persistence": "${CONSUL_ACL_TOKEN_PERSISTENCE:-true}"
+  },
+  "auto_encrypt": {
+    "allow_tls": "${CONSUL_AUTO_ENCRYPT_TLS:-true}"
+  },
+  "verify_incoming": "${CONSUL_VERIFY_INCOMING:-false}",
+  "verify_outgoing": "${CONSUL_VERIFY_OUTGOING:-false}",
+  "verify_server_hostname": "${CONSUL_VERIFY_SERVER_HOSTNAME:-false}",
+  "leave_on_terminate": "${CONSUL_LEAVE_ON_TERMINATE:-true}",
+  "skip_leave_on_interrupt": "${CONSUL_SKIP_LEAVE_ON_INTERRUPT:-false}",
+  "rejoin_after_leave": "${CONSUL_REJOIN_AFTER_LEAVE:-true}",
+  "enable_local_script_checks": "${CONSUL_LOCAL_SCRIPT_CHECKS:-true}",
+  "disable_update_check": "${CONSUL_DISABLE_UPDATE_CHECK:-true}"
+}
