@@ -94,3 +94,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER 65532:65532
 
 CMD ["python3", "-c", "import asyncio; from controller.main import main; asyncio.run(main())"]
+
