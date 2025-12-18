@@ -260,7 +260,7 @@ services:
       blockchain-engine:
         condition: service_healthy
       data-chain:
-        condition: service_healthy
+        condition: service_started
 
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64
