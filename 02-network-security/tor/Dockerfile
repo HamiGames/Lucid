@@ -1,6 +1,6 @@
 # LUCID TOR PROXY - SPEC-4 Stage 0 Beta Sidecar
 # Distroless Tor proxy for Lucid (ARM64), aligned with project spin-up
-# Build Context: 02-network-security/tor
+# Build Context: project root (same as tunnel-tools)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -128,11 +128,12 @@ COPY --from=tor-builder /etc/passwd                                    /etc/pass
 COPY --from=tor-builder /etc/group                                     /etc/group
 
 # Lucid scripts and tor configuration (torrc baked into image)
-COPY --chmod=644 torrc                                  /etc/tor/torrc
-COPY --chmod=755 entrypoint.sh                          /usr/local/bin/entrypoint.sh
-COPY --chmod=755 tor-health.sh                          /usr/local/bin/tor-health
-COPY --chmod=755 tor-show-onion.sh                      /usr/local/bin/tor-show-onion
-COPY --chmod=755 scripts/create_ephemeral_onion.sh      /usr/local/bin/create-ephemeral-onion
+# Build context: project root, so we prefix with 02-network-security/tor/
+COPY --chmod=644 02-network-security/tor/torrc                                  /etc/tor/torrc
+COPY --chmod=755 02-network-security/tor/entrypoint.sh                          /usr/local/bin/entrypoint.sh
+COPY --chmod=755 02-network-security/tor/tor-health.sh                          /usr/local/bin/tor-health
+COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                      /usr/local/bin/tor-show-onion
+COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh      /usr/local/bin/create-ephemeral-onion
 
 # Minimal defaults (overridden by env files/compose)
 ENV TOR_SOCKS_PORT=9050 \
