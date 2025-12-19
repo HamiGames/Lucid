@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Rotate the ephemeral onion: try to delete existing, then create a new one.
-# Delegates creation to tor/scripts/create_ephemeral_onion.sh
+# Delegates creation to create_ephemeral_onion.sh in the same directory
 
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CREATE_SCRIPT="${SCRIPT_DIR}/../../tor/scripts/create_ephemeral_onion.sh"
+CREATE_SCRIPT="${SCRIPT_DIR}/create_ephemeral_onion.sh"
 
-CONTROL_HOST="${CONTROL_HOST:-127.0.0.1}"
+# Load defaults from environment variables
+CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
-WRITE_ENV="${WRITE_ENV:-/scripts/.onion.env}"
+WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
 
 # Input format matches previous usage:
 #   --ports "80 lucid_api:8081"

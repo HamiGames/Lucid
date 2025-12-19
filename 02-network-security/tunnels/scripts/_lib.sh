@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Shared helpers for tunnel scripts (works against lucid_tor in lucid-dev.yaml)
+# Shared helpers for tunnel scripts (works against tor-proxy container)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENV_FILE="$REPO_ROOT/06-orchestration-runtime/compose/.env"
+
+# Load environment variables from .env file (set by docker-compose or environment)
+# Default to WRITE_ENV if set, otherwise use standard location
+ENV_FILE="${ENV_FILE:-${WRITE_ENV:-/run/lucid/onion/.onion.env}}"
+
+# Tor container name (from environment or default)
+TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
 
 _have(){ command -v "$1" >/dev/null 2>&1; }
 
@@ -31,17 +36,17 @@ save_env_var() {
 }
 
 hex_from_cookie_in_container() {
-  local container="${1:-lucid_tor}"
+  local container="${1:-${TOR_CONTAINER_NAME}}"
   docker exec "$container" sh -lc 'hexdump -v -e "/1 \"%02x\"" /var/lib/tor/control.authcookie' 2>/dev/null || true
 }
 
 tor_ctl() {
-  local container="${1:-lucid_tor}" cmds="${2:-}"
+  local container="${1:-${TOR_CONTAINER_NAME}}" cmds="${2:-}"
   docker exec -i "$container" sh -lc 'nc 127.0.0.1 9051' <<<"$cmds"
 }
 
 wait_bootstrap() {
-  local container="${1:-lucid_tor}" tries=60
+  local container="${1:-${TOR_CONTAINER_NAME}}" tries=60
   for _ in $(seq 1 "$tries"); do
     if docker logs "$container" 2>&1 | grep -q "Bootstrapped 100%"; then
       return 0

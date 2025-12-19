@@ -17,9 +17,14 @@ load_env
 ADDR="${ONION_ARG:-${ONION:-}}"
 [[ -z "$ADDR" ]] && { echo "[tunnel_status] No onion address provided or found in .env"; exit 2; }
 
+# Load Tor proxy configuration from environment
+TOR_PROXY="${TOR_PROXY:-tor-proxy:9050}"
+TOR_PROXY_HOST="${TOR_PROXY%%:*}"
+TOR_PROXY_PORT="${TOR_PROXY##*:}"
+
 URL="http://${ADDR}${PATH_CHECK}"
-echo "[tunnel_status] Testing ${URL} via SOCKS5 127.0.0.1:9050"
-if curl -sS --max-time 10 --socks5-hostname 127.0.0.1:9050 "$URL" > /dev/null; then
+echo "[tunnel_status] Testing ${URL} via SOCKS5 ${TOR_PROXY_HOST}:${TOR_PROXY_PORT}"
+if curl -sS --max-time 10 --socks5-hostname "${TOR_PROXY_HOST}:${TOR_PROXY_PORT}" "$URL" > /dev/null; then
   echo "OK"
 else
   echo "FAIL"

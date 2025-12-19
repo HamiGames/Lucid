@@ -7,8 +7,13 @@ set -euo pipefail
 log() { printf '[create_tunnel] %s\n' "$*"; }
 die() { printf '[create_tunnel] ERROR: %s\n' "$*" >&2; exit 1; }
 
-CONTAINER="${1:-lucid_tor}"
-PORTS="${2:-80 lucid_api:4000}"
+# Load defaults from environment variables
+TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
+UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
+UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
+
+CONTAINER="${1:-${TOR_CONTAINER_NAME}}"
+PORTS="${2:-80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}}"
 
 # Ensure container exists and is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then

@@ -5,16 +5,16 @@
 set -Eeuo pipefail
 
 # ---- defaults (override via flags or env) ----
-CONTROL_HOST="${CONTROL_HOST:-127.0.0.1}"
+CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
 # Fallback if --ports not provided. Uses upstream service/port if envs set.
-UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-lucid_api}"
-UPSTREAM_PORT="${UPSTREAM_PORT:-8081}"
+UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
+UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
 DEFAULT_PORT_MAP="80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}"
 
 # Optional: write result to a file (e.g. shared env)
-WRITE_ENV="${WRITE_ENV:-/scripts/.onion.env}"
+WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
 
 # ---- helpers ----
 log() { printf '[create_ephemeral_onion] %s\n' "$*"; }

@@ -3,18 +3,24 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-ROTATE="${ROOT_DIR}/02-network-security/tunnels/scripts/rotate_onion.sh"
-VERIFY="${ROOT_DIR}/02-network-security/tunnels/scripts/verify_tunnel.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROTATE="${SCRIPT_DIR}/rotate_onion.sh"
+VERIFY="${SCRIPT_DIR}/verify_tunnel.sh"
 
-HOST_IP="${HOST_IP:-127.0.0.1}"
-PORTS="${PORTS:-80 lucid_api:8080}"
+# Load defaults from environment variables
+CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
+UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
+UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
+PORTS="${PORTS:-80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}}"
+ENV_FILE="${ENV_FILE:-${WRITE_ENV:-/run/lucid/onion/.onion.env}}"
 
-"${ROTATE}" --host "${HOST_IP}" --ports "${PORTS}"
+"${ROTATE}" --control-host "${CONTROL_HOST}" --ports "${PORTS}"
 
-# Reload env
-# shellcheck disable=SC1090
-source "${ROOT_DIR}/06-orchestration-runtime/compose/.env"
+# Reload env from the correct location
+if [[ -f "$ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+fi
 ONION="${ONION:-}"
 
 if [[ -z "${ONION}" ]]; then

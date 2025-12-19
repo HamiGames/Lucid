@@ -399,6 +399,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tunnel-tools
     networks:
       - lucid-pi-network
     ports:
@@ -411,15 +412,24 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      # Tor Proxy Configuration (can be overridden by .env.tunnel-tools)
+      - TOR_CONTAINER_NAME=tor-proxy
       - CONTROL_HOST=tor-proxy
       - CONTROL_PORT=9051
       - COOKIE_FILE=/var/lib/tor/control_auth_cookie
+      - TOR_PROXY=tor-proxy:9050
+      - TOR_PROXY_HOST=tor-proxy
+      - TOR_PROXY_PORT=9050
+      # Onion Service Configuration
       - ONION_PORTS=80 api-gateway:8080
+      - UPSTREAM_SERVICE=api-gateway
+      - UPSTREAM_PORT=8080
       - WRITE_ENV=/run/lucid/onion/.onion.env
+      - ENV_FILE=/run/lucid/onion/.onion.env
       - ROTATE_INTERVAL=0
+      # Tunnel Configuration
       - TUNNEL_PORT=7000
       - TUNNEL_MODE=client
-      - TOR_PROXY=tor-proxy:9050
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
