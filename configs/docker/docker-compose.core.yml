@@ -224,7 +224,6 @@ services:
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
       - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
-      - SESSION_ANCHORING_HOST=127.0.0.1
       - SESSION_ANCHORING_PORT=8085
       - SESSION_ANCHORING_HEALTH_PATH=/health
       - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
@@ -335,8 +334,12 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.data-chain
     networks:
-      - lucid-pi-network
+      lucid-pi-network:
+        ipv4_address: ${DATA_CHAIN_IP:-172.20.0.18}
+    ports:
+      - "${DATA_CHAIN_PORT:-8087}:${DATA_CHAIN_PORT:-8087}"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
@@ -345,14 +348,13 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - DATA_CHAIN_HOST=0.0.0.0
-      - DATA_CHAIN_PORT=8087
-      - DATA_CHAIN_URL=http://data-chain:8087
+      - DATA_CHAIN_PORT=${DATA_CHAIN_PORT:-8087}
+      - DATA_CHAIN_URL=${DATA_CHAIN_URL:-http://data-chain:8087}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
-      - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
-      - DATA_CHAIN_HEALTH_PATH=/health
-      - DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      - DATA_CHAIN_HEALTH_PATH=${DATA_CHAIN_HEALTH_PATH:-/health}
+      - DATA_CHAIN_HEALTH_CHECK_TIMEOUT=${DATA_CHAIN_HEALTH_CHECK_TIMEOUT:-10}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
