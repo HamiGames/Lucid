@@ -48,11 +48,19 @@ def wait_for_file(path: Path, timeout: int = 120) -> None:
     log(f"Waiting for {path} (timeout {timeout}s)...")
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if path.exists() and path.stat().st_size > 0:
-            log(f"Found {path}")
-            return
+        try:
+            # Try to read the file directly (more reliable than stat for permission-restricted files)
+            # This works even if we can't stat the file due to directory permissions
+            with open(path, 'rb') as f:
+                data = f.read(1)  # Read at least 1 byte to verify file has content
+                if len(data) > 0:
+                    log(f"Found {path}")
+                    return
+        except (FileNotFoundError, PermissionError, OSError):
+            # File doesn't exist yet or permission issue - keep waiting
+            pass
         time.sleep(1)
-    die(f"File not present: {path}")
+    die(f"File not present or not accessible: {path}")
 
 
 def read_cookie_hex(path: Path) -> str:
