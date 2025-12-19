@@ -228,6 +228,7 @@ services:
       - SESSION_ANCHORING_PORT=8085
       - SESSION_ANCHORING_HEALTH_PATH=/health
       - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
+      - CORS_ORIGINS=
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -265,7 +266,7 @@ services:
       blockchain-engine:
         condition: service_healthy
       data-chain:
-        condition: service_started
+        condition: service_healthy
 
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64

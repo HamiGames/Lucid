@@ -61,9 +61,47 @@ class DataChainService:
         if mongo_client:
             self.mongo_client = mongo_client
         else:
-            self.mongo_client = AsyncIOMotorClient(MONGO_URL)
+            # Get connection pool settings from environment variables (aligned with blockchain-engine)
+            server_selection_timeout_ms = int(os.getenv("MONGODB_SERVER_SELECTION_TIMEOUT_MS", "5000"))
+            connect_timeout_ms = int(os.getenv("MONGODB_CONNECT_TIMEOUT_MS", "10000"))
+            socket_timeout_ms = int(os.getenv("MONGODB_SOCKET_TIMEOUT_MS", "20000"))
+            max_pool_size = int(os.getenv("MONGODB_MAX_POOL_SIZE", "50"))
+            min_pool_size = int(os.getenv("MONGODB_MIN_POOL_SIZE", "5"))
+            max_idle_time_ms = int(os.getenv("MONGODB_MAX_IDLE_TIME_MS", "30000"))
+            retry_writes = os.getenv("MONGODB_RETRY_WRITES", "true").lower() in ("true", "1", "yes")
+            retry_reads = os.getenv("MONGODB_RETRY_READS", "true").lower() in ("true", "1", "yes")
+            
+            # Create client with connection options (aligned with blockchain-engine)
+            self.mongo_client = AsyncIOMotorClient(
+                MONGO_URL,
+                serverSelectionTimeoutMS=server_selection_timeout_ms,
+                connectTimeoutMS=connect_timeout_ms,
+                socketTimeoutMS=socket_timeout_ms,
+                maxPoolSize=max_pool_size,
+                minPoolSize=min_pool_size,
+                maxIdleTimeMS=max_idle_time_ms,
+                retryWrites=retry_writes,
+                retryReads=retry_reads
+            )
         
-        self.db: AsyncIOMotorDatabase = self.mongo_client.get_database("lucid")
+        # Extract database name from connection string or use environment variable, default to "lucid"
+        # Parse database name from MONGO_URL if present, otherwise use env var or default
+        database_name = os.getenv("MONGO_DB") or os.getenv("DATABASE_NAME") or os.getenv("DATA_CHAIN_DB_NAME", "lucid")
+        
+        # Try to extract database name from connection string
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(MONGO_URL)
+            if parsed.path and parsed.path != "/":
+                # Connection string has database in path (e.g., mongodb://host/dbname)
+                db_from_url = parsed.path.lstrip("/").split("?")[0]
+                if db_from_url:
+                    database_name = db_from_url
+        except Exception:
+            # If parsing fails, use the database_name from env/default
+            pass
+        
+        self.db: AsyncIOMotorDatabase = self.mongo_client.get_database(database_name)
         
         # Initialize storage
         self.storage = DataStorage(self.db)
