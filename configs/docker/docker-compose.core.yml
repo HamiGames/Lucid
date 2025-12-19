@@ -218,11 +218,16 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw
       - session-anchoring-cache:/tmp/anchoring
+      - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
     environment:
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
       - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
+      - SESSION_ANCHORING_HOST=127.0.0.1
+      - SESSION_ANCHORING_PORT=8085
+      - SESSION_ANCHORING_HEALTH_PATH=/health
+      - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -238,7 +243,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8085)); s.close(); exit(0 if result == 0 else 1)",
+          "import sys; sys.argv = ['data-health.py', 'session-anchoring']; exec(open('/tmp/data-health.py').read())",
         ]
       interval: 30s
       timeout: 10s
@@ -335,6 +340,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
       - data-chain-cache:/tmp/chain
+      - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -344,6 +350,8 @@ services:
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+      - DATA_CHAIN_HEALTH_PATH=/health
+      - DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -357,9 +365,9 @@ services:
       test:
         [
           "CMD",
-          "python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)",
+          "import sys; sys.argv = ['data-health.py', 'data-chain']; exec(open('/tmp/data-health.py').read())",
         ]
       interval: 30s
       timeout: 10s
