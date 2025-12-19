@@ -265,7 +265,7 @@ services:
       blockchain-engine:
         condition: service_healthy
       data-chain:
-        condition: service_healthy
+        condition: service_started
 
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64
@@ -459,18 +459,24 @@ volumes:
   api-gateway-tmp:
     driver: local
     name: lucid-api-gateway-tmp
+    external: false
   blockchain-cache:
     driver: local
     name: lucid-blockchain-cache
+    external: false
   service-mesh-cache:
     driver: local
     name: lucid-service-mesh-cache
+    external: false
   session-anchoring-cache:
     driver: local
     name: lucid-session-anchoring-cache
+    external: false
   block-manager-cache:
     driver: local
     name: lucid-block-manager-cache
+    external: false
   data-chain-cache:
     driver: local
     name: lucid-data-chain-cache
+    external: false
