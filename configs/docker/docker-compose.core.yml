@@ -370,7 +370,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import sys; sys.argv = ['data-health.py', 'data-chain']; exec(open('/tmp/data-health.py').read())",
+          "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s

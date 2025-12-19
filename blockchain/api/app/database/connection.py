@@ -192,6 +192,14 @@ async def get_database_connection() -> DatabaseConnection:
         connection_string = os.getenv("MONGODB_URI") or os.getenv("MONGODB_URL")
         if not connection_string:
             raise RuntimeError("MONGODB_URI or MONGODB_URL environment variable not set")
+        
+        # Substitute password placeholder if present in connection string
+        # This handles cases where env files have {MONGODB_PASSWORD} placeholder
+        if "{MONGODB_PASSWORD}" in connection_string:
+            mongodb_password = os.getenv("MONGODB_PASSWORD")
+            if not mongodb_password:
+                raise RuntimeError("MONGODB_PASSWORD environment variable required but not set (connection string contains placeholder)")
+            connection_string = connection_string.replace("{MONGODB_PASSWORD}", mongodb_password)
         database_name = os.getenv(
             "BLOCKCHAIN_DB_NAME",
             os.getenv("DATABASE_NAME", os.getenv("MONGO_DB", "lucid_blockchain"))
