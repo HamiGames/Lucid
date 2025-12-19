@@ -65,6 +65,39 @@ LOG_OUTPUT=stdout
 # =============================================================================
 HEALTH_CHECK_INTERVAL=30
 HEALTH_CHECK_TIMEOUT=10
+HEALTH_CHECK_START_PERIOD=45
+
+# =============================================================================
+# Status and Metrics Configuration
+# =============================================================================
+# Status file paths
+STATUS_JSON_PATH=/run/lucid/onion/tunnel_status.json
+METRICS_JSON_PATH=/var/lib/tunnel/metrics.json
+STATUS_ENV_PATH=/run/lucid/onion/tunnel_status.env
+
+# Metrics collection
+METRICS_ENABLED=true
+METRICS_UPDATE_INTERVAL=60
+METRICS_RETENTION_DAYS=7
+
+# =============================================================================
+# Operational Configuration
+# =============================================================================
+# Operational config file path
+OPERATIONAL_CONFIG_PATH=/app/config/operational-config.json
+
+# Logging configuration file path
+LOGGING_CONFIG_PATH=/app/config/logging-config.json
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_OUTPUT=stdout
+LOG_FILE_PATH=/var/log/tunnel/tunnel-tools.log
+LOG_MAX_SIZE=10MB
+LOG_MAX_FILES=5
 
 # =============================================================================
 # Lucid Platform Configuration

@@ -11,7 +11,7 @@ Architecture Notes:
 
 import os
 from typing import List, Optional
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator, model_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -76,6 +76,28 @@ class Settings(BaseSettings):
     METRICS_ENABLED: bool = Field(default=True)
     HEALTH_CHECK_INTERVAL: str = Field(default="30")
     
+    @model_validator(mode="before")
+    @classmethod
+    def parse_list_fields(cls, data):
+        """Parse List fields from environment variables before pydantic-settings tries to parse as JSON."""
+        if isinstance(data, dict):
+            # Handle ALLOWED_HOSTS and CORS_ORIGINS
+            for list_field in ["ALLOWED_HOSTS", "CORS_ORIGINS"]:
+                if list_field in data:
+                    value = data[list_field]
+                    if value is None or value == "":
+                        data[list_field] = ["*"]
+                    elif isinstance(value, str):
+                        # Handle single "*" value
+                        if value.strip() == "*":
+                            data[list_field] = ["*"]
+                        else:
+                            # Split comma-separated values
+                            items = [item.strip() for item in value.split(",") if item.strip()]
+                            data[list_field] = items if items else ["*"]
+                    # If it's already a list, leave it as is
+        return data
+    
     @field_validator('HEALTH_CHECK_INTERVAL', mode='before')
     @classmethod
     def parse_health_check_interval(cls, v):
@@ -93,17 +115,35 @@ class Settings(BaseSettings):
     @classmethod
     def parse_allowed_hosts(cls, v):
         """Parse comma-separated allowed hosts"""
+        if v is None or v == "":
+            return ["*"]  # Default to allow all
         if isinstance(v, str):
-            return [host.strip() for host in v.split(',')]
-        return v
+            # Handle single "*" value
+            if v.strip() == "*":
+                return ["*"]
+            # Split comma-separated values
+            items = [host.strip() for host in v.split(',') if host.strip()]
+            return items if items else ["*"]
+        if isinstance(v, list):
+            return v
+        return ["*"]  # Fallback to default
     
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
     def parse_cors_origins(cls, v):
         """Parse comma-separated CORS origins"""
+        if v is None or v == "":
+            return ["*"]  # Default to allow all
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',')]
-        return v
+            # Handle single "*" value
+            if v.strip() == "*":
+                return ["*"]
+            # Split comma-separated values
+            items = [origin.strip() for origin in v.split(',') if origin.strip()]
+            return items if items else ["*"]
+        if isinstance(v, list):
+            return v
+        return ["*"]  # Fallback to default
     
     @field_validator('JWT_SECRET_KEY')
     @classmethod

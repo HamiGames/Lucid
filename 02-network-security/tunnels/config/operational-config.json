@@ -1,0 +1,175 @@
+{
+  "version": "1.0.0",
+  "description": "Tunnel Tools Operational Configuration",
+  "operations": {
+    "create_onion": {
+      "enabled": true,
+      "script": "create_ephemeral_onion.sh",
+      "description": "Create a new ephemeral onion service",
+      "timeout_seconds": 30,
+      "retry": {
+        "max_attempts": 3,
+        "delay_seconds": 5,
+        "exponential_backoff": true
+      }
+    },
+    "rotate_onion": {
+      "enabled": true,
+      "script": "rotate_onion.sh",
+      "description": "Rotate existing onion service",
+      "timeout_seconds": 60,
+      "depends_on": ["verify_tunnel"],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 10
+      }
+    },
+    "verify_tunnel": {
+      "enabled": true,
+      "script": "verify_tunnel.sh",
+      "description": "Verify tunnel reachability",
+      "timeout_seconds": 20,
+      "health_check": {
+        "enabled": true,
+        "interval_seconds": 60,
+        "failure_threshold": 3
+      }
+    },
+    "refresh_tunnel": {
+      "enabled": true,
+      "script": "refresh_tunnel.sh",
+      "description": "Refresh tunnel by rotating and verifying",
+      "timeout_seconds": 90,
+      "depends_on": ["rotate_onion", "verify_tunnel"]
+    },
+    "teardown_tunnel": {
+      "enabled": true,
+      "script": "teardown_tunnel.sh",
+      "description": "Remove ephemeral onion tunnel",
+      "timeout_seconds": 30
+    },
+    "list_tunnels": {
+      "enabled": true,
+      "script": "list_tunnels.sh",
+      "description": "List current tunnel information",
+      "timeout_seconds": 10
+    },
+    "tunnel_status": {
+      "enabled": true,
+      "script": "tunnel_status.sh",
+      "description": "Check tunnel status",
+      "timeout_seconds": 15
+    }
+  },
+  "workflows": {
+    "startup": {
+      "enabled": true,
+      "steps": [
+        {
+          "operation": "create_onion",
+          "on_failure": "retry"
+        },
+        {
+          "operation": "verify_tunnel",
+          "on_failure": "retry",
+          "wait_after_seconds": 5
+        }
+      ],
+      "on_failure": "alert"
+    },
+    "rotation": {
+      "enabled": true,
+      "steps": [
+        {
+          "operation": "rotate_onion",
+          "on_failure": "abort"
+        },
+        {
+          "operation": "verify_tunnel",
+          "on_failure": "retry",
+          "wait_after_seconds": 10
+        }
+      ],
+      "on_failure": "alert"
+    },
+    "refresh": {
+      "enabled": true,
+      "steps": [
+        {
+          "operation": "refresh_tunnel"
+        }
+      ],
+      "on_failure": "retry"
+    }
+  },
+  "schedules": {
+    "daily_rotation": {
+      "enabled": false,
+      "workflow": "rotation",
+      "cron": "0 2 * * *",
+      "timezone": "UTC"
+    },
+    "hourly_verification": {
+      "enabled": true,
+      "operation": "verify_tunnel",
+      "cron": "0 * * * *",
+      "timezone": "UTC"
+    }
+  },
+  "monitoring": {
+    "health_checks": {
+      "tunnel_reachability": {
+        "enabled": true,
+        "operation": "verify_tunnel",
+        "interval_seconds": 60,
+        "timeout_seconds": 20,
+        "alert_on_failure": true,
+        "failure_threshold": 3
+      },
+      "tor_connection": {
+        "enabled": true,
+        "check_type": "control_port",
+        "interval_seconds": 30,
+        "timeout_seconds": 5,
+        "alert_on_failure": true
+      }
+    },
+    "metrics": {
+      "enabled": true,
+      "collection_interval_seconds": 60,
+      "retention_days": 7,
+      "export_formats": ["json"]
+    },
+    "alerts": {
+      "enabled": true,
+      "channels": [],
+      "rules": [
+        {
+          "name": "TunnelUnreachable",
+          "condition": "verification_failures >= 3",
+          "severity": "critical",
+          "cooldown_seconds": 300
+        },
+        {
+          "name": "TorConnectionFailed",
+          "condition": "tor_connection_failed",
+          "severity": "critical",
+          "cooldown_seconds": 60
+        },
+        {
+          "name": "OnionCreationFailed",
+          "condition": "onion_creation_failed",
+          "severity": "warning",
+          "cooldown_seconds": 180
+        }
+      ]
+    }
+  },
+  "performance": {
+    "connection_timeout_seconds": 10,
+    "command_timeout_seconds": 30,
+    "max_retries": 3,
+    "retry_delay_seconds": 5
+  }
+}
+

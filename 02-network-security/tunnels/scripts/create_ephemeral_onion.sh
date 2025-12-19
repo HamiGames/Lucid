@@ -22,17 +22,44 @@ die() { printf '[create_ephemeral_onion][ERROR] %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing dependency: $1"; }
 
 # Resolve a hostname to a single IPv4 address; passthrough if already an IP.
+# In containerized environments, hostnames are resolved by Docker DNS.
+# This function attempts resolution but falls back to using the hostname directly
+# if resolution tools are not available (e.g., in distroless containers).
 resolve_ip() {
   local host="$1"
+  
+  # If already an IP address, return as-is
   if printf '%s' "$host" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
     printf '%s' "$host"
     return 0
   fi
+  
+  # Try getent first (available in most Linux systems)
   if command -v getent >/dev/null 2>&1; then
-    getent hosts "$host" 2>/dev/null | awk '{print $1; exit}'
-    return 0
+    local ip
+    ip=$(getent hosts "$host" 2>/dev/null | awk '{print $1; exit}')
+    if [[ -n "$ip" ]]; then
+      printf '%s' "$ip"
+      return 0
+    fi
   fi
-  nslookup -timeout=2 "$host" 2>/dev/null | awk '/^Address: /{print $2; exit}'
+  
+  # Try nslookup as fallback
+  if command -v nslookup >/dev/null 2>&1; then
+    local ip
+    ip=$(nslookup -timeout=2 "$host" 2>/dev/null | awk '/^Address: /{print $2; exit}')
+    if [[ -n "$ip" ]]; then
+      printf '%s' "$ip"
+      return 0
+    fi
+  fi
+  
+  # If resolution tools are not available (e.g., distroless container),
+  # return the hostname as-is. Docker will resolve it at runtime.
+  # This is acceptable for container-to-container communication.
+  log "WARNING: DNS resolution tools not available, using hostname directly: $host"
+  printf '%s' "$host"
+  return 0
 }
 
 # Send one control command (AUTH + CMD + QUIT); print raw reply

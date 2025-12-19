@@ -154,9 +154,18 @@ class Settings(BaseSettings):
     @validator("CORS_ORIGINS", pre=True)
     def parse_cors_origins(cls, v):
         """Parse CORS origins from string or list"""
+        if v is None or v == "":
+            return ["*"]  # Default to allow all
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
+            # Handle single "*" value
+            if v.strip() == "*":
+                return ["*"]
+            # Split comma-separated values
+            items = [origin.strip() for origin in v.split(",") if origin.strip()]
+            return items if items else ["*"]
+        if isinstance(v, list):
+            return v
+        return ["*"]  # Fallback to default
     
     class Config:
         env_file = ".env"

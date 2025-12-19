@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     @model_validator(mode="before")
     @classmethod
     def check_env_aliases(cls, data):
-        """Check for alternative environment variable names."""
+        """Check for alternative environment variable names and parse CORS fields."""
         if isinstance(data, dict):
             # Check for DATABASE_URL alias (MONGODB_URL)
             if "DATABASE_URL" not in data and "MONGODB_URL" in data:
@@ -97,9 +97,22 @@ class Settings(BaseSettings):
             # Check for SECRET_KEY alias (BLOCKCHAIN_SECRET_KEY)
             if "SECRET_KEY" not in data and "BLOCKCHAIN_SECRET_KEY" in data:
                 data["SECRET_KEY"] = data["BLOCKCHAIN_SECRET_KEY"]
-            # Handle empty CORS_ORIGINS
-            if "CORS_ORIGINS" in data and (data["CORS_ORIGINS"] == "" or data["CORS_ORIGINS"] is None):
-                data["CORS_ORIGINS"] = ["*"]
+            
+            # Handle CORS_ORIGINS - parse string values before pydantic-settings tries to parse as JSON
+            for cors_field in ["CORS_ORIGINS", "CORS_METHODS", "CORS_HEADERS"]:
+                if cors_field in data:
+                    value = data[cors_field]
+                    if value is None or value == "":
+                        data[cors_field] = ["*"]
+                    elif isinstance(value, str):
+                        # Parse comma-separated string or single value
+                        if value.strip() == "*":
+                            data[cors_field] = ["*"]
+                        else:
+                            # Split comma-separated values
+                            items = [item.strip() for item in value.split(",") if item.strip()]
+                            data[cors_field] = items if items else ["*"]
+                    # If it's already a list, leave it as is
         return data
 
 # Global settings instance

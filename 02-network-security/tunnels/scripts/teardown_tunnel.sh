@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Path: 02-network-security/tunnels/scripts/teardown_tunnel.sh
 # Remove ephemeral onion tunnel
+# NOTE: This script is designed to run from the host (uses docker exec)
 
 set -euo pipefail
 
 log() { printf '[teardown_tunnel] %s\n' "$*"; }
 die() { printf '[teardown_tunnel] ERROR: %s\n' "$*" >&2; exit 1; }
+
+# Check if docker is available
+if ! command -v docker >/dev/null 2>&1; then
+  die "docker command not found. This script must be run from the host."
+fi
 
 # Load defaults from environment variables
 TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
