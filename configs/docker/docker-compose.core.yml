@@ -370,12 +370,12 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=5).read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('DATA_CHAIN_PORT', '8087'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
-      timeout: 10s
+      timeout: 15s
       retries: 3
-      start_period: 90s
+      start_period: 120s
     labels:
       - "lucid.service=data-chain"
       - "lucid.type=distroless"
