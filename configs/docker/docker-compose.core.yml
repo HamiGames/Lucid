@@ -227,7 +227,6 @@ services:
       - SESSION_ANCHORING_PORT=8085
       - SESSION_ANCHORING_HEALTH_PATH=/health
       - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
-      - CORS_ORIGINS=
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true

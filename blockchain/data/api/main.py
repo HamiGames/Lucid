@@ -122,17 +122,30 @@ async def startup_event():
     try:
         service = await get_data_chain_service()
         
-        # Verify MongoDB connection before accepting requests
+        # Verify MongoDB connection before accepting requests (with retry)
         logger.info("Verifying MongoDB connection...")
-        mongodb_healthy = await service.check_mongodb_connection()
-        if not mongodb_healthy:
-            raise RuntimeError("MongoDB connection verification failed - service cannot start")
+        import asyncio
+        max_retries = 5
+        retry_delay = 2
         
-        logger.info("MongoDB connection verified successfully")
-        logger.info("Data chain service initialized successfully")
+        for attempt in range(max_retries):
+            mongodb_healthy = await service.check_mongodb_connection()
+            if mongodb_healthy:
+                logger.info("MongoDB connection verified successfully")
+                logger.info("Data chain service initialized successfully")
+                break
+            else:
+                if attempt < max_retries - 1:
+                    logger.warning(f"MongoDB connection check failed (attempt {attempt + 1}/{max_retries}), retrying in {retry_delay}s...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error("MongoDB connection verification failed after all retries - service will start but may be unhealthy")
+                    # Don't raise - allow service to start and health check will report unhealthy
+        
     except Exception as e:
         logger.error(f"Failed to initialize data chain service: {e}")
-        raise
+        # Log but don't raise - allow service to start and health check will catch it
+        logger.warning("Service starting despite initialization error - health check will report status")
 
 
 # Shutdown event
