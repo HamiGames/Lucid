@@ -24,7 +24,8 @@ LUCID_ENV=production
 # =============================================================================
 # MongoDB Connection - REQUIRED
 # Alternative: MONGO_URL, MONGODB_URI
-MONGODB_URL=mongodb://lucid:{MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+# Note: If MONGODB_PASSWORD is not substituted by shell, Python code will handle {MONGODB_PASSWORD} placeholder
+MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
 MONGO_URL=${MONGODB_URL}
 MONGODB_URI=${MONGODB_URL}
 MONGO_DB=lucid

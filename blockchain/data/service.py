@@ -28,6 +28,14 @@ MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("MON
 if not MONGO_URL:
     raise RuntimeError("MONGO_URL, MONGODB_URL, or MONGODB_URI environment variable not set")
 
+# Substitute password placeholder if present in connection string
+# This handles cases where env files have {MONGODB_PASSWORD} placeholder
+if "{MONGODB_PASSWORD}" in MONGO_URL:
+    mongodb_password = os.getenv("MONGODB_PASSWORD")
+    if not mongodb_password:
+        raise RuntimeError("MONGODB_PASSWORD environment variable required but not set (connection string contains placeholder)")
+    MONGO_URL = MONGO_URL.replace("{MONGODB_PASSWORD}", mongodb_password)
+
 # BLOCKCHAIN_ENGINE_URL is optional - data-chain is a storage service that doesn't directly call blockchain-engine
 # The blockchain-engine would call data-chain, not the other way around
 BLOCKCHAIN_ENGINE_URL = os.getenv("BLOCKCHAIN_ENGINE_URL")
