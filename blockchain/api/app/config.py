@@ -6,8 +6,8 @@ Includes database connections, Redis settings, and other configuration options.
 """
 
 import os
-from typing import Optional
-from pydantic import Field, AliasChoices, model_validator
+from typing import Optional, List
+from pydantic import Field, AliasChoices, model_validator, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -63,15 +63,28 @@ class Settings(BaseSettings):
     MAX_TRANSACTIONS_PER_BLOCK: int = int(os.getenv("MAX_TRANSACTIONS_PER_BLOCK", os.getenv("LUCID_MAX_BLOCK_TXS", "1000")))
     
     # CORS Settings
-    CORS_ORIGINS: list = ["*"]
+    CORS_ORIGINS: List[str] = ["*"]
     CORS_CREDENTIALS: bool = True
-    CORS_METHODS: list = ["*"]
-    CORS_HEADERS: list = ["*"]
+    CORS_METHODS: List[str] = ["*"]
+    CORS_HEADERS: List[str] = ["*"]
     
     # Redis connection details (derived from REDIS_URL if needed)
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
     REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
+    
+    @field_validator("CORS_ORIGINS", "CORS_METHODS", "CORS_HEADERS", mode="before")
+    @classmethod
+    def parse_cors_list(cls, v):
+        """Parse CORS list fields from string or list."""
+        if v is None or v == "":
+            return ["*"]  # Default to allow all
+        if isinstance(v, str):
+            # Handle comma-separated strings
+            return [item.strip() for item in v.split(",") if item.strip()]
+        if isinstance(v, list):
+            return v
+        return ["*"]  # Fallback to default
     
     @model_validator(mode="before")
     @classmethod
@@ -84,6 +97,9 @@ class Settings(BaseSettings):
             # Check for SECRET_KEY alias (BLOCKCHAIN_SECRET_KEY)
             if "SECRET_KEY" not in data and "BLOCKCHAIN_SECRET_KEY" in data:
                 data["SECRET_KEY"] = data["BLOCKCHAIN_SECRET_KEY"]
+            # Handle empty CORS_ORIGINS
+            if "CORS_ORIGINS" in data and (data["CORS_ORIGINS"] == "" or data["CORS_ORIGINS"] is None):
+                data["CORS_ORIGINS"] = ["*"]
         return data
 
 # Global settings instance
