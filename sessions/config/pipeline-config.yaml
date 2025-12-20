@@ -2,13 +2,18 @@
 # Optional YAML configuration for session pipeline orchestration
 # File: sessions/config/pipeline-config.yaml
 # Purpose: Define pipeline stages, worker configuration, and processing rules
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml. Values here are
+# documentation of expected environment variables and optional overrides.
 
 # Global Pipeline Configuration
 global:
   service_name: "lucid-pipeline-manager"
   service_version: "1.0.0"
+  # Service host and port come from: SESSION_PIPELINE_HOST, SESSION_PIPELINE_PORT
+  # Defaults documented for reference only
   debug: false
-  log_level: "INFO"
+  log_level: "INFO"  # Override with LOG_LEVEL env var
   max_concurrent_sessions: 100
   pipeline_timeout_seconds: 300
 
@@ -110,6 +115,7 @@ stages:
       max_memory_mb: 1024
     config:
       storage_backend: "mongodb"  # Options: mongodb, filesystem, s3
+      # Storage paths come from volumes mounted in docker-compose
       storage_path: "/app/data/sessions"
       chunk_storage_path: "/app/data/chunks"
       max_storage_size_gb: 1000
@@ -134,16 +140,25 @@ quality:
   quality_validation: true
 
 # Network Configuration
+# NOTE: Host and port MUST come from environment variables:
+# - SESSION_PIPELINE_HOST (default: session-pipeline)
+# - SESSION_PIPELINE_PORT (default: 8087)
+# - SESSION_PIPELINE_URL (default: http://session-pipeline:8087)
 network:
-  host: "0.0.0.0"
-  port: 8087
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8087  # Override with SESSION_PIPELINE_PORT env var
   grpc_port: 9087
 
 # Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
+# Values below are for documentation only - actual values come from env vars
 database:
-  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_sessions"
-  redis_url: "redis://lucid-redis:6379/0"
-  elasticsearch_url: "http://lucid-elasticsearch:9200"
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
+  elasticsearch_url: ""  # Set via ELASTICSEARCH_URL env var
 
 # Monitoring Configuration
 monitoring:
@@ -191,4 +206,3 @@ state_machine:
     - from: "storing"
       to: "completed"
       condition: "storage_complete"
-

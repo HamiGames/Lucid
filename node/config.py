@@ -165,7 +165,7 @@ class NodeConfig:
             payout_processing_interval=data.get("payout_processing_interval", 3600),
             payout_minimum_amount=data.get("payout_minimum_amount", 10.0),
             payout_batch_size=data.get("payout_batch_size", 10),
-            database_url=data.get("database_url", "mongodb://localhost:27017/lucid"),
+            database_url=data.get("database_url", ""),  # Must be provided via environment
             database_name=data.get("database_name", "lucid_nodes"),
             log_level=data.get("log_level", "INFO"),
             log_file=data.get("log_file", "node.log"),
@@ -220,12 +220,13 @@ def load_config(config_path: Optional[str] = None) -> NodeConfig:
         "node_address": os.getenv("NODE_ADDRESS", config_data.get("node_address", "")),
         "private_key": os.getenv("NODE_PRIVATE_KEY", config_data.get("private_key", "")),
         "tron_network": os.getenv("TRON_NETWORK", config_data.get("tron_network", "mainnet")),
-        "api_port": safe_int_env("API_PORT", config_data.get("api_port", 8095)),
+        "api_port": safe_int_env("NODE_MANAGEMENT_PORT", safe_int_env("API_PORT", config_data.get("api_port", 8095))),
         "rpc_port": safe_int_env("RPC_PORT", config_data.get("rpc_port", 8096)),
         "resource_monitoring_interval": safe_int_env("RESOURCE_MONITORING_INTERVAL", config_data.get("resource_monitoring_interval", 30)),
         "poot_validation_interval": safe_int_env("POOT_VALIDATION_INTERVAL", config_data.get("poot_validation_interval", 300)),
         "payout_processing_interval": safe_int_env("PAYOUT_PROCESSING_INTERVAL", config_data.get("payout_processing_interval", 3600)),
-        "database_url": os.getenv("DATABASE_URL", config_data.get("database_url", "mongodb://localhost:27017/lucid")),
+        "database_url": os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI") or os.getenv("DATABASE_URL") or config_data.get("database_url") or "",
+        "database_name": os.getenv("MONGODB_DATABASE", config_data.get("database_name", "lucid_node_management")),
         "log_level": os.getenv("LOG_LEVEL", config_data.get("log_level", "INFO")),
         "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
         "test_mode": os.getenv("TEST_MODE", "false").lower() == "true",
@@ -237,6 +238,10 @@ def load_config(config_path: Optional[str] = None) -> NodeConfig:
         raise ValueError("NODE_ADDRESS is required")
     if not config_data.get("private_key"):
         raise ValueError("NODE_PRIVATE_KEY is required")
+    if not config_data.get("database_url"):
+        raise ValueError("MONGODB_URL or MONGODB_URI environment variable is required. Set it in docker-compose.yml or .env.secrets")
+    if "localhost" in config_data.get("database_url", "") or "127.0.0.1" in config_data.get("database_url", ""):
+        raise ValueError("database_url must not use localhost - use service name (e.g., lucid-mongodb)")
     
     return NodeConfig.from_dict(config_data)
 

@@ -2,15 +2,20 @@
 # Optional YAML configuration for session API service
 # File: sessions/config/api-config.yaml
 # Purpose: Define API endpoints, rate limiting, and session management rules
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
 
 # Global API Configuration
 global:
   service_name: "lucid-session-api"
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"
-  host: "0.0.0.0"
-  port: 8087
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  # Network configuration from environment:
+  # - SESSION_API_HOST (default: session-api)
+  # - SESSION_API_PORT (default: 8087)
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8087  # Override with SESSION_API_PORT env var
 
 # API Configuration
 api:
@@ -21,10 +26,8 @@ api:
   # CORS Configuration
   cors:
     enabled: true
-    allow_origins:
-      - "http://localhost:3000"
-      - "http://localhost:8080"
-      - "https://app.lucid-blockchain.org"
+    # CORS origins should be configured via environment variables in production
+    allow_origins: []
     allow_credentials: true
     allow_methods: ["*"]
     allow_headers: ["*"]
@@ -94,32 +97,43 @@ session_management:
     max_concurrent_recordings: 10
 
 # Storage Integration
+# NOTE: Service URLs MUST come from environment variables:
+# - SESSION_STORAGE_URL (from docker-compose.application.yml)
 storage:
-  storage_service_url: "http://session-storage:8082"
-  chunk_storage_url: "http://session-storage:8082"
+  storage_service_url: ""  # Set via SESSION_STORAGE_URL env var (http://session-storage:8082)
+  chunk_storage_url: ""  # Set via SESSION_STORAGE_URL env var
   timeout_seconds: 30
   retry_attempts: 3
   retry_delay_seconds: 1
 
 # Pipeline Integration
+# NOTE: Service URL MUST come from environment variable:
+# - SESSION_PIPELINE_URL (from docker-compose.application.yml)
 pipeline:
-  pipeline_service_url: "http://session-pipeline:8087"
+  pipeline_service_url: ""  # Set via SESSION_PIPELINE_URL env var (http://session-pipeline:8087)
   timeout_seconds: 60
   retry_attempts: 3
   auto_start_pipeline: true
 
 # Blockchain Integration
+# NOTE: Service URLs MUST come from environment variables:
+# - BLOCKCHAIN_ENGINE_URL (from docker-compose.core.yml)
+# - SESSION_ANCHORING_URL would be derived from BLOCKCHAIN_ENGINE_URL
 blockchain:
-  blockchain_engine_url: "http://blockchain-engine:8084"
-  session_anchoring_url: "http://session-anchoring:8085"
+  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (http://blockchain-engine:8084)
+  session_anchoring_url: ""  # Derived from BLOCKCHAIN_ENGINE_URL
   auto_anchor_on_complete: true
   anchoring_timeout_seconds: 60
 
 # Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
 database:
-  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_sessions"
-  redis_url: "redis://lucid-redis:6379/0"
-  elasticsearch_url: "http://lucid-elasticsearch:9200"
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
+  elasticsearch_url: ""  # Set via ELASTICSEARCH_URL env var
 
 # Monitoring and Metrics
 monitoring:
@@ -171,4 +185,3 @@ security:
     audit_log_enabled: true
     audit_log_retention_days: 90
     mask_sensitive_data: true
-

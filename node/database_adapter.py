@@ -13,10 +13,20 @@ import json
 
 logger = logging.getLogger(__name__)
 
-# Database Configuration
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+# Database Configuration (from .env.foundation, .env.core, .env.secrets)
+MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGODB_URL", "")
 MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "lucid_node_management")
-REDIS_URI = os.getenv("REDIS_URI", "redis://localhost:6379")
+REDIS_URI = os.getenv("REDIS_URI") or os.getenv("REDIS_URL", "")
+
+# Validate required environment variables
+if not MONGODB_URI:
+    raise ValueError("MONGODB_URI or MONGODB_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+if "localhost" in MONGODB_URI or "127.0.0.1" in MONGODB_URI:
+    raise ValueError("MONGODB_URI must not use localhost - use service name (e.g., lucid-mongodb)")
+if not REDIS_URI:
+    raise ValueError("REDIS_URI or REDIS_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+if "localhost" in REDIS_URI or "127.0.0.1" in REDIS_URI:
+    raise ValueError("REDIS_URI must not use localhost - use service name (e.g., lucid-redis)")
 
 class DatabaseAdapter:
     """

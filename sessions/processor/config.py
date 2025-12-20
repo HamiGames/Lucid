@@ -98,12 +98,13 @@ class ChunkProcessorConfig(BaseSettings):
     service_name: str = "chunk-processor"
     service_version: str = "1.0.0"
     debug: bool = False
-    host: str = "0.0.0.0"
-    port: int = 8085
+    host: str = "0.0.0.0"  # Bind address (always 0.0.0.0 for container)
+    port: int = 8091  # Default port (overridden by SESSION_PROCESSOR_PORT from docker-compose)
+    SESSION_PROCESSOR_PORT: str = ""  # From docker-compose: SESSION_PROCESSOR_PORT
     
-    # Database Configuration
-    mongodb_url: str = "mongodb://localhost:27017/lucid_sessions"
-    redis_url: str = "redis://localhost:6379/0"
+    # Database Configuration (from .env.foundation, .env.core)
+    mongodb_url: str = ""  # Required from environment: MONGODB_URL
+    redis_url: str = ""  # Required from environment: REDIS_URL
     
     # Encryption Configuration
     encryption_key: Optional[str] = None
@@ -118,8 +119,8 @@ class ChunkProcessorConfig(BaseSettings):
     retry_attempts: int = 3
     retry_delay: float = 1.0
     
-    # Storage Configuration
-    storage_path: str = "/storage/chunks"
+    # Storage Configuration (use volume mount paths from docker-compose)
+    storage_path: str = "/app/data/chunks"  # Volume: /data/session-processor:/app/data
     max_chunk_size: int = 10 * 1024 * 1024  # 10MB
     max_session_size: int = 100 * 1024 * 1024 * 1024  # 100GB
     compression_enabled: bool = True
@@ -151,16 +152,60 @@ class ChunkProcessorConfig(BaseSettings):
     jaeger_enabled: bool = False
     jaeger_endpoint: Optional[str] = None
     
-    # External Service URLs
-    storage_service_url: str = "http://session-storage:8086"
-    blockchain_service_url: str = "http://blockchain-core:8084"
-    api_gateway_url: str = "http://api-gateway:8080"
+    # External Service URLs (from .env.core, .env.application)
+    storage_service_url: str = ""  # Optional: SESSION_STORAGE_URL or construct from SESSION_STORAGE_HOST:PORT
+    blockchain_service_url: str = ""  # Optional: BLOCKCHAIN_ENGINE_URL from docker-compose
+    api_gateway_url: str = ""  # Optional: API_GATEWAY_URL from docker-compose
     
     model_config = {
-        "env_file": ".env",
+        # pydantic-settings will read from environment variables
+        # docker-compose provides: .env.secrets, .env.core, .env.application, .env.foundation
+        "env_file": None,  # Don't read .env file directly - use environment variables from docker-compose
         "case_sensitive": True,
-        "env_prefix": "CHUNK_PROCESSOR_"
+        "env_prefix": ""  # No prefix - use standard env var names (MONGODB_URL, REDIS_URL)
     }
+    
+    @field_validator('mongodb_url', mode='before')
+    @classmethod
+    def validate_mongodb_url(cls, v):
+        """Validate MongoDB URL from environment"""
+        if not v or v == "":
+            # Try to get from environment
+            import os
+            v = os.getenv('MONGODB_URL', '')
+        if not v or v == "":
+            raise ValueError('MONGODB_URL environment variable is required but not set')
+        if "localhost" in v or "127.0.0.1" in v:
+            raise ValueError('MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)')
+        return v
+    
+    @field_validator('redis_url', mode='before')
+    @classmethod
+    def validate_redis_url(cls, v):
+        """Validate Redis URL from environment"""
+        if not v or v == "":
+            # Try to get from environment
+            import os
+            v = os.getenv('REDIS_URL', '')
+        if not v or v == "":
+            raise ValueError('REDIS_URL environment variable is required but not set')
+        if "localhost" in v or "127.0.0.1" in v:
+            raise ValueError('REDIS_URL must not use localhost - use service name (e.g., lucid-redis)')
+        return v
+    
+    @field_validator('encryption_key', mode='before')
+    @classmethod
+    def validate_encryption_key_from_env(cls, v):
+        """Get encryption key from environment"""
+        if not v or v == "":
+            import os
+            v = os.getenv('ENCRYPTION_KEY', '')
+        if not v or v == "":
+            # This is acceptable - encryption may be optional
+            return None
+        if "your-" in str(v).lower() or "placeholder" in str(v).lower():
+            raise ValueError('ENCRYPTION_KEY contains placeholder value - must be set from .env.secrets')
+        return v
     
     @field_validator('encryption_key', mode='before')
     @classmethod
@@ -316,16 +361,29 @@ class ChunkProcessorConfig(BaseSettings):
             True if configuration is valid
         """
         try:
-            # Validate encryption key
-            if not self.encryption_key or len(self.encryption_key) < 32:
-                logger.error("Invalid encryption key")
+            # Override port from SESSION_PROCESSOR_PORT if provided
+            import os
+            port_str = os.getenv('SESSION_PROCESSOR_PORT') or self.SESSION_PROCESSOR_PORT
+            if port_str:
+                try:
+                    self.port = int(port_str)
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid SESSION_PROCESSOR_PORT value: {port_str}, using default {self.port}")
+            
+            # Validate encryption key (optional - may be None)
+            if self.encryption_key and len(self.encryption_key) < 32:
+                logger.error("Encryption key must be at least 32 characters if provided")
                 return False
             
-            # Validate storage path
+            # Validate storage path (create if doesn't exist)
             storage_path = Path(self.storage_path)
             if not storage_path.exists():
-                logger.error(f"Storage path does not exist: {self.storage_path}")
-                return False
+                try:
+                    storage_path.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"Created storage directory: {storage_path}")
+                except Exception as e:
+                    logger.error(f"Storage path does not exist and cannot be created: {self.storage_path}: {e}")
+                    return False
             
             # Validate worker settings
             if self.max_workers < 1 or self.max_workers > 50:
@@ -395,12 +453,12 @@ def create_default_config_file(config_path: str = "config.yaml"):
         "debug": False,
         "host": "0.0.0.0",
         "port": 8085,
-        "mongodb_url": "mongodb://localhost:27017/lucid_sessions",
-        "redis_url": "redis://localhost:6379/0",
+        "mongodb_url": "",  # Must be set from MONGODB_URL env var
+        "redis_url": "",  # Must be set from REDIS_URL env var
         "encryption_algorithm": "AES-256-GCM",
         "max_workers": 10,
         "queue_size": 1000,
-        "storage_path": "/storage/chunks",
+        "storage_path": "/app/data/chunks",  # Volume mount path
         "max_chunk_size": 10485760,  # 10MB
         "compression_enabled": True,
         "compression_level": 6,

@@ -87,25 +87,30 @@ class PipelineSettings(BaseSettings):
     MERKLE_MAX_MEMORY_MB: int = 256
     STORAGE_MAX_MEMORY_MB: int = 1024
     
-    # Database Configuration
-    MONGODB_URL: str = "mongodb://localhost:27017/lucid_sessions"
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # Database Configuration (from .env.foundation, .env.core)
+    MONGODB_URL: str = ""  # Required from environment: MONGODB_URL
+    REDIS_URL: str = ""  # Required from environment: REDIS_URL
+    ELASTICSEARCH_URL: str = ""  # Optional from environment: ELASTICSEARCH_URL
     
-    # Storage Configuration
-    CHUNK_STORAGE_PATH: str = "/storage/chunks"
-    SESSION_STORAGE_PATH: str = "/storage/sessions"
-    TEMP_STORAGE_PATH: str = "/tmp/sessions"
+    # Storage Configuration (use volume mount paths from docker-compose)
+    CHUNK_STORAGE_PATH: str = "/app/data/chunks"  # Volume: /data/session-pipeline:/app/data
+    SESSION_STORAGE_PATH: str = "/app/data/sessions"  # Volume: /data/session-pipeline:/app/data
+    TEMP_STORAGE_PATH: str = "/tmp/pipeline"  # tmpfs mount: /tmp:size=200m
     MAX_STORAGE_SIZE_GB: int = 1000
     
-    # Network Configuration
-    HOST: str = "0.0.0.0"
-    PORT: int = 8083
-    GRPC_PORT: int = 9083
+    # Network Configuration (from .env.application, docker-compose)
+    # Note: SESSION_PIPELINE_HOST and SESSION_PIPELINE_PORT are provided by docker-compose
+    # HOST is the bind address (should be 0.0.0.0), PORT is the service port
+    HOST: str = "0.0.0.0"  # Bind address (always 0.0.0.0 for container binding)
+    PORT: int = 8087  # Default port (overridden by SESSION_PIPELINE_PORT from docker-compose)
+    SESSION_PIPELINE_HOST: str = ""  # From docker-compose: SESSION_PIPELINE_HOST (service name, not bind address)
+    SESSION_PIPELINE_PORT: str = ""  # From docker-compose: SESSION_PIPELINE_PORT (string, converted to int)
+    GRPC_PORT: int = 9083  # Optional, not used currently
     
-    # Security Configuration
-    SECRET_KEY: str = "your-secret-key-here"
-    ENCRYPTION_KEY: str = "your-encryption-key-here"
-    JWT_SECRET: str = "your-jwt-secret-here"
+    # Security Configuration (from .env.secrets, .env.application)
+    SECRET_KEY: str = ""  # Required from environment: SECRET_KEY or BLOCKCHAIN_SECRET_KEY or JWT_SECRET_KEY
+    ENCRYPTION_KEY: str = ""  # Required from environment: ENCRYPTION_KEY
+    JWT_SECRET_KEY: str = ""  # Required from environment: JWT_SECRET_KEY (used instead of JWT_SECRET)
     
     # Monitoring Configuration
     METRICS_ENABLED: bool = True
@@ -146,9 +151,31 @@ class PipelineSettings(BaseSettings):
         return v
     
     model_config = {
-        "env_file": ".env",
-        "case_sensitive": True
+        # pydantic-settings will read from environment variables
+        # docker-compose provides: .env.secrets, .env.core, .env.application, .env.foundation
+        "env_file": None,  # Don't read .env file directly - use environment variables from docker-compose
+        "case_sensitive": True,
+        "env_file_encoding": "utf-8"
     }
+    
+    @field_validator('MONGODB_URL')
+    @classmethod
+    def validate_mongodb_url(cls, v):
+        if not v or v == "":
+            raise ValueError('MONGODB_URL environment variable is required but not set')
+        if "localhost" in v or "127.0.0.1" in v:
+            raise ValueError('MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)')
+        return v
+    
+    @field_validator('REDIS_URL')
+    @classmethod
+    def validate_redis_url(cls, v):
+        if not v or v == "":
+            raise ValueError('REDIS_URL environment variable is required but not set')
+        if "localhost" in v or "127.0.0.1" in v:
+            raise ValueError('REDIS_URL must not use localhost - use service name (e.g., lucid-redis)')
+        return v
+    
 
 class PipelineConfig:
     """
@@ -157,13 +184,65 @@ class PipelineConfig:
     """
     
     def __init__(self, settings: Optional[PipelineSettings] = None):
-        self.settings = settings or PipelineSettings()
-        self.stage_configs: Dict[str, StageConfig] = {}
+        try:
+            self.settings = settings or PipelineSettings()
+            self.stage_configs: Dict[str, StageConfig] = {}
+            
+            # Validate critical environment variables
+            self._validate_required_env_vars()
+            
+            # Override PORT from SESSION_PIPELINE_PORT if provided (HOST always stays 0.0.0.0)
+            # SESSION_PIPELINE_HOST is the service name for URLs, not the bind address
+            if hasattr(self.settings, 'SESSION_PIPELINE_PORT') and self.settings.SESSION_PIPELINE_PORT:
+                try:
+                    self.settings.PORT = int(self.settings.SESSION_PIPELINE_PORT)
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid SESSION_PIPELINE_PORT value: {self.settings.SESSION_PIPELINE_PORT}, using default {self.settings.PORT}")
+            
+            # Initialize stage configurations
+            self._initialize_stage_configs()
+            
+            logger.info("Pipeline configuration initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize pipeline configuration: {str(e)}")
+            raise
+    
+    def _validate_required_env_vars(self):
+        """Validate that required environment variables are set"""
+        import os
         
-        # Initialize stage configurations
-        self._initialize_stage_configs()
+        # Check SECRET_KEY, ENCRYPTION_KEY, JWT_SECRET_KEY from environment
+        if not self.settings.SECRET_KEY:
+            # Try to get from alternative env var names
+            self.settings.SECRET_KEY = os.getenv('SECRET_KEY') or os.getenv('BLOCKCHAIN_SECRET_KEY') or os.getenv('JWT_SECRET_KEY') or ""
         
-        logger.info("Pipeline configuration initialized")
+        if not self.settings.ENCRYPTION_KEY:
+            self.settings.ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY') or ""
+        
+        if not self.settings.JWT_SECRET_KEY:
+            self.settings.JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY') or os.getenv('JWT_SECRET') or ""
+        
+        # Validate required values
+        required_vars = {
+            'MONGODB_URL': self.settings.MONGODB_URL,
+            'REDIS_URL': self.settings.REDIS_URL,
+        }
+        
+        missing = [name for name, value in required_vars.items() if not value or value == ""]
+        
+        # Validate secrets (check for placeholders)
+        secret_checks = {
+            'SECRET_KEY': self.settings.SECRET_KEY,
+            'ENCRYPTION_KEY': self.settings.ENCRYPTION_KEY,
+            'JWT_SECRET_KEY': self.settings.JWT_SECRET_KEY,
+        }
+        
+        for name, value in secret_checks.items():
+            if not value or value == "" or "your-" in str(value).lower() or "placeholder" in str(value).lower():
+                missing.append(name)
+        
+        if missing:
+            raise ValueError(f"Required environment variables not set or contain placeholders: {', '.join(missing)}. Please check .env.secrets, .env.core, and .env.application files.")
     
     def _initialize_stage_configs(self):
         """Initialize stage configurations for 6 states as required by Step 15"""
@@ -442,5 +521,8 @@ class PipelineConfig:
             "REDIS_URL": self.settings.REDIS_URL,
             "HOST": self.settings.HOST,
             "PORT": str(self.settings.PORT),
-            "GRPC_PORT": str(self.settings.GRPC_PORT)
+            "GRPC_PORT": str(self.settings.GRPC_PORT),
+            "SECRET_KEY": "***REDACTED***",
+            "ENCRYPTION_KEY": "***REDACTED***",
+            "JWT_SECRET_KEY": "***REDACTED***"
         }

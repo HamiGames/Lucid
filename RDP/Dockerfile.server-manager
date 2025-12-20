@@ -8,7 +8,7 @@ ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 
-FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -18,7 +18,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
@@ -88,6 +90,10 @@ LABEL maintainer="Lucid Development Team" \
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONPATH=/opt/lucid/app \
     PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     SERVER_MANAGER_HOST=0.0.0.0 \
     SERVER_MANAGER_PORT=8081 \
     SERVER_MANAGER_METRICS_PORT=8090 \
@@ -101,6 +107,9 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
+# Copy CA certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
 # Copy entire venv (directory already populated with packages + marker files from builder stage)
 COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
 
@@ -112,8 +121,10 @@ COPY --from=builder --chown=65532:65532 /build/app /opt/lucid/app
 WORKDIR /opt/lucid/app
 EXPOSE 8081 8090
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD ["python3","-c","import urllib.request; urllib.request.urlopen('http://127.0.0.1:'+str(${SERVER_MANAGER_PORT:-8081})+'/health', timeout=5)"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8081)); s.close(); exit(0 if result == 0 else 1)"]
 
-ENTRYPOINT ["/usr/bin/python3"]
-CMD ["-m", "uvicorn", "server_manager.main:app", "--host", "0.0.0.0", "--port", "8081"]
+USER 65532:65532
+
+ENTRYPOINT []
+CMD ["/usr/bin/python3.11", "-m", "uvicorn", "server_manager.main:app", "--host", "0.0.0.0", "--port", "8081"]

@@ -25,19 +25,24 @@ from config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
+# Configuration from environment (from docker-compose.application.yml)
 SERVICE_NAME = os.getenv("SERVICE_NAME", "rdp-server-manager")
-SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8090"))
-MONGODB_URL = os.getenv("MONGODB_URL", "")
+SERVICE_PORT = int(os.getenv("RDP_SERVER_MANAGER_PORT", os.getenv("SERVER_MANAGER_PORT", "8081")))
+MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI", "")
 REDIS_URL = os.getenv("REDIS_URL", "")
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8089")
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "")
+API_GATEWAY_URL = os.getenv("API_GATEWAY_URL", "")
 
-# CRITICAL: MONGODB_URL and REDIS_URL must be set via docker-compose environment variables
+# CRITICAL: MONGODB_URL/MONGODB_URI and REDIS_URL must be set via docker-compose environment variables
 # from .env.secrets file. Defaults are empty strings to fail fast if not configured.
 if not MONGODB_URL:
-    raise ValueError("MONGODB_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+    raise ValueError("MONGODB_URL or MONGODB_URI environment variable is required. Set it in docker-compose.yml or .env.secrets")
+if "localhost" in MONGODB_URL or "127.0.0.1" in MONGODB_URL:
+    raise ValueError("MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)")
 if not REDIS_URL:
     raise ValueError("REDIS_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+if "localhost" in REDIS_URL or "127.0.0.1" in REDIS_URL:
+    raise ValueError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
 
 # Port allocation range
 PORT_RANGE_START = int(os.getenv("PORT_RANGE_START", "13389"))

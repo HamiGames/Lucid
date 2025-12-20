@@ -41,8 +41,20 @@ async def lifespan(app: FastAPI):
     
     try:
         # Initialize API
-        mongo_url = os.getenv("MONGO_URL", "mongodb://lucid:lucid@localhost:27017/lucid")
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        # Get MongoDB URL - try both MONGO_URL and MONGODB_URL
+        mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+        if not mongo_url:
+            raise RuntimeError("MONGODB_URL or MONGO_URL environment variable is required but not set")
+        # Validate not using localhost
+        if "localhost" in mongo_url or "127.0.0.1" in mongo_url:
+            raise RuntimeError("MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)")
+        
+        redis_url = os.getenv("REDIS_URL")
+        if not redis_url:
+            raise RuntimeError("REDIS_URL environment variable is required but not set")
+        # Validate not using localhost
+        if "localhost" in redis_url or "127.0.0.1" in redis_url:
+            raise RuntimeError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
         
         session_api = SessionAPI(mongo_url, redis_url)
         
@@ -217,10 +229,15 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Get configuration from environment
-    host = os.getenv("LUCID_API_HOST", "0.0.0.0")
-    port = int(os.getenv("LUCID_API_PORT", "8080"))
-    workers = int(os.getenv("LUCID_API_WORKERS", "1"))
+    # Get configuration from environment (from docker-compose)
+    host = "0.0.0.0"  # Always bind to all interfaces in container
+    port_str = os.getenv("SESSION_API_PORT", "8087")
+    try:
+        port = int(port_str)
+    except ValueError:
+        logger.error(f"Invalid SESSION_API_PORT value: {port_str}")
+        sys.exit(1)
+    workers = int(os.getenv("SESSION_API_WORKERS", "1"))
     
     logger.info(f"Starting Session API Service on {host}:{port}")
     

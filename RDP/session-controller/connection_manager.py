@@ -7,6 +7,7 @@ monitoring, and cleanup.
 
 import asyncio
 import logging
+import os
 import subprocess
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -83,7 +84,7 @@ class ConnectionManager:
                 "xrdp-sesman",
                 "--config", connection.config.get("xrdp_config_path", "/etc/xrdp/sesman.ini"),
                 "--port", str(connection.config.get("port", 3389)),
-                "--server", connection.config.get("server_host", "localhost")
+                "--server", connection.config.get("server_host", os.getenv("RDP_SERVER_HOST", "rdp-server-manager"))
             ]
             
             # Start process

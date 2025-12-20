@@ -2,15 +2,21 @@
 # Optional YAML configuration for RDP resource monitoring
 # File: RDP/config/monitor-config.yaml
 # Purpose: Define monitoring metrics, thresholds, and alerting rules
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
 
 # Global Monitor Configuration
 global:
   service_name: "lucid-rdp-monitor"
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"
-  host: "0.0.0.0"
-  port: 8093
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  # Network configuration from environment:
+  # - RDP_MONITOR_HOST (default: rdp-monitor)
+  # - RDP_MONITOR_PORT (default: 8093)
+  # - RDP_MONITOR_URL (default: http://rdp-monitor:8093)
+  port: 8093  # Override with RDP_MONITOR_PORT env var
 
 # Monitoring Configuration
 monitoring:
@@ -200,9 +206,12 @@ performance_metrics:
     - "throughput_mbps"
 
 # Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
 database:
-  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_rdp"
-  redis_url: "redis://lucid-redis:6379/0"
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
   
   # Metrics Storage
   metrics_storage:
@@ -263,4 +272,3 @@ security:
     enabled: true
     audit_log_enabled: true
     audit_log_retention_days: 90
-

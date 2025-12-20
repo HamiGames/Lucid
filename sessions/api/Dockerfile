@@ -42,21 +42,12 @@ COPY --from=builder /build/sessions /app/sessions
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV LUCID_API_HOST=0.0.0.0
-ENV LUCID_API_PORT=8080
-ENV LUCID_STORAGE_PATH=/data/sessions
-ENV LUCID_CHUNK_STORE_PATH=/data/chunks
-ENV LUCID_COMPRESSION_ALGORITHM=zstd
-ENV LUCID_COMPRESSION_LEVEL=6
-ENV LUCID_CHUNK_SIZE_MB=10
-ENV LUCID_RETENTION_DAYS=30
-ENV LUCID_MAX_SESSIONS=1000
-ENV LUCID_CLEANUP_INTERVAL_HOURS=24
-ENV LUCID_BACKUP_ENABLED=true
-ENV LUCID_BACKUP_RETENTION_DAYS=7
-# MONGO_URL and REDIS_URL must be set via docker-compose environment variables
-# from .env.secrets file (no hardcoded passwords)
-# These will be overridden by docker-compose.yml environment section
+# Note: SESSION_API_HOST and SESSION_API_PORT are set by docker-compose
+# SESSION_API_HOST is service name, bind address is always 0.0.0.0
+# All configuration values come from docker-compose .env files:
+# - MONGODB_URL, REDIS_URL from .env.foundation, .env.core
+# - SESSION_API_PORT, SESSION_API_HOST from docker-compose environment section
+# - API_GATEWAY_URL, BLOCKCHAIN_ENGINE_URL from .env.core, .env.application
 
 # Create data directories
 USER root
@@ -72,7 +63,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD ["/usr/bin/python3", "-c", "import requests; requests.get('http://localhost:8080/health')"]
+    CMD ["/usr/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8087/health', timeout=5).read(); exit(0)"]
 
 # Run the application
 CMD ["/usr/bin/python3", "-m", "sessions.api.main"]

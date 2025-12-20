@@ -21,13 +21,16 @@ from .config import PipelineConfig, PipelineSettings
 from .state_machine import PipelineState, StateTransition
 from ..core.logging import setup_logging, get_logger
 
+# Initialize logging
+setup_logging()
+
 # Global pipeline manager instance
 pipeline_manager: Optional[PipelineManager] = None
+logger = get_logger(__name__)
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown"""
     def signal_handler(signum, frame):
-        logger = get_logger(__name__)
         logger.info(f"Received signal {signum}, initiating graceful shutdown...")
         if pipeline_manager:
             asyncio.create_task(pipeline_manager.shutdown())

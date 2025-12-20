@@ -2,15 +2,21 @@
 # Optional YAML configuration for node management service
 # File: node/config/node-management-config.yaml
 # Purpose: Define node pool management, PoOT consensus, and payout policies
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
 
 # Global Node Management Configuration
 global:
   service_name: "lucid-node-management"
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"
-  host: "0.0.0.0"
-  port: 8095
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  # Network configuration from environment:
+  # - NODE_MANAGEMENT_HOST (default: node-management)
+  # - NODE_MANAGEMENT_PORT (default: 8095)
+  # - NODE_MANAGEMENT_URL (default: http://node-management:8095)
+  port: 8095  # Override with NODE_MANAGEMENT_PORT env var
   staging_port: 8099
 
 # Node Pool Configuration
@@ -98,140 +104,81 @@ payout:
     auto_process: true
     require_confirmation: true
     confirmation_blocks: 6
-    max_retries: 3
-    retry_delay_seconds: 60
   
-  # Payout Thresholds
-  thresholds:
-    minimum_usdt: 10.0
-    maximum_usdt: 10000.0
-    daily_limit_usdt: 1000.0
-    monthly_limit_usdt: 30000.0
-
-# Node Registration
-registration:
-  enabled: true
-  require_kyc: false
-  require_stake: false
-  require_reputation: false
-  registration_fee_usdt: 0.0
-  registration_timeout_seconds: 300
+  # Payout Limits
+  limits:
+    max_payout_amount_usdt: 10000.0
+    max_payouts_per_day: 100
+    max_payouts_per_user_per_day: 10
   
-  # Registration Validation
-  validation:
-    validate_tron_address: true
-    validate_node_capabilities: true
-    validate_resource_availability: true
-    validate_network_connectivity: true
+  # Payout Fees
+  fees:
+    enabled: true
+    fee_percentage: 0.01  # 1%
+    min_fee_usdt: 0.1
+    max_fee_usdt: 10.0
 
 # Resource Monitoring
 resource_monitoring:
   enabled: true
   monitoring_interval_seconds: 30
+  resource_collection_interval_seconds: 10
+  
+  # Resource Thresholds
   thresholds:
     cpu_percent: 80.0
     memory_percent: 80.0
     disk_percent: 85.0
     network_bandwidth_mbps: 100.0
   
-  # Resource Requirements
-  requirements:
-    min_cpu_cores: 2
-    min_memory_gb: 4
-    min_disk_gb: 50
-    min_network_mbps: 10
-
-# Reputation System
-reputation:
-  enabled: true
-  initial_reputation: 0.5
-  max_reputation: 1.0
-  min_reputation: 0.0
-  
-  # Reputation Factors
-  factors:
-    uptime_weight: 0.4
-    performance_weight: 0.3
-    reliability_weight: 0.2
-    community_contribution_weight: 0.1
-  
-  # Reputation Updates
-  updates:
-    update_interval_seconds: 3600  # 1 hour
-    history_retention_days: 90
-    decay_rate: 0.01  # Reputation decays 1% per day if inactive
-
-# Network Configuration
-network:
-  tron_network: "mainnet"  # Options: mainnet, testnet, nile, shasta
-  tron_api_url: "https://api.trongrid.io"
-  tron_api_key: null  # Set via environment variable
-  tron_contract_address: null
-  
-  # Peer Discovery
-  peer_discovery:
-    enabled: true
-    discovery_interval_seconds: 60
-    max_peers: 50
-    min_peers: 5
+  # Resource Limits
+  limits:
+    max_cpu_percent: 100.0
+    max_memory_mb: 2048
+    max_disk_gb: 100.0
+    max_bandwidth_mbps: 1000.0
 
 # Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL or MONGODB_URI (required, from .env.secrets)
+# - REDIS_URL or REDIS_URI (from .env.core or .env.secrets)
 database:
-  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_node_management"
-  redis_url: "redis://lucid-redis:6379/0"
-  
-  # Collections
-  collections:
-    nodes: "nodes"
-    pools: "pools"
-    payouts: "payouts"
-    poot_scores: "poot_scores"
-    work_credits: "work_credits"
+  mongodb_url: ""  # Set via MONGODB_URL or MONGODB_URI env var (required)
+  mongodb_database: ""  # Set via MONGODB_DATABASE env var (default: lucid_node_management)
+  redis_url: ""    # Set via REDIS_URL or REDIS_URI env var
 
-# API Gateway Integration
-api_gateway:
-  enabled: true
-  gateway_url: "http://api-gateway:8080"
-  timeout_seconds: 30
-  retry_attempts: 3
+# External Service URLs
+# NOTE: Service URLs MUST come from environment variables:
+# - API_GATEWAY_URL (from docker-compose.core.yml)
+# - BLOCKCHAIN_ENGINE_URL (from docker-compose.core.yml)
+external_services:
+  api_gateway_url: ""  # Set via API_GATEWAY_URL env var (http://api-gateway:8080)
+  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (http://blockchain-engine:8084)
 
-# Blockchain Integration
-blockchain:
-  enabled: true
-  blockchain_engine_url: "http://blockchain-engine:8084"
-  timeout_seconds: 60
-  retry_attempts: 3
-
-# Monitoring and Metrics
+# Monitoring Configuration
 monitoring:
   enabled: true
-  metrics:
-    enabled: true
-    endpoint: "/metrics"
-    port: 9090
-  
-  health_check:
-    enabled: true
-    endpoint: "/health"
-    interval_seconds: 30
-    timeout_seconds: 10
-  
-  logging:
-    enabled: true
-    format: "json"
-    level: "INFO"
+  metrics_enabled: true
+  metrics_port: 9090
+  health_check_interval: 30  # seconds
+  prometheus_enabled: true
+  jaeger_enabled: false
+  jaeger_endpoint: null
 
 # Error Handling
 error_handling:
-  retry:
-    enabled: true
+  retry_policies:
     max_retries: 3
-    retry_delay_seconds: 5
+    retry_delay_seconds: 1
     exponential_backoff: true
+    backoff_multiplier: 2
   
-  recovery:
-    auto_recovery_enabled: true
-    recovery_timeout_seconds: 60
+  failure_handling:
+    log_failures: true
+    notify_on_failure: false
+    queue_failed_items: true
+    retry_failed_items: true
+    max_retry_attempts: 5
 
 # Security Configuration
 security:
@@ -240,13 +187,8 @@ security:
     require_authorization: true
     allowed_roles: ["NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
   
-  node_authentication:
-    require_node_signature: true
-    validate_node_identity: true
-    node_certificate_validation: false
-  
-  audit:
-    enabled: true
+  data_privacy:
+    encrypt_sensitive_data: false
     audit_log_enabled: true
     audit_log_retention_days: 90
-
+    mask_data_in_logs: true

@@ -66,11 +66,12 @@ class PortManager:
                 logger.warning(f"Port {port} is not available")
     
     def _is_port_available(self, port: int) -> bool:
-        """Check if port is available"""
+        """Check if port is available (binds to 127.0.0.1 for local check)"""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(1)
-                result = sock.connect_ex(('localhost', port))
+                # Use 127.0.0.1 for local port availability check (not for service connections)
+                result = sock.connect_ex(('127.0.0.1', port))
                 return result != 0
         except Exception:
             return False

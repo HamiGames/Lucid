@@ -156,9 +156,27 @@ class SessionAPI:
     
     def __init__(
         self,
-        mongo_url: str | None = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL"),
-        redis_url: str = "redis://localhost:6379/0"
+        mongo_url: str | None = None,
+        redis_url: str | None = None
     ):
+        """Initialize SessionAPI with MongoDB and Redis URLs from environment"""
+        # Get from environment if not provided
+        if mongo_url is None:
+            mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+        if redis_url is None:
+            redis_url = os.getenv("REDIS_URL")
+        
+        # Validate required environment variables
+        if not mongo_url:
+            raise ValueError("MONGODB_URL or MONGO_URL environment variable is required but not set")
+        if "localhost" in mongo_url or "127.0.0.1" in mongo_url:
+            raise ValueError("MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)")
+        
+        if not redis_url:
+            raise ValueError("REDIS_URL environment variable is required but not set")
+        if "localhost" in redis_url or "127.0.0.1" in redis_url:
+            raise ValueError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
+        
         self.mongo_client = MongoClient(mongo_url)
         self.db: Database = self.mongo_client.lucid
         self.sessions_collection: Collection = self.db.sessions

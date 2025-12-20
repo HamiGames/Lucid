@@ -440,13 +440,21 @@ def main():
     logger = logging.getLogger(__name__)
     
     try:
-        # Run the application
-        logger.info("Starting Lucid Session Recorder Service on 0.0.0.0:8084")
+        # Get configuration from environment (from docker-compose)
+        host = "0.0.0.0"  # Always bind to all interfaces in container
+        port_str = os.getenv("SESSION_RECORDER_PORT", "8090")
+        try:
+            port = int(port_str)
+        except ValueError:
+            logger.error(f"Invalid SESSION_RECORDER_PORT value: {port_str}")
+            sys.exit(1)
+        
+        logger.info(f"Starting Lucid Session Recorder Service on {host}:{port}")
         
         uvicorn.run(
             "sessions.recorder.main:app",
-            host="0.0.0.0",
-            port=8084,
+            host=host,
+            port=port,
             log_level="info",
             access_log=True
         )

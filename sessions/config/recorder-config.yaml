@@ -2,13 +2,16 @@
 # Optional YAML configuration for session recording service
 # File: sessions/config/recorder-config.yaml
 # Purpose: Define recording parameters, hardware acceleration, and chunk generation
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
 
 # Global Recording Configuration
 global:
   service_name: "lucid-session-recorder"
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  # Storage paths come from volumes mounted in docker-compose.application.yml
   recording_path: "/app/recordings"
   chunk_output_path: "/app/chunks"
 
@@ -89,6 +92,7 @@ session_management:
   cleanup_interval_seconds: 3600  # 1 hour
 
 # Storage Configuration
+# NOTE: Storage paths come from volumes mounted in docker-compose.application.yml
 storage:
   recordings_path: "/app/recordings"
   chunks_path: "/app/chunks"
@@ -97,6 +101,25 @@ storage:
   auto_cleanup: true
   compression_enabled: true
   encryption_enabled: false
+
+# Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
+database:
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
+  elasticsearch_url: ""  # Set via ELASTICSEARCH_URL env var
+
+# Network Configuration
+# NOTE: Host and port MUST come from environment variables:
+# - SESSION_RECORDER_HOST (default: session-recorder)
+# - SESSION_RECORDER_PORT (default: 8090)
+# - SESSION_RECORDER_URL (default: http://session-recorder:8090)
+network:
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8090  # Override with SESSION_RECORDER_PORT env var
 
 # Quality Control
 quality_control:
@@ -149,4 +172,3 @@ security:
     mask_sensitive_data: false
     audit_log_enabled: true
     audit_log_retention_days: 90
-

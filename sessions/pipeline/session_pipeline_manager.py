@@ -468,7 +468,10 @@ class SessionPipelineManager:
     async def _start_health_monitoring(self, session_id: str): pass
     async def _compress_chunk(self, chunk_data: bytes): return chunk_data
     async def _encrypt_chunk(self, chunk_data: bytes): return chunk_data, 0.0
-    def _calculate_chunk_hash(self, chunk_data: bytes): return "hash_placeholder"
+    def _calculate_chunk_hash(self, chunk_data: bytes):
+        """Calculate hash of chunk data"""
+        import hashlib
+        return hashlib.sha256(chunk_data).hexdigest()
     async def _store_chunk(self, session_id: str, metadata: Dict[str, Any], data: bytes): pass
     async def _update_merkle_tree(self, session_id: str, chunk_hash: str): pass
     async def _pause_rdp_recording(self, session_id: str): pass
@@ -476,8 +479,21 @@ class SessionPipelineManager:
     async def _restore_session_state(self, session_id: str): pass
     async def _resume_rdp_recording(self, session_id: str): pass
     async def _stop_rdp_recording(self, session_id: str): pass
-    async def _finalize_merkle_tree(self, session_id: str): return "merkle_root_placeholder"
-    async def _anchor_to_blockchain(self, session_id: str, merkle_root: str): return "blockchain_anchor_placeholder"
+    async def _finalize_merkle_tree(self, session_id: str):
+        """Finalize Merkle tree and return root hash"""
+        # TODO: Implement Merkle tree finalization
+        # Should use self.merkle_trees[session_id] if it exists
+        if session_id in self.merkle_trees:
+            # Return actual Merkle root
+            return self.merkle_trees[session_id].get_root_hash() if hasattr(self.merkle_trees[session_id], 'get_root_hash') else ""
+        return ""
+    
+    async def _anchor_to_blockchain(self, session_id: str, merkle_root: str):
+        """Anchor Merkle root to blockchain"""
+        # TODO: Implement blockchain anchoring
+        # Should call blockchain service to anchor the Merkle root
+        logger.info(f"Anchoring Merkle root {merkle_root} for session {session_id} to blockchain - implementation needed")
+        return None
     async def _cleanup_session_resources(self, session_id: str): pass
     async def _setup_connection_monitoring(self, session_id: str): pass
     async def _setup_authentication_timeout(self, session_id: str): pass

@@ -66,7 +66,12 @@ async def lifespan(app: FastAPI):
         mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
         if not mongo_url:
             raise RuntimeError("MONGODB_URL/MONGO_URL not set for session-storage")
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        redis_url = os.getenv("REDIS_URL")
+        if not redis_url:
+            raise RuntimeError("REDIS_URL not set for session-storage")
+        # Validate not using localhost
+        if "localhost" in redis_url or "127.0.0.1" in redis_url:
+            raise RuntimeError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
         
         session_storage = SessionStorage(storage_config, mongo_url, redis_url)
         chunk_store = ChunkStore(chunk_config)
@@ -420,10 +425,15 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Get configuration from environment
-    host = os.getenv("LUCID_STORAGE_HOST", "0.0.0.0")
-    port = int(os.getenv("LUCID_STORAGE_PORT", "8081"))
-    workers = int(os.getenv("LUCID_STORAGE_WORKERS", "1"))
+    # Get configuration from environment (from docker-compose)
+    host = "0.0.0.0"  # Always bind to all interfaces in container
+    port_str = os.getenv("SESSION_STORAGE_PORT", "8082")
+    try:
+        port = int(port_str)
+    except ValueError:
+        logger.error(f"Invalid SESSION_STORAGE_PORT value: {port_str}")
+        sys.exit(1)
+    workers = int(os.getenv("SESSION_STORAGE_WORKERS", "1"))
     
     logger.info(f"Starting Session Storage Service on {host}:{port}")
     

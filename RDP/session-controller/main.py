@@ -6,6 +6,8 @@ FastAPI application for RDP session management service.
 
 import asyncio
 import logging
+import os
+import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -220,10 +222,20 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
+    import os
+    # Get configuration from environment (from docker-compose.application.yml)
+    host = "0.0.0.0"  # Always bind to all interfaces in container
+    port_str = os.getenv("RDP_CONTROLLER_PORT", "8092")
+    try:
+        port = int(port_str)
+    except ValueError:
+        logger.error(f"Invalid RDP_CONTROLLER_PORT value: {port_str}")
+        sys.exit(1)
+    
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=8092,
+        host=host,
+        port=port,
         log_level="info",
         access_log=True
     )

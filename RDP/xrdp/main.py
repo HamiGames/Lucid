@@ -318,10 +318,18 @@ def main():
     )
     
     # Run server
+    # Get port from environment (from docker-compose.application.yml)
+    port_str = os.getenv("XRDP_PORT", str(SERVICE_PORT))
+    try:
+        port = int(port_str)
+    except ValueError:
+        logger.error(f"Invalid XRDP_PORT value: {port_str}")
+        sys.exit(1)
+    
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=SERVICE_PORT,
+        host="0.0.0.0",  # Always bind to all interfaces in container
+        port=port,
         log_level="info",
         access_log=True
     )

@@ -470,7 +470,8 @@ class PipelineManager:
         try:
             while not self._shutdown_event.is_set():
                 # Worker implementation depends on stage type
-                await asyncio.sleep(1)  # Placeholder
+                # Actual processing happens in _process_stage_chunk
+                await asyncio.sleep(0.1)  # Small delay to prevent busy loop
                 
         except asyncio.CancelledError:
             logger.info(f"Cancelled {stage.stage_name} worker {worker_id} for session {session_id}")
@@ -521,11 +522,15 @@ class PipelineManager:
             # Import chunk generator
             from ..recorder.chunk_generator import ChunkGenerator, ChunkConfig
             
-            # Configure for 10MB chunks
+            # Configure for 10MB chunks (use config from settings)
+            chunk_size_mb = self.config.settings.CHUNK_SIZE_MB
+            compression_level = self.config.settings.COMPRESSION_LEVEL
+            output_path = Path(self.config.settings.CHUNK_STORAGE_PATH)
+            
             chunk_config = ChunkConfig(
-                chunk_size_mb=10,
-                compression_level=6,
-                output_path=Path("/data/chunks")
+                chunk_size_mb=chunk_size_mb,
+                compression_level=compression_level,
+                output_path=output_path
             )
             
             # Generate chunks
@@ -568,7 +573,12 @@ class PipelineManager:
     async def _encrypt_chunk(self, chunk_data: bytes, stage: PipelineStage) -> bytes:
         """Encrypt chunk data"""
         try:
-            # Placeholder for encryption implementation
+            # TODO: Implement encryption using ENCRYPTION_KEY from config
+            # For now, return unencrypted data if encryption is disabled
+            if not self.config.settings.ENABLE_ENCRYPTION:
+                return chunk_data
+            # Encryption implementation needed using self.config.settings.ENCRYPTION_KEY
+            logger.warning("Encryption is enabled but not yet implemented")
             return chunk_data
         except Exception as e:
             stage.last_error = str(e)
@@ -583,7 +593,12 @@ class PipelineManager:
     ):
         """Store chunk data"""
         try:
-            # Placeholder for storage implementation
+            # TODO: Implement storage to filesystem or database
+            # Storage path should use self.config.settings.CHUNK_STORAGE_PATH
+            storage_path = Path(self.config.settings.CHUNK_STORAGE_PATH)
+            storage_path.mkdir(parents=True, exist_ok=True)
+            # Storage implementation needed
+            logger.debug(f"Chunk storage for session {session_id} - implementation needed")
             pass
         except Exception as e:
             stage.last_error = str(e)

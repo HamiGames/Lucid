@@ -2,22 +2,28 @@
 # Optional YAML configuration for XRDP service
 # File: RDP/config/xrdp-config.yaml
 # Purpose: Define XRDP protocol settings, display configuration, and session management
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
 
 # Global XRDP Configuration
 global:
   service_name: "lucid-rdp-xrdp"
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"
-  xrdp_port: 3389
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  # Network configuration from environment:
+  # - RDP_XRDP_HOST (default: rdp-xrdp)
+  # - XRDP_PORT (default: 3389)
+  # - RDP_XRDP_URL (default: http://rdp-xrdp:3389)
+  xrdp_port: 3389  # Override with XRDP_PORT env var
   xrdp_display: ":10"
 
 # XRDP Server Configuration
 xrdp_server:
   # Network Configuration
   network:
-    bind_address: "0.0.0.0"
-    port: 3389
+    bind_address: "0.0.0.0"  # Always bind to all interfaces in container
+    port: 3389  # Override with XRDP_PORT env var
     tcp_nodelay: true
     tcp_keepalive: true
     tcp_keepalive_interval: 30
@@ -147,31 +153,38 @@ logging:
   log_errors: true
 
 # Integration Configuration
+# NOTE: Service URLs MUST come from environment variables or docker-compose:
+# - RDP_SERVER_MANAGER_URL (from docker-compose.application.yml)
+# - RDP_CONTROLLER_URL (from docker-compose.application.yml)
+# - RDP_MONITOR_URL (from docker-compose.application.yml)
 integration:
   # Server Manager Integration
   server_manager:
     enabled: true
-    manager_url: "http://rdp-server-manager:8081"
+    manager_url: ""  # Set via RDP_SERVER_MANAGER_URL env var (http://rdp-server-manager:8081)
     timeout_seconds: 30
     auto_register: true
   
   # Session Controller Integration
   session_controller:
     enabled: true
-    controller_url: "http://rdp-controller:8092"
+    controller_url: ""  # Set via RDP_CONTROLLER_URL env var (http://rdp-controller:8092)
     timeout_seconds: 30
     report_sessions: true
   
   # Resource Monitor Integration
   resource_monitor:
     enabled: true
-    monitor_url: "http://rdp-monitor:8093"
+    monitor_url: ""  # Set via RDP_MONITOR_URL env var (http://rdp-monitor:8093)
     report_interval_seconds: 30
 
 # Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
 database:
-  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_rdp"
-  redis_url: "redis://lucid-redis:6379/0"
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
 
 # Monitoring and Metrics
 monitoring:
@@ -215,4 +228,3 @@ security:
     enabled: true
     audit_log_enabled: true
     audit_log_retention_days: 90
-

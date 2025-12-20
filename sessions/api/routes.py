@@ -31,8 +31,14 @@ def get_session_api() -> SessionAPI:
     """Dependency to get session API instance"""
     global session_api
     if session_api is None:
-        mongo_url = os.getenv("MONGO_URL", "mongodb://lucid:lucid@localhost:27017/lucid")
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        # Get MongoDB URL - try both MONGO_URL and MONGODB_URL
+        mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+        if not mongo_url:
+            raise RuntimeError("MONGODB_URL or MONGO_URL environment variable is required but not set")
+        
+        redis_url = os.getenv("REDIS_URL")
+        if not redis_url:
+            raise RuntimeError("REDIS_URL environment variable is required but not set")
         session_api = SessionAPI(mongo_url, redis_url)
     return session_api
 

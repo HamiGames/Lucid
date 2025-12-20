@@ -2,16 +2,19 @@
 # Optional YAML configuration for session storage service
 # File: sessions/config/storage-config.yaml
 # Purpose: Define storage policies, retention rules, and data management
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
 
 # Global Storage Configuration
 global:
   service_name: "lucid-session-storage"
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"
+  log_level: "INFO"  # Override with LOG_LEVEL env var
   storage_backend: "mongodb"  # Options: mongodb, filesystem, s3, ipfs
 
 # Storage Paths
+# NOTE: Storage paths come from volumes mounted in docker-compose.application.yml
 paths:
   base_path: "/app/data"
   sessions_path: "/app/data/sessions"
@@ -73,9 +76,13 @@ retention:
     archive_path: "/archive/sessions"
 
 # Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
 database:
   mongodb:
-    url: "mongodb://lucid-mongodb:27017/lucid_sessions"
+    url: ""  # Set via MONGODB_URL env var (required)
     database: "lucid_sessions"
     collections:
       sessions: "sessions"
@@ -87,14 +94,23 @@ database:
     read_concern: "majority"
   
   redis:
-    url: "redis://lucid-redis:6379/0"
+    url: ""  # Set via REDIS_URL env var
     cache_ttl_seconds: 3600
     max_cache_size_mb: 500
   
   elasticsearch:
-    url: "http://lucid-elasticsearch:9200"
+    url: ""  # Set via ELASTICSEARCH_URL env var
     index_prefix: "lucid_sessions"
     index_retention_days: 90
+
+# Network Configuration
+# NOTE: Host and port MUST come from environment variables:
+# - SESSION_STORAGE_HOST (default: session-storage)
+# - SESSION_STORAGE_PORT (default: 8082)
+# - SESSION_STORAGE_URL (default: http://session-storage:8082)
+network:
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8082  # Override with SESSION_STORAGE_PORT env var
 
 # Indexing Configuration
 indexing:
@@ -214,4 +230,3 @@ security:
     audit_log_enabled: true
     audit_log_retention_days: 90
     mask_data_in_logs: true
-

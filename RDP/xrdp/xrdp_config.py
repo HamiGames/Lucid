@@ -214,9 +214,13 @@ IP.2 = {server_ip}
             conf_file = self.ssl_path / "ssl.conf"
             
             # Create SSL configuration
+            hostname = os.getenv("XRDP_HOSTNAME", os.getenv("RDP_XRDP_HOST", "rdp-xrdp"))
+            # For SSL cert, use actual bind address (0.0.0.0 maps to container's IP)
+            # But for certificate, we include localhost and service name
+            server_ip = os.getenv("XRDP_SERVER_IP", "127.0.0.1")  # Default to localhost for cert SAN (required for SSL cert)
             ssl_config = self.config_templates["ssl.conf"].format(
-                hostname="lucid-rdp.local",
-                server_ip="127.0.0.1"
+                hostname=hostname,
+                server_ip=server_ip
             )
             
             with open(conf_file, 'w') as f:

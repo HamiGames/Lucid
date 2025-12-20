@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class StorageConfig:
     """Storage service configuration"""
-    mongodb_uri: str = "mongodb://localhost:27017/lucid_sessions"
-    redis_url: str = "redis://localhost:6379/0"
+    mongodb_uri: str = ""  # Required from environment: MONGODB_URL or MONGO_URL
+    redis_url: str = ""  # Required from environment: REDIS_URL
     compression_enabled: bool = True
     compression_level: int = 6
     chunk_size_mb: int = 10
@@ -605,10 +605,16 @@ class SessionStorageService:
 # Example usage
 if __name__ == "__main__":
     async def main():
-        # Initialize storage service
+        # Initialize storage service (for testing - use environment variables in production)
+        import os
+        mongodb_uri = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
+        redis_url = os.getenv("REDIS_URL")
+        if not mongodb_uri or not redis_url:
+            raise RuntimeError("MONGODB_URL/MONGO_URL and REDIS_URL must be set")
+        
         config = StorageConfig(
-            mongodb_uri="mongodb://localhost:27017/lucid_sessions",
-            redis_url="redis://localhost:6379/0",
+            mongodb_uri=mongodb_uri,
+            redis_url=redis_url,
             compression_enabled=True,
             compression_level=6
         )

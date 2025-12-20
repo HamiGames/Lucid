@@ -6,6 +6,8 @@ FastAPI application for RDP resource monitoring service.
 
 import asyncio
 import logging
+import os
+import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Dict, List, Optional, Any
@@ -246,10 +248,19 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
+    # Get configuration from environment (from docker-compose.application.yml)
+    host = "0.0.0.0"  # Always bind to all interfaces in container
+    port_str = os.getenv("RDP_MONITOR_PORT", os.getenv("MONITOR_PORT", "8093"))
+    try:
+        port = int(port_str)
+    except ValueError:
+        logger.error(f"Invalid RDP_MONITOR_PORT/MONITOR_PORT value: {port_str}")
+        sys.exit(1)
+    
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=8093,
+        host=host,
+        port=port,
         log_level="info",
         access_log=True
     )
