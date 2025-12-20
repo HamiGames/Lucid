@@ -49,28 +49,37 @@ def die(msg: str) -> None:
 def find_cookie_file() -> Optional[Path]:
     """Find the cookie file, checking shared volume first, then direct mount."""
     # Check shared volume first (where tor-proxy may have copied it)
-    if COOKIE_FILE_SHARED.exists():
-        try:
-            with open(COOKIE_FILE_SHARED, 'rb') as f:
-                data = f.read(1)
-                if len(data) > 0:
-                    log(f"Found cookie file in shared volume: {COOKIE_FILE_SHARED}")
-                    return COOKIE_FILE_SHARED
-        except (PermissionError, OSError) as e:
-            log(f"WARNING: Cannot read shared cookie file {COOKIE_FILE_SHARED}: {e}")
+    try:
+        if COOKIE_FILE_SHARED.exists():
+            try:
+                with open(COOKIE_FILE_SHARED, 'rb') as f:
+                    data = f.read(1)
+                    if len(data) > 0:
+                        log(f"Found cookie file in shared volume: {COOKIE_FILE_SHARED}")
+                        return COOKIE_FILE_SHARED
+            except (PermissionError, OSError) as e:
+                log(f"WARNING: Cannot read shared cookie file {COOKIE_FILE_SHARED}: {e}")
+    except (PermissionError, OSError):
+        # Can't even check if shared file exists, but continue to try direct mount
+        pass
     
-    # Fallback to direct mount location
-    if COOKIE_FILE_DIRECT.exists():
-        try:
-            with open(COOKIE_FILE_DIRECT, 'rb') as f:
-                data = f.read(1)
-                if len(data) > 0:
-                    log(f"Found cookie file in direct mount: {COOKIE_FILE_DIRECT}")
-                    return COOKIE_FILE_DIRECT
-        except PermissionError:
-            log(f"WARNING: Cannot read direct cookie file {COOKIE_FILE_DIRECT} due to permissions")
-        except OSError as e:
-            log(f"WARNING: Cannot read direct cookie file {COOKIE_FILE_DIRECT}: {e}")
+    # Fallback to direct mount location (wrap exists() check to handle permission errors)
+    try:
+        if COOKIE_FILE_DIRECT.exists():
+            try:
+                with open(COOKIE_FILE_DIRECT, 'rb') as f:
+                    data = f.read(1)
+                    if len(data) > 0:
+                        log(f"Found cookie file in direct mount: {COOKIE_FILE_DIRECT}")
+                        return COOKIE_FILE_DIRECT
+            except PermissionError:
+                log(f"WARNING: Cannot read direct cookie file {COOKIE_FILE_DIRECT} due to permissions")
+            except OSError as e:
+                log(f"WARNING: Cannot read direct cookie file {COOKIE_FILE_DIRECT}: {e}")
+    except (PermissionError, OSError) as e:
+        # Can't even check if direct file exists (directory not readable)
+        # This is expected when /var/lib/tor has 700 permissions
+        log(f"WARNING: Cannot access directory to check direct cookie file {COOKIE_FILE_DIRECT}: {e}")
     
     return None
 

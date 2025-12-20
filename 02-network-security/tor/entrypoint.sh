@@ -90,8 +90,8 @@ wait_for_bootstrap() {
 }
 
 copy_cookie_to_shared() {
-  local cookie_src="/var/lib/tor/control_auth_cookie"
-  local cookie_dest="/run/lucid/onion/control_auth_cookie"
+  local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+  local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
   local max_wait=60
   local waited=0
   
@@ -108,8 +108,13 @@ copy_cookie_to_shared() {
     return 1
   fi
   
+  # Get destination directory using pure bash parameter expansion (distroless-compatible)
+  # ${cookie_dest%/*} removes the shortest match of /* from the end
+  # This is pure bash - no external commands required
+  local dest_dir="${cookie_dest%/*}"
+  
   # Ensure destination directory exists
-  mkdir -p "$(dirname "$cookie_dest")" 2>/dev/null || true
+  mkdir -p "$dest_dir" 2>/dev/null || true
   
   # Copy with world-readable permissions so tunnel-tools (UID 65532) can read it
   if cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
@@ -123,12 +128,16 @@ copy_cookie_to_shared() {
 }
 
 monitor_and_copy_cookie() {
-  local cookie_src="/var/lib/tor/control_auth_cookie"
-  local cookie_dest="/run/lucid/onion/control_auth_cookie"
+  local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+  local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
   
   log "Starting cookie monitor (background)..."
   while true; do
     if [ -f "$cookie_src" ]; then
+      # Get destination directory using pure bash parameter expansion (distroless-compatible)
+      local dest_dir="${cookie_dest%/*}"
+      mkdir -p "$dest_dir" 2>/dev/null || true
+      
       # Only copy if source is newer or destination doesn't exist
       if [ ! -f "$cookie_dest" ] || [ "$cookie_src" -nt "$cookie_dest" ]; then
         cp "$cookie_src" "$cookie_dest" 2>/dev/null && \
