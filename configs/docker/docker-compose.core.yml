@@ -406,7 +406,7 @@ services:
       - "7000:7000"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:ro
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:rw
+      - onion-state:/run/lucid/onion:rw
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
       - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
     environment:
@@ -489,3 +489,6 @@ volumes:
     driver: local
     name: lucid-data-chain-cache
     external: false
+  onion-state:
+    name: lucid-onion-state
+    external: true

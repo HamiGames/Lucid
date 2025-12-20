@@ -113,16 +113,34 @@ copy_cookie_to_shared() {
   # This is pure bash - no external commands required
   local dest_dir="${cookie_dest%/*}"
   
-  # Ensure destination directory exists
-  mkdir -p "$dest_dir" 2>/dev/null || true
+  # Ensure destination directory exists and is writable
+  if ! mkdir -p "$dest_dir" 2>/dev/null; then
+    log "ERROR: Cannot create destination directory: $dest_dir"
+    return 1
+  fi
+  
+  # Check if directory is writable
+  if [ ! -w "$dest_dir" ]; then
+    log "ERROR: Destination directory is not writable: $dest_dir"
+    log "Directory permissions: $(ls -ld "$dest_dir" 2>/dev/null || echo 'unknown')"
+    return 1
+  fi
   
   # Copy with world-readable permissions so tunnel-tools (UID 65532) can read it
   if cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
-    chmod 644 "$cookie_dest" 2>/dev/null || true
-    log "Cookie copied to $cookie_dest (readable by tunnel-tools)"
-    return 0
+    # Set permissions: owner read/write, group read, others read (644)
+    if chmod 644 "$cookie_dest" 2>/dev/null; then
+      log "Cookie copied to $cookie_dest (readable by tunnel-tools)"
+      return 0
+    else
+      log "WARNING: Cookie copied but chmod failed - tunnel-tools may not be able to read it"
+      log "File permissions: $(ls -l "$cookie_dest" 2>/dev/null || echo 'unknown')"
+      return 0  # Still return success as copy worked
+    fi
   else
     log "ERROR: Failed to copy cookie to shared volume"
+    log "Source: $cookie_src (exists: $([ -f "$cookie_src" ] && echo 'yes' || echo 'no'))"
+    log "Destination: $cookie_dest (dir writable: $([ -w "$dest_dir" ] && echo 'yes' || echo 'no'))"
     return 1
   fi
 }
@@ -136,13 +154,16 @@ monitor_and_copy_cookie() {
     if [ -f "$cookie_src" ]; then
       # Get destination directory using pure bash parameter expansion (distroless-compatible)
       local dest_dir="${cookie_dest%/*}"
-      mkdir -p "$dest_dir" 2>/dev/null || true
       
-      # Only copy if source is newer or destination doesn't exist
-      if [ ! -f "$cookie_dest" ] || [ "$cookie_src" -nt "$cookie_dest" ]; then
-        cp "$cookie_src" "$cookie_dest" 2>/dev/null && \
-        chmod 644 "$cookie_dest" 2>/dev/null && \
-        log "Updated cookie in shared volume"
+      # Ensure directory exists and is writable
+      if mkdir -p "$dest_dir" 2>/dev/null && [ -w "$dest_dir" ]; then
+        # Only copy if source is newer or destination doesn't exist
+        if [ ! -f "$cookie_dest" ] || [ "$cookie_src" -nt "$cookie_dest" ]; then
+          if cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
+            chmod 644 "$cookie_dest" 2>/dev/null || true
+            log "Updated cookie in shared volume"
+          fi
+        fi
       fi
     fi
     sleep 10  # Check every 10 seconds
