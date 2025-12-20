@@ -27,7 +27,9 @@ except ImportError:
 
 CONTROL_HOST = os.getenv("CONTROL_HOST", "tor-proxy")
 CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
-COOKIE_FILE = Path(os.getenv("COOKIE_FILE", "/var/lib/tor/control_auth_cookie"))
+# Cookie file locations (check shared volume first, then fallback to direct mount)
+COOKIE_FILE_SHARED = Path(os.getenv("COOKIE_FILE_SHARED", "/run/lucid/onion/control_auth_cookie"))
+COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/var/lib/tor/control_auth_cookie"))
 ONION_PORTS = os.getenv("ONION_PORTS", "80 api-gateway:8080")
 WRITE_ENV = Path(os.getenv("WRITE_ENV", "/run/lucid/onion/.onion.env"))
 ROTATE_INTERVAL = int(os.getenv("ROTATE_INTERVAL", "0"))  # minutes; 0 = create once
@@ -44,29 +46,63 @@ def die(msg: str) -> None:
     sys.exit(1)
 
 
-def wait_for_file(path: Path, timeout: int = 120) -> None:
-    log(f"Waiting for {path} (timeout {timeout}s)...")
+def find_cookie_file() -> Optional[Path]:
+    """Find the cookie file, checking shared volume first, then direct mount."""
+    # Check shared volume first (where tor-proxy may have copied it)
+    if COOKIE_FILE_SHARED.exists():
+        try:
+            with open(COOKIE_FILE_SHARED, 'rb') as f:
+                data = f.read(1)
+                if len(data) > 0:
+                    log(f"Found cookie file in shared volume: {COOKIE_FILE_SHARED}")
+                    return COOKIE_FILE_SHARED
+        except (PermissionError, OSError) as e:
+            log(f"WARNING: Cannot read shared cookie file {COOKIE_FILE_SHARED}: {e}")
+    
+    # Fallback to direct mount location
+    if COOKIE_FILE_DIRECT.exists():
+        try:
+            with open(COOKIE_FILE_DIRECT, 'rb') as f:
+                data = f.read(1)
+                if len(data) > 0:
+                    log(f"Found cookie file in direct mount: {COOKIE_FILE_DIRECT}")
+                    return COOKIE_FILE_DIRECT
+        except PermissionError:
+            log(f"WARNING: Cannot read direct cookie file {COOKIE_FILE_DIRECT} due to permissions")
+        except OSError as e:
+            log(f"WARNING: Cannot read direct cookie file {COOKIE_FILE_DIRECT}: {e}")
+    
+    return None
+
+
+def wait_for_file(timeout: int = 120) -> Path:
+    """Wait for cookie file to become available, checking both locations."""
+    log(f"Waiting for cookie file (timeout {timeout}s)...")
+    log(f"Checking shared volume: {COOKIE_FILE_SHARED}")
+    log(f"Checking direct mount: {COOKIE_FILE_DIRECT}")
+    
     deadline = time.time() + timeout
     while time.time() < deadline:
-        try:
-            # Try to read the file directly (more reliable than stat for permission-restricted files)
-            # This works even if we can't stat the file due to directory permissions
-            with open(path, 'rb') as f:
-                data = f.read(1)  # Read at least 1 byte to verify file has content
-                if len(data) > 0:
-                    log(f"Found {path}")
-                    return
-        except (FileNotFoundError, PermissionError, OSError):
-            # File doesn't exist yet or permission issue - keep waiting
-            pass
+        cookie_path = find_cookie_file()
+        if cookie_path:
+            return cookie_path
         time.sleep(1)
-    die(f"File not present or not accessible: {path}")
+    
+    die(f"Cookie file not found in either location after {timeout}s: "
+        f"{COOKIE_FILE_SHARED} or {COOKIE_FILE_DIRECT}")
 
 
 def read_cookie_hex(path: Path) -> str:
+    """Read cookie file and return hex-encoded value."""
     try:
         data = path.read_bytes()
+        if len(data) == 0:
+            die(f"Cookie file {path} is empty")
         return binascii.hexlify(data).decode()
+    except PermissionError:
+        die(f"CRITICAL: Permission denied reading cookie file {path}. "
+            f"The file exists but is not readable. "
+            f"If this is the shared volume location, ensure tor-proxy has copied the cookie there with correct permissions.")
     except Exception as exc:
         die(f"Unable to read control cookie {path}: {exc}")
 
@@ -259,9 +295,9 @@ def main() -> None:
         except Exception as e:
             log(f"WARNING: Failed to initialize metrics module: {e}")
     
-    # Wait for cookie file to be available
-    wait_for_file(COOKIE_FILE, timeout=120)
-    cookie_hex = read_cookie_hex(COOKIE_FILE)
+    # Wait for cookie file to be available (checks shared volume first, then direct mount)
+    cookie_path = wait_for_file(timeout=120)
+    cookie_hex = read_cookie_hex(cookie_path)
     
     # Authenticate with Tor control port
     authenticate(cookie_hex)

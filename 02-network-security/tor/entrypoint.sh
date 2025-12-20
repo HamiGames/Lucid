@@ -44,17 +44,6 @@ wait_for_file() {
   return 1
 }
 
-fix_cookie_permissions() {
-  local cookie_file="$1"
-  [ -f "$cookie_file" ] || { log "Cookie file not found, skipping permission fix"; return 0; }
-  
-  # Only change permissions (not ownership) to avoid breaking Tor's ability to write
-  # Tor runs as debian-tor and needs to own/write the file
-  # Making it world-readable (644) allows tunnel-tools to read it while Tor can still write
-  chmod 644 "$cookie_file" 2>/dev/null || true
-  log "Cookie file permissions set to 644 for tunnel-tools access (ownership unchanged)"
-}
-
 ctl() {
   local cmd="$1"
   [ -f "$COOKIE_FILE" ] || { log "ERROR: Cookie file not found: $COOKIE_FILE"; return 1; }
@@ -146,9 +135,6 @@ main() {
     log "FATAL: Tor control cookie not created"
     exit 1
   fi
-
-  # Fix cookie file permissions so tunnel-tools container can read it
-  fix_cookie_permissions "$COOKIE_FILE"
 
   wait_for_bootstrap || log "Continuing despite bootstrap warning..."
   create_ephemeral_onion || log "Onion creation skipped or failed"
