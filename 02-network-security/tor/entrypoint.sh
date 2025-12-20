@@ -89,6 +89,57 @@ wait_for_bootstrap() {
   return 1
 }
 
+copy_cookie_to_shared() {
+  local cookie_src="/var/lib/tor/control_auth_cookie"
+  local cookie_dest="/run/lucid/onion/control_auth_cookie"
+  local max_wait=60
+  local waited=0
+  
+  log "Copying cookie to shared volume for tunnel-tools access..."
+  
+  # Wait for cookie file if it doesn't exist yet
+  while [ ! -f "$cookie_src" ] && [ $waited -lt $max_wait ]; do
+    sleep 1
+    waited=$((waited + 1))
+  done
+  
+  if [ ! -f "$cookie_src" ]; then
+    log "WARNING: Cookie file not found: $cookie_src"
+    return 1
+  fi
+  
+  # Ensure destination directory exists
+  mkdir -p "$(dirname "$cookie_dest")" 2>/dev/null || true
+  
+  # Copy with world-readable permissions so tunnel-tools (UID 65532) can read it
+  if cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
+    chmod 644 "$cookie_dest" 2>/dev/null || true
+    log "Cookie copied to $cookie_dest (readable by tunnel-tools)"
+    return 0
+  else
+    log "ERROR: Failed to copy cookie to shared volume"
+    return 1
+  fi
+}
+
+monitor_and_copy_cookie() {
+  local cookie_src="/var/lib/tor/control_auth_cookie"
+  local cookie_dest="/run/lucid/onion/control_auth_cookie"
+  
+  log "Starting cookie monitor (background)..."
+  while true; do
+    if [ -f "$cookie_src" ]; then
+      # Only copy if source is newer or destination doesn't exist
+      if [ ! -f "$cookie_dest" ] || [ "$cookie_src" -nt "$cookie_dest" ]; then
+        cp "$cookie_src" "$cookie_dest" 2>/dev/null && \
+        chmod 644 "$cookie_dest" 2>/dev/null && \
+        log "Updated cookie in shared volume"
+      fi
+    fi
+    sleep 10  # Check every 10 seconds
+  done
+}
+
 create_ephemeral_onion() {
   [ "$CREATE_ONION" = "1" ] || { log "CREATE_ONION=0 — skipping onion creation"; return 0; }
   [ -n "$UPSTREAM_SERVICE" ] || { log "No UPSTREAM_SERVICE configured — skipping onion creation"; return 0; }
@@ -135,6 +186,12 @@ main() {
     log "FATAL: Tor control cookie not created"
     exit 1
   fi
+
+  # Copy cookie to shared volume for tunnel-tools access
+  copy_cookie_to_shared || log "WARNING: Cookie copy failed, tunnel-tools may not have access"
+  
+  # Start background monitor to keep cookie updated
+  monitor_and_copy_cookie &
 
   wait_for_bootstrap || log "Continuing despite bootstrap warning..."
   create_ephemeral_onion || log "Onion creation skipped or failed"
