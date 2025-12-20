@@ -2,7 +2,7 @@
 
 # LUCID SESSION PIPELINE - Distroless Container
 # Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md, block-manager-design.md
-# Session Pipeline Manager (lucid-session-pipeline) - Port 8087
+# Session Pipeline Manager (lucid-session-pipeline) - Port 8083
 # Image: pickme/lucid-session-pipeline:latest-arm64
 # Build Context: . (project root)
 # Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
@@ -110,7 +110,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    SESSION_PIPELINE_PORT=8087 \
+    SESSION_PIPELINE_PORT=8083 \
     SESSION_PIPELINE_HOST=0.0.0.0
 
 WORKDIR /app

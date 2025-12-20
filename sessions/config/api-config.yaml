@@ -110,7 +110,7 @@ storage:
 # NOTE: Service URL MUST come from environment variable:
 # - SESSION_PIPELINE_URL (from docker-compose.application.yml)
 pipeline:
-  pipeline_service_url: ""  # Set via SESSION_PIPELINE_URL env var (http://session-pipeline:8087)
+  pipeline_service_url: ""  # Set via SESSION_PIPELINE_URL env var (http://session-pipeline:8083)
   timeout_seconds: 60
   retry_attempts: 3
   auto_start_pipeline: true

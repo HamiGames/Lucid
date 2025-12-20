@@ -102,7 +102,7 @@ class PipelineSettings(BaseSettings):
     # Note: SESSION_PIPELINE_HOST and SESSION_PIPELINE_PORT are provided by docker-compose
     # HOST is the bind address (should be 0.0.0.0), PORT is the service port
     HOST: str = "0.0.0.0"  # Bind address (always 0.0.0.0 for container binding)
-    PORT: int = 8087  # Default port (overridden by SESSION_PIPELINE_PORT from docker-compose)
+    PORT: int = 8083  # Default port (overridden by SESSION_PIPELINE_PORT from docker-compose)
     SESSION_PIPELINE_HOST: str = ""  # From docker-compose: SESSION_PIPELINE_HOST (service name, not bind address)
     SESSION_PIPELINE_PORT: str = ""  # From docker-compose: SESSION_PIPELINE_PORT (string, converted to int)
     GRPC_PORT: int = 9083  # Optional, not used currently

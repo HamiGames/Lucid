@@ -15,7 +15,7 @@ import sys
 if __name__ == "__main__":
     # Get configuration from environment variables (from docker-compose)
     # SESSION_PIPELINE_HOST is service name, but bind address must be 0.0.0.0
-    port_str = os.getenv('SESSION_PIPELINE_PORT', '8087')
+    port_str = os.getenv('SESSION_PIPELINE_PORT', '8083')
     host = '0.0.0.0'  # Always bind to all interfaces in container
     
     try:

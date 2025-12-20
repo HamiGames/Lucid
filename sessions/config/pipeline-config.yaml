@@ -142,11 +142,11 @@ quality:
 # Network Configuration
 # NOTE: Host and port MUST come from environment variables:
 # - SESSION_PIPELINE_HOST (default: session-pipeline)
-# - SESSION_PIPELINE_PORT (default: 8087)
-# - SESSION_PIPELINE_URL (default: http://session-pipeline:8087)
+# - SESSION_PIPELINE_PORT (default: 8083)
+# - SESSION_PIPELINE_URL (default: http://session-pipeline:8083)
 network:
   host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-  port: 8087  # Override with SESSION_PIPELINE_PORT env var
+  port: 8083  # Override with SESSION_PIPELINE_PORT env var
   grpc_port: 9087
 
 # Database Configuration

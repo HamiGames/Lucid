@@ -12,7 +12,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "8087:8087"
+      - "8083:8083"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs:rw
@@ -21,8 +21,8 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - SESSION_PIPELINE_HOST=session-pipeline
-      - SESSION_PIPELINE_PORT=8087
-      - SESSION_PIPELINE_URL=http://session-pipeline:8087
+      - SESSION_PIPELINE_PORT=8083
+      - SESSION_PIPELINE_URL=http://session-pipeline:8083
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
