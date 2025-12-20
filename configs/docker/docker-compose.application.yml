@@ -49,11 +49,11 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
 
   session-recorder:
     image: pickme/lucid-session-recorder:latest-arm64
@@ -105,11 +105,11 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
 
   session-processor:
     image: pickme/lucid-chunk-processor:latest-arm64
@@ -160,11 +160,11 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
   session-storage:
     image: pickme/lucid-session-storage:latest-arm64
     container_name: session-storage
@@ -214,11 +214,11 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
       lucid-elasticsearch:
         condition: service_started
   session-api:
@@ -273,13 +273,13 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
         condition: service_started
       api-gateway:
-        condition: service_started
+        condition: service_healthy
       blockchain-engine:
         condition: service_started
 
@@ -336,13 +336,13 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
       api-gateway:
-        condition: service_started
+        condition: service_healthy
       lucid-auth-service:
         condition: service_healthy
 
@@ -394,13 +394,13 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
       rdp-server-manager:
-        condition: service_started
+        condition: service_healthy
 
   rdp-controller:
     image: pickme/lucid-rdp-controller:latest-arm64
@@ -450,13 +450,13 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
       rdp-server-manager:
-        condition: service_started
+        condition: service_healthy
   rdp-monitor:
     image: pickme/lucid-rdp-monitor:latest-arm64
     container_name: rdp-monitor
@@ -504,11 +504,11 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
   node-management:
     image: pickme/lucid-node-management:latest-arm64
     container_name: node-management
@@ -559,15 +559,15 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
       api-gateway:
-        condition: service_started
+        condition: service_healthy
       blockchain-engine:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   session-pipeline-cache:
