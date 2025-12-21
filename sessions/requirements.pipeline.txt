@@ -26,6 +26,9 @@ prometheus-client>=0.19.0
 cryptography>=41.0.0
 blake3>=0.3.3
 
+# Compression
+zstd>=1.5.5
+
 # Utilities
 python-multipart>=0.0.6
 python-jose[cryptography]>=3.3.0

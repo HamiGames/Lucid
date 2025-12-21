@@ -8,6 +8,7 @@ including FastAPI application setup, health checks, and API endpoints.
 
 import asyncio
 import logging
+import os
 import signal
 import sys
 from contextlib import asynccontextmanager
@@ -37,6 +38,7 @@ chunk_processor_service: Optional[ChunkProcessorService] = None
 encryption_manager: Optional[EncryptionManager] = None
 merkle_tree_manager: Optional[MerkleTreeManager] = None
 config: Optional[ChunkProcessorConfig] = None
+integrations: Optional[Any] = None
 
 
 @asynccontextmanager
@@ -53,6 +55,20 @@ async def lifespan(app: FastAPI):
         # Load configuration
         global config
         config = get_config()
+        
+        # Initialize integration manager
+        global integrations
+        try:
+            from .integration.integration_manager import IntegrationManager
+            integrations = IntegrationManager(
+                service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30')),
+                service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
+                service_retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
+            )
+            logger.info("Integration manager initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize integration manager: {str(e)}")
+            integrations = None
         
         # Initialize services
         global chunk_processor_service, encryption_manager, merkle_tree_manager
@@ -78,6 +94,13 @@ async def lifespan(app: FastAPI):
     try:
         if chunk_processor_service:
             await chunk_processor_service.stop()
+        
+        # Close integration clients
+        if integrations:
+            try:
+                await integrations.close_all()
+            except Exception as e:
+                logger.warning(f"Error closing integrations: {str(e)}")
         
         logger.info("Chunk processor service stopped successfully")
         

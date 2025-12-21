@@ -67,7 +67,7 @@ RUN echo "LUCID_SESSION_RECORDER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, httpx; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -76,6 +76,8 @@ RUN python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages 
 
 COPY sessions/recorder/ ./recorder/
 COPY sessions/core/ ./core/
+COPY sessions/pipeline/__init__.py ./pipeline/__init__.py
+COPY sessions/pipeline/integration/ ./pipeline/integration/
 COPY sessions/__init__.py ./__init__.py
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
@@ -126,9 +128,11 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('Packages verified in runtime stage')"]
 COPY --chown=65532:65532 --from=builder /build/recorder /app/recorder
 COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/pipeline/__init__.py /app/pipeline/__init__.py
+COPY --chown=65532:65532 --from=builder /build/pipeline/integration /app/pipeline/integration
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
 EXPOSE 8090

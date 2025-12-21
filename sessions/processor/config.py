@@ -153,9 +153,19 @@ class ChunkProcessorConfig(BaseSettings):
     jaeger_endpoint: Optional[str] = None
     
     # External Service URLs (from .env.core, .env.application)
-    storage_service_url: str = ""  # Optional: SESSION_STORAGE_URL or construct from SESSION_STORAGE_HOST:PORT
-    blockchain_service_url: str = ""  # Optional: BLOCKCHAIN_ENGINE_URL from docker-compose
-    api_gateway_url: str = ""  # Optional: API_GATEWAY_URL from docker-compose
+    BLOCKCHAIN_ENGINE_URL: str = ""  # From environment: BLOCKCHAIN_ENGINE_URL (e.g., http://blockchain-engine:8084)
+    NODE_MANAGEMENT_URL: str = ""  # From environment: NODE_MANAGEMENT_URL (e.g., http://node-management:8095)
+    API_GATEWAY_URL: str = ""  # From environment: API_GATEWAY_URL (e.g., http://api-gateway:8080)
+    AUTH_SERVICE_URL: str = ""  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
+    SESSION_PIPELINE_URL: str = ""  # From environment: SESSION_PIPELINE_URL (e.g., http://session-pipeline:8083)
+    SESSION_RECORDER_URL: str = ""  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
+    SESSION_STORAGE_URL: str = ""  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
+    SESSION_API_URL: str = ""  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
+    
+    # Integration Service Timeout Configuration (from .env.application)
+    SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
+    SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls
+    SERVICE_RETRY_DELAY_SECONDS: float = 1.0  # Default delay between retries
     
     model_config = {
         # pydantic-settings will read from environment variables
@@ -369,6 +379,24 @@ class ChunkProcessorConfig(BaseSettings):
                     self.port = int(port_str)
                 except (ValueError, TypeError):
                     logger.warning(f"Invalid SESSION_PROCESSOR_PORT value: {port_str}, using default {self.port}")
+            
+            # Set integration service URLs from environment if not already set
+            if not self.BLOCKCHAIN_ENGINE_URL:
+                self.BLOCKCHAIN_ENGINE_URL = os.getenv('BLOCKCHAIN_ENGINE_URL', '')
+            if not self.NODE_MANAGEMENT_URL:
+                self.NODE_MANAGEMENT_URL = os.getenv('NODE_MANAGEMENT_URL', '')
+            if not self.API_GATEWAY_URL:
+                self.API_GATEWAY_URL = os.getenv('API_GATEWAY_URL', '')
+            if not self.AUTH_SERVICE_URL:
+                self.AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', '')
+            if not self.SESSION_PIPELINE_URL:
+                self.SESSION_PIPELINE_URL = os.getenv('SESSION_PIPELINE_URL', '')
+            if not self.SESSION_RECORDER_URL:
+                self.SESSION_RECORDER_URL = os.getenv('SESSION_RECORDER_URL', '')
+            if not self.SESSION_STORAGE_URL:
+                self.SESSION_STORAGE_URL = os.getenv('SESSION_STORAGE_URL', '')
+            if not self.SESSION_API_URL:
+                self.SESSION_API_URL = os.getenv('SESSION_API_URL', '')
             
             # Validate encryption key (optional - may be None)
             if self.encryption_key and len(self.encryption_key) < 32:

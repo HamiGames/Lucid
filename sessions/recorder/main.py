@@ -24,6 +24,7 @@ from .compression import CompressionManager
 session_recorder: Optional[SessionRecorder] = None
 chunk_processor: Optional[ChunkProcessor] = None
 compression_manager: Optional[CompressionManager] = None
+integrations: Optional[Any] = None
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown"""
@@ -38,12 +39,21 @@ def setup_signal_handlers():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global session_recorder, chunk_processor, compression_manager
+    global session_recorder, chunk_processor, compression_manager, integrations
     
     logger = logging.getLogger(__name__)
     logger.info("Starting Lucid Session Recorder Service")
     
     try:
+        # Initialize integration manager
+        try:
+            from .integration.integration_manager import IntegrationManager
+            integrations = IntegrationManager()
+            logger.info("Integration manager initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize integration manager: {str(e)}")
+            integrations = None
+        
         # Initialize components
         session_recorder = SessionRecorder()
         chunk_processor = ChunkProcessor(ChunkConfig())
@@ -63,6 +73,13 @@ async def lifespan(app: FastAPI):
         # Cleanup
         if chunk_processor:
             await chunk_processor.cleanup_all_sessions()
+        
+        # Close integration clients
+        if integrations:
+            try:
+                await integrations.close_all()
+            except Exception as e:
+                logger.warning(f"Error closing integrations: {str(e)}")
         
         logger.info("Session Recorder Service shutdown complete")
 
