@@ -19,8 +19,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from resource_monitor import ResourceMonitor, ResourceMetrics
-from metrics_collector import MetricsCollector
+from .resource_monitor import ResourceMonitor, ResourceMetrics
+from .metrics_collector import MetricsCollector
 
 # Configure logging
 logging.basicConfig(

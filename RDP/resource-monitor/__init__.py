@@ -14,11 +14,14 @@ Features:
 
 from .resource_monitor import ResourceMonitor, ResourceMetrics
 from .metrics_collector import MetricsCollector
+from .config import MonitorSettings, MonitorConfig
 
 __all__ = [
     'ResourceMonitor',
     'ResourceMetrics',
-    'MetricsCollector'
+    'MetricsCollector',
+    'MonitorSettings',
+    'MonitorConfig'
 ]
 
 __version__ = "1.0.0"
