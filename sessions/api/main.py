@@ -6,20 +6,18 @@ Step 17 Implementation: Session Storage & API
 
 import asyncio
 import logging
-import os
 import signal
 import sys
 from contextlib import asynccontextmanager
 from typing import Optional
-import uvicorn
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-from pymongo import MongoClient
 from datetime import datetime
 
 from .session_api import SessionAPI
 from .routes import router
+from .config import SessionAPIConfig
 
 # Configure logging
 logging.basicConfig(
@@ -28,52 +26,55 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global API instance
+# Global instances
 session_api: Optional[SessionAPI] = None
+api_config: Optional[SessionAPIConfig] = None
+
+def setup_signal_handlers():
+    """Setup signal handlers for graceful shutdown"""
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global session_api
+    global session_api, api_config
     
-    # Startup
-    logger.info("Starting Session API Service...")
+    logger.info("Starting Lucid Session API Service")
     
     try:
-        # Initialize API
-        # Get MongoDB URL - try both MONGO_URL and MONGODB_URL
-        mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
-        if not mongo_url:
-            raise RuntimeError("MONGODB_URL or MONGO_URL environment variable is required but not set")
-        # Validate not using localhost
-        if "localhost" in mongo_url or "127.0.0.1" in mongo_url:
-            raise RuntimeError("MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)")
+        # Initialize configuration
+        api_config = SessionAPIConfig()
+        if not api_config.validate_configuration():
+            raise RuntimeError("Session API configuration validation failed")
         
-        redis_url = os.getenv("REDIS_URL")
-        if not redis_url:
-            raise RuntimeError("REDIS_URL environment variable is required but not set")
-        # Validate not using localhost
-        if "localhost" in redis_url or "127.0.0.1" in redis_url:
-            raise RuntimeError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
+        # Initialize API with configuration
+        session_api = SessionAPI(
+            api_config.settings.MONGODB_URL,
+            api_config.settings.REDIS_URL
+        )
         
-        session_api = SessionAPI(mongo_url, redis_url)
+        # Setup signal handlers
+        setup_signal_handlers()
         
         logger.info("Session API Service started successfully")
         
         yield
         
     except Exception as e:
-        logger.error(f"Failed to start Session API Service: {e}")
+        logger.error(f"Failed to start Session API Service: {str(e)}")
         raise
-    
     finally:
         # Shutdown
-        logger.info("Shutting down Session API Service...")
-        
         if session_api:
+            logger.info("Shutting down Session API Service")
             await session_api.close()
-        
-        logger.info("Session API Service stopped")
+            session_api = None
+        logger.info("Session API Service shutdown complete")
 
 # Create FastAPI application
 app = FastAPI(
@@ -83,10 +84,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware (configured from environment variables)
+# CORS_ORIGINS env var: comma-separated list of origins, or "*" for all
+# Default to ["*"] if not set
+import os
+cors_origins_str = os.getenv('CORS_ORIGINS', '*')
+if cors_origins_str == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -218,38 +228,3 @@ async def get_metrics():
         logger.error(f"Failed to get metrics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-def signal_handler(signum, frame):
-    """Handle shutdown signals"""
-    logger.info(f"Received signal {signum}, shutting down...")
-    sys.exit(0)
-
-def main():
-    """Main entry point"""
-    # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
-    # Get configuration from environment (from docker-compose)
-    host = "0.0.0.0"  # Always bind to all interfaces in container
-    port_str = os.getenv("SESSION_API_PORT", "8087")
-    try:
-        port = int(port_str)
-    except ValueError:
-        logger.error(f"Invalid SESSION_API_PORT value: {port_str}")
-        sys.exit(1)
-    workers = int(os.getenv("SESSION_API_WORKERS", "1"))
-    
-    logger.info(f"Starting Session API Service on {host}:{port}")
-    
-    # Start the server
-    uvicorn.run(
-        "sessions.api.main:app",
-        host=host,
-        port=port,
-        workers=workers,
-        log_level="info",
-        access_log=True
-    )
-
-if __name__ == "__main__":
-    main()

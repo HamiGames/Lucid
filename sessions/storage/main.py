@@ -7,18 +7,16 @@ Step 17 Implementation: Session Storage & API
 import asyncio
 import logging
 import os
-import signal
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from .session_storage import SessionStorage, StorageConfig, StorageMetrics
+from .session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
 from .chunk_store import ChunkStore, ChunkStoreConfig
+from .config import StorageConfig
 
 # Configure logging
 logging.basicConfig(
@@ -30,49 +28,33 @@ logger = logging.getLogger(__name__)
 # Global storage instances
 session_storage: Optional[SessionStorage] = None
 chunk_store: Optional[ChunkStore] = None
+storage_config_manager: Optional[StorageConfigManager] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global session_storage, chunk_store
+    global session_storage, chunk_store, storage_config_manager
     
     # Startup
     logger.info("Starting Session Storage Service...")
     
     try:
-        # Initialize storage configuration
-        storage_config = StorageConfig(
-            base_path=os.getenv("LUCID_STORAGE_PATH", "/data/sessions"),
-            chunk_size_mb=int(os.getenv("LUCID_CHUNK_SIZE_MB", "10")),
-            compression_level=int(os.getenv("LUCID_COMPRESSION_LEVEL", "6")),
-            encryption_enabled=os.getenv("LUCID_ENCRYPTION_ENABLED", "true").lower() == "true",
-            retention_days=int(os.getenv("LUCID_RETENTION_DAYS", "30")),
-            max_sessions=int(os.getenv("LUCID_MAX_SESSIONS", "1000")),
-            cleanup_interval_hours=int(os.getenv("LUCID_CLEANUP_INTERVAL_HOURS", "24"))
-        )
+        # Initialize configuration using Pydantic Settings
+        storage_config_manager = StorageConfig()
         
-        chunk_config = ChunkStoreConfig(
-            base_path=os.getenv("LUCID_CHUNK_STORE_PATH", "/data/chunks"),
-            compression_algorithm=os.getenv("LUCID_COMPRESSION_ALGORITHM", "zstd"),
-            compression_level=int(os.getenv("LUCID_COMPRESSION_LEVEL", "6")),
-            chunk_size_mb=int(os.getenv("LUCID_CHUNK_SIZE_MB", "10")),
-            max_chunks_per_session=int(os.getenv("LUCID_MAX_CHUNKS_PER_SESSION", "100000")),
-            cleanup_interval_hours=int(os.getenv("LUCID_CLEANUP_INTERVAL_HOURS", "24")),
-            backup_enabled=os.getenv("LUCID_BACKUP_ENABLED", "true").lower() == "true",
-            backup_retention_days=int(os.getenv("LUCID_BACKUP_RETENTION_DAYS", "7"))
-        )
+        # Get configuration dictionaries for dataclass-based configs
+        storage_config_dict = storage_config_manager.get_storage_config_dict()
+        chunk_config_dict = storage_config_manager.get_chunk_store_config_dict()
+        
+        # Create dataclass-based configs (for backward compatibility with existing code)
+        storage_config = StorageConfigDataclass(**storage_config_dict)
+        chunk_config = ChunkStoreConfig(**chunk_config_dict)
+        
+        # Get database URLs from settings (already validated)
+        mongo_url = storage_config_manager.settings.MONGODB_URL
+        redis_url = storage_config_manager.settings.REDIS_URL
         
         # Initialize storage services
-        mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
-        if not mongo_url:
-            raise RuntimeError("MONGODB_URL/MONGO_URL not set for session-storage")
-        redis_url = os.getenv("REDIS_URL")
-        if not redis_url:
-            raise RuntimeError("REDIS_URL not set for session-storage")
-        # Validate not using localhost
-        if "localhost" in redis_url or "127.0.0.1" in redis_url:
-            raise RuntimeError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
-        
         session_storage = SessionStorage(storage_config, mongo_url, redis_url)
         chunk_store = ChunkStore(chunk_config)
         
@@ -101,10 +83,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware (configured from environment)
+# Parse CORS origins from environment (same logic as config, but read here for middleware setup)
+cors_origins_str = os.getenv("CORS_ORIGINS", "*")
+if cors_origins_str == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -414,38 +403,5 @@ async def cleanup_storage(
         logger.error(f"Failed to start cleanup: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-def signal_handler(signum, frame):
-    """Handle shutdown signals"""
-    logger.info(f"Received signal {signum}, shutting down...")
-    sys.exit(0)
-
-def main():
-    """Main entry point"""
-    # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
-    # Get configuration from environment (from docker-compose)
-    host = "0.0.0.0"  # Always bind to all interfaces in container
-    port_str = os.getenv("SESSION_STORAGE_PORT", "8082")
-    try:
-        port = int(port_str)
-    except ValueError:
-        logger.error(f"Invalid SESSION_STORAGE_PORT value: {port_str}")
-        sys.exit(1)
-    workers = int(os.getenv("SESSION_STORAGE_WORKERS", "1"))
-    
-    logger.info(f"Starting Session Storage Service on {host}:{port}")
-    
-    # Start the server
-    uvicorn.run(
-        "sessions.storage.main:app",
-        host=host,
-        port=port,
-        workers=workers,
-        log_level="info",
-        access_log=True
-    )
-
-if __name__ == "__main__":
-    main()
+# Note: Entrypoint logic moved to entrypoint.py for distroless container compatibility
+# This file is now used as the FastAPI application module only

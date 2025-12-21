@@ -142,6 +142,7 @@ class SessionStorage:
             logger.info("MongoDB indexes created successfully")
         except Exception as e:
             logger.error(f"Failed to create indexes: {e}")
+            raise  # Don't silently pass - index creation is critical
     
     async def store_session_metadata(self, session: RecordingSession) -> bool:
         """Store session metadata in MongoDB"""

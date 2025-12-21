@@ -4,6 +4,7 @@ LUCID Session API Routes - Step 17 Implementation
 FastAPI route definitions for session management
 """
 
+import os
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Any

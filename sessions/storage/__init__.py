@@ -1,7 +1,7 @@
 """
 Lucid Session Storage Service
 Cluster: Session Storage
-Port: 8081
+Port: 8082
 
 Features:
 - Session data storage and retrieval
@@ -15,15 +15,18 @@ Features:
 
 from .session_storage import SessionStorage, StorageConfig, StorageMetrics
 from .chunk_store import ChunkStore, ChunkStoreConfig
+from .config import StorageSettings, StorageConfig as StorageConfigManager
 
 __all__ = [
     'SessionStorage',
     'StorageConfig', 
     'StorageMetrics',
     'ChunkStore',
-    'ChunkStoreConfig'
+    'ChunkStoreConfig',
+    'StorageSettings',
+    'StorageConfigManager'
 ]
 
 __version__ = "1.0.0"
 __cluster__ = "session-storage"
-__port__ = 8081
+__port__ = 8082

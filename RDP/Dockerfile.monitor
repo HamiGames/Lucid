@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.5
 
 # LUCID RDP MONITOR - Distroless Container
-# Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md
+# Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md, block-manager-design.md
 # RDP Resource Monitor (lucid-rdp-monitor) - Port 8093
 # Image: pickme/lucid-rdp-monitor:latest-arm64
 # Build Context: . (project root)
@@ -73,7 +73,7 @@ RUN echo "LUCID_RDP_MONITOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/p
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx, psutil; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil, prometheus_client, aiofiles; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages"
@@ -134,8 +134,13 @@ assert os.path.exists(site_packages), site_packages + ' does not exist'; \
 assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
 assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
 assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
+assert os.path.exists(os.path.join(site_packages, 'prometheus_client')), 'prometheus_client not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
 assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \

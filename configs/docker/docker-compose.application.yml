@@ -64,6 +64,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-recorder
     networks:
       - lucid-pi-network
     ports:
@@ -120,6 +121,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-processor
     networks:
       - lucid-pi-network
     ports:
