@@ -5,9 +5,9 @@ Main entry point for the session recorder service
 """
 
 import asyncio
+import os
 import signal
 import sys
-import logging
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -19,6 +19,12 @@ from fastapi.responses import JSONResponse
 from .session_recorder import SessionRecorder, RecordingStatus
 from .chunk_generator import ChunkProcessor, ChunkConfig
 from .compression import CompressionManager
+from core.logging import setup_logging, get_logger
+
+# Initialize logging
+setup_logging()
+
+logger = get_logger(__name__)
 
 # Global instances
 session_recorder: Optional[SessionRecorder] = None
@@ -29,7 +35,6 @@ integrations: Optional[Any] = None
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown"""
     def signal_handler(signum, frame):
-        logger = logging.getLogger(__name__)
         logger.info(f"Received signal {signum}, initiating graceful shutdown...")
         sys.exit(0)
     
@@ -41,14 +46,20 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     global session_recorder, chunk_processor, compression_manager, integrations
     
-    logger = logging.getLogger(__name__)
     logger.info("Starting Lucid Session Recorder Service")
     
     try:
+        # Setup signal handlers
+        setup_signal_handlers()
+        
         # Initialize integration manager
         try:
             from .integration.integration_manager import IntegrationManager
-            integrations = IntegrationManager()
+            integrations = IntegrationManager(
+                service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30')),
+                service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
+                service_retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
+            )
             logger.info("Integration manager initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize integration manager: {str(e)}")
@@ -59,9 +70,6 @@ async def lifespan(app: FastAPI):
         chunk_processor = ChunkProcessor(ChunkConfig())
         compression_manager = CompressionManager(default_level=6)
         
-        # Setup signal handlers
-        setup_signal_handlers()
-        
         logger.info("Session Recorder Service started successfully")
         
         yield
@@ -71,17 +79,23 @@ async def lifespan(app: FastAPI):
         raise
     finally:
         # Cleanup
-        if chunk_processor:
-            await chunk_processor.cleanup_all_sessions()
+        logger.info("Shutting down Session Recorder Service...")
         
-        # Close integration clients
-        if integrations:
-            try:
-                await integrations.close_all()
-            except Exception as e:
-                logger.warning(f"Error closing integrations: {str(e)}")
-        
-        logger.info("Session Recorder Service shutdown complete")
+        try:
+            if chunk_processor:
+                await chunk_processor.cleanup_all_sessions()
+            
+            # Close integration clients
+            if integrations:
+                try:
+                    await integrations.close_all()
+                except Exception as e:
+                    logger.warning(f"Error closing integrations: {str(e)}")
+            
+            logger.info("Session Recorder Service shutdown complete")
+            
+        except Exception as e:
+            logger.error(f"Error during shutdown: {str(e)}")
 
 # Create FastAPI application
 app = FastAPI(
@@ -103,7 +117,6 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Global exception handler"""
-    logger = logging.getLogger(__name__)
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     
     return JSONResponse(
@@ -144,7 +157,6 @@ async def health_check():
             "timestamp": asyncio.get_event_loop().time()
         }
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Health check failed")
 
@@ -182,7 +194,6 @@ async def get_service_status():
             "timestamp": asyncio.get_event_loop().time()
         }
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Status check failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Status check failed")
 
@@ -205,7 +216,6 @@ async def start_recording(session_id: str, owner_address: str, metadata: dict = 
         # Initialize chunk generation
         await chunk_processor.get_or_create_generator(session_id)
         
-        logger = logging.getLogger(__name__)
         logger.info(f"Started recording with chunk generation for session {session_id}")
         
         return result
@@ -213,7 +223,6 @@ async def start_recording(session_id: str, owner_address: str, metadata: dict = 
     except HTTPException:
         raise
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to start recording for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to start recording")
 
@@ -232,7 +241,6 @@ async def stop_recording(session_id: str):
         # Finalize chunk generation
         final_chunks = await chunk_processor.finalize_session(session_id)
         
-        logger = logging.getLogger(__name__)
         logger.info(f"Stopped recording and generated {len(final_chunks)} final chunks for session {session_id}")
         
         # Add chunk information to result
@@ -252,7 +260,6 @@ async def stop_recording(session_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to stop recording for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to stop recording")
 
@@ -291,7 +298,6 @@ async def get_recording(session_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to get recording info for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get recording info")
 
@@ -324,7 +330,6 @@ async def list_recordings():
         }
         
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to list recordings: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to list recordings")
 
@@ -344,7 +349,6 @@ async def cleanup_recording(session_id: str):
         if session_id in session_recorder.active_recordings:
             del session_recorder.active_recordings[session_id]
         
-        logger = logging.getLogger(__name__)
         logger.info(f"Cleaned up recording and {deleted_chunks} chunks for session {session_id}")
         
         return {
@@ -355,7 +359,6 @@ async def cleanup_recording(session_id: str):
         }
         
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to cleanup recording for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to cleanup recording")
 
@@ -379,7 +382,6 @@ async def get_session_chunks(session_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to get chunks for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get chunks")
 
@@ -411,7 +413,6 @@ async def process_chunk_data(session_id: str, data: bytes):
         }
         
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to process chunk data for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to process chunk data")
 
@@ -426,7 +427,6 @@ async def get_compression_stats():
     try:
         return compression_manager.get_statistics()
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to get compression stats: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get compression stats")
 
@@ -442,20 +442,11 @@ async def reset_compression_stats():
         compression_manager.reset_statistics()
         return {"message": "Compression statistics reset successfully"}
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"Failed to reset compression stats: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to reset compression stats")
 
 def main():
     """Main entry point"""
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[session-recorder] %(asctime)s - %(levelname)s - %(message)s'
-    )
-    
-    logger = logging.getLogger(__name__)
-    
     try:
         # Get configuration from environment (from docker-compose)
         host = "0.0.0.0"  # Always bind to all interfaces in container

@@ -21,12 +21,16 @@ try:
     from sessions.pipeline.integration.node_manager_client import NodeManagerClient
     from sessions.pipeline.integration.api_gateway_client import APIGatewayClient
     from sessions.pipeline.integration.auth_service_client import AuthServiceClient
+    from .session_pipeline_client import SessionPipelineClient
+    from .session_storage_client import SessionStorageClient
 except ImportError:
     # Fallback if imports fail - clients will be None
     BlockchainEngineClient = None
     NodeManagerClient = None
     APIGatewayClient = None
     AuthServiceClient = None
+    SessionPipelineClient = None
+    SessionStorageClient = None
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +58,8 @@ class IntegrationManager:
         self._node_manager_client: Optional[NodeManagerClient] = None
         self._api_gateway_client: Optional[APIGatewayClient] = None
         self._auth_service_client: Optional[AuthServiceClient] = None
+        self._pipeline_client: Optional[SessionPipelineClient] = None
+        self._storage_client: Optional[SessionStorageClient] = None
         
         logger.info("Initializing IntegrationManager for session-processor")
     
@@ -129,6 +135,44 @@ class IntegrationManager:
                     logger.warning(f"Failed to initialize AuthServiceClient: {str(e)}")
         return self._auth_service_client
     
+    @property
+    def pipeline(self) -> Optional[SessionPipelineClient]:
+        """Get session pipeline client (lazy initialization)"""
+        if self._pipeline_client is None and SessionPipelineClient:
+            url = os.getenv('SESSION_PIPELINE_URL', '')
+            if url:
+                try:
+                    self._pipeline_client = SessionPipelineClient(
+                        base_url=url,
+                        timeout=self.service_timeout,
+                        retry_count=self.service_retry_count,
+                        retry_delay=self.service_retry_delay,
+                        api_key=os.getenv('JWT_SECRET_KEY', '')
+                    )
+                    logger.info("Initialized SessionPipelineClient")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize SessionPipelineClient: {str(e)}")
+        return self._pipeline_client
+    
+    @property
+    def storage(self) -> Optional[SessionStorageClient]:
+        """Get session storage client (lazy initialization)"""
+        if self._storage_client is None and SessionStorageClient:
+            url = os.getenv('SESSION_STORAGE_URL', '')
+            if url:
+                try:
+                    self._storage_client = SessionStorageClient(
+                        base_url=url,
+                        timeout=self.service_timeout,
+                        retry_count=self.service_retry_count,
+                        retry_delay=self.service_retry_delay,
+                        api_key=os.getenv('JWT_SECRET_KEY', '')
+                    )
+                    logger.info("Initialized SessionStorageClient")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize SessionStorageClient: {str(e)}")
+        return self._storage_client
+    
     async def health_check_all(self) -> Dict[str, Any]:
         """
         Perform health check on all initialized clients
@@ -162,6 +206,18 @@ class IntegrationManager:
             except Exception as e:
                 results['auth_service'] = {"status": "error", "error": str(e)}
         
+        if self._pipeline_client:
+            try:
+                results['pipeline'] = await self._pipeline_client.health_check()
+            except Exception as e:
+                results['pipeline'] = {"status": "error", "error": str(e)}
+        
+        if self._storage_client:
+            try:
+                results['storage'] = await self._storage_client.health_check()
+            except Exception as e:
+                results['storage'] = {"status": "error", "error": str(e)}
+        
         return results
     
     async def close_all(self):
@@ -189,6 +245,18 @@ class IntegrationManager:
                 await self._auth_service_client.close()
             except Exception as e:
                 logger.warning(f"Error closing auth service client: {str(e)}")
+        
+        if self._pipeline_client:
+            try:
+                await self._pipeline_client.close()
+            except Exception as e:
+                logger.warning(f"Error closing pipeline client: {str(e)}")
+        
+        if self._storage_client:
+            try:
+                await self._storage_client.close()
+            except Exception as e:
+                logger.warning(f"Error closing storage client: {str(e)}")
         
         logger.info("Closed all integration clients")
 

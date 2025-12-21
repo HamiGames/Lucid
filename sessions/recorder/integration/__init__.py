@@ -9,19 +9,19 @@ from .integration_manager import IntegrationManager
 
 # Import clients if needed
 try:
-    from .blockchain_engine_client import BlockchainEngineClient
-    from .node_manager_client import NodeManagerClient
-    from .api_gateway_client import APIGatewayClient
-    from .auth_service_client import AuthServiceClient
     from .session_pipeline_client import SessionPipelineClient
+    from .session_storage_client import SessionStorageClient
 except ImportError:
     # Clients will be created dynamically
-    pass
+    SessionPipelineClient = None
+    SessionStorageClient = None
 
 __all__ = [
     'ServiceClientBase',
     'ServiceError',
     'ServiceTimeoutError',
     'IntegrationManager',
+    'SessionPipelineClient',
+    'SessionStorageClient',
 ]
 

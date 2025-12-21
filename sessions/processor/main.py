@@ -7,7 +7,6 @@ including FastAPI application setup, health checks, and API endpoints.
 """
 
 import asyncio
-import logging
 import os
 import signal
 import sys
@@ -25,13 +24,12 @@ from .config import ChunkProcessorConfig, get_config
 from .chunk_processor import ChunkProcessorService, ProcessingResult
 from .encryption import EncryptionManager
 from .merkle_builder import MerkleTreeManager
+from core.logging import setup_logging, get_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Initialize logging
+setup_logging()
+
+logger = get_logger(__name__)
 
 # Global service instances
 chunk_processor_service: Optional[ChunkProcessorService] = None
@@ -48,16 +46,20 @@ async def lifespan(app: FastAPI):
     
     Handles startup and shutdown events for the FastAPI application.
     """
-    # Startup
+    global config, integrations, chunk_processor_service, encryption_manager, merkle_tree_manager
+    
     logger.info("Starting chunk processor service...")
     
     try:
-        # Load configuration
-        global config
+        # Load and validate configuration
         config = get_config()
+        if not config.validate_config():
+            raise RuntimeError("Configuration validation failed")
+        
+        # Setup signal handlers
+        setup_signal_handlers()
         
         # Initialize integration manager
-        global integrations
         try:
             from .integration.integration_manager import IntegrationManager
             integrations = IntegrationManager(
@@ -71,8 +73,6 @@ async def lifespan(app: FastAPI):
             integrations = None
         
         # Initialize services
-        global chunk_processor_service, encryption_manager, merkle_tree_manager
-        
         encryption_manager = EncryptionManager(config.encryption_key)
         merkle_tree_manager = MerkleTreeManager()
         chunk_processor_service = ChunkProcessorService(config)
@@ -82,30 +82,30 @@ async def lifespan(app: FastAPI):
         
         logger.info("Chunk processor service started successfully")
         
+        yield
+        
     except Exception as e:
         logger.error(f"Failed to start chunk processor service: {str(e)}")
         raise
-    
-    yield
-    
-    # Shutdown
-    logger.info("Shutting down chunk processor service...")
-    
-    try:
-        if chunk_processor_service:
-            await chunk_processor_service.stop()
+    finally:
+        # Shutdown
+        logger.info("Shutting down chunk processor service...")
         
-        # Close integration clients
-        if integrations:
-            try:
-                await integrations.close_all()
-            except Exception as e:
-                logger.warning(f"Error closing integrations: {str(e)}")
-        
-        logger.info("Chunk processor service stopped successfully")
-        
-    except Exception as e:
-        logger.error(f"Error during shutdown: {str(e)}")
+        try:
+            if chunk_processor_service:
+                await chunk_processor_service.stop()
+            
+            # Close integration clients
+            if integrations:
+                try:
+                    await integrations.close_all()
+                except Exception as e:
+                    logger.warning(f"Error closing integrations: {str(e)}")
+            
+            logger.info("Chunk processor service stopped successfully")
+            
+        except Exception as e:
+            logger.error(f"Error during shutdown: {str(e)}")
 
 
 # Create FastAPI application
@@ -506,25 +506,25 @@ async def general_exception_handler(request, exc):
 
 
 # Signal handlers for graceful shutdown
-def signal_handler(signum, frame):
-    """Handle shutdown signals."""
-    logger.info(f"Received signal {signum}, initiating graceful shutdown...")
-    sys.exit(0)
+def setup_signal_handlers():
+    """Setup signal handlers for graceful shutdown"""
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
 
 def main():
     """Main entry point for the chunk processor service."""
-    # Set up signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
     try:
         # Load configuration
-        global config
         config = get_config()
         
-        # Configure logging
-        logging.getLogger().setLevel(getattr(logging, config.log_level))
+        # Configure logging level from config
+        import logging as std_logging
+        std_logging.getLogger().setLevel(getattr(std_logging, config.log_level))
         
         logger.info(f"Starting chunk processor service on {config.host}:{config.port}")
         
