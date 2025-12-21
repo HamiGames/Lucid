@@ -81,6 +81,7 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx; print(
 # Application source COPY
 COPY sessions/pipeline/ ./pipeline/
 COPY sessions/core/ ./core/
+COPY sessions/encryption/ ./encryption/
 COPY sessions/__init__.py ./__init__.py
 
 ############################
@@ -142,6 +143,7 @@ print('Packages verified in runtime stage')"]
 # Application layout COPY
 COPY --chown=65532:65532 --from=builder /build/pipeline /app/pipeline
 COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/encryption /app/encryption
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
 EXPOSE 8083

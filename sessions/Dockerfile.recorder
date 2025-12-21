@@ -22,13 +22,16 @@ ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
     DEBIAN_FRONTEND=noninteractive
 
-RUN rm -rf /var/lib/apt/lists/* && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
@@ -41,6 +44,7 @@ RUN rm -rf /var/lib/apt/lists/* && \
         libavformat-dev \
         libavutil-dev \
         libswscale-dev \
+        curl \
         ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -52,13 +56,17 @@ RUN echo "LUCID_SESSION_RECORDER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_SESSION_RECORDER_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip wheel setuptools
+
 COPY sessions/requirements.recorder.txt ./requirements.recorder.txt
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
-RUN pip install --user --no-cache-dir -r requirements.recorder.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.recorder.txt
 
 # Create marker files with actual content (ensures directory structure is locked in)
 # CRITICAL: Must be AFTER pip install, with actual content (not empty)
