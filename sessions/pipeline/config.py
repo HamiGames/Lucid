@@ -168,6 +168,21 @@ class PipelineSettings(BaseSettings):
             raise ValueError('Max concurrent sessions must be between 1 and 1000')
         return v
     
+    @field_validator('HEALTH_CHECK_INTERVAL', mode='before')
+    @classmethod
+    def validate_health_check_interval(cls, v):
+        """Convert '30s' format to integer seconds"""
+        if isinstance(v, int):
+            return v
+        if isinstance(v, str):
+            # Strip 's' suffix if present (e.g., '30s' -> '30')
+            v = v.rstrip('s').strip()
+            try:
+                return int(v)
+            except ValueError:
+                raise ValueError(f'HEALTH_CHECK_INTERVAL must be an integer or integer string (e.g., "30" or "30s"), got: {v}')
+        return v
+    
     model_config = {
         # pydantic-settings will read from environment variables
         # docker-compose provides: .env.secrets, .env.core, .env.application, .env.foundation
