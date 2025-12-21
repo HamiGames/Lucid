@@ -19,7 +19,7 @@ from fastapi.responses import JSONResponse
 from .pipeline_manager import PipelineManager
 from .config import PipelineConfig, PipelineSettings
 from .state_machine import PipelineState, StateTransition
-from ..core.logging import setup_logging, get_logger
+from core.logging import setup_logging, get_logger
 
 # Initialize logging
 setup_logging()
@@ -81,10 +81,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware (configured from environment variables)
+# CORS_ORIGINS env var: comma-separated list of origins, or "*" for all
+# Default to ["*"] if not set
+import os
+cors_origins_str = os.getenv('CORS_ORIGINS', '*')
+if cors_origins_str == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -354,7 +363,8 @@ async def get_metrics():
                 len(workers) for workers in pipeline_manager.pipeline_workers.values()
             ),
             "pipeline_states": {},
-            "stage_metrics": {}
+            "stage_metrics": {},
+            "integrations": {}
         }
         
         # Collect state statistics
@@ -382,6 +392,15 @@ async def get_metrics():
                 stage_metrics["total_errors"] += stage.metrics.error_count
                 stage_metrics["average_processing_time_ms"] += stage.metrics.average_processing_time_ms
                 stage_metrics["throughput_chunks_per_second"] += stage.metrics.throughput_chunks_per_second
+        
+        # Collect integration service health
+        if hasattr(pipeline_manager, 'integrations') and pipeline_manager.integrations:
+            try:
+                integration_health = await pipeline_manager.integrations.health_check_all()
+                metrics["integrations"] = integration_health
+            except Exception as e:
+                logger.warning(f"Failed to get integration health: {str(e)}")
+                metrics["integrations"] = {"error": str(e)}
         
         return metrics
         

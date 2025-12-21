@@ -12,10 +12,15 @@ from enum import Enum
 from dataclasses import dataclass, field
 import json
 import uuid
+from pathlib import Path
+import base64
+import secrets
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
 from .state_machine import PipelineStateMachine, PipelineState, StateTransition
 from .config import PipelineConfig
-from ..core.logging import get_logger
+from core.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -69,6 +74,15 @@ class PipelineManager:
         self.pipeline_workers: Dict[str, List[asyncio.Task]] = {}
         self._shutdown_event = asyncio.Event()
         
+        # Initialize integration manager for external service communication
+        try:
+            from .integration.integration_manager import IntegrationManager
+            self.integrations = IntegrationManager(self.config)
+            logger.info("Integration manager initialized")
+        except Exception as e:
+            logger.warning(f"Failed to initialize integration manager: {str(e)}")
+            self.integrations = None
+        
         # Initialize default pipeline stages
         self._initialize_default_stages()
         
@@ -80,44 +94,44 @@ class PipelineManager:
             PipelineStage(
                 stage_name="recording",
                 stage_type="recorder",
-                worker_count=self.config.recorder_workers,
-                buffer_size=self.config.recorder_buffer_size,
-                timeout_seconds=self.config.recorder_timeout
+                worker_count=self.config.settings.RECORDER_WORKERS,
+                buffer_size=self.config.settings.RECORDER_BUFFER_SIZE,
+                timeout_seconds=self.config.settings.RECORDER_TIMEOUT
             ),
             PipelineStage(
                 stage_name="chunk_generation",
                 stage_type="chunk_generator",
-                worker_count=self.config.chunk_workers,
-                buffer_size=self.config.chunk_buffer_size,
-                timeout_seconds=self.config.chunk_timeout
+                worker_count=self.config.settings.CHUNK_WORKERS,
+                buffer_size=self.config.settings.CHUNK_BUFFER_SIZE,
+                timeout_seconds=self.config.settings.CHUNK_TIMEOUT
             ),
             PipelineStage(
                 stage_name="compression",
                 stage_type="compressor",
-                worker_count=self.config.compressor_workers,
-                buffer_size=self.config.compressor_buffer_size,
-                timeout_seconds=self.config.compressor_timeout
+                worker_count=self.config.settings.COMPRESSOR_WORKERS,
+                buffer_size=self.config.settings.COMPRESSOR_BUFFER_SIZE,
+                timeout_seconds=self.config.settings.COMPRESSOR_TIMEOUT
             ),
             PipelineStage(
                 stage_name="encryption",
                 stage_type="encryptor",
-                worker_count=self.config.encryptor_workers,
-                buffer_size=self.config.encryptor_buffer_size,
-                timeout_seconds=self.config.encryptor_timeout
+                worker_count=self.config.settings.ENCRYPTOR_WORKERS,
+                buffer_size=self.config.settings.ENCRYPTOR_BUFFER_SIZE,
+                timeout_seconds=self.config.settings.ENCRYPTOR_TIMEOUT
             ),
             PipelineStage(
                 stage_name="merkle_building",
                 stage_type="merkle_builder",
-                worker_count=self.config.merkle_workers,
-                buffer_size=self.config.merkle_buffer_size,
-                timeout_seconds=self.config.merkle_timeout
+                worker_count=self.config.settings.MERKLE_WORKERS,
+                buffer_size=self.config.settings.MERKLE_BUFFER_SIZE,
+                timeout_seconds=self.config.settings.MERKLE_TIMEOUT
             ),
             PipelineStage(
                 stage_name="storage",
                 stage_type="storage",
-                worker_count=self.config.storage_workers,
-                buffer_size=self.config.storage_buffer_size,
-                timeout_seconds=self.config.storage_timeout
+                worker_count=self.config.settings.STORAGE_WORKERS,
+                buffer_size=self.config.settings.STORAGE_BUFFER_SIZE,
+                timeout_seconds=self.config.settings.STORAGE_TIMEOUT
             )
         ]
     
@@ -364,6 +378,42 @@ class PipelineManager:
             }
         }
     
+    async def anchor_session_to_blockchain(
+        self,
+        session_id: str,
+        merkle_root: str,
+        chunk_count: int,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Anchor session Merkle root to blockchain using blockchain-engine client
+        
+        Args:
+            session_id: Session identifier
+            merkle_root: Merkle root hash
+            chunk_count: Number of chunks in session
+            metadata: Optional additional metadata
+            
+        Returns:
+            Anchoring transaction details or None if blockchain client not available
+        """
+        if not self.integrations or not self.integrations.blockchain:
+            logger.warning("Blockchain client not available, skipping anchoring")
+            return None
+        
+        try:
+            result = await self.integrations.blockchain.anchor_session_merkle_root(
+                session_id=session_id,
+                merkle_root=merkle_root,
+                chunk_count=chunk_count,
+                metadata=metadata
+            )
+            logger.info(f"Anchored session {session_id} to blockchain: {result.get('tx_hash', 'N/A')}")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to anchor session {session_id} to blockchain: {str(e)}")
+            return None
+    
     async def cleanup_pipeline(self, session_id: str) -> bool:
         """
         Clean up pipeline resources for a session
@@ -407,6 +457,13 @@ class PipelineManager:
         # Stop all active pipelines
         for session_id in list(self.active_pipelines.keys()):
             await self.cleanup_pipeline(session_id)
+        
+        # Close integration clients
+        if hasattr(self, 'integrations') and self.integrations:
+            try:
+                await self.integrations.close_all()
+            except Exception as e:
+                logger.warning(f"Error closing integrations: {str(e)}")
         
         logger.info("Pipeline Manager shutdown complete")
     
@@ -520,7 +577,7 @@ class PipelineManager:
         """Generate 10MB chunks from session data"""
         try:
             # Import chunk generator
-            from ..recorder.chunk_generator import ChunkGenerator, ChunkConfig
+            from recorder.chunk_generator import ChunkGenerator, ChunkConfig
             
             # Configure for 10MB chunks (use config from settings)
             chunk_size_mb = self.config.settings.CHUNK_SIZE_MB
@@ -548,7 +605,7 @@ class PipelineManager:
         """Build Merkle tree from chunk data"""
         try:
             # Import Merkle tree builder
-            from ..core.merkle_builder import MerkleTreeBuilder
+            from core.merkle_builder import MerkleTreeBuilder
             
             # Build Merkle tree
             builder = MerkleTreeBuilder()
@@ -571,17 +628,44 @@ class PipelineManager:
             raise
     
     async def _encrypt_chunk(self, chunk_data: bytes, stage: PipelineStage) -> bytes:
-        """Encrypt chunk data"""
+        """Encrypt chunk data using ENCRYPTION_KEY from config"""
         try:
-            # TODO: Implement encryption using ENCRYPTION_KEY from config
-            # For now, return unencrypted data if encryption is disabled
             if not self.config.settings.ENABLE_ENCRYPTION:
                 return chunk_data
-            # Encryption implementation needed using self.config.settings.ENCRYPTION_KEY
-            logger.warning("Encryption is enabled but not yet implemented")
-            return chunk_data
+            
+            encryption_key = self.config.settings.ENCRYPTION_KEY
+            if not encryption_key:
+                raise ValueError("ENCRYPTION_KEY is required when encryption is enabled")
+            
+            # Convert encryption key to bytes if it's a string
+            if isinstance(encryption_key, str):
+                # Try to decode as base64, if that fails, use it as-is (will need to be 32 bytes for Fernet)
+                try:
+                    key_bytes = base64.urlsafe_b64decode(encryption_key)
+                except Exception:
+                    # If not base64, hash it to get 32 bytes for Fernet
+                    import hashlib
+                    key_bytes = hashlib.sha256(encryption_key.encode()).digest()
+            else:
+                key_bytes = encryption_key
+            
+            # Use ChaCha20Poly1305 for encryption (XChaCha20-Poly1305 equivalent)
+            # Generate 12-byte nonce (96 bits) for ChaCha20Poly1305
+            nonce = secrets.token_bytes(12)
+            
+            # Create cipher and encrypt
+            cipher = ChaCha20Poly1305(key_bytes[:32])  # Use first 32 bytes if key is longer
+            encrypted_data = cipher.encrypt(nonce, chunk_data, None)
+            
+            # Prepend nonce to encrypted data for decryption
+            encrypted_with_nonce = nonce + encrypted_data
+            
+            logger.debug(f"Encrypted chunk: {len(chunk_data)} bytes -> {len(encrypted_with_nonce)} bytes")
+            return encrypted_with_nonce
+            
         except Exception as e:
             stage.last_error = str(e)
+            logger.error(f"Encryption failed: {str(e)}")
             raise
     
     async def _store_chunk(
@@ -591,17 +675,40 @@ class PipelineManager:
         chunk_metadata: Dict[str, Any], 
         stage: PipelineStage
     ):
-        """Store chunk data"""
+        """Store chunk data to filesystem using CHUNK_STORAGE_PATH from config"""
         try:
-            # TODO: Implement storage to filesystem or database
-            # Storage path should use self.config.settings.CHUNK_STORAGE_PATH
-            storage_path = Path(self.config.settings.CHUNK_STORAGE_PATH)
-            storage_path.mkdir(parents=True, exist_ok=True)
-            # Storage implementation needed
-            logger.debug(f"Chunk storage for session {session_id} - implementation needed")
-            pass
+            storage_base_path = Path(self.config.settings.CHUNK_STORAGE_PATH)
+            session_storage_path = storage_base_path / session_id
+            
+            # Create session directory if it doesn't exist
+            session_storage_path.mkdir(parents=True, exist_ok=True)
+            
+            # Generate chunk filename from metadata or use timestamp
+            chunk_id = chunk_metadata.get('chunk_id') or chunk_metadata.get('sequence_number')
+            if not chunk_id:
+                chunk_id = f"chunk_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
+            
+            chunk_filename = f"{chunk_id}.chunk"
+            chunk_file_path = session_storage_path / chunk_filename
+            
+            # Write chunk data to file
+            chunk_file_path.write_bytes(chunk_data)
+            
+            # Write metadata to separate JSON file
+            metadata_filename = f"{chunk_id}.metadata.json"
+            metadata_file_path = session_storage_path / metadata_filename
+            metadata_file_path.write_text(json.dumps({
+                **chunk_metadata,
+                'chunk_file': chunk_filename,
+                'chunk_size': len(chunk_data),
+                'stored_at': datetime.utcnow().isoformat()
+            }, default=str))
+            
+            logger.debug(f"Stored chunk {chunk_id} for session {session_id} ({len(chunk_data)} bytes) to {chunk_file_path}")
+            
         except Exception as e:
             stage.last_error = str(e)
+            logger.error(f"Storage failed for session {session_id}: {str(e)}")
             raise
     
     def _update_stage_metrics(self, stage: PipelineStage, start_time: datetime):

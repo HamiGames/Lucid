@@ -144,10 +144,10 @@ COPY --chown=65532:65532 --from=builder /build/pipeline /app/pipeline
 COPY --chown=65532:65532 --from=builder /build/core /app/core
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
-EXPOSE 8087
+EXPOSE 8083
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8083)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

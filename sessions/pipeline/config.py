@@ -123,11 +123,29 @@ class PipelineSettings(BaseSettings):
     ENABLE_DEDUPLICATION: bool = True
     PARALLEL_PROCESSING: bool = True
     
-    # Quality Configuration
-    DEFAULT_QUALITY: str = "high"
-    DEFAULT_FRAME_RATE: int = 30
-    DEFAULT_RESOLUTION: str = "1920x1080"
+    # Quality Configuration (from .env.application, defaults if not set)
+    DEFAULT_QUALITY: str = ""  # From environment: DEFAULT_QUALITY (default: "high")
+    DEFAULT_FRAME_RATE: int = 0  # From environment: DEFAULT_FRAME_RATE (default: 30)
+    DEFAULT_RESOLUTION: str = ""  # From environment: DEFAULT_RESOLUTION (default: "1920x1080")
     QUALITY_THRESHOLD: float = 0.8
+    
+    # CORS Configuration (from .env.application)
+    CORS_ORIGINS: str = "*"  # From environment: CORS_ORIGINS (comma-separated list, default: "*")
+    
+    # Integration Service URLs (from .env.application, .env.core)
+    BLOCKCHAIN_ENGINE_URL: str = ""  # From environment: BLOCKCHAIN_ENGINE_URL (e.g., http://blockchain-engine:8084)
+    NODE_MANAGEMENT_URL: str = ""  # From environment: NODE_MANAGEMENT_URL (e.g., http://node-management:8095)
+    API_GATEWAY_URL: str = ""  # From environment: API_GATEWAY_URL (e.g., http://api-gateway:8080)
+    AUTH_SERVICE_URL: str = ""  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
+    SESSION_RECORDER_URL: str = ""  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
+    SESSION_PROCESSOR_URL: str = ""  # From environment: SESSION_PROCESSOR_URL (e.g., http://session-processor:8091)
+    SESSION_STORAGE_URL: str = ""  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
+    SESSION_API_URL: str = ""  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
+    
+    # Integration Service Timeout Configuration (from .env.application)
+    SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
+    SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls
+    SERVICE_RETRY_DELAY_SECONDS: float = 1.0  # Default delay between retries
     
     @field_validator('CHUNK_SIZE_MB')
     @classmethod
@@ -198,6 +216,39 @@ class PipelineConfig:
                     self.settings.PORT = int(self.settings.SESSION_PIPELINE_PORT)
                 except (ValueError, TypeError):
                     logger.warning(f"Invalid SESSION_PIPELINE_PORT value: {self.settings.SESSION_PIPELINE_PORT}, using default {self.settings.PORT}")
+            
+            # Set default values for quality settings if not provided
+            import os
+            if not self.settings.DEFAULT_QUALITY:
+                self.settings.DEFAULT_QUALITY = os.getenv('DEFAULT_QUALITY', 'high')
+            if self.settings.DEFAULT_FRAME_RATE == 0:
+                self.settings.DEFAULT_FRAME_RATE = int(os.getenv('DEFAULT_FRAME_RATE', '30'))
+            if not self.settings.DEFAULT_RESOLUTION:
+                self.settings.DEFAULT_RESOLUTION = os.getenv('DEFAULT_RESOLUTION', '1920x1080')
+            
+            # Set integration service URLs from environment if not already set
+            if not self.settings.BLOCKCHAIN_ENGINE_URL:
+                self.settings.BLOCKCHAIN_ENGINE_URL = os.getenv('BLOCKCHAIN_ENGINE_URL', '')
+            if not self.settings.NODE_MANAGEMENT_URL:
+                self.settings.NODE_MANAGEMENT_URL = os.getenv('NODE_MANAGEMENT_URL', '')
+            if not self.settings.API_GATEWAY_URL:
+                self.settings.API_GATEWAY_URL = os.getenv('API_GATEWAY_URL', '')
+            if not self.settings.AUTH_SERVICE_URL:
+                self.settings.AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', '')
+            if not self.settings.SESSION_RECORDER_URL:
+                self.settings.SESSION_RECORDER_URL = os.getenv('SESSION_RECORDER_URL', '')
+            if not self.settings.SESSION_PROCESSOR_URL:
+                self.settings.SESSION_PROCESSOR_URL = os.getenv('SESSION_PROCESSOR_URL', '')
+            if not self.settings.SESSION_STORAGE_URL:
+                self.settings.SESSION_STORAGE_URL = os.getenv('SESSION_STORAGE_URL', '')
+            if not self.settings.SESSION_API_URL:
+                self.settings.SESSION_API_URL = os.getenv('SESSION_API_URL', '')
+            
+            # Parse CORS origins (comma-separated list or "*")
+            if self.settings.CORS_ORIGINS == "*":
+                self.cors_origins = ["*"]
+            else:
+                self.cors_origins = [origin.strip() for origin in self.settings.CORS_ORIGINS.split(",") if origin.strip()]
             
             # Initialize stage configurations
             self._initialize_stage_configs()
