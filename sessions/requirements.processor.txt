@@ -8,6 +8,7 @@ pydantic-settings==2.1.0
 # Cryptography and encryption
 cryptography==41.0.7
 pycryptodome==3.19.0
+blake3>=0.3.3
 
 # Database and caching
 motor==3.3.2
@@ -17,6 +18,12 @@ pymongo==4.6.0
 # Async and concurrency
 aiofiles==23.2.1
 aiohttp==3.9.1
+httpx==0.25.2
+
+# Compression libraries
+zstandard>=0.21.0
+lz4>=4.3.2
+brotli>=1.1.0
 
 # Data processing and validation
 numpy==1.24.4
@@ -30,7 +37,6 @@ structlog==23.2.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
-httpx==0.25.2
 
 # Development tools
 black==23.11.0
