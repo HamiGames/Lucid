@@ -76,12 +76,20 @@ RUN echo "LUCID_SESSION_RECORDER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/
     echo "LUCID_SESSION_RECORDER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+# Verify packages are installed and verify directory structure
 RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, httpx, aiofiles, motor, pymongo, cv2, PIL, numpy, psutil, netifaces, structlog, lz4, zstandard, yaml; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     python3 -c "import yaml; print('yaml location:', yaml.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Directory exists: /root/.local/lib/python3.11/site-packages"
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
 # Application source COPY
 COPY sessions/recorder/ ./recorder/
@@ -134,28 +142,59 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages
+# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# This will fail the build if packages are missing (catches COPY failures immediately)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.isdir(site_packages), site_packages + ' is not a directory'; \
+# Verify critical packages exist as directories/files \
+uvicorn_path = os.path.join(site_packages, 'uvicorn'); \
+assert os.path.exists(uvicorn_path), 'uvicorn not found at ' + uvicorn_path; \
+assert os.path.isdir(uvicorn_path) or os.path.isfile(uvicorn_path), 'uvicorn path exists but is not dir/file'; \
 assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'yaml')), 'yaml not found'; \
-import yaml; assert yaml, 'yaml import failed'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
+assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml not found'; \
+# Verify marker file exists and is non-empty (ensures COPY worked) \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found at ' + marker_path; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-print('Packages verified in runtime stage')"]
+# Actually import packages to verify they work (catches import errors) \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+print('uvicorn imported successfully, location:', uvicorn.__file__); \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import pymongo; assert pymongo, 'pymongo import failed'; \
+import httpx; assert httpx, 'httpx import failed'; \
+import aiofiles; assert aiofiles, 'aiofiles import failed'; \
+import yaml; assert yaml, 'yaml import failed'; \
+print('✅ All packages verified in runtime stage')"]
 
-# Application layout COPY
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/core /app/core
 COPY --chown=65532:65532 --from=builder /build/recorder /app/sessions/recorder
 COPY --chown=65532:65532 --from=builder /build/pipeline/__init__.py /app/sessions/pipeline/__init__.py
 COPY --chown=65532:65532 --from=builder /build/pipeline/integration /app/sessions/pipeline/integration
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
 COPY --chown=65532:65532 --from=builder /build/config/recorder-config.yaml /app/sessions/config/recorder-config.yaml
+
+# Verify application source files were copied (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/sessions/recorder'), 'recorder directory not found'; \
+assert os.path.exists('/app/sessions/recorder/entrypoint.py'), 'entrypoint.py not found'; \
+assert os.path.exists('/app/sessions/recorder/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/core'), 'core directory not found'; \
+assert os.path.exists('/app/sessions/pipeline/__init__.py'), 'pipeline/__init__.py not found'; \
+assert os.path.exists('/app/sessions/pipeline/integration'), 'pipeline/integration directory not found'; \
+assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
+assert os.path.exists('/app/sessions/config/recorder-config.yaml'), 'recorder-config.yaml not found'; \
+print('✅ All application source files verified')"]
 
 EXPOSE 8090
 

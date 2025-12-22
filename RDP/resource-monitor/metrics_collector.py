@@ -36,11 +36,27 @@ logger = logging.getLogger(__name__)
 class MetricsCollector:
     """Collects and exposes metrics for RDP sessions"""
     
-    def __init__(self):
+    def __init__(self, config=None):
+        """
+        Initialize MetricsCollector with configuration.
+        
+        Args:
+            config: MonitorConfig instance (optional, will create default if not provided)
+        """
+        from .config import MonitorConfig, MonitorSettings
+        
+        self.config = config or MonitorConfig()
+        self.settings = self.config.settings
+        
         self.registry = CollectorRegistry()
         self.metrics = self._initialize_metrics()
-        self.collection_interval = 30  # seconds
+        
+        # Get collection interval from config
+        self.collection_interval = self.config.settings.COLLECTION_INTERVAL
+        
         self.collection_active = False
+        
+        logger.info(f"MetricsCollector initialized with collection interval: {self.collection_interval}s")
     
     def _initialize_metrics(self):
         """Initialize Prometheus metrics"""
@@ -160,19 +176,24 @@ class MetricsCollector:
     async def record_session_created(self, session_id: UUID, user_id: str):
         """Record session creation"""
         try:
-            self.metrics['sessions_total'].labels(status='created').inc()
+            if 'sessions_total' in self.metrics:
+                self.metrics['sessions_total'].labels(status='created').inc()
             logger.info(f"Recorded session creation: {session_id}")
         except Exception as e:
-            logger.error(f"Failed to record session creation: {e}")
+            logger.error(f"Failed to record session creation: {e}", exc_info=True)
+            raise RuntimeError(f"Failed to record session creation: {str(e)}") from e
     
     async def record_session_terminated(self, session_id: UUID, duration: float):
         """Record session termination"""
         try:
-            self.metrics['sessions_total'].labels(status='terminated').inc()
-            self.metrics['session_duration'].labels(session_id=str(session_id)).observe(duration)
+            if 'sessions_total' in self.metrics:
+                self.metrics['sessions_total'].labels(status='terminated').inc()
+            if 'session_duration' in self.metrics:
+                self.metrics['session_duration'].labels(session_id=str(session_id)).observe(duration)
             logger.info(f"Recorded session termination: {session_id}, duration: {duration}s")
         except Exception as e:
-            logger.error(f"Failed to record session termination: {e}")
+            logger.error(f"Failed to record session termination: {e}", exc_info=True)
+            raise RuntimeError(f"Failed to record session termination: {str(e)}") from e
     
     async def record_session_active(self, session_id: UUID):
         """Record active session"""
@@ -185,52 +206,55 @@ class MetricsCollector:
     async def record_resource_metrics(self, session_id: UUID, metrics_data: Dict[str, Any]):
         """Record resource metrics for a session"""
         try:
+            session_id_str = str(session_id)
+            
             # CPU metrics
-            if 'cpu_percent' in metrics_data:
-                self.metrics['cpu_usage'].labels(session_id=str(session_id)).set(
+            if 'cpu_percent' in metrics_data and 'cpu_usage' in self.metrics:
+                self.metrics['cpu_usage'].labels(session_id=session_id_str).set(
                     metrics_data['cpu_percent']
                 )
             
             # Memory metrics
-            if 'memory_usage' in metrics_data:
-                self.metrics['memory_usage'].labels(session_id=str(session_id)).set(
+            if 'memory_usage' in metrics_data and 'memory_usage' in self.metrics:
+                self.metrics['memory_usage'].labels(session_id=session_id_str).set(
                     metrics_data['memory_usage']
                 )
-            if 'memory_percent' in metrics_data:
-                self.metrics['memory_percent'].labels(session_id=str(session_id)).set(
+            if 'memory_percent' in metrics_data and 'memory_percent' in self.metrics:
+                self.metrics['memory_percent'].labels(session_id=session_id_str).set(
                     metrics_data['memory_percent']
                 )
             
             # Disk metrics
-            if 'disk_usage' in metrics_data:
-                self.metrics['disk_usage'].labels(session_id=str(session_id)).set(
+            if 'disk_usage' in metrics_data and 'disk_usage' in self.metrics:
+                self.metrics['disk_usage'].labels(session_id=session_id_str).set(
                     metrics_data['disk_usage']
                 )
-            if 'disk_percent' in metrics_data:
-                self.metrics['disk_percent'].labels(session_id=str(session_id)).set(
+            if 'disk_percent' in metrics_data and 'disk_percent' in self.metrics:
+                self.metrics['disk_percent'].labels(session_id=session_id_str).set(
                     metrics_data['disk_percent']
                 )
             
             # Network metrics
-            if 'network_bytes_sent' in metrics_data:
-                self.metrics['network_bytes_sent'].labels(session_id=str(session_id)).inc(
+            if 'network_bytes_sent' in metrics_data and 'network_bytes_sent' in self.metrics:
+                self.metrics['network_bytes_sent'].labels(session_id=session_id_str).inc(
                     metrics_data['network_bytes_sent']
                 )
-            if 'network_bytes_recv' in metrics_data:
-                self.metrics['network_bytes_recv'].labels(session_id=str(session_id)).inc(
+            if 'network_bytes_recv' in metrics_data and 'network_bytes_recv' in self.metrics:
+                self.metrics['network_bytes_recv'].labels(session_id=session_id_str).inc(
                     metrics_data['network_bytes_recv']
                 )
-            if 'network_packets_sent' in metrics_data:
-                self.metrics['network_packets_sent'].labels(session_id=str(session_id)).inc(
+            if 'network_packets_sent' in metrics_data and 'network_packets_sent' in self.metrics:
+                self.metrics['network_packets_sent'].labels(session_id=session_id_str).inc(
                     metrics_data['network_packets_sent']
                 )
-            if 'network_packets_recv' in metrics_data:
-                self.metrics['network_packets_recv'].labels(session_id=str(session_id)).inc(
+            if 'network_packets_recv' in metrics_data and 'network_packets_recv' in self.metrics:
+                self.metrics['network_packets_recv'].labels(session_id=session_id_str).inc(
                     metrics_data['network_packets_recv']
                 )
             
         except Exception as e:
-            logger.error(f"Failed to record resource metrics: {e}")
+            logger.error(f"Failed to record resource metrics: {e}", exc_info=True)
+            raise RuntimeError(f"Failed to record resource metrics: {str(e)}") from e
     
     async def record_connection_created(self, connection_id: UUID):
         """Record connection creation"""
@@ -334,28 +358,35 @@ class MetricsCollector:
         alerts = []
         
         try:
+            # Get thresholds from config
+            thresholds = self.config.get_alert_thresholds()
+            cpu_threshold = thresholds.get("cpu_percent", 80.0)
+            memory_threshold = thresholds.get("memory_percent", 80.0)
+            disk_threshold = thresholds.get("disk_percent", 90.0)
+            
             # CPU alert
-            if metrics_data.get('cpu_percent', 0) > 80:
+            if metrics_data.get('cpu_percent', 0) > cpu_threshold:
                 alerts.append({
                     'type': 'cpu_high',
                     'severity': 'warning'
                 })
             
             # Memory alert
-            if metrics_data.get('memory_percent', 0) > 80:
+            if metrics_data.get('memory_percent', 0) > memory_threshold:
                 alerts.append({
                     'type': 'memory_high',
                     'severity': 'warning'
                 })
             
             # Disk alert
-            if metrics_data.get('disk_percent', 0) > 90:
+            if metrics_data.get('disk_percent', 0) > disk_threshold:
                 alerts.append({
                     'type': 'disk_high',
                     'severity': 'critical'
                 })
             
         except Exception as e:
-            logger.error(f"Failed to check metrics alerts: {e}")
+            logger.error(f"Failed to check metrics alerts: {e}", exc_info=True)
+            # Don't raise here, just return empty alerts
         
         return alerts

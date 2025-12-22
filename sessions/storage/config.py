@@ -6,9 +6,16 @@ Configuration management for session storage service
 
 import os
 from typing import Dict, Any, Optional
+from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 import logging
+
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -137,9 +144,20 @@ class StorageConfig:
     Manages all storage-related configuration
     """
     
-    def __init__(self, settings: Optional[StorageSettings] = None):
+    def __init__(self, settings: Optional[StorageSettings] = None, config_file: Optional[str] = None):
+        """
+        Initialize StorageConfig.
+        
+        Args:
+            settings: Optional StorageSettings instance. If not provided, will load from YAML and environment variables.
+            config_file: Optional path to YAML configuration file. Only used if settings is None.
+        """
         try:
-            self.settings = settings or StorageSettings()
+            if settings is None:
+                # Load configuration from YAML and environment variables
+                self.settings = load_config(config_file)
+            else:
+                self.settings = settings
             
             # Validate critical environment variables
             self._validate_required_env_vars()
@@ -234,4 +252,205 @@ class StorageConfig:
             "LUCID_BACKUP_ENABLED": str(self.settings.LUCID_BACKUP_ENABLED),
             "LUCID_BACKUP_RETENTION_DAYS": str(self.settings.LUCID_BACKUP_RETENTION_DAYS),
         }
+
+
+def load_config(config_file: Optional[str] = None) -> StorageSettings:
+    """
+    Load configuration from YAML file and environment variables.
+    
+    Configuration loading priority (highest to lowest):
+    1. Environment variables (highest priority - override everything)
+    2. YAML configuration file values
+    3. Pydantic field defaults (lowest priority)
+    
+    Args:
+        config_file: Optional path to YAML configuration file. If not provided,
+                     will look for 'config.yaml' in the storage directory.
+        
+    Returns:
+        Loaded StorageSettings object with environment variables overriding YAML values
+        
+    Raises:
+        FileNotFoundError: If config_file is provided but doesn't exist
+        ValueError: If configuration validation fails
+        ImportError: If PyYAML is not available (should not happen if requirements are installed)
+    """
+    try:
+        yaml_data: Dict[str, Any] = {}
+        yaml_file_path: Optional[Path] = None
+        
+        # Determine YAML file path
+        if config_file:
+            yaml_file_path = Path(config_file)
+        else:
+            # Try default locations
+            default_locations = [
+                Path(__file__).parent / "config.yaml",  # Same directory as config.py
+                Path(__file__).parent.parent / "storage" / "config.yaml",  # Alternative path
+            ]
+            for loc in default_locations:
+                if loc.exists():
+                    yaml_file_path = loc
+                    break
+        
+        # Load YAML file if it exists
+        if yaml_file_path and yaml_file_path.exists():
+            if not YAML_AVAILABLE:
+                logger.warning(f"PyYAML not available, skipping YAML file {yaml_file_path}")
+            else:
+                try:
+                    with open(yaml_file_path, 'r', encoding='utf-8') as f:
+                        yaml_data = yaml.safe_load(f) or {}
+                    logger.info(f"Loaded YAML configuration from {yaml_file_path}")
+                    
+                    # Filter out empty string values from YAML (they should come from env vars)
+                    # This allows YAML to have placeholders like mongodb_url: "" that get filled from env
+                    yaml_data = {k: v for k, v in yaml_data.items() if v != "" or k in ["MONGODB_URL", "REDIS_URL", "MONGO_URL"]}
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to load YAML configuration from {yaml_file_path}: {str(e)}")
+                    logger.warning("Continuing with environment variables and defaults only")
+                    yaml_data = {}
+        elif config_file:
+            # User specified a file but it doesn't exist - this is an error
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+        else:
+            logger.debug("No YAML configuration file found, using environment variables and defaults only")
+        
+        # Create configuration object
+        # Priority: Environment variables (highest) > YAML values > Field defaults (lowest)
+        # Strategy: Create config from YAML, then override with environment variables
+        
+        if yaml_data:
+            try:
+                # Step 1: Create config from YAML data (YAML provides defaults)
+                config = StorageSettings.model_validate(yaml_data)
+                
+                # Step 2: Create config normally to get environment variable values
+                env_config = StorageSettings()
+                
+                # Step 3: Override YAML config with environment variable values
+                # Environment variables take highest priority
+                env_dict = env_config.model_dump()
+                yaml_dict = config.model_dump()
+                
+                # For each field, if env_config value differs from yaml_config value,
+                # use the env value (environment variable was set)
+                for key in env_dict.keys():
+                    env_value = env_dict[key]
+                    yaml_value = yaml_dict.get(key)
+                    
+                    # If values differ, environment variable was set - use it
+                    if env_value != yaml_value:
+                        try:
+                            setattr(config, key, env_value)
+                        except Exception as e:
+                            logger.debug(f"Could not override {key} with environment variable: {str(e)}")
+                
+            except Exception as e:
+                logger.warning(f"Error merging YAML with environment variables: {str(e)}")
+                logger.warning("Falling back to environment variables and defaults only")
+                config = StorageSettings()
+        else:
+            # Load from environment variables and defaults only
+            config = StorageSettings()
+        
+        logger.info("Configuration loaded successfully")
+        return config
+        
+    except FileNotFoundError:
+        # Re-raise file not found errors
+        raise
+    except Exception as e:
+        logger.error(f"Failed to load configuration: {str(e)}")
+        raise
+
+
+def create_default_config_file(config_path: str = "config.yaml"):
+    """
+    Create a default configuration file.
+    
+    Args:
+        config_path: Path to create the configuration file
+        
+    Raises:
+        ImportError: If PyYAML is not available
+        IOError: If file cannot be written
+    """
+    if not YAML_AVAILABLE:
+        raise ImportError("PyYAML is required to create configuration files. Install it with: pip install PyYAML")
+    
+    default_config = {
+        "SERVICE_NAME": "lucid-session-storage",
+        "SERVICE_VERSION": "1.0.0",
+        "DEBUG": False,
+        "LOG_LEVEL": "INFO",
+        "HOST": "0.0.0.0",
+        "PORT": 8082,  # Default port (override with SESSION_STORAGE_PORT env var)
+        "SESSION_STORAGE_HOST": "",  # Set via SESSION_STORAGE_HOST env var
+        "SESSION_STORAGE_PORT": "",  # Set via SESSION_STORAGE_PORT env var
+        "MONGODB_URL": "",  # Must be set from MONGODB_URL or MONGO_URL env var (required)
+        "REDIS_URL": "",  # Must be set from REDIS_URL env var (required)
+        "LUCID_STORAGE_PATH": "/app/data/sessions",
+        "LUCID_CHUNK_STORE_PATH": "/app/data/chunks",
+        "TEMP_STORAGE_PATH": "/tmp/storage",
+        "LUCID_CHUNK_SIZE_MB": 10,
+        "LUCID_COMPRESSION_LEVEL": 6,
+        "LUCID_COMPRESSION_ALGORITHM": "zstd",
+        "LUCID_ENCRYPTION_ENABLED": True,
+        "LUCID_RETENTION_DAYS": 30,
+        "LUCID_MAX_SESSIONS": 1000,
+        "LUCID_MAX_CHUNKS_PER_SESSION": 100000,
+        "LUCID_CLEANUP_INTERVAL_HOURS": 24,
+        "LUCID_BACKUP_ENABLED": True,
+        "LUCID_BACKUP_RETENTION_DAYS": 7,
+        "SESSION_STORAGE_WORKERS": 1,
+        "MAX_STORAGE_SIZE_GB": 1000,
+        "METRICS_ENABLED": True,
+        "METRICS_PORT": 9217,
+        "HEALTH_CHECK_INTERVAL": 30,
+        "CORS_ORIGINS": "*"
+    }
+    
+    try:
+        config_file_path = Path(config_path)
+        config_file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(config_file_path, 'w', encoding='utf-8') as f:
+            yaml.dump(default_config, f, default_flow_style=False, sort_keys=False)
+        
+        logger.info(f"Created default configuration file: {config_path}")
+        
+    except Exception as e:
+        logger.error(f"Failed to create configuration file: {str(e)}")
+        raise
+
+
+# Global configuration instance
+_config: Optional[StorageSettings] = None
+
+
+def get_config() -> StorageSettings:
+    """
+    Get the global configuration instance.
+    
+    Returns:
+        Global StorageSettings instance
+    """
+    global _config
+    if _config is None:
+        _config = load_config()
+    return _config
+
+
+def set_config(new_config: StorageSettings):
+    """
+    Set the global configuration instance.
+    
+    Args:
+        new_config: New StorageSettings instance
+    """
+    global _config
+    _config = new_config
+    logger.info("Global configuration updated")
 
