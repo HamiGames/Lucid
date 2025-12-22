@@ -74,11 +74,20 @@ RUN echo "LUCID_CHUNK_PROCESSOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
     echo "LUCID_CHUNK_PROCESSOR_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, aiofiles, aiohttp; print('✅ critical packages installed')" && \
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+# Verify packages are installed and verify directory structure
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, cryptography, httpx, aiofiles, aiohttp, numpy, structlog, lz4, zstandard, brotli; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    python3 -c "import async_timeout; print('async_timeout location:', async_timeout.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Directory exists: /root/.local/lib/python3.11/site-packages"
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
 # Application source COPY
 COPY sessions/processor/ ./processor/
@@ -130,20 +139,36 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages
-# Use import checks for all packages to verify they work correctly in distroless environment
+# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# This will fail the build if packages are missing (catches COPY failures immediately)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
+assert os.path.isdir(site_packages), site_packages + ' is not a directory'; \
+# Verify critical packages exist as directories/files \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; \
+# Verify marker file exists and is non-empty (ensures COPY worked) \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found at ' + marker_path; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+# Actually import packages to verify they work (catches import errors) \
 import fastapi; assert fastapi, 'fastapi import failed'; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic; assert pydantic, 'pydantic import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import motor; assert motor, 'motor import failed'; \
 import pymongo; assert pymongo, 'pymongo import failed'; \
+import async_timeout; assert async_timeout, 'async_timeout import failed'; \
 import redis; assert redis, 'redis import failed'; \
 import httpx; assert httpx, 'httpx import failed'; \
 import aiofiles; assert aiofiles, 'aiofiles import failed'; \
@@ -154,14 +179,24 @@ import structlog; assert structlog, 'structlog import failed'; \
 import lz4; assert lz4, 'lz4 import failed'; \
 import zstandard; assert zstandard, 'zstandard import failed'; \
 import brotli; assert brotli, 'brotli import failed'; \
-print('Packages verified in runtime stage')"]
+print('✅ All packages verified in runtime stage')"]
 
-# Application layout COPY
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/core /app/core
 COPY --chown=65532:65532 --from=builder /build/processor /app/sessions/processor
 COPY --chown=65532:65532 --from=builder /build/pipeline/__init__.py /app/sessions/pipeline/__init__.py
 COPY --chown=65532:65532 --from=builder /build/pipeline/integration /app/sessions/pipeline/integration
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
+
+# Verify application source files were copied (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/sessions/processor'), 'processor directory not found'; \
+assert os.path.exists('/app/sessions/processor/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/core'), 'core directory not found'; \
+assert os.path.exists('/app/sessions/pipeline/__init__.py'), 'pipeline/__init__.py not found'; \
+assert os.path.exists('/app/sessions/pipeline/integration'), 'pipeline/integration directory not found'; \
+assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
+print('✅ All application source files verified')"]
 
 EXPOSE 8091
 
