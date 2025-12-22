@@ -8,31 +8,38 @@ import logging
 import os
 from typing import Optional, Dict, Any
 
-# Import clients from pipeline integration (shared across services)
+# Use core.logging if available, fallback to standard logging
 try:
-    import sys
-    from pathlib import Path
-    # Add sessions parent to path for imports
-    sessions_path = Path(__file__).parent.parent.parent.parent
-    if str(sessions_path) not in sys.path:
-        sys.path.insert(0, str(sessions_path))
-    
+    from core.logging import get_logger
+except ImportError:
+    logger = logging.getLogger(__name__)
+    def get_logger(name):
+        return logging.getLogger(name)
+
+# Import clients from pipeline integration (shared across services)
+# Note: PYTHONPATH includes /app, so sessions.pipeline.integration is accessible
+try:
     from sessions.pipeline.integration.blockchain_engine_client import BlockchainEngineClient
     from sessions.pipeline.integration.node_manager_client import NodeManagerClient
     from sessions.pipeline.integration.api_gateway_client import APIGatewayClient
     from sessions.pipeline.integration.auth_service_client import AuthServiceClient
-    from .session_pipeline_client import SessionPipelineClient
-    from .session_storage_client import SessionStorageClient
 except ImportError:
-    # Fallback if imports fail - clients will be None
+    # Fallback if pipeline integration clients are not available
     BlockchainEngineClient = None
     NodeManagerClient = None
     APIGatewayClient = None
     AuthServiceClient = None
+
+# Import local processor integration clients
+try:
+    from .session_pipeline_client import SessionPipelineClient
+    from .session_storage_client import SessionStorageClient
+except ImportError:
+    # Fallback if local clients fail to import
     SessionPipelineClient = None
     SessionStorageClient = None
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class IntegrationManager:

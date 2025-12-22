@@ -131,20 +131,29 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime verification of packages
+# Use import checks for all packages to verify they work correctly in distroless environment
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
-assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
-assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
-assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
-assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
 assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import pymongo; assert pymongo, 'pymongo import failed'; \
+import redis; assert redis, 'redis import failed'; \
+import httpx; assert httpx, 'httpx import failed'; \
+import aiofiles; assert aiofiles, 'aiofiles import failed'; \
+import aiohttp; assert aiohttp, 'aiohttp import failed'; \
+import cryptography; assert cryptography, 'cryptography import failed'; \
+import numpy; assert numpy, 'numpy import failed'; \
+import structlog; assert structlog, 'structlog import failed'; \
+import lz4; assert lz4, 'lz4 import failed'; \
+import zstandard; assert zstandard, 'zstandard import failed'; \
+import brotli; assert brotli, 'brotli import failed'; \
 print('Packages verified in runtime stage')"]
 
 # Application layout COPY

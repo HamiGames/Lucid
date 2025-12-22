@@ -175,4 +175,4 @@ USER 65532:65532
 # Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
 
-CMD ["/usr/bin/python3.11", "-m", "sessions.recorder.main"]
+CMD ["/usr/bin/python3.11", "/app/sessions/recorder/entrypoint.py"]

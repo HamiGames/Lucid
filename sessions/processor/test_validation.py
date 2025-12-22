@@ -17,7 +17,7 @@ from typing import List
 
 from .encryption import EncryptionManager, ChunkEncryptor
 from .merkle_builder import MerkleTreeBuilder, MerkleTreeManager
-from .chunk_processor import ChunkProcessor, ChunkProcessorConfig
+from .chunk_processor import ChunkProcessor
 from .config import ChunkProcessorConfig
 
 # Configure logging
