@@ -9,16 +9,17 @@ import os
 import signal
 import sys
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, Any, Dict
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .session_recorder import SessionRecorder, RecordingStatus
+from .session_recorder import SessionRecorder, RecordingStatus, StartRecordingRequest
 from .chunk_generator import ChunkProcessor, ChunkConfig
 from .compression import CompressionManager
+from .config import RecorderConfig, load_config
 from core.logging import setup_logging, get_logger
 
 # Initialize logging
@@ -31,6 +32,7 @@ session_recorder: Optional[SessionRecorder] = None
 chunk_processor: Optional[ChunkProcessor] = None
 compression_manager: Optional[CompressionManager] = None
 integrations: Optional[Any] = None
+recorder_config: Optional[RecorderConfig] = None
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown"""
@@ -44,11 +46,21 @@ def setup_signal_handlers():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global session_recorder, chunk_processor, compression_manager, integrations
+    global session_recorder, chunk_processor, compression_manager, integrations, recorder_config
     
     logger.info("Starting Lucid Session Recorder Service")
     
     try:
+        # Load configuration from YAML and environment variables
+        try:
+            recorder_config = load_config()
+            logger.info(f"Configuration loaded: {recorder_config.settings.service_name} v{recorder_config.settings.service_version}")
+        except Exception as e:
+            logger.error(f"Failed to load configuration: {str(e)}")
+            logger.warning("Using default configuration and environment variables only")
+            from .config import RecorderConfig
+            recorder_config = RecorderConfig()
+        
         # Setup signal handlers
         setup_signal_handlers()
         
@@ -65,10 +77,19 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Failed to initialize integration manager: {str(e)}")
             integrations = None
         
-        # Initialize components
-        session_recorder = SessionRecorder()
-        chunk_processor = ChunkProcessor(ChunkConfig())
-        compression_manager = CompressionManager(default_level=6)
+        # Initialize components with configuration
+        session_recorder = SessionRecorder(config=recorder_config)
+        
+        # Create chunk config from recorder config
+        chunk_config = ChunkConfig(
+            chunk_size_mb=recorder_config.settings.chunk_size_mb,
+            compression_level=recorder_config.settings.compression_level,
+            output_path=Path(recorder_config.settings.chunk_output_path),
+            enable_compression=recorder_config.settings.chunk_generation_enabled,
+            quality_threshold=recorder_config.settings.min_quality_score
+        )
+        chunk_processor = ChunkProcessor(chunk_config)
+        compression_manager = CompressionManager(default_level=recorder_config.settings.compression_level)
         
         logger.info("Session Recorder Service started successfully")
         
@@ -105,10 +126,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# CORS_ORIGINS env var: comma-separated list of origins, or "*" for all
+# Default to ["*"] if not set
+cors_origins_str = os.getenv('CORS_ORIGINS', '*')
+if cors_origins_str == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -198,7 +226,7 @@ async def get_service_status():
         raise HTTPException(status_code=500, detail="Status check failed")
 
 @app.post("/recordings/start")
-async def start_recording(session_id: str, owner_address: str, metadata: dict = None):
+async def start_recording(request: StartRecordingRequest):
     """Start session recording with chunk generation"""
     global session_recorder, chunk_processor
     
@@ -208,22 +236,22 @@ async def start_recording(session_id: str, owner_address: str, metadata: dict = 
     try:
         # Start recording
         result = await session_recorder.start_recording(
-            session_id=session_id,
-            owner_address=owner_address,
-            metadata=metadata or {}
+            session_id=request.session_id,
+            owner_address=request.owner_address,
+            metadata=request.metadata or {}
         )
         
         # Initialize chunk generation
-        await chunk_processor.get_or_create_generator(session_id)
+        await chunk_processor.get_or_create_generator(request.session_id)
         
-        logger.info(f"Started recording with chunk generation for session {session_id}")
+        logger.info(f"Started recording with chunk generation for session {request.session_id}")
         
         return result
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to start recording for session {session_id}: {str(e)}")
+        logger.error(f"Failed to start recording for session {request.session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to start recording")
 
 @app.post("/recordings/{session_id}/stop")
@@ -386,7 +414,7 @@ async def get_session_chunks(session_id: str):
         raise HTTPException(status_code=500, detail="Failed to get chunks")
 
 @app.post("/chunks/{session_id}/process")
-async def process_chunk_data(session_id: str, data: bytes):
+async def process_chunk_data(session_id: str, data: bytes = Body(..., description="Binary chunk data to process")):
     """Process chunk data for a session"""
     global chunk_processor
     

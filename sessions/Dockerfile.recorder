@@ -77,8 +77,9 @@ RUN echo "LUCID_SESSION_RECORDER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, httpx, aiofiles, motor, pymongo, cv2, PIL, numpy, psutil, netifaces, structlog, lz4, zstandard; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, httpx, aiofiles, motor, pymongo, cv2, PIL, numpy, psutil, netifaces, structlog, lz4, zstandard, yaml; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    python3 -c "import yaml; print('yaml location:', yaml.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages"
 
@@ -88,6 +89,7 @@ COPY sessions/core/ ./core/
 COPY sessions/pipeline/__init__.py ./pipeline/__init__.py
 COPY sessions/pipeline/integration/ ./pipeline/integration/
 COPY sessions/__init__.py ./__init__.py
+COPY sessions/config/recorder-config.yaml ./config/recorder-config.yaml
 
 ############################
 # Stage 2 – Runtime
@@ -140,6 +142,8 @@ assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not foun
 assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'yaml')), 'yaml not found'; \
+import yaml; assert yaml, 'yaml import failed'; \
 assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
@@ -151,6 +155,7 @@ COPY --chown=65532:65532 --from=builder /build/recorder /app/sessions/recorder
 COPY --chown=65532:65532 --from=builder /build/pipeline/__init__.py /app/sessions/pipeline/__init__.py
 COPY --chown=65532:65532 --from=builder /build/pipeline/integration /app/sessions/pipeline/integration
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
+COPY --chown=65532:65532 --from=builder /build/config/recorder-config.yaml /app/sessions/config/recorder-config.yaml
 
 EXPOSE 8090
 

@@ -28,8 +28,9 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-RECORDING_PATH = Path(os.getenv("LUCID_RECORDING_PATH", "/data/recordings"))
+# Configuration will be loaded from config module
+# These are kept as fallback defaults for backward compatibility
+RECORDING_PATH = Path(os.getenv("LUCID_RECORDING_PATH", "/app/recordings"))
 FFMPEG_PATH = os.getenv("LUCID_FFMPEG_PATH", "/usr/bin/ffmpeg")
 XRDP_DISPLAY = os.getenv("LUCID_XRDP_DISPLAY", ":10")
 HARDWARE_ACCELERATION = os.getenv("LUCID_HARDWARE_ACCELERATION", "true").lower() == "true"
@@ -41,7 +42,7 @@ FPS = int(os.getenv("LUCID_FPS", "30"))
 # Chunk generation configuration
 CHUNK_SIZE_MB = int(os.getenv("LUCID_CHUNK_SIZE_MB", "10"))
 COMPRESSION_LEVEL = int(os.getenv("LUCID_COMPRESSION_LEVEL", "6"))
-CHUNK_OUTPUT_PATH = Path(os.getenv("LUCID_CHUNK_OUTPUT_PATH", "/data/chunks"))
+CHUNK_OUTPUT_PATH = Path(os.getenv("LUCID_CHUNK_OUTPUT_PATH", "/app/chunks"))
 
 
 class RecordingStatus(Enum):
@@ -94,13 +95,42 @@ class SessionRecorder:
     Integrates with pipeline state machine for Step 15 requirements.
     """
     
-    def __init__(self):
-        """Initialize session recorder"""
+    def __init__(self, config=None):
+        """
+        Initialize session recorder
+        
+        Args:
+            config: Optional RecorderConfig instance. If not provided, uses environment variables.
+        """
         self.app = FastAPI(
             title="Lucid Session Recorder",
             description="Session recording service for Lucid RDP system",
             version="1.0.0"
         )
+        
+        # Store configuration
+        self.config = config
+        
+        # Get configuration values (from config or environment)
+        if self.config:
+            self.recording_path = Path(self.config.settings.recording_path)
+            self.ffmpeg_path = self.config.settings.ffmpeg_path
+            self.xrdp_display = self.config.settings.xrdp_display
+            self.hardware_acceleration = self.config.settings.video_hardware_acceleration
+            self.video_codec = self.config.settings.video_codec
+            self.audio_codec = self.config.settings.audio_codec
+            self.bitrate = self.config.settings.video_bitrate
+            self.fps = self.config.settings.video_frame_rate
+        else:
+            # Fallback to environment variables
+            self.recording_path = RECORDING_PATH
+            self.ffmpeg_path = FFMPEG_PATH
+            self.xrdp_display = XRDP_DISPLAY
+            self.hardware_acceleration = HARDWARE_ACCELERATION
+            self.video_codec = VIDEO_CODEC
+            self.audio_codec = AUDIO_CODEC
+            self.bitrate = BITRATE
+            self.fps = FPS
         
         # Recording tracking
         self.active_recordings: Dict[str, RecordingSession] = {}
@@ -114,8 +144,8 @@ class SessionRecorder:
     
     def _create_directories(self) -> None:
         """Create required directories"""
-        RECORDING_PATH.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Created recording directory: {RECORDING_PATH}")
+        self.recording_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created recording directory: {self.recording_path}")
     
     def _setup_routes(self) -> None:
         """Setup FastAPI routes"""
@@ -127,8 +157,8 @@ class SessionRecorder:
                 "status": "healthy",
                 "service": "session-recorder",
                 "active_recordings": len(self.active_recordings),
-                "hardware_acceleration": HARDWARE_ACCELERATION,
-                "video_codec": VIDEO_CODEC
+                "hardware_acceleration": self.hardware_acceleration,
+                "video_codec": self.video_codec
             }
         
         @self.app.post("/recordings/start")
@@ -191,7 +221,7 @@ class SessionRecorder:
                 owner_address=owner_address,
                 status=RecordingStatus.STARTING,
                 started_at=datetime.now(timezone.utc),
-                output_path=RECORDING_PATH / f"{session_id}.mp4",
+                output_path=self.recording_path / f"{session_id}.mp4",
                 metadata=metadata or {}
             )
             
@@ -272,7 +302,7 @@ class SessionRecorder:
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=str(RECORDING_PATH)
+                cwd=str(self.recording_path)
             )
             
             # Update status
@@ -300,52 +330,63 @@ class SessionRecorder:
     
     def _build_ffmpeg_command(self, recording: RecordingSession) -> List[str]:
         """Build FFmpeg command for recording"""
-        cmd = [FFMPEG_PATH]
+        cmd = [self.ffmpeg_path]
+        
+        # Get resolution from config
+        resolution = "1920x1080"
+        if self.config:
+            resolution = self.config.settings.video_resolution
         
         # Input sources
-        if HARDWARE_ACCELERATION:
+        if self.hardware_acceleration:
             # Hardware-accelerated video capture
             cmd.extend([
                 "-f", "x11grab",
-                "-display", XRDP_DISPLAY,
-                "-video_size", "1920x1080",
-                "-framerate", str(FPS)
+                "-display", self.xrdp_display,
+                "-video_size", resolution,
+                "-framerate", str(self.fps)
             ])
         else:
             # Software video capture
             cmd.extend([
                 "-f", "x11grab",
-                "-display", XRDP_DISPLAY,
-                "-video_size", "1920x1080",
-                "-framerate", str(FPS)
+                "-display", self.xrdp_display,
+                "-video_size", resolution,
+                "-framerate", str(self.fps)
             ])
         
         # Video encoding
-        if HARDWARE_ACCELERATION and VIDEO_CODEC == "h264_v4l2m2m":
+        if self.hardware_acceleration and self.video_codec == "h264_v4l2m2m":
             # Pi 5 hardware acceleration
             cmd.extend([
                 "-c:v", "h264_v4l2m2m",
-                "-b:v", BITRATE,
-                "-maxrate", BITRATE,
+                "-b:v", self.bitrate,
+                "-maxrate", self.bitrate,
                 "-bufsize", "4000k"
             ])
         else:
             # Software encoding
             cmd.extend([
                 "-c:v", "libx264",
-                "-b:v", BITRATE,
-                "-maxrate", BITRATE,
+                "-b:v", self.bitrate,
+                "-maxrate", self.bitrate,
                 "-bufsize", "4000k",
                 "-preset", "fast"
             ])
         
         # Audio capture and encoding
+        audio_bitrate = "128k"
+        audio_sample_rate = "44100"
+        if self.config:
+            audio_bitrate = self.config.settings.audio_bitrate
+            audio_sample_rate = str(self.config.settings.audio_sample_rate)
+        
         cmd.extend([
             "-f", "pulse",
             "-ac", "2",
-            "-ar", "44100",
-            "-c:a", AUDIO_CODEC,
-            "-b:a", "128k"
+            "-ar", audio_sample_rate,
+            "-c:a", self.audio_codec,
+            "-b:a", audio_bitrate
         ])
         
         # Output settings

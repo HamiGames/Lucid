@@ -14,6 +14,12 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -438,20 +444,103 @@ class ChunkProcessorConfig(BaseSettings):
 
 def load_config(config_file: Optional[str] = None) -> ChunkProcessorConfig:
     """
-    Load configuration from file and environment variables.
+    Load configuration from YAML file and environment variables.
+    
+    Configuration loading priority (highest to lowest):
+    1. Environment variables (highest priority - override everything)
+    2. YAML configuration file values
+    3. Pydantic field defaults (lowest priority)
     
     Args:
-        config_file: Optional path to configuration file
+        config_file: Optional path to YAML configuration file. If not provided,
+                     will look for 'config.yaml' in the processor directory.
         
     Returns:
-        Loaded configuration object
+        Loaded configuration object with environment variables overriding YAML values
+        
+    Raises:
+        FileNotFoundError: If config_file is provided but doesn't exist
+        ValueError: If configuration validation fails
+        ImportError: If PyYAML is not available (should not happen if requirements are installed)
     """
     try:
-        if config_file and os.path.exists(config_file):
-            # Load from specific file
-            config = ChunkProcessorConfig(_env_file=config_file)
+        yaml_data: Dict[str, Any] = {}
+        yaml_file_path: Optional[Path] = None
+        
+        # Determine YAML file path
+        if config_file:
+            yaml_file_path = Path(config_file)
         else:
-            # Load from default locations
+            # Try default locations
+            default_locations = [
+                Path(__file__).parent / "config.yaml",  # Same directory as config.py
+                Path(__file__).parent.parent / "processor" / "config.yaml",  # Alternative path
+            ]
+            for loc in default_locations:
+                if loc.exists():
+                    yaml_file_path = loc
+                    break
+        
+        # Load YAML file if it exists
+        if yaml_file_path and yaml_file_path.exists():
+            if not YAML_AVAILABLE:
+                logger.warning(f"PyYAML not available, skipping YAML file {yaml_file_path}")
+            else:
+                try:
+                    with open(yaml_file_path, 'r', encoding='utf-8') as f:
+                        yaml_data = yaml.safe_load(f) or {}
+                    logger.info(f"Loaded YAML configuration from {yaml_file_path}")
+                    
+                    # Filter out empty string values from YAML (they should come from env vars)
+                    # This allows YAML to have placeholders like mongodb_url: "" that get filled from env
+                    yaml_data = {k: v for k, v in yaml_data.items() if v != "" or k in ["mongodb_url", "redis_url", "encryption_key"]}
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to load YAML configuration from {yaml_file_path}: {str(e)}")
+                    logger.warning("Continuing with environment variables and defaults only")
+                    yaml_data = {}
+        elif config_file:
+            # User specified a file but it doesn't exist - this is an error
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+        else:
+            logger.debug("No YAML configuration file found, using environment variables and defaults only")
+        
+        # Create configuration object
+        # Priority: Environment variables (highest) > YAML values > Field defaults (lowest)
+        # Strategy: Create config from YAML, then override with environment variables
+        
+        if yaml_data:
+            try:
+                # Step 1: Create config from YAML data (YAML provides defaults)
+                config = ChunkProcessorConfig.model_validate(yaml_data)
+                
+                # Step 2: Create config normally to get environment variable values
+                env_config = ChunkProcessorConfig()
+                
+                # Step 3: Override YAML config with environment variable values
+                # Environment variables take highest priority
+                env_dict = env_config.model_dump()
+                yaml_dict = config.model_dump()
+                
+                # For each field, if env_config value differs from yaml_config value,
+                # use the env value (environment variable was set)
+                for key in env_dict.keys():
+                    env_value = env_dict[key]
+                    yaml_value = yaml_dict.get(key)
+                    
+                    # If values differ, environment variable was set - use it
+                    if env_value != yaml_value:
+                        try:
+                            setattr(config, key, env_value)
+                        except Exception as e:
+                            logger.debug(f"Could not override {key} with environment variable: {str(e)}")
+                
+            except Exception as e:
+                logger.warning(f"Error merging YAML with environment variables: {str(e)}")
+                logger.warning("Falling back to environment variables and defaults only")
+                config = ChunkProcessorConfig()
+        else:
+            # Load from environment variables and defaults only
             config = ChunkProcessorConfig()
         
         # Validate configuration
@@ -461,6 +550,9 @@ def load_config(config_file: Optional[str] = None) -> ChunkProcessorConfig:
         logger.info("Configuration loaded successfully")
         return config
         
+    except FileNotFoundError:
+        # Re-raise file not found errors
+        raise
     except Exception as e:
         logger.error(f"Failed to load configuration: {str(e)}")
         raise
@@ -472,33 +564,63 @@ def create_default_config_file(config_path: str = "config.yaml"):
     
     Args:
         config_path: Path to create the configuration file
+        
+    Raises:
+        ImportError: If PyYAML is not available
+        IOError: If file cannot be written
     """
-    import yaml
+    if not YAML_AVAILABLE:
+        raise ImportError("PyYAML is required to create configuration files. Install it with: pip install PyYAML")
     
     default_config = {
         "service_name": "chunk-processor",
         "service_version": "1.0.0",
         "debug": False,
         "host": "0.0.0.0",
-        "port": 8085,
+        "port": 8091,  # Default port (override with SESSION_PROCESSOR_PORT env var)
         "mongodb_url": "",  # Must be set from MONGODB_URL env var
         "redis_url": "",  # Must be set from REDIS_URL env var
         "encryption_algorithm": "AES-256-GCM",
+        "key_rotation_interval": 3600,
         "max_workers": 10,
         "queue_size": 1000,
+        "worker_timeout": 30,
+        "batch_size": 100,
+        "retry_attempts": 3,
+        "retry_delay": 1.0,
         "storage_path": "/app/data/chunks",  # Volume mount path
         "max_chunk_size": 10485760,  # 10MB
+        "max_session_size": 107374182400,  # 100GB
         "compression_enabled": True,
         "compression_level": 6,
+        "cleanup_interval": 3600,
         "metrics_enabled": True,
+        "metrics_interval": 10,
+        "profiling_enabled": False,
+        "memory_limit_mb": 1024,
+        "cpu_limit_percent": 80,
+        "io_timeout": 30,
+        "allowed_origins": [],
+        "rate_limit_enabled": True,
+        "rate_limit_requests": 1000,
+        "rate_limit_window": 60,
+        "audit_logging": True,
+        "secure_headers": True,
+        "health_check_interval": 30,
         "log_level": "INFO",
+        "log_format": "json",
         "prometheus_enabled": True,
-        "prometheus_port": 9090
+        "prometheus_port": 9090,
+        "jaeger_enabled": False,
+        "jaeger_endpoint": None
     }
     
     try:
-        with open(config_path, 'w') as f:
-            yaml.dump(default_config, f, default_flow_style=False)
+        config_file_path = Path(config_path)
+        config_file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(config_file_path, 'w', encoding='utf-8') as f:
+            yaml.dump(default_config, f, default_flow_style=False, sort_keys=False)
         
         logger.info(f"Created default configuration file: {config_path}")
         

@@ -7,6 +7,7 @@ including FastAPI application setup, health checks, and API endpoints.
 """
 
 import asyncio
+import base64
 import os
 import signal
 import sys
@@ -18,6 +19,7 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 import uvicorn
 
 from .config import ChunkProcessorConfig, get_config
@@ -37,6 +39,62 @@ encryption_manager: Optional[EncryptionManager] = None
 merkle_tree_manager: Optional[MerkleTreeManager] = None
 config: Optional[ChunkProcessorConfig] = None
 integrations: Optional[Any] = None
+
+
+# Request/Response Models
+class ProcessChunkRequest(BaseModel):
+    """Request model for processing a single chunk."""
+    session_id: str = Field(..., description="ID of the session")
+    chunk_id: str = Field(..., description="Unique identifier for the chunk")
+    chunk_data_base64: str = Field(..., description="Base64-encoded chunk data")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata for the chunk")
+    
+    @field_validator('chunk_data_base64')
+    @classmethod
+    def validate_chunk_data(cls, v: str) -> str:
+        """Validate and decode base64 chunk data."""
+        if not v:
+            raise ValueError("chunk_data_base64 cannot be empty")
+        try:
+            # Validate base64 encoding
+            base64.b64decode(v, validate=True)
+        except Exception as e:
+            raise ValueError(f"Invalid base64 encoding: {str(e)}")
+        return v
+    
+    def get_chunk_data(self) -> bytes:
+        """Decode base64 chunk data to bytes."""
+        return base64.b64decode(self.chunk_data_base64)
+
+
+class ChunkData(BaseModel):
+    """Single chunk data for batch processing."""
+    chunk_id: str = Field(..., description="Unique identifier for the chunk")
+    chunk_data_base64: str = Field(..., description="Base64-encoded chunk data")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata for the chunk")
+    
+    @field_validator('chunk_data_base64')
+    @classmethod
+    def validate_chunk_data(cls, v: str) -> str:
+        """Validate and decode base64 chunk data."""
+        if not v:
+            raise ValueError("chunk_data_base64 cannot be empty")
+        try:
+            # Validate base64 encoding
+            base64.b64decode(v, validate=True)
+        except Exception as e:
+            raise ValueError(f"Invalid base64 encoding: {str(e)}")
+        return v
+    
+    def get_chunk_data(self) -> bytes:
+        """Decode base64 chunk data to bytes."""
+        return base64.b64decode(self.chunk_data_base64)
+
+
+class ProcessBatchRequest(BaseModel):
+    """Request model for batch chunk processing."""
+    session_id: str = Field(..., description="ID of the session")
+    chunks: List[ChunkData] = Field(..., description="List of chunks to process", min_length=1)
 
 
 @asynccontextmanager
@@ -240,47 +298,83 @@ async def get_metrics():
 # Chunk processing endpoints
 @app.post("/api/v1/chunks/process")
 async def process_chunk(
-    session_id: str,
-    chunk_id: str,
-    chunk_data: bytes,
-    background_tasks: BackgroundTasks,
+    request: ProcessChunkRequest,
     processor: ChunkProcessorService = Depends(get_chunk_processor)
 ):
     """
     Process a single chunk.
     
     Args:
-        session_id: ID of the session
-        chunk_id: ID of the chunk
-        chunk_data: Raw chunk data
-        background_tasks: FastAPI background tasks
+        request: ProcessChunkRequest containing session_id, chunk_id, base64-encoded chunk_data, and optional metadata
         
     Returns:
-        Processing result
+        Processing result with chunk metadata and processing time
     """
     try:
-        logger.info(f"Processing chunk {chunk_id} for session {session_id}")
+        logger.info(f"Processing chunk {request.chunk_id} for session {request.session_id}")
+        
+        # Decode chunk data from base64
+        chunk_data = request.get_chunk_data()
         
         # Process chunk
-        result = await processor.process_chunk(session_id, chunk_id, chunk_data)
+        result = await processor.process_chunk(
+            request.session_id,
+            request.chunk_id,
+            chunk_data,
+            request.metadata
+        )
         
         if result.success:
+            # Convert ChunkMetadata dataclass to dict for JSON serialization
+            metadata_dict = None
+            if result.chunk_metadata:
+                metadata_dict = {
+                    "chunk_id": result.chunk_metadata.chunk_id,
+                    "session_id": result.chunk_metadata.session_id,
+                    "original_size": result.chunk_metadata.original_size,
+                    "encrypted_size": result.chunk_metadata.encrypted_size,
+                    "compression_ratio": result.chunk_metadata.compression_ratio,
+                    "hash": result.chunk_metadata.hash,
+                    "encrypted_hash": result.chunk_metadata.encrypted_hash,
+                    "timestamp": result.chunk_metadata.timestamp.isoformat(),
+                    "processing_time_ms": result.chunk_metadata.processing_time_ms,
+                    "worker_id": result.chunk_metadata.worker_id
+                }
+            
             return {
                 "success": True,
-                "chunk_id": chunk_id,
-                "session_id": session_id,
-                "metadata": result.chunk_metadata,
+                "chunk_id": request.chunk_id,
+                "session_id": request.session_id,
+                "metadata": metadata_dict,
                 "processing_time_ms": result.processing_time_ms,
                 "timestamp": datetime.utcnow().isoformat()
             }
         else:
-            raise HTTPException(
+            # Return error response instead of raising exception for better error handling
+            return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.error_message
+                content={
+                    "success": False,
+                    "chunk_id": request.chunk_id,
+                    "session_id": request.session_id,
+                    "error": result.error_message,
+                    "processing_time_ms": result.processing_time_ms,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
             )
         
+    except ValueError as e:
+        # Handle validation errors
+        logger.error(f"Validation error processing chunk {request.chunk_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid request: {str(e)}"
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        logger.error(f"Failed to process chunk {chunk_id}: {str(e)}")
+        logger.error(f"Failed to process chunk {request.chunk_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process chunk: {str(e)}"
@@ -289,65 +383,81 @@ async def process_chunk(
 
 @app.post("/api/v1/chunks/process-batch")
 async def process_chunks_batch(
-    session_id: str,
-    chunks: List[Dict[str, Any]],
-    background_tasks: BackgroundTasks,
+    request: ProcessBatchRequest,
     processor: ChunkProcessorService = Depends(get_chunk_processor)
 ):
     """
     Process multiple chunks in batch.
     
     Args:
-        session_id: ID of the session
-        chunks: List of chunk data
-        background_tasks: FastAPI background tasks
+        request: ProcessBatchRequest containing session_id and list of chunks with base64-encoded data
         
     Returns:
-        Batch processing results
+        Batch processing results with success/failure counts and individual chunk results
     """
     try:
-        logger.info(f"Processing batch of {len(chunks)} chunks for session {session_id}")
+        logger.info(f"Processing batch of {len(request.chunks)} chunks for session {request.session_id}")
         
-        # Convert chunks to the expected format
+        # Convert chunks to the expected format (chunk_id, chunk_data_bytes, metadata)
         chunk_tuples = []
-        for chunk in chunks:
-            chunk_id = chunk.get("chunk_id")
-            chunk_data = chunk.get("chunk_data", b"")
-            metadata = chunk.get("metadata")
-            
-            if not chunk_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="chunk_id is required for each chunk"
-                )
-            
-            chunk_tuples.append((chunk_id, chunk_data, metadata))
+        for chunk in request.chunks:
+            chunk_data = chunk.get_chunk_data()
+            chunk_tuples.append((chunk.chunk_id, chunk_data, chunk.metadata))
         
         # Process chunks
-        results = await processor.process_chunks_batch(session_id, chunk_tuples)
+        results = await processor.process_chunks_batch(request.session_id, chunk_tuples)
         
         # Format results
         formatted_results = []
         for result in results:
+            metadata_dict = None
+            if result.chunk_metadata:
+                metadata_dict = {
+                    "chunk_id": result.chunk_metadata.chunk_id,
+                    "session_id": result.chunk_metadata.session_id,
+                    "original_size": result.chunk_metadata.original_size,
+                    "encrypted_size": result.chunk_metadata.encrypted_size,
+                    "compression_ratio": result.chunk_metadata.compression_ratio,
+                    "hash": result.chunk_metadata.hash,
+                    "encrypted_hash": result.chunk_metadata.encrypted_hash,
+                    "timestamp": result.chunk_metadata.timestamp.isoformat(),
+                    "processing_time_ms": result.chunk_metadata.processing_time_ms,
+                    "worker_id": result.chunk_metadata.worker_id
+                }
+            
             formatted_results.append({
                 "success": result.success,
                 "chunk_id": result.chunk_metadata.chunk_id if result.chunk_metadata else None,
+                "metadata": metadata_dict,
                 "error_message": result.error_message,
                 "processing_time_ms": result.processing_time_ms
             })
         
+        successful_count = len([r for r in results if r.success])
+        failed_count = len([r for r in results if not r.success])
+        
         return {
-            "success": True,
-            "session_id": session_id,
-            "total_chunks": len(chunks),
-            "successful_chunks": len([r for r in results if r.success]),
-            "failed_chunks": len([r for r in results if not r.success]),
+            "success": failed_count == 0,  # Overall success if no failures
+            "session_id": request.session_id,
+            "total_chunks": len(request.chunks),
+            "successful_chunks": successful_count,
+            "failed_chunks": failed_count,
             "results": formatted_results,
             "timestamp": datetime.utcnow().isoformat()
         }
         
+    except ValueError as e:
+        # Handle validation errors
+        logger.error(f"Validation error processing batch: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid request: {str(e)}"
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        logger.error(f"Failed to process chunk batch: {str(e)}")
+        logger.error(f"Failed to process chunk batch: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process chunk batch: {str(e)}"
@@ -367,9 +477,15 @@ async def get_session_merkle_root(
         session_id: ID of the session
         
     Returns:
-        Merkle root hash
+        Merkle root hash with session_id and timestamp
     """
     try:
+        if not session_id or not session_id.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="session_id cannot be empty"
+            )
+        
         merkle_root = await processor.get_session_merkle_root(session_id)
         
         if merkle_root:
@@ -384,8 +500,11 @@ async def get_session_merkle_root(
                 detail=f"No Merkle root found for session {session_id}"
             )
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (including 404)
+        raise
     except Exception as e:
-        logger.error(f"Failed to get Merkle root for session {session_id}: {str(e)}")
+        logger.error(f"Failed to get Merkle root for session {session_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get Merkle root: {str(e)}"
@@ -395,7 +514,6 @@ async def get_session_merkle_root(
 @app.post("/api/v1/sessions/{session_id}/finalize")
 async def finalize_session(
     session_id: str,
-    background_tasks: BackgroundTasks,
     processor: ChunkProcessorService = Depends(get_chunk_processor)
 ):
     """
@@ -403,12 +521,17 @@ async def finalize_session(
     
     Args:
         session_id: ID of the session to finalize
-        background_tasks: FastAPI background tasks
         
     Returns:
-        Final Merkle root hash
+        Final Merkle root hash with finalized status and timestamp
     """
     try:
+        if not session_id or not session_id.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="session_id cannot be empty"
+            )
+        
         logger.info(f"Finalizing session {session_id}")
         
         merkle_root = await processor.finalize_session(session_id)
@@ -426,8 +549,11 @@ async def finalize_session(
                 detail=f"Session {session_id} not found or could not be finalized"
             )
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (including 404)
+        raise
     except Exception as e:
-        logger.error(f"Failed to finalize session {session_id}: {str(e)}")
+        logger.error(f"Failed to finalize session {session_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to finalize session: {str(e)}"
@@ -438,10 +564,10 @@ async def finalize_session(
 @app.get("/api/v1/config")
 async def get_configuration():
     """
-    Get service configuration.
+    Get service configuration (without sensitive data).
     
     Returns:
-        Service configuration (without sensitive data)
+        Service configuration excluding sensitive fields like encryption keys
     """
     try:
         if config is None:
@@ -452,7 +578,28 @@ async def get_configuration():
         
         # Return configuration without sensitive data
         config_dict = config.to_dict()
-        config_dict.pop("encryption_key", None)  # Remove sensitive data
+        # Remove sensitive data fields
+        config_dict.pop("encryption_key", None)
+        # Also check for any nested sensitive fields
+        if "mongodb_url" in config_dict and config_dict["mongodb_url"]:
+            # Redact password from MongoDB URL if present
+            mongodb_url = config_dict["mongodb_url"]
+            if "@" in mongodb_url and ":" in mongodb_url:
+                # Format: mongodb://user:password@host:port/db
+                parts = mongodb_url.split("@")
+                if len(parts) == 2:
+                    user_pass = parts[0].split("://")[-1]
+                    if ":" in user_pass:
+                        user = user_pass.split(":")[0]
+                        config_dict["mongodb_url"] = mongodb_url.replace(user_pass, f"{user}:***")
+        
+        if "redis_url" in config_dict and config_dict["redis_url"]:
+            # Redact password from Redis URL if present
+            redis_url = config_dict["redis_url"]
+            if "@" in redis_url:
+                parts = redis_url.split("@")
+                if len(parts) == 2:
+                    config_dict["redis_url"] = f"redis://:***@{parts[1]}"
         
         return {
             "service": "chunk-processor",
@@ -460,8 +607,11 @@ async def get_configuration():
             "timestamp": datetime.utcnow().isoformat()
         }
         
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        logger.error(f"Failed to get configuration: {str(e)}")
+        logger.error(f"Failed to get configuration: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get configuration: {str(e)}"
@@ -527,15 +677,39 @@ def main():
         import logging as std_logging
         std_logging.getLogger().setLevel(getattr(std_logging, config.log_level))
         
-        logger.info(f"Starting chunk processor service on {config.host}:{config.port}")
+        # Get host and port from config (or environment for container compatibility)
+        host = os.getenv("SESSION_PROCESSOR_HOST", config.host)
+        port_str = os.getenv("SESSION_PROCESSOR_PORT", str(config.port))
+        try:
+            port = int(port_str)
+        except (ValueError, TypeError):
+            logger.error(f"Invalid SESSION_PROCESSOR_PORT value: {port_str}")
+            sys.exit(1)
+        
+        # Map log level to uvicorn-compatible values
+        # Uvicorn accepts: critical, error, warning, info, debug, trace
+        log_level_map = {
+            "CRITICAL": "critical",
+            "ERROR": "error",
+            "WARNING": "warning",
+            "INFO": "info",
+            "DEBUG": "debug",
+            "TRACE": "trace"
+        }
+        uvicorn_log_level = log_level_map.get(config.log_level.upper(), "info")
+        
+        logger.info(f"Starting chunk processor service on {host}:{port}")
         
         # Run the application
+        # Note: reload is disabled for production/distroless containers
+        # Access log is enabled for monitoring and debugging
+        # Workers are not used with uvicorn.run() - single worker for distroless compatibility
         uvicorn.run(
             "sessions.processor.main:app",
-            host=config.host,
-            port=config.port,
-            reload=config.debug,
-            log_level=config.log_level.lower(),
+            host=host,
+            port=port,
+            reload=False,  # Never enable reload in production/distroless containers
+            log_level=uvicorn_log_level,
             access_log=True
         )
         
