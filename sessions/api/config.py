@@ -184,8 +184,9 @@ def load_config(config_file: Optional[str] = None) -> SessionAPISettings:
                     logger.info(f"Loaded YAML configuration from {yaml_file_path}")
                     
                     # Filter out empty string values from YAML (they should come from env vars)
-                    # This allows YAML to have placeholders like mongodb_url: "" that get filled from env
-                    yaml_data = {k: v for k, v in yaml_data.items() if v != "" or k in ["MONGODB_URL", "REDIS_URL", "ELASTICSEARCH_URL"]}
+                    # Empty strings in YAML indicate "use environment variable", so we remove them
+                    # and let Pydantic Settings load them from environment variables instead
+                    yaml_data = {k: v for k, v in yaml_data.items() if v != ""}
                     
                 except Exception as e:
                     logger.warning(f"Failed to load YAML configuration from {yaml_file_path}: {str(e)}")

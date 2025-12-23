@@ -78,7 +78,7 @@ RUN echo "LUCID_CHUNK_PROCESSOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, cryptography, httpx, aiofiles, aiohttp, numpy, structlog, lz4, zstandard, zstd, brotli; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, cryptography, httpx, aiofiles, aiohttp, numpy, structlog, lz4, zstandard, zstd, brotli, blake3; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     python3 -c "import async_timeout; print('async_timeout location:', async_timeout.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
@@ -182,6 +182,7 @@ import lz4; assert lz4, 'lz4 import failed'; \
 import zstandard; assert zstandard, 'zstandard import failed'; \
 import zstd; assert zstd, 'zstd import failed'; \
 import brotli; assert brotli, 'brotli import failed'; \
+import blake3; assert blake3, 'blake3 import failed'; \
 print('✅ All packages verified in runtime stage')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
