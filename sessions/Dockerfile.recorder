@@ -80,7 +80,7 @@ RUN echo "LUCID_SESSION_RECORDER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, httpx, aiofiles, motor, pymongo, cv2, PIL, numpy, psutil, netifaces, structlog, lz4, zstandard, zstd, yaml; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, httpx, aiofiles, motor, pymongo, cv2, PIL, numpy, psutil, netifaces, structlog, lz4, zstandard, yaml; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     python3 -c "import yaml; print('yaml location:', yaml.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
@@ -176,7 +176,7 @@ import pymongo; assert pymongo, 'pymongo import failed'; \
 import httpx; assert httpx, 'httpx import failed'; \
 import aiofiles; assert aiofiles, 'aiofiles import failed'; \
 import yaml; assert yaml, 'yaml import failed'; \
-import zstd; assert zstd, 'zstd import failed'; \
+import zstandard; assert zstandard, 'zstandard import failed'; \
 print('✅ All packages verified in runtime stage')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)

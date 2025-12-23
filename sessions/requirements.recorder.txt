@@ -20,6 +20,7 @@ pymongo>=4.6.0
 # Optional compression libraries
 lz4>=4.3.2
 zstandard>=0.21.0
+zstd>=1.5.5  # Required by core/chunker.py for direct zstd.compress/decompress API
 
 # Video processing
 opencv-python-headless>=4.8.1.78
