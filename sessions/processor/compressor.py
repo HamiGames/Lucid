@@ -18,9 +18,31 @@ from enum import Enum
 import json
 import uuid
 
-import zstandard as zstd
-import lz4.frame
-import brotli
+# Compression libraries - required dependencies
+try:
+    import zstandard as zstd
+except ImportError:
+    raise ImportError(
+        "zstandard package is required but not installed. "
+        "Please ensure 'zstandard>=0.21.0' is installed. "
+        "If using Docker, rebuild the container to include dependencies."
+    )
+
+try:
+    import lz4.frame
+except ImportError:
+    raise ImportError(
+        "lz4 package is required but not installed. "
+        "Please ensure 'lz4>=4.3.2' is installed."
+    )
+
+try:
+    import brotli
+except ImportError:
+    raise ImportError(
+        "brotli package is required but not installed. "
+        "Please ensure 'brotli>=1.1.0' is installed."
+    )
 
 logger = logging.getLogger(__name__)
 

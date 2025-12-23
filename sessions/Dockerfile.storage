@@ -135,7 +135,8 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages
+# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# This will fail the build if packages are missing (catches COPY failures immediately)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
