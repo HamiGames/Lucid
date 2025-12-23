@@ -45,7 +45,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libssl-dev \
         pkg-config \
         libzstd-dev \
+        libzstd1 \
         liblz4-dev \
+        liblz4-1 \
         curl \
         ca-certificates \
     && apt-get clean \
@@ -136,6 +138,11 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Distroless base already has correct linker/runtime; only copy CA certs
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Copy required dynamic libraries for zstandard, lz4, and other native extensions
+# Pattern matches architecture-specific subdirectories (aarch64-linux-gnu, x86_64-linux-gnu, etc.)
+COPY --from=builder /lib/*/libzstd.so.1 /lib/
+COPY --from=builder /lib/*/liblz4.so.1 /lib/
 
 # Python packages (per COPY pattern guide)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
