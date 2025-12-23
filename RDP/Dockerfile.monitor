@@ -72,11 +72,19 @@ RUN echo "LUCID_RDP_MONITOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/p
     echo "LUCID_RDP_MONITOR_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+# Verify packages are installed and verify directory structure
 RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil, prometheus_client, aiofiles; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Directory exists: /root/.local/lib/python3.11/site-packages"
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
 # Application source COPY
 COPY RDP/resource-monitor/ ./resource_monitor/
@@ -127,7 +135,8 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages
+# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# This will fail the build if packages are missing (catches COPY failures immediately)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \

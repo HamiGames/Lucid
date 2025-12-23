@@ -72,11 +72,19 @@ RUN echo "LUCID_SESSION_STORAGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
     echo "LUCID_SESSION_STORAGE_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+# Verify packages are installed and verify directory structure
 RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, aiofiles, zstandard, lz4, cryptography; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Directory exists: /root/.local/lib/python3.11/site-packages"
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
 # Application source COPY
 COPY sessions/storage/ ./storage/
@@ -146,11 +154,20 @@ marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 print('Packages verified in runtime stage')"]
 
-# Application layout COPY
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/storage /app/sessions/storage
 COPY --chown=65532:65532 --from=builder /build/core /app/core
 COPY --chown=65532:65532 --from=builder /build/recorder /app/sessions/recorder
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
+
+# Verify application source files were copied (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/sessions/storage'), 'storage directory not found'; \
+assert os.path.exists('/app/sessions/storage/main.py'), 'storage/main.py not found'; \
+assert os.path.exists('/app/core'), 'core directory not found'; \
+assert os.path.exists('/app/sessions/recorder'), 'recorder directory not found'; \
+assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
+print('✅ All application source files verified')"]
 
 EXPOSE 8082
 

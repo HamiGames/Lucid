@@ -70,13 +70,18 @@ RUN echo "LUCID_SESSION_API_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/p
     echo "LUCID_SESSION_API_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Verify packages are installed and verify directory structure
+# Verify packages are installed and verify directory structure (per Dockerfile-copy-pattern.md)
 RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
 COPY sessions/api/ ./api/
 COPY sessions/core/ ./core/
@@ -122,9 +127,19 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('Packages verified in runtime stage')"]
+
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/core /app/core
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
+
+# Verify application source files were copied (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/api'), 'api directory not found'; \
+assert os.path.exists('/app/api/main.py'), 'api/main.py not found'; \
+assert os.path.exists('/app/core'), 'core directory not found'; \
+assert os.path.exists('/app/__init__.py'), '__init__.py not found'; \
+print('✅ All application source files verified')"]
 
 EXPOSE 8087
 
