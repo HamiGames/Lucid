@@ -33,7 +33,7 @@ httpx==0.25.2
 # =============================================================================
 # Compression libraries
 # =============================================================================
-zstandard>=0.21.0
+zstandard>=0.21.0  # REQUIRED: Used by sessions/processor/compressor.py for session data compression
 zstd>=1.5.5  # Required by core/chunker.py for direct zstd.compress/decompress API
 lz4>=4.3.2
 brotli>=1.1.0

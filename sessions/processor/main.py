@@ -15,6 +15,12 @@ from contextlib import asynccontextmanager
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
+# Ensure site-packages is in sys.path for distroless containers
+# This is critical for module resolution when running with -m flag
+site_packages = '/usr/local/lib/python3.11/site-packages'
+if site_packages not in sys.path:
+    sys.path.insert(0, site_packages)
+
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
