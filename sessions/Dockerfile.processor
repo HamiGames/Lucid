@@ -142,8 +142,8 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 # Copy required dynamic libraries for zstandard, lz4, and other native extensions
 # CRITICAL: zstandard Python package requires libzstd.so.1 at runtime (distroless base doesn't include it)
 # Pattern matches architecture-specific subdirectories (aarch64-linux-gnu, x86_64-linux-gnu, etc.)
-COPY --from=builder /lib/*/libzstd.so.1 /lib/  # Runtime library for zstandard>=0.21.0
-COPY --from=builder /lib/*/liblz4.so.1 /lib/  # Runtime library for lz4 Python package
+COPY --from=builder /lib/*/libzstd.so.1 /lib/
+COPY --from=builder /lib/*/liblz4.so.1 /lib/
 
 # Python packages (per COPY pattern guide)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages

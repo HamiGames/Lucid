@@ -74,7 +74,7 @@ RUN echo "LUCID_RDP_MONITOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/p
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil, prometheus_client, aiofiles; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, async_timeout, httpx, psutil, prometheus_client, aiofiles; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -149,6 +149,7 @@ assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not fo
 assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
 assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
 assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
 assert os.path.exists(os.path.join(site_packages, 'prometheus_client')), 'prometheus_client not found'; \
@@ -163,6 +164,7 @@ import fastapi; assert fastapi, 'fastapi import failed'; \
 import pydantic; assert pydantic, 'pydantic import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import motor; assert motor, 'motor import failed'; \
+import async_timeout; assert async_timeout, 'async_timeout import failed'; \
 import redis; assert redis, 'redis import failed'; \
 import httpx; assert httpx, 'httpx import failed'; \
 import psutil; assert psutil, 'psutil import failed'; \
