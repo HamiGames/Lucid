@@ -137,9 +137,12 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
+# Verifies both package existence AND functionality by actually importing them
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+# Verify critical packages exist \
 assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
 assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
@@ -150,16 +153,38 @@ assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; 
 assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
 assert os.path.exists(os.path.join(site_packages, 'prometheus_client')), 'prometheus_client not found'; \
 assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
+# Verify marker file \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-print('Packages verified in runtime stage')"]
+# Actually import packages to verify functionality \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import redis; assert redis, 'redis import failed'; \
+import httpx; assert httpx, 'httpx import failed'; \
+import psutil; assert psutil, 'psutil import failed'; \
+import prometheus_client; assert prometheus_client, 'prometheus_client import failed'; \
+import aiofiles; assert aiofiles, 'aiofiles import failed'; \
+print('✅ All packages verified in runtime stage (existence and functionality)')"]
 
 # Application layout COPY
 COPY --chown=65532:65532 --from=builder /build/resource_monitor /app/resource_monitor
 COPY --chown=65532:65532 --from=builder /build/recorder /app/recorder
 COPY --chown=65532:65532 --from=builder /build/common /app/common
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
+
+# Verify application source files were copied (per dockerfile-design.md)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/resource_monitor'), 'resource_monitor directory not found'; \
+assert os.path.exists('/app/resource_monitor/entrypoint.py'), 'entrypoint.py not found'; \
+assert os.path.exists('/app/resource_monitor/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/recorder'), 'recorder directory not found'; \
+assert os.path.exists('/app/common'), 'common directory not found'; \
+assert os.path.exists('/app/__init__.py'), '__init__.py not found'; \
+print('✅ All application source files verified')"]
 
 EXPOSE 8093
 
