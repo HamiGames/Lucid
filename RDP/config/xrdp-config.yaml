@@ -1,230 +1,158 @@
-# Lucid XRDP Integration - XRDP Configuration
+# Lucid XRDP - Configuration File
 # Optional YAML configuration for XRDP service
 # File: RDP/config/xrdp-config.yaml
-# Purpose: Define XRDP protocol settings, display configuration, and session management
-# NOTE: All service URLs, ports, and database connections must be provided via
-# environment variables from docker-compose.application.yml
+# Purpose: Configuration for XRDP protocol settings, display configuration, and session management
+# This file uses a flat structure matching the configuration model
+# Environment variables from docker-compose.application.yml override these values
+# Values with empty strings MUST be provided via environment variables
 
-# Global XRDP Configuration
-global:
-  service_name: "lucid-rdp-xrdp"
-  service_version: "1.0.0"
-  debug: false
-  log_level: "INFO"  # Override with LOG_LEVEL env var
-  # Network configuration from environment:
-  # - RDP_XRDP_HOST (default: rdp-xrdp)
-  # - XRDP_PORT (default: 3389)
-  # - RDP_XRDP_URL (default: http://rdp-xrdp:3389)
-  xrdp_port: 3389  # Override with XRDP_PORT env var
-  xrdp_display: ":10"
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_NAME: "lucid-rdp-xrdp"
+SERVICE_VERSION: "1.0.0"
+DEBUG: false
+LOG_LEVEL: "INFO"
+HOST: "0.0.0.0"
+XRDP_PORT: 3389
+XRDP_DISPLAY: ":10"
 
-# XRDP Server Configuration
-xrdp_server:
-  # Network Configuration
-  network:
-    bind_address: "0.0.0.0"  # Always bind to all interfaces in container
-    port: 3389  # Override with XRDP_PORT env var
-    tcp_nodelay: true
-    tcp_keepalive: true
-    tcp_keepalive_interval: 30
-  
-  # Security Configuration
-  security:
-    crypt_level: "high"  # Options: none, low, medium, high
-    ssl_protocols: "TLSv1.2,TLSv1.3"
-    certificate_path: "/etc/xrdp/cert.pem"
-    key_path: "/etc/xrdp/key.pem"
-    allow_root_login: false
-    max_login_attempts: 3
-    login_timeout: 60
-  
-  # Performance Configuration
-  performance:
-    bitmap_cache: true
-    bitmap_compression: true
-    max_bpp: 24  # Bits per pixel: 8, 15, 16, 24, 32
-    use_fastpath: "both"  # Options: input, output, both, none
-    bulk_compression: true
-    jpeg_quality: 80
-    h264_codec: true
-  
-  # Channel Configuration
-  channels:
-    rdpdr: true  # Device redirection
-    rdpsnd: true  # Sound redirection
-    drdynvc: true  # Dynamic virtual channels
-    cliprdr: true  # Clipboard redirection
-    rail: true  # Remote application integration
-    rdpgfx: true  # Graphics acceleration
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_XRDP_HOST: ""
+RDP_XRDP_URL: ""
 
-# Display Configuration
-display:
-  default_display: ":10"
-  display_resolution: "1920x1080"
-  color_depth: 24  # Options: 8, 15, 16, 24, 32
-  dpi: 96
-  
-  # Multi-display Support
-  multi_display:
-    enabled: false
-    max_displays: 2
-    display_layout: "horizontal"  # Options: horizontal, vertical, custom
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MUST come from .env.secrets via docker-compose.application.yml
+MONGODB_URL: ""
+REDIS_URL: ""
 
-# Session Configuration
-session:
-  session_type: "Xorg"  # Options: Xorg, Xvnc, X11rdp
-  session_startup_script: "/etc/xrdp/startwm.sh"
-  session_shutdown_script: "/etc/xrdp/stopwm.sh"
-  session_timeout_seconds: 7200  # 2 hours
-  idle_timeout_seconds: 1800  # 30 minutes
-  max_sessions_per_user: 5
-  max_concurrent_sessions: 50
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+# Default paths matching volume mounts in docker-compose.application.yml
+LOG_STORAGE_PATH: "/app/logs"
+TEMP_STORAGE_PATH: "/tmp/xrdp"
 
-# Audio Configuration
-audio:
-  enabled: true
-  audio_output: true
-  audio_input: true
-  audio_quality: "high"  # Options: low, medium, high
-  audio_codec: "opus"
-  sample_rate: 48000
-  channels: 2
+# =============================================================================
+# XRDP SERVER CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+XRDP_BIND_ADDRESS: "0.0.0.0"
+XRDP_TCP_NODELAY: true
+XRDP_TCP_KEEPALIVE: true
+XRDP_TCP_KEEPALIVE_INTERVAL: 30
+XRDP_CRYPT_LEVEL: "high"
+XRDP_SSL_PROTOCOLS: "TLSv1.2,TLSv1.3"
+XRDP_CERTIFICATE_PATH: "/etc/xrdp/cert.pem"
+XRDP_KEY_PATH: "/etc/xrdp/key.pem"
+XRDP_ALLOW_ROOT_LOGIN: false
+XRDP_MAX_LOGIN_ATTEMPTS: 3
+XRDP_LOGIN_TIMEOUT: 60
 
-# Clipboard Configuration
-clipboard:
-  enabled: true
-  sync_direction: "bidirectional"  # Options: client_to_server, server_to_client, bidirectional
-  max_clipboard_size_mb: 10
-  clipboard_formats:
-    - "text/plain"
-    - "text/html"
-    - "image/png"
-    - "image/jpeg"
+# =============================================================================
+# XRDP PERFORMANCE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+XRDP_BITMAP_CACHE: true
+XRDP_BITMAP_COMPRESSION: true
+XRDP_MAX_BPP: 24
+XRDP_USE_FASTPATH: "both"
+XRDP_BULK_COMPRESSION: true
+XRDP_JPEG_QUALITY: 80
+XRDP_H264_CODEC: true
 
-# File Transfer Configuration
-file_transfer:
-  enabled: true
-  max_file_size_mb: 100
-  allowed_extensions: []  # Empty = all extensions allowed
-  blocked_extensions:
-    - ".exe"
-    - ".bat"
-    - ".cmd"
-    - ".scr"
-  transfer_timeout_seconds: 300
+# =============================================================================
+# DISPLAY CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+DISPLAY_DEFAULT: ":10"
+DISPLAY_RESOLUTION: "1920x1080"
+DISPLAY_COLOR_DEPTH: 24
+DISPLAY_DPI: 96
+MULTI_DISPLAY_ENABLED: false
+MULTI_DISPLAY_MAX: 2
 
-# Printing Configuration
-printing:
-  enabled: false
-  printer_redirection: false
-  default_printer: null
+# =============================================================================
+# SESSION CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SESSION_TYPE: "Xorg"
+SESSION_STARTUP_SCRIPT: "/etc/xrdp/startwm.sh"
+SESSION_SHUTDOWN_SCRIPT: "/etc/xrdp/stopwm.sh"
+SESSION_TIMEOUT_SECONDS: 7200
+SESSION_IDLE_TIMEOUT_SECONDS: 1800
+MAX_SESSIONS_PER_USER: 5
+MAX_CONCURRENT_SESSIONS: 50
 
-# Performance Optimization
-performance:
-  # Compression
-  compression:
-    enabled: true
-    level: 6
-    algorithm: "zlib"  # Options: zlib, rfx, h264
-  
-  # Caching
-  caching:
-    enabled: true
-    bitmap_cache_size_mb: 100
-    glyph_cache_size_mb: 50
-    brush_cache_size_mb: 10
-  
-  # Bandwidth Management
-  bandwidth:
-    enabled: true
-    max_bandwidth_mbps: 10
-    adaptive_quality: true
-    quality_adjustment_interval_seconds: 30
+# =============================================================================
+# AUDIO CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+AUDIO_ENABLED: true
+AUDIO_OUTPUT: true
+AUDIO_INPUT: true
+AUDIO_QUALITY: "high"
+AUDIO_CODEC: "opus"
+AUDIO_SAMPLE_RATE: 48000
+AUDIO_CHANNELS: 2
 
-# Logging Configuration
-logging:
-  enabled: true
-  log_level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
-  log_file: "/app/logs/xrdp.log"
-  log_max_size_mb: 100
-  log_backup_count: 5
-  log_connections: true
-  log_disconnections: true
-  log_errors: true
+# =============================================================================
+# CLIPBOARD CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+CLIPBOARD_ENABLED: true
+CLIPBOARD_SYNC_DIRECTION: "bidirectional"
+CLIPBOARD_MAX_SIZE_MB: 10
 
-# Integration Configuration
-# NOTE: Service URLs MUST come from environment variables or docker-compose:
-# - RDP_SERVER_MANAGER_URL (from docker-compose.application.yml)
-# - RDP_CONTROLLER_URL (from docker-compose.application.yml)
-# - RDP_MONITOR_URL (from docker-compose.application.yml)
-integration:
-  # Server Manager Integration
-  server_manager:
-    enabled: true
-    manager_url: ""  # Set via RDP_SERVER_MANAGER_URL env var (http://rdp-server-manager:8081)
-    timeout_seconds: 30
-    auto_register: true
-  
-  # Session Controller Integration
-  session_controller:
-    enabled: true
-    controller_url: ""  # Set via RDP_CONTROLLER_URL env var (http://rdp-controller:8092)
-    timeout_seconds: 30
-    report_sessions: true
-  
-  # Resource Monitor Integration
-  resource_monitor:
-    enabled: true
-    monitor_url: ""  # Set via RDP_MONITOR_URL env var (http://rdp-monitor:8093)
-    report_interval_seconds: 30
+# =============================================================================
+# FILE TRANSFER CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+FILE_TRANSFER_ENABLED: true
+FILE_TRANSFER_MAX_SIZE_MB: 100
+FILE_TRANSFER_TIMEOUT_SECONDS: 300
 
-# Database Configuration
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL (required, from .env.secrets)
-# - REDIS_URL (from .env.core or .env.secrets)
-database:
-  mongodb_url: ""  # Set via MONGODB_URL env var (required)
-  redis_url: ""    # Set via REDIS_URL env var
+# =============================================================================
+# INTEGRATION SERVICE URLS
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_SERVER_MANAGER_URL: ""
+RDP_CONTROLLER_URL: ""
+RDP_MONITOR_URL: ""
 
-# Monitoring and Metrics
-monitoring:
-  enabled: true
-  metrics:
-    enabled: true
-    endpoint: "/metrics"
-    port: 9090
-  
-  health_check:
-    enabled: true
-    endpoint: "/health"
-    interval_seconds: 30
-    timeout_seconds: 10
+# =============================================================================
+# INTEGRATION SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_TIMEOUT_SECONDS: 30
+SERVICE_RETRY_COUNT: 3
+AUTO_REGISTER: true
+REPORT_INTERVAL_SECONDS: 30
 
-# Error Handling
-error_handling:
-  retry:
-    enabled: true
-    max_retries: 3
-    retry_delay_seconds: 5
-  
-  recovery:
-    auto_recovery_enabled: true
-    recovery_timeout_seconds: 60
-    restart_on_failure: true
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Default values
+HEALTH_CHECK_INTERVAL: 30
+HEALTH_CHECK_ENABLED: true
 
-# Security Configuration
-security:
-  access_control:
-    require_authentication: true
-    require_authorization: true
-    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
-  
-  connection_security:
-    require_tls: true
-    validate_certificates: true
-    encryption_level: "high"
-  
-  audit:
-    enabled: true
-    audit_log_enabled: true
-    audit_log_retention_days: 90
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+# Default values
+METRICS_ENABLED: true
+PROMETHEUS_ENABLED: true
+METRICS_PORT: 9090
+EXPORT_METRICS_ENDPOINT: true
+
+# =============================================================================
+# CORS CONFIGURATION
+# =============================================================================
+# Default value - can be overridden by environment variables
+CORS_ORIGINS: "*"

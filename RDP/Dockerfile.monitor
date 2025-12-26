@@ -92,6 +92,10 @@ COPY RDP/recorder/ ./recorder/
 COPY RDP/common/ ./common/
 COPY RDP/__init__.py ./__init__.py
 
+# Copy monitor-config.yaml from RDP/config/ and rename to config.yaml
+# This replaces the config.yaml in resource-monitor/ with the one from RDP/config/
+COPY RDP/config/monitor-config.yaml ./resource_monitor/config.yaml
+
 ############################
 # Stage 2 – Runtime
 ############################

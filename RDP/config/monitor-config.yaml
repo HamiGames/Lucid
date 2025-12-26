@@ -1,274 +1,102 @@
-# Lucid RDP Monitor - Resource Monitoring Configuration
-# Optional YAML configuration for RDP resource monitoring
+# Lucid RDP Resource Monitor - Configuration File
+# Optional YAML configuration for RDP resource monitoring service
 # File: RDP/config/monitor-config.yaml
-# Purpose: Define monitoring metrics, thresholds, and alerting rules
-# NOTE: All service URLs, ports, and database connections must be provided via
-# environment variables from docker-compose.application.yml
+# Purpose: Configuration for resource monitoring, metrics collection, and alerting
+# This file uses a flat structure to match MonitorSettings Pydantic model
+# Environment variables from docker-compose.application.yml override these values
+# Values with empty strings MUST be provided via environment variables
 
-# Global Monitor Configuration
-global:
-  service_name: "lucid-rdp-monitor"
-  service_version: "1.0.0"
-  debug: false
-  log_level: "INFO"  # Override with LOG_LEVEL env var
-  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-  # Network configuration from environment:
-  # - RDP_MONITOR_HOST (default: rdp-monitor)
-  # - RDP_MONITOR_PORT (default: 8093)
-  # - RDP_MONITOR_URL (default: http://rdp-monitor:8093)
-  port: 8093  # Override with RDP_MONITOR_PORT env var
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_NAME: "lucid-rdp-monitor"
+SERVICE_VERSION: "1.0.0"
+DEBUG: false
+LOG_LEVEL: "INFO"
+HOST: "0.0.0.0"
+PORT: 8093
 
-# Monitoring Configuration
-monitoring:
-  # Monitoring Intervals
-  intervals:
-    resource_collection_interval_seconds: 30
-    health_check_interval_seconds: 30
-    metrics_aggregation_interval_seconds: 60
-    alert_evaluation_interval_seconds: 30
-  
-  # Resource Metrics
-  metrics:
-    cpu:
-      enabled: true
-      collection_interval_seconds: 10
-      aggregation_window_seconds: 60
-      threshold_warning: 70
-      threshold_critical: 90
-    
-    memory:
-      enabled: true
-      collection_interval_seconds: 10
-      aggregation_window_seconds: 60
-      threshold_warning: 70
-      threshold_critical: 90
-    
-    disk:
-      enabled: true
-      collection_interval_seconds: 30
-      aggregation_window_seconds: 300
-      threshold_warning: 80
-      threshold_critical: 95
-    
-    network:
-      enabled: true
-      collection_interval_seconds: 10
-      aggregation_window_seconds: 60
-      bandwidth_threshold_mbps: 100
-      latency_threshold_ms: 100
-      packet_loss_threshold_percent: 1
-    
-    session:
-      enabled: true
-      collection_interval_seconds: 30
-      metrics:
-        - "active_sessions"
-        - "total_sessions"
-        - "session_duration"
-        - "session_quality"
-        - "connection_errors"
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_MONITOR_HOST: ""
+RDP_MONITOR_PORT: ""
+RDP_MONITOR_URL: ""
 
-# Alerting Configuration
-alerting:
-  enabled: true
-  alert_channels:
-    - "log"
-    - "metrics"
-    - "webhook"  # Optional
-  
-  # Alert Rules
-  rules:
-    - name: "high_cpu_usage"
-      metric: "cpu_percent"
-      condition: ">"
-      threshold: 80
-      duration_seconds: 300
-      severity: "warning"
-      action: "log"
-    
-    - name: "critical_cpu_usage"
-      metric: "cpu_percent"
-      condition: ">"
-      threshold: 90
-      duration_seconds: 60
-      severity: "critical"
-      action: "log_and_notify"
-    
-    - name: "high_memory_usage"
-      metric: "memory_percent"
-      condition: ">"
-      threshold: 80
-      duration_seconds: 300
-      severity: "warning"
-      action: "log"
-    
-    - name: "critical_memory_usage"
-      metric: "memory_percent"
-      condition: ">"
-      threshold: 90
-      duration_seconds: 60
-      severity: "critical"
-      action: "log_and_notify"
-    
-    - name: "high_disk_usage"
-      metric: "disk_percent"
-      condition: ">"
-      threshold: 85
-      duration_seconds: 300
-      severity: "warning"
-      action: "log"
-    
-    - name: "critical_disk_usage"
-      metric: "disk_percent"
-      condition: ">"
-      threshold: 95
-      duration_seconds: 60
-      severity: "critical"
-      action: "log_and_notify"
-    
-    - name: "high_network_latency"
-      metric: "network_latency_ms"
-      condition: ">"
-      threshold: 100
-      duration_seconds: 300
-      severity: "warning"
-      action: "log"
-    
-    - name: "high_packet_loss"
-      metric: "packet_loss_percent"
-      condition: ">"
-      threshold: 1
-      duration_seconds: 60
-      severity: "warning"
-      action: "log"
-    
-    - name: "session_errors"
-      metric: "session_errors_total"
-      condition: ">"
-      threshold: 10
-      duration_seconds: 300
-      severity: "warning"
-      action: "log"
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MUST come from .env.secrets via docker-compose.application.yml
+MONGODB_URL: ""
+REDIS_URL: ""
 
-# Resource Thresholds
-resource_thresholds:
-  cpu:
-    warning: 70
-    critical: 90
-    max: 100
-  
-  memory:
-    warning: 70
-    critical: 90
-    max: 100
-  
-  disk:
-    warning: 80
-    critical: 95
-    max: 100
-  
-  network:
-    bandwidth_warning_mbps: 80
-    bandwidth_critical_mbps: 100
-    latency_warning_ms: 50
-    latency_critical_ms: 100
-    packet_loss_warning_percent: 0.5
-    packet_loss_critical_percent: 1.0
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+# Default paths matching volume mounts in docker-compose.application.yml
+LOG_STORAGE_PATH: "/app/logs"
+TEMP_STORAGE_PATH: "/tmp/monitor"
 
-# Session Monitoring
-session_monitoring:
-  enabled: true
-  metrics:
-    - "active_sessions"
-    - "total_sessions"
-    - "session_duration_avg"
-    - "session_duration_max"
-    - "session_quality_avg"
-    - "connection_errors"
-    - "disconnection_errors"
-  
-  quality_metrics:
-    enabled: true
-    frame_rate_threshold: 25
-    latency_threshold_ms: 100
-    packet_loss_threshold_percent: 1
-    quality_score_threshold: 0.7
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+MONITORING_INTERVAL: 30
+COLLECTION_INTERVAL: 30
+METRICS_HISTORY_LIMIT: 100
+METRICS_CLEANUP_HOURS: 24
 
-# Performance Metrics
-performance_metrics:
-  enabled: true
-  metrics:
-    - "requests_per_second"
-    - "response_time_avg"
-    - "response_time_p95"
-    - "response_time_p99"
-    - "error_rate"
-    - "throughput_mbps"
+# =============================================================================
+# ALERT THRESHOLDS CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+CPU_THRESHOLD_PERCENT: 80.0
+MEMORY_THRESHOLD_PERCENT: 80.0
+DISK_THRESHOLD_PERCENT: 90.0
+NETWORK_BANDWIDTH_THRESHOLD_MB: 1000.0
 
-# Database Configuration
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL (required, from .env.secrets)
-# - REDIS_URL (from .env.core or .env.secrets)
-database:
-  mongodb_url: ""  # Set via MONGODB_URL env var (required)
-  redis_url: ""    # Set via REDIS_URL env var
-  
-  # Metrics Storage
-  metrics_storage:
-    enabled: true
-    retention_days: 30
-    aggregation_intervals:
-      - "1m"
-      - "5m"
-      - "1h"
-      - "1d"
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+# Default values
+METRICS_ENABLED: true
+PROMETHEUS_ENABLED: true
+EXPORT_METRICS_ENDPOINT: true
 
-# Prometheus Integration
-prometheus:
-  enabled: true
-  metrics_endpoint: "/metrics"
-  metrics_port: 9090
-  scrape_interval_seconds: 30
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+MAX_CONCURRENT_SESSIONS: 100
+SESSION_METRICS_CACHE_SIZE: 1000
 
-# Grafana Integration
-grafana:
-  enabled: false
-  dashboard_url: null
-  datasource_url: null
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Default values
+HEALTH_CHECK_INTERVAL: 30
+HEALTH_CHECK_ENABLED: true
 
-# Monitoring and Metrics
-monitoring:
-  enabled: true
-  health_check:
-    enabled: true
-    endpoint: "/health"
-    interval_seconds: 30
-    timeout_seconds: 10
-  
-  logging:
-    enabled: true
-    format: "json"
-    level: "INFO"
+# =============================================================================
+# INTEGRATION SERVICE URLS
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_SERVER_MANAGER_URL: ""
+RDP_XRDP_URL: ""
+RDP_CONTROLLER_URL: ""
 
-# Error Handling
-error_handling:
-  retry:
-    enabled: true
-    max_retries: 3
-    retry_delay_seconds: 5
-  
-  recovery:
-    auto_recovery_enabled: true
-    recovery_timeout_seconds: 60
+# =============================================================================
+# INTEGRATION SERVICE TIMEOUT CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_TIMEOUT_SECONDS: 30
+SERVICE_RETRY_COUNT: 3
+SERVICE_RETRY_DELAY_SECONDS: 1.0
 
-# Security Configuration
-security:
-  access_control:
-    require_authentication: true
-    require_authorization: true
-    allowed_roles: ["NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
-  
-  audit:
-    enabled: true
-    audit_log_enabled: true
-    audit_log_retention_days: 90
+# =============================================================================
+# CORS CONFIGURATION
+# =============================================================================
+# Default value - can be overridden by environment variables
+CORS_ORIGINS: "*"

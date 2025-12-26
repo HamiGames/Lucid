@@ -1,213 +1,122 @@
-# Lucid RDP Controller - Session Controller Configuration
+# Lucid RDP Controller - Configuration File
 # Optional YAML configuration for RDP session controller
 # File: RDP/config/controller-config.yaml
-# Purpose: Define session control policies, connection management, and state transitions
-# NOTE: All service URLs, ports, and database connections must be provided via
-# environment variables from docker-compose.application.yml
+# Purpose: Configuration for session control, connection management, and state transitions
+# This file uses a flat structure matching the configuration model
+# Environment variables from docker-compose.application.yml override these values
+# Values with empty strings MUST be provided via environment variables
 
-# Global Controller Configuration
-global:
-  service_name: "lucid-rdp-controller"
-  service_version: "1.0.0"
-  debug: false
-  log_level: "INFO"  # Override with LOG_LEVEL env var
-  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-  # Network configuration from environment:
-  # - RDP_CONTROLLER_HOST (default: rdp-controller)
-  # - RDP_CONTROLLER_PORT (default: 8092)
-  # - RDP_CONTROLLER_URL (default: http://rdp-controller:8092)
-  port: 8092  # Override with RDP_CONTROLLER_PORT env var
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_NAME: "lucid-rdp-controller"
+SERVICE_VERSION: "1.0.0"
+DEBUG: false
+LOG_LEVEL: "INFO"
+HOST: "0.0.0.0"
+PORT: 8092
 
-# Session Control Configuration
-session_control:
-  # Session Lifecycle
-  lifecycle:
-    states:
-      - "created"
-      - "connecting"
-      - "connected"
-      - "active"
-      - "idle"
-      - "paused"
-      - "disconnecting"
-      - "disconnected"
-      - "terminated"
-      - "error"
-    
-    state_transitions:
-      - from: "created"
-        to: ["connecting", "terminated"]
-      - from: "connecting"
-        to: ["connected", "error", "terminated"]
-      - from: "connected"
-        to: ["active", "idle", "disconnecting", "error"]
-      - from: "active"
-        to: ["idle", "paused", "disconnecting", "error"]
-      - from: "idle"
-        to: ["active", "disconnecting", "terminated"]
-      - from: "paused"
-        to: ["active", "disconnecting", "terminated"]
-      - from: "disconnecting"
-        to: ["disconnected", "error"]
-      - from: "disconnected"
-        to: ["terminated"]
-      - from: "error"
-        to: ["terminated"]
-  
-  # Session Limits
-  limits:
-    max_concurrent_sessions: 100
-    max_sessions_per_user: 10
-    max_sessions_per_ip: 5
-    session_timeout_seconds: 7200  # 2 hours
-    idle_timeout_seconds: 1800  # 30 minutes
-    connection_timeout_seconds: 300  # 5 minutes
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_CONTROLLER_HOST: ""
+RDP_CONTROLLER_PORT: ""
+RDP_CONTROLLER_URL: ""
 
-# Connection Management
-connection_management:
-  # Connection Pooling
-  connection_pool:
-    enabled: true
-    pool_size: 50
-    max_overflow: 20
-    pool_timeout_seconds: 30
-  
-  # Connection Health
-  health_check:
-    enabled: true
-    check_interval_seconds: 30
-    timeout_seconds: 10
-    unhealthy_threshold: 3
-    healthy_threshold: 2
-  
-  # Connection Retry
-  retry:
-    enabled: true
-    max_retries: 3
-    retry_delay_seconds: 5
-    exponential_backoff: true
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MUST come from .env.secrets via docker-compose.application.yml
+MONGODB_URL: ""
+REDIS_URL: ""
 
-# Server Manager Integration
-# NOTE: Service URL MUST come from environment variable:
-# - RDP_SERVER_MANAGER_URL (from docker-compose.application.yml)
-server_manager:
-  enabled: true
-  manager_url: ""  # Set via RDP_SERVER_MANAGER_URL env var (http://rdp-server-manager:8081)
-  timeout_seconds: 30
-  retry_attempts: 3
-  auto_register: true
-  health_check_interval_seconds: 60
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+# Default paths matching volume mounts in docker-compose.application.yml
+LOG_STORAGE_PATH: "/app/logs"
+TEMP_STORAGE_PATH: "/tmp/controller"
 
-# XRDP Integration
-# NOTE: Service URL MUST come from environment variable:
-# - RDP_XRDP_URL (from docker-compose.application.yml)
-xrdp:
-  enabled: true
-  xrdp_url: ""  # Set via RDP_XRDP_URL env var (http://rdp-xrdp:3389)
-  timeout_seconds: 30
-  retry_attempts: 3
-  connection_pool_size: 20
+# =============================================================================
+# SESSION CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+MAX_CONCURRENT_SESSIONS: 100
+MAX_SESSIONS_PER_USER: 10
+MAX_SESSIONS_PER_IP: 5
+SESSION_TIMEOUT_SECONDS: 7200
+IDLE_TIMEOUT_SECONDS: 1800
+CONNECTION_TIMEOUT_SECONDS: 300
 
-# Resource Monitor Integration
-# NOTE: Service URL MUST come from environment variable:
-# - RDP_MONITOR_URL (from docker-compose.application.yml)
-resource_monitor:
-  enabled: true
-  monitor_url: ""  # Set via RDP_MONITOR_URL env var (http://rdp-monitor:8093)
-  monitoring_interval_seconds: 30
-  resource_thresholds:
-    cpu_percent: 80
-    memory_percent: 80
-    disk_percent: 85
-    network_bandwidth_mbps: 100
+# =============================================================================
+# CONNECTION CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+CONNECTION_POOL_ENABLED: true
+CONNECTION_POOL_SIZE: 50
+CONNECTION_POOL_MAX_OVERFLOW: 20
+CONNECTION_POOL_TIMEOUT_SECONDS: 30
+CONNECTION_HEALTH_CHECK_ENABLED: true
+CONNECTION_HEALTH_CHECK_INTERVAL_SECONDS: 30
+CONNECTION_HEALTH_CHECK_TIMEOUT_SECONDS: 10
+CONNECTION_RETRY_ENABLED: true
+CONNECTION_RETRY_MAX_RETRIES: 3
+CONNECTION_RETRY_DELAY_SECONDS: 5
 
-# Quality Control
-quality_control:
-  enabled: true
-  min_quality_score: 0.7
-  quality_check_interval_seconds: 60
-  auto_adjust_quality: false
-  quality_metrics:
-    - "latency"
-    - "bandwidth"
-    - "frame_rate"
-    - "packet_loss"
+# =============================================================================
+# INTEGRATION SERVICE URLS
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_SERVER_MANAGER_URL: ""
+RDP_XRDP_URL: ""
+RDP_MONITOR_URL: ""
 
-# Session Policies
-session_policies:
-  # Access Policies
-  access:
-    require_authentication: true
-    require_authorization: true
-    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
-    ip_whitelist: []
-    ip_blacklist: []
-  
-  # Time Policies
-  time:
-    max_session_duration_hours: 24
-    max_idle_time_minutes: 30
-    session_extension_allowed: true
-    max_extensions: 3
-  
-  # Resource Policies
-  resources:
-    max_cpu_percent: 80
-    max_memory_mb: 2048
-    max_disk_gb: 10
-    max_bandwidth_mbps: 10
+# =============================================================================
+# INTEGRATION SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_TIMEOUT_SECONDS: 30
+SERVICE_RETRY_COUNT: 3
+AUTO_REGISTER: true
+HEALTH_CHECK_INTERVAL_SECONDS: 60
 
-# Database Configuration
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL (required, from .env.secrets)
-# - REDIS_URL (from .env.core or .env.secrets)
-database:
-  mongodb_url: ""  # Set via MONGODB_URL env var (required)
-  redis_url: ""    # Set via REDIS_URL env var
+# =============================================================================
+# QUALITY CONTROL CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+QUALITY_CONTROL_ENABLED: true
+MIN_QUALITY_SCORE: 0.7
+QUALITY_CHECK_INTERVAL_SECONDS: 60
+AUTO_ADJUST_QUALITY: false
 
-# Monitoring and Metrics
-monitoring:
-  enabled: true
-  metrics:
-    enabled: true
-    endpoint: "/metrics"
-    port: 9090
-  
-  health_check:
-    enabled: true
-    endpoint: "/health"
-    interval_seconds: 30
-    timeout_seconds: 10
-  
-  logging:
-    enabled: true
-    format: "json"
-    level: "INFO"
+# =============================================================================
+# RESOURCE THRESHOLDS
+# =============================================================================
+# Default values - can be overridden by environment variables
+CPU_THRESHOLD_PERCENT: 80.0
+MEMORY_THRESHOLD_PERCENT: 80.0
+DISK_THRESHOLD_PERCENT: 85.0
+NETWORK_BANDWIDTH_THRESHOLD_MB: 100.0
 
-# Error Handling
-error_handling:
-  retry:
-    enabled: true
-    max_retries: 3
-    retry_delay_seconds: 5
-    exponential_backoff: true
-  
-  recovery:
-    auto_recovery_enabled: true
-    recovery_timeout_seconds: 60
-    reconnect_on_failure: true
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Default values
+HEALTH_CHECK_INTERVAL: 30
+HEALTH_CHECK_ENABLED: true
 
-# Security Configuration
-security:
-  access_control:
-    require_authentication: true
-    require_authorization: true
-    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
-  
-  audit:
-    enabled: true
-    log_connections: true
-    log_disconnections: true
-    log_state_changes: true
-    log_errors: true
-    audit_log_retention_days: 90
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+# Default values
+METRICS_ENABLED: true
+PROMETHEUS_ENABLED: true
+EXPORT_METRICS_ENDPOINT: true
+
+# =============================================================================
+# CORS CONFIGURATION
+# =============================================================================
+# Default value - can be overridden by environment variables
+CORS_ORIGINS: "*"

@@ -6,17 +6,24 @@ rule_files:
   - "alerts.yml"
 
 scrape_configs:
-  # RDP Session Controller
-  - job_name: 'rdp-session-controller'
+  # RDP Controller
+  - job_name: 'rdp-controller'
     static_configs:
-      - targets: ['rdp-session-controller:8092']
+      - targets: ['rdp-controller:8092']
     metrics_path: '/api/v1/metrics'
     scrape_interval: 30s
 
   # RDP Resource Monitor
-  - job_name: 'rdp-resource-monitor'
+  - job_name: 'rdp-monitor'
     static_configs:
-      - targets: ['rdp-resource-monitor:8093']
+      - targets: ['rdp-monitor:8093']
+    metrics_path: '/api/v1/metrics'
+    scrape_interval: 30s
+
+  # RDP Server Manager
+  - job_name: 'rdp-server-manager'
+    static_configs:
+      - targets: ['rdp-server-manager:8081']
     metrics_path: '/api/v1/metrics'
     scrape_interval: 30s
 

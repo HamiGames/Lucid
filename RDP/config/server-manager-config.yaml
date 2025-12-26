@@ -1,162 +1,120 @@
-# Lucid RDP Server Manager - Server Management Configuration
+# Lucid RDP Server Manager - Configuration File
 # Optional YAML configuration for RDP server management
 # File: RDP/config/server-manager-config.yaml
-# Purpose: Define server templates, port management, and connection policies
-# NOTE: All service URLs, ports, and database connections must be provided via
-# environment variables from docker-compose.application.yml
+# Purpose: Configuration for server templates, port management, and connection policies
+# This file uses a flat structure matching the configuration model
+# Environment variables from docker-compose.application.yml override these values
+# Values with empty strings MUST be provided via environment variables
 
-# Global Server Manager Configuration
-global:
-  service_name: "lucid-rdp-server-manager"
-  service_version: "1.0.0"
-  debug: false
-  log_level: "INFO"  # Override with LOG_LEVEL env var
-  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-  # Network configuration from environment:
-  # - RDP_SERVER_MANAGER_HOST (default: rdp-server-manager)
-  # - RDP_SERVER_MANAGER_PORT (default: 8081)
-  # - RDP_SERVER_MANAGER_URL (default: http://rdp-server-manager:8081)
-  port: 8081  # Override with RDP_SERVER_MANAGER_PORT env var
-  monitoring_port: 8090
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_NAME: "lucid-rdp-server-manager"
+SERVICE_VERSION: "1.0.0"
+DEBUG: false
+LOG_LEVEL: "INFO"
+HOST: "0.0.0.0"
+PORT: 8081
+MONITORING_PORT: 8090
 
-# Server Configuration Templates
-server_templates:
-  default:
-    name: "default"
-    description: "Default RDP server configuration"
-    rdp_port: 3389
-    max_connections: 10
-    connection_timeout_seconds: 300
-    idle_timeout_seconds: 1800
-    quality_settings:
-      color_depth: 24
-      resolution: "1920x1080"
-      compression: true
-      bandwidth_limit_mbps: 10
-  
-  high_performance:
-    name: "high_performance"
-    description: "High performance RDP server configuration"
-    rdp_port: 3389
-    max_connections: 20
-    connection_timeout_seconds: 600
-    idle_timeout_seconds: 3600
-    quality_settings:
-      color_depth: 32
-      resolution: "2560x1440"
-      compression: true
-      bandwidth_limit_mbps: 50
-  
-  low_bandwidth:
-    name: "low_bandwidth"
-    description: "Low bandwidth optimized RDP server configuration"
-    rdp_port: 3389
-    max_connections: 5
-    connection_timeout_seconds: 300
-    idle_timeout_seconds: 1800
-    quality_settings:
-      color_depth: 16
-      resolution: "1280x720"
-      compression: true
-      bandwidth_limit_mbps: 2
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_SERVER_MANAGER_HOST: ""
+RDP_SERVER_MANAGER_PORT: ""
+RDP_SERVER_MANAGER_URL: ""
 
-# Port Management
-port_management:
-  enabled: true
-  port_range_start: 3390
-  port_range_end: 3499
-  port_allocation_strategy: "sequential"  # Options: sequential, random, round_robin
-  port_reuse_delay_seconds: 60
-  max_ports_per_user: 5
-  port_health_check: true
-  port_health_check_interval_seconds: 30
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MUST come from .env.secrets via docker-compose.application.yml
+MONGODB_URL: ""
+REDIS_URL: ""
 
-# Connection Management
-connection_management:
-  max_concurrent_connections: 100
-  max_connections_per_user: 10
-  max_connections_per_ip: 5
-  connection_timeout_seconds: 300
-  idle_timeout_seconds: 1800
-  keepalive_interval_seconds: 30
-  
-  # Connection Pooling
-  connection_pool:
-    enabled: true
-    pool_size: 50
-    max_overflow: 20
-    pool_timeout_seconds: 30
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+# Default paths matching volume mounts in docker-compose.application.yml
+LOG_STORAGE_PATH: "/app/logs"
+TEMP_STORAGE_PATH: "/tmp/server-manager"
 
-# XRDP Integration
-# NOTE: Service URLs MUST come from environment variables:
-# - RDP_XRDP_URL (from docker-compose.application.yml)
-xrdp_integration:
-  enabled: true
-  xrdp_service_url: ""  # Set via RDP_XRDP_URL env var (http://rdp-xrdp:3389)
-  xrdp_config_path: "/etc/xrdp"
-  xrdp_sessions_path: "/var/lib/xrdp/sessions"
-  xrdp_log_path: "/var/log/xrdp"
-  
-  # XRDP Configuration
-  xrdp_config:
-    port: 3389  # Override with XRDP_PORT env var
-    crypt_level: "high"
-    bitmap_cache: true
-    bitmap_compression: true
-    max_bpp: 24
-    use_fastpath: "both"
-    ssl_protocols: "TLSv1.2,TLSv1.3"
+# =============================================================================
+# PORT MANAGEMENT CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+PORT_MANAGEMENT_ENABLED: true
+PORT_RANGE_START: 3390
+PORT_RANGE_END: 3499
+PORT_ALLOCATION_STRATEGY: "sequential"
+PORT_REUSE_DELAY_SECONDS: 60
+MAX_PORTS_PER_USER: 5
+PORT_HEALTH_CHECK: true
+PORT_HEALTH_CHECK_INTERVAL_SECONDS: 30
 
-# Database Configuration
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL (required, from .env.secrets)
-# - REDIS_URL (from .env.core or .env.secrets)
-database:
-  mongodb_url: ""  # Set via MONGODB_URL env var (required)
-  redis_url: ""    # Set via REDIS_URL env var
+# =============================================================================
+# CONNECTION CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+MAX_CONCURRENT_CONNECTIONS: 100
+MAX_CONNECTIONS_PER_USER: 10
+MAX_CONNECTIONS_PER_IP: 5
+CONNECTION_TIMEOUT_SECONDS: 300
+IDLE_TIMEOUT_SECONDS: 1800
+KEEPALIVE_INTERVAL_SECONDS: 30
+CONNECTION_POOL_ENABLED: true
+CONNECTION_POOL_SIZE: 50
+CONNECTION_POOL_MAX_OVERFLOW: 20
+CONNECTION_POOL_TIMEOUT_SECONDS: 30
 
-# External Service URLs
-# NOTE: Service URLs MUST come from environment variables:
-# - API_GATEWAY_URL (from docker-compose.core.yml)
-# - AUTH_SERVICE_URL (from docker-compose.core.yml)
-external_services:
-  api_gateway_url: ""  # Set via API_GATEWAY_URL env var (http://api-gateway:8080)
-  auth_service_url: ""  # Set via AUTH_SERVICE_URL env var (http://lucid-auth-service:8089)
+# =============================================================================
+# INTEGRATION SERVICE URLS
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_XRDP_URL: ""
+API_GATEWAY_URL: ""
+AUTH_SERVICE_URL: ""
 
-# Monitoring Configuration
-monitoring:
-  enabled: true
-  metrics_enabled: true
-  metrics_port: 9090
-  health_check_interval: 30  # seconds
-  prometheus_enabled: true
-  jaeger_enabled: false
-  jaeger_endpoint: null
+# =============================================================================
+# XRDP CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+XRDP_CONFIG_PATH: "/etc/xrdp"
+XRDP_SESSIONS_PATH: "/var/lib/xrdp/sessions"
+XRDP_LOG_PATH: "/var/log/xrdp"
+XRDP_PORT: 3389
+XRDP_CRYPT_LEVEL: "high"
+XRDP_BITMAP_CACHE: true
+XRDP_BITMAP_COMPRESSION: true
+XRDP_MAX_BPP: 24
 
-# Error Handling
-error_handling:
-  retry_policies:
-    max_retries: 3
-    retry_delay_seconds: 1
-    exponential_backoff: true
-    backoff_multiplier: 2
-  
-  failure_handling:
-    log_failures: true
-    notify_on_failure: false
-    queue_failed_items: true
-    retry_failed_items: true
-    max_retry_attempts: 5
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Default values
+HEALTH_CHECK_INTERVAL: 30
+HEALTH_CHECK_ENABLED: true
 
-# Security Configuration
-security:
-  access_control:
-    require_authentication: true
-    require_authorization: true
-    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
-  
-  data_privacy:
-    encrypt_sensitive_data: false
-    audit_log_enabled: true
-    audit_log_retention_days: 90
-    mask_data_in_logs: true
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+# Default values
+METRICS_ENABLED: true
+PROMETHEUS_ENABLED: true
+METRICS_PORT: 9090
+EXPORT_METRICS_ENDPOINT: true
+
+# =============================================================================
+# RETRY CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_TIMEOUT_SECONDS: 30
+SERVICE_RETRY_COUNT: 3
+SERVICE_RETRY_DELAY_SECONDS: 1.0
+
+# =============================================================================
+# CORS CONFIGURATION
+# =============================================================================
+# Default value - can be overridden by environment variables
+CORS_ORIGINS: "*"

@@ -147,6 +147,7 @@ services:
       - SESSION_RECORDER_URL=http://session-recorder:8090
       - SESSION_STORAGE_URL=http://session-storage:8082
       - SESSION_API_URL=http://session-api:8087
+      - LUCID_COMPRESSION_PATH=/app/data/compression
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -492,6 +493,9 @@ services:
       - RDP_MONITOR_URL=http://rdp-monitor:8093
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
+      - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8081
+      - RDP_XRDP_URL=http://rdp-xrdp:3389
+      - RDP_CONTROLLER_URL=http://rdp-controller:8092
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -502,7 +506,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8093)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
