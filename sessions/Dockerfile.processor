@@ -167,8 +167,6 @@ assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.e
 assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
 assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
 assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; \
-# Note: zstandard, lz4, brotli, blake3 are compiled extensions and may not exist as directories
-# They will be verified via import checks below \
 # Verify marker file exists and is non-empty (ensures COPY worked) \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found at ' + marker_path; \
@@ -190,6 +188,7 @@ import numpy; assert numpy, 'numpy import failed'; \
 import structlog; assert structlog, 'structlog import failed'; \
 import lz4; assert lz4, 'lz4 import failed'; \
 import zstandard; assert zstandard, 'zstandard import failed'; \
+print('zstandard imported successfully, location:', zstandard.__file__); \
 import zstd; assert zstd, 'zstd import failed'; \
 import brotli; assert brotli, 'brotli import failed'; \
 import blake3; assert blake3, 'blake3 import failed'; \
