@@ -148,6 +148,7 @@ services:
       - SESSION_STORAGE_URL=http://session-storage:8082
       - SESSION_API_URL=http://session-api:8087
       - LUCID_COMPRESSION_PATH=/app/data/compression
+      - LUCID_MANIFEST_PATH=/app/data/manifests
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true

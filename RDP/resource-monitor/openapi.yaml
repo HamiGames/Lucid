@@ -1,0 +1,693 @@
+openapi: 3.0.3
+info:
+  title: Lucid RDP Resource Monitor API
+  description: |
+    RDP resource monitoring and metrics collection service for Lucid project.
+    
+    Features:
+    - Session resource monitoring (CPU, memory, disk, network)
+    - Metrics collection and aggregation
+    - Prometheus metrics export
+    - Alert detection and reporting
+    - System-wide resource summaries
+  version: 1.0.0
+  contact:
+    name: Lucid Development Team
+    email: dev@lucid-blockchain.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://rdp-monitor:8093
+    description: Docker container service (internal)
+  - url: http://localhost:8093
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Health check and service info endpoints
+  - name: Monitoring
+    description: Resource monitoring and session management endpoints
+  - name: Metrics
+    description: Prometheus metrics and metrics summary endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      description: Returns service health status and basic information
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is not available or not fully initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/start:
+    post:
+      tags:
+        - Monitoring
+      summary: Start monitoring a session
+      description: Begin monitoring resource usage for a specific RDP session
+      operationId: startMonitoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartMonitoringRequest'
+      responses:
+        '200':
+          description: Monitoring started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringStatusResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to start monitoring
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/sessions/{session_id}/stop:
+    post:
+      tags:
+        - Monitoring
+      summary: Stop monitoring a session
+      description: Stop monitoring resource usage for a specific RDP session
+      operationId: stopMonitoring
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session to stop monitoring
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Monitoring stopped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringStatusResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to stop monitoring
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/sessions/{session_id}/metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Get current metrics for a session
+      description: Retrieve current resource metrics for a specific session
+      operationId: getSessionMetrics
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current session metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceMetrics'
+        '404':
+          description: Session not found or not being monitored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get session metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/sessions/{session_id}/history:
+    get:
+      tags:
+        - Monitoring
+      summary: Get metrics history for a session
+      description: Retrieve historical metrics data for a specific session
+      operationId: getSessionHistory
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+        - name: hours
+          in: query
+          required: false
+          description: Number of hours of history to retrieve (1-24)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+            default: 1
+      responses:
+        '200':
+          description: Session metrics history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsHistoryResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get session history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/sessions/{session_id}/alerts:
+    get:
+      tags:
+        - Monitoring
+      summary: Get alerts for a session
+      description: Retrieve active alerts for a specific session based on resource thresholds
+      operationId: getSessionAlerts
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session alerts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertsResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get session alerts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/summary:
+    get:
+      tags:
+        - Monitoring
+      summary: Get system-wide resource summary
+      description: Retrieve aggregated resource usage statistics across all monitored sessions
+      operationId: getSystemSummary
+      responses:
+        '200':
+          description: System-wide resource summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSummaryResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get system summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/monitoring/collect:
+    post:
+      tags:
+        - Monitoring
+      summary: Manually collect metrics for a session
+      description: Trigger immediate metrics collection for a specific session
+      operationId: collectMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectMetricsRequest'
+      responses:
+        '200':
+          description: Metrics collected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectMetricsResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to collect metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/metrics:
+    get:
+      tags:
+        - Metrics
+      summary: Get Prometheus metrics
+      description: Export metrics in Prometheus text format for scraping
+      operationId: getPrometheusMetrics
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+          content:
+            text/plain; version=0.0.4; charset=utf-8:
+              schema:
+                type: string
+                example: |
+                  # HELP rdp_sessions_total Total number of RDP sessions
+                  # TYPE rdp_sessions_total counter
+                  rdp_sessions_total{status="created"} 10
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to export metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/metrics/summary:
+    get:
+      tags:
+        - Metrics
+      summary: Get metrics collection summary
+      description: Get information about the metrics collection system
+      operationId: getMetricsSummary
+      responses:
+        '200':
+          description: Metrics collection summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsSummaryResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get metrics summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - active_sessions
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+          description: Health status
+        service:
+          type: string
+          example: rdp-resource-monitor
+          description: Service name
+        version:
+          type: string
+          example: "1.0.0"
+          description: Service version
+        active_sessions:
+          type: integer
+          minimum: 0
+          description: Number of currently active monitored sessions
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the health check
+
+    StartMonitoringRequest:
+      type: object
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: UUID of the session to monitor
+        session_config:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: Optional session configuration
+
+    CollectMetricsRequest:
+      type: object
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: UUID of the session to collect metrics for
+        metrics_data:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: Additional metrics data
+
+    MonitoringStatusResponse:
+      type: object
+      required:
+        - status
+        - session_id
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [monitoring_started, monitoring_stopped]
+          description: Monitoring status
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the operation
+
+    ResourceMetrics:
+      type: object
+      required:
+        - session_id
+        - timestamp
+        - cpu_percent
+        - memory_usage
+        - memory_percent
+        - disk_usage
+        - disk_percent
+        - network_bytes_sent
+        - network_bytes_recv
+        - network_packets_sent
+        - network_packets_recv
+        - active_connections
+        - process_count
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when metrics were collected
+        cpu_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: CPU usage percentage
+        memory_usage:
+          type: integer
+          minimum: 0
+          description: Memory usage in bytes
+        memory_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Memory usage percentage
+        disk_usage:
+          type: integer
+          minimum: 0
+          description: Disk usage in bytes
+        disk_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Disk usage percentage
+        network_bytes_sent:
+          type: integer
+          minimum: 0
+          description: Total network bytes sent
+        network_bytes_recv:
+          type: integer
+          minimum: 0
+          description: Total network bytes received
+        network_packets_sent:
+          type: integer
+          minimum: 0
+          description: Total network packets sent
+        network_packets_recv:
+          type: integer
+          minimum: 0
+          description: Total network packets received
+        active_connections:
+          type: integer
+          minimum: 0
+          description: Number of active connections
+        process_count:
+          type: integer
+          minimum: 0
+          description: Number of processes
+
+    MetricsHistoryResponse:
+      type: object
+      required:
+        - session_id
+        - hours
+        - metrics_count
+        - history
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID
+        hours:
+          type: integer
+          minimum: 1
+          maximum: 24
+          description: Number of hours of history retrieved
+        metrics_count:
+          type: integer
+          minimum: 0
+          description: Number of metrics entries in history
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceMetrics'
+          description: List of historical metrics
+
+    AlertsResponse:
+      type: object
+      required:
+        - session_id
+        - alerts
+        - alert_count
+        - timestamp
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                description: Alert type (e.g., cpu_high, memory_high, disk_high)
+              severity:
+                type: string
+                enum: [warning, critical]
+                description: Alert severity
+              message:
+                type: string
+                description: Alert message
+              value:
+                type: number
+                description: Current value that triggered the alert
+          description: List of active alerts
+        alert_count:
+          type: integer
+          minimum: 0
+          description: Total number of alerts
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when alerts were checked
+
+    SystemSummaryResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the summary
+        total_sessions:
+          type: integer
+          minimum: 0
+          description: Total number of monitored sessions
+        average_cpu_percent:
+          type: number
+          format: float
+          description: Average CPU usage across all sessions
+        average_memory_percent:
+          type: number
+          format: float
+          description: Average memory usage across all sessions
+        average_disk_percent:
+          type: number
+          format: float
+          description: Average disk usage across all sessions
+
+    CollectMetricsResponse:
+      type: object
+      required:
+        - status
+        - session_id
+        - metrics
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [metrics_collected]
+          description: Collection status
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID
+        metrics:
+          $ref: '#/components/schemas/ResourceMetrics'
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when metrics were collected
+
+    MetricsSummaryResponse:
+      type: object
+      required:
+        - timestamp
+        - metrics_available
+        - collection_active
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the summary
+        metrics_available:
+          type: boolean
+          description: Whether metrics are available
+        collection_active:
+          type: boolean
+          description: Whether metrics collection is active
+        registry_size:
+          type: integer
+          minimum: 0
+          description: Number of metrics in the registry
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: LUCID_ERR_2300
+              description: Error code
+            message:
+              type: string
+              example: Internal server error
+              description: Error message
+            service:
+              type: string
+              example: rdp-resource-monitor
+              description: Service name
+            version:
+              type: string
+              example: "1.0.0"
+              description: Service version
+            details:
+              type: string
+              description: Additional error details
+        detail:
+          type: string
+          description: Error detail message (alternative format)
+

@@ -1,0 +1,263 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RDP Resource Monitor Metrics Schema",
+  "description": "Schema definition for all Prometheus metrics exported by the RDP Resource Monitor service",
+  "version": "1.0.0",
+  "metrics": {
+    "rdp_sessions_total": {
+      "type": "counter",
+      "description": "Total number of RDP sessions",
+      "help": "Total number of RDP sessions",
+      "labels": ["status"],
+      "label_descriptions": {
+        "status": "Session status (created, terminated)"
+      },
+      "unit": "sessions",
+      "category": "session"
+    },
+    "rdp_sessions_active": {
+      "type": "gauge",
+      "description": "Number of active RDP sessions",
+      "help": "Number of active RDP sessions",
+      "labels": [],
+      "unit": "sessions",
+      "category": "session"
+    },
+    "rdp_session_duration_seconds": {
+      "type": "histogram",
+      "description": "Duration of RDP sessions",
+      "help": "Duration of RDP sessions in seconds",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "seconds",
+      "category": "session"
+    },
+    "rdp_cpu_usage_percent": {
+      "type": "gauge",
+      "description": "CPU usage percentage",
+      "help": "CPU usage percentage",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "percent",
+      "category": "resource",
+      "thresholds": {
+        "warning": 70.0,
+        "critical": 90.0
+      },
+      "range": {
+        "min": 0.0,
+        "max": 100.0
+      }
+    },
+    "rdp_memory_usage_bytes": {
+      "type": "gauge",
+      "description": "Memory usage in bytes",
+      "help": "Memory usage in bytes",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "bytes",
+      "category": "resource"
+    },
+    "rdp_memory_usage_percent": {
+      "type": "gauge",
+      "description": "Memory usage percentage",
+      "help": "Memory usage percentage",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "percent",
+      "category": "resource",
+      "thresholds": {
+        "warning": 70.0,
+        "critical": 90.0
+      },
+      "range": {
+        "min": 0.0,
+        "max": 100.0
+      }
+    },
+    "rdp_disk_usage_bytes": {
+      "type": "gauge",
+      "description": "Disk usage in bytes",
+      "help": "Disk usage in bytes",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "bytes",
+      "category": "resource"
+    },
+    "rdp_disk_usage_percent": {
+      "type": "gauge",
+      "description": "Disk usage percentage",
+      "help": "Disk usage percentage",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "percent",
+      "category": "resource",
+      "thresholds": {
+        "warning": 80.0,
+        "critical": 95.0
+      },
+      "range": {
+        "min": 0.0,
+        "max": 100.0
+      }
+    },
+    "rdp_network_bytes_sent_total": {
+      "type": "counter",
+      "description": "Total network bytes sent",
+      "help": "Total network bytes sent",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "bytes",
+      "category": "network"
+    },
+    "rdp_network_bytes_recv_total": {
+      "type": "counter",
+      "description": "Total network bytes received",
+      "help": "Total network bytes received",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "bytes",
+      "category": "network"
+    },
+    "rdp_network_packets_sent_total": {
+      "type": "counter",
+      "description": "Total network packets sent",
+      "help": "Total network packets sent",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "packets",
+      "category": "network"
+    },
+    "rdp_network_packets_recv_total": {
+      "type": "counter",
+      "description": "Total network packets received",
+      "help": "Total network packets received",
+      "labels": ["session_id"],
+      "label_descriptions": {
+        "session_id": "UUID of the session"
+      },
+      "unit": "packets",
+      "category": "network"
+    },
+    "rdp_connections_active": {
+      "type": "gauge",
+      "description": "Number of active connections",
+      "help": "Number of active connections",
+      "labels": [],
+      "unit": "connections",
+      "category": "connection"
+    },
+    "rdp_connection_duration_seconds": {
+      "type": "histogram",
+      "description": "Duration of RDP connections",
+      "help": "Duration of RDP connections in seconds",
+      "labels": ["connection_id"],
+      "label_descriptions": {
+        "connection_id": "UUID of the connection"
+      },
+      "unit": "seconds",
+      "category": "connection"
+    },
+    "rdp_errors_total": {
+      "type": "counter",
+      "description": "Total number of errors",
+      "help": "Total number of errors",
+      "labels": ["error_type", "session_id"],
+      "label_descriptions": {
+        "error_type": "Type of error (e.g., collection_error, monitoring_error)",
+        "session_id": "UUID of the session where error occurred"
+      },
+      "unit": "errors",
+      "category": "error"
+    },
+    "rdp_alerts_total": {
+      "type": "counter",
+      "description": "Total number of alerts",
+      "help": "Total number of alerts",
+      "labels": ["alert_type", "severity"],
+      "label_descriptions": {
+        "alert_type": "Type of alert (e.g., cpu_high, memory_high, disk_high)",
+        "severity": "Alert severity (warning, critical)"
+      },
+      "unit": "alerts",
+      "category": "alert"
+    }
+  },
+  "categories": {
+    "session": {
+      "description": "Session lifecycle metrics",
+      "metrics": ["rdp_sessions_total", "rdp_sessions_active", "rdp_session_duration_seconds"]
+    },
+    "resource": {
+      "description": "Resource usage metrics (CPU, memory, disk)",
+      "metrics": [
+        "rdp_cpu_usage_percent",
+        "rdp_memory_usage_bytes",
+        "rdp_memory_usage_percent",
+        "rdp_disk_usage_bytes",
+        "rdp_disk_usage_percent"
+      ]
+    },
+    "network": {
+      "description": "Network traffic metrics",
+      "metrics": [
+        "rdp_network_bytes_sent_total",
+        "rdp_network_bytes_recv_total",
+        "rdp_network_packets_sent_total",
+        "rdp_network_packets_recv_total"
+      ]
+    },
+    "connection": {
+      "description": "Connection metrics",
+      "metrics": ["rdp_connections_active", "rdp_connection_duration_seconds"]
+    },
+    "error": {
+      "description": "Error metrics",
+      "metrics": ["rdp_errors_total"]
+    },
+    "alert": {
+      "description": "Alert metrics",
+      "metrics": ["rdp_alerts_total"]
+    }
+  },
+  "default_thresholds": {
+    "cpu_percent": {
+      "warning": 70.0,
+      "critical": 90.0
+    },
+    "memory_percent": {
+      "warning": 70.0,
+      "critical": 90.0
+    },
+    "disk_percent": {
+      "warning": 80.0,
+      "critical": 95.0
+    },
+    "network_bandwidth_mb": {
+      "warning": 800.0,
+      "critical": 1000.0
+    }
+  },
+  "export_endpoint": "/api/v1/metrics",
+  "export_format": "prometheus_text",
+  "scrape_interval": "30s"
+}
+
