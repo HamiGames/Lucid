@@ -84,9 +84,10 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_
     echo "✅ Marker file verified in builder (non-empty)" && \
     python3 -c "import async_timeout; print('✅ async_timeout verified in builder')"
 
-COPY sessions/api/ ./api/
-COPY sessions/core/ ./core/
-COPY sessions/__init__.py ./__init__.py
+COPY sessions/api/ ./sessions/api/
+COPY sessions/core/ ./sessions/core/
+COPY sessions/storage/ ./sessions/storage/
+COPY sessions/__init__.py ./sessions/__init__.py
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
@@ -131,30 +132,30 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import pydantic; assert pydantic, 'pydantic import failed'; import motor; assert motor, 'motor import failed'; import async_timeout; assert async_timeout, 'async_timeout import failed'; import redis; assert redis, 'redis import failed'; import httpx; assert httpx, 'httpx import failed'; print('✅ All packages verified in runtime stage (existence and functionality)')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
-COPY --chown=65532:65532 --from=builder /build/api /app/api
-COPY --chown=65532:65532 --from=builder /build/core /app/core
-COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions /app/sessions
 
 # Verify application source files were copied (prevents silent COPY failures)
 RUN ["/usr/bin/python3.11", "-c", "import os; \
-assert os.path.exists('/app/api'), 'api directory not found'; \
-assert os.path.exists('/app/api/main.py'), 'api/main.py not found'; \
-assert os.path.exists('/app/api/config.yaml'), 'api/config.yaml not found'; \
-assert os.path.exists('/app/api/openapi.yaml'), 'api/openapi.yaml not found'; \
-assert os.path.exists('/app/api/metrics-schema.json'), 'api/metrics-schema.json not found'; \
-assert os.path.exists('/app/api/health-schema.json'), 'api/health-schema.json not found'; \
-assert os.path.exists('/app/core'), 'core directory not found'; \
-assert os.path.exists('/app/__init__.py'), '__init__.py not found'; \
+assert os.path.exists('/app/sessions'), 'sessions directory not found'; \
+assert os.path.exists('/app/sessions/api'), 'sessions/api directory not found'; \
+assert os.path.exists('/app/sessions/api/main.py'), 'sessions/api/main.py not found'; \
+assert os.path.exists('/app/sessions/api/config.yaml'), 'sessions/api/config.yaml not found'; \
+assert os.path.exists('/app/sessions/api/openapi.yaml'), 'sessions/api/openapi.yaml not found'; \
+assert os.path.exists('/app/sessions/api/metrics-schema.json'), 'sessions/api/metrics-schema.json not found'; \
+assert os.path.exists('/app/sessions/api/health-schema.json'), 'sessions/api/health-schema.json not found'; \
+assert os.path.exists('/app/sessions/core'), 'sessions/core directory not found'; \
+assert os.path.exists('/app/sessions/storage'), 'sessions/storage directory not found'; \
+assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
 print('✅ All application source files verified')"]
 
-EXPOSE 8087
+EXPOSE 8113
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)"]
+    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8113)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 ENTRYPOINT []
-CMD ["/usr/bin/python3.11", "/app/api/entrypoint.py"]
+CMD ["/usr/bin/python3.11", "/app/sessions/api/entrypoint.py"]
 
 # All configuration drawn from .env.application, .env.core, .env.secrets, .env.foundation

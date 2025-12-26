@@ -23,9 +23,18 @@ from pymongo.database import Database
 import zstd
 
 from ..core.session_orchestrator import SessionPipeline, PipelineStage
-from ..recorder.session_recorder import ChunkMetadata, RecordingSession
 
 logger = logging.getLogger(__name__)
+
+# Optional imports from recorder (lazy loading to avoid module initialization issues)
+# Note: Module-level initialization in recorder tries to create directories which fails in read-only containers
+try:
+    from ..recorder.session_recorder import ChunkMetadata, RecordingSession
+except (ImportError, OSError) as e:
+    # Define minimal types if recorder module is not available or initialization fails
+    logger.warning(f"Failed to import recorder module (will use graceful degradation): {e}")
+    ChunkMetadata = None
+    RecordingSession = None
 
 @dataclass
 class StorageConfig:

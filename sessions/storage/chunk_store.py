@@ -19,9 +19,16 @@ from dataclasses import dataclass
 import zstd
 import lz4.frame
 
-from ..recorder.session_recorder import ChunkMetadata
-
 logger = logging.getLogger(__name__)
+
+# Optional import from recorder (lazy loading to avoid module initialization issues)
+# Note: Module-level initialization in recorder tries to create directories which fails in read-only containers
+try:
+    from ..recorder.session_recorder import ChunkMetadata
+except (ImportError, OSError) as e:
+    # Define minimal type if recorder module is not available or initialization fails
+    logger.warning(f"Failed to import recorder module (will use graceful degradation): {e}")
+    ChunkMetadata = None
 
 @dataclass
 class ChunkStoreConfig:
