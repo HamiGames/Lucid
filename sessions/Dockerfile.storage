@@ -170,7 +170,7 @@ assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; 
 assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
-assert os.path.exists(os.path.join(site_packages, 'zstd')) or os.path.exists(os.path.join(site_packages, 'zstandard')), 'zstandard/zstd not found'; \
+assert os.path.exists(os.path.join(site_packages, 'zstd')) or os.path.exists(os.path.join(site_packages, 'zstd.py')), 'zstd not found'; \
 assert os.path.exists(os.path.join(site_packages, 'lz4')), 'lz4 not found'; \
 assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'cryptography not found'; \
 # Verify marker file \

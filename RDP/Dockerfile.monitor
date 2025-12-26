@@ -185,6 +185,7 @@ COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 # Verify application source files were copied (per dockerfile-design.md)
 RUN ["/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/resource_monitor'), 'resource_monitor directory not found'; \
+assert os.path.exists('/app/resource_monitor/__init__.py'), 'resource_monitor/__init__.py not found'; \
 assert os.path.exists('/app/resource_monitor/entrypoint.py'), 'entrypoint.py not found'; \
 assert os.path.exists('/app/resource_monitor/main.py'), 'main.py not found'; \
 assert os.path.exists('/app/resource_monitor/config.yaml'), 'config.yaml not found'; \
