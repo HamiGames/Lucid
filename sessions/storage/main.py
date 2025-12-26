@@ -4,7 +4,6 @@ LUCID Session Storage Service - Main Entry Point
 Step 17 Implementation: Session Storage & API
 """
 
-import asyncio
 import logging
 import os
 from datetime import datetime
@@ -16,11 +15,12 @@ from contextlib import asynccontextmanager
 
 from .session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
 from .chunk_store import ChunkStore, ChunkStoreConfig
-from .config import StorageConfig
+from .config import StorageConfig as StorageConfigManager
 
-# Configure logging
+# Configure logging (structured logging per master design)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -39,8 +39,8 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Session Storage Service...")
     
     try:
-        # Initialize configuration using Pydantic Settings
-        storage_config_manager = StorageConfig()
+        # Initialize configuration using Pydantic Settings (per master design)
+        storage_config_manager = StorageConfigManager()
         
         # Get configuration dictionaries for dataclass-based configs
         storage_config_dict = storage_config_manager.get_storage_config_dict()
@@ -63,15 +63,21 @@ async def lifespan(app: FastAPI):
         yield
         
     except Exception as e:
-        logger.error(f"Failed to start Session Storage Service: {e}")
+        logger.error(f"Failed to start Session Storage Service: {e}", exc_info=True)
         raise
     
     finally:
-        # Shutdown
+        # Shutdown (graceful shutdown per master design)
         logger.info("Shutting down Session Storage Service...")
         
-        if session_storage:
-            await session_storage.close()
+        try:
+            if session_storage:
+                await session_storage.close()
+            if chunk_store:
+                # ChunkStore cleanup if needed
+                pass
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}", exc_info=True)
         
         logger.info("Session Storage Service stopped")
 
@@ -138,11 +144,15 @@ async def health_check(
         }
         
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.error(f"Health check failed: {e}", exc_info=True)
         return {
             "status": "unhealthy",
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            "services": {
+                "session_storage": {"status": "unknown", "error": "Health check failed"},
+                "chunk_store": {"status": "unknown", "error": "Health check failed"}
+            }
         }
 
 @app.get("/metrics")
@@ -163,8 +173,11 @@ async def get_metrics(
         }
         
     except Exception as e:
-        logger.error(f"Failed to get metrics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to get metrics: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to get metrics: {str(e)}. Check logs for details."
+        )
 
 @app.post("/sessions/{session_id}/chunks")
 async def store_chunk(
@@ -177,10 +190,9 @@ async def store_chunk(
 ):
     """Store a chunk for a session"""
     try:
-        # Create ChunkMetadata object with safe timestamp parsing
+        # Create ChunkMetadata object with safe timestamp parsing (optional import per master design)
         try:
             from ..recorder.session_recorder import ChunkMetadata
-            from datetime import datetime
             
             # Safe timestamp parsing
             timestamp_str = chunk_metadata["timestamp"]
@@ -203,7 +215,10 @@ async def store_chunk(
             )
         except ImportError as e:
             logger.error(f"Failed to import ChunkMetadata: {e}")
-            raise HTTPException(status_code=500, detail="Session recorder module not available")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Session recorder module not available: {str(e)}"
+            )
         
         # Store chunk in chunk store
         success, storage_path, metadata = await chunk_store.store_chunk(
@@ -230,9 +245,14 @@ async def store_chunk(
             "timestamp": datetime.utcnow().isoformat()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to store chunk: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to store chunk for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to store chunk: {str(e)}. Check logs for details."
+        )
 
 @app.get("/sessions/{session_id}/chunks/{chunk_id}")
 async def get_chunk(
@@ -260,8 +280,11 @@ async def get_chunk(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to retrieve chunk: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to retrieve chunk {chunk_id} for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to retrieve chunk: {str(e)}. Check logs for details."
+        )
 
 @app.get("/sessions/{session_id}/chunks")
 async def list_session_chunks(
@@ -286,8 +309,11 @@ async def list_session_chunks(
         }
         
     except Exception as e:
-        logger.error(f"Failed to list session chunks: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to list chunks for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to list session chunks: {str(e)}. Check logs for details."
+        )
 
 @app.delete("/sessions/{session_id}/chunks/{chunk_id}")
 async def delete_chunk(
@@ -312,8 +338,11 @@ async def delete_chunk(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete chunk: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to delete chunk {chunk_id} for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to delete chunk: {str(e)}. Check logs for details."
+        )
 
 @app.delete("/sessions/{session_id}/chunks")
 async def delete_session_chunks(
@@ -331,8 +360,11 @@ async def delete_session_chunks(
         }
         
     except Exception as e:
-        logger.error(f"Failed to delete session chunks: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to delete chunks for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to delete session chunks: {str(e)}. Check logs for details."
+        )
 
 @app.post("/sessions/{session_id}/archive")
 async def archive_session(
@@ -355,8 +387,11 @@ async def archive_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to archive session: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to archive session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to archive session: {str(e)}. Check logs for details."
+        )
 
 @app.post("/sessions/{session_id}/restore")
 async def restore_session(
@@ -379,8 +414,11 @@ async def restore_session(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to restore session: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to restore session {session_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to restore session: {str(e)}. Check logs for details."
+        )
 
 @app.post("/cleanup")
 async def cleanup_storage(
@@ -400,8 +438,11 @@ async def cleanup_storage(
         }
         
     except Exception as e:
-        logger.error(f"Failed to start cleanup: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to start cleanup: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to start cleanup: {str(e)}. Check logs for details."
+        )
 
 # Note: Entrypoint logic moved to entrypoint.py for distroless container compatibility
 # This file is now used as the FastAPI application module only

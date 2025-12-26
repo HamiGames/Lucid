@@ -74,7 +74,7 @@ RUN echo "LUCID_SESSION_STORAGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, aiofiles, zstandard, lz4, cryptography; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, aiofiles, zstd, lz4, cryptography; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -135,11 +135,13 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# Runtime verification of packages (per master-docker-design.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+# Verify critical packages exist \
 assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
 assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
@@ -147,17 +149,29 @@ assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; 
 assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
-assert os.path.exists(os.path.join(site_packages, 'zstandard')), 'zstandard not found'; \
+assert os.path.exists(os.path.join(site_packages, 'zstd')) or os.path.exists(os.path.join(site_packages, 'zstandard')), 'zstandard/zstd not found'; \
 assert os.path.exists(os.path.join(site_packages, 'lz4')), 'lz4 not found'; \
 assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'cryptography not found'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
+# Verify marker file \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-print('Packages verified in runtime stage')"]
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty'; \
+# Actually import packages to verify functionality \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import pymongo; assert pymongo, 'pymongo import failed'; \
+import redis; assert redis, 'redis import failed'; \
+import aiofiles; assert aiofiles, 'aiofiles import failed'; \
+import zstd; assert zstd, 'zstd import failed'; \
+import lz4; assert lz4, 'lz4 import failed'; \
+import cryptography; assert cryptography, 'cryptography import failed'; \
+print('✅ All packages verified in runtime stage')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/storage /app/sessions/storage
-COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/core /app/sessions/core
 COPY --chown=65532:65532 --from=builder /build/recorder /app/sessions/recorder
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
 
@@ -165,8 +179,9 @@ COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init_
 RUN ["/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/sessions/storage'), 'storage directory not found'; \
 assert os.path.exists('/app/sessions/storage/main.py'), 'storage/main.py not found'; \
-assert os.path.exists('/app/core'), 'core directory not found'; \
-assert os.path.exists('/app/sessions/recorder'), 'recorder directory not found'; \
+assert os.path.exists('/app/sessions/storage/entrypoint.py'), 'storage/entrypoint.py not found'; \
+assert os.path.exists('/app/sessions/core'), 'sessions/core directory not found'; \
+assert os.path.exists('/app/sessions/recorder'), 'sessions/recorder directory not found'; \
 assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
 print('✅ All application source files verified')"]
 

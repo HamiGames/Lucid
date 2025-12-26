@@ -185,13 +185,9 @@ class MonitorConfig:
                 except (ValueError, TypeError):
                     logger.warning(f"Invalid RDP_MONITOR_PORT value: {self.settings.RDP_MONITOR_PORT}, using default {self.settings.PORT}")
             
-            # Set integration service URLs from environment if not already set
-            if not self.settings.RDP_SERVER_MANAGER_URL:
-                self.settings.RDP_SERVER_MANAGER_URL = os.getenv('RDP_SERVER_MANAGER_URL', 'http://rdp-server-manager:8081')
-            if not self.settings.RDP_XRDP_URL:
-                self.settings.RDP_XRDP_URL = os.getenv('RDP_XRDP_URL', 'http://rdp-xrdp:3389')
-            if not self.settings.RDP_CONTROLLER_URL:
-                self.settings.RDP_CONTROLLER_URL = os.getenv('RDP_CONTROLLER_URL', 'http://rdp-controller:8092')
+            # Integration service URLs must come from environment variables (no hardcoded defaults)
+            # Pydantic Settings already loaded them from environment, so just validate they're not empty if required
+            # Note: These are optional for rdp-monitor, so empty strings are acceptable
             
             logger.info("Monitor configuration initialized successfully")
             

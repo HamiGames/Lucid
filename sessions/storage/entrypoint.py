@@ -12,6 +12,11 @@ No hardcoded values - all configuration from environment variables.
 import os
 import sys
 
+# Ensure site-packages is in Python path (per master-docker-design.md)
+site_packages = '/usr/local/lib/python3.11/site-packages'
+if site_packages not in sys.path:
+    sys.path.insert(0, site_packages)
+
 if __name__ == "__main__":
     # Get configuration from environment variables (from docker-compose)
     # SESSION_STORAGE_HOST is service name, but bind address must be 0.0.0.0
@@ -25,6 +30,11 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Import uvicorn and start the application
-    import uvicorn
+    try:
+        import uvicorn
+    except ImportError as e:
+        print(f"ERROR: Failed to import uvicorn: {e}", file=sys.stderr)
+        sys.exit(1)
+    
     uvicorn.run('sessions.storage.main:app', host=host, port=port)
 
