@@ -335,8 +335,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.data-chain
     networks:
-      lucid-pi-network:
-        ipv4_address: ${DATA_CHAIN_IP:-172.20.0.18}
+      - lucid-pi-network
     ports:
       - "${DATA_CHAIN_PORT:-8087}:${DATA_CHAIN_PORT:-8087}"
     volumes:

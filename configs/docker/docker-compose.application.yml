@@ -146,7 +146,7 @@ services:
       - SESSION_PIPELINE_URL=http://session-pipeline:8083
       - SESSION_RECORDER_URL=http://session-recorder:8090
       - SESSION_STORAGE_URL=http://session-storage:8082
-      - SESSION_API_URL=http://session-api:8087
+      - SESSION_API_URL=http://session-api:8113
       - LUCID_COMPRESSION_PATH=/app/data/compression
       - LUCID_MANIFEST_PATH=/app/data/manifests
     user: "65532:65532"
@@ -257,7 +257,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "8087:8087"
+      - "8113:8113"
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs:rw
       - session-api-cache:/tmp/api
@@ -265,8 +265,8 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - SESSION_API_HOST=session-api
-      - SESSION_API_PORT=8087
-      - SESSION_API_URL=http://session-api:8087
+      - SESSION_API_PORT=8113
+      - SESSION_API_URL=http://session-api:8113
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
@@ -284,7 +284,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8087)); s.close(); exit(0 if result == 0 else 1)"]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8113)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3

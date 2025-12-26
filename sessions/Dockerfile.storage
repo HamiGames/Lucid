@@ -90,13 +90,15 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_
 COPY sessions/storage/ ./storage/
 COPY sessions/core/ ./core/
 COPY sessions/recorder/ ./recorder/
+COPY sessions/encryption/ ./encryption/
 COPY sessions/__init__.py ./__init__.py
 
 # Create source marker files (per Dockerfile-copy-pattern.md - ensures directories have content)
 RUN echo "LUCID_SESSION_STORAGE_SOURCE_INSTALLED_$(date +%s)" > ./storage/.lucid-source-marker && \
     echo "LUCID_SESSION_STORAGE_CORE_SOURCE_INSTALLED_$(date +%s)" > ./core/.lucid-source-marker && \
     echo "LUCID_SESSION_STORAGE_RECORDER_SOURCE_INSTALLED_$(date +%s)" > ./recorder/.lucid-source-marker && \
-    chown -R 65532:65532 ./storage ./core ./recorder ./__init__.py
+    echo "LUCID_SESSION_STORAGE_ENCRYPTION_SOURCE_INSTALLED_$(date +%s)" > ./encryption/.lucid-source-marker && \
+    chown -R 65532:65532 ./storage ./core ./recorder ./encryption ./__init__.py
 
 # Verify source files and markers in builder stage (per Dockerfile-copy-pattern.md)
 RUN test -d ./storage && \
@@ -108,6 +110,9 @@ RUN test -d ./storage && \
     test -d ./recorder && \
     test -f ./recorder/.lucid-source-marker && \
     test -s ./recorder/.lucid-source-marker && \
+    test -d ./encryption && \
+    test -f ./encryption/.lucid-source-marker && \
+    test -s ./encryption/.lucid-source-marker && \
     test -f ./__init__.py && \
     test -f ./storage/main.py && \
     test -f ./storage/entrypoint.py && \
@@ -197,6 +202,7 @@ print('✅ All packages verified in runtime stage')"]
 COPY --chown=65532:65532 --from=builder /build/storage /app/sessions/storage
 COPY --chown=65532:65532 --from=builder /build/core /app/sessions/core
 COPY --chown=65532:65532 --from=builder /build/recorder /app/sessions/recorder
+COPY --chown=65532:65532 --from=builder /build/encryption /app/sessions/encryption
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
 
 # Verify application source files were copied (prevents silent COPY failures per Dockerfile-copy-pattern.md)
@@ -205,20 +211,25 @@ RUN ["/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/sessions/storage'), 'storage directory not found'; \
 assert os.path.exists('/app/sessions/core'), 'sessions/core directory not found'; \
 assert os.path.exists('/app/sessions/recorder'), 'sessions/recorder directory not found'; \
+assert os.path.exists('/app/sessions/encryption'), 'sessions/encryption directory not found'; \
 assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
 # Verify critical source files exist \
 assert os.path.exists('/app/sessions/storage/main.py'), 'storage/main.py not found'; \
 assert os.path.exists('/app/sessions/storage/entrypoint.py'), 'storage/entrypoint.py not found'; \
+assert os.path.exists('/app/sessions/encryption/encryptor.py'), 'encryption/encryptor.py not found'; \
 # Verify source marker files exist and are non-empty (per Dockerfile-copy-pattern.md) \
 storage_marker = '/app/sessions/storage/.lucid-source-marker'; \
 core_marker = '/app/sessions/core/.lucid-source-marker'; \
 recorder_marker = '/app/sessions/recorder/.lucid-source-marker'; \
+encryption_marker = '/app/sessions/encryption/.lucid-source-marker'; \
 assert os.path.exists(storage_marker), 'storage marker file not found'; \
 assert os.path.getsize(storage_marker) > 0, 'storage marker file is empty'; \
 assert os.path.exists(core_marker), 'core marker file not found'; \
 assert os.path.getsize(core_marker) > 0, 'core marker file is empty'; \
 assert os.path.exists(recorder_marker), 'recorder marker file not found'; \
 assert os.path.getsize(recorder_marker) > 0, 'recorder marker file is empty'; \
+assert os.path.exists(encryption_marker), 'encryption marker file not found'; \
+assert os.path.getsize(encryption_marker) > 0, 'encryption marker file is empty'; \
 print('✅ All application source files and markers verified')"]
 
 EXPOSE 8082
