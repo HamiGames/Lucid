@@ -2,69 +2,102 @@
 # Optional YAML configuration for RDP resource monitoring service
 # File: RDP/resource-monitor/config.yaml
 # Purpose: Configuration for resource monitoring, metrics collection, and alerting
-# NOTE: All service URLs, ports, and database connections must be provided via
-# environment variables from docker-compose.application.yml
+# This file uses a flat structure to match MonitorSettings Pydantic model
+# Environment variables from docker-compose.application.yml override these values
+# Values with empty strings MUST be provided via environment variables
+# NOTE: This file is replaced by RDP/config/monitor-config.yaml during Docker build
 
-# Service Configuration
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
 SERVICE_NAME: "lucid-rdp-monitor"
 SERVICE_VERSION: "1.0.0"
 DEBUG: false
-LOG_LEVEL: "INFO"  # Override with LOG_LEVEL env var
-HOST: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-# Network configuration from environment:
-# - RDP_MONITOR_HOST (default: rdp-monitor)
-# - RDP_MONITOR_PORT (default: 8093)
-# - RDP_MONITOR_URL (default: http://rdp-monitor:8093)
-PORT: 8093  # Override with RDP_MONITOR_PORT env var
+LOG_LEVEL: "INFO"
+HOST: "0.0.0.0"
+PORT: 8093
 
-# Database Configuration (optional for rdp-monitor)
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL (optional, from .env.secrets)
-# - REDIS_URL (optional, from .env.core or .env.secrets)
-MONGODB_URL: ""  # Set via MONGODB_URL env var (optional)
-REDIS_URL: ""    # Set via REDIS_URL env var (optional)
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_MONITOR_HOST: ""
+RDP_MONITOR_PORT: ""
+RDP_MONITOR_URL: ""
 
-# Storage Configuration
-# NOTE: Storage paths come from volumes mounted in docker-compose.application.yml
-LOG_STORAGE_PATH: "/app/logs"  # Volume: /logs/rdp-monitor:/app/logs:rw
-TEMP_STORAGE_PATH: "/tmp/monitor"  # tmpfs mount: /tmp:size=100m
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MUST come from .env.secrets via docker-compose.application.yml
+MONGODB_URL: ""
+REDIS_URL: ""
 
-# Monitoring Configuration
-MONITORING_INTERVAL: 30  # seconds - interval for collecting metrics
-COLLECTION_INTERVAL: 30  # seconds - interval for metrics collection
-METRICS_HISTORY_LIMIT: 100  # Maximum number of metrics per session to keep in memory
-METRICS_CLEANUP_HOURS: 24  # Hours of metrics history to keep
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+# Default paths matching volume mounts in docker-compose.application.yml
+LOG_STORAGE_PATH: "/app/logs"
+TEMP_STORAGE_PATH: "/tmp/monitor"
 
-# Alert Thresholds Configuration
-CPU_THRESHOLD_PERCENT: 80.0  # CPU usage alert threshold
-MEMORY_THRESHOLD_PERCENT: 80.0  # Memory usage alert threshold
-DISK_THRESHOLD_PERCENT: 90.0  # Disk usage alert threshold
-NETWORK_BANDWIDTH_THRESHOLD_MB: 1000.0  # Network bandwidth alert threshold (MB/s)
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+MONITORING_INTERVAL: 30
+COLLECTION_INTERVAL: 30
+METRICS_HISTORY_LIMIT: 100
+METRICS_CLEANUP_HOURS: 24
 
-# Metrics Configuration
+# =============================================================================
+# ALERT THRESHOLDS CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+CPU_THRESHOLD_PERCENT: 80.0
+MEMORY_THRESHOLD_PERCENT: 80.0
+DISK_THRESHOLD_PERCENT: 90.0
+NETWORK_BANDWIDTH_THRESHOLD_MB: 1000.0
+
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+# Default values
 METRICS_ENABLED: true
 PROMETHEUS_ENABLED: true
 EXPORT_METRICS_ENDPOINT: true
 
-# Performance Configuration
-MAX_CONCURRENT_SESSIONS: 100  # Maximum number of sessions to monitor concurrently
-SESSION_METRICS_CACHE_SIZE: 1000  # Maximum cached metrics per session
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+MAX_CONCURRENT_SESSIONS: 100
+SESSION_METRICS_CACHE_SIZE: 1000
 
-# Health Check Configuration
-HEALTH_CHECK_INTERVAL: 30  # seconds
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Default values
+HEALTH_CHECK_INTERVAL: 30
 HEALTH_CHECK_ENABLED: true
 
-# Integration Service URLs (from .env.application, .env.core)
-# NOTE: Service URLs MUST come from environment variables or docker-compose:
-RDP_SERVER_MANAGER_URL: ""  # Set via RDP_SERVER_MANAGER_URL env var (http://rdp-server-manager:8081)
-RDP_XRDP_URL: ""  # Set via RDP_XRDP_URL env var (http://rdp-xrdp:3389)
-RDP_CONTROLLER_URL: ""  # Set via RDP_CONTROLLER_URL env var (http://rdp-controller:8092)
+# =============================================================================
+# INTEGRATION SERVICE URLS
+# =============================================================================
+# MUST come from docker-compose.application.yml environment section
+RDP_SERVER_MANAGER_URL: ""
+RDP_XRDP_URL: ""
+RDP_CONTROLLER_URL: ""
 
-# Integration Service Timeout Configuration (from .env.application)
-SERVICE_TIMEOUT_SECONDS: 30  # Default timeout for service calls
-SERVICE_RETRY_COUNT: 3  # Default retry count for service calls
-SERVICE_RETRY_DELAY_SECONDS: 1.0  # Default delay between retries
+# =============================================================================
+# INTEGRATION SERVICE TIMEOUT CONFIGURATION
+# =============================================================================
+# Default values - can be overridden by environment variables
+SERVICE_TIMEOUT_SECONDS: 30
+SERVICE_RETRY_COUNT: 3
+SERVICE_RETRY_DELAY_SECONDS: 1.0
 
-# CORS Configuration (from .env.application)
-CORS_ORIGINS: "*"  # From environment: CORS_ORIGINS (comma-separated list, default: "*")
-
+# =============================================================================
+# CORS CONFIGURATION
+# =============================================================================
+# Default value - can be overridden by environment variables
+CORS_ORIGINS: "*"
