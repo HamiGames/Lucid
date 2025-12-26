@@ -49,5 +49,20 @@ if __name__ == "__main__":
                 print(f"ERROR: Could not list site packages: {list_err}", file=sys.stderr)
         sys.exit(1)
     
-    uvicorn.run('resource_monitor.main:app', host=host, port=port)
+    # Import the app directly to ensure sys.path is respected
+    try:
+        from resource_monitor.main import app
+    except ImportError as e:
+        print(f"ERROR: Failed to import resource_monitor.main: {e}", file=sys.stderr)
+        print(f"ERROR: Python path: {sys.path}", file=sys.stderr)
+        print(f"ERROR: App path exists: {os.path.exists(app_path)}", file=sys.stderr)
+        if os.path.exists(app_path):
+            try:
+                contents = os.listdir(app_path)
+                print(f"ERROR: App directory contents: {contents}", file=sys.stderr)
+            except Exception as list_err:
+                print(f"ERROR: Could not list app directory: {list_err}", file=sys.stderr)
+        sys.exit(1)
+    
+    uvicorn.run(app, host=host, port=port)
 
