@@ -24,6 +24,9 @@ lz4>=4.3.2
 zstandard>=0.21.0
 zstd>=1.5.5  # Required by storage modules for direct zstd.compress/decompress API
 
+# Hashing
+blake3>=0.3.3  # Required by core/merkle_builder.py for BLAKE3 hashing
+
 # Monitoring
 prometheus-client>=0.19.0
 structlog>=23.2.0
