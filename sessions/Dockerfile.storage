@@ -74,7 +74,7 @@ RUN echo "LUCID_SESSION_STORAGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, aiofiles, zstd, lz4, cryptography; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_timeout, aiofiles, zstd, lz4, cryptography; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -169,6 +169,7 @@ assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not fo
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
 assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
 # Note: zstd package may not create a directory, so we verify via import only \
 assert os.path.exists(os.path.join(site_packages, 'lz4')), 'lz4 not found'; \
@@ -183,6 +184,7 @@ import fastapi; assert fastapi, 'fastapi import failed'; \
 import pydantic; assert pydantic, 'pydantic import failed'; \
 import motor; assert motor, 'motor import failed'; \
 import pymongo; assert pymongo, 'pymongo import failed'; \
+import async_timeout; assert async_timeout, 'async_timeout import failed'; \
 import redis; assert redis, 'redis import failed'; \
 import aiofiles; assert aiofiles, 'aiofiles import failed'; \
 import zstd; assert zstd, 'zstd import failed'; \
