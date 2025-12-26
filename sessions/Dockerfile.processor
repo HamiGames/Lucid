@@ -205,6 +205,7 @@ COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init_
 RUN ["/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/sessions/processor'), 'processor directory not found'; \
 assert os.path.exists('/app/sessions/processor/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/sessions/processor/entrypoint.py'), 'entrypoint.py not found'; \
 assert os.path.exists('/app/core'), 'core directory not found'; \
 assert os.path.exists('/app/sessions/pipeline/__init__.py'), 'pipeline/__init__.py not found'; \
 assert os.path.exists('/app/sessions/pipeline/integration'), 'pipeline/integration directory not found'; \
@@ -221,4 +222,4 @@ USER 65532:65532
 # Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
 
-CMD ["/usr/bin/python3.11", "-m", "sessions.processor.main"]
+CMD ["/usr/bin/python3.11", "/app/sessions/processor/entrypoint.py"]

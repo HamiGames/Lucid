@@ -12,8 +12,13 @@ No hardcoded values - all configuration from environment variables.
 import os
 import sys
 
-# Ensure site-packages is in Python path (defensive programming)
+# Ensure site-packages and app directory are in Python path (defensive programming)
 site_packages = '/usr/local/lib/python3.11/site-packages'
+app_path = '/app'
+
+# Add to sys.path if not already present (order matters - app_path first so our modules take precedence)
+if app_path not in sys.path:
+    sys.path.insert(0, app_path)
 if site_packages not in sys.path:
     sys.path.insert(0, site_packages)
 

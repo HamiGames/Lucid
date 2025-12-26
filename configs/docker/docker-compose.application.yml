@@ -139,6 +139,14 @@ services:
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      - API_GATEWAY_URL=${API_GATEWAY_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+      - NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - SESSION_PIPELINE_URL=http://session-pipeline:8083
+      - SESSION_RECORDER_URL=http://session-recorder:8090
+      - SESSION_STORAGE_URL=http://session-storage:8082
+      - SESSION_API_URL=http://session-api:8087
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -149,7 +157,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8091)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
