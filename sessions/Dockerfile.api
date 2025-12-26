@@ -139,6 +139,10 @@ COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 RUN ["/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/api'), 'api directory not found'; \
 assert os.path.exists('/app/api/main.py'), 'api/main.py not found'; \
+assert os.path.exists('/app/api/config.yaml'), 'api/config.yaml not found'; \
+assert os.path.exists('/app/api/openapi.yaml'), 'api/openapi.yaml not found'; \
+assert os.path.exists('/app/api/metrics-schema.json'), 'api/metrics-schema.json not found'; \
+assert os.path.exists('/app/api/health-schema.json'), 'api/health-schema.json not found'; \
 assert os.path.exists('/app/core'), 'core directory not found'; \
 assert os.path.exists('/app/__init__.py'), '__init__.py not found'; \
 print('✅ All application source files verified')"]

@@ -86,7 +86,7 @@ class SessionAPISettings(BaseSettings):
         return v
     
     class Config:
-        env_file = ['.env.application', '.env.core', '.env.secrets', '.env.foundation']
+        env_file = ['.env.application', '.env.core', '.env.secrets', '.env.foundation', '.env.session-api']
         case_sensitive = True
         extra = 'ignore'
 

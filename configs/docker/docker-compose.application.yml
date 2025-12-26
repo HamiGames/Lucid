@@ -186,6 +186,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-storage
     networks:
       - lucid-pi-network
     ports:
@@ -194,6 +195,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/data/session-storage:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs:rw
       - session-storage-cache:/tmp/storage
+      # Optional: Mount external config file (YAML or JSON)
+      # Uncomment to use external config file instead of baked-in config.yaml
+      # - /mnt/myssd/Lucid/Lucid/configs/session-storage/config.yaml:/app/sessions/storage/config.yaml:ro
+      # Or use JSON:
+      # - /mnt/myssd/Lucid/Lucid/configs/session-storage/config.json:/app/sessions/storage/config.json:ro
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -203,6 +209,11 @@ services:
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      # Optional: Specify external config file path (YAML or JSON)
+      # Uncomment and set path if using external config file mount
+      # - SESSION_STORAGE_CONFIG_FILE=/app/sessions/storage/config.yaml
+      # Or for JSON:
+      # - SESSION_STORAGE_CONFIG_FILE=/app/sessions/storage/config.json
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -242,6 +253,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-api
     networks:
       - lucid-pi-network
     ports:

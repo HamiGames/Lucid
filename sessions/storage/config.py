@@ -5,6 +5,7 @@ Configuration management for session storage service
 """
 
 import os
+import json
 from typing import Dict, Any, Optional
 from pathlib import Path
 from pydantic import field_validator
@@ -73,6 +74,9 @@ class StorageSettings(BaseSettings):
     
     # CORS Configuration (from .env.application)
     CORS_ORIGINS: str = "*"  # From environment: CORS_ORIGINS (comma-separated list, default: "*")
+    
+    # Configuration File Path (optional - for external config file support)
+    SESSION_STORAGE_CONFIG_FILE: str = ""  # Path to YAML/JSON config file (optional)
     
     @field_validator('LUCID_CHUNK_SIZE_MB')
     @classmethod
@@ -149,12 +153,19 @@ class StorageConfig:
         Initialize StorageConfig.
         
         Args:
-            settings: Optional StorageSettings instance. If not provided, will load from YAML and environment variables.
-            config_file: Optional path to YAML configuration file. Only used if settings is None.
+            settings: Optional StorageSettings instance. If not provided, will load from YAML/JSON and environment variables.
+            config_file: Optional path to YAML/JSON configuration file. Only used if settings is None.
+                       If not provided, will check SESSION_STORAGE_CONFIG_FILE environment variable.
         """
         try:
             if settings is None:
-                # Load configuration from YAML and environment variables
+                # Determine config file path: explicit parameter > env var > default locations
+                if config_file is None:
+                    config_file = os.getenv('SESSION_STORAGE_CONFIG_FILE', '')
+                    if not config_file:
+                        config_file = None
+                
+                # Load configuration from YAML/JSON and environment variables
                 self.settings = load_config(config_file)
             else:
                 self.settings = settings
@@ -256,130 +267,225 @@ class StorageConfig:
 
 def load_config(config_file: Optional[str] = None) -> StorageSettings:
     """
-    Load configuration from YAML file and environment variables.
+    Load configuration from YAML/JSON file and environment variables.
     
     Configuration loading priority (highest to lowest):
     1. Environment variables (highest priority - override everything)
-    2. YAML configuration file values
+    2. YAML/JSON configuration file values
     3. Pydantic field defaults (lowest priority)
     
+    Supports both YAML (.yaml, .yml) and JSON (.json) configuration files.
+    
     Args:
-        config_file: Optional path to YAML configuration file. If not provided,
-                     will look for 'config.yaml' in the storage directory.
+        config_file: Optional path to YAML/JSON configuration file. If not provided,
+                     will check SESSION_STORAGE_CONFIG_FILE env var, then look for
+                     'config.yaml' or 'config.json' in default locations.
         
     Returns:
-        Loaded StorageSettings object with environment variables overriding YAML values
+        Loaded StorageSettings object with environment variables overriding file values
         
     Raises:
         FileNotFoundError: If config_file is provided but doesn't exist
-        ValueError: If configuration validation fails
-        ImportError: If PyYAML is not available (should not happen if requirements are installed)
+        ValueError: If configuration validation fails or file format is invalid
+        ImportError: If PyYAML is not available for YAML files (JSON always available)
     """
     try:
-        yaml_data: Dict[str, Any] = {}
-        yaml_file_path: Optional[Path] = None
+        config_data: Dict[str, Any] = {}
+        config_file_path: Optional[Path] = None
+        config_format: Optional[str] = None  # 'yaml', 'json', or None
         
-        # Determine YAML file path
+        # Determine config file path
         if config_file:
-            yaml_file_path = Path(config_file)
-        else:
-            # Try default locations
-            default_locations = [
-                Path(__file__).parent / "config.yaml",  # Same directory as config.py
-                Path(__file__).parent.parent / "storage" / "config.yaml",  # Alternative path
-            ]
-            for loc in default_locations:
-                if loc.exists():
-                    yaml_file_path = loc
-                    break
-        
-        # Load YAML file if it exists
-        if yaml_file_path and yaml_file_path.exists():
-            if not YAML_AVAILABLE:
-                logger.warning(f"PyYAML not available, skipping YAML file {yaml_file_path}")
+            config_file_path = Path(config_file)
+            # Detect format from extension
+            if config_file_path.suffix.lower() in ['.yaml', '.yml']:
+                config_format = 'yaml'
+            elif config_file_path.suffix.lower() == '.json':
+                config_format = 'json'
             else:
-                try:
-                    with open(yaml_file_path, 'r', encoding='utf-8') as f:
-                        yaml_data = yaml.safe_load(f) or {}
-                    logger.info(f"Loaded YAML configuration from {yaml_file_path}")
-                    
-                    # Filter out empty string values from YAML (they should come from env vars)
-                    # Empty strings in YAML indicate "use environment variable", so we remove them
-                    # and let Pydantic Settings load them from environment variables instead
-                    yaml_data = {k: v for k, v in yaml_data.items() if v != ""}
-                    
-                except Exception as e:
-                    logger.warning(f"Failed to load YAML configuration from {yaml_file_path}: {str(e)}")
-                    logger.warning("Continuing with environment variables and defaults only")
-                    yaml_data = {}
-        elif config_file:
-            # User specified a file but it doesn't exist - this is an error
-            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+                # Try to detect from content or default to YAML
+                config_format = 'yaml'
         else:
-            logger.debug("No YAML configuration file found, using environment variables and defaults only")
+            # Check environment variable first
+            env_config_file = os.getenv('SESSION_STORAGE_CONFIG_FILE', '')
+            if env_config_file:
+                config_file_path = Path(env_config_file)
+                if config_file_path.suffix.lower() in ['.yaml', '.yml']:
+                    config_format = 'yaml'
+                elif config_file_path.suffix.lower() == '.json':
+                    config_format = 'json'
+                else:
+                    config_format = 'yaml'  # Default to YAML
+            else:
+                # Try default locations (YAML first, then JSON)
+                default_locations = [
+                    (Path(__file__).parent / "config.yaml", 'yaml'),
+                    (Path(__file__).parent / "config.json", 'json'),
+                    (Path(__file__).parent.parent / "storage" / "config.yaml", 'yaml'),
+                    (Path(__file__).parent.parent / "storage" / "config.json", 'json'),
+                ]
+                for loc, fmt in default_locations:
+                    if loc.exists():
+                        config_file_path = loc
+                        config_format = fmt
+                        break
+        
+        # Load config file if it exists
+        if config_file_path and config_file_path.exists():
+            try:
+                if config_format == 'json':
+                    # Load JSON file
+                    with open(config_file_path, 'r', encoding='utf-8') as f:
+                        config_data = json.load(f) or {}
+                    logger.info(f"Loaded JSON configuration from {config_file_path}")
+                elif config_format == 'yaml':
+                    # Load YAML file
+                    if not YAML_AVAILABLE:
+                        logger.warning(f"PyYAML not available, cannot load YAML file {config_file_path}")
+                        logger.warning("Falling back to environment variables and defaults only")
+                        config_data = {}
+                    else:
+                        with open(config_file_path, 'r', encoding='utf-8') as f:
+                            config_data = yaml.safe_load(f) or {}
+                        logger.info(f"Loaded YAML configuration from {config_file_path}")
+                else:
+                    # Try to auto-detect format
+                    if config_file_path.suffix.lower() in ['.yaml', '.yml']:
+                        if YAML_AVAILABLE:
+                            with open(config_file_path, 'r', encoding='utf-8') as f:
+                                config_data = yaml.safe_load(f) or {}
+                            logger.info(f"Loaded YAML configuration from {config_file_path} (auto-detected)")
+                        else:
+                            logger.warning(f"PyYAML not available, cannot load YAML file {config_file_path}")
+                            config_data = {}
+                    elif config_file_path.suffix.lower() == '.json':
+                        with open(config_file_path, 'r', encoding='utf-8') as f:
+                            config_data = json.load(f) or {}
+                        logger.info(f"Loaded JSON configuration from {config_file_path} (auto-detected)")
+                    else:
+                        logger.warning(f"Unknown config file format: {config_file_path.suffix}")
+                        config_data = {}
+                
+                # Filter out empty string values (they should come from env vars)
+                # Empty strings in config files indicate "use environment variable"
+                config_data = {k: v for k, v in config_data.items() if v != ""}
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON in configuration file {config_file_path}: {str(e)}")
+                logger.error("JSON syntax error - check file format. Continuing with environment variables and defaults only")
+                config_data = {}
+            except yaml.YAMLError as e:
+                logger.error(f"Invalid YAML in configuration file {config_file_path}: {str(e)}")
+                logger.error("YAML syntax error - check file format. Continuing with environment variables and defaults only")
+                config_data = {}
+            except Exception as e:
+                logger.error(f"Failed to load configuration file {config_file_path}: {str(e)}")
+                logger.error("Continuing with environment variables and defaults only")
+                config_data = {}
+        elif config_file or os.getenv('SESSION_STORAGE_CONFIG_FILE'):
+            # User specified a file but it doesn't exist - this is an error
+            specified_file = config_file or os.getenv('SESSION_STORAGE_CONFIG_FILE')
+            raise FileNotFoundError(
+                f"Configuration file not found: {specified_file}. "
+                f"Please check the path or remove SESSION_STORAGE_CONFIG_FILE environment variable."
+            )
+        else:
+            logger.debug("No configuration file found, using environment variables and defaults only")
         
         # Create configuration object
-        # Priority: Environment variables (highest) > YAML values > Field defaults (lowest)
-        # Strategy: Create config from YAML, then override with environment variables
+        # Priority: Environment variables (highest) > File values (YAML/JSON) > Field defaults (lowest)
+        # Strategy: Create config from file data, then override with environment variables
         
-        if yaml_data:
+        if config_data:
             try:
-                # Step 1: Create config from YAML data (YAML provides defaults)
-                config = StorageSettings.model_validate(yaml_data)
+                # Step 1: Create config from file data (file provides defaults)
+                config = StorageSettings.model_validate(config_data)
                 
                 # Step 2: Create config normally to get environment variable values
                 env_config = StorageSettings()
                 
-                # Step 3: Override YAML config with environment variable values
+                # Step 3: Override file config with environment variable values
                 # Environment variables take highest priority
                 env_dict = env_config.model_dump()
-                yaml_dict = config.model_dump()
+                file_dict = config.model_dump()
                 
-                # For each field, if env_config value differs from yaml_config value,
+                # For each field, if env_config value differs from file_config value,
                 # use the env value (environment variable was set)
                 for key in env_dict.keys():
                     env_value = env_dict[key]
-                    yaml_value = yaml_dict.get(key)
+                    file_value = file_dict.get(key)
                     
                     # If values differ, environment variable was set - use it
-                    if env_value != yaml_value:
+                    if env_value != file_value:
                         try:
                             setattr(config, key, env_value)
                         except Exception as e:
                             logger.debug(f"Could not override {key} with environment variable: {str(e)}")
                 
+                file_type = config_format.upper() if config_format else 'CONFIG'
+                logger.info(f"Configuration loaded from {file_type} file with environment variable overrides")
+                
             except Exception as e:
-                logger.warning(f"Error merging YAML with environment variables: {str(e)}")
-                logger.warning("Falling back to environment variables and defaults only")
+                file_type = config_format or 'config'
+                logger.error(f"Error merging {file_type} file with environment variables: {str(e)}")
+                logger.error("Configuration file validation failed. Falling back to environment variables and defaults only")
+                logger.debug(f"Validation error details: {str(e)}", exc_info=True)
                 config = StorageSettings()
         else:
             # Load from environment variables and defaults only
             config = StorageSettings()
+            logger.info("Configuration loaded from environment variables and defaults only")
         
-        logger.info("Configuration loaded successfully")
+        # Validate final configuration
+        try:
+            # Additional validation beyond Pydantic validators
+            if config.LUCID_STORAGE_PATH and not config.LUCID_STORAGE_PATH.startswith('/'):
+                logger.warning(f"LUCID_STORAGE_PATH should be absolute path, got: {config.LUCID_STORAGE_PATH}")
+            if config.LUCID_CHUNK_STORE_PATH and not config.LUCID_CHUNK_STORE_PATH.startswith('/'):
+                logger.warning(f"LUCID_CHUNK_STORE_PATH should be absolute path, got: {config.LUCID_CHUNK_STORE_PATH}")
+        except Exception as e:
+            logger.debug(f"Additional validation check failed (non-critical): {str(e)}")
+        
+        logger.info("Configuration loaded and validated successfully")
         return config
         
     except FileNotFoundError:
-        # Re-raise file not found errors
+        # Re-raise file not found errors with helpful message
         raise
+    except ValueError as e:
+        # Re-raise validation errors with context
+        logger.error(f"Configuration validation failed: {str(e)}")
+        logger.error("Please check your configuration file format and values")
+        raise ValueError(f"Configuration validation failed: {str(e)}") from e
     except Exception as e:
         logger.error(f"Failed to load configuration: {str(e)}")
+        logger.error("This may indicate a problem with the configuration file or environment variables")
         raise
 
 
 def create_default_config_file(config_path: str = "config.yaml"):
     """
-    Create a default configuration file.
+    Create a default configuration file in YAML or JSON format.
     
     Args:
-        config_path: Path to create the configuration file
+        config_path: Path to create the configuration file (supports .yaml, .yml, or .json extension)
         
     Raises:
-        ImportError: If PyYAML is not available
+        ImportError: If PyYAML is not available for YAML files
         IOError: If file cannot be written
+        ValueError: If file extension is not supported
     """
-    if not YAML_AVAILABLE:
-        raise ImportError("PyYAML is required to create configuration files. Install it with: pip install PyYAML")
+    config_file_path = Path(config_path)
+    file_extension = config_file_path.suffix.lower()
+    
+    if file_extension in ['.yaml', '.yml']:
+        if not YAML_AVAILABLE:
+            raise ImportError("PyYAML is required to create YAML configuration files. Install it with: pip install PyYAML")
+    elif file_extension == '.json':
+        # JSON is always available (built-in)
+        pass
+    else:
+        raise ValueError(f"Unsupported configuration file format: {file_extension}. Use .yaml, .yml, or .json")
     
     default_config = {
         "SERVICE_NAME": "lucid-session-storage",
@@ -414,13 +520,16 @@ def create_default_config_file(config_path: str = "config.yaml"):
     }
     
     try:
-        config_file_path = Path(config_path)
         config_file_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(config_file_path, 'w', encoding='utf-8') as f:
-            yaml.dump(default_config, f, default_flow_style=False, sort_keys=False)
-        
-        logger.info(f"Created default configuration file: {config_path}")
+        if file_extension in ['.yaml', '.yml']:
+            with open(config_file_path, 'w', encoding='utf-8') as f:
+                yaml.dump(default_config, f, default_flow_style=False, sort_keys=False)
+            logger.info(f"Created default YAML configuration file: {config_path}")
+        elif file_extension == '.json':
+            with open(config_file_path, 'w', encoding='utf-8') as f:
+                json.dump(default_config, f, indent=2, sort_keys=False)
+            logger.info(f"Created default JSON configuration file: {config_path}")
         
     except Exception as e:
         logger.error(f"Failed to create configuration file: {str(e)}")
