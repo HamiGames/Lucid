@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1.5
-
 # LUCID SESSION STORAGE - Distroless Container
 # Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md, block-manager-design.md
 # Session Storage service (lucid-session-storage) - Port 8082
@@ -74,7 +73,7 @@ RUN echo "LUCID_SESSION_STORAGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_timeout, aiofiles, zstd, lz4, cryptography, blake3; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, aiofiles, zstd, lz4, cryptography, blake3; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -187,6 +186,7 @@ assert os.path.getsize(marker_path) > 0, 'marker file is empty'; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import fastapi; assert fastapi, 'fastapi import failed'; \
 import pydantic; assert pydantic, 'pydantic import failed'; \
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import motor; assert motor, 'motor import failed'; \
 import pymongo; assert pymongo, 'pymongo import failed'; \
 import async_timeout; assert async_timeout, 'async_timeout import failed'; \
