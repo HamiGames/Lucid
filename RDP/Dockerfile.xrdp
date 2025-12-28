@@ -112,10 +112,7 @@ RUN test -d ./xrdp && \
 ############################
 # Stage 2 – Runtime
 ############################
-# Allow overriding the runtime base image to avoid registry/DNS issues.
-# Default uses the Kubernetes mirror for distroless python3 (identical bits).
-ARG RUNTIME_BASE=gcr.k8s.io/distroless/python3-debian12:latest
-FROM ${RUNTIME_BASE}
+FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
