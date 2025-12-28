@@ -102,7 +102,18 @@ class SessionStorage:
                 f"Storage base path would be: {self.base_path}"
             )
         # Create base_path if it doesn't exist (parent already exists from volume mount)
-        self.base_path.mkdir(exist_ok=True)
+        # Handle permission errors gracefully (user 65532:65532 needs write access)
+        try:
+            self.base_path.mkdir(exist_ok=True)
+        except PermissionError as e:
+            raise PermissionError(
+                f"Permission denied creating directory: {self.base_path}. "
+                f"The container runs as user 65532:65532 and needs write access to the volume mount. "
+                f"On the host, ensure the directory has correct permissions: "
+                f"sudo chown -R 65532:65532 /mnt/myssd/Lucid/Lucid/data/session-api && "
+                f"sudo chmod -R 755 /mnt/myssd/Lucid/Lucid/data/session-api. "
+                f"Original error: {e}"
+            )
         
         # MongoDB connection
         self.mongo_client = MongoClient(mongo_url)
@@ -130,7 +141,17 @@ class SessionStorage:
         ]
         
         for directory in directories:
-            (self.base_path / directory).mkdir(exist_ok=True)
+            try:
+                (self.base_path / directory).mkdir(exist_ok=True)
+            except PermissionError as e:
+                raise PermissionError(
+                    f"Permission denied creating directory: {self.base_path / directory}. "
+                    f"The container runs as user 65532:65532 and needs write access to the volume mount. "
+                    f"On the host, ensure the directory has correct permissions: "
+                    f"sudo chown -R 65532:65532 /mnt/myssd/Lucid/Lucid/data/session-api && "
+                    f"sudo chmod -R 755 /mnt/myssd/Lucid/Lucid/data/session-api. "
+                    f"Original error: {e}"
+                )
         
         # Create indexes
         self._create_indexes()

@@ -34,9 +34,10 @@ from .models import (
     PoOTProof, NodeMetrics, PoolMetrics
 )
 
-# Configure logging
+# Configure logging (structured logging per master design)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -219,14 +220,18 @@ async def periodic_pool_health_check():
 
 # API Endpoints
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"service": "node-management", "status": "running"}
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
         "service": "node-management",
-        "version": "1.0.0"
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 @app.get("/metrics")
