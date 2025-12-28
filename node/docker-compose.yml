@@ -4,8 +4,8 @@
 services:
   node-management:
     build:
-      context: .
-      dockerfile: Dockerfile.node-management
+      context: ..
+      dockerfile: node/Dockerfile.node-management
       target: distroless
       platforms:
         - linux/arm64

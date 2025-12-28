@@ -21,6 +21,7 @@ pydantic-settings==2.1.0
 # Database and caching
 motor==3.3.2
 redis==5.0.1
+async-timeout>=4.0.0
 
 # Security and cryptography
 cryptography>=41.0.0

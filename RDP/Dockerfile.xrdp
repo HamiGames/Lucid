@@ -24,7 +24,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -82,7 +82,7 @@ RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/pyth
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification (per master-docker-design.md, Dockerfile-copy-pattern.md)
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil, async_timeout; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -116,7 +116,7 @@ RUN test -d ./xrdp && \
 ############################
 # Stage 2 – Runtime
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -170,9 +170,11 @@ assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; 
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
 assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
+assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+import async_timeout; assert async_timeout, 'async_timeout import failed'; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import fastapi; assert fastapi, 'fastapi import failed'; \
 import pydantic; assert pydantic, 'pydantic import failed'; \
