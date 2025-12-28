@@ -288,7 +288,8 @@ max_connections=1
                 
                 # Generate connection info
                 # Host should be the service name, not localhost (for external connections)
-                rdp_host = os.getenv("RDP_SERVER_HOST", os.getenv("RDP_SERVER_MANAGER_HOST", "rdp-server-manager"))
+                # Use RDP_SERVER_MANAGER_HOST from environment (set by docker-compose)
+                rdp_host = os.getenv("RDP_SERVER_MANAGER_HOST", "rdp-server-manager")
                 server.connection_info = {
                     "host": rdp_host,  # Service name for Docker network connections
                     "port": server.port,

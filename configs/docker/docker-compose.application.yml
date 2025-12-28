@@ -312,29 +312,33 @@ services:
     container_name: rdp-server-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-server-manager
     networks:
       - lucid-pi-network
     ports:
-      - "8081:8081"
-      - "8090:8090"
+      - "${RDP_SERVER_MANAGER_PORT:-8081}:${RDP_SERVER_MANAGER_PORT:-8081}"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
-      - rdp-server-manager-cache:/tmp/rdp-manager
+      - rdp-server-manager-cache:/tmp/server-manager
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - RDP_SERVER_MANAGER_HOST=rdp-server-manager
-      - RDP_SERVER_MANAGER_PORT=8081
-      - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8081
+      - RDP_SERVER_MANAGER_PORT=${RDP_SERVER_MANAGER_PORT:-8081}
+      - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:${RDP_SERVER_MANAGER_PORT:-8081}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
-      - API_GATEWAY_URL=${API_GATEWAY_URL}
-      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://api-gateway:8080}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://lucid-auth-service:8089}
+      - PORT_RANGE_START=${PORT_RANGE_START:-13389}
+      - PORT_RANGE_END=${PORT_RANGE_END:-14389}
+      - MAX_CONCURRENT_SERVERS=${MAX_CONCURRENT_SERVERS:-50}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -347,7 +351,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('RDP_SERVER_MANAGER_PORT', '8081'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -360,14 +370,10 @@ services:
       - "lucid.cluster=application"
     depends_on:
       tor-proxy:
-        condition: service_healthy
+        condition: service_started
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
-        condition: service_healthy
-      api-gateway:
-        condition: service_healthy
-      lucid-auth-service:
         condition: service_healthy
 
   rdp-xrdp:

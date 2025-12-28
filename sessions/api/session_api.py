@@ -22,8 +22,9 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from ..storage.session_storage import SessionStorage, StorageConfig
+from ..storage.session_storage import SessionStorage
 from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
+from ..storage.config import StorageConfigManager
 from ..core.session_orchestrator import SessionPipeline, PipelineStage
 
 logger = logging.getLogger(__name__)
@@ -183,28 +184,21 @@ class SessionAPI:
         self.chunks_collection: Collection = self.db.chunks
         self.pipeline_collection: Collection = self.db.pipeline
         
-        # Initialize storage services
-        storage_config = StorageConfig(
-            base_path=os.getenv("LUCID_STORAGE_PATH", "/data/sessions"),
-            chunk_size_mb=safe_int_env("LUCID_CHUNK_SIZE_MB", 10),
-            compression_level=safe_int_env("LUCID_COMPRESSION_LEVEL", 6),
-            encryption_enabled=os.getenv("LUCID_ENCRYPTION_ENABLED", "true").lower() == "true",
-            retention_days=safe_int_env("LUCID_RETENTION_DAYS", 30),
-            max_sessions=safe_int_env("LUCID_MAX_SESSIONS", 1000),
-            cleanup_interval_hours=safe_int_env("LUCID_CLEANUP_INTERVAL_HOURS", 24)
-        )
+        # Initialize storage configuration using StorageConfigManager (per master design)
+        storage_config_manager = StorageConfigManager()
         
-        chunk_config = ChunkStoreConfig(
-            base_path=os.getenv("LUCID_CHUNK_STORE_PATH", "/data/chunks"),
-            compression_algorithm=os.getenv("LUCID_COMPRESSION_ALGORITHM", "zstd"),
-            compression_level=int(os.getenv("LUCID_COMPRESSION_LEVEL", "6")),
-            chunk_size_mb=int(os.getenv("LUCID_CHUNK_SIZE_MB", "10")),
-            max_chunks_per_session=int(os.getenv("LUCID_MAX_CHUNKS_PER_SESSION", "100000")),
-            cleanup_interval_hours=int(os.getenv("LUCID_CLEANUP_INTERVAL_HOURS", "24")),
-            backup_enabled=os.getenv("LUCID_BACKUP_ENABLED", "true").lower() == "true",
-            backup_retention_days=int(os.getenv("LUCID_BACKUP_RETENTION_DAYS", "7"))
-        )
+        # Get configuration dictionaries for dataclass-based configs
+        storage_config_dict = storage_config_manager.get_storage_config_dict()
+        chunk_config_dict = storage_config_manager.get_chunk_store_config_dict()
         
+        # Import the dataclass StorageConfig from session_storage (not the Pydantic BaseModel)
+        from ..storage.session_storage import StorageConfig as StorageConfigDataclass
+        
+        # Create dataclass-based configs (for backward compatibility with existing code)
+        storage_config = StorageConfigDataclass(**storage_config_dict)
+        chunk_config = ChunkStoreConfig(**chunk_config_dict)
+        
+        # Use the mongo_url and redis_url that were validated above (from parameters or environment)
         self.session_storage = SessionStorage(storage_config, mongo_url, redis_url)
         self.chunk_store = ChunkStore(chunk_config)
         

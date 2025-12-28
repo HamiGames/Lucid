@@ -1,66 +1,104 @@
-# LUCID RDP Server Manager - Main Entry Point
-# LUCID-STRICT Layer 2 Service Integration
-# Multi-platform support for Pi 5 ARM64
-# Distroless container implementation
+#!/usr/bin/env python3
+"""
+LUCID RDP Server Manager Service - Main Entry Point
+"""
 
-from __future__ import annotations
-
-import asyncio
 import logging
 import os
-import signal
-import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-
-import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from typing import Optional, Dict, Any
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
 
-# Import server manager components
-from server_manager import RDPServerManager
-from port_manager import PortManager
-from config_manager import ConfigManager
+from .server_manager import RDPServerManager
+from .port_manager import PortManager
+from .config_manager import ConfigManager
+from .config import RDPServerManagerConfigManager
 
+# Configure logging (structured logging per master design)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-# Configuration from environment (from docker-compose.application.yml)
-SERVICE_NAME = os.getenv("SERVICE_NAME", "rdp-server-manager")
-SERVICE_PORT = int(os.getenv("RDP_SERVER_MANAGER_PORT", os.getenv("SERVER_MANAGER_PORT", "8081")))
-MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI", "")
-REDIS_URL = os.getenv("REDIS_URL", "")
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "")
-API_GATEWAY_URL = os.getenv("API_GATEWAY_URL", "")
+# Global service instances
+server_manager_instance: Optional[RDPServerManager] = None
+port_manager_instance: Optional[PortManager] = None
+config_manager_instance: Optional[ConfigManager] = None
+config_manager: Optional[RDPServerManagerConfigManager] = None
 
-# CRITICAL: MONGODB_URL/MONGODB_URI and REDIS_URL must be set via docker-compose environment variables
-# from .env.secrets file. Defaults are empty strings to fail fast if not configured.
-if not MONGODB_URL:
-    raise ValueError("MONGODB_URL or MONGODB_URI environment variable is required. Set it in docker-compose.yml or .env.secrets")
-if "localhost" in MONGODB_URL or "127.0.0.1" in MONGODB_URL:
-    raise ValueError("MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)")
-if not REDIS_URL:
-    raise ValueError("REDIS_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
-if "localhost" in REDIS_URL or "127.0.0.1" in REDIS_URL:
-    raise ValueError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager"""
+    global server_manager_instance, port_manager_instance, config_manager_instance, config_manager
+    
+    # Startup
+    logger.info("Starting RDP Server Manager Service...")
+    
+    try:
+        # Initialize configuration using Pydantic Settings (per master design)
+        config_manager = RDPServerManagerConfigManager()
+        
+        # Get configuration dictionary
+        config_dict = config_manager.get_server_manager_config_dict()
+        
+        # Get database URLs from settings (already validated)
+        mongo_url = config_manager.get_mongodb_url()
+        redis_url = config_manager.get_redis_url()
+        
+        # Initialize components
+        config_manager_instance = ConfigManager()
+        await config_manager_instance.initialize()
+        
+        port_manager_instance = PortManager(
+            config_dict["port_range_start"],
+            config_dict["port_range_end"]
+        )
+        await port_manager_instance.initialize()
+        
+        server_manager_instance = RDPServerManager(config_manager_instance, port_manager_instance)
+        await server_manager_instance.initialize()
+        
+        logger.info("RDP Server Manager Service started successfully")
+        
+        yield
+        
+    except Exception as e:
+        logger.error(f"Failed to start RDP Server Manager Service: {e}", exc_info=True)
+        raise
+    
+    finally:
+        # Shutdown (graceful shutdown per master design)
+        logger.info("Shutting down RDP Server Manager Service...")
+        
+        try:
+            if server_manager_instance:
+                await server_manager_instance.shutdown()
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}", exc_info=True)
 
-# Port allocation range
-PORT_RANGE_START = int(os.getenv("PORT_RANGE_START", "13389"))
-PORT_RANGE_END = int(os.getenv("PORT_RANGE_END", "14389"))
-MAX_CONCURRENT_SERVERS = int(os.getenv("MAX_CONCURRENT_SERVERS", "50"))
-
-# Initialize components
-config_manager = ConfigManager()
-port_manager = PortManager(PORT_RANGE_START, PORT_RANGE_END)
-server_manager = RDPServerManager(config_manager, port_manager)
-
-# FastAPI application
+# Create FastAPI application
 app = FastAPI(
-    title="Lucid RDP Server Manager",
+    title="RDP Server Manager Service",
     description="RDP server lifecycle management for Lucid system",
     version="1.0.0",
+    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
+)
+
+# Add CORS middleware if needed
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Pydantic models
@@ -85,30 +123,32 @@ class ServerStatusResponse(BaseModel):
     started_at: Optional[str] = None
     resource_usage: Optional[Dict[str, Any]] = None
 
-# API Routes
+# Health check endpoint
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    global server_manager_instance, port_manager_instance, config_manager
     return {
         "status": "healthy",
-        "service": SERVICE_NAME,
-        "version": "1.0.0",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "active_servers": len(server_manager.active_servers),
-        "max_servers": MAX_CONCURRENT_SERVERS,
-        "available_ports": port_manager.get_available_ports_count()
+        "service": "rdp-server-manager",
+        "timestamp": datetime.utcnow().isoformat(),
+        "active_servers": len(server_manager_instance.active_servers) if server_manager_instance else 0,
+        "max_servers": config_manager.get_server_manager_config_dict()["max_concurrent_servers"] if config_manager else 50,
+        "available_ports": port_manager_instance.get_available_ports_count() if port_manager_instance else 0
     }
 
 @app.post("/servers", response_model=ServerResponse)
 async def create_server(request: CreateServerRequest):
     """Create new RDP server instance"""
+    global server_manager_instance, config_manager
     try:
         # Check server limits
-        if len(server_manager.active_servers) >= MAX_CONCURRENT_SERVERS:
+        max_servers = config_manager.get_server_manager_config_dict()["max_concurrent_servers"] if config_manager else 50
+        if len(server_manager_instance.active_servers) >= max_servers:
             raise HTTPException(429, "Maximum concurrent servers reached")
         
         # Create server
-        server = await server_manager.create_server(
+        server = await server_manager_instance.create_server(
             user_id=request.user_id,
             session_id=request.session_id,
             display_config=request.display_config,
@@ -130,8 +170,9 @@ async def create_server(request: CreateServerRequest):
 @app.get("/servers/{server_id}", response_model=ServerStatusResponse)
 async def get_server(server_id: str):
     """Get server status"""
+    global server_manager_instance
     try:
-        server = await server_manager.get_server(server_id)
+        server = await server_manager_instance.get_server(server_id)
         if not server:
             raise HTTPException(404, "Server not found")
         
@@ -153,8 +194,9 @@ async def get_server(server_id: str):
 @app.post("/servers/{server_id}/start")
 async def start_server(server_id: str):
     """Start RDP server"""
+    global server_manager_instance
     try:
-        result = await server_manager.start_server(server_id)
+        result = await server_manager_instance.start_server(server_id)
         return result
         
     except Exception as e:
@@ -164,8 +206,9 @@ async def start_server(server_id: str):
 @app.post("/servers/{server_id}/stop")
 async def stop_server(server_id: str):
     """Stop RDP server"""
+    global server_manager_instance
     try:
-        result = await server_manager.stop_server(server_id)
+        result = await server_manager_instance.stop_server(server_id)
         return result
         
     except Exception as e:
@@ -175,8 +218,9 @@ async def stop_server(server_id: str):
 @app.post("/servers/{server_id}/restart")
 async def restart_server(server_id: str):
     """Restart RDP server"""
+    global server_manager_instance
     try:
-        result = await server_manager.restart_server(server_id)
+        result = await server_manager_instance.restart_server(server_id)
         return result
         
     except Exception as e:
@@ -186,8 +230,10 @@ async def restart_server(server_id: str):
 @app.get("/servers")
 async def list_servers():
     """List all active servers"""
+    global server_manager_instance, config_manager
     try:
-        servers = await server_manager.list_servers()
+        servers = await server_manager_instance.list_servers()
+        max_servers = config_manager.get_server_manager_config_dict()["max_concurrent_servers"] if config_manager else 50
         return {
             "servers": [
                 {
@@ -201,7 +247,7 @@ async def list_servers():
                 for server in servers
             ],
             "total": len(servers),
-            "max_servers": MAX_CONCURRENT_SERVERS
+            "max_servers": max_servers
         }
         
     except Exception as e:
@@ -211,62 +257,17 @@ async def list_servers():
 @app.delete("/servers/{server_id}")
 async def delete_server(server_id: str):
     """Delete RDP server"""
+    global server_manager_instance
     try:
-        result = await server_manager.delete_server(server_id)
+        result = await server_manager_instance.delete_server(server_id)
         return result
         
     except Exception as e:
         logger.error(f"Delete server failed: {e}")
         raise HTTPException(500, f"Delete server failed: {str(e)}")
 
-# Startup and shutdown events
-@app.on_event("startup")
-async def startup_event():
-    """Application startup"""
-    logger.info(f"Starting {SERVICE_NAME}...")
-    
-    # Initialize components
-    await config_manager.initialize()
-    await port_manager.initialize()
-    await server_manager.initialize()
-    
-    logger.info(f"{SERVICE_NAME} started on port {SERVICE_PORT}")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown"""
-    logger.info(f"Shutting down {SERVICE_NAME}...")
-    
-    # Stop all active servers
-    await server_manager.shutdown()
-    
-    logger.info(f"{SERVICE_NAME} stopped")
-
-# Signal handlers for graceful shutdown
-def signal_handler(signum, frame):
-    """Handle shutdown signals"""
-    logger.info(f"Received signal {signum}, shutting down...")
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-
-def main():
-    """Main entry point"""
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format=f'[{SERVICE_NAME}] %(asctime)s - %(levelname)s - %(message)s'
-    )
-    
-    # Run server
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=SERVICE_PORT,
-        log_level="info",
-        access_log=True
-    )
-
-if __name__ == "__main__":
-    main()
+# Root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"service": "rdp-server-manager", "status": "running"}
