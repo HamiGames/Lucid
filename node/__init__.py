@@ -7,7 +7,7 @@ Complete node management system including DHT/CRDT, consensus, economy, and more
 from .dht_crdt import DHTCRDTNode, DHTNode, DHTEntry, CRDTEntry, GossipMessage, NodeStatus, MessageType
 
 # Database and Peer Discovery
-from .database_adapter import DatabaseAdapter, CollectionAdapter, get_database_adapter
+from .database_adapter import DatabaseAdapter, get_database_adapter
 from .peer_discovery import PeerDiscovery, PeerInfo
 
 # Node Management
@@ -88,7 +88,7 @@ __all__ = [
     'DHTCRDTNode', 'DHTNode', 'DHTEntry', 'CRDTEntry', 'GossipMessage', 'NodeStatus', 'MessageType',
     
     # Database and Discovery
-    'DatabaseAdapter', 'CollectionAdapter', 'get_database_adapter', 'PeerDiscovery', 'PeerInfo',
+    'DatabaseAdapter', 'get_database_adapter', 'PeerDiscovery', 'PeerInfo',
     
     # Node Management
     'NodeManager', 'NodeConfig', 'create_node_config',
