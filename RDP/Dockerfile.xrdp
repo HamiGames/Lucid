@@ -2,32 +2,18 @@
 # Lucid XRDP API – REST interface for XRDP lifecycle control
 # Image: pickme/lucid-rdp-xrdp:latest-arm64
 #
-# DESIGN COMPLIANCE: Follows master-docker-design.md and dockerfile-design.md patterns
-# PI BUILD: No BuildKit/buildx required - uses standard docker build
+# DESIGN COMPLIANCE: Follows master-docker-design.md, dockerfile-design.md, 
+#                    Dockerfile-copy-pattern.md patterns
 #
-# RUNTIME BASE WORKAROUND:
-# - Current: python:3.11-slim-bookworm (Pi build workaround - gcr.io not accessible)
-# - Target: gcr.io/distroless/python3-debian12:latest (when network available)
+# BUILD COMMAND (on Pi - NO buildx):
+#   docker build -f RDP/Dockerfile.xrdp -t pickme/lucid-rdp-xrdp:latest-arm64 .
 #
-# BUILD COMMAND (on Pi):
-#   docker build --platform linux/arm64 -f RDP/Dockerfile.xrdp -t pickme/lucid-rdp-xrdp:latest-arm64 . --no-cache
-#
-# To switch to distroless (requires pre-pulled image if gcr.io not accessible):
-#   1. Pre-pull on machine with internet:
-#      docker pull --platform linux/arm64 gcr.io/distroless/python3-debian12:latest
-#      docker save gcr.io/distroless/python3-debian12:latest | gzip > distroless-python3.tar.gz
-#   2. Transfer to Pi and load:
-#      docker load < distroless-python3.tar.gz
-#   3. Change runtime FROM to: FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
-#   4. Change runtime verification to use: ["/usr/bin/python3.11", "-c", ...]
-#   5. Change CMD to use: ["/usr/bin/python3.11", "/app/xrdp/entrypoint.py"]
-#   6. Change HEALTHCHECK to use: ["/usr/bin/python3.11", "-c", ...]
+# RUNTIME BASE: python:3.11-slim-bookworm (Pi workaround - gcr.io not accessible)
+# TARGET BASE: gcr.io/distroless/python3-debian12:latest (when network available)
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-ARG TARGETPLATFORM=linux/arm64
-ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
 ############################
@@ -35,8 +21,6 @@ ARG PYTHON_VERSION=3.11
 ############################
 FROM python:3.11-slim-bookworm AS builder
 
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -46,12 +30,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_PREFER_BINARY=1 \
     DEBIAN_FRONTEND=noninteractive
 
-# Configure APT for better network reliability on Pi
-RUN echo 'Acquire::Retries "3";' >> /etc/apt/apt.conf.d/80-retries && \
-    echo 'Acquire::http::Timeout "60";' >> /etc/apt/apt.conf.d/80-retries && \
-    echo 'Acquire::ftp::Timeout "60";' >> /etc/apt/apt.conf.d/80-retries
-
-# System packages (no cache mounts - standard docker build compatible)
+# System packages installation (per master-docker-design.md)
 RUN rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
@@ -68,35 +47,36 @@ RUN rm -rf /var/lib/apt/lists/* && \
 
 WORKDIR /build
 
-# Create placeholder files in system directories with actual content (per master-docker-design.md)
-# Ensures /var/run and /var/lib exist with real content (COPY won't be silent)
+# System directory markers (per master-docker-design.md, Dockerfile-copy-pattern.md)
+# Creates content-filled markers - NOT empty files
 RUN echo "LUCID_RDP_XRDP_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_RDP_XRDP_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
-# Python package installation (no cache mounts - standard docker build compatible)
-RUN pip install --upgrade pip setuptools wheel --timeout=100 --retries=3
+# Python package installation (per master-docker-design.md)
+RUN pip install --upgrade pip setuptools wheel
 
 COPY RDP/requirements.xrdp.txt ./requirements.txt
 
+# Create directories before pip install (per Dockerfile-copy-pattern.md)
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
-RUN pip install --user --no-cache-dir --prefer-binary --timeout=100 --retries=3 -r requirements.txt
+# Install packages
+RUN pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
-# Marker files (per master-docker-design.md - CRITICAL: must have actual content)
+# Create marker files with actual content AFTER pip install (per Dockerfile-copy-pattern.md - CRITICAL)
 RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     echo "LUCID_RDP_XRDP_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification (per master-docker-design.md - CRITICAL)
+# Builder-stage verification (per master-docker-design.md, Dockerfile-copy-pattern.md)
 RUN python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
-    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "✅ Marker file verified in builder (non-empty)"
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Application source COPY (per dockerfile-design.md)
 COPY RDP/xrdp/               ./xrdp/
@@ -107,7 +87,7 @@ COPY RDP/resource-monitor/   ./resource-monitor/
 COPY RDP/session-controller/ ./session-controller/
 COPY RDP/__init__.py         ./__init__.py
 
-# Create source marker files (per master-docker-design.md - ensures directories have content)
+# Create source marker files with content (per Dockerfile-copy-pattern.md)
 RUN echo "LUCID_RDP_XRDP_SOURCE_INSTALLED_$(date +%s)" > ./xrdp/.lucid-source-marker && \
     chown -R 65532:65532 ./xrdp ./common ./protocol ./client ./resource-monitor ./session-controller ./__init__.py
 
@@ -122,8 +102,8 @@ RUN test -d ./xrdp && \
 ############################
 # Stage 2 – Runtime
 ############################
-# WORKAROUND: Using python-slim instead of distroless due to gcr.io network timeout on Pi
 # Per master-docker-design.md: Target is gcr.io/distroless/python3-debian12:latest
+# WORKAROUND: Using python-slim (Pi cannot reach gcr.io)
 FROM python:3.11-slim-bookworm
 
 ARG BUILD_DATE
@@ -139,8 +119,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="rdp-xrdp" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="application" \
-      com.lucid.security="slim-workaround" \
-      com.lucid.note="Using python-slim due to gcr.io network timeout. Switch to distroless when network is available."
+      com.lucid.security="slim-workaround"
 
 # Environment variables (per master-docker-design.md)
 ENV PATH=/usr/local/bin:/usr/bin:/bin \
@@ -151,12 +130,12 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     XRDP_PORT=3389 \
-    XRDP_SERVICE_HOST=rdp-xrdp \
+    XRDP_SERVICE_HOST=0.0.0.0 \
     XRDP_SERVICE_PORT=3389
 
 WORKDIR /app
 
-# Create non-root user (matching distroless UID/GID per master-docker-design.md)
+# Create non-root user (matching distroless UID/GID 65532:65532 per master-docker-design.md)
 RUN groupadd -r -g 65532 nonroot && \
     useradd -r -g nonroot -u 65532 -d /app -s /bin/false nonroot
 
@@ -165,16 +144,12 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Python packages (per master-docker-design.md)
+# Python packages (per master-docker-design.md, Dockerfile-copy-pattern.md)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Set ownership for all copied files
-RUN chown -R 65532:65532 /app /usr/local/lib/python3.11/site-packages /usr/local/bin
-
-# Runtime verification of packages (per master-docker-design.md - CRITICAL)
-# NOTE: Using python3 (not /usr/bin/python3.11) because we're using python-slim workaround
-# When switching to distroless, use: ["/usr/bin/python3.11", "-c", ...]
+# Runtime verification of packages (per master-docker-design.md, Dockerfile-copy-pattern.md - CRITICAL)
+# Verifies: site-packages exists, packages exist, marker file exists and is non-empty
 RUN python3 -c "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
@@ -209,20 +184,23 @@ assert os.path.exists(server_marker), 'xrdp marker file not found'; \
 assert os.path.getsize(server_marker) > 0, 'xrdp marker file is empty'; \
 print('✅ All application source files and markers verified')"
 
+# Verify entrypoint exists (per data-chain-design.md pattern)
+RUN python3 -c "import os; \
+entrypoint_path = '/app/xrdp/entrypoint.py'; \
+assert os.path.exists(entrypoint_path), 'CRITICAL: entrypoint not found at ' + entrypoint_path; \
+assert os.path.isfile(entrypoint_path), 'CRITICAL: ' + entrypoint_path + ' is not a file'; \
+print('✅ Entrypoint verified: ' + entrypoint_path)"
+
 EXPOSE 3389
 
-# Health check (per master-docker-design.md)
-# NOTE: Using python3 (not /usr/bin/python3.11) because we're using python-slim workaround
-# When switching to distroless, use: ["/usr/bin/python3.11", "-c", ...]
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+# Health check - socket-based (per master-docker-design.md, service-mesh-design.md)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD python3 -c "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"
 
 USER 65532:65532
 
-# Clear base ENTRYPOINT so CMD works as expected (per master-docker-design.md)
+# Clear base ENTRYPOINT so CMD works as expected (per master-docker-design.md, data-chain-design.md)
 ENTRYPOINT []
 
-# CMD (per master-docker-design.md)
-# NOTE: Using python3 (not /usr/bin/python3.11) because we're using python-slim workaround
-# When switching to distroless, use: ["/usr/bin/python3.11", "/app/xrdp/entrypoint.py"]
+# CMD - JSON form (per master-docker-design.md, dockerfile-design.md)
 CMD ["python3", "/app/xrdp/entrypoint.py"]
