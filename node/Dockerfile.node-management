@@ -74,7 +74,7 @@ RUN echo "LUCID_NODE_MANAGEMENT_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification (per master-docker-design.md - CRITICAL)
-RUN python3 -c "import sys, os; \
+RUN /usr/local/bin/python3 -c "import sys, os; \
 site_packages = '/root/.local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
@@ -99,7 +99,7 @@ RUN echo "LUCID_NODE_MANAGEMENT_SOURCE_INSTALLED_$(date +%s)" > ./node/.lucid-so
     chown -R 65532:65532 ./node
 
 # Verify application source files were copied (prevents silent COPY failures)
-RUN python3 -c "import os; \
+RUN /usr/local/bin/python3 -c "import os; \
 assert os.path.exists('/build/node'), 'node directory not found'; \
 assert os.path.exists('/build/node/main.py'), 'node/main.py not found'; \
 assert os.path.exists('/build/node/entrypoint.py'), 'node/entrypoint.py not found'; \

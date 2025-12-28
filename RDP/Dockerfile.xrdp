@@ -85,7 +85,11 @@ RUN test -d ./xrdp && \
 ###############
 # Runtime step
 ###############
-FROM gcr.io/distroless/python3-debian12:latest
+# NOTE: If gcr.io is not accessible, pre-pull this image on a machine with internet:
+# docker pull gcr.io/distroless/python3-debian12:latest
+# docker save gcr.io/distroless/python3-debian12:latest | gzip > distroless-python3.tar.gz
+# Then load on Pi: docker load < distroless-python3.tar.gz
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
