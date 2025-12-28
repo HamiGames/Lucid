@@ -70,25 +70,33 @@ if __name__ == "__main__":
                     print(f"ERROR: Could not list server_manager directory: {list_err}", file=sys.stderr)
             sys.exit(1)
         
-        from server_manager.main import app
-    except ImportError as e:
-        print(f"ERROR: Failed to import server_manager.main: {e}", file=sys.stderr)
-        print(f"ERROR: Python path: {sys.path}", file=sys.stderr)
-        print(f"ERROR: App path exists: {os.path.exists(app_path)}", file=sys.stderr)
-        if os.path.exists(app_path):
-            try:
-                contents = os.listdir(app_path)
-                print(f"ERROR: App directory contents: {contents}", file=sys.stderr)
-            except Exception as list_err:
-                print(f"ERROR: Could not list app directory: {list_err}", file=sys.stderr)
-        server_manager_path = os.path.join(app_path, 'server_manager')
-        if os.path.exists(server_manager_path):
-            try:
-                contents = os.listdir(server_manager_path)
-                print(f"ERROR: server_manager directory contents: {contents}", file=sys.stderr)
-            except Exception as list_err:
-                print(f"ERROR: Could not list server_manager directory: {list_err}", file=sys.stderr)
+        # Debug: Print Python path before import
+        print(f"DEBUG: Python path before import: {sys.path}", file=sys.stderr)
+        print(f"DEBUG: App path exists: {os.path.exists(app_path)}", file=sys.stderr)
+        print(f"DEBUG: server_manager path exists: {os.path.exists(server_manager_path)}", file=sys.stderr)
+        
+        # Import with full traceback on error
+        import traceback
+        try:
+            from server_manager.main import app
+            print(f"DEBUG: Successfully imported server_manager.main.app", file=sys.stderr)
+        except Exception as import_err:
+            print(f"ERROR: Failed to import server_manager.main: {import_err}", file=sys.stderr)
+            print(f"ERROR: Full traceback:", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            sys.exit(1)
+            
+    except Exception as e:
+        print(f"ERROR: Unexpected error during import setup: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)
     
+    # Verify app is valid before passing to uvicorn
+    if app is None:
+        print("ERROR: app object is None", file=sys.stderr)
+        sys.exit(1)
+    
+    print(f"DEBUG: Starting uvicorn with app object (type: {type(app)})", file=sys.stderr)
     uvicorn.run(app, host=host, port=port)
 
