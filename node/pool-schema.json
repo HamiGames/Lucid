@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Node Management Pool Schema",
+  "description": "JSON schema for Pool information models used by the Node Management service",
+  "definitions": {
+    "PoolStatus": {
+      "type": "string",
+      "enum": ["active", "inactive", "maintenance", "full", "empty"],
+      "description": "Pool status enumeration"
+    },
+    "PoolInfo": {
+      "type": "object",
+      "required": [
+        "pool_id",
+        "pool_name",
+        "max_nodes",
+        "current_nodes",
+        "status",
+        "created_at",
+        "last_updated"
+      ],
+      "properties": {
+        "pool_id": {
+          "type": "string",
+          "description": "Unique pool identifier",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "example": "pool_xyz789"
+        },
+        "pool_name": {
+          "type": "string",
+          "description": "Pool name",
+          "minLength": 1,
+          "maxLength": 100,
+          "example": "Primary Pool"
+        },
+        "max_nodes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum number of nodes allowed in pool",
+          "example": 100
+        },
+        "current_nodes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Current number of nodes in pool",
+          "example": 45
+        },
+        "status": {
+          "$ref": "#/definitions/PoolStatus",
+          "description": "Current pool status"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Pool creation timestamp (ISO 8601)",
+          "example": "2025-01-27T12:00:00Z"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp (ISO 8601)",
+          "example": "2025-01-27T12:00:00Z"
+        },
+        "configuration": {
+          "type": ["object", "null"],
+          "description": "Pool configuration dictionary",
+          "additionalProperties": true,
+          "properties": {
+            "auto_join_enabled": {
+              "type": "boolean"
+            },
+            "auto_leave_enabled": {
+              "type": "boolean"
+            },
+            "selection_strategy": {
+              "type": "string",
+              "enum": ["round_robin", "least_loaded", "random", "geographic"]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PoolMetrics": {
+      "type": "object",
+      "required": [
+        "total_pools",
+        "total_nodes",
+        "active_pools",
+        "full_pools",
+        "empty_pools",
+        "max_nodes_per_pool",
+        "average_nodes_per_pool"
+      ],
+      "properties": {
+        "total_pools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of pools",
+          "example": 5
+        },
+        "total_nodes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of nodes across all pools",
+          "example": 250
+        },
+        "active_pools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of active pools",
+          "example": 4
+        },
+        "full_pools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of full pools (at max capacity)",
+          "example": 1
+        },
+        "empty_pools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of empty pools (no nodes)",
+          "example": 0
+        },
+        "max_nodes_per_pool": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum nodes allowed per pool",
+          "example": 100
+        },
+        "average_nodes_per_pool": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "description": "Average number of nodes per pool",
+          "example": 50.0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

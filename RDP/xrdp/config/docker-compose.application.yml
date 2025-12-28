@@ -1,0 +1,87 @@
+# Docker Compose Configuration for rdp-xrdp Service
+# File: RDP/xrdp/config/docker-compose.application.yml
+# Purpose: Docker Compose service definition for rdp-xrdp container
+# Usage: Include this snippet in configs/docker/docker-compose.application.yml
+
+rdp-xrdp:
+  image: pickme/lucid-rdp-xrdp:latest-arm64
+  container_name: rdp-xrdp
+  hostname: rdp-xrdp
+  restart: unless-stopped
+  platform: linux/arm64
+  env_file:
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-xrdp
+  networks:
+    - lucid-pi-network
+  ports:
+    - "${XRDP_PORT:-3389}:${XRDP_PORT:-3389}"
+  volumes:
+    - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp/config:/app/config:rw
+    - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp/sessions:/app/data/sessions:rw
+    - /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp:/app/logs:rw
+    - rdp-xrdp-cache:/tmp/xrdp
+  environment:
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - SERVICE_NAME=lucid-rdp-xrdp
+    - SERVICE_VERSION=1.0.0
+    - HOST=0.0.0.0
+    - PORT=${XRDP_PORT:-3389}
+    - XRDP_HOST=rdp-xrdp
+    - XRDP_PORT=${XRDP_PORT:-3389}
+    - RDP_XRDP_URL=http://rdp-xrdp:${XRDP_PORT:-3389}
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+    - API_GATEWAY_URL=${API_GATEWAY_URL:-http://api-gateway:8080}
+    - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://lucid-auth-service:8089}
+    - SESSION_CONTROLLER_URL=${SESSION_CONTROLLER_URL:-http://rdp-controller:8092}
+    - MAX_XRDP_PROCESSES=${MAX_XRDP_PROCESSES:-10}
+    - PROCESS_TIMEOUT=${PROCESS_TIMEOUT:-30}
+    - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    - DEBUG=${DEBUG:-false}
+    - SERVICE_TIMEOUT_SECONDS=${SERVICE_TIMEOUT_SECONDS:-30}
+    - SERVICE_RETRY_COUNT=${SERVICE_RETRY_COUNT:-3}
+    - SERVICE_RETRY_DELAY_SECONDS=${SERVICE_RETRY_DELAY_SECONDS:-1.0}
+  user: "65532:65532"
+  security_opt:
+    - no-new-privileges:true
+    - seccomp:unconfined
+  cap_drop:
+    - ALL
+  read_only: true
+  tmpfs:
+    - /tmp:noexec,nosuid,size=100m
+  healthcheck:
+    test:
+      [
+        "CMD",
+        "/usr/bin/python3.11",
+        "-c",
+        "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', ${XRDP_PORT:-3389})); s.close(); exit(0 if result == 0 else 1)",
+      ]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+  labels:
+    - "lucid.service=rdp-xrdp"
+    - "lucid.type=distroless"
+    - "lucid.platform=arm64"
+    - "lucid.security=hardened"
+    - "lucid.cluster=application"
+    - "lucid.version=1.0.0"
+  depends_on:
+    lucid-mongodb:
+      condition: service_healthy
+    lucid-redis:
+      condition: service_healthy
+
+volumes:
+  rdp-xrdp-cache:
+    driver: local

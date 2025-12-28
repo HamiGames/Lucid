@@ -158,9 +158,17 @@ class SessionAPI:
     def __init__(
         self,
         mongo_url: str | None = None,
-        redis_url: str | None = None
+        redis_url: str | None = None,
+        rdp_controller_client: Optional[Any] = None
     ):
-        """Initialize SessionAPI with MongoDB and Redis URLs from environment"""
+        """
+        Initialize SessionAPI with MongoDB and Redis URLs from environment
+        
+        Args:
+            mongo_url: MongoDB connection URL
+            redis_url: Redis connection URL
+            rdp_controller_client: Optional RDP controller client for session creation
+        """
         # Get from environment if not provided
         if mongo_url is None:
             mongo_url = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
@@ -202,13 +210,70 @@ class SessionAPI:
         self.session_storage = SessionStorage(storage_config, mongo_url, redis_url)
         self.chunk_store = ChunkStore(chunk_config)
         
+        # Store RDP controller client
+        self.rdp_controller_client = rdp_controller_client
+        
         logger.info("SessionAPI initialized")
     
     async def create_session(self, request: CreateSessionRequest) -> SessionResponse:
         """Create a new session"""
         try:
-            session_id = f"sess-{uuid.uuid4().hex[:8]}"
             now = datetime.utcnow()
+            
+            # Call rdp-controller to generate session-id and session-room (connection_id)
+            rdp_session_id = None
+            rdp_connection_id = None
+            rdp_server_id = None
+            
+            if self.rdp_controller_client:
+                try:
+                    # Extract user_id from metadata or use a default
+                    user_id = request.metadata.owner or request.metadata.project or "system"
+                    
+                    # Get server_id from rdp_config or generate one
+                    # For now, we'll use the host as server identifier
+                    # In production, this should come from rdp-server-manager
+                    import uuid as uuid_lib
+                    server_id = str(uuid_lib.uuid4())  # TODO: Get from rdp-server-manager
+                    
+                    # Prepare session config for rdp-controller
+                    session_config = {
+                        "display_resolution": request.rdp_config.host,  # Using host as placeholder
+                        "color_depth": 24,
+                        "audio_enabled": request.recording_config.audio_enabled,
+                        "clipboard_enabled": True,
+                        "file_transfer_enabled": True,
+                        "session_timeout": request.storage_config.retention_days * 86400,
+                        "idle_timeout": 1800,
+                        "max_connections": 1,
+                        "encryption_enabled": request.storage_config.encryption_enabled,
+                        "compression_enabled": request.storage_config.compression_enabled,
+                        "bandwidth_limit": request.recording_config.bitrate if request.recording_config.bitrate else None
+                    }
+                    
+                    # Call rdp-controller to create session
+                    rdp_session_result = await self.rdp_controller_client.create_session(
+                        user_id=user_id,
+                        server_id=server_id,
+                        session_config=session_config
+                    )
+                    
+                    rdp_session_id = rdp_session_result.get("session_id")
+                    rdp_connection_id = rdp_session_result.get("connection_id")  # This is the session-room
+                    rdp_server_id = rdp_session_result.get("server_id")
+                    
+                    logger.info(f"RDP session created via rdp-controller: {rdp_session_id}, connection_id: {rdp_connection_id}")
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to create RDP session via rdp-controller: {e}")
+                    # Continue with local session creation even if rdp-controller fails
+                    # This allows graceful degradation
+            
+            # Use RDP session_id if available, otherwise generate local one
+            if rdp_session_id:
+                session_id = rdp_session_id
+            else:
+                session_id = f"sess-{uuid.uuid4().hex[:8]}"
             
             # Create session document
             session_doc = {
@@ -222,6 +287,9 @@ class SessionAPI:
                 "recording_config": request.recording_config.dict(),
                 "storage_config": request.storage_config.dict(),
                 "metadata": request.metadata.dict(),
+                "rdp_session_id": rdp_session_id,  # Store RDP session ID
+                "rdp_connection_id": rdp_connection_id,  # Store session-room (connection_id)
+                "rdp_server_id": rdp_server_id,  # Store server ID
                 "statistics": {
                     "duration_seconds": 0,
                     "chunks_count": 0,
@@ -256,9 +324,10 @@ class SessionAPI:
             
             self.pipeline_collection.insert_one(pipeline_doc)
             
-            logger.info(f"Session created: {session_id}")
+            logger.info(f"Session created: {session_id} (RDP session: {rdp_session_id}, connection: {rdp_connection_id})")
             
-            return SessionResponse(
+            # Build response with RDP session information
+            response = SessionResponse(
                 session_id=session_id,
                 name=request.name,
                 status=SessionStatus.CREATED,
@@ -269,6 +338,16 @@ class SessionAPI:
                 metadata=request.metadata,
                 statistics=session_doc["statistics"]
             )
+            
+            # Add RDP session information to metadata if available
+            # Store in session document metadata (already done above)
+            # Also add to response statistics for easy access
+            if rdp_session_id or rdp_connection_id:
+                response.statistics["rdp_session_id"] = rdp_session_id
+                response.statistics["rdp_connection_id"] = rdp_connection_id  # This is the session-room
+                response.statistics["rdp_server_id"] = rdp_server_id
+            
+            return response
             
         except Exception as e:
             logger.error(f"Failed to create session: {e}")

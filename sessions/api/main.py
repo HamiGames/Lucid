@@ -18,6 +18,7 @@ from datetime import datetime
 from .session_api import SessionAPI
 from .routes import router
 from .config import SessionAPIConfig
+from .integration.rdp_controller_client import RDPControllerClient
 
 # Configure logging
 logging.basicConfig(
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Global instances
 session_api: Optional[SessionAPI] = None
 api_config: Optional[SessionAPIConfig] = None
+rdp_controller_client: Optional[RDPControllerClient] = None
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown"""
@@ -42,7 +44,7 @@ def setup_signal_handlers():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global session_api, api_config
+    global session_api, api_config, rdp_controller_client
     
     logger.info("Starting Lucid Session API Service")
     
@@ -52,10 +54,30 @@ async def lifespan(app: FastAPI):
         if not api_config.validate_configuration():
             raise RuntimeError("Session API configuration validation failed")
         
-        # Initialize API with configuration
+        # Initialize RDP controller client
+        try:
+            import os
+            rdp_controller_url = os.getenv('RDP_CONTROLLER_URL', '')
+            if rdp_controller_url:
+                rdp_controller_client = RDPControllerClient(
+                    base_url=rdp_controller_url,
+                    timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30.0')),
+                    retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
+                    retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
+                )
+                logger.info("RDP controller client initialized")
+            else:
+                logger.warning("RDP_CONTROLLER_URL not set, rdp-controller integration unavailable")
+                rdp_controller_client = None
+        except Exception as e:
+            logger.warning(f"Failed to initialize RDP controller client: {e}")
+            rdp_controller_client = None
+        
+        # Initialize API with configuration and RDP controller client
         session_api = SessionAPI(
             api_config.settings.MONGODB_URL,
-            api_config.settings.REDIS_URL
+            api_config.settings.REDIS_URL,
+            rdp_controller_client=rdp_controller_client
         )
         
         # Setup signal handlers
@@ -70,6 +92,12 @@ async def lifespan(app: FastAPI):
         raise
     finally:
         # Shutdown
+        if rdp_controller_client:
+            try:
+                await rdp_controller_client.close()
+            except Exception as e:
+                logger.warning(f"Error closing RDP controller client: {e}")
+        
         if session_api:
             logger.info("Shutting down Session API Service")
             await session_api.close()

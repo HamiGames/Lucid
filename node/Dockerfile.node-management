@@ -104,6 +104,14 @@ assert os.path.exists('/build/node'), 'node directory not found'; \
 assert os.path.exists('/build/node/main.py'), 'node/main.py not found'; \
 assert os.path.exists('/build/node/entrypoint.py'), 'node/entrypoint.py not found'; \
 assert os.path.exists('/build/node/config.py'), 'node/config.py not found'; \
+assert os.path.exists('/build/node/config.yaml') or os.path.exists('/build/node/config/node-management-config.yaml'), 'config.yaml not found'; \
+assert os.path.exists('/build/node/openapi.yaml'), 'openapi.yaml not found'; \
+assert os.path.exists('/build/node/health-schema.json'), 'health-schema.json not found'; \
+assert os.path.exists('/build/node/metrics-schema.json'), 'metrics-schema.json not found'; \
+assert os.path.exists('/build/node/node-schema.json'), 'node-schema.json not found'; \
+assert os.path.exists('/build/node/pool-schema.json'), 'pool-schema.json not found'; \
+assert os.path.exists('/build/node/payout-schema.json'), 'payout-schema.json not found'; \
+assert os.path.exists('/build/node/poot-schema.json'), 'poot-schema.json not found'; \
 node_marker = '/build/node/.lucid-source-marker'; \
 assert os.path.exists(node_marker), 'node marker file not found'; \
 assert os.path.getsize(node_marker) > 0, 'node marker file is empty'; \
@@ -112,7 +120,7 @@ print('✅ All application source files and markers verified in builder')"]
 ############################
 # Stage 2 – Runtime
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:nonroot
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -177,6 +185,14 @@ assert os.path.exists('/app/node'), 'node directory not found'; \
 assert os.path.exists('/app/node/main.py'), 'node/main.py not found'; \
 assert os.path.exists('/app/node/entrypoint.py'), 'node/entrypoint.py not found'; \
 assert os.path.exists('/app/node/config.py'), 'node/config.py not found'; \
+assert os.path.exists('/app/node/config.yaml') or os.path.exists('/app/node/config/node-management-config.yaml'), 'config.yaml not found'; \
+assert os.path.exists('/app/node/openapi.yaml'), 'openapi.yaml not found'; \
+assert os.path.exists('/app/node/health-schema.json'), 'health-schema.json not found'; \
+assert os.path.exists('/app/node/metrics-schema.json'), 'metrics-schema.json not found'; \
+assert os.path.exists('/app/node/node-schema.json'), 'node-schema.json not found'; \
+assert os.path.exists('/app/node/pool-schema.json'), 'pool-schema.json not found'; \
+assert os.path.exists('/app/node/payout-schema.json'), 'payout-schema.json not found'; \
+assert os.path.exists('/app/node/poot-schema.json'), 'poot-schema.json not found'; \
 node_marker = '/app/node/.lucid-source-marker'; \
 assert os.path.exists(node_marker), 'node marker file not found'; \
 assert os.path.getsize(node_marker) > 0, 'node marker file is empty'; \
@@ -185,7 +201,7 @@ print('✅ All application source files and markers verified')"]
 EXPOSE 8095 8099
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3.11", "-c", "import os, urllib.request, sys; port = os.getenv('NODE_MANAGEMENT_PORT', '8095'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)"]
+    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

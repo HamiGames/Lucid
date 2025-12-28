@@ -21,47 +21,42 @@ services:
       - ../configs/environment/.env.core
       - ../configs/environment/.env.support
       - ../configs/environment/.env.secrets
+      - ../configs/environment/.env.node-management
     ports:
-      - "8095:8095"
-      - "8099:8099"
+      - "${NODE_MANAGEMENT_PORT:-8095}:${NODE_MANAGEMENT_PORT:-8095}"
+      - "${NODE_MANAGEMENT_STAGING_PORT:-8099}:${NODE_MANAGEMENT_STAGING_PORT:-8099}"
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - NODE_MANAGEMENT_HOST=node-management
-      - NODE_MANAGEMENT_PORT=8095
-      - NODE_MANAGEMENT_STAGING_PORT=8099
-      - NODE_MANAGEMENT_URL=http://node-management:8095
-      - MAX_NODES_PER_POOL=100
-      - PAYOUT_THRESHOLD_USDT=10.0
-      - POOT_CALCULATION_INTERVAL=300
-      - PAYOUT_PROCESSING_INTERVAL=3600
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - MONGODB_HOST=lucid-mongodb
-      - MONGODB_PORT=27017
-      - MONGODB_DATABASE=lucid_node_management
-      - REDIS_URL=redis://lucid-redis:6379/0
-      - REDIS_URI=redis://lucid-redis:6379/0
-      - REDIS_HOST=lucid-redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
-      - NODE_MANAGEMENT_API_URL=http://172.20.0.25:8095/api/v1
-      - ELECTRON_GUI_ENDPOINT=http://172.20.0.25:8095/api/v1
+      - NODE_MANAGEMENT_PORT=${NODE_MANAGEMENT_PORT:-8095}
+      - NODE_MANAGEMENT_STAGING_PORT=${NODE_MANAGEMENT_STAGING_PORT:-8099}
+      - NODE_MANAGEMENT_URL=http://node-management:${NODE_MANAGEMENT_PORT:-8095}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+      - API_GATEWAY_URL=${API_GATEWAY_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+      - NODE_MANAGEMENT_API_URL=http://node-management:${NODE_MANAGEMENT_PORT:-8095}/api/v1
+      - ELECTRON_GUI_ENDPOINT=http://node-management:${NODE_MANAGEMENT_PORT:-8095}/api/v1
       - LOG_LEVEL=INFO
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
     volumes:
-      - node-logs:/app/logs
-      - node-data:/app/data
-      - node-cache:/app/cache
+      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs:rw
+      - node-management-cache:/tmp/nodes
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.25
-      lucid-gui-network:
-        ipv4_address: 172.22.0.25
+      - lucid-pi-network
+      - lucid-gui-network
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('NODE_MANAGEMENT_PORT', '8095'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -94,9 +89,9 @@ services:
       - "lucid.port=8095"
       - "lucid.port.staging=8099"
       - "lucid.features=poot-calculation,payout-processing,node-pool-management"
-      - "lucid.ip.main=172.20.0.25"
-      - "lucid.ip.gui=172.22.0.25"
     depends_on:
+      tor-proxy:
+        condition: service_started
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
@@ -221,11 +216,8 @@ networks:
           gateway: 172.22.0.1
 
 volumes:
-  node-logs:
-    name: lucid-node-management-logs  # Volume names can keep lucid- prefix as external identifiers
-  node-data:
-    name: lucid-node-management-data
-  node-cache:
+  node-management-cache:
+    driver: local
     name: lucid-node-management-cache
   mongodb-data:
     name: lucid-mongodb-data

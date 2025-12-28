@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Node Management Metrics Schema",
+  "description": "Schema definition for all metrics exported by the Node Management service",
+  "version": "1.0.0",
+  "metrics": {
+    "nodes_total": {
+      "type": "counter",
+      "description": "Total number of nodes",
+      "help": "Total number of nodes registered in the system",
+      "labels": ["status", "pool_id"],
+      "label_descriptions": {
+        "status": "Node status (active, inactive, pending, error)",
+        "pool_id": "Pool ID the node belongs to"
+      },
+      "unit": "nodes",
+      "category": "node"
+    },
+    "nodes_active": {
+      "type": "gauge",
+      "description": "Number of active nodes",
+      "help": "Number of currently active nodes",
+      "labels": [],
+      "unit": "nodes",
+      "category": "node"
+    },
+    "pools_total": {
+      "type": "counter",
+      "description": "Total number of pools",
+      "help": "Total number of node pools created",
+      "labels": [],
+      "unit": "pools",
+      "category": "pool"
+    },
+    "pools_active": {
+      "type": "gauge",
+      "description": "Number of active pools",
+      "help": "Number of pools with at least one active node",
+      "labels": [],
+      "unit": "pools",
+      "category": "pool"
+    },
+    "pool_nodes_count": {
+      "type": "gauge",
+      "description": "Number of nodes in a pool",
+      "help": "Current number of nodes in a specific pool",
+      "labels": ["pool_id"],
+      "label_descriptions": {
+        "pool_id": "Pool identifier"
+      },
+      "unit": "nodes",
+      "category": "pool"
+    },
+    "poot_score": {
+      "type": "gauge",
+      "description": "PoOT score for a node",
+      "help": "Proof of Operational Time score for a node",
+      "labels": ["node_id"],
+      "label_descriptions": {
+        "node_id": "Node identifier"
+      },
+      "unit": "score",
+      "category": "poot",
+      "range": {
+        "min": 0.0,
+        "max": 1.0
+      }
+    },
+    "poot_calculations_total": {
+      "type": "counter",
+      "description": "Total number of PoOT calculations",
+      "help": "Total number of PoOT calculations performed",
+      "labels": ["node_id", "status"],
+      "label_descriptions": {
+        "node_id": "Node identifier",
+        "status": "Calculation status (success, error)"
+      },
+      "unit": "calculations",
+      "category": "poot"
+    },
+    "payouts_total": {
+      "type": "counter",
+      "description": "Total number of payouts",
+      "help": "Total number of payouts processed",
+      "labels": ["status"],
+      "label_descriptions": {
+        "status": "Payout status (pending, processed, failed)"
+      },
+      "unit": "payouts",
+      "category": "payout"
+    },
+    "payout_amount_usdt": {
+      "type": "histogram",
+      "description": "Payout amount in USDT",
+      "help": "Distribution of payout amounts in USDT",
+      "labels": ["node_id"],
+      "label_descriptions": {
+        "node_id": "Node identifier"
+      },
+      "unit": "usdt",
+      "category": "payout",
+      "buckets": [1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0]
+    },
+    "payout_processing_duration_seconds": {
+      "type": "histogram",
+      "description": "Payout processing duration",
+      "help": "Time taken to process a payout in seconds",
+      "labels": ["node_id"],
+      "label_descriptions": {
+        "node_id": "Node identifier"
+      },
+      "unit": "seconds",
+      "category": "payout"
+    },
+    "api_requests_total": {
+      "type": "counter",
+      "description": "Total number of API requests",
+      "help": "Total number of API requests processed",
+      "labels": ["method", "endpoint", "status_code"],
+      "label_descriptions": {
+        "method": "HTTP method (GET, POST, PUT, DELETE)",
+        "endpoint": "API endpoint path",
+        "status_code": "HTTP status code"
+      },
+      "unit": "requests",
+      "category": "api"
+    },
+    "api_request_duration_seconds": {
+      "type": "histogram",
+      "description": "API request duration",
+      "help": "Time taken to process an API request in seconds",
+      "labels": ["method", "endpoint"],
+      "label_descriptions": {
+        "method": "HTTP method",
+        "endpoint": "API endpoint path"
+      },
+      "unit": "seconds",
+      "category": "api"
+    },
+    "errors_total": {
+      "type": "counter",
+      "description": "Total number of errors",
+      "help": "Total number of errors encountered",
+      "labels": ["error_type", "service"],
+      "label_descriptions": {
+        "error_type": "Type of error (validation_error, database_error, network_error, etc.)",
+        "service": "Service where error occurred (node_manager, pool_manager, poot_calculator, payout_manager)"
+      },
+      "unit": "errors",
+      "category": "error"
+    }
+  },
+  "categories": {
+    "node": {
+      "description": "Node lifecycle metrics",
+      "metrics": ["nodes_total", "nodes_active"]
+    },
+    "pool": {
+      "description": "Pool management metrics",
+      "metrics": ["pools_total", "pools_active", "pool_nodes_count"]
+    },
+    "poot": {
+      "description": "Proof of Operational Time metrics",
+      "metrics": ["poot_score", "poot_calculations_total"]
+    },
+    "payout": {
+      "description": "Payout processing metrics",
+      "metrics": ["payouts_total", "payout_amount_usdt", "payout_processing_duration_seconds"]
+    },
+    "api": {
+      "description": "API request metrics",
+      "metrics": ["api_requests_total", "api_request_duration_seconds"]
+    },
+    "error": {
+      "description": "Error metrics",
+      "metrics": ["errors_total"]
+    }
+  },
+  "default_thresholds": {
+    "pool_nodes_count": {
+      "warning": 80,
+      "critical": 95
+    },
+    "poot_score": {
+      "warning": 0.7,
+      "critical": 0.5
+    },
+    "payout_amount_usdt": {
+      "warning": 50.0,
+      "critical": 100.0
+    }
+  },
+  "export_endpoint": "/metrics",
+  "export_format": "prometheus_text",
+  "scrape_interval": "30s"
+}
+

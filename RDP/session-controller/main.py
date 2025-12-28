@@ -22,6 +22,7 @@ from datetime import datetime
 from session_controller import SessionController
 from connection_manager import ConnectionManager
 from common.models import RdpSession, SessionStatus, SessionMetrics
+from integration.integration_manager import IntegrationManager
 
 # Configure logging
 logging.basicConfig(
@@ -33,17 +34,35 @@ logger = logging.getLogger(__name__)
 # Global instances
 connection_manager = None
 session_controller = None
+integration_manager = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifespan manager"""
-    global connection_manager, session_controller
+    global connection_manager, session_controller, integration_manager
     
     # Startup
     logger.info("Starting RDP Session Controller")
     
-    connection_manager = ConnectionManager()
-    session_controller = SessionController(connection_manager)
+    # Initialize integration manager
+    try:
+        integration_manager = IntegrationManager(
+            service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30.0')),
+            service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
+            service_retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
+        )
+        logger.info("Integration manager initialized")
+    except Exception as e:
+        logger.warning(f"Failed to initialize integration manager: {e}")
+        integration_manager = None
+    
+    # Initialize connection manager and session controller
+    # Pass integration_manager to ConnectionManager so it can access XRDP client
+    connection_manager = ConnectionManager(integration_manager=integration_manager)
+    session_controller = SessionController(
+        connection_manager=connection_manager,
+        integration_manager=integration_manager
+    )
     
     # Start background monitoring tasks
     asyncio.create_task(session_controller.start_session_monitoring())
@@ -55,6 +74,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     
     # Shutdown
     logger.info("Shutting down RDP Session Controller")
+    
+    # Close integration clients
+    if integration_manager:
+        try:
+            await integration_manager.close_all()
+        except Exception as e:
+            logger.warning(f"Error closing integration clients: {e}")
+    
     logger.info("RDP Session Controller shut down successfully")
 
 def create_app() -> FastAPI:
@@ -82,29 +109,58 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health_check():
         """Health check endpoint"""
+        integration_status = {}
+        if integration_manager:
+            try:
+                integration_status = await integration_manager.health_check_all()
+            except Exception as e:
+                logger.warning(f"Failed to check integration health: {e}")
+                integration_status = {"error": str(e)}
+        
         return {
             "status": "healthy",
             "service": "rdp-session-controller",
             "version": "1.0.0",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            "integrations": integration_status
         }
     
     # Session management endpoints
     @app.post("/api/v1/sessions", response_model=dict)
     async def create_session(
         user_id: str,
-        server_id: UUID,
+        server_id: str,
         session_config: dict
     ):
-        """Create a new RDP session"""
+        """
+        Create a new RDP session
+        
+        Accepts JSON body with:
+        - user_id: str
+        - server_id: str (UUID string)
+        - session_config: dict
+        """
         try:
+            from uuid import UUID as UUIDType
+            # Convert server_id string to UUID
+            try:
+                server_id_uuid = UUIDType(server_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid server_id format: {server_id}"
+                )
+            
             session = await session_controller.create_session(
                 user_id=user_id,
-                server_id=server_id,
+                server_id=server_id_uuid,
                 session_config=session_config
             )
             return session.to_dict()
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"Failed to create session: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to create session: {str(e)}"

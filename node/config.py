@@ -9,6 +9,15 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import logging
+
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 
 class NodeManagementSettings(BaseSettings):
@@ -159,8 +168,16 @@ class NodeManagementSettings(BaseSettings):
 class NodeManagementConfigManager:
     """Configuration manager for Node Management service"""
     
-    def __init__(self):
-        self.settings = NodeManagementSettings()
+    def __init__(self, config_file: Optional[str] = None):
+        """
+        Initialize configuration manager.
+        
+        Args:
+            config_file: Optional path to YAML configuration file.
+                        If not provided, will look for config.yaml in default locations.
+        """
+        # load_config handles YAML availability internally
+        self.settings = load_config(config_file)
         self._validate_config()
     
     def _validate_config(self):
@@ -230,3 +247,212 @@ class NodeManagementConfigManager:
     def get_mongodb_database(self) -> str:
         """Get MongoDB database name"""
         return self.settings.MONGODB_DATABASE
+
+
+def load_config(config_file: Optional[str] = None) -> NodeManagementSettings:
+    """
+    Load configuration from YAML file and environment variables.
+    
+    Configuration loading priority (highest to lowest):
+    1. Environment variables (highest priority - override everything)
+    2. YAML configuration file values (flattened nested structure)
+    3. Pydantic field defaults (lowest priority)
+    
+    Args:
+        config_file: Optional path to YAML configuration file. If not provided,
+                     will look for 'config.yaml' or 'node-management-config.yaml' 
+                     in the node directory.
+        
+    Returns:
+        Loaded NodeManagementSettings object with environment variables overriding YAML values
+        
+    Raises:
+        FileNotFoundError: If config_file is provided but doesn't exist
+        ValueError: If configuration validation fails
+        ImportError: If PyYAML is not available (should not happen if requirements are installed)
+    """
+    try:
+        yaml_data: Dict[str, Any] = {}
+        yaml_file_path: Optional[Path] = None
+        
+        # Determine YAML file path
+        if config_file:
+            yaml_file_path = Path(config_file)
+        else:
+            # Try default locations
+            default_locations = [
+                Path(__file__).parent / "config.yaml",  # Same directory as config.py
+                Path(__file__).parent / "config" / "node-management-config.yaml",  # config directory
+                Path(__file__).parent.parent / "node" / "config.yaml",  # Alternative path
+            ]
+            for loc in default_locations:
+                if loc.exists():
+                    yaml_file_path = loc
+                    break
+        
+        # Load YAML file if it exists
+        if yaml_file_path and yaml_file_path.exists():
+            if not YAML_AVAILABLE:
+                logger.warning(f"PyYAML not available, skipping YAML file {yaml_file_path}")
+            else:
+                try:
+                    with open(yaml_file_path, 'r', encoding='utf-8') as f:
+                        raw_yaml_data = yaml.safe_load(f) or {}
+                    logger.info(f"Loaded YAML configuration from {yaml_file_path}")
+                    
+                    # Flatten nested YAML structure to match Pydantic field names
+                    # The YAML has nested structure, but Pydantic uses flat field names
+                    # We'll extract relevant values from nested structure
+                    flattened_data = {}
+                    
+                    # Global service configuration
+                    if 'global' in raw_yaml_data:
+                        global_cfg = raw_yaml_data['global']
+                        if 'service_name' in global_cfg:
+                            flattened_data['SERVICE_NAME'] = global_cfg['service_name']
+                        if 'log_level' in global_cfg:
+                            flattened_data['LOG_LEVEL'] = global_cfg['log_level']
+                        if 'debug' in global_cfg:
+                            flattened_data['DEBUG'] = global_cfg['debug']
+                    
+                    # Database configuration
+                    if 'database' in raw_yaml_data:
+                        db_cfg = raw_yaml_data['database']
+                        if 'mongodb_url' in db_cfg and db_cfg['mongodb_url']:
+                            flattened_data['MONGODB_URL'] = db_cfg['mongodb_url']
+                        if 'mongodb_database' in db_cfg:
+                            flattened_data['MONGODB_DATABASE'] = db_cfg['mongodb_database']
+                        if 'redis_url' in db_cfg and db_cfg['redis_url']:
+                            flattened_data['REDIS_URL'] = db_cfg['redis_url']
+                    
+                    # Monitoring configuration
+                    if 'monitoring' in raw_yaml_data:
+                        mon_cfg = raw_yaml_data['monitoring']
+                        if 'metrics_enabled' in mon_cfg:
+                            flattened_data['METRICS_ENABLED'] = mon_cfg['metrics_enabled']
+                        if 'metrics_port' in mon_cfg:
+                            flattened_data['METRICS_PORT'] = mon_cfg['metrics_port']
+                        if 'health_check_interval' in mon_cfg:
+                            flattened_data['HEALTH_CHECK_INTERVAL'] = mon_cfg['health_check_interval']
+                        if 'health_check_enabled' in mon_cfg:
+                            flattened_data['HEALTH_CHECK_ENABLED'] = mon_cfg['health_check_enabled']
+                    
+                    # Node pool configuration
+                    if 'node_pool' in raw_yaml_data:
+                        pool_cfg = raw_yaml_data['node_pool']
+                        if 'limits' in pool_cfg:
+                            limits = pool_cfg['limits']
+                            if 'max_nodes_per_pool' in limits:
+                                flattened_data['MAX_NODES_PER_POOL'] = limits['max_nodes_per_pool']
+                            if 'min_nodes_per_pool' in limits:
+                                flattened_data['MIN_NODES_PER_POOL'] = limits['min_nodes_per_pool']
+                        if 'management' in pool_cfg:
+                            mgmt = pool_cfg['management']
+                            if 'pool_health_check_interval_seconds' in mgmt:
+                                flattened_data['POOL_HEALTH_CHECK_INTERVAL'] = mgmt['pool_health_check_interval_seconds']
+                            if 'pool_sync_interval_seconds' in mgmt:
+                                flattened_data['POOL_SYNC_INTERVAL'] = mgmt['pool_sync_interval_seconds']
+                    
+                    # PoOT configuration
+                    if 'poot' in raw_yaml_data:
+                        poot_cfg = raw_yaml_data['poot']
+                        if 'calculation_interval_seconds' in poot_cfg:
+                            flattened_data['POOT_CALCULATION_INTERVAL'] = poot_cfg['calculation_interval_seconds']
+                        if 'score_threshold' in poot_cfg:
+                            flattened_data['POOT_SCORE_THRESHOLD'] = poot_cfg['score_threshold']
+                        if 'challenge_validity_minutes' in poot_cfg:
+                            flattened_data['POOT_CHALLENGE_VALIDITY_MINUTES'] = poot_cfg['challenge_validity_minutes']
+                        if 'proof_cache_minutes' in poot_cfg:
+                            flattened_data['POOT_PROOF_CACHE_MINUTES'] = poot_cfg['proof_cache_minutes']
+                        if 'min_token_stake_amount' in poot_cfg:
+                            flattened_data['MIN_TOKEN_STAKE_AMOUNT'] = poot_cfg['min_token_stake_amount']
+                        if 'max_validation_attempts' in poot_cfg:
+                            flattened_data['MAX_VALIDATION_ATTEMPTS'] = poot_cfg['max_validation_attempts']
+                        if 'challenge_complexity_bytes' in poot_cfg:
+                            flattened_data['CHALLENGE_COMPLEXITY_BYTES'] = poot_cfg['challenge_complexity_bytes']
+                        if 'validation_required' in poot_cfg:
+                            flattened_data['POOT_VALIDATION_REQUIRED'] = poot_cfg['validation_required']
+                    
+                    # Payout configuration
+                    if 'payout' in raw_yaml_data:
+                        payout_cfg = raw_yaml_data['payout']
+                        if 'processing_interval_seconds' in payout_cfg:
+                            flattened_data['PAYOUT_PROCESSING_INTERVAL'] = payout_cfg['processing_interval_seconds']
+                        if 'threshold_usdt' in payout_cfg:
+                            flattened_data['PAYOUT_THRESHOLD_USDT'] = payout_cfg['threshold_usdt']
+                        if 'minimum_amount_usdt' in payout_cfg:
+                            flattened_data['PAYOUT_MIN_AMOUNT_USDT'] = payout_cfg['minimum_amount_usdt']
+                        if 'maximum_amount_usdt' in payout_cfg:
+                            flattened_data['PAYOUT_MAX_AMOUNT_USDT'] = payout_cfg['maximum_amount_usdt']
+                        if 'fees' in payout_cfg and 'fee_percentage' in payout_cfg['fees']:
+                            flattened_data['PAYOUT_PROCESSING_FEE_PERCENT'] = payout_cfg['fees']['fee_percentage']
+                    
+                    # External services
+                    if 'external_services' in raw_yaml_data:
+                        ext_svc = raw_yaml_data['external_services']
+                        if 'api_gateway_url' in ext_svc and ext_svc['api_gateway_url']:
+                            flattened_data['API_GATEWAY_URL'] = ext_svc['api_gateway_url']
+                        if 'blockchain_engine_url' in ext_svc and ext_svc['blockchain_engine_url']:
+                            flattened_data['BLOCKCHAIN_ENGINE_URL'] = ext_svc['blockchain_engine_url']
+                    
+                    # Filter out empty string values from YAML (they should come from env vars)
+                    # Empty strings in YAML indicate "use environment variable", so we remove them
+                    yaml_data = {k: v for k, v in flattened_data.items() if v != ""}
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to load YAML configuration from {yaml_file_path}: {str(e)}")
+                    logger.warning("Continuing with environment variables and defaults only")
+                    yaml_data = {}
+        elif config_file:
+            # User specified a file but it doesn't exist - this is an error
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+        else:
+            logger.debug("No YAML configuration file found, using environment variables and defaults only")
+        
+        # Create configuration object
+        # Priority: Environment variables (highest) > YAML values > Field defaults (lowest)
+        # Strategy: Create config from YAML, then override with environment variables
+        
+        if yaml_data:
+            try:
+                # Step 1: Create config from YAML data (YAML provides defaults)
+                config = NodeManagementSettings.model_validate(yaml_data)
+                
+                # Step 2: Create config normally to get environment variable values
+                env_config = NodeManagementSettings()
+                
+                # Step 3: Override YAML config with environment variable values
+                # Environment variables take highest priority
+                env_dict = env_config.model_dump()
+                yaml_dict = config.model_dump()
+                
+                # For each field, if env_config value differs from yaml_config value,
+                # use the env value (environment variable was set)
+                for key in env_dict.keys():
+                    env_value = env_dict[key]
+                    yaml_value = yaml_dict.get(key)
+                    
+                    # If values differ, environment variable was set - use it
+                    if env_value != yaml_value:
+                        try:
+                            setattr(config, key, env_value)
+                        except Exception as e:
+                            logger.debug(f"Could not override {key} with environment variable: {str(e)}")
+                
+            except Exception as e:
+                logger.warning(f"Error merging YAML with environment variables: {str(e)}")
+                logger.warning("Falling back to environment variables and defaults only")
+                config = NodeManagementSettings()
+        else:
+            # Load from environment variables and defaults only
+            config = NodeManagementSettings()
+        
+        logger.info("Configuration loaded successfully")
+        return config
+        
+    except FileNotFoundError:
+        # Re-raise file not found errors
+        raise
+    except Exception as e:
+        logger.error(f"Failed to load configuration: {str(e)}")
+        raise

@@ -3,6 +3,7 @@ RDP Session Controller - Session Management Service
 
 This module provides session management functionality for RDP connections,
 including session creation, monitoring, and termination.
+Integrates with session-recorder and session-processor for complete session lifecycle.
 """
 
 import asyncio
@@ -15,15 +16,28 @@ import json
 from connection_manager import ConnectionManager
 from common.models import RdpSession, SessionStatus, SessionMetrics
 from security.session_validator import SessionValidator
+from integration.integration_manager import IntegrationManager
 
 logger = logging.getLogger(__name__)
 
 class SessionController:
     """Manages RDP session lifecycle and monitoring"""
     
-    def __init__(self, connection_manager: ConnectionManager):
+    def __init__(
+        self,
+        connection_manager: ConnectionManager,
+        integration_manager: Optional[Any] = None
+    ):
+        """
+        Initialize session controller
+        
+        Args:
+            connection_manager: Connection manager instance
+            integration_manager: Optional integration manager for session-recorder/processor
+        """
         self.connection_manager = connection_manager
         self.session_validator = SessionValidator()
+        self.integration_manager = integration_manager
         self.active_sessions: Dict[UUID, RdpSession] = {}
         self.session_metrics: Dict[UUID, SessionMetrics] = {}
         
@@ -50,10 +64,12 @@ class SessionController:
                 config=session_config
             )
             
-            # Initialize connection
+            # Initialize connection (pass session_id in config)
+            session_config_with_id = session_config.copy()
+            session_config_with_id["session_id"] = session_id
             connection = await self.connection_manager.create_connection(
                 server_id=server_id,
-                session_config=session_config
+                session_config=session_config_with_id
             )
             
             session.connection_id = connection.connection_id
@@ -67,6 +83,22 @@ class SessionController:
                 session_id=session_id,
                 start_time=datetime.utcnow()
             )
+            
+            # Start recording if integration manager is available
+            if self.integration_manager and self.integration_manager.recorder:
+                try:
+                    await self.integration_manager.recorder.start_recording(
+                        session_id=str(session_id),
+                        owner_address=user_id,
+                        metadata={
+                            "server_id": str(server_id),
+                            "session_config": session_config
+                        }
+                    )
+                    logger.info(f"Started recording for session {session_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to start recording for session {session_id}: {e}")
+                    # Continue even if recording fails - session is still created
             
             logger.info(f"Session {session_id} created for user {user_id}")
             return session
@@ -114,6 +146,28 @@ class SessionController:
                 return False
                 
             session = self.active_sessions[session_id]
+            
+            # Stop recording if integration manager is available
+            if self.integration_manager and self.integration_manager.recorder:
+                try:
+                    stop_result = await self.integration_manager.recorder.stop_recording(
+                        session_id=str(session_id)
+                    )
+                    logger.info(f"Stopped recording for session {session_id}: {stop_result}")
+                    
+                    # Finalize processing if processor is available
+                    if self.integration_manager.processor:
+                        try:
+                            finalize_result = await self.integration_manager.processor.finalize_session(
+                                session_id=str(session_id)
+                            )
+                            logger.info(f"Finalized processing for session {session_id}: {finalize_result}")
+                        except Exception as e:
+                            logger.warning(f"Failed to finalize processing for session {session_id}: {e}")
+                            
+                except Exception as e:
+                    logger.warning(f"Failed to stop recording for session {session_id}: {e}")
+                    # Continue with termination even if recording stop fails
             
             # Close connection
             if session.connection_id:

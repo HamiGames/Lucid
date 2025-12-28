@@ -268,6 +268,7 @@ services:
       - SESSION_API_HOST=session-api
       - SESSION_API_PORT=8113
       - SESSION_API_URL=http://session-api:8113
+      - RDP_CONTROLLER_URL=http://rdp-controller:8092
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
@@ -468,7 +469,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -583,13 +584,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test:
-        [
-          "CMD",
-          "/usr/bin/python3.11",
-          "-c",
-          "import os, urllib.request, sys; port = os.getenv('NODE_MANAGEMENT_PORT', '8095'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
-        ]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
