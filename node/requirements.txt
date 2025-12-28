@@ -53,4 +53,4 @@ mypy==1.7.1
 
 # Optional: Additional monitoring
 # psutil==5.9.6
-# aiofiles==23.2.1
+aiofiles==23.2.1
