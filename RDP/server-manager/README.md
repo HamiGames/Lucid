@@ -1,7 +1,7 @@
 # RDP Server Manager Service
 
-**Service Name:** `lucid-rdp-server-manager`  
-**Container Name:** `lucid-rdp-server-manager`  
+**Service Name:** `rdp-server-manager`  
+**Container Name:** `rdp-server-manager` (in docker-compose.application.yml)  
 **Port:** 8081  
 **Cluster:** support  
 **Type:** distroless Python service
@@ -41,7 +41,7 @@ This service follows the Lucid module design template pattern:
 
 The service uses Pydantic Settings for configuration validation. Required environment variables:
 
-- `RDP_SERVER_MANAGER_HOST` - Service hostname (default: `lucid-rdp-server-manager`)
+- `RDP_SERVER_MANAGER_HOST` - Service hostname (default: `rdp-server-manager`)
 - `RDP_SERVER_MANAGER_PORT` - Service port (default: `8081`)
 - `RDP_SERVER_MANAGER_URL` - Service URL
 - `MONGODB_URL` - MongoDB connection URL (required)

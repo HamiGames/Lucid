@@ -84,7 +84,7 @@ class ConnectionManager:
                 "xrdp-sesman",
                 "--config", connection.config.get("xrdp_config_path", "/etc/xrdp/sesman.ini"),
                 "--port", str(connection.config.get("port", 3389)),
-                "--server", connection.config.get("server_host", os.getenv("RDP_SERVER_HOST", "rdp-server-manager"))
+                "--server", connection.config.get("server_host", os.getenv("RDP_XRDP_HOST", "rdp-xrdp"))
             ]
             
             # Start process
