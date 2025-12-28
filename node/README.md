@@ -245,7 +245,8 @@ Deploy using Docker Compose:
 # docker-compose.yml
 services:
   node-management:
-    image: lucid-node-management:latest
+    image: pickme/lucid-node-management:latest-arm64
+    container_name: node-management
     ports:
       - "8095:8095"
     environment:
@@ -269,7 +270,7 @@ curl http://localhost:8095/health
 # Expected response
 {
   "status": "healthy",
-  "service": "lucid-node-management",
+  "service": "node-management",
   "version": "1.0.0"
 }
 ```

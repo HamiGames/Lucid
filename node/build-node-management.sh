@@ -134,7 +134,7 @@ test_container() {
         # Run container in background
         local container_id
         container_id=$(docker run -d \
-            --name "lucid-node-management-test" \
+            --name "node-management-test" \
             --rm \
             -p 8095:8095 \
             -e NODE_MANAGEMENT_PORT=8095 \
