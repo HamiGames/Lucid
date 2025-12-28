@@ -38,40 +38,51 @@ RUN echo "LUCID_RDP_XRDP_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_RDP_XRDP_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
-COPY RDP/requirements.xrdp.txt ./requirements.xrdp.txt
+COPY RDP/requirements.xrdp.txt ./requirements.txt
 
-# Create virtual environment
-RUN python -m venv /opt/venv
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
 
-# Ensure directory structure exists before pip install
-RUN mkdir -p /opt/venv/lib/python3.11/site-packages && \
-    mkdir -p /opt/venv/bin
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
-# Install packages in venv
-RUN /opt/venv/bin/pip install --upgrade pip setuptools wheel && \
-    /opt/venv/bin/pip install -r requirements.xrdp.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
-# Create marker files with actual content (ensures directory structure is locked in)
-# CRITICAL: Must be AFTER pip install, with actual content (not empty)
-RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_RDP_XRDP_BINARIES_INSTALLED_$(date +%s)" > /opt/venv/bin/.lucid-marker && \
-    chown -R 65532:65532 /opt/venv
+# Marker files (per Dockerfile-copy-pattern.md)
+RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_RDP_XRDP_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
 
-# Verify packages are installed and verify directory structure
-RUN /opt/venv/bin/python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
-    /opt/venv/bin/python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
-    test -d /opt/venv/lib/python3.11/site-packages && \
-    echo "Directory exists: /opt/venv/lib/python3.11/site-packages" && \
-    ls -la /opt/venv/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /opt/venv/lib/python3.11/site-packages/ | wc -l)"
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+RUN python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
+    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
-COPY RDP/xrdp/               ./app/xrdp/
-COPY RDP/common/             ./app/common/
-COPY RDP/protocol/           ./app/protocol/
-COPY RDP/client/             ./app/client/
-COPY RDP/resource-monitor/   ./app/resource_monitor/
-COPY RDP/session-controller/ ./app/session_controller/
-COPY RDP/__init__.py         ./app/__init__.py
+# Application source COPY
+COPY RDP/xrdp/               ./xrdp/
+COPY RDP/common/             ./common/
+COPY RDP/protocol/           ./protocol/
+COPY RDP/client/             ./client/
+COPY RDP/resource-monitor/   ./resource-monitor/
+COPY RDP/session-controller/ ./session-controller/
+COPY RDP/__init__.py         ./__init__.py
+
+# Create source marker files (per Dockerfile-copy-pattern.md - ensures directories have content)
+RUN echo "LUCID_RDP_XRDP_SOURCE_INSTALLED_$(date +%s)" > ./xrdp/.lucid-source-marker && \
+    chown -R 65532:65532 ./xrdp ./common ./protocol ./client ./resource-monitor ./session-controller ./__init__.py
+
+# Verify source files and markers in builder stage (per Dockerfile-copy-pattern.md)
+RUN test -d ./xrdp && \
+    test -f ./xrdp/.lucid-source-marker && \
+    test -s ./xrdp/.lucid-source-marker && \
+    test -f ./xrdp/main.py && \
+    test -f ./xrdp/entrypoint.py && \
+    echo "✅ All source files and markers verified in builder stage"
 
 ###############
 # Runtime step
@@ -92,38 +103,64 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.platform="arm64" \
       com.lucid.security="distroless"
 
-ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
-    PYTHONPATH=/opt/lucid/app \
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    API_BIND_HOST=0.0.0.0 \
-    API_PORT=3389 \
-    XRDP_SERVICE_HOST=lucid-rdp \
-    XRDP_SERVICE_PORT=3389 \
-    XRDP_CONFIG_ROOT=/etc/xrdp \
-    XRDP_SESSIONS_ROOT=/opt/lucid/data/sessions \
-    XRDP_LOG_ROOT=/opt/lucid/logs/xrdp \
-    MAX_XRDP_PROCESSES=10 \
-    PROCESS_TIMEOUT=30 \
-    # MONGODB_URI and REDIS_URL must be set via docker-compose environment variables
-    # from .env.secrets file (no hardcoded passwords)
+    XRDP_PORT=3389 \
+    XRDP_SERVICE_HOST=rdp-xrdp \
+    XRDP_SERVICE_PORT=3389
 
-# Copy runtime directories from builder (directory already populated with .keep files)
+WORKDIR /app
+
+# System directories & certificates
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-# Copy entire venv (directory already populated with packages + marker files from builder stage)
-COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
+# Distroless base already has correct linker/runtime; only copy CA certs
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+# Python packages (per COPY pattern guide)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-COPY --from=builder --chown=65532:65532 /build/app /opt/lucid/app
+# Runtime verification of packages (per master-docker-design.md - CRITICAL)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty'; \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+print('✅ All packages verified in runtime stage')"]
 
-WORKDIR /opt/lucid/app
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
+COPY --chown=65532:65532 --from=builder /build/xrdp /app/xrdp
+COPY --chown=65532:65532 --from=builder /build/common /app/common
+COPY --chown=65532:65532 --from=builder /build/protocol /app/protocol
+COPY --chown=65532:65532 --from=builder /build/client /app/client
+COPY --chown=65532:65532 --from=builder /build/resource-monitor /app/resource-monitor
+COPY --chown=65532:65532 --from=builder /build/session-controller /app/session-controller
+COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
+
+# Verify application source files were copied (prevents silent COPY failures per Dockerfile-copy-pattern.md)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/xrdp'), 'xrdp directory not found'; \
+assert os.path.exists('/app/xrdp/main.py'), 'xrdp/main.py not found'; \
+assert os.path.exists('/app/xrdp/entrypoint.py'), 'xrdp/entrypoint.py not found'; \
+server_marker = '/app/xrdp/.lucid-source-marker'; \
+assert os.path.exists(server_marker), 'xrdp marker file not found'; \
+assert os.path.getsize(server_marker) > 0, 'xrdp marker file is empty'; \
+print('✅ All application source files and markers verified')"]
 
 EXPOSE 3389
 
@@ -132,5 +169,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
+# Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
-CMD ["/usr/bin/python3.11", "-m", "uvicorn", "xrdp.main:app", "--host", "0.0.0.0", "--port", "3389"]
+
+CMD ["/usr/bin/python3.11", "/app/xrdp/entrypoint.py"]

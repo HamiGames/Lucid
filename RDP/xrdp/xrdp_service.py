@@ -57,10 +57,11 @@ class XRDPServiceManager:
         self.active_processes: Dict[str, XRDPProcess] = {}
         self.monitor_tasks: Dict[str, asyncio.Task] = {}
         
-        # Service configuration
-        self.base_config_path = Path("/etc/xrdp/servers")
-        self.base_log_path = Path("/var/log/xrdp/servers")
-        self.base_session_path = Path("/data/sessions")
+        # Service configuration - use writable volume mount locations
+        # /app/config and /app/logs are volume mounts (writable in distroless container)
+        self.base_config_path = Path("/app/config/servers")
+        self.base_log_path = Path("/app/logs/servers")
+        self.base_session_path = Path("/app/config/sessions")
         
         # XRDP binary paths
         self.xrdp_binary = "/usr/sbin/xrdp"

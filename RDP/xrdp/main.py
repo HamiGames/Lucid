@@ -1,52 +1,96 @@
-# LUCID XRDP Service - Main Entry Point
-# LUCID-STRICT Layer 2 Service Integration
-# Multi-platform support for Pi 5 ARM64
-# Distroless container implementation
-
-from __future__ import annotations
+#!/usr/bin/env python3
+"""
+LUCID XRDP Service - Main Entry Point
+LUCID-STRICT Layer 2 Service Integration
+Multi-platform support for Pi 5 ARM64
+Distroless container implementation
+"""
 
 import asyncio
 import logging
 import os
-import signal
 import sys
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
 # Import XRDP service components
-from xrdp_service import XRDPServiceManager
-from xrdp_config import XRDPConfigManager
+from xrdp.xrdp_service import XRDPServiceManager
+from xrdp.xrdp_config import XRDPConfigManager, SecurityLevel
 
+# Configure logging (structured logging per master design)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
+
+# Global service instances
+config_manager: Optional[XRDPConfigManager] = None
+service_manager: Optional[XRDPServiceManager] = None
 
 # Configuration from environment
 SERVICE_NAME = os.getenv("SERVICE_NAME", "xrdp-service")
-SERVICE_PORT = int(os.getenv("SERVICE_PORT", "8091"))
+SERVICE_PORT = int(os.getenv("XRDP_PORT", "3389"))
 MONGODB_URL = os.getenv("MONGODB_URL", "")
 REDIS_URL = os.getenv("REDIS_URL", "")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8089")
 
-# CRITICAL: MONGODB_URL and REDIS_URL must be set via docker-compose environment variables
-# from .env.secrets file. Defaults are empty strings to fail fast if not configured.
-if not MONGODB_URL:
-    raise ValueError("MONGODB_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
-if not REDIS_URL:
-    raise ValueError("REDIS_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
-
-# Initialize components
-config_manager = XRDPConfigManager()
-service_manager = XRDPServiceManager()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager"""
+    global config_manager, service_manager
+    
+    # Startup
+    logger.info("Starting Lucid XRDP Service...")
+    
+    try:
+        # CRITICAL: MONGODB_URL and REDIS_URL must be set via docker-compose environment variables
+        # from .env.secrets file. Defaults are empty strings to fail fast if not configured.
+        if not MONGODB_URL:
+            raise ValueError("MONGODB_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+        if not REDIS_URL:
+            raise ValueError("REDIS_URL environment variable is required. Set it in docker-compose.yml or .env.secrets")
+        
+        # Initialize components
+        config_manager = XRDPConfigManager()
+        service_manager = XRDPServiceManager()
+        
+        # Initialize components
+        await config_manager.initialize()
+        await service_manager.initialize()
+        
+        logger.info(f"{SERVICE_NAME} started on port {SERVICE_PORT}")
+        
+        yield
+        
+    except Exception as e:
+        logger.error(f"Failed to start {SERVICE_NAME}: {e}", exc_info=True)
+        raise
+    
+    finally:
+        # Shutdown (graceful shutdown per master design)
+        logger.info(f"Shutting down {SERVICE_NAME}...")
+        
+        try:
+            if service_manager:
+                await service_manager.shutdown_all()
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}", exc_info=True)
+        
+        logger.info(f"{SERVICE_NAME} stopped")
 
 # FastAPI application
 app = FastAPI(
     title="Lucid XRDP Service",
     description="XRDP service management for Lucid system",
     version="1.0.0",
+    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -79,18 +123,23 @@ class ServiceStatusResponse(BaseModel):
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    global service_manager
     return {
         "status": "healthy",
         "service": SERVICE_NAME,
         "version": "1.0.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "active_processes": len(service_manager.active_processes),
-        "max_processes": service_manager.max_processes
+        "active_processes": len(service_manager.active_processes) if service_manager else 0,
+        "max_processes": service_manager.max_processes if service_manager else 0
     }
 
 @app.post("/services", response_model=ServiceResponse)
 async def start_service(request: StartServiceRequest):
     """Start XRDP service"""
+    global service_manager
+    if not service_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         # Convert string paths to Path objects
         config_path = Path(request.config_path)
@@ -121,6 +170,10 @@ async def start_service(request: StartServiceRequest):
 @app.get("/services/{process_id}", response_model=ServiceStatusResponse)
 async def get_service(process_id: str):
     """Get XRDP service status"""
+    global service_manager
+    if not service_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         xrdp_process = await service_manager.get_process_status(process_id)
         if not xrdp_process:
@@ -145,6 +198,10 @@ async def get_service(process_id: str):
 @app.post("/services/{process_id}/stop")
 async def stop_service(process_id: str):
     """Stop XRDP service"""
+    global service_manager
+    if not service_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         result = await service_manager.stop_xrdp_service(process_id)
         return result
@@ -156,6 +213,10 @@ async def stop_service(process_id: str):
 @app.post("/services/{process_id}/restart")
 async def restart_service(process_id: str):
     """Restart XRDP service"""
+    global service_manager
+    if not service_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         result = await service_manager.restart_xrdp_service(process_id)
         return result
@@ -167,6 +228,10 @@ async def restart_service(process_id: str):
 @app.get("/services")
 async def list_services():
     """List all XRDP services"""
+    global service_manager
+    if not service_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         processes = await service_manager.list_processes()
         return {
@@ -191,6 +256,10 @@ async def list_services():
 @app.get("/statistics")
 async def get_statistics():
     """Get service statistics"""
+    global service_manager
+    if not service_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         stats = await service_manager.get_service_statistics()
         return stats
@@ -209,9 +278,11 @@ async def create_config(
     security_level: str = "high"
 ):
     """Create XRDP configuration"""
+    global config_manager
+    if not config_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
-        from .xrdp_config import SecurityLevel
-        
         # Map security level
         security_levels = {
             "low": SecurityLevel.LOW,
@@ -249,6 +320,10 @@ async def create_config(
 @app.post("/config/validate")
 async def validate_config(config_path: str):
     """Validate XRDP configuration"""
+    global config_manager
+    if not config_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         path = Path(config_path)
         is_valid = await config_manager.validate_config(path)
@@ -265,6 +340,10 @@ async def validate_config(config_path: str):
 @app.delete("/config/{server_id}")
 async def cleanup_config(server_id: str):
     """Cleanup XRDP configuration"""
+    global config_manager
+    if not config_manager:
+        raise HTTPException(503, "Service not initialized")
+    
     try:
         config_path = config_manager.config_path / server_id
         await config_manager.cleanup_config(config_path)
@@ -278,61 +357,8 @@ async def cleanup_config(server_id: str):
         logger.error(f"Config cleanup failed: {e}")
         raise HTTPException(500, f"Config cleanup failed: {str(e)}")
 
-# Startup and shutdown events
-@app.on_event("startup")
-async def startup_event():
-    """Application startup"""
-    logger.info(f"Starting {SERVICE_NAME}...")
-    
-    # Initialize components
-    await config_manager.initialize()
-    await service_manager.initialize()
-    
-    logger.info(f"{SERVICE_NAME} started on port {SERVICE_PORT}")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown"""
-    logger.info(f"Shutting down {SERVICE_NAME}...")
-    
-    # Stop all XRDP processes
-    await service_manager.shutdown_all()
-    
-    logger.info(f"{SERVICE_NAME} stopped")
-
-# Signal handlers for graceful shutdown
-def signal_handler(signum, frame):
-    """Handle shutdown signals"""
-    logger.info(f"Received signal {signum}, shutting down...")
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-
-def main():
-    """Main entry point"""
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format=f'[{SERVICE_NAME}] %(asctime)s - %(levelname)s - %(message)s'
-    )
-    
-    # Run server
-    # Get port from environment (from docker-compose.application.yml)
-    port_str = os.getenv("XRDP_PORT", str(SERVICE_PORT))
-    try:
-        port = int(port_str)
-    except ValueError:
-        logger.error(f"Invalid XRDP_PORT value: {port_str}")
-        sys.exit(1)
-    
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",  # Always bind to all interfaces in container
-        port=port,
-        log_level="info",
-        access_log=True
-    )
-
-if __name__ == "__main__":
-    main()
+# Root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"service": "xrdp-service", "status": "running"}

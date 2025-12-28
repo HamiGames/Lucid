@@ -553,10 +553,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.node-management
     networks:
       - lucid-pi-network
     ports:
-      - "8095:8095"
+      - "${NODE_MANAGEMENT_PORT:-8095}:${NODE_MANAGEMENT_PORT:-8095}"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs:rw
@@ -566,10 +567,10 @@ services:
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - NODE_MANAGEMENT_HOST=node-management
-      - NODE_MANAGEMENT_PORT=8095
-      - NODE_MANAGEMENT_URL=http://node-management:8095
+      - NODE_MANAGEMENT_PORT=${NODE_MANAGEMENT_PORT:-8095}
+      - NODE_MANAGEMENT_URL=http://node-management:${NODE_MANAGEMENT_PORT:-8095}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - API_GATEWAY_URL=${API_GATEWAY_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
     user: "65532:65532"
@@ -582,7 +583,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('NODE_MANAGEMENT_PORT', '8095'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

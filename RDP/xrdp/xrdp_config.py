@@ -58,10 +58,11 @@ class XRDPConfigManager:
     
     def __init__(self):
         """Initialize XRDP config manager"""
-        self.config_path = Path("/etc/xrdp")
-        self.log_path = Path("/var/log/xrdp")
-        self.session_path = Path("/data/sessions")
-        self.ssl_path = Path("/etc/ssl/xrdp")
+        # Use writable volume mount locations (/app/config and /app/logs are volume mounts)
+        self.config_path = Path("/app/config")
+        self.log_path = Path("/app/logs")
+        self.session_path = Path("/app/config/sessions")  # Sessions under config since no /app/data mount
+        self.ssl_path = Path("/app/config/ssl")
         
         # Configuration templates
         self.config_templates: Dict[str, str] = {}
