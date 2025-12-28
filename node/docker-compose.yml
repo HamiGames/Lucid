@@ -45,6 +45,7 @@ services:
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/cache/node-management:/app/cache:rw
       - node-management-cache:/tmp/nodes
     networks:
       - lucid-pi-network

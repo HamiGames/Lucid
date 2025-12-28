@@ -55,6 +55,14 @@ RUN echo "LUCID_NODE_MANAGEMENT_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_NODE_MANAGEMENT_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
+# Create writable directories for runtime (required by uptime_beacon.py and work_credits.py)
+# These directories need marker files so COPY works correctly (per Dockerfile-copy-pattern.md)
+RUN mkdir -p /app-dirs/cache/node /app-dirs/data/node /app-dirs/logs/node && \
+    echo "LUCID_NODE_MANAGEMENT_CACHE_$(date +%s)" > /app-dirs/cache/node/.keep && \
+    echo "LUCID_NODE_MANAGEMENT_DATA_$(date +%s)" > /app-dirs/data/node/.keep && \
+    echo "LUCID_NODE_MANAGEMENT_LOGS_$(date +%s)" > /app-dirs/logs/node/.keep && \
+    chown -R 65532:65532 /app-dirs
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip wheel setuptools
 
@@ -84,11 +92,13 @@ assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not fo
 assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+import blake3; assert blake3, 'blake3 import failed'; \
 print('✅ All packages verified in builder stage')"
 
 # Application source COPY (per Dockerfile-copy-pattern.md - copy entire directory)
@@ -154,6 +164,13 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
+# Writable directories for runtime (required by uptime_beacon.py and work_credits.py)
+# These MUST be volume mounts in docker-compose for write access in read-only container
+# We copy the pre-created structure with marker files for proper ownership
+COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
+COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
+COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
+
 # Python packages (per COPY pattern guide)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
@@ -169,11 +186,13 @@ assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not fo
 assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+import blake3; assert blake3, 'blake3 import failed'; \
 print('✅ All packages verified in runtime stage')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directory)

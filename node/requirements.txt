@@ -24,6 +24,7 @@ python-multipart==0.0.6
 # Cryptography
 cryptography>=42.0.0
 pycryptodome==3.19.0
+blake3>=0.3.0
 
 # Async utilities
 asyncio-mqtt==0.16.1
