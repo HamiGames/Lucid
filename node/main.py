@@ -29,6 +29,7 @@ from .poot_calculator import PoOTCalculator
 from .payout_manager import PayoutManager
 from .node_pool_manager import NodePoolManager
 from .database_adapter import get_database_adapter, DatabaseAdapter
+from .config import NodeManagementConfigManager
 from .models import (
     NodeInfo, NodeStatus, PoolInfo, PayoutInfo, 
     PoOTProof, NodeMetrics, PoolMetrics
@@ -48,37 +49,20 @@ poot_calculator: Optional[PoOTCalculator] = None
 payout_manager: Optional[PayoutManager] = None
 pool_manager: Optional[NodePoolManager] = None
 db_adapter: Optional[DatabaseAdapter] = None
-
-# Configuration with safe type conversion
-def safe_int_env(key: str, default: int) -> int:
-    """Safely convert environment variable to int."""
-    try:
-        return int(os.getenv(key, str(default)))
-    except ValueError:
-        logger.warning(f"Invalid {key}, using default: {default}")
-        return default
-
-def safe_float_env(key: str, default: float) -> float:
-    """Safely convert environment variable to float."""
-    try:
-        return float(os.getenv(key, str(default)))
-    except ValueError:
-        logger.warning(f"Invalid {key}, using default: {default}")
-        return default
-
-NODE_MANAGEMENT_PORT = safe_int_env("NODE_MANAGEMENT_PORT", 8095)
-MAX_NODES_PER_POOL = safe_int_env("MAX_NODES_PER_POOL", 100)
-PAYOUT_THRESHOLD_USDT = safe_float_env("PAYOUT_THRESHOLD_USDT", 10.0)
-POOT_CALCULATION_INTERVAL = safe_int_env("POOT_CALCULATION_INTERVAL", 300)  # 5 minutes
-PAYOUT_PROCESSING_INTERVAL = safe_int_env("PAYOUT_PROCESSING_INTERVAL", 3600)  # 1 hour
+config_manager: Optional[NodeManagementConfigManager] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global node_manager, poot_calculator, payout_manager, pool_manager, db_adapter
+    global node_manager, poot_calculator, payout_manager, pool_manager, db_adapter, config_manager
     
     try:
         logger.info("Starting Lucid Node Management Service...")
+        
+        # Initialize configuration using Pydantic Settings (per master design)
+        config_manager = NodeManagementConfigManager()
+        config_dict = config_manager.get_node_management_config_dict()
+        logger.info("Configuration initialized using Pydantic Settings")
         
         # Initialize database adapter
         db_adapter = await get_database_adapter()
@@ -91,23 +75,24 @@ async def lifespan(app: FastAPI):
         # Initialize payout manager
         payout_manager = PayoutManager(
             db_adapter=db_adapter,
-            threshold_usdt=PAYOUT_THRESHOLD_USDT
+            threshold_usdt=config_dict["payout_threshold_usdt"]
         )
         logger.info("Payout manager initialized")
         
         # Initialize node pool manager
         pool_manager = NodePoolManager(
             db_adapter=db_adapter,
-            max_nodes_per_pool=MAX_NODES_PER_POOL
+            max_nodes_per_pool=config_dict["max_nodes_per_pool"]
         )
         logger.info("Node pool manager initialized")
         
         # Initialize node manager
+        node_id = config_dict.get("node_id") or os.getenv("NODE_ID") or str(uuid.uuid4())
         node_config = NodeConfig(
-            node_id=os.getenv("NODE_ID", str(uuid.uuid4())),
+            node_id=node_id,
             role="management",
-            onion_address=os.getenv("ONION_ADDRESS", ""),
-            port=NODE_MANAGEMENT_PORT,
+            onion_address=config_dict.get("onion_address") or os.getenv("ONION_ADDRESS", ""),
+            port=config_dict["port"],
             work_credits_enabled=True,
             relay_enabled=True
         )
@@ -130,12 +115,16 @@ async def lifespan(app: FastAPI):
         yield
         
     except Exception as e:
-        logger.error(f"Failed to start Node Management Service: {e}")
+        logger.error(f"Failed to start Node Management Service: {e}", exc_info=True)
         raise
     finally:
-        # Cleanup
-        if node_manager:
-            await node_manager.stop()
+        # Cleanup (graceful shutdown per master design)
+        logger.info("Shutting down Lucid Node Management Service...")
+        try:
+            if node_manager:
+                await node_manager.stop()
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}", exc_info=True)
         logger.info("Lucid Node Management Service stopped")
 
 # Create FastAPI application
@@ -186,13 +175,15 @@ async def periodic_poot_calculation():
     """Periodic PoOT calculation task"""
     while True:
         try:
-            if poot_calculator:
+            if poot_calculator and config_manager:
                 await poot_calculator.calculate_all_poots()
                 logger.info("Periodic PoOT calculation completed")
         except Exception as e:
             logger.error(f"PoOT calculation error: {e}")
         
-        await asyncio.sleep(POOT_CALCULATION_INTERVAL)
+        # Get interval from config manager
+        interval = config_manager.settings.POOT_CALCULATION_INTERVAL if config_manager else 300
+        await asyncio.sleep(interval)
 
 async def periodic_payout_processing():
     """Periodic payout processing task"""
@@ -204,7 +195,9 @@ async def periodic_payout_processing():
         except Exception as e:
             logger.error(f"Payout processing error: {e}")
         
-        await asyncio.sleep(PAYOUT_PROCESSING_INTERVAL)
+        # Get interval from config manager
+        interval = config_manager.settings.PAYOUT_PROCESSING_INTERVAL if config_manager else 3600
+        await asyncio.sleep(interval)
 
 async def periodic_pool_health_check():
     """Periodic pool health check task"""
@@ -216,7 +209,9 @@ async def periodic_pool_health_check():
         except Exception as e:
             logger.error(f"Pool health check error: {e}")
         
-        await asyncio.sleep(300)  # 5 minutes
+        # Get interval from config manager
+        interval = config_manager.settings.POOL_HEALTH_CHECK_INTERVAL if config_manager else 300
+        await asyncio.sleep(interval)
 
 # API Endpoints
 
@@ -231,7 +226,11 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "node-management",
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "active_nodes": len(node_manager.active_nodes) if node_manager and hasattr(node_manager, 'active_nodes') else 0,
+        "max_nodes_per_pool": config_manager.settings.MAX_NODES_PER_POOL if config_manager else 100,
+        "payout_threshold_usdt": config_manager.settings.PAYOUT_THRESHOLD_USDT if config_manager else 10.0
     }
 
 @app.get("/metrics")
@@ -349,15 +348,20 @@ async def get_pool(
 @app.post("/pools")
 async def create_pool(
     pool_name: str,
-    max_nodes: int = MAX_NODES_PER_POOL,
+    max_nodes: Optional[int] = None,
     pool_manager: NodePoolManager = Depends(get_pool_manager)
 ):
     """Create a new node pool"""
     try:
-        if max_nodes > MAX_NODES_PER_POOL:
+        # Get max nodes from config manager if not provided
+        if max_nodes is None:
+            max_nodes = config_manager.settings.MAX_NODES_PER_POOL if config_manager else 100
+        
+        max_allowed = config_manager.settings.MAX_NODES_PER_POOL if config_manager else 100
+        if max_nodes > max_allowed:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Max nodes cannot exceed {MAX_NODES_PER_POOL}"
+                detail=f"Max nodes cannot exceed {max_allowed}"
             )
         
         pool_id = await pool_manager.create_pool(pool_name, max_nodes)
@@ -453,8 +457,9 @@ async def process_payouts(
 @app.get("/payouts/threshold")
 async def get_payout_threshold():
     """Get current payout threshold"""
+    threshold = config_manager.settings.PAYOUT_THRESHOLD_USDT if config_manager else 10.0
     return {
-        "threshold_usdt": PAYOUT_THRESHOLD_USDT,
+        "threshold_usdt": threshold,
         "description": "Minimum USDT amount required for payout processing"
     }
 
@@ -469,10 +474,13 @@ async def global_exception_handler(request, exc):
     )
 
 if __name__ == "__main__":
+    # This is only used for local development
+    # In production, entrypoint.py is used
+    port = int(os.getenv("NODE_MANAGEMENT_PORT", "8095"))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=NODE_MANAGEMENT_PORT,
+        port=port,
         log_level="info",
         access_log=True
     )

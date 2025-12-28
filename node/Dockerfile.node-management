@@ -1,0 +1,196 @@
+# syntax=docker/dockerfile:1.5
+# LUCID NODE MANAGEMENT - Distroless Container
+# Node Management service (lucid-node-management) - Ports 8095, 8099
+# Image: pickme/lucid-node-management:latest-arm64
+# Build Context: . (project root)
+# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
+
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /build
+
+# Create placeholder files in system directories with actual content (ensures they're baked into image)
+RUN echo "LUCID_NODE_MANAGEMENT_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_NODE_MANAGEMENT_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip wheel setuptools
+
+COPY node/requirements.txt ./requirements.txt
+
+# Ensure directory structure exists before pip install
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary -r requirements.txt
+
+# Create marker files with actual content (ensures directory structure is locked in)
+# CRITICAL: Must be AFTER pip install, with actual content (not empty)
+RUN echo "LUCID_NODE_MANAGEMENT_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_NODE_MANAGEMENT_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Builder-stage verification (per master-docker-design.md - CRITICAL)
+RUN ["/usr/bin/python3.11", "-c", "import sys, os; \
+site_packages = '/root/.local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+print('✅ All packages verified in builder stage')"]
+
+# Application source COPY (per Dockerfile-copy-pattern.md - copy entire directory)
+COPY node/ ./node/
+
+# Create source marker files (per Dockerfile-copy-pattern.md)
+RUN echo "LUCID_NODE_MANAGEMENT_SOURCE_INSTALLED_$(date +%s)" > ./node/.lucid-source-marker && \
+    chown -R 65532:65532 ./node
+
+# Verify application source files were copied (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/build/node'), 'node directory not found'; \
+assert os.path.exists('/build/node/main.py'), 'node/main.py not found'; \
+assert os.path.exists('/build/node/entrypoint.py'), 'node/entrypoint.py not found'; \
+assert os.path.exists('/build/node/config.py'), 'node/config.py not found'; \
+node_marker = '/build/node/.lucid-source-marker'; \
+assert os.path.exists(node_marker), 'node marker file not found'; \
+assert os.path.getsize(node_marker) > 0, 'node marker file is empty'; \
+print('✅ All application source files and markers verified in builder')"]
+
+############################
+# Stage 2 – Runtime
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:nonroot
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Node Management" \
+      org.opencontainers.image.description="Distroless node management service for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="node-management" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="application" \
+      com.lucid.security="distroless"
+
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    NODE_MANAGEMENT_PORT=8095 \
+    NODE_MANAGEMENT_HOST=0.0.0.0
+
+WORKDIR /app
+
+# System directories & certificates
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Python packages (per COPY pattern guide)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+
+# Runtime verification of packages (per master-docker-design.md - CRITICAL)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+print('✅ All packages verified in runtime stage')"]
+
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directory)
+COPY --chown=65532:65532 --from=builder /build/node /app/node
+
+# Verify application source files were copied (prevents silent COPY failures per Dockerfile-copy-pattern.md)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/node'), 'node directory not found'; \
+assert os.path.exists('/app/node/main.py'), 'node/main.py not found'; \
+assert os.path.exists('/app/node/entrypoint.py'), 'node/entrypoint.py not found'; \
+assert os.path.exists('/app/node/config.py'), 'node/config.py not found'; \
+node_marker = '/app/node/.lucid-source-marker'; \
+assert os.path.exists(node_marker), 'node marker file not found'; \
+assert os.path.getsize(node_marker) > 0, 'node marker file is empty'; \
+print('✅ All application source files and markers verified')"]
+
+EXPOSE 8095 8099
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/usr/bin/python3.11", "-c", "import os, urllib.request, sys; port = os.getenv('NODE_MANAGEMENT_PORT', '8095'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)"]
+
+USER 65532:65532
+
+ENTRYPOINT []
+
+CMD ["/usr/bin/python3.11", "/app/node/entrypoint.py"]
+
+# All configuration comes from .env.application, .env.core, .env.secrets, .env.foundation
+

@@ -1,331 +1,232 @@
-# Path: node/config.py
-# Lucid Node Management Configuration
-# Based on LUCID-STRICT requirements per Spec-1c
-
-from __future__ import annotations
+#!/usr/bin/env python3
+"""
+Lucid Node Management Configuration Management
+Uses Pydantic Settings for environment variable validation
+"""
 
 import os
-import json
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, field
-from datetime import timedelta
+from typing import Optional, Dict, Any
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def safe_int_env(key: str, default: int) -> int:
-    """Safely convert environment variable to int."""
-    try:
-        return int(os.getenv(key, str(default)))
-    except ValueError:
-        print(f"Warning: Invalid {key}, using default: {default}")
-        return default
+class NodeManagementSettings(BaseSettings):
+    """Base settings for Node Management service"""
 
-
-@dataclass
-class NodeConfig:
-    """Node management configuration"""
-    
-    # Node identification
-    node_id: str
-    node_address: str
-    private_key: str
-    
-    # Network configuration
-    tron_network: str = "mainnet"  # mainnet, testnet, shasta
-    api_port: int = 8095
-    rpc_port: int = 8096
-    
-    # Resource monitoring
-    resource_monitoring_interval: int = 30  # seconds
-    resource_thresholds: Dict[str, float] = field(default_factory=lambda: {
-        "cpu_percent": 80.0,
-        "memory_percent": 80.0,
-        "disk_percent": 85.0,
-        "network_bandwidth_mbps": 100.0
-    })
-    
-    # PoOT configuration
-    poot_validation_interval: int = 300  # seconds
-    poot_score_threshold: float = 0.5
-    poot_history_days: int = 30
-    
-    # Pool configuration
-    pool_join_timeout: int = 60  # seconds
-    pool_health_check_interval: int = 120  # seconds
-    pool_sync_interval: int = 30  # seconds
-    
-    # Payout configuration
-    payout_processing_interval: int = 3600  # seconds
-    payout_minimum_amount: float = 10.0  # USDT
-    payout_batch_size: int = 10
+    # Service configuration
+    NODE_MANAGEMENT_HOST: str = Field(default="0.0.0.0", description="Service host")
+    NODE_MANAGEMENT_PORT: int = Field(default=8095, description="Service port")
+    NODE_MANAGEMENT_STAGING_PORT: int = Field(default=8099, description="Staging port")
+    NODE_MANAGEMENT_URL: str = Field(description="Service URL")
     
     # Database configuration
-    database_url: str = "mongodb://localhost:27017/lucid"
-    database_name: str = "lucid_nodes"
+    MONGODB_URL: str = Field(description="MongoDB connection URL")
+    # Support MONGODB_URI as alternative (for compatibility)
+    MONGODB_URI: Optional[str] = Field(default=None, description="MongoDB connection URL (alternative)")
+    MONGODB_DATABASE: str = Field(default="lucid_node_management", description="MongoDB database name")
+    REDIS_URL: str = Field(description="Redis connection URL")
+    # Support REDIS_URI as alternative (for compatibility)
+    REDIS_URI: Optional[str] = Field(default=None, description="Redis connection URL (alternative)")
     
-    # Logging configuration
-    log_level: str = "INFO"
-    log_file: str = "node.log"
-    log_max_size_mb: int = 100
-    log_backup_count: int = 5
+    # Node pool configuration
+    MAX_NODES_PER_POOL: int = Field(default=100, description="Maximum nodes per pool")
+    MIN_NODES_PER_POOL: int = Field(default=3, description="Minimum nodes per pool")
+    POOL_HEALTH_CHECK_INTERVAL: int = Field(default=300, description="Pool health check interval in seconds")
+    POOL_SYNC_INTERVAL: int = Field(default=60, description="Pool synchronization interval in seconds")
     
-    # Security configuration
-    enable_ssl: bool = False
-    ssl_cert_path: Optional[str] = None
-    ssl_key_path: Optional[str] = None
+    # PoOT (Proof of Operational Trust) configuration
+    POOT_CALCULATION_INTERVAL: int = Field(default=300, description="PoOT calculation interval in seconds")
+    POOT_CHALLENGE_VALIDITY_MINUTES: int = Field(default=15, description="PoOT challenge validity in minutes")
+    POOT_PROOF_CACHE_MINUTES: int = Field(default=60, description="PoOT proof cache time in minutes")
+    MIN_TOKEN_STAKE_AMOUNT: float = Field(default=100.0, description="Minimum token stake amount")
+    MAX_VALIDATION_ATTEMPTS: int = Field(default=3, description="Maximum validation attempts")
+    CHALLENGE_COMPLEXITY_BYTES: int = Field(default=32, description="Challenge complexity in bytes")
+    POOT_SCORE_THRESHOLD: float = Field(default=0.5, description="PoOT score threshold")
+    POOT_VALIDATION_REQUIRED: bool = Field(default=True, description="PoOT validation required")
     
-    # Performance configuration
-    max_concurrent_sessions: int = 10
-    session_timeout: int = 7200  # seconds
-    bandwidth_limit_mbps: float = 100.0
-    storage_limit_gb: float = 100.0
+    # Payout configuration
+    PAYOUT_THRESHOLD_USDT: float = Field(default=10.0, description="Payout threshold in USDT")
+    PAYOUT_PROCESSING_INTERVAL: int = Field(default=3600, description="Payout processing interval in seconds")
+    PAYOUT_PROCESSING_FEE_PERCENT: float = Field(default=1.0, description="Payout processing fee percentage")
+    PAYOUT_MIN_AMOUNT_USDT: float = Field(default=1.0, description="Minimum payout amount in USDT")
+    PAYOUT_MAX_AMOUNT_USDT: float = Field(default=10000.0, description="Maximum payout amount in USDT")
     
-    # TRON configuration
-    tron_api_key: Optional[str] = None
-    tron_api_url: str = "https://api.trongrid.io"
-    tron_contract_address: Optional[str] = None
+    # TRON integration (optional)
+    TRON_NETWORK: str = Field(default="mainnet", description="TRON network (mainnet or testnet)")
+    TRON_API_URL: str = Field(default="https://api.trongrid.io", description="TRON API URL")
+    TRON_API_KEY: Optional[str] = Field(default=None, description="TRON API key")
+    USDT_CONTRACT_ADDRESS: Optional[str] = Field(default=None, description="USDT contract address on TRON")
+    
+    # Integration service URLs (optional)
+    API_GATEWAY_URL: Optional[str] = Field(default=None, description="API Gateway URL")
+    BLOCKCHAIN_ENGINE_URL: Optional[str] = Field(default=None, description="Blockchain Engine URL")
+    NODE_MANAGEMENT_API_URL: Optional[str] = Field(default=None, description="Node Management API URL")
+    ELECTRON_GUI_ENDPOINT: Optional[str] = Field(default=None, description="Electron GUI endpoint")
+    
+    # Node registration configuration
+    NODE_REGISTRATION_ENABLED: bool = Field(default=True, description="Node registration enabled")
+    NODE_VERIFICATION_REQUIRED: bool = Field(default=True, description="Node verification required")
+    NODE_HEALTH_CHECK_INTERVAL: int = Field(default=60, description="Node health check interval in seconds")
+    NODE_ID: Optional[str] = Field(default=None, description="Node ID")
+    ONION_ADDRESS: Optional[str] = Field(default=None, description="Onion address")
+    
+    # Environment
+    LUCID_ENV: str = Field(default="production")
+    LUCID_PLATFORM: str = Field(default="arm64")
+    LUCID_CLUSTER: str = Field(default="application")
+    PROJECT_ROOT: str = Field(default="/mnt/myssd/Lucid/Lucid")
+    
+    # Logging
+    LOG_LEVEL: str = Field(default="INFO", description="Logging level")
+    LOG_FORMAT: str = Field(default="json", description="Log format")
+    DEBUG: bool = Field(default=False, description="Debug mode")
+    
+    # Storage paths
+    LUCID_DATA_PATH: str = Field(default="/app/data", description="Data storage base path")
+    LUCID_LOG_PATH: str = Field(default="/app/logs", description="Log storage path")
+    LOG_FILE: str = Field(default="/app/logs/node-management.log", description="Log file path")
+    TEMP_STORAGE_PATH: str = Field(default="/tmp/nodes", description="Temporary storage path")
     
     # Monitoring configuration
-    enable_metrics: bool = True
-    metrics_port: int = 9090
-    health_check_interval: int = 30  # seconds
+    METRICS_ENABLED: bool = Field(default=True, description="Metrics enabled")
+    METRICS_PORT: int = Field(default=9090, description="Metrics port")
+    HEALTH_CHECK_INTERVAL: int = Field(default=30, description="Health check interval in seconds")
+    HEALTH_CHECK_ENABLED: bool = Field(default=True, description="Health check enabled")
     
-    # Development configuration
-    debug_mode: bool = False
-    test_mode: bool = False
-    mock_tron: bool = False
+    # Performance configuration
+    SERVICE_TIMEOUT_SECONDS: int = Field(default=30, description="Service timeout in seconds")
+    SERVICE_RETRY_COUNT: int = Field(default=3, description="Service retry count")
+    SERVICE_RETRY_DELAY_SECONDS: float = Field(default=1.0, description="Service retry delay in seconds")
+    WORKERS: int = Field(default=1, description="Number of workers")
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary"""
-        return {
-            "node_id": self.node_id,
-            "node_address": self.node_address,
-            "private_key": self.private_key,
-            "tron_network": self.tron_network,
-            "api_port": self.api_port,
-            "rpc_port": self.rpc_port,
-            "resource_monitoring_interval": self.resource_monitoring_interval,
-            "resource_thresholds": self.resource_thresholds,
-            "poot_validation_interval": self.poot_validation_interval,
-            "poot_score_threshold": self.poot_score_threshold,
-            "poot_history_days": self.poot_history_days,
-            "pool_join_timeout": self.pool_join_timeout,
-            "pool_health_check_interval": self.pool_health_check_interval,
-            "pool_sync_interval": self.pool_sync_interval,
-            "payout_processing_interval": self.payout_processing_interval,
-            "payout_minimum_amount": self.payout_minimum_amount,
-            "payout_batch_size": self.payout_batch_size,
-            "database_url": self.database_url,
-            "database_name": self.database_name,
-            "log_level": self.log_level,
-            "log_file": self.log_file,
-            "log_max_size_mb": self.log_max_size_mb,
-            "log_backup_count": self.log_backup_count,
-            "enable_ssl": self.enable_ssl,
-            "ssl_cert_path": self.ssl_cert_path,
-            "ssl_key_path": self.ssl_key_path,
-            "max_concurrent_sessions": self.max_concurrent_sessions,
-            "session_timeout": self.session_timeout,
-            "bandwidth_limit_mbps": self.bandwidth_limit_mbps,
-            "storage_limit_gb": self.storage_limit_gb,
-            "tron_api_key": self.tron_api_key,
-            "tron_api_url": self.tron_api_url,
-            "tron_contract_address": self.tron_contract_address,
-            "enable_metrics": self.enable_metrics,
-            "metrics_port": self.metrics_port,
-            "health_check_interval": self.health_check_interval,
-            "debug_mode": self.debug_mode,
-            "test_mode": self.test_mode,
-            "mock_tron": self.mock_tron
-        }
+    # Security configuration
+    CORS_ORIGINS: str = Field(default="*", description="CORS origins")
+    TRUSTED_HOSTS: str = Field(default="*", description="Trusted hosts")
+    PRODUCTION: bool = Field(default=False, description="Production mode")
     
+    @field_validator('NODE_MANAGEMENT_PORT', 'NODE_MANAGEMENT_STAGING_PORT', 'METRICS_PORT')
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'NodeConfig':
-        """Create config from dictionary"""
-        return cls(
-            node_id=data["node_id"],
-            node_address=data["node_address"],
-            private_key=data["private_key"],
-            tron_network=data.get("tron_network", "mainnet"),
-            api_port=data.get("api_port", 8095),
-            rpc_port=data.get("rpc_port", 8096),
-            resource_monitoring_interval=data.get("resource_monitoring_interval", 30),
-            resource_thresholds=data.get("resource_thresholds", {
-                "cpu_percent": 80.0,
-                "memory_percent": 80.0,
-                "disk_percent": 85.0,
-                "network_bandwidth_mbps": 100.0
-            }),
-            poot_validation_interval=data.get("poot_validation_interval", 300),
-            poot_score_threshold=data.get("poot_score_threshold", 0.5),
-            poot_history_days=data.get("poot_history_days", 30),
-            pool_join_timeout=data.get("pool_join_timeout", 60),
-            pool_health_check_interval=data.get("pool_health_check_interval", 120),
-            pool_sync_interval=data.get("pool_sync_interval", 30),
-            payout_processing_interval=data.get("payout_processing_interval", 3600),
-            payout_minimum_amount=data.get("payout_minimum_amount", 10.0),
-            payout_batch_size=data.get("payout_batch_size", 10),
-            database_url=data.get("database_url", ""),  # Must be provided via environment
-            database_name=data.get("database_name", "lucid_nodes"),
-            log_level=data.get("log_level", "INFO"),
-            log_file=data.get("log_file", "node.log"),
-            log_max_size_mb=data.get("log_max_size_mb", 100),
-            log_backup_count=data.get("log_backup_count", 5),
-            enable_ssl=data.get("enable_ssl", False),
-            ssl_cert_path=data.get("ssl_cert_path"),
-            ssl_key_path=data.get("ssl_key_path"),
-            max_concurrent_sessions=data.get("max_concurrent_sessions", 10),
-            session_timeout=data.get("session_timeout", 7200),
-            bandwidth_limit_mbps=data.get("bandwidth_limit_mbps", 100.0),
-            storage_limit_gb=data.get("storage_limit_gb", 100.0),
-            tron_api_key=data.get("tron_api_key"),
-            tron_api_url=data.get("tron_api_url", "https://api.trongrid.io"),
-            tron_contract_address=data.get("tron_contract_address"),
-            enable_metrics=data.get("enable_metrics", True),
-            metrics_port=data.get("metrics_port", 9090),
-            health_check_interval=data.get("health_check_interval", 30),
-            debug_mode=data.get("debug_mode", False),
-            test_mode=data.get("test_mode", False),
-            mock_tron=data.get("mock_tron", False)
-        )
-
-
-def load_config(config_path: Optional[str] = None) -> NodeConfig:
-    """
-    Load node configuration from file or environment variables.
+    def validate_port(cls, v):
+        if v < 1024 or v > 65535:
+            raise ValueError('Port must be between 1024 and 65535')
+        return v
     
-    Args:
-        config_path: Path to configuration file (optional)
-        
-    Returns:
-        NodeConfig instance
-    """
-    # Default config path
-    if config_path is None:
-        config_path = os.getenv("NODE_CONFIG_PATH", "node_config.json")
+    @field_validator('MAX_NODES_PER_POOL')
+    @classmethod
+    def validate_max_nodes(cls, v):
+        if v < 1 or v > 1000:
+            raise ValueError('MAX_NODES_PER_POOL must be between 1 and 1000')
+        return v
     
-    config_data = {}
+    @field_validator('MIN_NODES_PER_POOL')
+    @classmethod
+    def validate_min_nodes(cls, v):
+        if v < 1:
+            raise ValueError('MIN_NODES_PER_POOL must be at least 1')
+        return v
     
-    # Try to load from file
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r') as f:
-                config_data = json.load(f)
-        except Exception as e:
-            print(f"Warning: Failed to load config file {config_path}: {e}")
+    @field_validator('PAYOUT_THRESHOLD_USDT', 'PAYOUT_MIN_AMOUNT_USDT', 'PAYOUT_MAX_AMOUNT_USDT')
+    @classmethod
+    def validate_payout_amount(cls, v):
+        if v < 0:
+            raise ValueError('Payout amount must be non-negative')
+        return v
     
-    # Override with environment variables
-    config_data.update({
-        "node_id": os.getenv("NODE_ID", config_data.get("node_id", "default_node")),
-        "node_address": os.getenv("NODE_ADDRESS", config_data.get("node_address", "")),
-        "private_key": os.getenv("NODE_PRIVATE_KEY", config_data.get("private_key", "")),
-        "tron_network": os.getenv("TRON_NETWORK", config_data.get("tron_network", "mainnet")),
-        "api_port": safe_int_env("NODE_MANAGEMENT_PORT", safe_int_env("API_PORT", config_data.get("api_port", 8095))),
-        "rpc_port": safe_int_env("RPC_PORT", config_data.get("rpc_port", 8096)),
-        "resource_monitoring_interval": safe_int_env("RESOURCE_MONITORING_INTERVAL", config_data.get("resource_monitoring_interval", 30)),
-        "poot_validation_interval": safe_int_env("POOT_VALIDATION_INTERVAL", config_data.get("poot_validation_interval", 300)),
-        "payout_processing_interval": safe_int_env("PAYOUT_PROCESSING_INTERVAL", config_data.get("payout_processing_interval", 3600)),
-        "database_url": os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI") or os.getenv("DATABASE_URL") or config_data.get("database_url") or "",
-        "database_name": os.getenv("MONGODB_DATABASE", config_data.get("database_name", "lucid_node_management")),
-        "log_level": os.getenv("LOG_LEVEL", config_data.get("log_level", "INFO")),
-        "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
-        "test_mode": os.getenv("TEST_MODE", "false").lower() == "true",
-        "mock_tron": os.getenv("MOCK_TRON", "false").lower() == "true"
-    })
+    @field_validator('LOG_LEVEL')
+    @classmethod
+    def validate_log_level(cls, v):
+        allowed = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        if v.upper() not in allowed:
+            raise ValueError(f'LOG_LEVEL must be one of {allowed}')
+        return v.upper()
     
-    # Validate required fields
-    if not config_data.get("node_address"):
-        raise ValueError("NODE_ADDRESS is required")
-    if not config_data.get("private_key"):
-        raise ValueError("NODE_PRIVATE_KEY is required")
-    if not config_data.get("database_url"):
-        raise ValueError("MONGODB_URL or MONGODB_URI environment variable is required. Set it in docker-compose.yml or .env.secrets")
-    if "localhost" in config_data.get("database_url", "") or "127.0.0.1" in config_data.get("database_url", ""):
-        raise ValueError("database_url must not use localhost - use service name (e.g., lucid-mongodb)")
+    @field_validator('TRON_NETWORK')
+    @classmethod
+    def validate_tron_network(cls, v):
+        allowed = ['mainnet', 'testnet', 'shasta']
+        if v.lower() not in allowed:
+            raise ValueError(f'TRON_NETWORK must be one of {allowed}')
+        return v.lower()
     
-    return NodeConfig.from_dict(config_data)
-
-
-def save_config(config: NodeConfig, config_path: str = "node_config.json"):
-    """
-    Save node configuration to file.
-    
-    Args:
-        config: NodeConfig instance
-        config_path: Path to save configuration
-    """
-    try:
-        with open(config_path, 'w') as f:
-            json.dump(config.to_dict(), f, indent=2)
-        print(f"Configuration saved to {config_path}")
-    except Exception as e:
-        print(f"Failed to save configuration: {e}")
-
-
-def create_default_config(node_address: str, private_key: str, 
-                         node_id: Optional[str] = None) -> NodeConfig:
-    """
-    Create default configuration for a node.
-    
-    Args:
-        node_address: TRON address of the node
-        private_key: Private key for the node
-        node_id: Optional custom node ID
-        
-    Returns:
-        NodeConfig instance
-    """
-    if node_id is None:
-        import hashlib
-        node_id = hashlib.sha256(node_address.encode()).hexdigest()[:16]
-    
-    return NodeConfig(
-        node_id=node_id,
-        node_address=node_address,
-        private_key=private_key
+    model_config = SettingsConfigDict(
+        env_file_encoding='utf-8',
+        case_sensitive=False,
+        extra='ignore'
     )
 
 
-# Environment variable mappings
-ENV_VAR_MAPPINGS = {
-    "NODE_ID": "node_id",
-    "NODE_ADDRESS": "node_address", 
-    "NODE_PRIVATE_KEY": "private_key",
-    "TRON_NETWORK": "tron_network",
-    "API_PORT": "api_port",
-    "RPC_PORT": "rpc_port",
-    "DATABASE_URL": "database_url",
-    "LOG_LEVEL": "log_level",
-    "DEBUG_MODE": "debug_mode",
-    "TEST_MODE": "test_mode",
-    "MOCK_TRON": "mock_tron"
-}
-
-
-def get_env_config() -> Dict[str, Any]:
-    """Get configuration from environment variables"""
-    config = {}
-    for env_var, config_key in ENV_VAR_MAPPINGS.items():
-        value = os.getenv(env_var)
-        if value is not None:
-            # Convert string values to appropriate types
-            if config_key in ["api_port", "rpc_port", "resource_monitoring_interval", 
-                            "poot_validation_interval", "payout_processing_interval"]:
-                config[config_key] = int(value)
-            elif config_key in ["debug_mode", "test_mode", "mock_tron"]:
-                config[config_key] = value.lower() == "true"
-            else:
-                config[config_key] = value
-    return config
-
-
-if __name__ == "__main__":
-    # Test configuration loading
-    try:
-        config = load_config()
-        print(f"Loaded configuration: {config.node_id}")
-        print(f"Node address: {config.node_address}")
-        print(f"API port: {config.api_port}")
-        print(f"Database URL: {config.database_url}")
-    except Exception as e:
-        print(f"Configuration error: {e}")
+class NodeManagementConfigManager:
+    """Configuration manager for Node Management service"""
+    
+    def __init__(self):
+        self.settings = NodeManagementSettings()
+        self._validate_config()
+    
+    def _validate_config(self):
+        """Validate configuration"""
+        # Use MONGODB_URI if MONGODB_URL is not set (for compatibility)
+        if not self.settings.MONGODB_URL and self.settings.MONGODB_URI:
+            self.settings.MONGODB_URL = self.settings.MONGODB_URI
+        
+        if not self.settings.MONGODB_URL:
+            raise ValueError("MONGODB_URL or MONGODB_URI is required")
+        
+        # Use REDIS_URI if REDIS_URL is not set (for compatibility)
+        if not self.settings.REDIS_URL and self.settings.REDIS_URI:
+            self.settings.REDIS_URL = self.settings.REDIS_URI
+        
+        if not self.settings.REDIS_URL:
+            raise ValueError("REDIS_URL or REDIS_URI is required")
+        
+        # Validate node pool configuration
+        if self.settings.MIN_NODES_PER_POOL > self.settings.MAX_NODES_PER_POOL:
+            raise ValueError("MIN_NODES_PER_POOL must be less than or equal to MAX_NODES_PER_POOL")
+        
+        # Validate payout configuration
+        if self.settings.PAYOUT_MIN_AMOUNT_USDT > self.settings.PAYOUT_MAX_AMOUNT_USDT:
+            raise ValueError("PAYOUT_MIN_AMOUNT_USDT must be less than or equal to PAYOUT_MAX_AMOUNT_USDT")
+        
+        if self.settings.PAYOUT_THRESHOLD_USDT < self.settings.PAYOUT_MIN_AMOUNT_USDT:
+            raise ValueError("PAYOUT_THRESHOLD_USDT must be at least PAYOUT_MIN_AMOUNT_USDT")
+        
+        # Validate MongoDB URL doesn't use localhost
+        mongodb_url = self.settings.MONGODB_URL
+        if "localhost" in mongodb_url or "127.0.0.1" in mongodb_url:
+            raise ValueError("MONGODB_URL must not use localhost - use service name (e.g., lucid-mongodb)")
+        
+        # Validate Redis URL doesn't use localhost
+        if "localhost" in self.settings.REDIS_URL or "127.0.0.1" in self.settings.REDIS_URL:
+            raise ValueError("REDIS_URL must not use localhost - use service name (e.g., lucid-redis)")
+    
+    def get_node_management_config_dict(self) -> dict:
+        """Get service configuration as dictionary"""
+        return {
+            "host": self.settings.NODE_MANAGEMENT_HOST,
+            "port": self.settings.NODE_MANAGEMENT_PORT,
+            "staging_port": self.settings.NODE_MANAGEMENT_STAGING_PORT,
+            "url": self.settings.NODE_MANAGEMENT_URL,
+            "max_nodes_per_pool": self.settings.MAX_NODES_PER_POOL,
+            "min_nodes_per_pool": self.settings.MIN_NODES_PER_POOL,
+            "pool_health_check_interval": self.settings.POOL_HEALTH_CHECK_INTERVAL,
+            "pool_sync_interval": self.settings.POOL_SYNC_INTERVAL,
+            "poot_calculation_interval": self.settings.POOT_CALCULATION_INTERVAL,
+            "payout_threshold_usdt": self.settings.PAYOUT_THRESHOLD_USDT,
+            "payout_processing_interval": self.settings.PAYOUT_PROCESSING_INTERVAL,
+            "api_gateway_url": self.settings.API_GATEWAY_URL,
+            "blockchain_engine_url": self.settings.BLOCKCHAIN_ENGINE_URL,
+            "node_id": self.settings.NODE_ID,
+            "onion_address": self.settings.ONION_ADDRESS,
+        }
+    
+    def get_mongodb_url(self) -> str:
+        """Get MongoDB URL"""
+        return self.settings.MONGODB_URL
+    
+    def get_redis_url(self) -> str:
+        """Get Redis URL"""
+        return self.settings.REDIS_URL
+    
+    def get_mongodb_database(self) -> str:
+        """Get MongoDB database name"""
+        return self.settings.MONGODB_DATABASE

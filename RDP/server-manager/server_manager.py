@@ -66,10 +66,11 @@ class RDPServerManager:
         self.active_servers: Dict[str, RDPServer] = {}
         self.server_tasks: Dict[str, asyncio.Task] = {}
         
-        # Configuration - use writable locations in distroless container
-        self.base_config_path = Path("/var/lib/lucid/xrdp/servers")
-        self.base_log_path = Path("/var/lib/lucid/logs/xrdp/servers")
-        self.base_session_path = Path("/var/lib/lucid/sessions")
+        # Configuration - use writable volume mount locations
+        # /app/data and /app/logs are volume mounts (writable in distroless container)
+        self.base_config_path = Path("/app/data/xrdp/servers")
+        self.base_log_path = Path("/app/logs/xrdp/servers")
+        self.base_session_path = Path("/app/data/sessions")
         
         # Create directories
         self._create_directories()
