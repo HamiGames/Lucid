@@ -135,9 +135,10 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 
 WORKDIR /app
 
-# Create non-root user (matching distroless UID/GID 65532:65532 per master-docker-design.md)
-RUN groupadd -r -g 65532 nonroot && \
-    useradd -r -g nonroot -u 65532 -d /app -s /bin/false nonroot
+# Non-root user setup (per master-docker-design.md)
+# NOTE: python-slim doesn't have groupadd/useradd. We use numeric UID/GID directly.
+# Docker allows running as any UID/GID even if user doesn't exist in /etc/passwd.
+# This matches distroless behavior which also uses numeric UID 65532 without named user.
 
 # System directories & certificates (per master-docker-design.md)
 COPY --from=builder --chown=65532:65532 /var/run /var/run
