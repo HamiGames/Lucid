@@ -630,22 +630,18 @@ volumes:
   node-management-cache:
     driver: local
     name: lucid-node-management-cache
-  # External volumes from other projects
+  # Volumes from other projects (defined in foundation.yml and core.yml)
+  # These are not marked as external since they're created by the merged compose files
   mongodb-cache:
     name: lucid-mongodb-cache
-    external: true
   redis-cache:
     name: lucid-redis-cache
-    external: true
   auth-cache:
     name: lucid-auth-cache
-    external: true
   blockchain-cache:
     name: lucid-blockchain-cache
-    external: true
   api-gateway-tmp:
     name: lucid-api-gateway-tmp
-    external: true
 
 networks:
   lucid-pi-network:
