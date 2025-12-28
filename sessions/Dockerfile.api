@@ -73,7 +73,7 @@ RUN echo "LUCID_SESSION_API_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/p
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed and verify directory structure (per Dockerfile-copy-pattern.md)
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_timeout, httpx, zstd, lz4; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_timeout, httpx, zstd, lz4, blake3; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
@@ -85,7 +85,8 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_
     test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     echo "✅ Marker file verified in builder (non-empty)" && \
     python3 -c "import zstd; print('✅ zstd verified in builder, location:', zstd.__file__)" && \
-    python3 -c "import lz4; print('✅ lz4 verified in builder')"
+    python3 -c "import lz4; print('✅ lz4 verified in builder')" && \
+    python3 -c "import blake3; print('✅ blake3 verified in builder')"
 
 COPY sessions/api/ ./sessions/api/
 COPY sessions/core/ ./sessions/core/
@@ -132,7 +133,7 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found';  assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import pydantic; assert pydantic, 'pydantic import failed'; import motor; assert motor, 'motor import failed'; import async_timeout; assert async_timeout, 'async_timeout import failed'; import redis; assert redis, 'redis import failed'; import httpx; assert httpx, 'httpx import failed'; import zstd; assert zstd, 'zstd import failed'; import lz4; assert lz4, 'lz4 import failed'; print('✅ All packages verified in runtime stage (existence and functionality)')"]
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found';  assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import pydantic; assert pydantic, 'pydantic import failed'; import motor; assert motor, 'motor import failed'; import async_timeout; assert async_timeout, 'async_timeout import failed'; import redis; assert redis, 'redis import failed'; import httpx; assert httpx, 'httpx import failed'; import zstd; assert zstd, 'zstd import failed'; import lz4; assert lz4, 'lz4 import failed'; import blake3; assert blake3, 'blake3 import failed'; print('✅ All packages verified in runtime stage (existence and functionality)')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/sessions /app/sessions

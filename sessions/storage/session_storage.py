@@ -130,7 +130,7 @@ class SessionStorage:
             # Sessions collection indexes
             self.sessions_collection.create_index("session_id", unique=True)
             self.sessions_collection.create_index("status")
-            self.sessions_collection.create_index("created_at", -1)
+            self.sessions_collection.create_index([("created_at", -1)])  # Descending index for sorting
             self.sessions_collection.create_index("metadata.project")
             self.sessions_collection.create_index("metadata.environment")
             self.sessions_collection.create_index("metadata.tags")
@@ -141,12 +141,12 @@ class SessionStorage:
             self.chunks_collection.create_index([("session_id", 1), ("timestamp", 1)])
             self.chunks_collection.create_index("status")
             self.chunks_collection.create_index("merkle_hash")
-            self.chunks_collection.create_index("created_at", -1)
+            self.chunks_collection.create_index([("created_at", -1)])  # Descending index for sorting
             
             # Pipeline collection indexes
             self.pipeline_collection.create_index("session_id", unique=True)
             self.pipeline_collection.create_index("pipeline_status")
-            self.pipeline_collection.create_index("updated_at", -1)
+            self.pipeline_collection.create_index([("updated_at", -1)])  # Descending index for sorting
             
             logger.info("MongoDB indexes created successfully")
         except Exception as e:
