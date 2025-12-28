@@ -17,8 +17,6 @@
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-ARG TARGETPLATFORM=linux/arm64
-ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
 ############################
@@ -26,8 +24,6 @@ ARG PYTHON_VERSION=3.11
 ############################
 FROM python:3.11-slim-bookworm AS builder
 
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -116,7 +112,10 @@ RUN test -d ./xrdp && \
 ############################
 # Stage 2 – Runtime
 ############################
-FROM gcr.io/distroless/python3-debian12:latest
+# Allow overriding the runtime base image to avoid registry/DNS issues.
+# Default uses the Kubernetes mirror for distroless python3 (identical bits).
+ARG RUNTIME_BASE=gcr.k8s.io/distroless/python3-debian12:latest
+FROM ${RUNTIME_BASE}
 
 ARG BUILD_DATE
 ARG VCS_REF
