@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.5
 # LUCID NODE MANAGEMENT - Distroless Container
-# Node Management service (lucid-node-management) - Ports 8095, 8099
-# Image: pickme/lucid-node-management:latest-arm64
+# Node Management service (node-management) - Ports 8095, 8099
+# Image: pickme/lucid-node-management:latest-arm64 (image names include lucid- prefix)
+# Container name: node-management (container names do NOT include lucid- prefix)
 # Build Context: . (project root)
 # Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
 

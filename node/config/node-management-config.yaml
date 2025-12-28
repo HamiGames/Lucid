@@ -7,32 +7,34 @@
 
 # Global Node Management Configuration
 global:
-  service_name: "lucid-node-management"
+  service_name: "node-management"  # Service name (container_name: node-management, hostname: node-management, image: pickme/lucid-node-management:latest-arm64)
   service_version: "1.0.0"
   debug: false
   log_level: "INFO"  # Override with LOG_LEVEL env var
   host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-  # Network configuration from environment:
-  # - NODE_MANAGEMENT_HOST (default: node-management)
+  # Network configuration from environment (Pydantic Settings):
+  # - NODE_MANAGEMENT_HOST (default: 0.0.0.0 for binding, service name: node-management for URL)
   # - NODE_MANAGEMENT_PORT (default: 8095)
-  # - NODE_MANAGEMENT_URL (default: http://node-management:8095)
+  # - NODE_MANAGEMENT_STAGING_PORT (default: 8099)
+  # - NODE_MANAGEMENT_URL (required, e.g., http://node-management:8095)
   port: 8095  # Override with NODE_MANAGEMENT_PORT env var
   staging_port: 8099
 
 # Node Pool Configuration
+# Aligned with Pydantic Settings: MAX_NODES_PER_POOL, MIN_NODES_PER_POOL, POOL_HEALTH_CHECK_INTERVAL, POOL_SYNC_INTERVAL
 node_pool:
-  # Pool Limits
+  # Pool Limits (aligned with config.py defaults)
   limits:
-    max_nodes_per_pool: 100
-    min_nodes_per_pool: 1
+    max_nodes_per_pool: 100  # MAX_NODES_PER_POOL default
+    min_nodes_per_pool: 3    # MIN_NODES_PER_POOL default (was 1)
     max_pools: 10
   
-  # Pool Management
+  # Pool Management (aligned with config.py defaults)
   management:
     auto_join_enabled: true
     auto_leave_enabled: false
-    pool_health_check_interval_seconds: 120
-    pool_sync_interval_seconds: 30
+    pool_health_check_interval_seconds: 300  # POOL_HEALTH_CHECK_INTERVAL default (was 120)
+    pool_sync_interval_seconds: 60           # POOL_SYNC_INTERVAL default (was 30)
     pool_join_timeout_seconds: 60
   
   # Pool Selection
@@ -43,11 +45,19 @@ node_pool:
     consider_reputation: true
 
 # PoOT (Proof of Operational Time) Configuration
+# Aligned with Pydantic Settings: POOT_CALCULATION_INTERVAL, POOT_SCORE_THRESHOLD, etc.
 poot:
   enabled: true
-  calculation_interval_seconds: 300  # 5 minutes
-  score_threshold: 0.5
+  calculation_interval_seconds: 300  # POOT_CALCULATION_INTERVAL default (5 minutes)
+  score_threshold: 0.5               # POOT_SCORE_THRESHOLD default
   history_days: 30
+  # Additional PoOT settings from Pydantic Settings:
+  challenge_validity_minutes: 15     # POOT_CHALLENGE_VALIDITY_MINUTES default
+  proof_cache_minutes: 60            # POOT_PROOF_CACHE_MINUTES default
+  min_token_stake_amount: 100.0      # MIN_TOKEN_STAKE_AMOUNT default
+  max_validation_attempts: 3         # MAX_VALIDATION_ATTEMPTS default
+  challenge_complexity_bytes: 32     # CHALLENGE_COMPLEXITY_BYTES default
+  validation_required: true          # POOT_VALIDATION_REQUIRED default
   
   # PoOT Factors
   factors:
@@ -91,10 +101,14 @@ staking:
     reward_per_block: 10
 
 # Payout Configuration
+# Aligned with Pydantic Settings: PAYOUT_THRESHOLD_USDT, PAYOUT_PROCESSING_INTERVAL, etc.
 payout:
   enabled: true
-  processing_interval_seconds: 3600  # 1 hour
-  minimum_amount_usdt: 10.0
+  processing_interval_seconds: 3600  # PAYOUT_PROCESSING_INTERVAL default (1 hour)
+  threshold_usdt: 10.0               # PAYOUT_THRESHOLD_USDT default (minimum for payout processing)
+  minimum_amount_usdt: 1.0           # PAYOUT_MIN_AMOUNT_USDT default (was 10.0)
+  maximum_amount_usdt: 10000.0       # PAYOUT_MAX_AMOUNT_USDT default
+  processing_fee_percent: 1.0        # PAYOUT_PROCESSING_FEE_PERCENT default (1%)
   batch_size: 10
   payout_method: "tron"  # Options: tron, ethereum, manual
   
@@ -105,16 +119,16 @@ payout:
     require_confirmation: true
     confirmation_blocks: 6
   
-  # Payout Limits
+  # Payout Limits (aligned with PAYOUT_MAX_AMOUNT_USDT default: 10000.0)
   limits:
-    max_payout_amount_usdt: 10000.0
+    max_payout_amount_usdt: 10000.0  # PAYOUT_MAX_AMOUNT_USDT default
     max_payouts_per_day: 100
     max_payouts_per_user_per_day: 10
   
-  # Payout Fees
+  # Payout Fees (aligned with PAYOUT_PROCESSING_FEE_PERCENT default: 1.0)
   fees:
     enabled: true
-    fee_percentage: 0.01  # 1%
+    fee_percentage: 1.0  # PAYOUT_PROCESSING_FEE_PERCENT default (1%, was 0.01 which is incorrect)
     min_fee_usdt: 0.1
     max_fee_usdt: 10.0
 
@@ -139,28 +153,34 @@ resource_monitoring:
     max_bandwidth_mbps: 1000.0
 
 # Database Configuration
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL or MONGODB_URI (required, from .env.secrets)
-# - REDIS_URL or REDIS_URI (from .env.core or .env.secrets)
+# NOTE: Database URLs MUST come from environment variables (Pydantic Settings validates these):
+# - MONGODB_URL or MONGODB_URI (required, from .env.secrets) - validated to not use localhost
+# - REDIS_URL or REDIS_URI (required, from .env.core or .env.secrets) - validated to not use localhost
+# - MONGODB_DATABASE (default: lucid_node_management)
 database:
-  mongodb_url: ""  # Set via MONGODB_URL or MONGODB_URI env var (required)
-  mongodb_database: ""  # Set via MONGODB_DATABASE env var (default: lucid_node_management)
-  redis_url: ""    # Set via REDIS_URL or REDIS_URI env var
+  mongodb_url: ""  # Set via MONGODB_URL or MONGODB_URI env var (required, validated by Pydantic Settings)
+  mongodb_database: "lucid_node_management"  # MONGODB_DATABASE default (was empty string)
+  redis_url: ""    # Set via REDIS_URL or REDIS_URI env var (required, validated by Pydantic Settings)
 
-# External Service URLs
-# NOTE: Service URLs MUST come from environment variables:
-# - API_GATEWAY_URL (from docker-compose.core.yml)
-# - BLOCKCHAIN_ENGINE_URL (from docker-compose.core.yml)
+# External Service URLs (Optional - Pydantic Settings)
+# NOTE: Service URLs come from environment variables (all optional):
+# - API_GATEWAY_URL (optional, from docker-compose)
+# - BLOCKCHAIN_ENGINE_URL (optional, from docker-compose)
+# - NODE_MANAGEMENT_API_URL (optional)
+# - ELECTRON_GUI_ENDPOINT (optional)
 external_services:
-  api_gateway_url: ""  # Set via API_GATEWAY_URL env var (http://api-gateway:8080)
-  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (http://blockchain-engine:8084)
+  api_gateway_url: ""  # Set via API_GATEWAY_URL env var (optional, e.g., http://api-gateway:8080)
+  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (optional, e.g., http://blockchain-engine:8084)
+  node_management_api_url: ""  # Set via NODE_MANAGEMENT_API_URL env var (optional)
+  electron_gui_endpoint: ""  # Set via ELECTRON_GUI_ENDPOINT env var (optional)
 
-# Monitoring Configuration
+# Monitoring Configuration (aligned with Pydantic Settings)
 monitoring:
   enabled: true
-  metrics_enabled: true
-  metrics_port: 9090
-  health_check_interval: 30  # seconds
+  metrics_enabled: true  # METRICS_ENABLED default
+  metrics_port: 9090     # METRICS_PORT default
+  health_check_interval: 30  # HEALTH_CHECK_INTERVAL default (seconds)
+  health_check_enabled: true  # HEALTH_CHECK_ENABLED default
   prometheus_enabled: true
   jaeger_enabled: false
   jaeger_endpoint: null

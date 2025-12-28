@@ -2,10 +2,10 @@
 # Lucid Node Management stack – aligned with foundation/core constants
 
 services:
-  lucid-node-management:
+  node-management:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.node-management
       target: distroless
       platforms:
         - linux/arm64
@@ -14,8 +14,8 @@ services:
         VCS_REF: ${VCS_REF:-$(git rev-parse --short HEAD)}
         VERSION: ${VERSION:-1.0.0}
     image: pickme/lucid-node-management:latest-arm64
-    container_name: lucid-node-management
-    hostname: lucid-node-management
+    container_name: node-management
+    hostname: node-management
     env_file:
       - ../configs/environment/.env.foundation
       - ../configs/environment/.env.core
@@ -28,10 +28,10 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - NODE_MANAGEMENT_HOST=lucid-node-management
+      - NODE_MANAGEMENT_HOST=node-management
       - NODE_MANAGEMENT_PORT=8095
       - NODE_MANAGEMENT_STAGING_PORT=8099
-      - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
+      - NODE_MANAGEMENT_URL=http://node-management:8095
       - MAX_NODES_PER_POOL=100
       - PAYOUT_THRESHOLD_USDT=10.0
       - POOT_CALCULATION_INTERVAL=300
@@ -222,7 +222,7 @@ networks:
 
 volumes:
   node-logs:
-    name: lucid-node-management-logs
+    name: lucid-node-management-logs  # Volume names can keep lucid- prefix as external identifiers
   node-data:
     name: lucid-node-management-data
   node-cache:

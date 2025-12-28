@@ -86,9 +86,10 @@ class WorkCreditsCalculator:
     """Calculates and manages work credits for Proof of Operational Tasks (PoOT)"""
     
     def __init__(self):
-        self.data_dir = Path("/data/node/work_credits")
-        self.cache_dir = Path("/data/node/cache")
-        self.logs_dir = Path("/data/node/logs")
+        # Use writable volume mount locations (/app/data, /app/cache, and /app/logs are volume mounts)
+        self.data_dir = Path("/app/data/node/work_credits")
+        self.cache_dir = Path("/app/cache/node")
+        self.logs_dir = Path("/app/logs/node")
         
         # Ensure directories exist
         for directory in [self.data_dir, self.cache_dir, self.logs_dir]:

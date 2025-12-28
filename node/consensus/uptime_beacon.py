@@ -87,9 +87,10 @@ class UptimeBeaconSystem:
     """Manages uptime beacons and monitoring for PoOT consensus"""
     
     def __init__(self):
-        self.data_dir = Path("/data/node/uptime_beacons")
-        self.cache_dir = Path("/data/node/cache")
-        self.logs_dir = Path("/data/node/logs")
+        # Use writable volume mount locations (/app/data, /app/cache, and /app/logs are volume mounts)
+        self.data_dir = Path("/app/data/node/uptime_beacons")
+        self.cache_dir = Path("/app/cache/node")
+        self.logs_dir = Path("/app/logs/node")
         
         # Ensure directories exist
         for directory in [self.data_dir, self.cache_dir, self.logs_dir]:

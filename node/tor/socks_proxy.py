@@ -829,7 +829,7 @@ async def list_tunnels(data_dir: Path) -> List[Dict[str, Any]]:
 if __name__ == "__main__":
     # Example usage
     async def main():
-        data_dir = Path("/data/node/socks")
+        data_dir = Path("/app/data/node/socks")
         
         # Create Tor SOCKS proxy connection
         tor_proxy_request = SocksProxyRequest(

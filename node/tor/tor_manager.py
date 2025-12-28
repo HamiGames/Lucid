@@ -106,10 +106,11 @@ class TorManager:
     """Manages Tor proxy services and onion routing"""
     
     def __init__(self):
-        self.data_dir = Path("/data/node/tor")
-        self.config_dir = Path("/data/node/tor/config")
-        self.logs_dir = Path("/data/node/tor/logs")
-        self.keys_dir = Path("/data/node/tor/keys")
+        # Use writable volume mount locations (/app/data and /app/logs are volume mounts)
+        self.data_dir = Path("/app/data/node/tor")
+        self.config_dir = Path("/app/data/node/tor/config")
+        self.logs_dir = Path("/app/logs/node/tor")
+        self.keys_dir = Path("/app/data/node/tor/keys")
         
         # Ensure directories exist
         for directory in [self.data_dir, self.config_dir, self.logs_dir, self.keys_dir]:

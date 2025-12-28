@@ -29,7 +29,7 @@ TASK_PROOF_TIMEOUT = int(os.getenv("LUCID_TASK_PROOF_TIMEOUT", "300"))  # 5 minu
 MINIMUM_PROOF_COUNT = int(os.getenv("LUCID_MINIMUM_PROOF_COUNT", "3"))
 PROOF_VERIFICATION_TIMEOUT = int(os.getenv("LUCID_PROOF_VERIFICATION_TIMEOUT", "60"))  # 1 minute
 TASK_DIFFICULTY_LEVEL = int(os.getenv("LUCID_TASK_DIFFICULTY_LEVEL", "4"))  # Hash difficulty
-PROOF_STORAGE_PATH = Path(os.getenv("LUCID_PROOF_STORAGE_PATH", "/data/consensus/proofs"))
+PROOF_STORAGE_PATH = Path(os.getenv("LUCID_PROOF_STORAGE_PATH", "/app/data/consensus/proofs"))
 
 
 class TaskType(Enum):

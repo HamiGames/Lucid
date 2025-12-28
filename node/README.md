@@ -4,7 +4,9 @@
 
 The Lucid Node Management Service manages the network node pool for the Lucid RDP system. It implements PoOT (Proof of Operational Time) consensus, node registration, work credits, and payout management.
 
-**Service Name**: `lucid-node-management`  
+**Service Name**: `node-management`  
+**Container Name**: `node-management`  
+**Image Name**: `pickme/lucid-node-management:latest-arm64`  
 **Cluster ID**: Phase 3 Application Services  
 **Port**: 8095  
 **Phase**: Phase 3 Application Services  
@@ -60,19 +62,19 @@ curl http://localhost:8095/health
 ### Using Docker
 
 ```bash
-# Build container
-docker build -t lucid-node-management:latest .
+# Build container (image name includes lucid- prefix)
+docker build -t pickme/lucid-node-management:latest-arm64 -f Dockerfile.node-management .
 
-# Run container
+# Run container (container name does NOT include lucid- prefix)
 docker run -d \
-  --name lucid-node-management \
+  --name node-management \
   --network lucid-network \
   -p 8095:8095 \
   -e MONGODB_URI=mongodb://mongodb:27017/lucid_nodes \
-  lucid-node-management:latest
+  pickme/lucid-node-management:latest-arm64
 
 # Check logs
-docker logs lucid-node-management
+docker logs node-management
 ```
 
 ### Local Development
@@ -214,11 +216,11 @@ node/
 ### Building the Container
 
 ```bash
-# Build using distroless base image
-docker build -t lucid-node-management:latest .
+# Build using distroless base image (image name includes lucid- prefix)
+docker build -t pickme/lucid-node-management:latest-arm64 -f Dockerfile.node-management .
 
 # Build for specific platform
-docker buildx build --platform linux/arm64 -t lucid-node-management:latest .
+docker buildx build --platform linux/arm64 -t pickme/lucid-node-management:latest-arm64 -f Dockerfile.node-management .
 ```
 
 ### Testing
