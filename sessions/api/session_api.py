@@ -24,7 +24,7 @@ from pymongo.database import Database
 
 from ..storage.session_storage import SessionStorage
 from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
-from ..storage.config import StorageConfigManager
+from ..storage.config import StorageConfig as StorageConfigManager
 from ..core.session_orchestrator import SessionPipeline, PipelineStage
 
 logger = logging.getLogger(__name__)
