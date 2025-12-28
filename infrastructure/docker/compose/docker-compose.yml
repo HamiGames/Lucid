@@ -472,30 +472,68 @@ services:
       timeout: 10s
       retries: 3
 
-  lucid-rdp-controller:
+  rdp-controller:
     image: pickme/lucid-rdp-controller:latest-arm64
-    container_name: lucid-rdp-controller
+    container_name: rdp-controller
     restart: unless-stopped
     platform: linux/arm64
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-controller
     ports:
-      - "8094:8094"
+      - "${RDP_CONTROLLER_PORT:-8092}:${RDP_CONTROLLER_PORT:-8092}"
     volumes:
-      - rdp_controller_data:/app/controller
-      - rdp_controller_logs:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/rdp-controller:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs:rw
+      - rdp-controller-cache:/tmp/controller
     networks:
       lucid-pi-network:
         ipv4_address: 172.20.0.23
     environment:
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
-      - REDIS_URL=redis://172.20.0.12:6379/0
-    depends_on:
-      lucid-rdp-server-manager:
-        condition: service_healthy
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - RDP_CONTROLLER_HOST=rdp-controller
+      - RDP_CONTROLLER_PORT=${RDP_CONTROLLER_PORT:-8092}
+      - RDP_CONTROLLER_URL=http://rdp-controller:${RDP_CONTROLLER_PORT:-8092}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+      - RDP_SERVER_MANAGER_URL=${RDP_SERVER_MANAGER_URL:-http://rdp-server-manager:8081}
+      - SESSION_RECORDER_URL=${SESSION_RECORDER_URL:-http://session-recorder:8090}
+      - SESSION_PROCESSOR_URL=${SESSION_PROCESSOR_URL:-http://session-processor:8091}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8094/health"]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=rdp-controller"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=application"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      rdp-server-manager:
+        condition: service_healthy
 
   lucid-rdp-monitor:
     image: pickme/lucid-rdp-monitor:latest-arm64
