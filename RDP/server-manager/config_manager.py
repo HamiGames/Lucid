@@ -45,7 +45,8 @@ class ConfigManager:
     
     def __init__(self):
         """Initialize config manager"""
-        self.config_path = Path("/etc/lucid/rdp")
+        # Use writable location in distroless container (/var/lib is writable)
+        self.config_path = Path("/var/lib/lucid/rdp")
         self.templates_path = self.config_path / "templates"
         self.active_configs: Dict[str, Dict[str, Any]] = {}
         

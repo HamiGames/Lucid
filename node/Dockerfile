@@ -140,6 +140,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER 65532:65532
 
 ENTRYPOINT []
-CMD ["/usr/bin/python3.11", "-m", "node.main"]
+CMD ["/usr/bin/python3.11", "/app/node/entrypoint.py"]
 
 # All configuration comes from .env.application, .env.core, .env.secrets, .env.foundation
