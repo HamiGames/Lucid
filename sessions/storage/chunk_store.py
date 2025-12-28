@@ -33,7 +33,7 @@ except (ImportError, OSError) as e:
 @dataclass
 class ChunkStoreConfig:
     """Chunk store configuration"""
-    base_path: str = "/data/chunks"
+    base_path: str = "/app/data/chunks"  # Default should match config default (volume mount: /app/data)
     compression_algorithm: str = "zstd"  # zstd, lz4, gzip, none
     compression_level: int = 6
     chunk_size_mb: int = 10

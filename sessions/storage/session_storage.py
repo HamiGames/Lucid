@@ -39,7 +39,7 @@ except (ImportError, OSError) as e:
 @dataclass
 class StorageConfig:
     """Storage configuration"""
-    base_path: str = "/data/sessions"
+    base_path: str = "/app/data/sessions"  # Default should match config default (volume mount: /app/data)
     chunk_size_mb: int = 10
     compression_level: int = 6
     encryption_enabled: bool = True
