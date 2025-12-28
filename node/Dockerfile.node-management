@@ -74,7 +74,7 @@ RUN echo "LUCID_NODE_MANAGEMENT_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification (per master-docker-design.md - CRITICAL)
-RUN ["/usr/bin/python3.11", "-c", "import sys, os; \
+RUN python3 -c "import sys, os; \
 site_packages = '/root/.local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
@@ -89,7 +89,7 @@ assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
-print('✅ All packages verified in builder stage')"]
+print('✅ All packages verified in builder stage')"
 
 # Application source COPY (per Dockerfile-copy-pattern.md - copy entire directory)
 COPY node/ ./node/
@@ -99,7 +99,7 @@ RUN echo "LUCID_NODE_MANAGEMENT_SOURCE_INSTALLED_$(date +%s)" > ./node/.lucid-so
     chown -R 65532:65532 ./node
 
 # Verify application source files were copied (prevents silent COPY failures)
-RUN ["/usr/bin/python3.11", "-c", "import os; \
+RUN python3 -c "import os; \
 assert os.path.exists('/build/node'), 'node directory not found'; \
 assert os.path.exists('/build/node/main.py'), 'node/main.py not found'; \
 assert os.path.exists('/build/node/entrypoint.py'), 'node/entrypoint.py not found'; \
@@ -115,7 +115,7 @@ assert os.path.exists('/build/node/poot-schema.json'), 'poot-schema.json not fou
 node_marker = '/build/node/.lucid-source-marker'; \
 assert os.path.exists(node_marker), 'node marker file not found'; \
 assert os.path.getsize(node_marker) > 0, 'node marker file is empty'; \
-print('✅ All application source files and markers verified in builder')"]
+print('✅ All application source files and markers verified in builder')"
 
 ############################
 # Stage 2 – Runtime
