@@ -91,6 +91,7 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_
 COPY sessions/api/ ./sessions/api/
 COPY sessions/core/ ./sessions/core/
 COPY sessions/storage/ ./sessions/storage/
+COPY sessions/encryption/ ./sessions/encryption/
 COPY sessions/__init__.py ./sessions/__init__.py
 
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
@@ -149,6 +150,8 @@ assert os.path.exists('/app/sessions/api/metrics-schema.json'), 'sessions/api/me
 assert os.path.exists('/app/sessions/api/health-schema.json'), 'sessions/api/health-schema.json not found'; \
 assert os.path.exists('/app/sessions/core'), 'sessions/core directory not found'; \
 assert os.path.exists('/app/sessions/storage'), 'sessions/storage directory not found'; \
+assert os.path.exists('/app/sessions/encryption'), 'sessions/encryption directory not found'; \
+assert os.path.exists('/app/sessions/encryption/encryptor.py'), 'sessions/encryption/encryptor.py not found'; \
 assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
 print('✅ All application source files verified')"]
 
