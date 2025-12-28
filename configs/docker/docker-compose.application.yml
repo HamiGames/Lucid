@@ -259,6 +259,7 @@ services:
     ports:
       - "8113:8113"
     volumes:
+      - /mnt/myssd/Lucid/Lucid/data/session-api:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs:rw
       - session-api-cache:/tmp/api
     environment:
@@ -563,6 +564,7 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - NODE_MANAGEMENT_HOST=node-management
       - NODE_MANAGEMENT_PORT=8095
       - NODE_MANAGEMENT_URL=http://node-management:8095

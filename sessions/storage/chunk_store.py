@@ -53,9 +53,20 @@ class ChunkStore:
     def __init__(self, config: ChunkStoreConfig):
         self.config = config
         self.base_path = Path(config.base_path)
-        self.base_path.mkdir(parents=True, exist_ok=True)
+        # In read-only containers, parent directory (e.g., /app/data) should exist via volume mount
+        # Check that parent directory exists (from volume mount), then create base_path if needed
+        parent_path = self.base_path.parent
+        if not parent_path.exists():
+            raise OSError(
+                f"Parent directory does not exist: {parent_path}. "
+                f"This directory should be provided via a volume mount in docker-compose. "
+                f"Check that the volume is mounted correctly at {parent_path}. "
+                f"Chunk store base path would be: {self.base_path}"
+            )
+        # Create base_path if it doesn't exist (parent already exists from volume mount)
+        self.base_path.mkdir(exist_ok=True)
         
-        # Create directory structure
+        # Create directory structure (subdirectories within mounted volume)
         self._initialize_directories()
         
         # Compression functions

@@ -25,22 +25,27 @@ services:
       - "8095:8095"
       - "8099:8099"
     environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - NODE_MANAGEMENT_HOST=lucid-node-management
       - NODE_MANAGEMENT_PORT=8095
       - NODE_MANAGEMENT_STAGING_PORT=8099
+      - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
       - MAX_NODES_PER_POOL=100
       - PAYOUT_THRESHOLD_USDT=10.0
       - POOT_CALCULATION_INTERVAL=300
       - PAYOUT_PROCESSING_INTERVAL=3600
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
       - MONGODB_HOST=lucid-mongodb
       - MONGODB_PORT=27017
       - MONGODB_DATABASE=lucid_node_management
-      - REDIS_URI=redis://lucid-redis:6379/0
       - REDIS_URL=redis://lucid-redis:6379/0
+      - REDIS_URI=redis://lucid-redis:6379/0
       - REDIS_HOST=lucid-redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
       - NODE_MANAGEMENT_API_URL=http://172.20.0.25:8095/api/v1
       - ELECTRON_GUI_ENDPOINT=http://172.20.0.25:8095/api/v1
       - LOG_LEVEL=INFO
@@ -56,13 +61,7 @@ services:
       lucid-gui-network:
         ipv4_address: 172.22.0.25
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8095/health', timeout=5)",
-        ]
+      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -81,19 +80,20 @@ services:
       - seccomp:unconfined
     cap_drop:
       - ALL
-    cap_add:
-      - NET_BIND_SERVICE
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
       - /var/tmp:noexec,nosuid,size=50m
     labels:
       - "lucid.service=node-management"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
       - "lucid.plane=management"
       - "lucid.port=8095"
       - "lucid.port.staging=8099"
       - "lucid.features=poot-calculation,payout-processing,node-pool-management"
-      - "lucid.security=distroless"
       - "lucid.ip.main=172.20.0.25"
       - "lucid.ip.gui=172.22.0.25"
     depends_on:
