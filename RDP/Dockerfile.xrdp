@@ -1,26 +1,34 @@
-# RDP/Dockerfile.xrdp
-# Lucid XRDP API – REST interface for XRDP lifecycle control
+# syntax=docker/dockerfile:1.5
+# LUCID XRDP API – Distroless Container
+# REST interface for XRDP lifecycle control
 # Image: pickme/lucid-rdp-xrdp:latest-arm64
+# Container name: rdp-xrdp (container names do NOT include lucid- prefix)
+# Build Context: . (project root)
+# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
 #
-# DESIGN COMPLIANCE: Follows master-docker-design.md, dockerfile-design.md, 
+# DESIGN COMPLIANCE: Follows master-docker-design.md, dockerfile-design.md,
 #                    Dockerfile-copy-pattern.md patterns
 #
-# BUILD COMMAND (on Pi - NO buildx):
+# BUILD COMMAND (on Pi):
 #   docker build -f RDP/Dockerfile.xrdp -t pickme/lucid-rdp-xrdp:latest-arm64 .
-#
-# RUNTIME BASE: python:3.11-slim-bookworm (Pi workaround - gcr.io not accessible)
-# TARGET BASE: gcr.io/distroless/python3-debian12:latest (when network available)
 
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
 ############################
 # Stage 1 – Builder
 ############################
-FROM python:3.11-slim-bookworm AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -31,7 +39,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 # System packages installation (per master-docker-design.md)
-RUN rm -rf /var/lib/apt/lists/* && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
@@ -54,7 +64,8 @@ RUN echo "LUCID_RDP_XRDP_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 # Python package installation (per master-docker-design.md)
-RUN pip install --upgrade pip setuptools wheel
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
 COPY RDP/requirements.xrdp.txt ./requirements.txt
 
@@ -63,7 +74,8 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
 # Install packages
-RUN pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
 # Create marker files with actual content AFTER pip install (per Dockerfile-copy-pattern.md - CRITICAL)
 RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -71,12 +83,15 @@ RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/pyth
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification (per master-docker-design.md, Dockerfile-copy-pattern.md)
-RUN python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
 
 # Application source COPY (per dockerfile-design.md)
 COPY RDP/xrdp/               ./xrdp/
@@ -102,9 +117,7 @@ RUN test -d ./xrdp && \
 ############################
 # Stage 2 – Runtime
 ############################
-# Per master-docker-design.md: Target is gcr.io/distroless/python3-debian12:latest
-# WORKAROUND: Using python-slim (Pi cannot reach gcr.io)
-FROM python:3.11-slim-bookworm
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -112,14 +125,14 @@ ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.title="Lucid XRDP API" \
-      org.opencontainers.image.description="FastAPI control surface for XRDP sessions" \
+      org.opencontainers.image.description="Distroless XRDP API service for Lucid project" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="rdp-xrdp" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="application" \
-      com.lucid.security="slim-workaround"
+      com.lucid.security="distroless"
 
 # Environment variables (per master-docker-design.md)
 ENV PATH=/usr/local/bin:/usr/bin:/bin \
@@ -135,11 +148,6 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 
 WORKDIR /app
 
-# Non-root user setup (per master-docker-design.md)
-# NOTE: python-slim doesn't have groupadd/useradd. We use numeric UID/GID directly.
-# Docker allows running as any UID/GID even if user doesn't exist in /etc/passwd.
-# This matches distroless behavior which also uses numeric UID 65532 without named user.
-
 # System directories & certificates (per master-docker-design.md)
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
@@ -151,20 +159,30 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime verification of packages (per master-docker-design.md, Dockerfile-copy-pattern.md - CRITICAL)
 # Verifies: site-packages exists, packages exist, marker file exists and is non-empty
-RUN python3 -c "import sys; import os; \
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
 assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
 assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
+assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import fastapi; assert fastapi, 'fastapi import failed'; \
 import pydantic; assert pydantic, 'pydantic import failed'; \
-print('✅ All packages verified in runtime stage')"
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import redis; assert redis, 'redis import failed'; \
+import httpx; assert httpx, 'httpx import failed'; \
+import psutil; assert psutil, 'psutil import failed'; \
+print('✅ All packages verified in runtime stage')"]
 
 # Application layout COPY (per dockerfile-design.md - copy entire directories)
 COPY --chown=65532:65532 --from=builder /build/xrdp /app/xrdp
@@ -176,27 +194,27 @@ COPY --chown=65532:65532 --from=builder /build/session-controller /app/session-c
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
 # Verify application source files were copied (per master-docker-design.md)
-RUN python3 -c "import os; \
+RUN ["/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/xrdp'), 'xrdp directory not found'; \
 assert os.path.exists('/app/xrdp/main.py'), 'xrdp/main.py not found'; \
 assert os.path.exists('/app/xrdp/entrypoint.py'), 'xrdp/entrypoint.py not found'; \
 server_marker = '/app/xrdp/.lucid-source-marker'; \
 assert os.path.exists(server_marker), 'xrdp marker file not found'; \
 assert os.path.getsize(server_marker) > 0, 'xrdp marker file is empty'; \
-print('✅ All application source files and markers verified')"
+print('✅ All application source files and markers verified')"]
 
 # Verify entrypoint exists (per data-chain-design.md pattern)
-RUN python3 -c "import os; \
+RUN ["/usr/bin/python3.11", "-c", "import os; \
 entrypoint_path = '/app/xrdp/entrypoint.py'; \
 assert os.path.exists(entrypoint_path), 'CRITICAL: entrypoint not found at ' + entrypoint_path; \
 assert os.path.isfile(entrypoint_path), 'CRITICAL: ' + entrypoint_path + ' is not a file'; \
-print('✅ Entrypoint verified: ' + entrypoint_path)"
+print('✅ Entrypoint verified: ' + entrypoint_path)"]
 
 EXPOSE 3389
 
 # Health check - socket-based (per master-docker-design.md, service-mesh-design.md)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD python3 -c "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
@@ -204,4 +222,6 @@ USER 65532:65532
 ENTRYPOINT []
 
 # CMD - JSON form (per master-docker-design.md, dockerfile-design.md)
-CMD ["python3", "/app/xrdp/entrypoint.py"]
+CMD ["/usr/bin/python3.11", "/app/xrdp/entrypoint.py"]
+
+# All configuration comes from .env.application, .env.core, .env.secrets, .env.foundation
