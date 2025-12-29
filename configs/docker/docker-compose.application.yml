@@ -318,7 +318,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "${RDP_SERVER_MANAGER_PORT:-8081}:8081"
+      - "8081:8081"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
