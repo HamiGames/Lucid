@@ -93,12 +93,18 @@ assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydant
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
+assert os.path.exists(os.path.join(site_packages, 'stem')), 'stem not found'; \
+assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; \
+assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import blake3; assert blake3, 'blake3 import failed'; \
+import stem; assert stem, 'stem import failed'; \
+import tronpy; assert tronpy, 'tronpy import failed'; \
+import web3; assert web3, 'web3 import failed'; \
 print('✅ All packages verified in builder stage')"
 
 # Application source COPY (per Dockerfile-copy-pattern.md - copy entire directory)
@@ -187,12 +193,18 @@ assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydant
 assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
+assert os.path.exists(os.path.join(site_packages, 'stem')), 'stem not found'; \
+assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; \
+assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
 assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
 import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import blake3; assert blake3, 'blake3 import failed'; \
+import stem; assert stem, 'stem import failed'; \
+import tronpy; assert tronpy, 'tronpy import failed'; \
+import web3; assert web3, 'web3 import failed'; \
 print('✅ All packages verified in runtime stage')"]
 
 # Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directory)

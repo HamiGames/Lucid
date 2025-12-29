@@ -48,6 +48,9 @@ isort==5.12.0
 flake8==6.1.0
 mypy==1.7.1
 
+# Tor integration (required for onion services)
+stem>=1.8.0
+
 # Optional: TRON integration
 tronpy==0.4.0
 web3==6.11.3
