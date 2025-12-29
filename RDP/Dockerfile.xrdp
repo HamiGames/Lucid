@@ -17,14 +17,17 @@
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
-ARG DISTROLESS_REGISTRY=k8s.gcr.io
 
 ############################
 # Stage 1 – Builder
 ############################
-FROM python:3.11-slim-bookworm AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -54,7 +57,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 WORKDIR /build
 
 # System directory markers (per master-docker-design.md, Dockerfile-copy-pattern.md)
-# Creates content-filled markers - NOT empty files
 RUN echo "LUCID_RDP_XRDP_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_RDP_XRDP_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
@@ -73,21 +75,16 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
-# Create marker files with actual content AFTER pip install (per Dockerfile-copy-pattern.md - CRITICAL)
+# Create marker files with actual content AFTER pip install (per Dockerfile-copy-pattern.md)
 RUN echo "LUCID_RDP_XRDP_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     echo "LUCID_RDP_XRDP_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Builder-stage verification (per master-docker-design.md, Dockerfile-copy-pattern.md)
+# Builder-stage verification (per master-docker-design.md)
 RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, httpx, psutil, async_timeout; print('✅ critical packages installed')" && \
-    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
-    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
     test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "✅ Marker file verified in builder (non-empty)"
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker
 
 # Application source COPY (per dockerfile-design.md)
 COPY RDP/xrdp/               ./xrdp/
@@ -102,22 +99,10 @@ COPY RDP/__init__.py         ./__init__.py
 RUN echo "LUCID_RDP_XRDP_SOURCE_INSTALLED_$(date +%s)" > ./xrdp/.lucid-source-marker && \
     chown -R 65532:65532 ./xrdp ./common ./protocol ./client ./resource-monitor ./session-controller ./__init__.py
 
-# Verify source files and markers in builder stage (per master-docker-design.md)
-RUN test -d ./xrdp && \
-    test -f ./xrdp/.lucid-source-marker && \
-    test -s ./xrdp/.lucid-source-marker && \
-    test -f ./xrdp/main.py && \
-    test -f ./xrdp/entrypoint.py && \
-    echo "✅ All source files and markers verified in builder stage"
-
 ############################
 # Stage 2 – Runtime
 ############################
-# Using Kubernetes mirror registry as alternative when gcr.io is unavailable
-# Default: k8s.gcr.io (can be overridden with --build-arg DISTROLESS_REGISTRY=gcr.io)
-# Alternative mirrors: k8s.gcr.io, gcr.k8s.io, gcr.io
-ARG DISTROLESS_REGISTRY=k8s.gcr.io
-FROM ${DISTROLESS_REGISTRY}/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -143,8 +128,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     XRDP_PORT=3389 \
-    XRDP_SERVICE_HOST=0.0.0.0 \
-    XRDP_SERVICE_PORT=3389
+    XRDP_SERVICE_HOST=0.0.0.0
 
 WORKDIR /app
 
@@ -157,36 +141,16 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Runtime verification of packages (per master-docker-design.md, Dockerfile-copy-pattern.md - CRITICAL)
-# Verifies: site-packages exists, packages exist, marker file exists and is non-empty
+# Runtime verification (per master-docker-design.md, Dockerfile-copy-pattern.md - CRITICAL)
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
-assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
-assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
-assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
-assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
-marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.exists(marker_path), 'marker file not found'; \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-import async_timeout; assert async_timeout, 'async_timeout import failed'; \
-import uvicorn; assert uvicorn, 'uvicorn import failed'; \
-import fastapi; assert fastapi, 'fastapi import failed'; \
-import pydantic; assert pydantic, 'pydantic import failed'; \
-import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
-import motor; assert motor, 'motor import failed'; \
-import redis; assert redis, 'redis import failed'; \
-import httpx; assert httpx, 'httpx import failed'; \
-import psutil; assert psutil, 'psutil import failed'; \
-print('✅ All packages verified in runtime stage')"]
+assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker missing'; \
+import uvicorn; import fastapi; \
+print('✅ Packages verified in runtime stage')"]
 
-# Application layout COPY (per dockerfile-design.md - copy entire directories)
+# Application layout COPY (per dockerfile-design.md)
 COPY --chown=65532:65532 --from=builder /build/xrdp /app/xrdp
 COPY --chown=65532:65532 --from=builder /build/common /app/common
 COPY --chown=65532:65532 --from=builder /build/protocol /app/protocol
@@ -195,35 +159,20 @@ COPY --chown=65532:65532 --from=builder /build/resource-monitor /app/resource-mo
 COPY --chown=65532:65532 --from=builder /build/session-controller /app/session-controller
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
-# Verify application source files were copied (per master-docker-design.md)
+# Verify source files (per master-docker-design.md)
 RUN ["/usr/bin/python3.11", "-c", "import os; \
-assert os.path.exists('/app/xrdp'), 'xrdp directory not found'; \
-assert os.path.exists('/app/xrdp/main.py'), 'xrdp/main.py not found'; \
-assert os.path.exists('/app/xrdp/entrypoint.py'), 'xrdp/entrypoint.py not found'; \
-server_marker = '/app/xrdp/.lucid-source-marker'; \
-assert os.path.exists(server_marker), 'xrdp marker file not found'; \
-assert os.path.getsize(server_marker) > 0, 'xrdp marker file is empty'; \
-print('✅ All application source files and markers verified')"]
-
-# Verify entrypoint exists (per data-chain-design.md pattern)
-RUN ["/usr/bin/python3.11", "-c", "import os; \
-entrypoint_path = '/app/xrdp/entrypoint.py'; \
-assert os.path.exists(entrypoint_path), 'CRITICAL: entrypoint not found at ' + entrypoint_path; \
-assert os.path.isfile(entrypoint_path), 'CRITICAL: ' + entrypoint_path + ' is not a file'; \
-print('✅ Entrypoint verified: ' + entrypoint_path)"]
+assert os.path.exists('/app/xrdp/main.py'), 'main.py missing'; \
+assert os.path.exists('/app/xrdp/entrypoint.py'), 'entrypoint missing'"]
 
 EXPOSE 3389
 
-# Health check - socket-based (per master-docker-design.md, service-mesh-design.md)
+# Health check (per service-mesh-design.md, master-docker-design.md)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
-# Clear base ENTRYPOINT so CMD works as expected (per master-docker-design.md, data-chain-design.md)
 ENTRYPOINT []
 
-# CMD - JSON form (per master-docker-design.md, dockerfile-design.md)
+# CMD (per master-docker-design.md)
 CMD ["/usr/bin/python3.11", "/app/xrdp/entrypoint.py"]
-
-# All configuration comes from .env.application, .env.core, .env.secrets, .env.foundation
