@@ -318,7 +318,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "${RDP_SERVER_MANAGER_PORT:-8081}:${RDP_SERVER_MANAGER_PORT:-8081}"
+      - "${RDP_SERVER_MANAGER_PORT:-8081}:8081"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
@@ -328,8 +328,8 @@ services:
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - RDP_SERVER_MANAGER_HOST=${RDP_SERVER_MANAGER_HOST:-rdp-server-manager}
-      - RDP_SERVER_MANAGER_PORT=${RDP_SERVER_MANAGER_PORT:-8081}
-      - RDP_SERVER_MANAGER_URL=${RDP_SERVER_MANAGER_URL:-http://rdp-server-manager:${RDP_SERVER_MANAGER_PORT:-8081}}
+      - RDP_SERVER_MANAGER_PORT=8081
+      - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8081
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - API_GATEWAY_URL=${API_GATEWAY_URL:-http://api-gateway:8080}
@@ -387,7 +387,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "${XRDP_PORT:-3389}:${XRDP_PORT:-3389}"
+      - "${XRDP_PORT:-3389}:3389"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp/config:/app/config:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp:/app/logs:rw
@@ -396,8 +396,8 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - RDP_XRDP_HOST=${RDP_XRDP_HOST:-rdp-xrdp}
-      - XRDP_PORT=${XRDP_PORT:-3389}
-      - RDP_XRDP_URL=${RDP_XRDP_URL:-http://rdp-xrdp:${XRDP_PORT:-3389}}
+      - XRDP_PORT=3389
+      - RDP_XRDP_URL=http://rdp-xrdp:3389
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
