@@ -42,12 +42,26 @@ import blake3
 
 # Database adapter handles compatibility
 from ..database_adapter import DatabaseAdapter, get_database_adapter
-from tronpy import Tron
-from tronpy.keys import PrivateKey as TronPrivateKey
 
 # Import existing components using relative imports
 from ..peer_discovery import PeerDiscovery, PeerInfo
 from ..work_credits import WorkCreditsCalculator
+
+# Try to import TRON components - these might not be available in all environments
+try:
+    from tronpy import Tron
+    from tronpy.keys import PrivateKey as TronPrivateKey
+    TRONPY_AVAILABLE = True
+except ImportError:
+    TRONPY_AVAILABLE = False
+    # Create mock classes if not available
+    class Tron:
+        def __init__(self, *args, **kwargs):
+            pass
+    
+    class TronPrivateKey:
+        def __init__(self, *args, **kwargs):
+            pass
 
 # Try to import blockchain components - these might not be available in all environments
 try:
