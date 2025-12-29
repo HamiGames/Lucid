@@ -51,6 +51,9 @@ mypy==1.7.1
 # Tor integration (required for onion services)
 stem>=1.8.0
 
+# Setuptools (required by web3 for pkg_resources)
+setuptools>=65.0.0
+
 # Optional: TRON integration
 tronpy==0.4.0
 web3==6.11.3
