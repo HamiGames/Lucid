@@ -5,7 +5,7 @@ Configuration management for XRDP service
 """
 
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from pathlib import Path
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -34,7 +34,7 @@ class XRDPAPISettings(BaseSettings):
     HOST: str = "0.0.0.0"  # Bind address (always 0.0.0.0 for container binding)
     PORT: int = 3389  # Default port (overridden by XRDP_PORT from docker-compose)
     RDP_XRDP_HOST: str = ""  # From docker-compose: RDP_XRDP_HOST (service name, not bind address)
-    XRDP_PORT: str = ""  # From docker-compose: XRDP_PORT (string, converted to int)
+    XRDP_PORT: Union[str, int] = ""  # From docker-compose: XRDP_PORT (string or int, converted to int for PORT)
     RDP_XRDP_URL: str = ""  # From docker-compose: RDP_XRDP_URL (e.g., http://rdp-xrdp:3389)
     
     # Database Configuration (from .env.foundation, .env.core)
@@ -61,10 +61,10 @@ class XRDPAPISettings(BaseSettings):
     HEALTH_CHECK_INTERVAL: int = 30
     HEALTH_CHECK_ENABLED: bool = True
     
-    @field_validator('PORT', 'XRDP_PORT', mode='before')
+    @field_validator('PORT', mode='before')
     @classmethod
-    def validate_port(cls, v):
-        """Convert XRDP_PORT string to int and validate port range"""
+    def validate_port_int(cls, v):
+        """Convert PORT string to int and validate port range"""
         if isinstance(v, str):
             if not v:
                 return 3389  # Default port
@@ -75,6 +75,23 @@ class XRDPAPISettings(BaseSettings):
         if isinstance(v, int):
             if v < 1 or v > 65535:
                 raise ValueError('Port must be between 1 and 65535')
+            return v
+        return v
+    
+    @field_validator('XRDP_PORT', mode='before')
+    @classmethod
+    def validate_xrdp_port(cls, v):
+        """Convert XRDP_PORT string to int and validate port range, but keep as int for internal use"""
+        if isinstance(v, str):
+            if not v:
+                return 3389  # Default port
+            try:
+                v = int(v)
+            except ValueError:
+                raise ValueError(f'XRDP_PORT must be an integer, got: {v}')
+        if isinstance(v, int):
+            if v < 1 or v > 65535:
+                raise ValueError('XRDP_PORT must be between 1 and 65535')
             return v
         return v
     
@@ -143,10 +160,14 @@ class XRDPAPIConfig:
             
             # Override PORT from XRDP_PORT if provided (HOST always stays 0.0.0.0)
             # RDP_XRDP_HOST is the service name for URLs, not the bind address
+            # XRDP_PORT validator ensures it's an int, but we handle both str and int for safety
             if hasattr(self.settings, 'XRDP_PORT') and self.settings.XRDP_PORT:
                 try:
                     port_value = int(self.settings.XRDP_PORT) if isinstance(self.settings.XRDP_PORT, str) else self.settings.XRDP_PORT
-                    self.settings.PORT = port_value
+                    if isinstance(port_value, int) and 1 <= port_value <= 65535:
+                        self.settings.PORT = port_value
+                    else:
+                        logger.warning(f"Invalid XRDP_PORT value: {self.settings.XRDP_PORT}, using default {self.settings.PORT}")
                 except (ValueError, TypeError):
                     logger.warning(f"Invalid XRDP_PORT value: {self.settings.XRDP_PORT}, using default {self.settings.PORT}")
             

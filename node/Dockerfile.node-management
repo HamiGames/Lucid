@@ -72,6 +72,10 @@ COPY node/requirements.txt ./requirements.txt
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
+# Explicitly install setuptools in user site-packages (required by web3 for pkg_resources)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary setuptools>=65.0.0
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --prefer-binary -r requirements.txt
 
