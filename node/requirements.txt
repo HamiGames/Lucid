@@ -49,9 +49,9 @@ flake8==6.1.0
 mypy==1.7.1
 
 # Optional: TRON integration
-# tronpy==0.4.0
-# web3==6.11.3
+tronpy==0.4.0
+web3==6.11.3
 
 # Optional: Additional monitoring
-# psutil==5.9.6
+psutil==5.9.6
 aiofiles==23.2.1
