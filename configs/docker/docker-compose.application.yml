@@ -318,7 +318,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "${RDP_SERVER_MANAGER_PORT:-8081}:8081"
+      - "${RDP_SERVER_MANAGER_PORT:-8081}:${RDP_SERVER_MANAGER_PORT:-8081}"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
@@ -327,9 +327,9 @@ services:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - RDP_SERVER_MANAGER_HOST=rdp-server-manager
-      - RDP_SERVER_MANAGER_PORT=8081
-      - RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8081
+      - RDP_SERVER_MANAGER_HOST=${RDP_SERVER_MANAGER_HOST:-rdp-server-manager}
+      - RDP_SERVER_MANAGER_PORT=${RDP_SERVER_MANAGER_PORT:-8081}
+      - RDP_SERVER_MANAGER_URL=${RDP_SERVER_MANAGER_URL:-http://rdp-server-manager:${RDP_SERVER_MANAGER_PORT:-8081}}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - API_GATEWAY_URL=${API_GATEWAY_URL:-http://api-gateway:8080}
@@ -354,7 +354,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8081)); s.close(); exit(0 if result == 0 else 1)",
+          "import os, socket; s = socket.socket(); s.settimeout(2); port = int(os.getenv('RDP_SERVER_MANAGER_PORT', '8081')); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)",
         ]
       interval: 30s
       timeout: 10s
