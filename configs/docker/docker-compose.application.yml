@@ -385,7 +385,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-xrdp
     networks:
-      - lucid-pi-network
+      lucid-pi-network: {}
     ports:
       - "${XRDP_PORT:-3389}:3389"
     volumes:
@@ -422,7 +422,8 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=application"
     depends_on:
-      # tor-proxy is managed by lucid-foundation project and should already be running
+      tor-proxy:
+        condition: service_started
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:

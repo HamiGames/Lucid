@@ -76,6 +76,10 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --prefer-binary setuptools>=65.0.0
 
+# Explicitly install stem in user site-packages (required by tor integration)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary stem>=1.8.0
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --prefer-binary -r requirements.txt
 
