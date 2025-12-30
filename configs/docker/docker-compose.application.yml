@@ -441,7 +441,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
     networks:
-      - lucid-pi-network
+      lucid-pi-network: {}
     ports:
       - "8092:8092"
     volumes:
@@ -451,22 +451,31 @@ services:
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - RDP_CONTROLLER_HOST=rdp-controller
       - RDP_CONTROLLER_PORT=8092
       - RDP_CONTROLLER_URL=http://rdp-controller:8092
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
       - seccomp:unconfined
     cap_drop:
       - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -478,7 +487,8 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=application"
     depends_on:
-      # tor-proxy is managed by lucid-foundation project and should already be running
+      tor-proxy:
+        condition: service_started
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:

@@ -7,26 +7,28 @@ FastAPI application for RDP session management service.
 import asyncio
 import logging
 import os
+import signal
 import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from uuid import UUID
-from datetime import datetime
 
 from session_controller import SessionController
 from connection_manager import ConnectionManager
 from common.models import RdpSession, SessionStatus, SessionMetrics
 from integration.integration_manager import IntegrationManager
 
-# Configure logging
+# Configure logging (per master-docker-design.md)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -36,53 +38,70 @@ connection_manager = None
 session_controller = None
 integration_manager = None
 
+def setup_signal_handlers():
+    """Setup signal handlers for graceful shutdown (per master-docker-design.md)"""
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    """Application lifespan manager"""
+    """Application lifespan manager (per master-docker-design.md)"""
     global connection_manager, session_controller, integration_manager
     
     # Startup
     logger.info("Starting RDP Session Controller")
     
-    # Initialize integration manager
     try:
-        integration_manager = IntegrationManager(
-            service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30.0')),
-            service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
-            service_retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
-        )
-        logger.info("Integration manager initialized")
-    except Exception as e:
-        logger.warning(f"Failed to initialize integration manager: {e}")
-        integration_manager = None
-    
-    # Initialize connection manager and session controller
-    # Pass integration_manager to ConnectionManager so it can access XRDP client
-    connection_manager = ConnectionManager(integration_manager=integration_manager)
-    session_controller = SessionController(
-        connection_manager=connection_manager,
-        integration_manager=integration_manager
-    )
-    
-    # Start background monitoring tasks
-    asyncio.create_task(session_controller.start_session_monitoring())
-    asyncio.create_task(connection_manager.start_connection_monitoring())
-    
-    logger.info("RDP Session Controller started successfully")
-    
-    yield
-    
-    # Shutdown
-    logger.info("Shutting down RDP Session Controller")
-    
-    # Close integration clients
-    if integration_manager:
+        # Setup signal handlers for graceful shutdown
+        setup_signal_handlers()
+        
+        # Initialize integration manager
         try:
-            await integration_manager.close_all()
+            integration_manager = IntegrationManager(
+                service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30.0')),
+                service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
+                service_retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
+            )
+            logger.info("Integration manager initialized")
         except Exception as e:
-            logger.warning(f"Error closing integration clients: {e}")
-    
-    logger.info("RDP Session Controller shut down successfully")
+            logger.warning(f"Failed to initialize integration manager: {e}")
+            integration_manager = None
+        
+        # Initialize connection manager and session controller
+        # Pass integration_manager to ConnectionManager so it can access XRDP client
+        connection_manager = ConnectionManager(integration_manager=integration_manager)
+        session_controller = SessionController(
+            connection_manager=connection_manager,
+            integration_manager=integration_manager
+        )
+        
+        # Start background monitoring tasks
+        asyncio.create_task(session_controller.start_session_monitoring())
+        asyncio.create_task(connection_manager.start_connection_monitoring())
+        
+        logger.info("RDP Session Controller started successfully")
+        
+        yield
+        
+    except Exception as e:
+        logger.error(f"Failed to start RDP Session Controller: {e}", exc_info=True)
+        raise
+    finally:
+        # Shutdown (graceful shutdown per master-docker-design.md)
+        logger.info("Shutting down RDP Session Controller")
+        
+        # Close integration clients
+        if integration_manager:
+            try:
+                await integration_manager.close_all()
+            except Exception as e:
+                logger.warning(f"Error closing integration clients: {e}")
+        
+        logger.info("RDP Session Controller shut down successfully")
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""

@@ -50,6 +50,7 @@ mypy==1.7.1
 
 # Tor integration (required for onion services)
 stem>=1.8.0
+PySocks>=1.7.1
 
 # Setuptools (required by web3 for pkg_resources)
 setuptools>=65.0.0

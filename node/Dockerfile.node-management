@@ -103,6 +103,7 @@ assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; 
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
 assert os.path.exists(os.path.join(site_packages, 'stem')), 'stem not found'; \
+assert os.path.exists(os.path.join(site_packages, 'socks')) or os.path.exists(os.path.join(site_packages, 'socks.py')), 'socks not found'; \
 assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; \
 assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
@@ -112,6 +113,7 @@ import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import blake3; assert blake3, 'blake3 import failed'; \
 import stem; assert stem, 'stem import failed'; \
+import socks; assert socks, 'socks import failed'; \
 import tronpy; assert tronpy, 'tronpy import failed'; \
 import pkg_resources; assert pkg_resources, 'pkg_resources import failed'; \
 import web3; assert web3, 'web3 import failed'; \
@@ -204,6 +206,7 @@ assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; 
 assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
 assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
 assert os.path.exists(os.path.join(site_packages, 'stem')), 'stem not found'; \
+assert os.path.exists(os.path.join(site_packages, 'socks')) or os.path.exists(os.path.join(site_packages, 'socks.py')), 'socks not found'; \
 assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; \
 assert os.path.exists(os.path.join(site_packages, 'setuptools')), 'setuptools not found'; \
 assert os.path.exists(os.path.join(site_packages, 'pkg_resources.py')) or os.path.exists(os.path.join(site_packages, 'pkg_resources')), 'pkg_resources not found'; \
@@ -215,6 +218,7 @@ import uvicorn; assert uvicorn, 'uvicorn import failed'; \
 import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
 import blake3; assert blake3, 'blake3 import failed'; \
 import stem; assert stem, 'stem import failed'; \
+import socks; assert socks, 'socks import failed'; \
 import tronpy; assert tronpy, 'tronpy import failed'; \
 import pkg_resources; assert pkg_resources, 'pkg_resources import failed'; \
 import web3; assert web3, 'web3 import failed'; \

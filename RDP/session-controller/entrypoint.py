@@ -12,31 +12,20 @@ No hardcoded values - all configuration from environment variables.
 import os
 import sys
 
-# Ensure site-packages and app directory are in Python path (defensive programming)
+# Ensure site-packages is in Python path (per master-docker-design.md)
 site_packages = '/usr/local/lib/python3.11/site-packages'
-app_path = '/app'
-script_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Remove script directory from sys.path if present (prevents Python from adding it automatically)
-# We want /app in sys.path, not /app/session_controller
-if script_dir in sys.path:
-    sys.path.remove(script_dir)
-
-# Add to sys.path if not already present (order matters - app_path first so our modules take precedence)
-if app_path not in sys.path:
-    sys.path.insert(0, app_path)
 if site_packages not in sys.path:
     sys.path.insert(0, site_packages)
 
 if __name__ == "__main__":
     # Get configuration from environment variables (from docker-compose)
-    port_str = os.getenv('RDP_CONTROLLER_PORT', os.getenv('CONTROLLER_PORT', '8092'))
+    port_str = os.getenv('RDP_CONTROLLER_PORT', '8092')
     host = '0.0.0.0'  # Always bind to all interfaces in container
     
     try:
         port = int(port_str)
     except ValueError:
-        print(f"ERROR: Invalid RDP_CONTROLLER_PORT/CONTROLLER_PORT value: {port_str}", file=sys.stderr)
+        print(f"ERROR: Invalid RDP_CONTROLLER_PORT value: {port_str}", file=sys.stderr)
         sys.exit(1)
     
     # Import uvicorn and start the application
@@ -54,41 +43,5 @@ if __name__ == "__main__":
                 print(f"ERROR: Could not list site packages: {list_err}", file=sys.stderr)
         sys.exit(1)
     
-    # Import the app directly to ensure sys.path is respected
-    try:
-        # Verify session_controller is a package before importing
-        session_controller_path = os.path.join(app_path, 'session_controller')
-        init_file = os.path.join(session_controller_path, '__init__.py')
-        if not os.path.exists(init_file):
-            print(f"ERROR: session_controller/__init__.py not found at {init_file}", file=sys.stderr)
-            print(f"ERROR: session_controller directory exists: {os.path.exists(session_controller_path)}", file=sys.stderr)
-            if os.path.exists(session_controller_path):
-                try:
-                    contents = os.listdir(session_controller_path)
-                    print(f"ERROR: session_controller directory contents: {contents}", file=sys.stderr)
-                except Exception as list_err:
-                    print(f"ERROR: Could not list session_controller directory: {list_err}", file=sys.stderr)
-            sys.exit(1)
-        
-        from session_controller.main import app
-    except ImportError as e:
-        print(f"ERROR: Failed to import session_controller.main: {e}", file=sys.stderr)
-        print(f"ERROR: Python path: {sys.path}", file=sys.stderr)
-        print(f"ERROR: App path exists: {os.path.exists(app_path)}", file=sys.stderr)
-        if os.path.exists(app_path):
-            try:
-                contents = os.listdir(app_path)
-                print(f"ERROR: App directory contents: {contents}", file=sys.stderr)
-            except Exception as list_err:
-                print(f"ERROR: Could not list app directory: {list_err}", file=sys.stderr)
-        session_controller_path = os.path.join(app_path, 'session_controller')
-        if os.path.exists(session_controller_path):
-            try:
-                contents = os.listdir(session_controller_path)
-                print(f"ERROR: session_controller directory contents: {contents}", file=sys.stderr)
-            except Exception as list_err:
-                print(f"ERROR: Could not list session_controller directory: {list_err}", file=sys.stderr)
-        sys.exit(1)
-    
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run('session_controller.main:app', host=host, port=port)
 
