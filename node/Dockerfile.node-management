@@ -72,16 +72,17 @@ COPY node/requirements.txt ./requirements.txt
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
-# Explicitly install setuptools in user site-packages (required by web3 for pkg_resources)
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary setuptools>=65.0.0
-
-# Explicitly install stem in user site-packages (required by tor integration)
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary stem>=1.8.0
-
+# Install all requirements first
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --prefer-binary -r requirements.txt
+
+# Explicitly ensure setuptools is installed in user site-packages (required by web3 for pkg_resources)
+# This must be AFTER requirements.txt to ensure it's available and not overwritten
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --prefer-binary --force-reinstall --no-deps setuptools>=65.0.0
+
+# Verify setuptools and pkg_resources are available in builder stage
+RUN /usr/local/bin/python3 -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import setuptools; import pkg_resources; print('✅ setuptools and pkg_resources verified in builder')"
 
 # Create marker files with actual content (ensures directory structure is locked in)
 # CRITICAL: Must be AFTER pip install, with actual content (not empty)
@@ -112,6 +113,7 @@ import pydantic_settings; assert pydantic_settings, 'pydantic_settings import fa
 import blake3; assert blake3, 'blake3 import failed'; \
 import stem; assert stem, 'stem import failed'; \
 import tronpy; assert tronpy, 'tronpy import failed'; \
+import pkg_resources; assert pkg_resources, 'pkg_resources import failed'; \
 import web3; assert web3, 'web3 import failed'; \
 print('✅ All packages verified in builder stage')"
 
@@ -203,6 +205,8 @@ assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; 
 assert os.path.exists(os.path.join(site_packages, 'blake3')), 'blake3 not found'; \
 assert os.path.exists(os.path.join(site_packages, 'stem')), 'stem not found'; \
 assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; \
+assert os.path.exists(os.path.join(site_packages, 'setuptools')), 'setuptools not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pkg_resources.py')) or os.path.exists(os.path.join(site_packages, 'pkg_resources')), 'pkg_resources not found'; \
 assert os.path.exists(os.path.join(site_packages, 'web3')), 'web3 not found'; \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
@@ -212,6 +216,7 @@ import pydantic_settings; assert pydantic_settings, 'pydantic_settings import fa
 import blake3; assert blake3, 'blake3 import failed'; \
 import stem; assert stem, 'stem import failed'; \
 import tronpy; assert tronpy, 'tronpy import failed'; \
+import pkg_resources; assert pkg_resources, 'pkg_resources import failed'; \
 import web3; assert web3, 'web3 import failed'; \
 print('✅ All packages verified in runtime stage')"]
 
