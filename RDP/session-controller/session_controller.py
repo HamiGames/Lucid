@@ -13,10 +13,10 @@ from typing import Dict, List, Optional, Any
 from uuid import UUID, uuid4
 import json
 
-from connection_manager import ConnectionManager
+from .connection_manager import ConnectionManager
 from common.models import RdpSession, SessionStatus, SessionMetrics
 from security.session_validator import SessionValidator
-from integration.integration_manager import IntegrationManager
+from .integration.integration_manager import IntegrationManager
 
 logger = logging.getLogger(__name__)
 

@@ -74,8 +74,9 @@ RUN echo "LUCID_RDP_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/li
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, httpx, psutil; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, httpx, psutil, yaml; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    python3 -c "import yaml; print('PyYAML location:', yaml.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -89,12 +90,26 @@ COPY RDP/resource-monitor/  ./resource_monitor/
 COPY RDP/security/          ./security/
 COPY RDP/__init__.py        ./__init__.py
 
-# Verify integration directory exists
-RUN test -d ./session_controller/integration || (echo "ERROR: integration directory not found" && exit 1)
+# Verify integration directory exists and contains required files
+RUN test -d ./session_controller/integration || (echo "ERROR: integration directory not found" && exit 1) && \
+    test -f ./session_controller/integration/__init__.py || (echo "ERROR: integration/__init__.py not found" && exit 1) && \
+    test -f ./session_controller/integration/integration_manager.py || (echo "ERROR: integration_manager.py not found" && exit 1) && \
+    test -f ./session_controller/integration/service_base.py || (echo "ERROR: service_base.py not found" && exit 1) && \
+    test -f ./session_controller/integration/rdp_server_manager_client.py || (echo "ERROR: rdp_server_manager_client.py not found" && exit 1) && \
+    test -f ./session_controller/integration/rdp_monitor_client.py || (echo "ERROR: rdp_monitor_client.py not found" && exit 1) && \
+    echo "✅ Integration directory and files verified"
 
-# Copy controller-config.yaml from RDP/config/ to session_controller/
-# This replaces any config.yaml in session-controller/ with the one from RDP/config/
-COPY RDP/config/controller-config.yaml ./session_controller/config.yaml
+# Verify config.py exists
+RUN test -f ./session_controller/config.py || (echo "ERROR: config.py not found" && exit 1) && \
+    echo "✅ config.py verified"
+
+# Copy config.yaml from session-controller/ to session_controller/
+# This is the new configuration file with YAML/JSON support
+COPY RDP/session-controller/config.yaml ./session_controller/config.yaml
+
+# Verify config.yaml was copied
+RUN test -f ./session_controller/config.yaml || (echo "ERROR: config.yaml not found" && exit 1) && \
+    echo "✅ config.yaml verified"
 
 ############################
 # Stage 2 – Runtime
@@ -157,6 +172,7 @@ assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; 
 assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
 assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
 assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
+assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml (PyYAML) not found'; \
 # Verify marker file \
 marker_path = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.exists(marker_path), 'marker file not found'; \
@@ -172,6 +188,7 @@ import async_timeout; assert async_timeout, 'async_timeout import failed'; \
 import redis; assert redis, 'redis import failed'; \
 import httpx; assert httpx, 'httpx import failed'; \
 import psutil; assert psutil, 'psutil import failed'; \
+import yaml; assert yaml, 'yaml (PyYAML) import failed'; \
 print('✅ All packages verified in runtime stage (existence and functionality)')"]
 
 # Copy application source
@@ -183,22 +200,36 @@ COPY --from=builder --chown=65532:65532 /build/security /app/security
 COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
 # Verify application source files were copied (per dockerfile-design.md)
+# This verification ensures all modules and files are present before runtime
 RUN ["/usr/bin/python3.11", "-c", "import os; \
+# Verify main package structure \
 assert os.path.exists('/app/session_controller'), 'session_controller directory not found'; \
 assert os.path.exists('/app/session_controller/__init__.py'), 'session_controller/__init__.py not found'; \
 assert os.path.exists('/app/session_controller/entrypoint.py'), 'entrypoint.py not found'; \
 assert os.path.exists('/app/session_controller/main.py'), 'main.py not found'; \
 assert os.path.exists('/app/session_controller/session_controller.py'), 'session_controller.py not found'; \
 assert os.path.exists('/app/session_controller/connection_manager.py'), 'connection_manager.py not found'; \
+# Verify configuration files \
+assert os.path.exists('/app/session_controller/config.py'), 'config.py not found'; \
 assert os.path.exists('/app/session_controller/config.yaml'), 'config.yaml not found'; \
 assert os.path.exists('/app/session_controller/openapi.yaml'), 'openapi.yaml not found'; \
 assert os.path.exists('/app/session_controller/health-schema.json'), 'health-schema.json not found'; \
 assert os.path.exists('/app/session_controller/session-schema.json'), 'session-schema.json not found'; \
+assert os.path.exists('/app/session_controller/metrics-schema.json'), 'metrics-schema.json not found'; \
+# Verify integration directory and all client files \
 assert os.path.exists('/app/session_controller/integration'), 'integration directory not found'; \
 assert os.path.exists('/app/session_controller/integration/__init__.py'), 'integration/__init__.py not found'; \
 assert os.path.exists('/app/session_controller/integration/integration_manager.py'), 'integration_manager.py not found'; \
+assert os.path.exists('/app/session_controller/integration/service_base.py'), 'service_base.py not found'; \
 assert os.path.exists('/app/session_controller/integration/session_recorder_client.py'), 'session_recorder_client.py not found'; \
 assert os.path.exists('/app/session_controller/integration/session_processor_client.py'), 'session_processor_client.py not found'; \
+assert os.path.exists('/app/session_controller/integration/xrdp_client.py'), 'xrdp_client.py not found'; \
+assert os.path.exists('/app/session_controller/integration/rdp_server_manager_client.py'), 'rdp_server_manager_client.py not found'; \
+assert os.path.exists('/app/session_controller/integration/rdp_monitor_client.py'), 'rdp_monitor_client.py not found'; \
+# Verify config directory \
+assert os.path.exists('/app/session_controller/config'), 'config directory not found'; \
+assert os.path.exists('/app/session_controller/config/env.rdp-controller.template'), 'env.rdp-controller.template not found'; \
+# Verify shared modules \
 assert os.path.exists('/app/security'), 'security directory not found'; \
 assert os.path.exists('/app/security/session_validator.py'), 'security/session_validator.py not found'; \
 assert os.path.exists('/app/protocol'), 'protocol directory not found'; \

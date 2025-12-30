@@ -137,7 +137,7 @@ async def create_node(
 
 @router.get("/{node_id}", response_model=Node)
 async def get_node(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -170,7 +170,7 @@ async def get_node(
 
 @router.put("/{node_id}", response_model=Node)
 async def update_node(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     node_data: NodeUpdateRequest = ...,
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -218,7 +218,7 @@ async def update_node(
 
 @router.delete("/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_node(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -263,7 +263,7 @@ async def delete_node(
 
 @router.post("/{node_id}/start", response_model=Dict[str, Any])
 async def start_node(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -308,7 +308,7 @@ async def start_node(
 
 @router.post("/{node_id}/stop", response_model=Dict[str, Any])
 async def stop_node(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -353,7 +353,7 @@ async def stop_node(
 
 @router.get("/{node_id}/status", response_model=Dict[str, Any])
 async def get_node_status(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """

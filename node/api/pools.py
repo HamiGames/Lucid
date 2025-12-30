@@ -137,7 +137,7 @@ async def create_pool(
 
 @router.get("/{pool_id}", response_model=NodePool)
 async def get_pool(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
     repository: PoolRepository = Depends(get_pool_repository)
 ):
     """
@@ -170,7 +170,7 @@ async def get_pool(
 
 @router.put("/{pool_id}", response_model=NodePool)
 async def update_pool(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
     pool_data: NodePoolUpdateRequest = ...,
     repository: PoolRepository = Depends(get_pool_repository)
 ):
@@ -218,7 +218,7 @@ async def update_pool(
 
 @router.delete("/{pool_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_pool(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
     repository: PoolRepository = Depends(get_pool_repository)
 ):
     """
@@ -263,8 +263,8 @@ async def delete_pool(
 
 @router.post("/{pool_id}/nodes", response_model=Dict[str, Any])
 async def add_node_to_pool(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
-    node_id: str = Query(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
+    node_id: str = Query(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     priority: int = Query(50, ge=1, le=100, description="Node priority in pool"),
     repository: PoolRepository = Depends(get_pool_repository)
 ):
@@ -312,8 +312,8 @@ async def add_node_to_pool(
 
 @router.delete("/{pool_id}/nodes/{node_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_node_from_pool(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: PoolRepository = Depends(get_pool_repository)
 ):
     """
@@ -356,7 +356,7 @@ async def remove_node_from_pool(
 
 @router.get("/{pool_id}/nodes", response_model=Dict[str, Any])
 async def list_pool_nodes(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     repository: PoolRepository = Depends(get_pool_repository)
@@ -411,7 +411,7 @@ async def list_pool_nodes(
 
 @router.post("/{pool_id}/scale", response_model=Dict[str, Any])
 async def scale_pool(
-    pool_id: str = Path(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$"),
+    pool_id: str = Path(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$"),
     target_nodes: int = Query(..., ge=0, description="Target number of nodes"),
     repository: PoolRepository = Depends(get_pool_repository)
 ):

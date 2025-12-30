@@ -38,7 +38,7 @@ def get_node_repository() -> NodeRepository:
 
 @router.get("/{node_id}/payouts", response_model=Dict[str, Any])
 async def get_node_payouts(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     status: Optional[PayoutStatus] = Query(None, description="Filter by payout status"),
@@ -165,7 +165,7 @@ async def process_batch_payouts(
 
 @router.get("/payouts/batch/{batch_id}", response_model=Dict[str, Any])
 async def get_batch_status(
-    batch_id: str = Path(..., description="Batch ID", regex="^batch_[a-zA-Z0-9_-]+$"),
+    batch_id: str = Path(..., description="Batch ID", pattern="^batch_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -199,7 +199,7 @@ async def get_batch_status(
 
 @router.get("/payouts/{payout_id}", response_model=Payout)
 async def get_payout(
-    payout_id: str = Path(..., description="Payout ID", regex="^payout_[a-zA-Z0-9_-]+$"),
+    payout_id: str = Path(..., description="Payout ID", pattern="^payout_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -233,7 +233,7 @@ async def get_payout(
 
 @router.post("/{node_id}/payouts", response_model=Payout, status_code=status.HTTP_201_CREATED)
 async def create_payout(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     payout_request: PayoutRequest = ...,
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -296,7 +296,7 @@ async def create_payout(
 
 @router.post("/payouts/{payout_id}/cancel", response_model=Dict[str, Any])
 async def cancel_payout(
-    payout_id: str = Path(..., description="Payout ID", regex="^payout_[a-zA-Z0-9_-]+$"),
+    payout_id: str = Path(..., description="Payout ID", pattern="^payout_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """

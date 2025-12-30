@@ -64,7 +64,7 @@ class AutoScalingConfig(BaseModel):
 
 class NodePool(BaseModel):
     """Node pool model"""
-    pool_id: str = Field(..., description="Unique pool identifier", regex="^pool_[a-zA-Z0-9_-]+$")
+    pool_id: str = Field(..., description="Unique pool identifier", pattern="^pool_[a-zA-Z0-9_-]+$")
     name: str = Field(..., min_length=3, max_length=100, description="Human-readable pool name")
     description: Optional[str] = Field(None, max_length=500, description="Pool description")
     node_count: int = Field(default=0, ge=0, description="Current number of nodes in pool")
@@ -151,8 +151,8 @@ class NodePoolUpdateRequest(BaseModel):
 
 class PoolNode(BaseModel):
     """Node assignment in a pool"""
-    node_id: str = Field(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$")
-    pool_id: str = Field(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$")
+    pool_id: str = Field(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$")
     priority: int = Field(default=50, ge=1, le=100, description="Node priority in pool")
     assigned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Assignment timestamp")
     status: str = Field(default="active", description="Node status in pool")
@@ -181,7 +181,7 @@ class PoolNode(BaseModel):
 class PoolScalingEvent(BaseModel):
     """Pool scaling event"""
     event_id: str = Field(..., description="Event ID")
-    pool_id: str = Field(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$")
+    pool_id: str = Field(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$")
     event_type: str = Field(..., description="Event type (scale_up, scale_down)")
     target_nodes: int = Field(..., ge=0, description="Target number of nodes")
     current_nodes: int = Field(..., ge=0, description="Current number of nodes")
@@ -206,7 +206,7 @@ class PoolScalingEvent(BaseModel):
 
 class PoolMetrics(BaseModel):
     """Pool performance metrics"""
-    pool_id: str = Field(..., description="Pool ID", regex="^pool_[a-zA-Z0-9_-]+$")
+    pool_id: str = Field(..., description="Pool ID", pattern="^pool_[a-zA-Z0-9_-]+$")
     timestamp: datetime = Field(..., description="Metrics timestamp")
     total_nodes: int = Field(..., ge=0, description="Total nodes in pool")
     active_nodes: int = Field(..., ge=0, description="Active nodes")

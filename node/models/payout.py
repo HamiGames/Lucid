@@ -40,8 +40,8 @@ class Currency(str, Enum):
 
 class Payout(BaseModel):
     """Payout model"""
-    payout_id: str = Field(..., description="Unique payout identifier", regex="^payout_[a-zA-Z0-9_-]+$")
-    node_id: str = Field(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$")
+    payout_id: str = Field(..., description="Unique payout identifier", pattern="^payout_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$")
     amount: float = Field(..., ge=0.000001, le=1000000, description="Payout amount")
     currency: Currency = Field(default=Currency.USDT, description="Currency type")
     wallet_address: str = Field(..., description="Destination wallet address")
@@ -101,7 +101,7 @@ class Payout(BaseModel):
 
 class PayoutRequest(BaseModel):
     """Payout request model"""
-    node_id: str = Field(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$")
     amount: float = Field(..., ge=0.000001, le=1000000, description="Payout amount")
     currency: Currency = Field(default=Currency.USDT, description="Currency type")
     wallet_address: str = Field(..., description="Destination wallet address")
@@ -137,7 +137,7 @@ class PayoutRequest(BaseModel):
 
 class BatchPayoutRequest(BaseModel):
     """Batch payout request model"""
-    batch_id: str = Field(..., description="Batch identifier", regex="^batch_[a-zA-Z0-9_-]+$")
+    batch_id: str = Field(..., description="Batch identifier", pattern="^batch_[a-zA-Z0-9_-]+$")
     payout_requests: List[PayoutRequest] = Field(..., min_items=1, max_items=1000, description="Payout requests")
     priority: PayoutPriority = Field(default=PayoutPriority.NORMAL, description="Batch processing priority")
     scheduled_at: Optional[datetime] = Field(None, description="Scheduled execution time")
@@ -161,7 +161,7 @@ class BatchPayoutRequest(BaseModel):
 
 class PayoutBatch(BaseModel):
     """Payout batch model"""
-    batch_id: str = Field(..., description="Batch identifier", regex="^batch_[a-zA-Z0-9_-]+$")
+    batch_id: str = Field(..., description="Batch identifier", pattern="^batch_[a-zA-Z0-9_-]+$")
     total_payouts: int = Field(..., ge=1, description="Total number of payouts in batch")
     completed_payouts: int = Field(default=0, ge=0, description="Number of completed payouts")
     failed_payouts: int = Field(default=0, ge=0, description="Number of failed payouts")

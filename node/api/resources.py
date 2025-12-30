@@ -55,7 +55,7 @@ def get_node_repository() -> NodeRepository:
 
 @router.get("/{node_id}/resources", response_model=NodeResources)
 async def get_node_resources(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     time_range: TimeRange = Query(TimeRange.ONE_HOUR, description="Time range for resource data"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -94,7 +94,7 @@ async def get_node_resources(
 
 @router.get("/{node_id}/resources/metrics", response_model=ResourceMetrics)
 async def get_resource_metrics(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     metric_type: Optional[MetricType] = Query(None, description="Type of metrics to retrieve"),
     granularity: Granularity = Query(Granularity.FIVE_MINUTES, description="Data granularity"),
     start_time: Optional[datetime] = Query(None, description="Start time for metrics"),
@@ -153,7 +153,7 @@ async def get_resource_metrics(
 
 @router.get("/{node_id}/resources/cpu", response_model=CPUMetrics)
 async def get_cpu_metrics(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     time_range: TimeRange = Query(TimeRange.ONE_HOUR, description="Time range for CPU data"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -191,7 +191,7 @@ async def get_cpu_metrics(
 
 @router.get("/{node_id}/resources/memory", response_model=MemoryMetrics)
 async def get_memory_metrics(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     time_range: TimeRange = Query(TimeRange.ONE_HOUR, description="Time range for memory data"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -229,7 +229,7 @@ async def get_memory_metrics(
 
 @router.get("/{node_id}/resources/disk", response_model=DiskMetrics)
 async def get_disk_metrics(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     time_range: TimeRange = Query(TimeRange.ONE_HOUR, description="Time range for disk data"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -267,7 +267,7 @@ async def get_disk_metrics(
 
 @router.get("/{node_id}/resources/network", response_model=NetworkMetrics)
 async def get_network_metrics(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     time_range: TimeRange = Query(TimeRange.ONE_HOUR, description="Time range for network data"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -306,7 +306,7 @@ async def get_network_metrics(
 
 @router.get("/{node_id}/resources/alerts", response_model=List[Dict[str, Any]])
 async def get_resource_alerts(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     severity: Optional[str] = Query(None, description="Filter by alert severity"),
     active_only: bool = Query(True, description="Return only active alerts"),
     repository: NodeRepository = Depends(get_node_repository)
@@ -349,7 +349,7 @@ async def get_resource_alerts(
 
 @router.post("/{node_id}/resources/thresholds", response_model=Dict[str, Any])
 async def set_resource_thresholds(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     thresholds: Dict[str, Any] = ...,
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -408,7 +408,7 @@ async def set_resource_thresholds(
 
 @router.get("/{node_id}/resources/summary", response_model=Dict[str, Any])
 async def get_resource_summary(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     time_range: TimeRange = Query(TimeRange.TWENTY_FOUR_HOURS, description="Time range for summary"),
     repository: NodeRepository = Depends(get_node_repository)
 ):

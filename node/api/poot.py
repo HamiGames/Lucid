@@ -36,7 +36,7 @@ def get_node_repository() -> NodeRepository:
 
 @router.get("/{node_id}/poot/score", response_model=PoOTScore)
 async def get_poot_score(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     repository: NodeRepository = Depends(get_node_repository)
 ):
     """
@@ -79,7 +79,7 @@ async def get_poot_score(
 
 @router.post("/{node_id}/poot/validate", response_model=PoOTValidation)
 async def validate_poot(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     validation_request: PoOTValidationRequest = ...,
     repository: NodeRepository = Depends(get_node_repository)
 ):
@@ -240,7 +240,7 @@ async def batch_validate_poot(
 
 @router.get("/{node_id}/poot/history", response_model=Dict[str, Any])
 async def get_poot_history(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     repository: NodeRepository = Depends(get_node_repository)
@@ -357,7 +357,7 @@ async def get_poot_leaderboard(
 
 @router.post("/{node_id}/poot/calculate", response_model=PoOTScore)
 async def calculate_poot_score(
-    node_id: str = Path(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$"),
+    node_id: str = Path(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$"),
     output_data: str = Query(..., description="Base64 encoded output data"),
     repository: NodeRepository = Depends(get_node_repository)
 ):

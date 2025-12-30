@@ -114,11 +114,11 @@ class NodeConfiguration(BaseModel):
 
 class Node(BaseModel):
     """Node model"""
-    node_id: str = Field(..., description="Unique node identifier", regex="^node_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Unique node identifier", pattern="^node_[a-zA-Z0-9_-]+$")
     name: str = Field(..., min_length=3, max_length=100, description="Human-readable node name")
     status: NodeStatus = Field(..., description="Current node status")
     node_type: NodeType = Field(..., description="Type of node")
-    pool_id: Optional[str] = Field(None, description="Pool this node belongs to", regex="^pool_[a-zA-Z0-9_-]+$")
+    pool_id: Optional[str] = Field(None, description="Pool this node belongs to", pattern="^pool_[a-zA-Z0-9_-]+$")
     hardware_info: HardwareInfo = Field(..., description="Hardware information")
     location: NodeLocation = Field(..., description="Geographic location")
     configuration: NodeConfiguration = Field(..., description="Node configuration")
@@ -154,7 +154,7 @@ class NodeCreateRequest(BaseModel):
     node_type: NodeType = Field(..., description="Type of node")
     hardware_info: HardwareInfo = Field(..., description="Hardware information")
     location: NodeLocation = Field(..., description="Geographic location")
-    initial_pool_id: Optional[str] = Field(None, description="Initial pool assignment", regex="^pool_[a-zA-Z0-9_-]+$")
+    initial_pool_id: Optional[str] = Field(None, description="Initial pool assignment", pattern="^pool_[a-zA-Z0-9_-]+$")
     configuration: Optional[NodeConfiguration] = Field(None, description="Node configuration")
     
     @field_validator('name')
@@ -168,7 +168,7 @@ class NodeUpdateRequest(BaseModel):
     """Request model for updating a node"""
     name: Optional[str] = Field(None, min_length=3, max_length=100, description="Node name")
     node_type: Optional[NodeType] = Field(None, description="Type of node")
-    pool_id: Optional[str] = Field(None, description="Pool assignment", regex="^pool_[a-zA-Z0-9_-]+$")
+    pool_id: Optional[str] = Field(None, description="Pool assignment", pattern="^pool_[a-zA-Z0-9_-]+$")
     status: Optional[NodeStatus] = Field(None, description="Node status")
     configuration: Optional[NodeConfiguration] = Field(None, description="Node configuration")
     
@@ -255,7 +255,7 @@ class ResourceMetrics(BaseModel):
 # PoOT models
 class PoOTScore(BaseModel):
     """PoOT score model"""
-    node_id: str = Field(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$")
     score: float = Field(..., ge=0, le=100, description="PoOT score (0-100)")
     calculated_at: datetime = Field(..., description="Calculation timestamp")
     output_hash: str = Field(..., description="Hash of the output data")
@@ -264,7 +264,7 @@ class PoOTScore(BaseModel):
 
 class PoOTValidation(BaseModel):
     """PoOT validation result"""
-    node_id: str = Field(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$")
     validation_id: str = Field(..., description="Validation ID")
     is_valid: bool = Field(..., description="Whether PoOT is valid")
     score: float = Field(..., ge=0, le=100, description="PoOT score")
@@ -276,7 +276,7 @@ class PoOTValidation(BaseModel):
 
 class PoOTValidationRequest(BaseModel):
     """PoOT validation request"""
-    node_id: str = Field(..., description="Node ID", regex="^node_[a-zA-Z0-9_-]+$")
+    node_id: str = Field(..., description="Node ID", pattern="^node_[a-zA-Z0-9_-]+$")
     output_data: str = Field(..., description="Base64 encoded output data")
     timestamp: datetime = Field(..., description="Output timestamp")
     nonce: str = Field(..., description="Nonce for validation")

@@ -20,23 +20,25 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from uuid import UUID
 
-from session_controller import SessionController
-from connection_manager import ConnectionManager
+from .session_controller import SessionController
+from .connection_manager import ConnectionManager
 from common.models import RdpSession, SessionStatus, SessionMetrics
-from integration.integration_manager import IntegrationManager
-
-# Configure logging (per master-docker-design.md)
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from .integration.integration_manager import IntegrationManager
+from .config import RDPControllerConfig, load_config
 
 # Global instances
 connection_manager = None
 session_controller = None
 integration_manager = None
+controller_config: RDPControllerConfig = None
+
+# Configure logging (per master-docker-design.md)
+# Initial logging setup - will be reconfigured after config loads
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown (per master-docker-design.md)"""
@@ -50,7 +52,7 @@ def setup_signal_handlers():
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifespan manager (per master-docker-design.md)"""
-    global connection_manager, session_controller, integration_manager
+    global connection_manager, session_controller, integration_manager, controller_config
     
     # Startup
     logger.info("Starting RDP Session Controller")
@@ -59,12 +61,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         # Setup signal handlers for graceful shutdown
         setup_signal_handlers()
         
-        # Initialize integration manager
+        # Load configuration (per master-docker-design.md)
         try:
+            controller_config = load_config()
+            logger.info("Configuration loaded successfully")
+            
+            # Reconfigure logging with config log level
+            log_level = getattr(logging, controller_config.settings.LOG_LEVEL, logging.INFO)
+            logging.getLogger().setLevel(log_level)
+            logger.info(f"Logging level set to {controller_config.settings.LOG_LEVEL}")
+            
+        except Exception as e:
+            logger.error(f"Failed to load configuration: {e}", exc_info=True)
+            raise
+        
+        # Initialize integration manager with config values
+        try:
+            integration_config = controller_config.get_integration_config_dict()
             integration_manager = IntegrationManager(
-                service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30.0')),
-                service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),
-                service_retry_delay=float(os.getenv('SERVICE_RETRY_DELAY_SECONDS', '1.0'))
+                service_timeout=integration_config.get('service_timeout', 30.0),
+                service_retry_count=integration_config.get('service_retry_count', 3),
+                service_retry_delay=integration_config.get('service_retry_delay', 1.0)
             )
             logger.info("Integration manager initialized")
         except Exception as e:
