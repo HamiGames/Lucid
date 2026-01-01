@@ -1126,11 +1126,15 @@ if __name__ == "__main__":
         
         controller = get_admin_controller()
         
-        # Create test admin account
+        # Create test admin account - credentials from environment variables
+        test_password = os.getenv("TEST_ADMIN_PASSWORD", "")
+        if not test_password:
+            raise ValueError("TEST_ADMIN_PASSWORD environment variable must be set for test admin creation")
+        
         admin_id = await controller.create_admin_account(
-            username="test_admin",
-            email="admin@lucid-distroless.local",
-            password="secure_password_123",
+            username=os.getenv("TEST_ADMIN_USERNAME", "test_admin"),
+            email=os.getenv("TEST_ADMIN_EMAIL", "admin@lucid-distroless.local"),
+            password=test_password,
             role=AdminRole.SUPER_ADMIN,
             creator_admin_id="system"
         )
@@ -1138,7 +1142,8 @@ if __name__ == "__main__":
         print(f"Test admin created: {admin_id}")
         
         # Test authentication
-        session_token = await controller.authenticate_admin("test_admin", "secure_password_123")
+        test_username = os.getenv("TEST_ADMIN_USERNAME", "test_admin")
+        session_token = await controller.authenticate_admin(test_username, test_password)
         if session_token:
             print(f"Authentication successful: {session_token[:16]}...")
         

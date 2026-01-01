@@ -63,25 +63,26 @@ orchestration:
   
   # Service Integration
   services:
+    # Service URLs can be overridden via environment variables
     tron_client:
-      url: "http://tron-client:8091"
-      timeout_seconds: 30
-      retry_attempts: 3
+      url: "${TRON_CLIENT_URL:-http://lucid-tron-client:8091}"
+      timeout_seconds: ${TIMEOUT:-30}
+      retry_attempts: ${RETRY_MAX_RETRIES:-3}
     
     wallet_manager:
-      url: "http://tron-wallet-manager:8093"
-      timeout_seconds: 30
-      retry_attempts: 3
+      url: "${WALLET_MANAGER_URL:-http://lucid-wallet-manager:8093}"
+      timeout_seconds: ${TIMEOUT:-30}
+      retry_attempts: ${RETRY_MAX_RETRIES:-3}
     
     usdt_manager:
-      url: "http://tron-usdt-manager:8094"
-      timeout_seconds: 30
-      retry_attempts: 3
+      url: "${USDT_MANAGER_URL:-http://lucid-usdt-manager:8094}"
+      timeout_seconds: ${TIMEOUT:-30}
+      retry_attempts: ${RETRY_MAX_RETRIES:-3}
     
     payout_router:
-      url: "http://tron-payout-router:8092"
-      timeout_seconds: 30
-      retry_attempts: 3
+      url: "${PAYOUT_ROUTER_URL:-http://lucid-payout-router:8092}"
+      timeout_seconds: ${TIMEOUT:-30}
+      retry_attempts: ${RETRY_MAX_RETRIES:-3}
   
   # Payment Workflow
   workflow:
@@ -109,7 +110,7 @@ orchestration:
 # Database Configuration
 database:
   mongodb:
-    url: "mongodb://lucid-mongodb:27017/lucid_payments"
+    url: "${MONGODB_URL:-${MONGODB_URI:-mongodb://lucid-mongodb:27017/lucid_payments}}"
     database: "lucid_payments"
     collections:
       payments: "payments"
@@ -117,7 +118,7 @@ database:
       payment_stats: "payment_stats"
   
   redis:
-    url: "redis://lucid-redis:6379/0"
+    url: "${REDIS_URL:-redis://lucid-redis:6379/0}"
     cache_ttl_seconds: 300
 
 # Monitoring and Metrics

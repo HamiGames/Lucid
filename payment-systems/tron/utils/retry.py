@@ -6,6 +6,7 @@ Following architecture patterns from build/docs/
 
 import asyncio
 import logging
+import os
 import random
 import time
 from dataclasses import dataclass
@@ -17,15 +18,32 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RetryConfig:
-    """Retry configuration"""
-    max_retries: int = 3
-    initial_delay: float = 1.0
-    max_delay: float = 60.0
-    exponential_base: float = 2.0
-    jitter: bool = True
-    jitter_range: Tuple[float, float] = (0.0, 0.1)  # Percentage range
+    """Retry configuration - defaults from environment variables"""
+    max_retries: int = None
+    initial_delay: float = None
+    max_delay: float = None
+    exponential_base: float = None
+    jitter: bool = None
+    jitter_range: Tuple[float, float] = None
     retryable_exceptions: Tuple[Type[Exception], ...] = (Exception,)
     retry_on_status_codes: Optional[List[int]] = None
+    
+    def __post_init__(self):
+        """Initialize defaults from environment variables if not provided"""
+        if self.max_retries is None:
+            self.max_retries = int(os.getenv("RETRY_MAX_RETRIES", "3"))
+        if self.initial_delay is None:
+            self.initial_delay = float(os.getenv("RETRY_INITIAL_DELAY", "1.0"))
+        if self.max_delay is None:
+            self.max_delay = float(os.getenv("RETRY_MAX_DELAY", "60.0"))
+        if self.exponential_base is None:
+            self.exponential_base = float(os.getenv("RETRY_EXPONENTIAL_BASE", "2.0"))
+        if self.jitter is None:
+            self.jitter = os.getenv("RETRY_JITTER", "true").lower() == "true"
+        if self.jitter_range is None:
+            jitter_min = float(os.getenv("RETRY_JITTER_MIN", "0.0"))
+            jitter_max = float(os.getenv("RETRY_JITTER_MAX", "0.1"))
+            self.jitter_range = (jitter_min, jitter_max)
 
 
 class RetryableError(Exception):

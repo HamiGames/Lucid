@@ -104,7 +104,8 @@ class ServiceClient:
                     health_check_path=config.get("health_check_path", "/health"),
                     timeout=int(os.getenv(f"{name.upper()}_TIMEOUT", "30")),
                     max_retries=int(os.getenv(f"{name.upper()}_MAX_RETRIES", "3")),
-                    circuit_breaker_threshold=int(os.getenv(f"{name.upper()}_CIRCUIT_BREAKER_THRESHOLD", "5"))
+                    circuit_breaker_threshold=int(os.getenv(f"{name.upper()}_CIRCUIT_BREAKER_THRESHOLD", "5")),
+                    circuit_breaker_timeout=int(os.getenv(f"{name.upper()}_CIRCUIT_BREAKER_TIMEOUT", "60"))
                 )
     
     async def initialize(self):

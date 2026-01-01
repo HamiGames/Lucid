@@ -85,10 +85,12 @@ class ProvisioningManager:
     """Manages node provisioning and system configuration"""
     
     def __init__(self):
-        self.data_dir = Path("/data/admin/provisioning")
-        self.config_dir = Path("/data/admin/configs")
-        self.logs_dir = Path("/data/admin/logs")
-        self.templates_dir = Path("/data/admin/templates")
+        # Data storage paths - configured via environment variables
+        base_data_dir = Path(os.getenv("ADMIN_DATA_DIR", "/app/data"))
+        self.data_dir = Path(os.getenv("ADMIN_PROVISIONING_DIR", str(base_data_dir / "provisioning")))
+        self.config_dir = Path(os.getenv("ADMIN_CONFIG_DIR", str(base_data_dir / "configs")))
+        self.logs_dir = Path(os.getenv("ADMIN_LOGS_DIR", str(base_data_dir / "logs")))
+        self.templates_dir = Path(os.getenv("ADMIN_TEMPLATES_DIR", str(base_data_dir / "templates")))
         
         # Ensure directories exist
         for directory in [self.data_dir, self.config_dir, self.logs_dir, self.templates_dir]:
@@ -105,7 +107,6 @@ class ProvisioningManager:
             raise ValueError("API_GATEWAY_URL environment variable must be set")
         if not self.blockchain_api_url:
             raise ValueError("BLOCKCHAIN_API_URL, BLOCKCHAIN_ENGINE_URL, or BLOCKCHAIN_URL environment variable must be set")
-        self.blockchain_api_url = os.getenv("BLOCKCHAIN_API_URL", "http://blockchain_api:8084")
         
         # Provisioning state
         self.active_provisioning: Dict[str, ProvisioningStatusResponse] = {}
@@ -362,7 +363,7 @@ class ProvisioningManager:
                 },
                 "network": {
                     "ports": [
-                        int(os.getenv("ADMIN_INTERFACE_PORT", "8083")),
+                        int(os.getenv("ADMIN_INTERFACE_PORT", "8120")),
                         int(os.getenv("NODE_MANAGEMENT_PORT", "8095"))
                     ],
                     "protocols": ["p2p", "rpc"]

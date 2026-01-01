@@ -434,8 +434,8 @@ class PaymentGatewayService:
     async def _process_usdt_transfer(self, payment_info: PaymentInfo):
         """Process USDT transfer"""
         try:
-            # USDT contract address
-            usdt_contract = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+            # USDT contract address - from environment variable
+            usdt_contract = os.getenv("USDT_CONTRACT_ADDRESS", os.getenv("PAYMENT_GATEWAY_USDT_CONTRACT_ADDRESS", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"))
             
             # Get USDT contract
             contract = self.tron.get_contract(usdt_contract)
@@ -768,7 +768,7 @@ if __name__ == "__main__":
                 currency="TRX",
                 payment_type=PaymentType.TRX_TRANSFER,
                 payment_method=PaymentMethod.WALLET,
-                private_key="your_private_key_here",
+                private_key=os.getenv("TRON_TEST_PRIVATE_KEY", ""),  # Use environment variable for test private key
                 metadata={"description": "Test payment"}
             )
             

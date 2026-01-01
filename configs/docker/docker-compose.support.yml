@@ -14,7 +14,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "${ADMIN_INTERFACE_PORT:-8083}:${ADMIN_INTERFACE_PORT:-8083}"
+      - "${ADMIN_INTERFACE_PORT:-8120}:${ADMIN_INTERFACE_PORT:-8120}"
     volumes:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/admin-interface:/app/data:rw
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/admin-interface:/app/logs:rw
@@ -24,7 +24,7 @@ services:
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
       - ADMIN_INTERFACE_HOST=${ADMIN_INTERFACE_HOST:-lucid-admin-interface}
-      - ADMIN_INTERFACE_PORT=${ADMIN_INTERFACE_PORT:-8083}
+      - ADMIN_INTERFACE_PORT=${ADMIN_INTERFACE_PORT:-8120}
       - ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}
       - ADMIN_INTERFACE_DEBUG=${ADMIN_INTERFACE_DEBUG:-false}
       - ADMIN_INTERFACE_LOG_LEVEL=${ADMIN_INTERFACE_LOG_LEVEL:-INFO}
@@ -64,7 +64,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8083')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)",
+          "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8120')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)",
         ]
       interval: 30s
       timeout: 10s
@@ -190,31 +190,73 @@ services:
   tron-payout-router:
     image: pickme/lucid-tron-payout-router:latest-arm64
     container_name: tron-payout-router
+    hostname: tron-payout-router
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-payout-router
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payout-router
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
     ports:
-      - "8092:8092"
+      - "${PAYOUT_ROUTER_PORT:-8092}:${PAYOUT_ROUTER_PORT:-8092}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/payments:/data/payouts:rw
-      - /mnt/myssd/Lucid/Lucid/data/batches:/data/batches:rw
-      - /mnt/myssd/Lucid/Lucid/logs/payout-router:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payments:/data/payouts:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/batches:/data/batches:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payout-router:/app/logs:rw
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - TRON_NETWORK=${TRON_NETWORK}
-      - TRON_NODE_URL=${TRON_NODE_URL}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
-      - TRON_ADDRESS=${TRON_ADDRESS}
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - SERVICE_NAME=tron-payout-router
+      - SERVICE_PORT=${PAYOUT_ROUTER_PORT:-8092}
+      - SERVICE_HOST=${PAYOUT_ROUTER_HOST:-0.0.0.0}
+      - SERVICE_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
+      - PAYOUT_ROUTER_HOST=tron-payout-router
+      - PAYOUT_ROUTER_PORT=${PAYOUT_ROUTER_PORT:-8092}
+      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
+      - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
+      - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-}
+      - TRONGRID_API_KEY=${TRONGRID_API_KEY:-}
+      - TRON_API_KEY=${TRON_API_KEY:-${TRONGRID_API_KEY}}
+      - TRON_NODE_URL=${TRON_NODE_URL:-}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
+      - TRON_ADDRESS=${TRON_ADDRESS:-}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payout-router}
+      - LOG_FILE=${LOG_FILE:-/app/logs/payout-router.log}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-${WALLET_ENCRYPTION_KEY}}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -225,7 +267,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8092'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -244,31 +292,71 @@ services:
   tron-wallet-manager:
     image: pickme/lucid-tron-wallet-manager:latest-arm64
     container_name: tron-wallet-manager
+    hostname: tron-wallet-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-wallet-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-wallet-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
     ports:
-      - "8093:8093"
+      - "${WALLET_MANAGER_PORT:-8093}:${WALLET_MANAGER_PORT:-8093}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/wallets:/data/wallets:rw
-      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
-      - /mnt/myssd/Lucid/Lucid/logs/wallet-manager:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/wallets:/data/wallets:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/wallet-manager:/app/logs:rw
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - TRON_NETWORK=${TRON_NETWORK}
-      - TRON_NODE_URL=${TRON_NODE_URL}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
-      - TRON_ADDRESS=${TRON_ADDRESS}
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - SERVICE_NAME=tron-wallet-manager
+      - SERVICE_PORT=${WALLET_MANAGER_PORT:-8093}
+      - SERVICE_HOST=${WALLET_MANAGER_HOST:-0.0.0.0}
+      - SERVICE_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - WALLET_MANAGER_HOST=tron-wallet-manager
+      - WALLET_MANAGER_PORT=${WALLET_MANAGER_PORT:-8093}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
+      - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
+      - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-}
+      - TRONGRID_API_KEY=${TRONGRID_API_KEY:-}
+      - TRON_API_KEY=${TRON_API_KEY:-${TRONGRID_API_KEY}}
+      - TRON_NODE_URL=${TRON_NODE_URL:-}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
+      - TRON_ADDRESS=${TRON_ADDRESS:-}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/wallet-manager}
+      - LOG_FILE=${LOG_FILE:-/app/logs/wallet-manager.log}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:?WALLET_ENCRYPTION_KEY not set}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-${WALLET_ENCRYPTION_KEY}}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -279,7 +367,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8093'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -298,33 +392,76 @@ services:
   tron-usdt-manager:
     image: pickme/lucid-tron-usdt-manager:latest-arm64
     container_name: tron-usdt-manager
+    hostname: tron-usdt-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-usdt-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-usdt-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
     ports:
-      - "8094:8094"
+      - "${USDT_MANAGER_PORT:-8094}:${USDT_MANAGER_PORT:-8094}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/usdt:/data/usdt:rw
-      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
-      - /mnt/myssd/Lucid/Lucid/logs/usdt-manager:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/usdt:/data/usdt:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/usdt-manager:/app/logs:rw
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - TRON_NETWORK=${TRON_NETWORK}
-      - TRON_NODE_URL=${TRON_NODE_URL}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
-      - TRON_ADDRESS=${TRON_ADDRESS}
-      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
-      - USDT_DECIMALS=${USDT_DECIMALS}
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - SERVICE_NAME=tron-usdt-manager
+      - SERVICE_PORT=${USDT_MANAGER_PORT:-8094}
+      - SERVICE_HOST=${USDT_MANAGER_HOST:-0.0.0.0}
+      - SERVICE_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
+      - USDT_MANAGER_HOST=tron-usdt-manager
+      - USDT_MANAGER_PORT=${USDT_MANAGER_PORT:-8094}
+      - USDT_MANAGER_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
+      - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
+      - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-}
+      - TRONGRID_API_KEY=${TRONGRID_API_KEY:-}
+      - TRON_API_KEY=${TRON_API_KEY:-${TRONGRID_API_KEY}}
+      - TRON_NODE_URL=${TRON_NODE_URL:-}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
+      - TRON_ADDRESS=${TRON_ADDRESS:-}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
+      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}}
+      - USDT_CONTRACT_ADDRESS_SHASTA=${USDT_CONTRACT_ADDRESS_SHASTA:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
+      - USDT_DECIMALS=${USDT_DECIMALS:-6}
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/usdt-manager}
+      - LOG_FILE=${LOG_FILE:-/app/logs/usdt-manager.log}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-${WALLET_ENCRYPTION_KEY}}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -335,7 +472,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8094'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -354,31 +497,72 @@ services:
   tron-staking:
     image: pickme/lucid-tron-staking:latest-arm64
     container_name: tron-staking
+    hostname: tron-staking
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-staking
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-staking
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
     ports:
-      - "8096:8096"
+      - "${TRX_STAKING_PORT:-8096}:${TRX_STAKING_PORT:-8096}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/staking:/data/staking:rw
-      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
-      - /mnt/myssd/Lucid/Lucid/logs/trx-staking:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/staking:/data/staking:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/trx-staking:/app/logs:rw
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - TRON_NETWORK=${TRON_NETWORK}
-      - TRON_NODE_URL=${TRON_NODE_URL}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
-      - TRON_ADDRESS=${TRON_ADDRESS}
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - SERVICE_NAME=tron-staking
+      - SERVICE_PORT=${TRX_STAKING_PORT:-8096}
+      - SERVICE_HOST=${TRX_STAKING_HOST:-0.0.0.0}
+      - SERVICE_URL=${TRX_STAKING_URL:-http://tron-staking:8096}
+      - TRX_STAKING_HOST=tron-staking
+      - TRX_STAKING_PORT=${TRX_STAKING_PORT:-8096}
+      - TRX_STAKING_URL=${TRX_STAKING_URL:-http://tron-staking:8096}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
+      - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
+      - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-}
+      - TRONGRID_API_KEY=${TRONGRID_API_KEY:-}
+      - TRON_API_KEY=${TRON_API_KEY:-${TRONGRID_API_KEY}}
+      - TRON_NODE_URL=${TRON_NODE_URL:-}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
+      - TRON_ADDRESS=${TRON_ADDRESS:-}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/trx-staking}
+      - LOG_FILE=${LOG_FILE:-/app/logs/trx-staking.log}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-${WALLET_ENCRYPTION_KEY}}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -389,7 +573,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8096'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -408,33 +598,78 @@ services:
   tron-payment-gateway:
     image: pickme/lucid-tron-payment-gateway:latest-arm64
     container_name: tron-payment-gateway
+    hostname: tron-payment-gateway
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tron-payment-gateway
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payment-gateway
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
     ports:
-      - "8097:8097"
+      - "${PAYMENT_GATEWAY_PORT:-8097}:${PAYMENT_GATEWAY_PORT:-8097}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/gateway:/data/gateway:rw
-      - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
-      - /mnt/myssd/Lucid/Lucid/logs/payment-gateway:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/gateway:/data/gateway:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payment-gateway:/app/logs:rw
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - TRON_NETWORK=${TRON_NETWORK}
-      - TRON_NODE_URL=${TRON_NODE_URL}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
-      - TRON_ADDRESS=${TRON_ADDRESS}
-      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
-      - USDT_DECIMALS=${USDT_DECIMALS}
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - SERVICE_NAME=tron-payment-gateway
+      - SERVICE_PORT=${PAYMENT_GATEWAY_PORT:-8097}
+      - SERVICE_HOST=${PAYMENT_GATEWAY_HOST:-0.0.0.0}
+      - SERVICE_URL=${PAYMENT_GATEWAY_URL:-http://tron-payment-gateway:8097}
+      - PAYMENT_GATEWAY_HOST=tron-payment-gateway
+      - PAYMENT_GATEWAY_PORT=${PAYMENT_GATEWAY_PORT:-8097}
+      - PAYMENT_GATEWAY_URL=${PAYMENT_GATEWAY_URL:-http://tron-payment-gateway:8097}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - USDT_MANAGER_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
+      - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
+      - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-}
+      - TRONGRID_API_KEY=${TRONGRID_API_KEY:-}
+      - TRON_API_KEY=${TRON_API_KEY:-${TRONGRID_API_KEY}}
+      - TRON_NODE_URL=${TRON_NODE_URL:-}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:-}
+      - TRON_ADDRESS=${TRON_ADDRESS:-}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
+      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}}
+      - USDT_CONTRACT_ADDRESS_SHASTA=${USDT_CONTRACT_ADDRESS_SHASTA:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
+      - USDT_DECIMALS=${USDT_DECIMALS:-6}
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payment-gateway}
+      - LOG_FILE=${LOG_FILE:-/app/logs/payment-gateway.log}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - REDIS_URL=${REDIS_URL}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-${WALLET_ENCRYPTION_KEY}}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -445,7 +680,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8097'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -49,7 +49,8 @@ class HealthChecker:
     def __init__(self):
         self.checks: Dict[str, Callable] = {}
         self.cache: Dict[str, HealthCheckResult] = {}
-        self.cache_ttl = 5.0  # Cache results for 5 seconds
+        # Cache TTL from environment variable
+        self.cache_ttl = float(os.getenv("HEALTH_CHECK_CACHE_TTL", "5.0"))
         self._lock = asyncio.Lock()
     
     def register_check(self, name: str, check_func: Callable):

@@ -1,16 +1,28 @@
 # Lucid Admin Interface - Admin Interface Configuration
-# Optional YAML configuration for admin interface service
+# Reference/Documentation YAML file - NOT loaded by application
 # File: admin/config/admin-interface-config.yaml
-# Purpose: Define RBAC policies, system monitoring, and administrative controls
+# Purpose: Documentation of configuration structure
+#
+# IMPORTANT: All actual values are loaded from .env.admin-interface file via environment variables
+# This file is for reference only. Configure values in .env.admin-interface file.
+#
+# See admin/env.admin-interface.example for all configurable environment variables
 
 # Global Admin Interface Configuration
+# Values configured via environment variables in .env.admin-interface:
+# - ADMIN_INTERFACE_SERVICE_NAME
+# - ADMIN_INTERFACE_VERSION  
+# - ADMIN_INTERFACE_HOST
+# - ADMIN_INTERFACE_PORT (REQUIRED - no default, must be set in .env.admin-interface)
+# - ADMIN_INTERFACE_DEBUG
+# - ADMIN_INTERFACE_LOG_LEVEL
 global:
-  service_name: "lucid-admin-interface"
-  service_version: "1.0.0"
-  debug: false
-  log_level: "INFO"
-  host: "0.0.0.0"
-  port: 8083
+  service_name: "lucid-admin-interface"  # Set via ADMIN_INTERFACE_SERVICE_NAME
+  service_version: "1.0.0"  # Set via ADMIN_INTERFACE_VERSION
+  debug: false  # Set via ADMIN_INTERFACE_DEBUG
+  log_level: "INFO"  # Set via ADMIN_INTERFACE_LOG_LEVEL
+  host: "0.0.0.0"  # Set via ADMIN_INTERFACE_HOST
+  port: null  # REQUIRED - Set via ADMIN_INTERFACE_PORT in .env.admin-interface
 
 # Database Configuration
 database:
@@ -124,10 +136,7 @@ external_services:
 # CORS Configuration
 cors:
   enabled: true
-  allow_origins:
-    - "https://admin.lucid.local"
-    - "http://localhost:3000"
-    - "http://localhost:8083"
+  allow_origins: []  # Set via CORS_ORIGINS environment variable in .env.admin-interface
   allow_credentials: true
   allow_methods: ["*"]
   allow_headers: ["*"]

@@ -65,30 +65,37 @@ class ServiceDiscovery:
     
     def _initialize_from_env(self):
         """Initialize services from environment variables"""
+        # Port defaults - configurable via environment variables
+        api_gateway_port = int(os.getenv("API_GATEWAY_PORT", "8080"))
+        blockchain_port = int(os.getenv("BLOCKCHAIN_ENGINE_PORT", os.getenv("BLOCKCHAIN_PORT", "8084")))
+        session_port = int(os.getenv("SESSION_API_PORT", os.getenv("SESSION_MANAGEMENT_PORT", "8113")))
+        node_mgmt_port = int(os.getenv("NODE_MANAGEMENT_PORT", "8095"))
+        auth_port = int(os.getenv("AUTH_SERVICE_PORT", "8089"))
+        
         service_mappings = {
             "api_gateway": {
                 "url": self.config.api_gateway_url,
-                "port": 8080,
+                "port": api_gateway_port,
                 "health_endpoint": "/health"
             },
             "blockchain": {
                 "url": self.config.blockchain_url,
-                "port": 8084,
+                "port": blockchain_port,
                 "health_endpoint": "/health"
             },
             "session_management": {
                 "url": self.config.session_management_url,
-                "port": 8113,
+                "port": session_port,
                 "health_endpoint": "/health"
             },
             "node_management": {
                 "url": self.config.node_management_url,
-                "port": 8095,
+                "port": node_mgmt_port,
                 "health_endpoint": "/health"
             },
             "auth_service": {
                 "url": self.config.auth_service_url,
-                "port": 8089,
+                "port": auth_port,
                 "health_endpoint": "/health"
             }
         }
@@ -163,10 +170,15 @@ class ServiceDiscovery:
                                 node = service_info.get("Node", {})
                                 service = service_info.get("Service", {})
                                 
+                                default_port = int(os.getenv("API_GATEWAY_PORT", "8080"))
+                                default_address = os.getenv("CONSUL_NODE_ADDRESS", "localhost")
+                                service_port = service.get("Port", default_port)
+                                service_address = service.get('Address', node.get('Address', default_address))
+                                
                                 self.services[service_name] = ServiceInfo(
                                     name=service_name,
-                                    url=f"http://{service.get('Address', node.get('Address', 'localhost'))}:{service.get('Port', 8080)}",
-                                    port=service.get("Port", 8080),
+                                    url=f"http://{service_address}:{service_port}",
+                                    port=service_port,
                                     health_endpoint="/health",
                                     status="healthy" if service_info.get("Checks", [{}])[0].get("Status") == "passing" else "unhealthy",
                                     last_seen=datetime.now(timezone.utc)
@@ -204,10 +216,22 @@ class ServiceDiscovery:
                 service_data = await redis_client.hgetall(key)
                 
                 if service_data:
+                    port_bytes = service_data.get(b"port", b"")
+                    if port_bytes:
+                        try:
+                            if isinstance(port_bytes, bytes):
+                                port = int(port_bytes.decode())
+                            else:
+                                port = int(port_bytes)
+                        except (ValueError, AttributeError, TypeError):
+                            port = int(os.getenv("API_GATEWAY_PORT", "8080"))
+                    else:
+                        port = int(os.getenv("API_GATEWAY_PORT", "8080"))
+                    
                     self.services[service_name] = ServiceInfo(
                         name=service_name,
                         url=service_data.get(b"url", b"").decode(),
-                        port=int(service_data.get(b"port", b"8080")),
+                        port=port,
                         health_endpoint=service_data.get(b"health_endpoint", b"/health").decode(),
                         status=service_data.get(b"status", b"unknown").decode(),
                         last_seen=datetime.fromisoformat(service_data.get(b"last_heartbeat", datetime.now(timezone.utc).isoformat().encode()).decode())
@@ -244,18 +268,18 @@ class ServiceDiscovery:
                             health_url = f"{url}/health"
                             response = await self.http_client.get(health_url, timeout=2.0)
                             if response.status_code == 200:
-                                # Extract port from service name or use defaults
-                                port = 8080
+                                # Extract port from service name or use configurable defaults
+                                port = int(os.getenv("API_GATEWAY_PORT", "8080"))
                                 if "gateway" in service_name:
-                                    port = 8080
+                                    port = int(os.getenv("API_GATEWAY_PORT", "8080"))
                                 elif "blockchain" in service_name:
-                                    port = 8084
+                                    port = int(os.getenv("BLOCKCHAIN_ENGINE_PORT", os.getenv("BLOCKCHAIN_PORT", "8084")))
                                 elif "session" in service_name:
-                                    port = 8113
+                                    port = int(os.getenv("SESSION_API_PORT", os.getenv("SESSION_MANAGEMENT_PORT", "8113")))
                                 elif "node" in service_name:
-                                    port = 8095
+                                    port = int(os.getenv("NODE_MANAGEMENT_PORT", "8095"))
                                 elif "auth" in service_name:
-                                    port = 8089
+                                    port = int(os.getenv("AUTH_SERVICE_PORT", "8089"))
                                 
                                 self.services[service_name] = ServiceInfo(
                                     name=service_name,

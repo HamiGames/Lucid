@@ -96,7 +96,7 @@ backup:
 # TRON Network Integration
 tron:
   network_type: "mainnet"
-  tron_client_url: "http://tron-client:8091"
+  tron_client_url: "${TRON_CLIENT_URL:-http://lucid-tron-client:8091}"
   timeout_seconds: 30
   retry_attempts: 3
   
@@ -110,7 +110,7 @@ tron:
 # Database Configuration
 database:
   mongodb:
-    url: "mongodb://lucid-mongodb:27017/lucid_payments"
+    url: "${MONGODB_URL:-${MONGODB_URI:-mongodb://lucid-mongodb:27017/lucid_payments}}"
     database: "lucid_payments"
     collections:
       wallets: "wallets"
@@ -118,7 +118,7 @@ database:
       wallet_backups: "wallet_backups"
   
   redis:
-    url: "redis://lucid-redis:6379/0"
+    url: "${REDIS_URL:-redis://lucid-redis:6379/0}"
     cache_ttl_seconds: 300
 
 # Security Configuration

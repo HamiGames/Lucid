@@ -151,8 +151,8 @@ class USDTManagerService:
         self.token_balances: Dict[str, TokenBalance] = {}
         self.token_transactions: Dict[str, List[TokenTransaction]] = {}
         
-        # USDT contract address (mainnet)
-        self.usdt_contract_address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+        # USDT contract address - from environment variable
+        self.usdt_contract_address = os.getenv("USDT_CONTRACT_ADDRESS", os.getenv("USDT_MANAGER_CONTRACT_ADDRESS", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"))
         
         # Load existing data
         asyncio.create_task(self._load_existing_data())
@@ -617,9 +617,12 @@ if __name__ == "__main__":
     # Example usage
     async def main():
         try:
-            # Register USDT token
+            # Register USDT token - use environment variable for contract address
+            usdt_contract = os.getenv("USDT_CONTRACT_ADDRESS", os.getenv("USDT_MANAGER_CONTRACT_ADDRESS", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"))
+            test_address = os.getenv("TRON_TEST_ADDRESS", "TYourTRONAddressHere123456789")
+            
             usdt_token = await register_token(
-                "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+                usdt_contract,
                 "USDT",
                 "Tether USD"
             )
@@ -627,8 +630,8 @@ if __name__ == "__main__":
             
             # Get token balance
             balance_request = TokenBalanceRequest(
-                wallet_address="TYourTRONAddressHere123456789",
-                token_address="TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+                wallet_address=test_address,
+                token_address=usdt_contract
             )
             balance = await get_token_balance(balance_request)
             print(f"Token balance: {balance}")

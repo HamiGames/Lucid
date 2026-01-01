@@ -107,10 +107,12 @@ class SessionExportManager:
     """Manages session data export and manifest generation"""
     
     def __init__(self):
-        self.data_dir = Path("/data/admin/exports")
-        self.temp_dir = Path("/data/admin/temp")
-        self.logs_dir = Path("/data/admin/logs")
-        self.keys_dir = Path("/data/admin/keys")
+        # Data storage paths - configured via environment variables
+        base_data_dir = Path(os.getenv("ADMIN_DATA_DIR", "/app/data"))
+        self.data_dir = Path(os.getenv("ADMIN_EXPORTS_DIR", str(base_data_dir / "exports")))
+        self.temp_dir = Path(os.getenv("ADMIN_TEMP_DIR", str(base_data_dir / "temp")))
+        self.logs_dir = Path(os.getenv("ADMIN_LOGS_DIR", str(base_data_dir / "logs")))
+        self.keys_dir = Path(os.getenv("ADMIN_KEYS_DIR", str(base_data_dir / "keys")))
         
         # Ensure directories exist
         for directory in [self.data_dir, self.temp_dir, self.logs_dir, self.keys_dir]:
@@ -124,7 +126,6 @@ class SessionExportManager:
             raise ValueError("MONGODB_URL, MONGODB_URI, or MONGO_URI environment variable must be set")
         if not self.blockchain_api_url:
             raise ValueError("BLOCKCHAIN_API_URL, BLOCKCHAIN_ENGINE_URL, or BLOCKCHAIN_URL environment variable must be set")
-        self.blockchain_api_url = os.getenv("BLOCKCHAIN_API_URL", "http://blockchain_api:8084")
         self.max_export_size_mb = int(os.getenv("MAX_EXPORT_SIZE_MB", "1000"))
         
         # Export state

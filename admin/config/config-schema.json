@@ -29,7 +29,8 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 65535,
-          "default": 8083,
+          "default": 8120,
+          "description": "Port to listen on (configurable via ADMIN_INTERFACE_PORT environment variable)",
           "description": "Port to listen on"
         },
         "debug": {

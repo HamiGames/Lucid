@@ -6,6 +6,7 @@ Distroless container: lucid-tron-payment-service:latest
 
 import asyncio
 import logging
+import os
 import secrets
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
@@ -26,10 +27,11 @@ router = APIRouter(prefix="/api/v1/tron/usdt", tags=["USDT-TRC20"])
 # Initialize TRON client service
 tron_client = TronClientService()
 
-# USDT-TRC20 contract addresses
+# USDT-TRC20 contract addresses - from environment variables
 USDT_CONTRACT_ADDRESSES = {
-    "mainnet": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-    "shasta": "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"
+    "mainnet": os.getenv("USDT_CONTRACT_ADDRESS_MAINNET", os.getenv("USDT_CONTRACT_ADDRESS", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")),
+    "shasta": os.getenv("USDT_CONTRACT_ADDRESS_SHASTA", "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"),
+    "testnet": os.getenv("USDT_CONTRACT_ADDRESS_TESTNET", os.getenv("USDT_CONTRACT_ADDRESS_SHASTA", "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs"))
 }
 
 class USDTBalanceResponse(BaseModel):

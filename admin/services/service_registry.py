@@ -26,8 +26,8 @@ class RegistryConfig:
     """Service registry configuration"""
     enabled: bool = True
     registry_url: str = ""
-    service_name: str = "lucid-admin-interface"
-    service_port: int = 8083
+    service_name: str = os.getenv("ADMIN_INTERFACE_SERVICE_NAME", "lucid-admin-interface")
+    service_port: int = int(os.getenv("ADMIN_INTERFACE_PORT", "8120"))
     health_endpoint: str = "/admin/health"
     heartbeat_interval: int = 30
     registration_timeout: int = 10
@@ -46,11 +46,13 @@ class ServiceRegistry:
     
     def __init__(self):
         self.config = get_admin_config()
+        # Load port from environment variable, fallback to config service port
+        service_port = int(os.getenv("ADMIN_INTERFACE_PORT", str(self.config.service.port)))
         self.registry_config = RegistryConfig(
             enabled=os.getenv("SERVICE_REGISTRY_ENABLED", "true").lower() == "true",
             registry_url=os.getenv("SERVICE_REGISTRY_URL", ""),
             service_name=self.config.service.service_name,
-            service_port=self.config.service.port,
+            service_port=service_port,
             health_endpoint="/admin/health",
             heartbeat_interval=int(os.getenv("SERVICE_REGISTRY_HEARTBEAT_INTERVAL", "30")),
             registration_timeout=int(os.getenv("SERVICE_REGISTRY_TIMEOUT", "10"))
@@ -118,9 +120,10 @@ class ServiceRegistry:
                 self.http_client = httpx.AsyncClient(timeout=self.registry_config.registration_timeout)
             
             # Get service hostname (container name or host)
-            service_host = os.getenv("ADMIN_INTERFACE_HOST", "lucid-admin-interface")
+            service_host = os.getenv("ADMIN_INTERFACE_HOST", "0.0.0.0")
+            container_name = os.getenv("ADMIN_INTERFACE_SERVICE_NAME", "lucid-admin-interface")
             if service_host == "0.0.0.0":
-                service_host = "lucid-admin-interface"  # Use container name in Docker
+                service_host = container_name  # Use container name in Docker
             
             service_url = f"http://{service_host}:{self.registry_config.service_port}"
             

@@ -26,7 +26,7 @@ services:
       - LUCID_ADMIN_PORT=8083
       - LUCID_ADMIN_DEBUG=false
       - LUCID_ADMIN_LOG_LEVEL=INFO
-      - LUCID_ADMIN_MONGODB_URL=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - LUCID_ADMIN_MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
       - LUCID_ADMIN_REDIS_URL=redis://lucid-redis:6379/0
       - LUCID_ADMIN_BLOCKCHAIN_URL=http://lucid-blockchain-core:8084
       - LUCID_ADMIN_SESSION_URL=http://lucid-session-management:8082

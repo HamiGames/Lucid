@@ -424,7 +424,9 @@ class TronClientService:
                     logger.error(f"Transaction failed: {txid}")
                     return False
                 
-                await asyncio.sleep(10)  # Check every 10 seconds
+                # Check interval from environment variable
+                check_interval = int(os.getenv("TRON_CONFIRMATION_CHECK_INTERVAL", "10"))
+                await asyncio.sleep(check_interval)
             
             logger.warning(f"Transaction confirmation timeout: {txid}")
             return False

@@ -25,12 +25,23 @@ class CircuitBreakerState(Enum):
 
 @dataclass
 class CircuitBreakerConfig:
-    """Circuit breaker configuration"""
-    failure_threshold: int = 5
-    recovery_timeout: int = 60
-    success_threshold: int = 2
-    half_open_max_calls: int = 3
+    """Circuit breaker configuration - defaults from environment variables"""
+    failure_threshold: int = None
+    recovery_timeout: int = None
+    success_threshold: int = None
+    half_open_max_calls: int = None
     name: str = "default"
+    
+    def __post_init__(self):
+        """Initialize defaults from environment variables if not provided"""
+        if self.failure_threshold is None:
+            self.failure_threshold = int(os.getenv("CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5"))
+        if self.recovery_timeout is None:
+            self.recovery_timeout = int(os.getenv("CIRCUIT_BREAKER_RECOVERY_TIMEOUT", "60"))
+        if self.success_threshold is None:
+            self.success_threshold = int(os.getenv("CIRCUIT_BREAKER_SUCCESS_THRESHOLD", "2"))
+        if self.half_open_max_calls is None:
+            self.half_open_max_calls = int(os.getenv("CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS", "3"))
 
 
 class CircuitBreakerError(Exception):
@@ -217,4 +228,5 @@ def get_circuit_breaker_manager() -> CircuitBreakerManager:
     global _breaker_manager
     if _breaker_manager is None:
         _breaker_manager = CircuitBreakerManager()
-    return _breaker_
+    return _breaker_manager
+

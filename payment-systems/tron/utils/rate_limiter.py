@@ -6,6 +6,7 @@ Following architecture patterns from build/docs/
 
 import asyncio
 import logging
+import os
 import time
 from dataclasses import dataclass
 from typing import Optional, Dict
@@ -16,11 +17,22 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RateLimitConfig:
-    """Rate limit configuration"""
-    requests_per_minute: int = 100
-    burst_size: int = 200
-    window_seconds: int = 60
-    enabled: bool = True
+    """Rate limit configuration - defaults from environment variables"""
+    requests_per_minute: int = None
+    burst_size: int = None
+    window_seconds: int = None
+    enabled: bool = None
+    
+    def __post_init__(self):
+        """Initialize defaults from environment variables if not provided"""
+        if self.requests_per_minute is None:
+            self.requests_per_minute = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", os.getenv("RATE_LIMIT_REQUESTS", "100")))
+        if self.burst_size is None:
+            self.burst_size = int(os.getenv("RATE_LIMIT_BURST_SIZE", os.getenv("RATE_LIMIT_BURST", "200")))
+        if self.window_seconds is None:
+            self.window_seconds = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", os.getenv("RATE_LIMIT_WINDOW", "60")))
+        if self.enabled is None:
+            self.enabled = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
 
 
 class RateLimitExceeded(Exception):

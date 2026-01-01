@@ -4,7 +4,7 @@
 # Compatible with ARM64 Pi architecture
 # Security: LUCID-STRICT compliant with distroless base
 # Aligned with build/docs/dockerfile-design.md and build/docs/master-docker-design.md
-# Admin Interface service (lucid-admin-interface) - Port 8083
+# Admin Interface service (lucid-admin-interface) - Port 8120 (configurable via ADMIN_INTERFACE_PORT)
 # Image: pickme/lucid-admin-interface:latest-arm64
 # Configuration: All values from .env.support, .env.core, .env.secrets, .env.foundation via docker-compose
 # Build Context: . (project root) - copy admin/ directory
@@ -15,6 +15,7 @@ ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
+ARG ADMIN_INTERFACE_PORT
 
 ############################
 # Stage 1 – Builder
@@ -159,7 +160,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    ADMIN_INTERFACE_PORT=8083 \
+    ADMIN_INTERFACE_PORT=8120 \
     ADMIN_INTERFACE_HOST=0.0.0.0
 
 WORKDIR /app
@@ -184,10 +185,10 @@ COPY --chown=65532:65532 --from=builder /build/admin /app/admin
 # Verify application files, config files, and service modules
 RUN ["/usr/bin/python3.11", "-c", "import os; import sys; sys.path.insert(0, '/app'); assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; assert os.path.exists('/app/admin/main.py'), 'main.py not found'; assert os.path.exists('/app/admin/config.py'), 'config.py not found'; assert os.path.exists('/app/admin/config/health-schema.json'), 'health-schema.json not found'; assert os.path.exists('/app/admin/config/metrics-schema.json'), 'metrics-schema.json not found'; assert os.path.exists('/app/admin/config/rbac-schema.json'), 'rbac-schema.json not found'; assert os.path.exists('/app/admin/config/config-schema.json'), 'config-schema.json not found'; assert os.path.exists('/app/admin/config/api-schemas.json'), 'api-schemas.json not found'; assert os.path.exists('/app/admin/config/operational-config.json'), 'operational-config.json not found'; assert os.path.exists('/app/admin/config/admin-interface-config.yaml'), 'admin-interface-config.yaml not found'; assert os.path.exists('/app/admin/config/operational-config.yaml'), 'operational-config.yaml not found'; assert os.path.getsize('/app/admin/config/operational-config.yaml') > 0, 'operational-config.yaml is empty'; assert os.path.exists('/app/admin/services'), 'services directory not found'; assert os.path.exists('/app/admin/services/__init__.py'), 'services/__init__.py not found'; assert os.path.exists('/app/admin/services/service_client.py'), 'services/service_client.py not found'; assert os.path.exists('/app/admin/services/service_discovery.py'), 'services/service_discovery.py not found'; assert os.path.exists('/app/admin/services/service_registry.py'), 'services/service_registry.py not found'; from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; print('✅ Application files, config files, and cross-container service modules verified')"]
 
-EXPOSE 8083
+EXPOSE 8120
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8083')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8120')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

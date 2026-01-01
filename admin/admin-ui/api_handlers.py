@@ -29,13 +29,15 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
-# CORS middleware for Next.js frontend
+# CORS middleware for Next.js frontend - configured via environment variables
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+cors_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()] if cors_origins_env else []
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://admin-ui-distroless:3000", "http://api-gateway-distroless:8098"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true",
+    allow_methods=[method.strip() for method in os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,PATCH,OPTIONS").split(",") if method.strip()],
+    allow_headers=[header.strip() for header in os.getenv("CORS_ALLOW_HEADERS", "*").split(",") if header.strip()],
 )
 
 # Pydantic models
@@ -87,12 +89,11 @@ if not API_GATEWAY_URL:
     raise ValueError("API_GATEWAY_URL environment variable must be set")
 if not BLOCKCHAIN_API_URL:
     raise ValueError("BLOCKCHAIN_API_URL, BLOCKCHAIN_ENGINE_URL, or BLOCKCHAIN_URL environment variable must be set")
-BLOCKCHAIN_API_URL = os.getenv("BLOCKCHAIN_API_URL", "http://blockchain_api:8084")
 
-# Data storage paths
-DATA_DIR = Path("/data/admin")
-EXPORTS_DIR = DATA_DIR / "exports"
-LOGS_DIR = DATA_DIR / "logs"
+# Data storage paths - configured via environment variables
+DATA_DIR = Path(os.getenv("ADMIN_DATA_DIR", "/app/data"))
+EXPORTS_DIR = Path(os.getenv("ADMIN_EXPORTS_DIR", str(DATA_DIR / "exports")))
+LOGS_DIR = Path(os.getenv("ADMIN_LOGS_DIR", str(DATA_DIR / "logs")))
 
 # Ensure directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)

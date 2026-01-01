@@ -16,15 +16,34 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PoolConfig:
-    """Connection pool configuration"""
-    max_connections: int = 100
-    max_keepalive_connections: int = 20
-    keepalive_expiry: float = 5.0
-    timeout: float = 30.0
-    connect_timeout: float = 10.0
-    read_timeout: float = 30.0
-    write_timeout: float = 30.0
-    pool_timeout: float = 5.0
+    """Connection pool configuration - defaults from environment variables"""
+    max_connections: int = None
+    max_keepalive_connections: int = None
+    keepalive_expiry: float = None
+    timeout: float = None
+    connect_timeout: float = None
+    read_timeout: float = None
+    write_timeout: float = None
+    pool_timeout: float = None
+    
+    def __post_init__(self):
+        """Initialize defaults from environment variables if not provided"""
+        if self.max_connections is None:
+            self.max_connections = int(os.getenv("CONNECTION_POOL_MAX_CONNECTIONS", os.getenv("MAX_CONNECTIONS", "100")))
+        if self.max_keepalive_connections is None:
+            self.max_keepalive_connections = int(os.getenv("CONNECTION_POOL_MAX_KEEPALIVE", "20"))
+        if self.keepalive_expiry is None:
+            self.keepalive_expiry = float(os.getenv("CONNECTION_POOL_KEEPALIVE_EXPIRY", "5.0"))
+        if self.timeout is None:
+            self.timeout = float(os.getenv("CONNECTION_POOL_TIMEOUT", os.getenv("TIMEOUT", "30.0")))
+        if self.connect_timeout is None:
+            self.connect_timeout = float(os.getenv("CONNECTION_POOL_CONNECT_TIMEOUT", "10.0"))
+        if self.read_timeout is None:
+            self.read_timeout = float(os.getenv("CONNECTION_POOL_READ_TIMEOUT", os.getenv("TIMEOUT", "30.0")))
+        if self.write_timeout is None:
+            self.write_timeout = float(os.getenv("CONNECTION_POOL_WRITE_TIMEOUT", os.getenv("TIMEOUT", "30.0")))
+        if self.pool_timeout is None:
+            self.pool_timeout = float(os.getenv("CONNECTION_POOL_POOL_TIMEOUT", "5.0"))
 
 
 class ConnectionPoolManager:

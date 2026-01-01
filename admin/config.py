@@ -20,28 +20,28 @@ logger = logging.getLogger(__name__)
 class DatabaseConfig:
     """Database configuration"""
     mongodb_uri: str = ""
-    mongodb_database: str = os.getenv("MONGODB_DATABASE", "lucid")
+    mongodb_database: str = os.getenv("MONGODB_DATABASE", "")
     redis_url: str = os.getenv("REDIS_URL", "")
     elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL", "")
-    connection_timeout: int = 30
-    max_pool_size: int = 100
-    min_pool_size: int = 10
+    connection_timeout: int = int(os.getenv("DATABASE_CONNECTION_TIMEOUT", "30"))
+    max_pool_size: int = int(os.getenv("DATABASE_MAX_POOL_SIZE", "100"))
+    min_pool_size: int = int(os.getenv("DATABASE_MIN_POOL_SIZE", "10"))
 
 
 @dataclass
 class SecurityConfig:
     """Security configuration"""
-    jwt_secret_key: str = ""
-    jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = 15
-    jwt_refresh_token_expire_days: int = 7
-    password_min_length: int = 12
-    password_require_special_chars: bool = True
-    session_timeout_hours: int = 8
-    max_login_attempts: int = 5
-    lockout_duration_minutes: int = 30
-    totp_issuer: str = "Lucid Admin"
-    totp_window: int = 1
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    jwt_access_token_expire_minutes: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+    jwt_refresh_token_expire_days: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+    password_min_length: int = int(os.getenv("PASSWORD_MIN_LENGTH", "12"))
+    password_require_special_chars: bool = os.getenv("PASSWORD_REQUIRE_SPECIAL_CHARS", "true").lower() == "true"
+    session_timeout_hours: int = int(os.getenv("SESSION_TIMEOUT_HOURS", "8"))
+    max_login_attempts: int = int(os.getenv("MAX_LOGIN_ATTEMPTS", "5"))
+    lockout_duration_minutes: int = int(os.getenv("LOCKOUT_DURATION_MINUTES", "30"))
+    totp_issuer: str = os.getenv("TOTP_ISSUER", "Lucid Admin")
+    totp_window: int = int(os.getenv("TOTP_WINDOW", "1"))
 
 
 @dataclass
@@ -50,27 +50,27 @@ class ServiceConfig:
     service_name: str = os.getenv("ADMIN_INTERFACE_SERVICE_NAME", "lucid-admin-interface")
     version: str = os.getenv("ADMIN_INTERFACE_VERSION", "1.0.0")
     host: str = os.getenv("ADMIN_INTERFACE_HOST", "0.0.0.0")
-    port: int = int(os.getenv("ADMIN_INTERFACE_PORT", "8083"))
-    debug: bool = False
-    log_level: str = "INFO"
-    workers: int = 1
-    max_connections: int = 1000
-    keep_alive_timeout: int = 5
-    api_docs_path: str = "/admin/docs"
-    api_redoc_path: str = "/admin/redoc"
-    api_openapi_path: str = "/admin/openapi.json"
-    api_prefix: str = "/admin/api/v1"
+    port: int = int(os.getenv("ADMIN_INTERFACE_PORT", os.getenv("ADMIN_PORT", "")) or "8120")
+    debug: bool = os.getenv("ADMIN_INTERFACE_DEBUG", "false").lower() == "true"
+    log_level: str = os.getenv("ADMIN_INTERFACE_LOG_LEVEL", "INFO")
+    workers: int = int(os.getenv("ADMIN_INTERFACE_WORKERS", "1"))
+    max_connections: int = int(os.getenv("ADMIN_INTERFACE_MAX_CONNECTIONS", "1000"))
+    keep_alive_timeout: int = int(os.getenv("ADMIN_INTERFACE_KEEP_ALIVE_TIMEOUT", "5"))
+    api_docs_path: str = os.getenv("API_DOCS_PATH", "/admin/docs")
+    api_redoc_path: str = os.getenv("API_REDOC_PATH", "/admin/redoc")
+    api_openapi_path: str = os.getenv("API_OPENAPI_PATH", "/admin/openapi.json")
+    api_prefix: str = os.getenv("API_PREFIX", "/admin/api/v1")
 
 
 @dataclass
 class RBACConfig:
     """Role-based access control configuration"""
-    default_role: str = "read_only"
-    super_admin_role: str = "super_admin"
-    admin_role: str = "admin"
-    operator_role: str = "operator"
-    read_only_role: str = "read_only"
-    permission_cache_ttl: int = 300  # 5 minutes
+    default_role: str = os.getenv("RBAC_DEFAULT_ROLE", "read_only")
+    super_admin_role: str = os.getenv("RBAC_SUPER_ADMIN_ROLE", "super_admin")
+    admin_role: str = os.getenv("RBAC_ADMIN_ROLE", "admin")
+    operator_role: str = os.getenv("RBAC_OPERATOR_ROLE", "operator")
+    read_only_role: str = os.getenv("RBAC_READ_ONLY_ROLE", "read_only")
+    permission_cache_ttl: int = int(os.getenv("RBAC_PERMISSION_CACHE_TTL", "300"))
     role_hierarchy: Dict[str, List[str]] = field(default_factory=lambda: {
         "super_admin": ["admin", "operator", "read_only"],
         "admin": ["operator", "read_only"],
@@ -79,35 +79,37 @@ class RBACConfig:
     })
     
     # Admin Controller specific
-    key_rotation_interval_days: int = 30
-    admin_session_timeout_hours: int = 8
-    governance_quorum_pct: float = 0.67
-    policy_cache_ttl_sec: int = 300
-    multisig_threshold: int = 3
-    multisig_total: int = 5
+    key_rotation_interval_days: int = int(os.getenv("KEY_ROTATION_INTERVAL_DAYS", "30"))
+    admin_session_timeout_hours: int = int(os.getenv("ADMIN_SESSION_TIMEOUT_HOURS", "8"))
+    governance_quorum_pct: float = float(os.getenv("GOVERNANCE_QUORUM_PCT", "0.67"))
+    policy_cache_ttl_sec: int = int(os.getenv("POLICY_CACHE_TTL_SEC", "300"))
+    multisig_threshold: int = int(os.getenv("MULTISIG_THRESHOLD", "3"))
+    multisig_total: int = int(os.getenv("MULTISIG_TOTAL", "5"))
 
 
 @dataclass
 class MonitoringConfig:
     """Monitoring and metrics configuration"""
-    metrics_enabled: bool = True
-    metrics_port: int = 9090
-    health_check_interval: int = 30
-    system_metrics_interval: int = 60
-    log_retention_days: int = 30
-    audit_log_retention_days: int = 90
-    performance_monitoring: bool = True
+    metrics_enabled: bool = os.getenv("METRICS_ENABLED", "true").lower() == "true"
+    metrics_port: int = int(os.getenv("METRICS_PORT", "9090"))
+    health_check_interval: int = int(os.getenv("HEALTH_CHECK_INTERVAL", "30"))
+    system_metrics_interval: int = int(os.getenv("SYSTEM_METRICS_INTERVAL", "60"))
+    log_retention_days: int = int(os.getenv("LOG_RETENTION_DAYS", "30"))
+    audit_log_retention_days: int = int(os.getenv("AUDIT_LOG_RETENTION_DAYS", "90"))
+    performance_monitoring: bool = os.getenv("PERFORMANCE_MONITORING", "true").lower() == "true"
 
 
 @dataclass
 class EmergencyConfig:
     """Emergency controls configuration"""
-    emergency_lockdown_enabled: bool = True
-    emergency_shutdown_enabled: bool = True
-    session_termination_enabled: bool = True
-    node_maintenance_enabled: bool = True
-    blockchain_pause_enabled: bool = True
-    emergency_notification_emails: List[str] = field(default_factory=list)
+    emergency_lockdown_enabled: bool = os.getenv("EMERGENCY_LOCKDOWN_ENABLED", "true").lower() == "true"
+    emergency_shutdown_enabled: bool = os.getenv("EMERGENCY_SHUTDOWN_ENABLED", "true").lower() == "true"
+    session_termination_enabled: bool = os.getenv("SESSION_TERMINATION_ENABLED", "true").lower() == "true"
+    node_maintenance_enabled: bool = os.getenv("NODE_MAINTENANCE_ENABLED", "true").lower() == "true"
+    blockchain_pause_enabled: bool = os.getenv("BLOCKCHAIN_PAUSE_ENABLED", "true").lower() == "true"
+    emergency_notification_emails: List[str] = field(default_factory=lambda: [
+        email.strip() for email in os.getenv("EMERGENCY_NOTIFICATION_EMAILS", "").split(",") if email.strip()
+    ])
 
 
 @dataclass
@@ -130,7 +132,7 @@ class AdminConfig:
     
     # CORS settings
     cors_origins: List[str] = field(default_factory=lambda: [
-        origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://admin.lucid.local,http://localhost:3000,http://localhost:8083").split(",") if origin.strip()
+        origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()
     ])
     cors_allow_credentials: bool = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
     cors_allow_methods: List[str] = field(default_factory=lambda: [
@@ -142,20 +144,18 @@ class AdminConfig:
     
     # Trusted hosts
     trusted_hosts: List[str] = field(default_factory=lambda: [
-        host.strip() for host in os.getenv("TRUSTED_HOSTS", "admin.lucid.local,localhost,127.0.0.1").split(",") if host.strip()
+        host.strip() for host in os.getenv("TRUSTED_HOSTS", "").split(",") if host.strip()
     ])
     
     # Rate limiting
-    rate_limit_requests: int = 1000
-    rate_limit_window: int = 60  # seconds
-    rate_limit_burst: int = 100
+    rate_limit_requests: int = int(os.getenv("RATE_LIMIT_REQUESTS", "1000"))
+    rate_limit_window: int = int(os.getenv("RATE_LIMIT_WINDOW", "60"))  # seconds
+    rate_limit_burst: int = int(os.getenv("RATE_LIMIT_BURST", "100"))
     
     # File upload limits
-    max_upload_size: int = 100 * 1024 * 1024  # 100MB
+    max_upload_size: int = int(os.getenv("MAX_UPLOAD_SIZE", str(100 * 1024 * 1024)))  # Default: 100MB
     allowed_file_types: List[str] = field(default_factory=lambda: [
-        "application/json",
-        "text/csv",
-        "application/pdf"
+        ftype.strip() for ftype in os.getenv("ALLOWED_FILE_TYPES", "application/json,text/csv,application/pdf,text/plain").split(",") if ftype.strip()
     ])
     
     def __post_init__(self):
@@ -492,8 +492,8 @@ def get_testing_config() -> AdminConfig:
     config.service.debug = True
     config.service.log_level = "DEBUG"
     # Use environment variables for test config, fallback to defaults only for testing
-    config.database.mongodb_uri = os.getenv("TEST_MONGODB_URI", os.getenv("MONGODB_URI", "mongodb://localhost:27017/lucid_test"))
-    config.database.redis_url = os.getenv("TEST_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/1"))
+    config.database.mongodb_uri = os.getenv("TEST_MONGODB_URI") or os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or ""
+    config.database.redis_url = os.getenv("TEST_REDIS_URL") or os.getenv("REDIS_URL") or ""
     config.security.jwt_access_token_expire_minutes = int(os.getenv("TEST_JWT_EXPIRE_MINUTES", "1"))
     return config
 
