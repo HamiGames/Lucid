@@ -13,6 +13,10 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Regex patterns for URL validation (compiled at module level for performance)
+LOCALHOST_PATTERN = re.compile(r'\blocalhost\b', re.IGNORECASE)
+IP_127_PATTERN = re.compile(r'\b127\.0\.0\.1\b')
+
 
 class ServiceError(Exception):
     """Base exception for service communication errors"""
@@ -60,12 +64,9 @@ class ServiceClientBase(ABC):
         if not base_url:
             raise ValueError(f"Service base_url is required but not provided")
         
-        # Validate URL doesn't use localhost (using regex for accurate matching)
+        # Validate URL doesn't use localhost (using regex pattern for accurate matching)
         # Pattern matches: localhost, 127.0.0.1, but not mylocalhost.com or 127.0.0.10
-        localhost_pattern = re.compile(r'\blocalhost\b', re.IGNORECASE)
-        ip_pattern = re.compile(r'\b127\.0\.0\.1\b')
-        
-        if localhost_pattern.search(base_url) or ip_pattern.search(base_url):
+        if LOCALHOST_PATTERN.search(base_url) or IP_127_PATTERN.search(base_url):
             raise ValueError(f"Service URL must not use localhost: {base_url}. Use service name instead.")
         
         self.base_url = base_url.rstrip('/')

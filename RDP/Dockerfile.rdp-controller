@@ -74,9 +74,10 @@ RUN echo "LUCID_RDP_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/li
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, httpx, psutil, yaml; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, httpx, psutil, yaml, jsonschema; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     python3 -c "import yaml; print('PyYAML location:', yaml.__file__)" && \
+    python3 -c "import jsonschema; print('jsonschema location:', jsonschema.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -189,6 +190,7 @@ import redis; assert redis, 'redis import failed'; \
 import httpx; assert httpx, 'httpx import failed'; \
 import psutil; assert psutil, 'psutil import failed'; \
 import yaml; assert yaml, 'yaml (PyYAML) import failed'; \
+import jsonschema; assert jsonschema, 'jsonschema import failed'; \
 print('✅ All packages verified in runtime stage (existence and functionality)')"]
 
 # Copy application source
@@ -212,6 +214,7 @@ assert os.path.exists('/app/session_controller/connection_manager.py'), 'connect
 # Verify configuration files \
 assert os.path.exists('/app/session_controller/config.py'), 'config.py not found'; \
 assert os.path.exists('/app/session_controller/config.yaml'), 'config.yaml not found'; \
+assert os.path.exists('/app/session_controller/schema_validator.py'), 'schema_validator.py not found'; \
 assert os.path.exists('/app/session_controller/openapi.yaml'), 'openapi.yaml not found'; \
 assert os.path.exists('/app/session_controller/health-schema.json'), 'health-schema.json not found'; \
 assert os.path.exists('/app/session_controller/session-schema.json'), 'session-schema.json not found'; \

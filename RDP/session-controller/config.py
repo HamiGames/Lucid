@@ -32,6 +32,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Regex patterns for URL validation (compiled at module level for performance)
+LOCALHOST_PATTERN = re.compile(r'\blocalhost\b', re.IGNORECASE)
+IP_127_PATTERN = re.compile(r'\b127\.0\.0\.1\b')
+
 
 class RDPControllerSettings(BaseSettings):
     """Base settings for RDP Controller service"""
@@ -103,12 +107,9 @@ class RDPControllerSettings(BaseSettings):
     def validate_mongodb_url(cls, v: str) -> str:
         """Validate MongoDB URL doesn't use localhost"""
         if v:
-            # Use regex to match localhost or 127.0.0.1 as whole words/hostnames
+            # Use regex pattern to match localhost or 127.0.0.1 as whole words/hostnames
             # Pattern matches: localhost, 127.0.0.1, but not mylocalhost.com or 127.0.0.10
-            localhost_pattern = re.compile(r'\blocalhost\b', re.IGNORECASE)
-            ip_pattern = re.compile(r'\b127\.0\.0\.1\b')
-            
-            if localhost_pattern.search(v) or ip_pattern.search(v):
+            if LOCALHOST_PATTERN.search(v) or IP_127_PATTERN.search(v):
                 raise ValueError("MONGODB_URL must not use localhost. Use service name (e.g., lucid-mongodb)")
         return v
     
@@ -117,12 +118,9 @@ class RDPControllerSettings(BaseSettings):
     def validate_redis_url(cls, v: str) -> str:
         """Validate Redis URL doesn't use localhost"""
         if v:
-            # Use regex to match localhost or 127.0.0.1 as whole words/hostnames
+            # Use regex pattern to match localhost or 127.0.0.1 as whole words/hostnames
             # Pattern matches: localhost, 127.0.0.1, but not mylocalhost.com or 127.0.0.10
-            localhost_pattern = re.compile(r'\blocalhost\b', re.IGNORECASE)
-            ip_pattern = re.compile(r'\b127\.0\.0\.1\b')
-            
-            if localhost_pattern.search(v) or ip_pattern.search(v):
+            if LOCALHOST_PATTERN.search(v) or IP_127_PATTERN.search(v):
                 raise ValueError("REDIS_URL must not use localhost. Use service name (e.g., lucid-redis)")
         return v
     

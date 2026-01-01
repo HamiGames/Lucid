@@ -241,6 +241,7 @@ assert os.path.exists('/app/node/node-schema.json'), 'node-schema.json not found
 assert os.path.exists('/app/node/pool-schema.json'), 'pool-schema.json not found'; \
 assert os.path.exists('/app/node/payout-schema.json'), 'payout-schema.json not found'; \
 assert os.path.exists('/app/node/poot-schema.json'), 'poot-schema.json not found'; \
+assert os.path.exists('/app/node/models.py'), 'models.py not found'; \
 node_marker = '/app/node/.lucid-source-marker'; \
 assert os.path.exists(node_marker), 'node marker file not found'; \
 assert os.path.getsize(node_marker) > 0, 'node marker file is empty'; \

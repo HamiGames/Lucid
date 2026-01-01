@@ -5,26 +5,36 @@ FastAPI application for RDP session management service.
 """
 
 import asyncio
+import json
 import logging
 import os
 import signal
 import sys
 import uvicorn
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from pathlib import Path
+from typing import AsyncGenerator, Dict, Any, Optional
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from uuid import UUID
+
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+    yaml = None
 
 from .session_controller import SessionController
 from .connection_manager import ConnectionManager
 from common.models import RdpSession, SessionStatus, SessionMetrics
 from .integration.integration_manager import IntegrationManager
 from .config import RDPControllerConfig, load_config
+from .schema_validator import get_schema_validator, SchemaValidationError
 
 # Global instances
 connection_manager = None
@@ -120,8 +130,37 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         
         logger.info("RDP Session Controller shut down successfully")
 
+def load_openapi_schema() -> Optional[Dict[str, Any]]:
+    """
+    Load OpenAPI schema from openapi.yaml file
+    
+    Returns:
+        OpenAPI schema dictionary or None if not available
+    """
+    schema_path = Path('/app/session_controller/openapi.yaml')
+    if not schema_path.exists():
+        logger.warning(f"OpenAPI schema file not found: {schema_path}")
+        return None
+    
+    try:
+        if YAML_AVAILABLE:
+            with open(schema_path, 'r', encoding='utf-8') as f:
+                schema = yaml.safe_load(f)
+                logger.info(f"Loaded OpenAPI schema from {schema_path}")
+                return schema
+        else:
+            logger.warning("PyYAML not available, cannot load OpenAPI schema")
+            return None
+    except Exception as e:
+        logger.error(f"Failed to load OpenAPI schema: {e}", exc_info=True)
+        return None
+
+
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
+    
+    # Load OpenAPI schema if available
+    openapi_schema = load_openapi_schema()
     
     app = FastAPI(
         title="Lucid RDP Session Controller",
@@ -131,6 +170,17 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
         lifespan=lifespan,
     )
+    
+    # Override OpenAPI schema if loaded from file
+    if openapi_schema:
+        def custom_openapi():
+            if app.openapi_schema:
+                return app.openapi_schema
+            app.openapi_schema = openapi_schema
+            return app.openapi_schema
+        
+        app.openapi = custom_openapi
+        logger.info("OpenAPI schema loaded from openapi.yaml")
     
     # Add CORS middleware
     app.add_middleware(
@@ -153,13 +203,24 @@ def create_app() -> FastAPI:
                 logger.warning(f"Failed to check integration health: {e}")
                 integration_status = {"error": str(e)}
         
-        return {
+        response_data = {
             "status": "healthy",
             "service": "rdp-session-controller",
             "version": "1.0.0",
             "timestamp": datetime.utcnow().isoformat(),
             "integrations": integration_status
         }
+        
+        # Validate response against schema (graceful degradation if validation fails)
+        try:
+            schema_validator = get_schema_validator()
+            if schema_validator.enabled:
+                schema_validator.validate_health_response(response_data)
+        except SchemaValidationError as e:
+            logger.warning(f"Health response schema validation failed: {e}")
+            # Continue anyway - validation is optional
+        
+        return response_data
     
     # Session management endpoints
     @app.post("/api/v1/sessions", response_model=dict)
@@ -211,7 +272,19 @@ def create_app() -> FastAPI:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Session not found"
             )
-        return session.to_dict()
+        
+        session_dict = session.to_dict()
+        
+        # Validate response against schema (graceful degradation if validation fails)
+        try:
+            schema_validator = get_schema_validator()
+            if schema_validator.enabled:
+                schema_validator.validate_session_data(session_dict)
+        except SchemaValidationError as e:
+            logger.warning(f"Session data schema validation failed: {e}")
+            # Continue anyway - validation is optional
+        
+        return session_dict
     
     @app.get("/api/v1/sessions")
     async def list_sessions(user_id: str = None):
@@ -266,7 +339,19 @@ def create_app() -> FastAPI:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Session metrics not found"
             )
-        return metrics.to_dict()
+        
+        metrics_dict = metrics.to_dict()
+        
+        # Validate response against schema (graceful degradation if validation fails)
+        try:
+            schema_validator = get_schema_validator()
+            if schema_validator.enabled:
+                schema_validator.validate_metrics_data(metrics_dict)
+        except SchemaValidationError as e:
+            logger.warning(f"Metrics data schema validation failed: {e}")
+            # Continue anyway - validation is optional
+        
+        return metrics_dict
     
     @app.get("/api/v1/sessions/{session_id}/health")
     async def get_session_health(session_id: UUID):
