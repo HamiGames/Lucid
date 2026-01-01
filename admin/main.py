@@ -23,14 +23,15 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# Distroless-safe path resolution with validation
-try:
-    from src.core.utils import get_safe_project_root
-    project_root = get_safe_project_root()
-    sys.path.append(project_root)
-except Exception as e:
-    logging.error(f"Failed to resolve project root: {e}")
-    sys.exit(1)
+# Ensure site-packages is in Python path (per master-docker-design.md)
+site_packages = '/usr/local/lib/python3.11/site-packages'
+if site_packages not in sys.path:
+    sys.path.insert(0, site_packages)
+
+# Ensure app directory is in Python path
+app_path = '/app'
+if app_path not in sys.path:
+    sys.path.insert(0, app_path)
 
 
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -383,11 +384,13 @@ if __name__ == "__main__":
     config = get_admin_config()
     
     # Safe port conversion with validation
+    port_str = os.getenv("ADMIN_INTERFACE_PORT", str(config.port))
     try:
-        from src.core.utils import validate_port_env
-        port = validate_port_env("ADMIN_PORT", config.port)
-    except Exception as e:
-        logger.error(f"Invalid ADMIN_PORT environment variable: {e}")
+        port = int(port_str)
+        if not (1 <= port <= 65535):
+            raise ValueError(f"Port {port} out of range")
+    except ValueError as e:
+        logger.error(f"Invalid ADMIN_INTERFACE_PORT value: {port_str}: {e}")
         logger.info(f"Using default port: {config.port}")
         port = config.port
     

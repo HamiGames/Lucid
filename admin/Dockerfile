@@ -1,11 +1,11 @@
-# LUCID ADMIN INTERFACE - SPEC-1B Implementation
+# syntax=docker/dockerfile:1.5
+# LUCID ADMIN INTERFACE - Distroless Container
 # Professional multi-platform Admin Interface service for Pi deployment
-# Compatible with devcontainer builds and ARM64 Pi architecture
+# Compatible with ARM64 Pi architecture
 # Security: LUCID-STRICT compliant with distroless base
-# Aligned with plan/constants/ requirements
-# Admin Interface service (lucid-admin-interface) - Ports 8083, 8088, 8100
-# Image: pickme/lucid-admin-interface:latest-arm64 (essentials.md, path_plan.md)
-# Tor-proxy compatible: Uses CMD (no ENTRYPOINT)
+# Aligned with build/docs/dockerfile-design.md and build/docs/master-docker-design.md
+# Admin Interface service (lucid-admin-interface) - Port 8083
+# Image: pickme/lucid-admin-interface:latest-arm64
 # Configuration: All values from .env.support, .env.core, .env.secrets, .env.foundation via docker-compose
 # Build Context: . (project root) - copy admin/ directory
 
@@ -14,16 +14,19 @@ ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.11
 
-FROM python:3.12-slim-bookworm AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_PREFER_BINARY=1 \
@@ -31,7 +34,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
@@ -46,60 +51,125 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-WORKDIR /app
+WORKDIR /build
+
+# Ensures /var/run and /var/lib exist with real content (COPY won't be silent)
+RUN echo "LUCID_ADMIN_INTERFACE_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_ADMIN_INTERFACE_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+# Python Dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
 
 COPY admin/requirements.txt ./requirements.txt
 
-RUN python -m venv /opt/venv && \
-    /opt/venv/bin/pip install --upgrade pip setuptools wheel && \
-    /opt/venv/bin/pip install --prefer-binary -r requirements.txt
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
 
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+
+# Marker Files (per Dockerfile-copy-pattern.md)
+RUN echo "LUCID_ADMIN_INTERFACE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_ADMIN_INTERFACE_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Builder-Stage Verification
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis; print('✅ critical packages installed')" && \
+    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /root/.local/lib/python3.11/site-packages && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
+
+# Application Source COPY
 COPY admin/ ./admin/
 
-FROM gcr.io/distroless/python3-debian12:nonroot
+# Verify entrypoint exists
+RUN test -f ./admin/entrypoint.py && \
+    echo "✅ entrypoint.py found" && \
+    test -f ./admin/main.py && \
+    echo "✅ main.py found"
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Distroless Admin Interface for Lucid support services" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Admin Interface" \
       org.opencontainers.image.description="Distroless admin interface service for Lucid project" \
-      com.lucid.plane="ops" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="admin-interface" \
       com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
-      com.lucid.security="distroless" \
-      com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="8083,8088,8100" \
       com.lucid.cluster="support" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.env.config=".env.support,.env.core,.env.secrets,.env.foundation" \
-      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
+      com.lucid.security="distroless"
 
-ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    ADMIN_INTERFACE_PORT=8083 \
+    ADMIN_INTERFACE_HOST=0.0.0.0
 
 WORKDIR /app
 
-COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
-COPY --from=builder --chown=nonroot:nonroot /app/admin /app
+# System Directories & Certificates
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
-EXPOSE 8083 8088 8100
+# Distroless base already has correct linker/runtime; only copy CA certs
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Python Packages (Per COPY Pattern Guide)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+
+# Runtime Verification of Packages
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+print('✅ All packages verified in runtime stage')"]
+
+# Application Layout COPY
+COPY --chown=65532:65532 --from=builder /build/admin /app/admin
+
+# Verify application files
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; \
+assert os.path.exists('/app/admin/main.py'), 'main.py not found'; \
+print('✅ Application files verified')"]
+
+EXPOSE 8083
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8083/health').read(); exit(0)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8083)); s.close(); exit(0 if result == 0 else 1)"]
 
-USER nonroot
+USER 65532:65532
 
-ENTRYPOINT ["/opt/venv/bin/python3"]
-CMD ["-m", "uvicorn", "admin.main:app", "--host", "0.0.0.0", "--port", "8083", "--workers", "1"]
+# Clear base ENTRYPOINT so CMD works as expected
+ENTRYPOINT []
+
+CMD ["/usr/bin/python3.11", "/app/admin/entrypoint.py"]
 
 # All configuration values provided by .env.support, .env.core, .env.secrets, .env.foundation

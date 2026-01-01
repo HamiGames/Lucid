@@ -51,7 +51,7 @@ class AuditExportRequest(BaseModel):
     """Audit export request model"""
     start_time: datetime
     end_time: datetime
-    format: str = Field(default="json", regex="^(json|csv)$")
+    format: str = Field(default="json", pattern="^(json|csv)$")
     event_types: Optional[List[str]] = None
     severities: Optional[List[str]] = None
 

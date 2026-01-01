@@ -50,7 +50,7 @@ class ServiceConfig:
     service_name: str = "lucid-admin-interface"
     version: str = "1.0.0"
     host: str = "0.0.0.0"
-    port: int = 8096
+    port: int = 8083
     debug: bool = False
     log_level: str = "INFO"
     workers: int = 1
@@ -110,10 +110,10 @@ class AdminConfig:
     
     # External service URLs
     api_gateway_url: str = "http://api-gateway:8080"
-    blockchain_url: str = "http://blockchain-core:8084"
-    session_management_url: str = "http://session-management:8082"
+    blockchain_url: str = "http://blockchain-engine:8084"
+    session_management_url: str = "http://session-api:8113"
     node_management_url: str = "http://node-management:8095"
-    auth_service_url: str = "http://auth-service:8089"
+    auth_service_url: str = "http://lucid-auth-service:8089"
     # tron_payment_url removed for TRON isolation compliance
     
     # CORS settings
@@ -168,18 +168,21 @@ class AdminConfig:
         )
         
         # Service configuration
-        self.service.host = os.getenv("ADMIN_HOST", self.service.host)
+        self.service.host = os.getenv("ADMIN_INTERFACE_HOST", os.getenv("ADMIN_HOST", self.service.host))
         try:
-            self.service.port = int(os.getenv("ADMIN_PORT", str(self.service.port)))
-        except ValueError:
-            logger.warning(f"Invalid ADMIN_PORT, using default: {self.service.port}")
+            port_str = os.getenv("ADMIN_INTERFACE_PORT", os.getenv("ADMIN_PORT", str(self.service.port)))
+            self.service.port = int(port_str)
+            if not (1 <= self.service.port <= 65535):
+                raise ValueError(f"Port {self.service.port} out of range")
+        except ValueError as e:
+            logger.warning(f"Invalid ADMIN_INTERFACE_PORT/ADMIN_PORT, using default: {self.service.port}: {e}")
         self.service.debug = os.getenv("ADMIN_DEBUG", "false").lower() == "true"
         self.service.log_level = os.getenv("LOG_LEVEL", self.service.log_level)
         
         # External service URLs
         self.api_gateway_url = os.getenv("API_GATEWAY_URL", self.api_gateway_url)
-        self.blockchain_url = os.getenv("BLOCKCHAIN_URL", self.blockchain_url)
-        self.session_management_url = os.getenv("SESSION_MANAGEMENT_URL", self.session_management_url)
+        self.blockchain_url = os.getenv("BLOCKCHAIN_ENGINE_URL", os.getenv("BLOCKCHAIN_URL", self.blockchain_url))
+        self.session_management_url = os.getenv("SESSION_API_URL", os.getenv("SESSION_MANAGEMENT_URL", self.session_management_url))
         self.node_management_url = os.getenv("NODE_MANAGEMENT_URL", self.node_management_url)
         self.auth_service_url = os.getenv("AUTH_SERVICE_URL", self.auth_service_url)
         # self.tron_payment_url removed for TRON isolation compliance
