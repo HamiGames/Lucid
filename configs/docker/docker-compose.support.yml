@@ -2,7 +2,7 @@ name: lucid-support
 services:
   admin-interface:
     image: ${ADMIN_INTERFACE_IMAGE:-pickme/lucid-admin-interface:latest-arm64}
-    container_name: admin-interface
+    container_name: lucid-admin-interface
     restart: unless-stopped
     env_file:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
@@ -16,14 +16,14 @@ services:
     ports:
       - "${ADMIN_INTERFACE_PORT:-8083}:${ADMIN_INTERFACE_PORT:-8083}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/admin:/app/data:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/admin:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/admin-interface:/app/data:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/admin-interface:/app/logs:rw
       - admin-interface-cache:/tmp/admin
     environment:
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
-      - ADMIN_INTERFACE_HOST=${ADMIN_INTERFACE_HOST:-admin-interface}
+      - ADMIN_INTERFACE_HOST=${ADMIN_INTERFACE_HOST:-lucid-admin-interface}
       - ADMIN_INTERFACE_PORT=${ADMIN_INTERFACE_PORT:-8083}
       - ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}
       - ADMIN_INTERFACE_DEBUG=${ADMIN_INTERFACE_DEBUG:-false}

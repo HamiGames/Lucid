@@ -313,15 +313,18 @@ services:
         condition: service_healthy
     environment:
       # CRITICAL: MongoDB connection with authentication (overrides default in config.py)
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid_auth?authSource=admin
+      # Note: Variables loaded from env_file (.env.secrets, .env.foundation, etc.)
+      # The :? syntax causes interpolation errors, so we use :- with empty default
+      # Application code (auth/config.py) validates that required variables are set
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-}@lucid-mongodb:27017/lucid_auth?authSource=admin
       - MONGODB_DATABASE=lucid_auth
-      # JWT Configuration
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY not set}
+      # JWT Configuration (loaded from .env.secrets via env_file)
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
       - JWT_ALGORITHM=HS256
-      # Redis Configuration
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379/1
+      # Redis Configuration (loaded from .env.secrets via env_file)
+      - REDIS_URI=redis://:${REDIS_PASSWORD:-}@lucid-redis:6379/1
       # API Gateway Integration (REQUIRED by auth/config.py)
-      - API_GATEWAY_URL=${API_GATEWAY_URL:?API_GATEWAY_URL not set}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
