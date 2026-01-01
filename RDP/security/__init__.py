@@ -65,7 +65,8 @@ from .trust_controller import (
     evaluate_entity_trust,
     create_trusted_session,
     record_trust_event,
-    get_trust_statistics
+    get_trust_statistics,
+    get_trust_controller
 )
 
 __all__ = [
@@ -114,7 +115,8 @@ __all__ = [
     "evaluate_entity_trust",
     "create_trusted_session",
     "record_trust_event",
-    "get_trust_statistics"
+    "get_trust_statistics",
+    "get_trust_controller"
 ]
 
 # Version information
@@ -127,7 +129,8 @@ def create_security_manager():
     """Create and return a configured security manager with all components"""
     access_controller = create_access_controller()
     session_validator = create_session_validator()
-    trust_controller = TrustController()
+    # Use get_trust_controller() for lazy initialization with graceful degradation
+    trust_controller = get_trust_controller()
     
     return {
         "access_controller": access_controller,

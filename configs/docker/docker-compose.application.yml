@@ -457,6 +457,12 @@ services:
       - RDP_CONTROLLER_URL=http://rdp-controller:8092
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+      # Trust storage paths (using /app/data volume mount)
+      - TRUST_STORAGE_PATH=/app/data/rdp/trust
+      - TRUST_CERTIFICATE_PATH=/app/data/rdp/certificates
+      - TRUST_POLICY_PATH=/app/data/rdp/policies
+      # Storage path for other components
+      - LUCID_STORAGE_PATH=/app/data
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true

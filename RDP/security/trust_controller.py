@@ -28,9 +28,11 @@ from jwt.exceptions import InvalidTokenError
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-TRUST_STORAGE_PATH = Path(os.getenv("TRUST_STORAGE_PATH", "/data/rdp/trust"))
-TRUST_CERTIFICATE_PATH = Path(os.getenv("TRUST_CERTIFICATE_PATH", "/secrets/rdp/certificates"))
-TRUST_POLICY_PATH = Path(os.getenv("TRUST_POLICY_PATH", "/data/rdp/policies"))
+# Use /app/data as base path (matches volume mount: /app/data:rw)
+# Following master-docker-design.md: all storage paths under /app/data
+TRUST_STORAGE_PATH = Path(os.getenv("TRUST_STORAGE_PATH", "/app/data/rdp/trust"))
+TRUST_CERTIFICATE_PATH = Path(os.getenv("TRUST_CERTIFICATE_PATH", "/app/data/rdp/certificates"))
+TRUST_POLICY_PATH = Path(os.getenv("TRUST_POLICY_PATH", "/app/data/rdp/policies"))
 SESSION_TIMEOUT_MINUTES = int(os.getenv("SESSION_TIMEOUT_MINUTES", "60"))
 MAX_FAILED_ATTEMPTS = int(os.getenv("MAX_FAILED_ATTEMPTS", "5"))
 TRUST_SCORE_THRESHOLD = float(os.getenv("TRUST_SCORE_THRESHOLD", "0.7"))
@@ -168,14 +170,50 @@ class TrustController:
     
     def _initialize_storage(self):
         """Initialize trust storage directories"""
+        # Check if parent directory exists (volume mount should provide /app/data)
+        # Following master-docker-design.md: graceful degradation for read-only filesystem
         try:
+            # Verify parent directory exists (from volume mount)
+            parent_path = self.storage_path.parent
+            if not parent_path.exists():
+                error_msg = (
+                    f"Parent directory does not exist: {parent_path}. "
+                    f"Ensure volume mount provides /app/data directory. "
+                    f"Expected volume mount: /mnt/myssd/Lucid/Lucid/data/rdp-controller:/app/data:rw"
+                )
+                logger.warning(error_msg)
+                # Set paths to None to indicate storage unavailable (graceful degradation)
+                self.storage_path = None
+                self.certificate_path = None
+                self.policy_path = None
+                return
+            
+            # Check if parent is writable
+            if not os.access(parent_path, os.W_OK):
+                error_msg = (
+                    f"Parent directory is not writable: {parent_path}. "
+                    f"Container runs as user 65532:65532 and needs write access. "
+                    f"On the host, run: sudo chown -R 65532:65532 /mnt/myssd/Lucid/Lucid/data/rdp-controller"
+                )
+                logger.warning(error_msg)
+                # Set paths to None to indicate storage unavailable (graceful degradation)
+                self.storage_path = None
+                self.certificate_path = None
+                self.policy_path = None
+                return
+            
+            # Create directories
             self.storage_path.mkdir(parents=True, exist_ok=True, mode=0o700)
             self.certificate_path.mkdir(parents=True, exist_ok=True, mode=0o700)
             self.policy_path.mkdir(parents=True, exist_ok=True, mode=0o700)
-            logger.info("Trust storage initialized")
+            logger.info(f"Trust storage initialized: storage={self.storage_path}, certificates={self.certificate_path}, policies={self.policy_path}")
         except Exception as e:
-            logger.error(f"Failed to initialize trust storage: {e}")
-            raise
+            # Log errors but don't break service startup (graceful degradation)
+            logger.warning(f"Failed to initialize trust storage (continuing with degraded mode): {e}")
+            # Set paths to None to indicate storage unavailable
+            self.storage_path = None
+            self.certificate_path = None
+            self.policy_path = None
     
     def _load_default_policies(self):
         """Load default security policies"""
@@ -678,6 +716,11 @@ class TrustController:
     
     async def _save_entity(self, entity: TrustEntity):
         """Save entity to storage"""
+        # Graceful degradation: skip save if storage unavailable
+        if self.storage_path is None:
+            logger.debug(f"Skipping entity save (storage unavailable): {entity.entity_id}")
+            return
+        
         try:
             entity_file = self.storage_path / f"entity_{entity.entity_id}.json"
             entity_dict = {
@@ -705,6 +748,11 @@ class TrustController:
     
     async def _save_trust_event(self, event: TrustEvent):
         """Save trust event to storage"""
+        # Graceful degradation: skip save if storage unavailable
+        if self.storage_path is None:
+            logger.debug(f"Skipping event save (storage unavailable): {event.event_id}")
+            return
+        
         try:
             event_file = self.storage_path / f"event_{event.event_id}.json"
             event_dict = {
@@ -753,34 +801,87 @@ class TrustController:
             return {}
 
 
-# Global trust controller instance
-trust_controller = TrustController()
+# Global trust controller instance (lazy initialization)
+# Following master-docker-design.md: graceful degradation pattern
+_trust_controller: Optional[TrustController] = None
+
+
+def get_trust_controller() -> TrustController:
+    """
+    Get global trust controller instance (singleton pattern with lazy initialization)
+    
+    Returns:
+        TrustController instance
+        
+    Note:
+        If initialization fails, returns a minimal instance in degraded mode
+        to allow service startup even if storage is unavailable
+    """
+    global _trust_controller
+    if _trust_controller is None:
+        try:
+            _trust_controller = TrustController()
+            logger.info("Trust controller initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize trust controller: {e}", exc_info=True)
+            # Create a minimal instance that won't break imports
+            # This allows the service to start even if storage is unavailable
+            _trust_controller = TrustController.__new__(TrustController)
+            _trust_controller.storage_path = None
+            _trust_controller.certificate_path = None
+            _trust_controller.policy_path = None
+            _trust_controller.trust_entities = {}
+            _trust_controller.security_policies = {}
+            _trust_controller.trust_events = []
+            _trust_controller.active_sessions = {}
+            _trust_controller.failed_attempts = {}
+            _trust_controller.trust_weights = {
+                "authentication_success": 0.1,
+                "authentication_failure": -0.2,
+                "session_duration": 0.05,
+                "policy_violation": -0.3,
+                "suspicious_activity": -0.4,
+                "certificate_validity": 0.2,
+                "network_behavior": 0.1
+            }
+            logger.warning("Trust controller initialized in degraded mode (storage unavailable)")
+    return _trust_controller
+
+
+# Backward compatibility: module-level accessor
+# Use get_trust_controller() for new code
+class _TrustControllerProxy:
+    """Proxy class for backward compatibility with direct trust_controller access"""
+    def __getattr__(self, name):
+        return getattr(get_trust_controller(), name)
+
+trust_controller = _TrustControllerProxy()
 
 
 async def register_trusted_entity(entity_id: str, entity_type: EntityType, 
                                 public_key: str, **kwargs) -> bool:
     """Register a new trusted entity"""
-    return await trust_controller.register_entity(entity_id, entity_type, public_key, **kwargs)
+    return await get_trust_controller().register_entity(entity_id, entity_type, public_key, **kwargs)
 
 
 async def evaluate_entity_trust(entity_id: str, context: Dict[str, Any]) -> TrustDecision:
     """Evaluate trust for an entity"""
-    return await trust_controller.evaluate_trust(entity_id, context)
+    return await get_trust_controller().evaluate_trust(entity_id, context)
 
 
 async def create_trusted_session(entity_id: str, session_id: str, context: Dict[str, Any]) -> bool:
     """Create a new trusted session"""
-    return await trust_controller.create_session(entity_id, session_id, context)
+    return await get_trust_controller().create_session(entity_id, session_id, context)
 
 
 async def record_trust_event(event_type: TrustEvent, entity_id: str, details: Dict[str, Any], **kwargs):
     """Record a trust-related event"""
-    await trust_controller.record_trust_event(event_type, entity_id, details, **kwargs)
+    await get_trust_controller().record_trust_event(event_type, entity_id, details, **kwargs)
 
 
 async def get_trust_statistics() -> Dict[str, Any]:
     """Get trust system statistics"""
-    return await trust_controller.get_trust_statistics()
+    return await get_trust_controller().get_trust_statistics()
 
 
 if __name__ == "__main__":
