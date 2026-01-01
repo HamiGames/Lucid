@@ -139,8 +139,11 @@ class WalletManagerService:
         self.wallets: Dict[str, WalletInfo] = {}
         self.wallet_transactions: Dict[str, List[WalletTransaction]] = {}
         
-        # Encryption key (in production, this should be securely managed)
-        self.encryption_key = os.getenv("WALLET_ENCRYPTION_KEY", "default_encryption_key_change_in_production")
+        # Encryption key from environment variable (required in production)
+        encryption_key = os.getenv("WALLET_ENCRYPTION_KEY") or os.getenv("ENCRYPTION_KEY")
+        if not encryption_key:
+            raise ValueError("WALLET_ENCRYPTION_KEY or ENCRYPTION_KEY environment variable must be set")
+        self.encryption_key = encryption_key
         
         # Load existing wallets
         asyncio.create_task(self._load_existing_wallets())

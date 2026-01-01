@@ -52,6 +52,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     /opt/venv/bin/pip install --prefer-binary -r requirements.txt -r requirements-prod.txt
 
+# Create marker files with actual content (ensures directory structure is locked in)
+# Following Dockerfile-copy-pattern.md pattern
+RUN echo "LUCID_TRON_CLIENT_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python3.12/site-packages/.lucid-marker && \
+    echo "LUCID_TRON_CLIENT_BINARIES_INSTALLED_$(date +%s)" > /opt/venv/bin/.lucid-marker && \
+    chown -R 65532:65532 /opt/venv
+
+# Verify packages are installed
+RUN /opt/venv/bin/python -c "import fastapi, uvicorn, tronpy, httpx, aiofiles, pydantic, pydantic_settings; print('✅ critical packages installed')" && \
+    /opt/venv/bin/python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /opt/venv/lib/python3.12/site-packages && \
+    echo "Directory exists: /opt/venv/lib/python3.12/site-packages" && \
+    ls -la /opt/venv/lib/python3.12/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /opt/venv/lib/python3.12/site-packages/ | wc -l)"
+
 COPY payment-systems/tron/ ./app/
 
 RUN /opt/venv/bin/python -m compileall -b /app
@@ -92,12 +106,22 @@ WORKDIR /app
 COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
 COPY --from=builder --chown=nonroot:nonroot /build/app /app
 
+# Verify packages were copied (fails build if packages are missing)
+RUN ["/usr/bin/python3.12", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.12/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; print('Packages verified in runtime stage')"]
+
 EXPOSE 8091 8101
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/health').read(); exit(0)"]
+    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8091'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
 
 USER 65532:65532
 
+# Default environment variables (can be overridden via .env files)
+ENV SERVICE_PORT=8091 \
+    WORKERS=1 \
+    SERVICE_HOST=0.0.0.0 \
+    LOG_LEVEL=INFO
+
 ENTRYPOINT ["/opt/venv/bin/python3"]
-CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8091", "--workers", "1"]
+# Call main.py which reads from environment variables
+CMD ["-m", "main"]

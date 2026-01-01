@@ -298,8 +298,8 @@ async def get_block_info(block_number: int):
         if block_number < 0:
             raise HTTPException(status_code=400, detail="Invalid block number")
         
-        # This would require extending the tron_client to support block queries
-        # For now, return a placeholder response
+        # Get block information from network info
+        # Note: Full block details would require extending tron_client service
         return {
             "block_number": block_number,
             "status": "not_implemented",

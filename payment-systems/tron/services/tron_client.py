@@ -22,14 +22,13 @@ from tronpy import Tron
 from tronpy.keys import PrivateKey
 from tronpy.providers import HTTPProvider
 
+import os
 import sys
 from pathlib import Path
+from typing import Optional
 
-# Add project root to Python path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from app.config import get_settings
+# Use local config module instead of app.config
+from ..config import config, get_network_endpoint
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -104,18 +103,20 @@ class TronClientService:
     """TRON network client service for payment operations"""
     
     def __init__(self):
-        self.settings = get_settings()
-        
-        # Network configuration
-        self.network = self.settings.TRON_NETWORK
-        self.is_mainnet = self.network == "mainnet"
+        # Network configuration from environment/config
+        self.network = os.getenv("TRON_NETWORK", config.tron_network.value if hasattr(config.tron_network, 'value') else str(config.tron_network))
+        self.is_mainnet = self.network.lower() == "mainnet"
         self.node_url = self._resolve_endpoint()
+        
+        # Get TronGrid API key from environment
+        self.trongrid_api_key = os.getenv("TRONGRID_API_KEY", config.trongrid_api_key) if hasattr(config, 'trongrid_api_key') else os.getenv("TRONGRID_API_KEY")
         
         # Initialize TRON client
         self._initialize_tron_client()
         
-        # Data storage
-        self.data_dir = Path("/data/payment-systems/tron-client")
+        # Data storage - use environment variable or default
+        data_base = os.getenv("DATA_DIRECTORY", os.getenv("TRON_DATA_DIR", "/data/payment-systems"))
+        self.data_dir = Path(data_base) / "tron-client"
         self.network_dir = self.data_dir / "network"
         self.transactions_dir = self.data_dir / "transactions"
         self.accounts_dir = self.data_dir / "accounts"
@@ -146,29 +147,38 @@ class TronClientService:
         logger.info(f"TronClientService initialized: {self.network} -> {self.node_url}")
     
     def _resolve_endpoint(self) -> str:
-        """Resolve TRON endpoint"""
-        if self.settings.TRON_HTTP_ENDPOINT:
-            return self.settings.TRON_HTTP_ENDPOINT
+        """Resolve TRON endpoint from environment or config"""
+        # Check environment variable first
+        endpoint = os.getenv("TRON_HTTP_ENDPOINT") or os.getenv("TRON_RPC_URL")
+        if endpoint:
+            return endpoint
         
+        # Check config
+        if hasattr(config, 'tron_http_endpoint') and config.tron_http_endpoint:
+            return config.tron_http_endpoint
+        
+        # Use network-specific defaults
         if self.network.lower() == "shasta":
-            return "https://api.shasta.trongrid.io"
+            return os.getenv("TRON_RPC_URL_SHASTA", "https://api.shasta.trongrid.io")
         
-        return "https://api.trongrid.io"
+        return os.getenv("TRON_RPC_URL_MAINNET", get_network_endpoint())
     
     def _initialize_tron_client(self):
         """Initialize TRON client with network configuration"""
         try:
             headers = {}
-            if self.settings.TRONGRID_API_KEY:
-                headers["TRON-PRO-API-KEY"] = self.settings.TRONGRID_API_KEY
+            # Get API key from environment or config
+            api_key = self.trongrid_api_key or os.getenv("TRON_API_KEY")
+            if api_key:
+                headers["TRON-PRO-API-KEY"] = api_key
             
             provider = HTTPProvider(
                 self.node_url,
-                client=httpx.Client(headers=headers, timeout=30)
+                client=httpx.Client(headers=headers, timeout=int(os.getenv("TRON_TIMEOUT", "30")))
             )
             self.tron = Tron(provider=provider)
             
-            logger.info(f"TRON client connected to {self.network}")
+            logger.info(f"TRON client connected to {self.network} at {self.node_url}")
         except Exception as e:
             logger.error(f"Failed to initialize TRON client: {e}")
             raise

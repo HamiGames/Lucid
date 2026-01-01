@@ -19,16 +19,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-# Distroless-safe path resolution with validation
-try:
-    from src.core.utils import get_safe_project_root
-    project_root = get_safe_project_root()
-    sys.path.insert(0, project_root)
-except Exception as e:
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.error(f"Failed to resolve project root: {e}")
-    sys.exit(1)
+# Distroless-safe path resolution - use local paths only
+# No need for external project root resolution in containerized service
 
 # Removed app.config import - using local config module
 from .config import config, get_service_config, get_api_endpoints, validate_config
@@ -40,12 +32,19 @@ from .services.payment_gateway import payment_gateway_service
 from .services.trx_staking import trx_staking_service
 
 # Configure logging
+log_level = os.getenv("LOG_LEVEL", config.log_level.value if hasattr(config.log_level, 'value') else str(config.log_level))
+log_file = os.getenv("LOG_FILE", os.getenv("TRON_LOG_FILE", "/app/logs/tron-payment-service.log"))
+
+# Ensure log directory exists
+log_dir = Path(log_file).parent
+log_dir.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
-    level=getattr(logging, config.log_level.value),
+    level=getattr(logging, log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('/data/payment-systems/logs/tron-payment-service.log')
+        logging.FileHandler(log_file)
     ]
 )
 logger = logging.getLogger(__name__)
@@ -253,18 +252,23 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add middleware
+# Add middleware - configured from environment variables
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+cors_methods = os.getenv("CORS_METHODS", "GET,POST,PUT,DELETE,OPTIONS").split(",")
+cors_headers = os.getenv("CORS_HEADERS", "*").split(",")
+trusted_hosts = os.getenv("TRUSTED_HOSTS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true",
+    allow_methods=cors_methods,
+    allow_headers=cors_headers,
 )
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Configure appropriately for production
+    allowed_hosts=trusted_hosts
 )
 
 # Health check endpoint
@@ -497,19 +501,27 @@ signal.signal(signal.SIGTERM, signal_handler)
 def main():
     """Main entry point"""
     try:
-        # Get service configuration
-        service_config = get_service_config("tron_payment_service")
+        # Get service configuration from environment or config
+        service_config = get_service_config("tron_client")
+        
+        # Get configuration from environment variables (priority) or config
+        host = os.getenv("SERVICE_HOST", os.getenv("BIND_ADDRESS", service_config.get("host", "0.0.0.0")))
+        port = int(os.getenv("SERVICE_PORT", os.getenv("TRON_CLIENT_PORT", str(service_config.get("port", 8091)))))
+        workers = int(os.getenv("WORKERS", str(service_config.get("workers", 1))))
+        timeout = int(os.getenv("TIMEOUT", str(service_config.get("timeout", 30))))
+        log_level = os.getenv("LOG_LEVEL", config.log_level.value if hasattr(config.log_level, 'value') else str(config.log_level)).lower()
+        debug_mode = os.getenv("DEBUG", str(config.debug_mode if hasattr(config, 'debug_mode') else False)).lower() == "true"
         
         # Start the application
         uvicorn.run(
-            "payment_systems.tron.main:app",
-            host=service_config.get("host", "0.0.0.0"),
-            port=service_config.get("port", 8091),
-            workers=service_config.get("workers", 1),
-            timeout_keep_alive=service_config.get("timeout", 30),
-            log_level=config.log_level.value.lower(),
-            access_log=True,
-            reload=config.debug_mode
+            "main:app",
+            host=host,
+            port=port,
+            workers=workers,
+            timeout_keep_alive=timeout,
+            log_level=log_level,
+            access_log=os.getenv("ACCESS_LOG", "true").lower() == "true",
+            reload=debug_mode
         )
     except Exception as e:
         logger.error(f"Error starting application: {e}")
