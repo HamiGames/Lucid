@@ -72,9 +72,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
 # Fix shebang lines in installed scripts to use system Python (per Dockerfile-copy-pattern.md)
-# Some packages may install scripts with venv shebangs that don't exist in distroless
-RUN find /root/.local/bin -type f -executable -exec sed -i '1s|^#!/.*/venv/bin/python3|#!/usr/bin/python3.11|' {} \; 2>/dev/null || true && \
-    find /root/.local/bin -type f -executable -exec sed -i '1s|^#!/.*/opt/venv/bin/python3|#!/usr/bin/python3.11|' {} \; 2>/dev/null || true
+# CRITICAL: Some packages install scripts with venv shebangs (/opt/venv/bin/python3) that don't exist in distroless
+# Distroless python3-debian12 provides /usr/bin/python3 (not python3.11)
+RUN find /root/.local/bin -type f -executable -exec sed -i '1s|^#!/.*/venv/bin/python3|#!/usr/bin/python3|' {} \; 2>/dev/null || true && \
+    find /root/.local/bin -type f -executable -exec sed -i '1s|^#!/.*/opt/venv/bin/python3|#!/usr/bin/python3|' {} \; 2>/dev/null || true && \
+    find /root/.local/bin -type f -executable -exec sed -i '1s|^#!/usr/bin/python3\.11|#!/usr/bin/python3|' {} \; 2>/dev/null || true && \
+    echo "✅ All script shebangs fixed to use /usr/bin/python3"
 
 # Marker Files (per Dockerfile-copy-pattern.md)
 RUN echo "LUCID_ADMIN_INTERFACE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -92,9 +95,12 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx,
 # Application Source COPY
 COPY admin/ ./admin/
 
-# Verify entrypoint and main application files exist
+# Verify entrypoint exists and has correct shebang (must match distroless Python path)
 RUN test -f ./admin/entrypoint.py && \
     echo "✅ entrypoint.py found" && \
+    head -n1 ./admin/entrypoint.py | grep -qE '^#!/usr/bin/python3$|^#!/usr/bin/env python3$' && \
+    echo "✅ entrypoint.py has correct shebang for distroless image" || \
+    (echo "❌ ERROR: entrypoint.py shebang incorrect - must be #!/usr/bin/python3" && exit 1) && \
     test -f ./admin/main.py && \
     echo "✅ main.py found" && \
     test -f ./admin/config.py && \
@@ -185,28 +191,82 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 # Copy binaries (scripts with fixed shebangs)
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
-# Verify no venv references in copied binaries (per Dockerfile-copy-pattern.md)
-RUN ["python3", "-c", "import os; bin_dir = '/usr/local/bin'; scripts = [f for f in os.listdir(bin_dir) if os.path.isfile(os.path.join(bin_dir, f)) and os.access(os.path.join(bin_dir, f), os.X_OK)]; venv_refs = []; [venv_refs.append(f) for f in scripts if os.path.exists(os.path.join(bin_dir, f)) and (open(os.path.join(bin_dir, f), 'rb').read(200).find(b'/opt/venv') >= 0 or open(os.path.join(bin_dir, f), 'rb').read(200).find(b'venv/bin/python') >= 0)]; assert len(venv_refs) == 0, f'Found venv references in scripts: {venv_refs}'; print('✅ No venv references in binaries')"]
+# Verify Python executable exists and verify no venv references in copied binaries
+# CRITICAL: Distroless python3-debian12 provides /usr/bin/python3 (not python3.11)
+RUN ["/usr/bin/python3", "-c", "import os, sys; \
+# Verify Python executable exists \
+assert os.path.exists('/usr/bin/python3'), 'CRITICAL: /usr/bin/python3 not found in distroless image'; \
+print('✅ Python executable verified: /usr/bin/python3'); \
+# Verify no venv references in binaries \
+bin_dir = '/usr/local/bin'; \
+scripts = [f for f in os.listdir(bin_dir) if os.path.isfile(os.path.join(bin_dir, f)) and os.access(os.path.join(bin_dir, f), os.X_OK)]; \
+venv_refs = []; \
+for script in scripts: \
+    script_path = os.path.join(bin_dir, script); \
+    try: \
+        with open(script_path, 'rb') as f: \
+            content = f.read(500); \
+            if b'/opt/venv' in content or b'venv/bin/python' in content: \
+                venv_refs.append(script); \
+    except Exception: \
+        pass; \
+assert len(venv_refs) == 0, f'CRITICAL: Found venv references in scripts: {venv_refs}'; \
+print('✅ No venv references in binaries')"]
 
 # Runtime Verification of Packages
-RUN ["python3", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'jinja2')), 'jinja2 not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'tenacity')), 'tenacity not found'; assert os.path.exists(os.path.join(site_packages, 'email_validator')) or os.path.exists(os.path.join(site_packages, 'email_validator.py')), 'email_validator not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.exists(marker_path), 'marker file not found'; assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import jinja2; assert jinja2, 'jinja2 import failed'; import httpx; assert httpx, 'httpx import failed'; import aiohttp; assert aiohttp, 'aiohttp import failed'; import tenacity; assert tenacity, 'tenacity import failed'; import email_validator; assert email_validator, 'email_validator import failed'; print('✅ All packages verified in runtime stage')"]
+# Use explicit /usr/bin/python3 path (distroless provides this, not python3.11)
+RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'jinja2')), 'jinja2 not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'tenacity')), 'tenacity not found'; assert os.path.exists(os.path.join(site_packages, 'email_validator')) or os.path.exists(os.path.join(site_packages, 'email_validator.py')), 'email_validator not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.exists(marker_path), 'marker file not found'; assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import jinja2; assert jinja2, 'jinja2 import failed'; import httpx; assert httpx, 'httpx import failed'; import aiohttp; assert aiohttp, 'aiohttp import failed'; import tenacity; assert tenacity, 'tenacity import failed'; import email_validator; assert email_validator, 'email_validator import failed'; print('✅ All packages verified in runtime stage')"]
 
 # Application Layout COPY
 COPY --chown=65532:65532 --from=builder /build/admin /app/admin
 
-# Verify application files, config files, and service modules
-RUN ["python3", "-c", "import os; import sys; sys.path.insert(0, '/app'); assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; assert os.path.exists('/app/admin/main.py'), 'main.py not found'; assert os.path.exists('/app/admin/config.py'), 'config.py not found'; assert os.path.exists('/app/admin/config/health-schema.json'), 'health-schema.json not found'; assert os.path.exists('/app/admin/config/metrics-schema.json'), 'metrics-schema.json not found'; assert os.path.exists('/app/admin/config/rbac-schema.json'), 'rbac-schema.json not found'; assert os.path.exists('/app/admin/config/config-schema.json'), 'config-schema.json not found'; assert os.path.exists('/app/admin/config/api-schemas.json'), 'api-schemas.json not found'; assert os.path.exists('/app/admin/config/operational-config.json'), 'operational-config.json not found'; assert os.path.exists('/app/admin/config/admin-interface-config.yaml'), 'admin-interface-config.yaml not found'; assert os.path.exists('/app/admin/config/operational-config.yaml'), 'operational-config.yaml not found'; assert os.path.getsize('/app/admin/config/operational-config.yaml') > 0, 'operational-config.yaml is empty'; assert os.path.exists('/app/admin/services'), 'services directory not found'; assert os.path.exists('/app/admin/services/__init__.py'), 'services/__init__.py not found'; assert os.path.exists('/app/admin/services/service_client.py'), 'services/service_client.py not found'; assert os.path.exists('/app/admin/services/service_discovery.py'), 'services/service_discovery.py not found'; assert os.path.exists('/app/admin/services/service_registry.py'), 'services/service_registry.py not found'; from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; print('✅ Application files, config files, and cross-container service modules verified')"]
+# Verify application files, config files, service modules, and entrypoint shebang
+RUN ["/usr/bin/python3", "-c", "import os, sys; \
+sys.path.insert(0, '/app'); \
+# Verify entrypoint exists and has correct shebang \
+entrypoint_path = '/app/admin/entrypoint.py'; \
+assert os.path.exists(entrypoint_path), f'CRITICAL: entrypoint.py not found at {entrypoint_path}'; \
+assert os.path.isfile(entrypoint_path), f'CRITICAL: {entrypoint_path} is not a file'; \
+with open(entrypoint_path, 'rb') as f: \
+    first_line = f.readline().decode('utf-8', errors='ignore').strip(); \
+    assert first_line.startswith('#!'), f'CRITICAL: entrypoint.py missing shebang'; \
+    assert '/usr/bin/python3' in first_line or '/usr/bin/env python3' in first_line, \
+        f'CRITICAL: entrypoint.py has incorrect shebang: {first_line}. Expected #!/usr/bin/python3'; \
+print(f'✅ entrypoint.py verified with correct shebang: {first_line}'); \
+# Verify other application files \
+assert os.path.exists('/app/admin/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/admin/config.py'), 'config.py not found'; \
+assert os.path.exists('/app/admin/config/health-schema.json'), 'health-schema.json not found'; \
+assert os.path.exists('/app/admin/config/metrics-schema.json'), 'metrics-schema.json not found'; \
+assert os.path.exists('/app/admin/config/rbac-schema.json'), 'rbac-schema.json not found'; \
+assert os.path.exists('/app/admin/config/config-schema.json'), 'config-schema.json not found'; \
+assert os.path.exists('/app/admin/config/api-schemas.json'), 'api-schemas.json not found'; \
+assert os.path.exists('/app/admin/config/operational-config.json'), 'operational-config.json not found'; \
+assert os.path.exists('/app/admin/config/admin-interface-config.yaml'), 'admin-interface-config.yaml not found'; \
+assert os.path.exists('/app/admin/config/operational-config.yaml'), 'operational-config.yaml not found'; \
+assert os.path.getsize('/app/admin/config/operational-config.yaml') > 0, 'operational-config.yaml is empty'; \
+assert os.path.exists('/app/admin/services'), 'services directory not found'; \
+assert os.path.exists('/app/admin/services/__init__.py'), 'services/__init__.py not found'; \
+assert os.path.exists('/app/admin/services/service_client.py'), 'services/service_client.py not found'; \
+assert os.path.exists('/app/admin/services/service_discovery.py'), 'services/service_discovery.py not found'; \
+assert os.path.exists('/app/admin/services/service_registry.py'), 'services/service_registry.py not found'; \
+from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; \
+print('✅ Application files, config files, and cross-container service modules verified')"]
 
 EXPOSE 8120
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8120')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8120')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
-# Clear base ENTRYPOINT so CMD works as expected
+# CRITICAL: Clear any default ENTRYPOINT from distroless base image
+# Distroless python3-debian12 may have a default ENTRYPOINT that references /opt/venv/bin/python3
+# We must explicitly clear it to use our CMD
 ENTRYPOINT []
 
-CMD ["/usr/bin/python3.11", "/app/admin/entrypoint.py"]
+# Use explicit Python path - distroless provides /usr/bin/python3 (not python3.11)
+# The entrypoint.py shebang must match this path
+CMD ["/usr/bin/python3", "/app/admin/entrypoint.py"]
 
 # All configuration values provided by .env.support, .env.core, .env.secrets, .env.foundation
