@@ -272,9 +272,9 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/opt/venv/bin/python3",
           "-c",
-          "import os, urllib.request, sys; port = os.getenv('PAYOUT_ROUTER_PORT', '8092'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8092'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s

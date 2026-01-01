@@ -658,12 +658,41 @@ signal.signal(signal.SIGTERM, signal_handler)
 def main():
     """Main entry point"""
     try:
+        # Determine service name from environment variable or default to tron_client
+        service_name = os.getenv("SERVICE_NAME", "tron_client")
+        # Map service names to config keys
+        service_config_map = {
+            "lucid-tron-client": "tron_client",
+            "tron-client": "tron_client",
+            "tron-payout-router": "payout_router",
+            "payout-router": "payout_router",
+            "tron-wallet-manager": "wallet_manager",
+            "wallet-manager": "wallet_manager",
+            "tron-usdt-manager": "usdt_manager",
+            "usdt-manager": "usdt_manager",
+            "tron-payment-gateway": "payment_gateway",
+            "payment-gateway": "payment_gateway",
+            "tron-staking": "trx_staking",
+            "trx-staking": "trx_staking"
+        }
+        config_key = service_config_map.get(service_name.lower(), "tron_client")
+        
         # Get service configuration from environment or config
-        service_config = get_service_config("tron_client")
+        service_config = get_service_config(config_key)
         
         # Get configuration from environment variables (priority) or config
         host = os.getenv("SERVICE_HOST", os.getenv("BIND_ADDRESS", service_config.get("host", "0.0.0.0")))
-        port = int(os.getenv("SERVICE_PORT", os.getenv("TRON_CLIENT_PORT", str(service_config.get("port", 8091)))))
+        # Use service-specific port env var or fallback to SERVICE_PORT
+        port_env_vars = {
+            "tron_client": "TRON_CLIENT_PORT",
+            "payout_router": "PAYOUT_ROUTER_PORT",
+            "wallet_manager": "WALLET_MANAGER_PORT",
+            "usdt_manager": "USDT_MANAGER_PORT",
+            "payment_gateway": "PAYMENT_GATEWAY_PORT",
+            "trx_staking": "TRX_STAKING_PORT"
+        }
+        port_env = port_env_vars.get(config_key, "SERVICE_PORT")
+        port = int(os.getenv(port_env, os.getenv("SERVICE_PORT", str(service_config.get("port", 8091)))))
         workers = int(os.getenv("WORKERS", str(service_config.get("workers", 1))))
         timeout = int(os.getenv("TIMEOUT", str(service_config.get("timeout", 30))))
         log_level = os.getenv("LOG_LEVEL", config.log_level.value if hasattr(config.log_level, 'value') else str(config.log_level)).lower()

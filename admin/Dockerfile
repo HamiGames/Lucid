@@ -200,13 +200,13 @@ RUN ["python3", "-c", "import os; import sys; sys.path.insert(0, '/app'); assert
 EXPOSE 8120
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["python3", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8120')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8120')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 # Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
 
-CMD ["python3", "/app/admin/entrypoint.py"]
+CMD ["/usr/bin/python3.11", "/app/admin/entrypoint.py"]
 
 # All configuration values provided by .env.support, .env.core, .env.secrets, .env.foundation
