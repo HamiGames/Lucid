@@ -168,9 +168,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8091'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('TRON_CLIENT_PORT', '8091'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -272,9 +272,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8092'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('PAYOUT_ROUTER_PORT', '8092'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -374,9 +374,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8093'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('WALLET_MANAGER_PORT', '8093'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -481,9 +481,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8094'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('USDT_MANAGER_PORT', '8094'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -584,9 +584,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8096'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('TRX_STAKING_PORT', '8096'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -693,9 +693,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8097'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+          "import os, urllib.request, sys; port = os.getenv('PAYMENT_GATEWAY_PORT', '8097'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
       interval: 30s
       timeout: 10s
