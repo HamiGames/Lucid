@@ -42,5 +42,12 @@ if __name__ == "__main__":
         print(f"ERROR: Failed to import uvicorn: {e}", file=sys.stderr)
         sys.exit(1)
     
-    uvicorn.run('admin.main:app', host=host, port=port)
+    # Start the application with error handling
+    try:
+        uvicorn.run('admin.main:app', host=host, port=port, log_level='info')
+    except Exception as e:
+        print(f"ERROR: Failed to start application: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(2)
 

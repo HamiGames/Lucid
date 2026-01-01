@@ -29,10 +29,18 @@ import blake3
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import bcrypt
 
-# Import blockchain engine
+# Import blockchain engine (optional - may not be available)
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from blockchain.core.blockchain_engine import get_blockchain_engine
+try:
+    from blockchain.core.blockchain_engine import get_blockchain_engine
+    BLOCKCHAIN_ENGINE_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Blockchain engine not available: {e}")
+    BLOCKCHAIN_ENGINE_AVAILABLE = False
+    def get_blockchain_engine():
+        raise RuntimeError("Blockchain engine not available")
+
 from admin.config import get_admin_config
 
 logger = logging.getLogger(__name__)
@@ -703,7 +711,11 @@ class AdminController:
         # Initialize components
         self.key_manager = KeyRotationManager(self.db)
         self.governance = GovernanceManager(self.db)
-        self.blockchain = get_blockchain_engine()
+        try:
+            self.blockchain = get_blockchain_engine() if BLOCKCHAIN_ENGINE_AVAILABLE else None
+        except Exception as e:
+            logger.warning(f"Failed to initialize blockchain engine: {e}")
+            self.blockchain = None
         
         # Policy cache
         self.policy_cache: Dict[str, Tuple[SystemPolicy, datetime]] = {}

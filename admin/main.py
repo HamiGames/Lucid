@@ -92,9 +92,18 @@ async def lifespan(app: FastAPI):
         config = get_admin_config()
         logger.info(f"Admin config loaded: {config.service_name}")
         
+        # Validate required configuration
+        if not config.database.mongodb_uri:
+            logger.error("MONGODB_URI is required but not set. Please set MONGODB_URI in environment variables.")
+            raise ValueError("MONGODB_URI is required but not set")
+        
         # Initialize admin controller
-        admin_controller = get_admin_controller()
-        logger.info("Admin controller initialized")
+        try:
+            admin_controller = get_admin_controller()
+            logger.info("Admin controller initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize admin controller: {e}")
+            raise
         
         # Initialize RBAC manager
         rbac_manager = get_rbac_manager()
