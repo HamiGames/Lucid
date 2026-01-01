@@ -54,6 +54,10 @@ from admin.api.emergency import router as emergency_router
 from admin.rbac.manager import RBACManager, get_rbac_manager
 from admin.audit.logger import AuditLogger
 from admin.emergency.controls import EmergencyController, get_emergency_controller
+from admin.services import get_service_client, get_service_discovery, get_service_registry
+from admin.services.service_client import close_service_client
+from admin.services.service_discovery import close_service_discovery
+from admin.services.service_registry import close_service_registry
 
 # Configure logging
 logging.basicConfig(
@@ -70,12 +74,16 @@ admin_controller: AdminController = None
 rbac_manager: RBACManager = None
 emergency_controller: EmergencyController = None
 audit_logger: AuditLogger = None
+service_client = None
+service_discovery = None
+service_registry = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     global admin_controller, rbac_manager, emergency_controller, audit_logger
+    global service_client, service_discovery, service_registry
     
     logger.info("Starting Lucid Admin Interface...")
     
@@ -103,6 +111,25 @@ async def lifespan(app: FastAPI):
         await audit_logger.initialize()
         logger.info("Audit logger initialized")
         
+        # Initialize cross-container service modules
+        try:
+            service_client = await get_service_client()
+            logger.info("Service client initialized")
+        except Exception as e:
+            logger.warning(f"Service client initialization failed: {e}")
+        
+        try:
+            service_discovery = await get_service_discovery()
+            logger.info("Service discovery initialized")
+        except Exception as e:
+            logger.warning(f"Service discovery initialization failed: {e}")
+        
+        try:
+            service_registry = await get_service_registry()
+            logger.info("Service registry initialized")
+        except Exception as e:
+            logger.warning(f"Service registry initialization failed: {e}")
+        
         logger.info("Lucid Admin Interface started successfully")
         
     except Exception as e:
@@ -115,6 +142,11 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down Lucid Admin Interface...")
     
     try:
+        # Close cross-container service modules
+        await close_service_registry()
+        await close_service_discovery()
+        await close_service_client()
+        
         if audit_logger:
             await audit_logger.close()
         if emergency_controller:
@@ -250,11 +282,12 @@ async def require_permission(permission: str):
 @app.get("/admin/health", tags=["Health"])
 async def health_check():
     """Basic health check"""
+    config = get_admin_config()
     return {
         "status": "healthy",
-        "service": "lucid-admin-interface",
-        "version": "1.0.0",
-        "timestamp": "2025-01-10T19:08:00Z"
+        "service": config.service.service_name,
+        "version": config.service.version,
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -273,11 +306,12 @@ async def detailed_health_check(admin = Depends(get_current_admin)):
         # Get system metrics
         system_status = await admin_controller.get_admin_dashboard_data(admin.admin_id)
         
+        config = get_admin_config()
         return {
             "status": "healthy",
             "components": components,
             "system_status": system_status,
-            "timestamp": "2025-01-10T19:08:00Z"
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
     except Exception as e:
@@ -287,7 +321,7 @@ async def detailed_health_check(admin = Depends(get_current_admin)):
             content={
                 "status": "unhealthy",
                 "error": str(e),
-                "timestamp": "2025-01-10T19:08:00Z"
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
 
@@ -322,7 +356,7 @@ async def dependencies_health_check(admin = Depends(get_current_admin)):
         return {
             "status": "healthy",
             "dependencies": dependencies,
-            "timestamp": "2025-01-10T19:08:00Z"
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
     except Exception as e:
@@ -332,7 +366,7 @@ async def dependencies_health_check(admin = Depends(get_current_admin)):
             content={
                 "status": "unhealthy",
                 "error": str(e),
-                "timestamp": "2025-01-10T19:08:00Z"
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
 
@@ -352,14 +386,15 @@ async def global_exception_handler(request, exc):
             None  # No admin context available
         )
     
+    import uuid
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "error": {
                 "code": "LUCID_ADMIN_ERR_5000",
                 "message": "Internal server error",
-                "request_id": "req-uuid-here",
-                "timestamp": "2025-01-10T19:08:00Z"
+                "request_id": str(uuid.uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
         }
     )
@@ -369,14 +404,15 @@ async def global_exception_handler(request, exc):
 @app.get("/admin", tags=["Root"])
 async def admin_root():
     """Admin interface root endpoint"""
+    config = get_admin_config()
     return {
-        "service": "Lucid Admin Interface",
-        "version": "1.0.0",
+        "service": config.service.service_name,
+        "version": config.service.version,
         "description": "Administrative interface for Lucid RDP system",
         "endpoints": {
-            "health": "/admin/health",
-            "docs": "/admin/docs",
-            "api": "/admin/api/v1"
+            "health": config.service.api_docs_path.replace("/docs", "/health"),
+            "docs": config.service.api_docs_path,
+            "api": config.service.api_prefix
         }
     }
 

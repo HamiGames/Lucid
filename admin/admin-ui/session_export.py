@@ -116,8 +116,14 @@ class SessionExportManager:
         for directory in [self.data_dir, self.temp_dir, self.logs_dir, self.keys_dir]:
             directory.mkdir(parents=True, exist_ok=True)
         
-        # Configuration
-        self.mongodb_url = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid")
+        # Configuration - all values must be provided via environment variables
+        self.mongodb_url = os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+        self.blockchain_api_url = os.getenv("BLOCKCHAIN_API_URL") or os.getenv("BLOCKCHAIN_ENGINE_URL") or os.getenv("BLOCKCHAIN_URL")
+        
+        if not self.mongodb_url:
+            raise ValueError("MONGODB_URL, MONGODB_URI, or MONGO_URI environment variable must be set")
+        if not self.blockchain_api_url:
+            raise ValueError("BLOCKCHAIN_API_URL, BLOCKCHAIN_ENGINE_URL, or BLOCKCHAIN_URL environment variable must be set")
         self.blockchain_api_url = os.getenv("BLOCKCHAIN_API_URL", "http://blockchain_api:8084")
         self.max_export_size_mb = int(os.getenv("MAX_EXPORT_SIZE_MB", "1000"))
         

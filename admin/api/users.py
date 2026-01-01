@@ -10,7 +10,8 @@ Provides user creation, management, and role assignment functionality.
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
-from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, EmailStr
 import uuid
 
@@ -23,7 +24,10 @@ from admin.audit.logger import AuditLogger
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter()
+router = APIRouter(tags=["User Management"])
+
+# Security
+security = HTTPBearer()
 
 # Pydantic models
 class UserCreateRequest(BaseModel):
@@ -88,15 +92,31 @@ class UserActivationRequest(BaseModel):
     notify_user: bool = Field(True, description="Whether to notify the user")
 
 
-async def get_admin_controller() -> AdminController:
-    """Get admin controller dependency"""
+async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)) -> AdminAccount:
+    """Get current authenticated admin user"""
     from admin.main import admin_controller
     if not admin_controller:
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Admin controller not available"
         )
-    return admin_controller
+    
+    try:
+        admin = await admin_controller.validate_admin_session(credentials.credentials)
+        if not admin:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired session token"
+            )
+        return admin
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Authentication error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed"
+        )
 
 
 async def get_rbac_manager() -> RBACManager:
@@ -104,7 +124,7 @@ async def get_rbac_manager() -> RBACManager:
     from admin.main import rbac_manager
     if not rbac_manager:
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="RBAC manager not available"
         )
     return rbac_manager
@@ -115,20 +135,32 @@ async def get_audit_logger() -> AuditLogger:
     from admin.main import audit_logger
     if not audit_logger:
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Audit logger not available"
         )
     return audit_logger
 
 
-@router.get("", response_model=UserListResponse)
+@router.get(
+    "",
+    response_model=UserListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List users",
+    description="List all users with optional filtering by status, role, or search query",
+    operation_id="list_users",
+    responses={
+        200: {"description": "Users retrieved successfully"},
+        403: {"description": "Permission denied"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def list_users(
-    status: Optional[str] = Query(None, description="Filter by user status"),
-    role: Optional[str] = Query(None, description="Filter by user role"),
-    search: Optional[str] = Query(None, description="Search by username or email"),
-    limit: int = Query(50, ge=1, le=1000, description="Number of results to return"),
-    offset: int = Query(0, ge=0, description="Results offset"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    status: Optional[str] = Query(None, description="Filter by user status (active, suspended, banned)", example="active"),
+    role: Optional[str] = Query(None, description="Filter by user role", example="admin"),
+    search: Optional[str] = Query(None, description="Search by username or email", example="john"),
+    limit: int = Query(50, ge=1, le=1000, description="Number of results to return", example=50),
+    offset: int = Query(0, ge=0, description="Results offset", example=0),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -147,7 +179,7 @@ async def list_users(
         has_permission = await rbac.check_permission(admin.admin_id, "users:list")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:list"
             )
         
@@ -182,15 +214,29 @@ async def list_users(
     except Exception as e:
         logger.error(f"Failed to list users: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve users"
         )
 
 
-@router.post("", response_model=UserResponse)
+@router.post(
+    "",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create user",
+    description="Create a new user account with specified role and permissions. Requires super-admin or admin role.",
+    operation_id="create_user",
+    responses={
+        201: {"description": "User created successfully"},
+        400: {"description": "Invalid request data"},
+        403: {"description": "Permission denied"},
+        409: {"description": "Username or email already exists"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def create_user(
     user_data: UserCreateRequest,
-    admin: AdminAccount = Depends(get_admin_controller),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -205,7 +251,7 @@ async def create_user(
         has_permission = await rbac.check_permission(admin.admin_id, "users:create")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:create"
             )
         
@@ -213,7 +259,7 @@ async def create_user(
         valid_roles = [role.value for role in AdminRole]
         if user_data.role not in valid_roles:
             raise HTTPException(
-                status_code=400,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid role. Must be one of: {valid_roles}"
             )
         
@@ -221,7 +267,7 @@ async def create_user(
         existing_user = await _get_user_by_username(user_data.username)
         if existing_user:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="Username already exists"
             )
         
@@ -229,7 +275,7 @@ async def create_user(
         existing_email = await _get_user_by_email(user_data.email)
         if existing_email:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="Email already exists"
             )
         
@@ -252,7 +298,7 @@ async def create_user(
         created_user = await _get_user_by_id(user_id)
         if not created_user:
             raise HTTPException(
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to retrieve created user"
             )
         
@@ -263,15 +309,28 @@ async def create_user(
     except Exception as e:
         logger.error(f"Failed to create user: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create user"
         )
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get user",
+    description="Retrieve detailed information about a specific user by ID",
+    operation_id="get_user",
+    responses={
+        200: {"description": "User retrieved successfully"},
+        403: {"description": "Permission denied"},
+        404: {"description": "User not found"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def get_user(
-    user_id: str = Path(..., description="User ID"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    user_id: str = Path(..., description="User ID", example="user-123"),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -285,7 +344,7 @@ async def get_user(
         has_permission = await rbac.check_permission(admin.admin_id, "users:view")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:view"
             )
         
@@ -300,7 +359,7 @@ async def get_user(
         user = await _get_user_by_id(user_id)
         if not user:
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
         
@@ -311,16 +370,30 @@ async def get_user(
     except Exception as e:
         logger.error(f"Failed to get user: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve user"
         )
 
 
-@router.put("/{user_id}", response_model=UserResponse)
+@router.put(
+    "/{user_id}",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update user",
+    description="Update user profile information. Cannot change username or role.",
+    operation_id="update_user",
+    responses={
+        200: {"description": "User updated successfully"},
+        403: {"description": "Permission denied"},
+        404: {"description": "User not found"},
+        409: {"description": "Email already exists"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def update_user(
-    user_id: str = Path(..., description="User ID"),
+    user_id: str = Path(..., description="User ID", example="user-123"),
     user_data: UserUpdateRequest = Body(..., description="User update data"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -334,7 +407,7 @@ async def update_user(
         has_permission = await rbac.check_permission(admin.admin_id, "users:update")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:update"
             )
         
@@ -342,7 +415,7 @@ async def update_user(
         existing_user = await _get_user_by_id(user_id)
         if not existing_user:
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
         
@@ -351,7 +424,7 @@ async def update_user(
             existing_email = await _get_user_by_email(user_data.email)
             if existing_email:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_409_CONFLICT,
                     detail="Email already exists"
                 )
         
@@ -372,7 +445,7 @@ async def update_user(
         updated_user = await _get_user_by_id(user_id)
         if not updated_user:
             raise HTTPException(
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to retrieve updated user"
             )
         
@@ -383,16 +456,30 @@ async def update_user(
     except Exception as e:
         logger.error(f"Failed to update user: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user"
         )
 
 
-@router.post("/{user_id}/suspend", response_model=Dict[str, str])
+@router.post(
+    "/{user_id}/suspend",
+    response_model=Dict[str, str],
+    status_code=status.HTTP_200_OK,
+    summary="Suspend user",
+    description="Suspend a user account with optional duration. Suspended users cannot log in or create sessions.",
+    operation_id="suspend_user",
+    responses={
+        200: {"description": "User suspended successfully"},
+        403: {"description": "Permission denied"},
+        404: {"description": "User not found"},
+        409: {"description": "User is already suspended"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def suspend_user(
-    user_id: str = Path(..., description="User ID"),
+    user_id: str = Path(..., description="User ID", example="user-123"),
     suspension_data: UserSuspensionRequest = Body(..., description="Suspension details"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -407,7 +494,7 @@ async def suspend_user(
         has_permission = await rbac.check_permission(admin.admin_id, "users:suspend")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:suspend"
             )
         
@@ -415,14 +502,14 @@ async def suspend_user(
         existing_user = await _get_user_by_id(user_id)
         if not existing_user:
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
         
         # Check if user is already suspended
         if not existing_user.is_active:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="User is already suspended"
             )
         
@@ -459,16 +546,30 @@ async def suspend_user(
     except Exception as e:
         logger.error(f"Failed to suspend user: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to suspend user"
         )
 
 
-@router.post("/{user_id}/activate", response_model=Dict[str, str])
+@router.post(
+    "/{user_id}/activate",
+    response_model=Dict[str, str],
+    status_code=status.HTTP_200_OK,
+    summary="Activate user",
+    description="Activate a suspended user account",
+    operation_id="activate_user",
+    responses={
+        200: {"description": "User activated successfully"},
+        403: {"description": "Permission denied"},
+        404: {"description": "User not found"},
+        409: {"description": "User is already active"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def activate_user(
-    user_id: str = Path(..., description="User ID"),
+    user_id: str = Path(..., description="User ID", example="user-123"),
     activation_data: UserActivationRequest = Body(..., description="Activation details"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -482,7 +583,7 @@ async def activate_user(
         has_permission = await rbac.check_permission(admin.admin_id, "users:activate")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:activate"
             )
         
@@ -490,14 +591,14 @@ async def activate_user(
         existing_user = await _get_user_by_id(user_id)
         if not existing_user:
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
         
         # Check if user is already active
         if existing_user.is_active:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="User is already active"
             )
         
@@ -532,16 +633,30 @@ async def activate_user(
     except Exception as e:
         logger.error(f"Failed to activate user: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to activate user"
         )
 
 
-@router.post("/{user_id}/assign-role", response_model=UserRoleAssignment)
+@router.post(
+    "/{user_id}/assign-role",
+    response_model=UserRoleAssignment,
+    status_code=status.HTTP_200_OK,
+    summary="Assign role to user",
+    description="Assign a new role to a user. Requires super-admin permissions.",
+    operation_id="assign_user_role",
+    responses={
+        200: {"description": "Role assigned successfully"},
+        400: {"description": "Invalid role"},
+        403: {"description": "Permission denied"},
+        404: {"description": "User not found"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def assign_user_role(
-    user_id: str = Path(..., description="User ID"),
-    role: str = Body(..., description="Role to assign"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    user_id: str = Path(..., description="User ID", example="user-123"),
+    role: str = Body(..., description="Role to assign", example="admin"),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -555,7 +670,7 @@ async def assign_user_role(
         has_permission = await rbac.check_permission(admin.admin_id, "users:assign_role")
         if not has_permission:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied: users:assign_role"
             )
         
@@ -563,7 +678,7 @@ async def assign_user_role(
         valid_roles = [role.value for role in AdminRole]
         if role not in valid_roles:
             raise HTTPException(
-                status_code=400,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid role. Must be one of: {valid_roles}"
             )
         
@@ -571,7 +686,7 @@ async def assign_user_role(
         existing_user = await _get_user_by_id(user_id)
         if not existing_user:
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
         
@@ -601,7 +716,7 @@ async def assign_user_role(
     except Exception as e:
         logger.error(f"Failed to assign role: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to assign role"
         )
 

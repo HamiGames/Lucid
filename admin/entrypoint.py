@@ -25,7 +25,7 @@ if app_path not in sys.path:
 if __name__ == "__main__":
     # Get configuration from environment variables (from docker-compose)
     port_str = os.getenv('ADMIN_INTERFACE_PORT', '8083')
-    host = '0.0.0.0'  # Always bind to all interfaces in container
+    host = os.getenv('ADMIN_INTERFACE_HOST', '0.0.0.0')  # Configurable host binding
     
     try:
         port = int(port_str)

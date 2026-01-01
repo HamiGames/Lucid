@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Admin Interface Health Check Response Schema",
+  "description": "JSON schema for the admin interface health check endpoint response",
+  "type": "object",
+  "required": [
+    "status",
+    "timestamp",
+    "service"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["healthy", "degraded", "unhealthy"],
+      "description": "Health status of the service",
+      "example": "healthy"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the health check",
+      "example": "2025-01-27T12:00:00Z"
+    },
+    "service": {
+      "type": "string",
+      "const": "lucid-admin-interface",
+      "description": "Service identifier",
+      "example": "lucid-admin-interface"
+    },
+    "version": {
+      "type": "string",
+      "description": "Service version",
+      "example": "1.0.0",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "uptime_seconds": {
+      "type": "number",
+      "description": "Service uptime in seconds",
+      "minimum": 0,
+      "example": 3600
+    },
+    "dependencies": {
+      "type": "object",
+      "description": "Status of external dependencies",
+      "properties": {
+        "mongodb": {
+          "type": "string",
+          "enum": ["connected", "disconnected", "error"],
+          "description": "MongoDB connection status"
+        },
+        "redis": {
+          "type": "string",
+          "enum": ["connected", "disconnected", "error"],
+          "description": "Redis connection status"
+        },
+        "elasticsearch": {
+          "type": "string",
+          "enum": ["connected", "disconnected", "error"],
+          "description": "Elasticsearch connection status"
+        },
+        "api_gateway": {
+          "type": "string",
+          "enum": ["reachable", "unreachable", "error"],
+          "description": "API Gateway reachability"
+        },
+        "blockchain_engine": {
+          "type": "string",
+          "enum": ["reachable", "unreachable", "error"],
+          "description": "Blockchain Engine reachability"
+        },
+        "auth_service": {
+          "type": "string",
+          "enum": ["reachable", "unreachable", "error"],
+          "description": "Auth Service reachability"
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "description": "System resource information",
+      "properties": {
+        "cpu_usage_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "CPU usage percentage"
+        },
+        "memory_usage_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Memory usage percentage"
+        },
+        "disk_usage_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Disk usage percentage"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "status": "healthy",
+      "timestamp": "2025-01-27T12:00:00Z",
+      "service": "lucid-admin-interface",
+      "version": "1.0.0",
+      "uptime_seconds": 3600,
+      "dependencies": {
+        "mongodb": "connected",
+        "redis": "connected",
+        "elasticsearch": "connected",
+        "api_gateway": "reachable",
+        "blockchain_engine": "reachable",
+        "auth_service": "reachable"
+      },
+      "system": {
+        "cpu_usage_percent": 25.5,
+        "memory_usage_percent": 45.2,
+        "disk_usage_percent": 30.0
+      }
+    }
+  ]
+}
+

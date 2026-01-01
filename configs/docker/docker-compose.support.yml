@@ -66,10 +66,10 @@ services:
           "-c",
           "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8083')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)",
         ]
-      interval: ${HEALTH_CHECK_INTERVAL:-30s}
-      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
-      retries: ${HEALTH_CHECK_RETRIES:-3}
-      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "lucid.service=admin-interface"
       - "lucid.type=distroless"

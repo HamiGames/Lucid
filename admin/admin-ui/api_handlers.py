@@ -75,10 +75,18 @@ class SessionInfo(BaseModel):
     merkle_root: str
     owner_address: str
 
-# Configuration
-ADMIN_API_PORT = int(os.getenv("ADMIN_UI_PORT", "8098"))
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid")
-API_GATEWAY_URL = os.getenv("API_GATEWAY_URL", "http://lucid_api_gateway:8080")
+# Configuration - all values must be provided via environment variables
+ADMIN_API_PORT = int(os.getenv("ADMIN_UI_PORT", os.getenv("ADMIN_INTERFACE_PORT", "8098")))
+MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+API_GATEWAY_URL = os.getenv("API_GATEWAY_URL")
+BLOCKCHAIN_API_URL = os.getenv("BLOCKCHAIN_API_URL") or os.getenv("BLOCKCHAIN_ENGINE_URL") or os.getenv("BLOCKCHAIN_URL")
+
+if not MONGODB_URL:
+    raise ValueError("MONGODB_URL, MONGODB_URI, or MONGO_URI environment variable must be set")
+if not API_GATEWAY_URL:
+    raise ValueError("API_GATEWAY_URL environment variable must be set")
+if not BLOCKCHAIN_API_URL:
+    raise ValueError("BLOCKCHAIN_API_URL, BLOCKCHAIN_ENGINE_URL, or BLOCKCHAIN_URL environment variable must be set")
 BLOCKCHAIN_API_URL = os.getenv("BLOCKCHAIN_API_URL", "http://blockchain_api:8084")
 
 # Data storage paths

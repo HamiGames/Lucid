@@ -76,7 +76,7 @@ RUN echo "LUCID_ADMIN_INTERFACE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
     chown -R 65532:65532 /root/.local
 
 # Builder-Stage Verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx, aiohttp, jinja2, email_validator, blake3, bcrypt, cryptography; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx, aiohttp, jinja2, email_validator, blake3, bcrypt, cryptography, aiofiles, yaml, tenacity; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -86,11 +86,51 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx,
 # Application Source COPY
 COPY admin/ ./admin/
 
-# Verify entrypoint exists
+# Verify entrypoint and main application files exist
 RUN test -f ./admin/entrypoint.py && \
     echo "✅ entrypoint.py found" && \
     test -f ./admin/main.py && \
-    echo "✅ main.py found"
+    echo "✅ main.py found" && \
+    test -f ./admin/config.py && \
+    echo "✅ config.py found"
+
+# Verify config JSON schema files exist
+RUN test -f ./admin/config/health-schema.json && \
+    echo "✅ health-schema.json found" && \
+    test -f ./admin/config/metrics-schema.json && \
+    echo "✅ metrics-schema.json found" && \
+    test -f ./admin/config/rbac-schema.json && \
+    echo "✅ rbac-schema.json found" && \
+    test -f ./admin/config/config-schema.json && \
+    echo "✅ config-schema.json found" && \
+    test -f ./admin/config/api-schemas.json && \
+    echo "✅ api-schemas.json found" && \
+    test -f ./admin/config/operational-config.json && \
+    echo "✅ operational-config.json found" && \
+    echo "✅ All config JSON files verified"
+
+# Verify config YAML files exist
+RUN test -f ./admin/config/admin-interface-config.yaml && \
+    echo "✅ admin-interface-config.yaml found" && \
+    test -f ./admin/config/operational-config.yaml && \
+    echo "✅ operational-config.yaml found" && \
+    test -s ./admin/config/operational-config.yaml && \
+    echo "✅ operational-config.yaml is non-empty" && \
+    echo "✅ All config YAML files verified"
+
+# Verify cross-container service modules exist
+RUN test -d ./admin/services && \
+    echo "✅ services directory found" && \
+    test -f ./admin/services/__init__.py && \
+    echo "✅ services/__init__.py found" && \
+    test -f ./admin/services/service_client.py && \
+    echo "✅ services/service_client.py found" && \
+    test -f ./admin/services/service_discovery.py && \
+    echo "✅ services/service_discovery.py found" && \
+    test -f ./admin/services/service_registry.py && \
+    echo "✅ services/service_registry.py found" && \
+    python3 -c "import sys; sys.path.insert(0, './admin'); from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; print('✅ Service modules importable')" && \
+    echo "✅ All cross-container service modules verified"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -136,18 +176,18 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime Verification of Packages
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'jinja2')), 'jinja2 not found'; assert os.path.exists(os.path.join(site_packages, 'email_validator')) or os.path.exists(os.path.join(site_packages, 'email_validator.py')), 'email_validator not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.exists(marker_path), 'marker file not found'; assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import jinja2; assert jinja2, 'jinja2 import failed'; import email_validator; assert email_validator, 'email_validator import failed'; print('✅ All packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'jinja2')), 'jinja2 not found'; assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'aiohttp not found'; assert os.path.exists(os.path.join(site_packages, 'tenacity')), 'tenacity not found'; assert os.path.exists(os.path.join(site_packages, 'email_validator')) or os.path.exists(os.path.join(site_packages, 'email_validator.py')), 'email_validator not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.exists(marker_path), 'marker file not found'; assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import jinja2; assert jinja2, 'jinja2 import failed'; import httpx; assert httpx, 'httpx import failed'; import aiohttp; assert aiohttp, 'aiohttp import failed'; import tenacity; assert tenacity, 'tenacity import failed'; import email_validator; assert email_validator, 'email_validator import failed'; print('✅ All packages verified in runtime stage')"]
 
 # Application Layout COPY
 COPY --chown=65532:65532 --from=builder /build/admin /app/admin
 
-# Verify application files
-RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; assert os.path.exists('/app/admin/main.py'), 'main.py not found'; print('✅ Application files verified')"]
+# Verify application files, config files, and service modules
+RUN ["/usr/bin/python3.11", "-c", "import os; import sys; sys.path.insert(0, '/app'); assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; assert os.path.exists('/app/admin/main.py'), 'main.py not found'; assert os.path.exists('/app/admin/config.py'), 'config.py not found'; assert os.path.exists('/app/admin/config/health-schema.json'), 'health-schema.json not found'; assert os.path.exists('/app/admin/config/metrics-schema.json'), 'metrics-schema.json not found'; assert os.path.exists('/app/admin/config/rbac-schema.json'), 'rbac-schema.json not found'; assert os.path.exists('/app/admin/config/config-schema.json'), 'config-schema.json not found'; assert os.path.exists('/app/admin/config/api-schemas.json'), 'api-schemas.json not found'; assert os.path.exists('/app/admin/config/operational-config.json'), 'operational-config.json not found'; assert os.path.exists('/app/admin/config/admin-interface-config.yaml'), 'admin-interface-config.yaml not found'; assert os.path.exists('/app/admin/config/operational-config.yaml'), 'operational-config.yaml not found'; assert os.path.getsize('/app/admin/config/operational-config.yaml') > 0, 'operational-config.yaml is empty'; assert os.path.exists('/app/admin/services'), 'services directory not found'; assert os.path.exists('/app/admin/services/__init__.py'), 'services/__init__.py not found'; assert os.path.exists('/app/admin/services/service_client.py'), 'services/service_client.py not found'; assert os.path.exists('/app/admin/services/service_discovery.py'), 'services/service_discovery.py not found'; assert os.path.exists('/app/admin/services/service_registry.py'), 'services/service_registry.py not found'; from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; print('✅ Application files, config files, and cross-container service modules verified')"]
 
 EXPOSE 8083
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8083)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8083')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

@@ -11,8 +11,9 @@ import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any, Union
-from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 import json
 
@@ -25,7 +26,10 @@ from admin.audit.logger import AuditLogger
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter()
+router = APIRouter(tags=["Dashboard"])
+
+# Security
+security = HTTPBearer()
 
 # Pydantic models
 class SystemStatus(BaseModel):
@@ -102,15 +106,31 @@ class WebSocketMessage(BaseModel):
 websocket_connections: List[WebSocket] = []
 
 
-async def get_admin_controller() -> AdminController:
-    """Get admin controller dependency"""
+async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)) -> AdminAccount:
+    """Get current authenticated admin user"""
     from admin.main import admin_controller
     if not admin_controller:
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Admin controller not available"
         )
-    return admin_controller
+    
+    try:
+        admin = await admin_controller.validate_admin_session(credentials.credentials)
+        if not admin:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired session token"
+            )
+        return admin
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Authentication error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed"
+        )
 
 
 async def get_rbac_manager() -> RBACManager:
@@ -118,7 +138,7 @@ async def get_rbac_manager() -> RBACManager:
     from admin.main import rbac_manager
     if not rbac_manager:
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="RBAC manager not available"
         )
     return rbac_manager
@@ -129,15 +149,27 @@ async def get_audit_logger() -> AuditLogger:
     from admin.main import audit_logger
     if not audit_logger:
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Audit logger not available"
         )
     return audit_logger
 
 
-@router.get("/overview", response_model=DashboardOverview)
+@router.get(
+    "/overview",
+    response_model=DashboardOverview,
+    status_code=status.HTTP_200_OK,
+    summary="Get dashboard overview",
+    description="Get comprehensive system overview dashboard data including system health, active sessions, node status, blockchain sync status, and resource usage metrics",
+    operation_id="get_dashboard_overview",
+    responses={
+        200: {"description": "Dashboard overview retrieved successfully"},
+        403: {"description": "Permission denied"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def get_dashboard_overview(
-    admin: AdminAccount = Depends(get_admin_controller),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -195,16 +227,29 @@ async def get_dashboard_overview(
     except Exception as e:
         logger.error(f"Failed to get dashboard overview: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve dashboard data"
         )
 
 
-@router.get("/metrics", response_model=List[MetricResponse])
+@router.get(
+    "/metrics",
+    response_model=List[MetricResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get system metrics",
+    description="Get real-time system metrics for specified timeframe and metric type",
+    operation_id="get_dashboard_metrics",
+    responses={
+        200: {"description": "Metrics retrieved successfully"},
+        400: {"description": "Invalid timeframe or metric parameter"},
+        403: {"description": "Permission denied"},
+        500: {"description": "Internal server error"}
+    }
+)
 async def get_dashboard_metrics(
-    timeframe: str = Query("1h", description="Time range for metrics"),
-    metric: str = Query("cpu", description="Metric type to retrieve"),
-    admin: AdminAccount = Depends(get_admin_controller),
+    timeframe: str = Query("1h", description="Time range for metrics (1h, 6h, 24h, 7d, 30d)", example="1h"),
+    metric: str = Query("cpu", description="Metric type to retrieve (cpu, memory, disk, network, sessions)", example="cpu"),
+    admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
 ):
@@ -230,13 +275,13 @@ async def get_dashboard_metrics(
         
         if timeframe not in valid_timeframes:
             raise HTTPException(
-                status_code=400,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid timeframe. Must be one of: {valid_timeframes}"
             )
         
         if metric not in valid_metrics:
             raise HTTPException(
-                status_code=400,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid metric. Must be one of: {valid_metrics}"
             )
         
@@ -257,12 +302,16 @@ async def get_dashboard_metrics(
     except Exception as e:
         logger.error(f"Failed to get dashboard metrics: {e}")
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve metrics data"
         )
 
 
-@router.websocket("/stream")
+@router.websocket(
+    "/stream",
+    summary="Dashboard WebSocket stream",
+    description="Real-time dashboard updates via WebSocket. Provides live updates for system metrics, session changes, node status updates, blockchain updates, and system alerts"
+)
 async def dashboard_stream(websocket: WebSocket):
     """
     Real-time dashboard updates via WebSocket

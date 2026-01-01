@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 class DatabaseConfig:
     """Database configuration"""
     mongodb_uri: str = ""
-    mongodb_database: str = "lucid"
-    redis_url: str = "redis://redis-distroless:6379/0"
-    elasticsearch_url: str = "http://elasticsearch-distroless:9200"
+    mongodb_database: str = os.getenv("MONGODB_DATABASE", "lucid")
+    redis_url: str = os.getenv("REDIS_URL", "")
+    elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL", "")
     connection_timeout: int = 30
     max_pool_size: int = 100
     min_pool_size: int = 10
@@ -47,10 +47,10 @@ class SecurityConfig:
 @dataclass
 class ServiceConfig:
     """Service configuration"""
-    service_name: str = "lucid-admin-interface"
-    version: str = "1.0.0"
-    host: str = "0.0.0.0"
-    port: int = 8083
+    service_name: str = os.getenv("ADMIN_INTERFACE_SERVICE_NAME", "lucid-admin-interface")
+    version: str = os.getenv("ADMIN_INTERFACE_VERSION", "1.0.0")
+    host: str = os.getenv("ADMIN_INTERFACE_HOST", "0.0.0.0")
+    port: int = int(os.getenv("ADMIN_INTERFACE_PORT", "8083"))
     debug: bool = False
     log_level: str = "INFO"
     workers: int = 1
@@ -121,25 +121,29 @@ class AdminConfig:
     emergency: EmergencyConfig = field(default_factory=EmergencyConfig)
     
     # External service URLs
-    api_gateway_url: str = "http://api-gateway:8080"
-    blockchain_url: str = "http://blockchain-engine:8084"
-    session_management_url: str = "http://session-api:8113"
-    node_management_url: str = "http://node-management:8095"
-    auth_service_url: str = "http://lucid-auth-service:8089"
+    api_gateway_url: str = os.getenv("API_GATEWAY_URL", "")
+    blockchain_url: str = os.getenv("BLOCKCHAIN_ENGINE_URL", os.getenv("BLOCKCHAIN_URL", ""))
+    session_management_url: str = os.getenv("SESSION_API_URL", os.getenv("SESSION_MANAGEMENT_URL", ""))
+    node_management_url: str = os.getenv("NODE_MANAGEMENT_URL", "")
+    auth_service_url: str = os.getenv("AUTH_SERVICE_URL", "")
     # tron_payment_url removed for TRON isolation compliance
     
     # CORS settings
     cors_origins: List[str] = field(default_factory=lambda: [
-        "https://admin.lucid.local",
-        "http://localhost:3000",
-        "http://localhost:8083"
+        origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://admin.lucid.local,http://localhost:3000,http://localhost:8083").split(",") if origin.strip()
     ])
-    cors_allow_credentials: bool = True
-    cors_allow_methods: List[str] = field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
-    cors_allow_headers: List[str] = field(default_factory=lambda: ["*"])
+    cors_allow_credentials: bool = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+    cors_allow_methods: List[str] = field(default_factory=lambda: [
+        method.strip() for method in os.getenv("CORS_ALLOW_METHODS", "GET,POST,PUT,DELETE,PATCH,OPTIONS").split(",") if method.strip()
+    ])
+    cors_allow_headers: List[str] = field(default_factory=lambda: [
+        header.strip() for header in os.getenv("CORS_ALLOW_HEADERS", "*").split(",") if header.strip()
+    ])
     
     # Trusted hosts
-    trusted_hosts: List[str] = field(default_factory=lambda: ["admin.lucid.local", "localhost", "127.0.0.1"])
+    trusted_hosts: List[str] = field(default_factory=lambda: [
+        host.strip() for host in os.getenv("TRUSTED_HOSTS", "admin.lucid.local,localhost,127.0.0.1").split(",") if host.strip()
+    ])
     
     # Rate limiting
     rate_limit_requests: int = 1000
@@ -487,9 +491,10 @@ def get_testing_config() -> AdminConfig:
     config = AdminConfig()
     config.service.debug = True
     config.service.log_level = "DEBUG"
-    config.database.mongodb_uri = "mongodb://localhost:27017/lucid_test"
-    config.database.redis_url = "redis://localhost:6379/1"
-    config.security.jwt_access_token_expire_minutes = 1
+    # Use environment variables for test config, fallback to defaults only for testing
+    config.database.mongodb_uri = os.getenv("TEST_MONGODB_URI", os.getenv("MONGODB_URI", "mongodb://localhost:27017/lucid_test"))
+    config.database.redis_url = os.getenv("TEST_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/1"))
+    config.security.jwt_access_token_expire_minutes = int(os.getenv("TEST_JWT_EXPIRE_MINUTES", "1"))
     return config
 
 

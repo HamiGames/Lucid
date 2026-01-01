@@ -1,0 +1,86 @@
+{
+  "service": {
+    "name": "lucid-admin-interface",
+    "version": "1.0.0",
+    "description": "Lucid Admin Interface - Comprehensive administrative dashboard and control panel"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json",
+    "retention_days": 30,
+    "audit_retention_days": 90,
+    "include_stack_trace": false,
+    "include_details": true
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics_enabled": true,
+    "metrics_port": 9090,
+    "metrics_endpoint": "/admin/metrics",
+    "health_check_enabled": true,
+    "health_check_endpoint": "/admin/health",
+    "health_check_interval": 30,
+    "system_metrics_collection_interval": 60
+  },
+  "features": {
+    "audit_logging": true,
+    "rate_limiting": true,
+    "cors": true,
+    "websocket": true,
+    "rbac": true,
+    "emergency_controls": true,
+    "dashboard": true,
+    "session_management": true,
+    "node_management": true,
+    "blockchain_operations": true
+  },
+  "performance": {
+    "max_connections": 1000,
+    "keep_alive_timeout": 5,
+    "workers": 1,
+    "request_timeout": 30,
+    "response_timeout": 30
+  },
+  "security": {
+    "require_totp": false,
+    "session_timeout_hours": 8,
+    "max_login_attempts": 5,
+    "lockout_duration_minutes": 30,
+    "password_min_length": 12,
+    "password_require_special_chars": true
+  },
+  "api": {
+    "docs_path": "/admin/docs",
+    "redoc_path": "/admin/redoc",
+    "openapi_path": "/admin/openapi.json",
+    "prefix": "/admin/api/v1"
+  },
+  "external_services": {
+    "api_gateway": {
+      "url": "http://api-gateway:8080",
+      "timeout": 10,
+      "retries": 3
+    },
+    "blockchain_engine": {
+      "url": "http://blockchain-engine:8084",
+      "timeout": 10,
+      "retries": 3
+    },
+    "session_management": {
+      "url": "http://session-api:8113",
+      "timeout": 10,
+      "retries": 3
+    },
+    "node_management": {
+      "url": "http://node-management:8095",
+      "timeout": 10,
+      "retries": 3
+    },
+    "auth_service": {
+      "url": "http://lucid-auth-service:8089",
+      "timeout": 10,
+      "retries": 3
+    }
+  }
+}
+

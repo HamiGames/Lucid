@@ -94,9 +94,17 @@ class ProvisioningManager:
         for directory in [self.data_dir, self.config_dir, self.logs_dir, self.templates_dir]:
             directory.mkdir(parents=True, exist_ok=True)
         
-        # Configuration
-        self.mongodb_url = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid")
-        self.api_gateway_url = os.getenv("API_GATEWAY_URL", "http://lucid_api_gateway:8080")
+        # Configuration - all values must be provided via environment variables
+        self.mongodb_url = os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+        self.api_gateway_url = os.getenv("API_GATEWAY_URL")
+        self.blockchain_api_url = os.getenv("BLOCKCHAIN_API_URL") or os.getenv("BLOCKCHAIN_ENGINE_URL") or os.getenv("BLOCKCHAIN_URL")
+        
+        if not self.mongodb_url:
+            raise ValueError("MONGODB_URL, MONGODB_URI, or MONGO_URI environment variable must be set")
+        if not self.api_gateway_url:
+            raise ValueError("API_GATEWAY_URL environment variable must be set")
+        if not self.blockchain_api_url:
+            raise ValueError("BLOCKCHAIN_API_URL, BLOCKCHAIN_ENGINE_URL, or BLOCKCHAIN_URL environment variable must be set")
         self.blockchain_api_url = os.getenv("BLOCKCHAIN_API_URL", "http://blockchain_api:8084")
         
         # Provisioning state
@@ -353,7 +361,10 @@ class ProvisioningManager:
                     "storage_gb": 100
                 },
                 "network": {
-                    "ports": [8082, 8083],
+                    "ports": [
+                        int(os.getenv("ADMIN_INTERFACE_PORT", "8083")),
+                        int(os.getenv("NODE_MANAGEMENT_PORT", "8095"))
+                    ],
                     "protocols": ["p2p", "rpc"]
                 }
             },
