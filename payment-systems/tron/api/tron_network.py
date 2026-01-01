@@ -236,16 +236,21 @@ async def broadcast_transaction(transaction_data: TransactionCreateRequest):
         raise HTTPException(status_code=500, detail=f"Failed to broadcast transaction: {str(e)}")
 
 @router.post("/transaction/{txid}/wait")
-async def wait_for_transaction_confirmation(txid: str, timeout_seconds: int = 300):
+async def wait_for_transaction_confirmation(txid: str, timeout_seconds: Optional[int] = None):
     """Wait for transaction confirmation"""
     try:
+        # Get timeout from environment variable or use default
+        if timeout_seconds is None:
+            timeout_seconds = int(os.getenv("TRON_TRANSACTION_CONFIRMATION_TIMEOUT", os.getenv("TRON_TIMEOUT", "300")))
+        
         # Validate transaction ID format
         if not txid or len(txid) != 64:
             raise HTTPException(status_code=400, detail="Invalid transaction ID format")
         
-        # Validate timeout
-        if timeout_seconds <= 0 or timeout_seconds > 3600:
-            raise HTTPException(status_code=400, detail="Invalid timeout value (1-3600 seconds)")
+        # Validate timeout - get max timeout from environment
+        max_timeout = int(os.getenv("TRON_MAX_CONFIRMATION_TIMEOUT", "3600"))
+        if timeout_seconds <= 0 or timeout_seconds > max_timeout:
+            raise HTTPException(status_code=400, detail=f"Invalid timeout value (1-{max_timeout} seconds)")
         
         confirmed = await tron_client.wait_for_confirmation(txid, timeout_seconds)
         

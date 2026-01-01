@@ -126,14 +126,15 @@ class PayoutRouterService:
     def __init__(self):
         self.settings = get_settings()
         
-        # TRON client configuration
-        self.tron_client_url = os.getenv("TRON_CLIENT_URL", "http://localhost:8085")
+        # TRON client configuration - from environment variables
+        self.tron_client_url = os.getenv("TRON_CLIENT_URL", os.getenv("PAYOUT_ROUTER_TRON_CLIENT_URL", "http://lucid-tron-client:8091"))
         
         # Initialize TRON client
         self._initialize_tron_client()
         
-        # Data storage
-        self.data_dir = Path("/data/payment-systems/payout-router")
+        # Data storage - from environment variables
+        data_base = os.getenv("DATA_DIRECTORY", os.getenv("TRON_DATA_DIR", "/data/payment-systems"))
+        self.data_dir = Path(data_base) / "payout-router"
         self.payouts_dir = self.data_dir / "payouts"
         self.batches_dir = self.data_dir / "batches"
         self.logs_dir = self.data_dir / "logs"

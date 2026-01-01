@@ -51,59 +51,59 @@ class TRONPaymentConfig(BaseSettings):
     jwt_secret_key: str = Field(default_factory=lambda: os.getenv("JWT_SECRET_KEY", os.getenv("JWT_SECRET", "")), description="JWT secret key")
     api_key: Optional[str] = Field(default_factory=lambda: os.getenv("API_KEY", os.getenv("TRON_API_KEY")), description="API key for service authentication")
     
-    # Payment Configuration
-    max_payment_amount: float = Field(default=10000.0, description="Maximum payment amount")
-    min_payment_amount: float = Field(default=0.01, description="Minimum payment amount")
-    daily_payment_limit: float = Field(default=100000.0, description="Daily payment limit")
-    payment_timeout: int = Field(default=300, description="Payment timeout in seconds")
+    # Payment Configuration - from environment variables
+    max_payment_amount: float = Field(default_factory=lambda: float(os.getenv("MAX_PAYMENT_AMOUNT", "10000.0")), description="Maximum payment amount")
+    min_payment_amount: float = Field(default_factory=lambda: float(os.getenv("MIN_PAYMENT_AMOUNT", "0.01")), description="Minimum payment amount")
+    daily_payment_limit: float = Field(default_factory=lambda: float(os.getenv("DAILY_PAYMENT_LIMIT", "100000.0")), description="Daily payment limit")
+    payment_timeout: int = Field(default_factory=lambda: int(os.getenv("PAYMENT_TIMEOUT", os.getenv("TRON_TIMEOUT", "300"))), description="Payment timeout in seconds")
     
-    # Staking Configuration
-    min_staking_amount: float = Field(default=1.0, description="Minimum staking amount in TRX")
-    max_staking_amount: float = Field(default=1000000.0, description="Maximum staking amount in TRX")
-    staking_duration_min: int = Field(default=1, description="Minimum staking duration in days")
-    staking_duration_max: int = Field(default=365, description="Maximum staking duration in days")
+    # Staking Configuration - from environment variables
+    min_staking_amount: float = Field(default_factory=lambda: float(os.getenv("MIN_STAKING_AMOUNT", "1.0")), description="Minimum staking amount in TRX")
+    max_staking_amount: float = Field(default_factory=lambda: float(os.getenv("MAX_STAKING_AMOUNT", "1000000.0")), description="Maximum staking amount in TRX")
+    staking_duration_min: int = Field(default_factory=lambda: int(os.getenv("STAKING_DURATION_MIN", "1")), description="Minimum staking duration in days")
+    staking_duration_max: int = Field(default_factory=lambda: int(os.getenv("STAKING_DURATION_MAX", "365")), description="Maximum staking duration in days")
     
     # USDT Configuration - from environment variables
     usdt_contract_address: str = Field(default_factory=lambda: os.getenv("USDT_CONTRACT_ADDRESS", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"), description="USDT contract address")
-    usdt_decimals: int = Field(default=6, description="USDT decimals")
+    usdt_decimals: int = Field(default_factory=lambda: int(os.getenv("USDT_DECIMALS", "6")), description="USDT decimals")
     
-    # Wallet Configuration
-    max_wallets_per_user: int = Field(default=10, description="Maximum wallets per user")
-    wallet_backup_enabled: bool = Field(default=True, description="Enable wallet backup")
-    wallet_encryption_enabled: bool = Field(default=True, description="Enable wallet encryption")
+    # Wallet Configuration - from environment variables
+    max_wallets_per_user: int = Field(default_factory=lambda: int(os.getenv("MAX_WALLETS_PER_USER", "10")), description="Maximum wallets per user")
+    wallet_backup_enabled: bool = Field(default_factory=lambda: os.getenv("WALLET_BACKUP_ENABLED", "true").lower() == "true", description="Enable wallet backup")
+    wallet_encryption_enabled: bool = Field(default_factory=lambda: os.getenv("WALLET_ENCRYPTION_ENABLED", "true").lower() == "true", description="Enable wallet encryption")
     
-    # Monitoring Configuration
-    health_check_interval: int = Field(default=60, description="Health check interval in seconds")
-    metrics_enabled: bool = Field(default=True, description="Enable metrics collection")
-    log_level: LogLevel = Field(default=LogLevel.INFO, description="Log level")
+    # Monitoring Configuration - from environment variables
+    health_check_interval: int = Field(default_factory=lambda: int(os.getenv("HEALTH_CHECK_INTERVAL", "60")), description="Health check interval in seconds")
+    metrics_enabled: bool = Field(default_factory=lambda: os.getenv("METRICS_ENABLED", "true").lower() == "true", description="Enable metrics collection")
+    log_level: LogLevel = Field(default_factory=lambda: LogLevel(os.getenv("LOG_LEVEL", "INFO").upper()), description="Log level")
     
     # Data Storage Configuration - from environment variables
     data_directory: str = Field(default_factory=lambda: os.getenv("DATA_DIRECTORY", os.getenv("TRON_DATA_DIR", "/data/payment-systems")), description="Data directory")
-    backup_enabled: bool = Field(default=True, description="Enable data backup")
-    backup_interval: int = Field(default=3600, description="Backup interval in seconds")
-    retention_days: int = Field(default=30, description="Data retention in days")
+    backup_enabled: bool = Field(default_factory=lambda: os.getenv("BACKUP_ENABLED", "true").lower() == "true", description="Enable data backup")
+    backup_interval: int = Field(default_factory=lambda: int(os.getenv("BACKUP_INTERVAL", "3600")), description="Backup interval in seconds")
+    retention_days: int = Field(default_factory=lambda: int(os.getenv("RETENTION_DAYS", "30")), description="Data retention in days")
     
-    # Rate Limiting Configuration
-    rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
-    rate_limit_requests: int = Field(default=100, description="Rate limit requests per minute")
-    rate_limit_burst: int = Field(default=200, description="Rate limit burst requests")
+    # Rate Limiting Configuration - from environment variables
+    rate_limit_enabled: bool = Field(default_factory=lambda: os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true", description="Enable rate limiting")
+    rate_limit_requests: int = Field(default_factory=lambda: int(os.getenv("RATE_LIMIT_REQUESTS", "100")), description="Rate limit requests per minute")
+    rate_limit_burst: int = Field(default_factory=lambda: int(os.getenv("RATE_LIMIT_BURST", "200")), description="Rate limit burst requests")
     
-    # Circuit Breaker Configuration
-    circuit_breaker_enabled: bool = Field(default=True, description="Enable circuit breaker")
-    circuit_breaker_failure_threshold: int = Field(default=5, description="Circuit breaker failure threshold")
-    circuit_breaker_timeout: int = Field(default=60, description="Circuit breaker timeout in seconds")
-    circuit_breaker_recovery_timeout: int = Field(default=300, description="Circuit breaker recovery timeout in seconds")
+    # Circuit Breaker Configuration - from environment variables
+    circuit_breaker_enabled: bool = Field(default_factory=lambda: os.getenv("CIRCUIT_BREAKER_ENABLED", "true").lower() == "true", description="Enable circuit breaker")
+    circuit_breaker_failure_threshold: int = Field(default_factory=lambda: int(os.getenv("CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5")), description="Circuit breaker failure threshold")
+    circuit_breaker_timeout: int = Field(default_factory=lambda: int(os.getenv("CIRCUIT_BREAKER_TIMEOUT", "60")), description="Circuit breaker timeout in seconds")
+    circuit_breaker_recovery_timeout: int = Field(default_factory=lambda: int(os.getenv("CIRCUIT_BREAKER_RECOVERY_TIMEOUT", "300")), description="Circuit breaker recovery timeout in seconds")
     
-    # Notification Configuration
-    notification_enabled: bool = Field(default=True, description="Enable notifications")
-    email_notifications: bool = Field(default=False, description="Enable email notifications")
-    webhook_notifications: bool = Field(default=True, description="Enable webhook notifications")
-    webhook_url: Optional[str] = Field(default=None, description="Webhook URL for notifications")
+    # Notification Configuration - from environment variables
+    notification_enabled: bool = Field(default_factory=lambda: os.getenv("NOTIFICATION_ENABLED", "true").lower() == "true", description="Enable notifications")
+    email_notifications: bool = Field(default_factory=lambda: os.getenv("EMAIL_NOTIFICATIONS", "false").lower() == "true", description="Enable email notifications")
+    webhook_notifications: bool = Field(default_factory=lambda: os.getenv("WEBHOOK_NOTIFICATIONS", "true").lower() == "true", description="Enable webhook notifications")
+    webhook_url: Optional[str] = Field(default_factory=lambda: os.getenv("WEBHOOK_URL"), description="Webhook URL for notifications")
     
-    # Development Configuration
-    debug_mode: bool = Field(default=False, description="Enable debug mode")
-    mock_transactions: bool = Field(default=False, description="Enable mock transactions")
-    test_mode: bool = Field(default=False, description="Enable test mode")
+    # Development Configuration - from environment variables
+    debug_mode: bool = Field(default_factory=lambda: os.getenv("DEBUG", "false").lower() == "true", description="Enable debug mode")
+    mock_transactions: bool = Field(default_factory=lambda: os.getenv("MOCK_TRANSACTIONS", "false").lower() == "true", description="Enable mock transactions")
+    test_mode: bool = Field(default_factory=lambda: os.getenv("TEST_MODE", "false").lower() == "true", description="Enable test mode")
     
     class Config:
         env_prefix = "TRON_PAYMENT_"
@@ -114,25 +114,25 @@ class TRONPaymentConfig(BaseSettings):
 # Global configuration instance
 config = TRONPaymentConfig()
 
-# Network-specific configurations
+# Network-specific configurations - from environment variables
 NETWORK_CONFIGS = {
     NetworkType.MAINNET: {
-        "tron_http_endpoint": "https://api.trongrid.io",
-        "usdt_contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-        "chain_id": "0x2b6653dc",
-        "network_name": "TRON Mainnet"
+        "tron_http_endpoint": os.getenv("TRON_RPC_URL_MAINNET", os.getenv("TRON_HTTP_ENDPOINT", "https://api.trongrid.io")),
+        "usdt_contract_address": os.getenv("USDT_CONTRACT_ADDRESS_MAINNET", os.getenv("USDT_CONTRACT_ADDRESS", "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")),
+        "chain_id": os.getenv("TRON_CHAIN_ID_MAINNET", "0x2b6653dc"),
+        "network_name": os.getenv("TRON_NETWORK_NAME_MAINNET", "TRON Mainnet")
     },
     NetworkType.TESTNET: {
-        "tron_http_endpoint": "https://api.shasta.trongrid.io",
-        "usdt_contract_address": "TG3XXyExBkPJ4D8sYv7cL6Lf4n9W4iZ1C",  # Testnet USDT
-        "chain_id": "0x94a9059e",
-        "network_name": "TRON Testnet"
+        "tron_http_endpoint": os.getenv("TRON_RPC_URL_TESTNET", os.getenv("TRON_RPC_URL_SHASTA", os.getenv("TRON_HTTP_ENDPOINT", "https://api.shasta.trongrid.io"))),
+        "usdt_contract_address": os.getenv("USDT_CONTRACT_ADDRESS_TESTNET", os.getenv("USDT_CONTRACT_ADDRESS_SHASTA", "TG3XXyExBkPJ4D8sYv7cL6Lf4n9W4iZ1C")),
+        "chain_id": os.getenv("TRON_CHAIN_ID_TESTNET", "0x94a9059e"),
+        "network_name": os.getenv("TRON_NETWORK_NAME_TESTNET", "TRON Testnet")
     },
     NetworkType.SHASTA: {
-        "tron_http_endpoint": "https://api.shasta.trongrid.io",
-        "usdt_contract_address": "TG3XXyExBkPJ4D8sYv7cL6Lf4n9W4iZ1C",  # Shasta USDT
-        "chain_id": "0x94a9059e",
-        "network_name": "TRON Shasta"
+        "tron_http_endpoint": os.getenv("TRON_RPC_URL_SHASTA", os.getenv("TRON_HTTP_ENDPOINT", "https://api.shasta.trongrid.io")),
+        "usdt_contract_address": os.getenv("USDT_CONTRACT_ADDRESS_SHASTA", "TG3XXyExBkPJ4D8sYv7cL6Lf4n9W4iZ1C"),
+        "chain_id": os.getenv("TRON_CHAIN_ID_SHASTA", "0x94a9059e"),
+        "network_name": os.getenv("TRON_NETWORK_NAME_SHASTA", "TRON Shasta")
     }
 }
 

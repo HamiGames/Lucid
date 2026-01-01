@@ -31,23 +31,47 @@ from .services.payout_router import payout_router_service
 from .services.payment_gateway import payment_gateway_service
 from .services.trx_staking import trx_staking_service
 
-# Configure logging
+# Import utility modules
+from .utils.logging_config import setup_structured_logging
+from .utils.metrics import get_metrics_collector
+from .utils.health_check import get_health_checker
+from .utils.config_loader import get_config_loader, load_yaml_config
+from .utils.circuit_breaker import get_circuit_breaker_manager, CircuitBreakerConfig
+from .utils.rate_limiter import get_rate_limiter_manager, RateLimitConfig
+
+# Configure structured logging
 log_level = os.getenv("LOG_LEVEL", config.log_level.value if hasattr(config.log_level, 'value') else str(config.log_level))
-log_file = os.getenv("LOG_FILE", os.getenv("TRON_LOG_FILE", "/app/logs/tron-payment-service.log"))
+log_file = os.getenv("LOG_FILE", os.getenv("TRON_LOG_FILE", "/app/logs/tron-client.log"))
+log_format = os.getenv("LOG_FORMAT", "json")
 
 # Ensure log directory exists
 log_dir = Path(log_file).parent
 log_dir.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    level=getattr(logging, log_level),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_file)
-    ]
+# Setup structured logging
+setup_structured_logging(
+    log_level=log_level,
+    log_format=log_format,
+    log_file=log_file,
+    include_trace_id=True
 )
 logger = logging.getLogger(__name__)
+
+# Initialize utility modules
+metrics_collector = get_metrics_collector()
+health_checker = get_health_checker()
+config_loader = get_config_loader()
+circuit_breaker_manager = get_circuit_breaker_manager()
+rate_limiter_manager = get_rate_limiter_manager()
+
+# Load YAML configurations
+try:
+    circuit_breaker_config = load_yaml_config("circuit-breaker-config.yaml", merge_env=True, env_prefix="TRON")
+    retry_config = load_yaml_config("retry-config.yaml", merge_env=True, env_prefix="TRON")
+    prometheus_metrics_config = load_yaml_config("prometheus-metrics.yaml", merge_env=True, env_prefix="TRON")
+    logger.info("Loaded YAML configuration files")
+except Exception as e:
+    logger.warning(f"Failed to load YAML configurations: {e}, using defaults")
 
 # Service instances
 services = {
@@ -78,6 +102,9 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting TRON Payment Services...")
     
+    # Update metrics - service starting
+    metrics_collector.update_service_health("tron_client", True)
+    
     # Validate configuration
     try:
         config_errors = validate_config()
@@ -89,10 +116,43 @@ async def lifespan(app: FastAPI):
                 raise RuntimeError("Configuration validation failed in production mode")
     except Exception as e:
         logger.error(f"Configuration validation error: {e}")
+        metrics_collector.update_service_health("tron_client", False)
         if config.get("production_mode", False):
             raise RuntimeError(f"Configuration validation failed in production mode: {e}")
         else:
             logger.warning("Continuing in non-production mode despite config validation errors")
+    
+    # Initialize circuit breakers from config
+    try:
+        if circuit_breaker_config:
+            cb_configs = circuit_breaker_config.get("tron_network", {})
+            if cb_configs.get("enabled", True):
+                cb_config = CircuitBreakerConfig(
+                    failure_threshold=cb_configs.get("failure_threshold", 5),
+                    recovery_timeout=cb_configs.get("recovery_timeout", 60),
+                    success_threshold=cb_configs.get("success_threshold", 2),
+                    half_open_max_calls=cb_configs.get("half_open_max_calls", 3),
+                    name="tron_network"
+                )
+                await circuit_breaker_manager.get_breaker("tron_network", cb_config)
+                logger.info("Initialized circuit breaker: tron_network")
+    except Exception as e:
+        logger.warning(f"Failed to initialize circuit breakers: {e}")
+    
+    # Initialize rate limiters from config
+    try:
+        rate_limit_enabled = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
+        if rate_limit_enabled:
+            rate_config = RateLimitConfig(
+                requests_per_minute=int(os.getenv("RATE_LIMIT_REQUESTS", "100")),
+                burst_size=int(os.getenv("RATE_LIMIT_BURST", "200")),
+                window_seconds=int(os.getenv("RATE_LIMIT_WINDOW", "60")),
+                enabled=True
+            )
+            await rate_limiter_manager.get_limiter("tron_client", rate_config)
+            logger.info("Initialized rate limiter: tron_client")
+    except Exception as e:
+        logger.warning(f"Failed to initialize rate limiters: {e}")
     
     # Initialize services
     await initialize_services()
@@ -100,12 +160,17 @@ async def lifespan(app: FastAPI):
     # Start health monitoring
     await start_health_monitoring()
     
+    # Update metrics - service started
+    metrics_collector.update_service_health("tron_client", True)
     logger.info("TRON Payment Services started successfully")
     
     yield
     
     # Shutdown
     logger.info("Shutting down TRON Payment Services...")
+    
+    # Update metrics - service shutting down
+    metrics_collector.update_service_health("tron_client", False)
     
     # Stop health monitoring
     await stop_health_monitoring()
@@ -210,11 +275,12 @@ async def stop_services():
         raise
 
 async def monitor_service_health(service_name: str):
-    """Monitor service health"""
+    """Monitor service health with metrics collection"""
     try:
         while True:
             try:
                 service = services[service_name]
+                check_start = time.time()
                 
                 # Check service health
                 if hasattr(service, 'get_service_stats'):
@@ -222,22 +288,43 @@ async def monitor_service_health(service_name: str):
                     if "error" in stats:
                         service_status[service_name]["status"] = "error"
                         service_status[service_name]["error"] = stats["error"]
+                        metrics_collector.update_service_health(service_name, False)
                     else:
                         service_status[service_name]["status"] = "running"
                         service_status[service_name]["error"] = None
+                        metrics_collector.update_service_health(service_name, True)
+                        
+                        # Update service-specific metrics
+                        if service_name == "tron_client":
+                            if "pending_transactions" in stats:
+                                metrics_collector.update_pending_transactions(stats["pending_transactions"])
+                            if "confirmed_transactions" in stats:
+                                metrics_collector.update_confirmed_transactions(stats["confirmed_transactions"])
+                            if "cached_accounts" in stats:
+                                metrics_collector.update_account_cache_size(stats["cached_accounts"])
+                            if "monitoring_tasks" in stats:
+                                metrics_collector.update_monitoring_tasks(stats["monitoring_tasks"])
                 else:
                     service_status[service_name]["status"] = "running"
                     service_status[service_name]["error"] = None
+                    metrics_collector.update_service_health(service_name, True)
                 
                 service_status[service_name]["last_check"] = time.time()
+                
+                # Record health check duration
+                check_duration = time.time() - check_start
+                metrics_collector.record_account_operation(f"health_check_{service_name}", "success")
                 
             except Exception as e:
                 logger.error(f"Health check failed for {service_name}: {e}")
                 service_status[service_name]["status"] = "error"
                 service_status[service_name]["error"] = str(e)
+                metrics_collector.update_service_health(service_name, False)
+                metrics_collector.record_account_operation(f"health_check_{service_name}", "error")
             
             # Wait before next check
-            await asyncio.sleep(config.health_check_interval)
+            health_check_interval = int(os.getenv("HEALTH_CHECK_INTERVAL", str(config.health_check_interval if hasattr(config, 'health_check_interval') else 60)))
+            await asyncio.sleep(health_check_interval)
             
     except asyncio.CancelledError:
         logger.info(f"Health monitoring cancelled for {service_name}")
@@ -271,22 +358,38 @@ app.add_middleware(
     allowed_hosts=trusted_hosts
 )
 
-# Health check endpoint
+# Include API routers
+from .api import tron_network, wallets, usdt, payouts, staking
+
+app.include_router(tron_network.router)
+app.include_router(wallets.router)
+app.include_router(usdt.router)
+app.include_router(payouts.router)
+app.include_router(staking.router)
+
+# Health check endpoint - enhanced with HealthChecker
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with comprehensive dependency checks"""
     try:
-        # Check overall service health
+        # Get overall health from HealthChecker
+        overall_health = await health_checker.get_overall_health()
+        
+        # Check service status
         all_services_healthy = all(
             status["status"] == "running" 
             for status in service_status.values()
         )
         
-        if all_services_healthy:
+        # Combine health check results
+        health_status = overall_health["status"]
+        if all_services_healthy and health_status in ["healthy", "degraded"]:
+            status_code = 200 if health_status == "healthy" else 200  # Degraded still returns 200
             return {
-                "status": "healthy",
+                "status": health_status,
                 "timestamp": time.time(),
-                "services": service_status
+                "services": service_status,
+                "dependencies": overall_health["components"]
             }
         else:
             return JSONResponse(
@@ -294,11 +397,13 @@ async def health_check():
                 content={
                     "status": "unhealthy",
                     "timestamp": time.time(),
-                    "services": service_status
+                    "services": service_status,
+                    "dependencies": overall_health["components"]
                 }
             )
     except Exception as e:
         logger.error(f"Health check error: {e}")
+        metrics_collector.record_network_error("health_check_error", "/health")
         return JSONResponse(
             status_code=500,
             content={
@@ -307,6 +412,46 @@ async def health_check():
                 "error": str(e)
             }
         )
+
+# Liveness probe endpoint
+@app.get("/health/live")
+async def liveness_check():
+    """Liveness probe - is the service running?"""
+    is_alive = await health_checker.liveness_check()
+    if is_alive:
+        return {"status": "alive", "timestamp": time.time()}
+    else:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_alive", "timestamp": time.time()}
+        )
+
+# Readiness probe endpoint
+@app.get("/health/ready")
+async def readiness_check():
+    """Readiness probe - is the service ready to serve requests?"""
+    is_ready = await health_checker.readiness_check()
+    if is_ready:
+        return {"status": "ready", "timestamp": time.time()}
+    else:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "timestamp": time.time()}
+        )
+
+# Metrics endpoint - Prometheus format
+@app.get("/metrics")
+async def metrics_endpoint():
+    """Prometheus metrics endpoint"""
+    try:
+        metrics_enabled = os.getenv("METRICS_ENABLED", "true").lower() == "true"
+        if not metrics_enabled:
+            raise HTTPException(status_code=404, detail="Metrics not enabled")
+        
+        return metrics_collector.get_metrics_response()
+    except Exception as e:
+        logger.error(f"Metrics endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Service status endpoint
 @app.get("/status")
@@ -329,7 +474,7 @@ async def service_status_endpoint():
 # Service statistics endpoint
 @app.get("/stats")
 async def service_stats():
-    """Get service statistics"""
+    """Get service statistics with metrics"""
     try:
         stats = {}
         
@@ -343,6 +488,18 @@ async def service_stats():
                     stats[service_name] = {"status": "no_stats_available"}
             except Exception as e:
                 stats[service_name] = {"error": str(e)}
+        
+        # Add circuit breaker stats
+        try:
+            stats["circuit_breakers"] = circuit_breaker_manager.get_all_stats()
+        except Exception as e:
+            logger.warning(f"Failed to get circuit breaker stats: {e}")
+        
+        # Add rate limiter stats
+        try:
+            stats["rate_limiters"] = rate_limiter_manager.get_all_stats()
+        except Exception as e:
+            logger.warning(f"Failed to get rate limiter stats: {e}")
         
         return {
             "timestamp": time.time(),

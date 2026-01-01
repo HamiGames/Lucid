@@ -128,14 +128,15 @@ class USDTManagerService:
     def __init__(self):
         self.settings = get_settings()
         
-        # TRON client configuration
-        self.tron_client_url = os.getenv("TRON_CLIENT_URL", "http://localhost:8085")
+        # TRON client configuration - from environment variables
+        self.tron_client_url = os.getenv("TRON_CLIENT_URL", os.getenv("USDT_MANAGER_TRON_CLIENT_URL", "http://lucid-tron-client:8091"))
         
         # Initialize TRON client
         self._initialize_tron_client()
         
-        # Data storage
-        self.data_dir = Path("/data/payment-systems/usdt-manager")
+        # Data storage - from environment variables
+        data_base = os.getenv("DATA_DIRECTORY", os.getenv("TRON_DATA_DIR", "/data/payment-systems"))
+        self.data_dir = Path(data_base) / "usdt-manager"
         self.tokens_dir = self.data_dir / "tokens"
         self.transactions_dir = self.data_dir / "transactions"
         self.balances_dir = self.data_dir / "balances"

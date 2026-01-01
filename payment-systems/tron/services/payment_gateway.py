@@ -141,17 +141,18 @@ class PaymentGatewayService:
     def __init__(self):
         self.settings = get_settings()
         
-        # TRON client configuration
-        self.tron_client_url = os.getenv("TRON_CLIENT_URL", "http://localhost:8085")
-        self.wallet_manager_url = os.getenv("WALLET_MANAGER_URL", "http://localhost:8086")
-        self.usdt_manager_url = os.getenv("USDT_MANAGER_URL", "http://localhost:8087")
-        self.payout_router_url = os.getenv("PAYOUT_ROUTER_URL", "http://localhost:8088")
+        # TRON client configuration - from environment variables
+        self.tron_client_url = os.getenv("TRON_CLIENT_URL", os.getenv("PAYMENT_GATEWAY_TRON_CLIENT_URL", "http://lucid-tron-client:8091"))
+        self.wallet_manager_url = os.getenv("WALLET_MANAGER_URL", os.getenv("PAYMENT_GATEWAY_WALLET_MANAGER_URL", "http://lucid-wallet-manager:8093"))
+        self.usdt_manager_url = os.getenv("USDT_MANAGER_URL", os.getenv("PAYMENT_GATEWAY_USDT_MANAGER_URL", "http://lucid-usdt-manager:8094"))
+        self.payout_router_url = os.getenv("PAYOUT_ROUTER_URL", os.getenv("PAYMENT_GATEWAY_PAYOUT_ROUTER_URL", "http://lucid-payout-router:8092"))
         
         # Initialize TRON client
         self._initialize_tron_client()
         
-        # Data storage
-        self.data_dir = Path("/data/payment-systems/payment-gateway")
+        # Data storage - from environment variables
+        data_base = os.getenv("DATA_DIRECTORY", os.getenv("TRON_DATA_DIR", "/data/payment-systems"))
+        self.data_dir = Path(data_base) / "payment-gateway"
         self.payments_dir = self.data_dir / "payments"
         self.logs_dir = self.data_dir / "logs"
         

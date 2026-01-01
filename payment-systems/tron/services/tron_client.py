@@ -157,11 +157,11 @@ class TronClientService:
         if hasattr(config, 'tron_http_endpoint') and config.tron_http_endpoint:
             return config.tron_http_endpoint
         
-        # Use network-specific defaults
+        # Use network-specific defaults from environment variables
         if self.network.lower() == "shasta":
-            return os.getenv("TRON_RPC_URL_SHASTA", "https://api.shasta.trongrid.io")
+            return os.getenv("TRON_RPC_URL_SHASTA", os.getenv("TRON_HTTP_ENDPOINT", get_network_endpoint()))
         
-        return os.getenv("TRON_RPC_URL_MAINNET", get_network_endpoint())
+        return os.getenv("TRON_RPC_URL_MAINNET", os.getenv("TRON_HTTP_ENDPOINT", get_network_endpoint()))
     
     def _initialize_tron_client(self):
         """Initialize TRON client with network configuration"""
@@ -405,9 +405,13 @@ class TronClientService:
             logger.error(f"Error broadcasting transaction: {e}")
             raise
     
-    async def wait_for_confirmation(self, txid: str, timeout_seconds: int = 300) -> bool:
+    async def wait_for_confirmation(self, txid: str, timeout_seconds: Optional[int] = None) -> bool:
         """Wait for transaction confirmation"""
         try:
+            # Get timeout from environment variable or use default
+            if timeout_seconds is None:
+                timeout_seconds = int(os.getenv("TRON_TRANSACTION_CONFIRMATION_TIMEOUT", os.getenv("TRON_TIMEOUT", "300")))
+            
             start_time = time.time()
             
             while time.time() - start_time < timeout_seconds:
@@ -664,8 +668,8 @@ if __name__ == "__main__":
             network_info = await get_network_info()
             print(f"Network: {network_info.network_name}, Block: {network_info.latest_block}")
             
-            # Get account info
-            test_address = "TYourTRONAddressHere123456789"
+            # Get account info - use environment variable for test address
+            test_address = os.getenv("TRON_TEST_ADDRESS", "TYourTRONAddressHere123456789")
             account_info = await get_account_info(test_address)
             print(f"Account balance: {account_info.balance_trx} TRX")
             
