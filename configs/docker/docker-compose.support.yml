@@ -1,37 +1,52 @@
 name: lucid-support
 services:
   admin-interface:
-    image: pickme/lucid-admin-interface:latest-arm64
+    image: ${ADMIN_INTERFACE_IMAGE:-pickme/lucid-admin-interface:latest-arm64}
     container_name: admin-interface
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.application
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.admin-interface
     networks:
       - lucid-pi-network
     ports:
-      - "8083:8083"
+      - "${ADMIN_INTERFACE_PORT:-8083}:${ADMIN_INTERFACE_PORT:-8083}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/admin:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/admin:/app/logs:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/admin:/app/data:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/admin:/app/logs:rw
       - admin-interface-cache:/tmp/admin
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - ADMIN_INTERFACE_HOST=admin-interface
-      - ADMIN_INTERFACE_PORT=8083
-      - ADMIN_INTERFACE_URL=http://admin-interface:8083
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - ADMIN_INTERFACE_HOST=${ADMIN_INTERFACE_HOST:-admin-interface}
+      - ADMIN_INTERFACE_PORT=${ADMIN_INTERFACE_PORT:-8083}
+      - ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL}
+      - ADMIN_INTERFACE_DEBUG=${ADMIN_INTERFACE_DEBUG:-false}
+      - ADMIN_INTERFACE_LOG_LEVEL=${ADMIN_INTERFACE_LOG_LEVEL:-INFO}
+      - ADMIN_INTERFACE_SERVICE_NAME=${ADMIN_INTERFACE_SERVICE_NAME:-lucid-admin-interface}
+      - ADMIN_INTERFACE_VERSION=${ADMIN_INTERFACE_VERSION:-1.0.0}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGO_URI=${MONGO_URI:-${MONGODB_URI:-${MONGODB_URL}}}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid}
       - REDIS_URL=${REDIS_URL}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - API_GATEWAY_URL=${API_GATEWAY_URL}
-      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
-      - SESSION_API_URL=${SESSION_API_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-${BLOCKCHAIN_URL}}
+      - BLOCKCHAIN_URL=${BLOCKCHAIN_URL:-${BLOCKCHAIN_ENGINE_URL}}
+      - SESSION_API_URL=${SESSION_API_URL:-${SESSION_MANAGEMENT_URL}}
+      - SESSION_MANAGEMENT_URL=${SESSION_MANAGEMENT_URL:-${SESSION_API_URL}}
       - NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - TRUSTED_HOSTS=${TRUSTED_HOSTS}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -49,12 +64,12 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8083)); s.close(); exit(0 if result == 0 else 1)",
+          "import socket; import os; port = int(os.getenv('ADMIN_INTERFACE_PORT', '8083')); s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', port)); s.close(); exit(0 if result == 0 else 1)",
         ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
     labels:
       - "lucid.service=admin-interface"
       - "lucid.type=distroless"
