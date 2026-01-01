@@ -11,6 +11,7 @@ import time
 import hashlib
 import json
 import secrets
+import base64
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
@@ -22,15 +23,23 @@ import httpx
 from tronpy import Tron
 from tronpy.keys import PrivateKey, PublicKey
 from tronpy.providers import HTTPProvider
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
 
 import sys
-from pathlib import Path
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.config import get_settings
+try:
+    from app.config import get_settings
+except ImportError:
+    # Fallback if app.config is not available
+    def get_settings():
+        return type('Settings', (), {})()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -144,24 +153,78 @@ class WalletManagerService:
         encryption_key = os.getenv("WALLET_ENCRYPTION_KEY") or os.getenv("ENCRYPTION_KEY")
         if not encryption_key:
             raise ValueError("WALLET_ENCRYPTION_KEY or ENCRYPTION_KEY environment variable must be set")
-        self.encryption_key = encryption_key
+        self.encryption_key = encryption_key.encode() if isinstance(encryption_key, str) else encryption_key
         
-        # Load existing wallets
-        asyncio.create_task(self._load_existing_wallets())
-        
-        # Start monitoring tasks
-        asyncio.create_task(self._monitor_wallets())
-        asyncio.create_task(self._cleanup_old_data())
+        # Background tasks will be started in initialize() method
+        self._monitoring_task = None
+        self._cleanup_task = None
         
         logger.info("WalletManagerService initialized")
+    
+    async def initialize(self):
+        """Initialize async components"""
+        try:
+            # Load existing wallets
+            await self._load_existing_wallets()
+            
+            # Start monitoring tasks
+            self._monitoring_task = asyncio.create_task(self._monitor_wallets())
+            self._cleanup_task = asyncio.create_task(self._cleanup_old_data())
+            
+            logger.info("WalletManagerService async components initialized")
+        except Exception as e:
+            logger.error(f"Error initializing WalletManagerService: {e}")
+            raise
+    
+    async def stop(self):
+        """Stop background tasks"""
+        try:
+            if self._monitoring_task:
+                self._monitoring_task.cancel()
+            if self._cleanup_task:
+                self._cleanup_task.cancel()
+            
+            # Wait for tasks to complete
+            if self._monitoring_task:
+                try:
+                    await self._monitoring_task
+                except asyncio.CancelledError:
+                    pass
+            if self._cleanup_task:
+                try:
+                    await self._cleanup_task
+                except asyncio.CancelledError:
+                    pass
+            
+            logger.info("WalletManagerService stopped")
+        except Exception as e:
+            logger.error(f"Error stopping WalletManagerService: {e}")
     
     def _initialize_tron_client(self):
         """Initialize TRON client connection"""
         try:
-            # In production, this would connect to the TRON client service
-            # For now, we'll use direct TRON connection
-            self.tron = Tron()
-            logger.info("TRON client initialized for wallet management")
+            # Get TRON network configuration from environment
+            tron_network = os.getenv("TRON_NETWORK", "mainnet")
+            tron_rpc_url = os.getenv("TRON_RPC_URL")
+            tron_api_key = os.getenv("TRON_API_KEY") or os.getenv("TRONGRID_API_KEY")
+            
+            # Configure TRON provider
+            if tron_rpc_url:
+                provider = HTTPProvider(tron_rpc_url, api_key=tron_api_key)
+                self.tron = Tron(provider=provider, network=tron_network)
+            else:
+                # Use default provider based on network
+                if tron_network == "mainnet":
+                    default_url = "https://api.trongrid.io"
+                elif tron_network == "shasta":
+                    default_url = "https://api.shasta.trongrid.io"
+                else:
+                    default_url = "https://api.trongrid.io"
+                
+                provider = HTTPProvider(default_url, api_key=tron_api_key)
+                self.tron = Tron(provider=provider, network=tron_network)
+            
+            logger.info(f"TRON client initialized for {tron_network} network")
         except Exception as e:
             logger.error(f"Failed to initialize TRON client: {e}")
             raise
@@ -180,6 +243,12 @@ class WalletManagerService:
                         for field in ['created_at', 'last_used']:
                             if field in wallet_data and wallet_data[field]:
                                 wallet_data[field] = datetime.fromisoformat(wallet_data[field])
+                        
+                        # Convert enum strings back to Enum objects
+                        if 'wallet_type' in wallet_data and isinstance(wallet_data['wallet_type'], str):
+                            wallet_data['wallet_type'] = WalletType(wallet_data['wallet_type'])
+                        if 'status' in wallet_data and isinstance(wallet_data['status'], str):
+                            wallet_data['status'] = WalletStatus(wallet_data['status'])
                         
                         wallet_info = WalletInfo(**wallet_data)
                         self.wallets[wallet_id] = wallet_info
@@ -208,42 +277,69 @@ class WalletManagerService:
         except Exception as e:
             logger.error(f"Error saving wallets registry: {e}")
     
+    def _derive_key(self, password: Optional[str] = None, salt: Optional[bytes] = None) -> Tuple[bytes, bytes]:
+        """Derive encryption key using PBKDF2"""
+        if salt is None:
+            salt = secrets.token_bytes(16)
+        
+        source = password.encode() if password else self.encryption_key
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = kdf.derive(source)
+        return key, salt
+    
     def _encrypt_private_key(self, private_key: str, password: Optional[str] = None) -> str:
-        """Encrypt private key"""
+        """Encrypt private key using AES-256-GCM"""
         try:
-            # Simple encryption (in production, use proper encryption)
-            if password:
-                key = hashlib.sha256(password.encode()).digest()
-            else:
-                key = hashlib.sha256(self.encryption_key.encode()).digest()
+            # Generate salt and derive key
+            key, salt = self._derive_key(password)
             
-            # Simple XOR encryption (replace with proper encryption in production)
-            encrypted = ""
-            for i, char in enumerate(private_key):
-                encrypted += chr(ord(char) ^ key[i % len(key)])
+            # Create AES-GCM cipher
+            aesgcm = AESGCM(key)
             
-            return encrypted.encode().hex()
+            # Generate nonce
+            nonce = secrets.token_bytes(12)
+            
+            # Encrypt
+            private_key_bytes = private_key.encode('utf-8')
+            ciphertext = aesgcm.encrypt(nonce, private_key_bytes, None)
+            
+            # Combine salt + nonce + ciphertext
+            encrypted_data = salt + nonce + ciphertext
+            
+            # Return base64 encoded
+            return base64.b64encode(encrypted_data).decode('utf-8')
             
         except Exception as e:
             logger.error(f"Error encrypting private key: {e}")
             raise
     
     def _decrypt_private_key(self, encrypted_key: str, password: Optional[str] = None) -> str:
-        """Decrypt private key"""
+        """Decrypt private key using AES-256-GCM"""
         try:
-            # Simple decryption (in production, use proper decryption)
-            if password:
-                key = hashlib.sha256(password.encode()).digest()
-            else:
-                key = hashlib.sha256(self.encryption_key.encode()).digest()
+            # Decode base64
+            encrypted_data = base64.b64decode(encrypted_key.encode('utf-8'))
             
-            # Decode hex and decrypt
-            encrypted_bytes = bytes.fromhex(encrypted_key)
-            decrypted = ""
-            for i, char in enumerate(encrypted_bytes.decode()):
-                decrypted += chr(ord(char) ^ key[i % len(key)])
+            # Extract salt (16 bytes), nonce (12 bytes), and ciphertext (rest)
+            salt = encrypted_data[:16]
+            nonce = encrypted_data[16:28]
+            ciphertext = encrypted_data[28:]
             
-            return decrypted
+            # Derive key
+            key, _ = self._derive_key(password, salt)
+            
+            # Create AES-GCM cipher
+            aesgcm = AESGCM(key)
+            
+            # Decrypt
+            private_key_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+            
+            return private_key_bytes.decode('utf-8')
             
         except Exception as e:
             logger.error(f"Error decrypting private key: {e}")
@@ -585,7 +681,7 @@ class WalletManagerService:
             logger.error(f"Error getting service stats: {e}")
             return {"error": str(e)}
 
-# Global instance
+# Global instance - will be initialized async
 wallet_manager_service = WalletManagerService()
 
 # Convenience functions for external use
@@ -618,19 +714,30 @@ async def get_service_stats() -> Dict[str, Any]:
     return await wallet_manager_service.get_service_stats()
 
 if __name__ == "__main__":
-    # Example usage
+    # Example usage - DO NOT USE IN PRODUCTION
+    # All sensitive values should come from environment variables
     async def main():
         try:
+            # Check for required environment variables
+            encryption_key = os.getenv("WALLET_ENCRYPTION_KEY") or os.getenv("ENCRYPTION_KEY")
+            if not encryption_key:
+                print("ERROR: WALLET_ENCRYPTION_KEY or ENCRYPTION_KEY must be set")
+                print("Set via environment variable or .env file")
+                return
+            
             # Create a wallet
+            # Note: Password should come from environment or user input, never hardcoded
+            wallet_password = os.getenv("WALLET_TEST_PASSWORD")  # Optional, uses service key if not set
             wallet_request = WalletCreateRequest(
                 name="Test Wallet",
                 description="Test wallet for development",
                 wallet_type=WalletType.HOT,
-                password="test_password"
+                password=wallet_password  # Uses service encryption key if None
             )
             
             wallet = await create_wallet(wallet_request)
-            print(f"Created wallet: {wallet}")
+            print(f"Created wallet: {wallet.wallet_id} -> {wallet.address}")
+            print("NOTE: Private key is encrypted and stored securely")
             
             # Get wallet balance
             balance = await get_wallet_balance(wallet.wallet_id)

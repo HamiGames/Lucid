@@ -106,8 +106,9 @@ WORKDIR /app
 COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
 COPY --from=builder --chown=nonroot:nonroot /build/app /app
 
-# Verify packages were copied (fails build if packages are missing)
-RUN ["/usr/bin/python3.12", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.12/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; print('Packages verified in runtime stage')"]
+# Note: Package verification is done in builder stage (line 62-67)
+# Distroless runtime stage doesn't support RUN commands (no shell available)
+# Verification ensures packages exist before COPY operation
 
 EXPOSE 8091 8101
 

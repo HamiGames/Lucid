@@ -15,6 +15,14 @@ from pydantic import BaseModel, Field, validator
 import httpx
 
 from ..services.tron_client import TronClientService
+from ..services.wallet_manager import (
+    wallet_manager_service,
+    WalletCreateRequest as WalletCreateRequestService,
+    WalletUpdateRequest as WalletUpdateRequestService,
+    WalletResponse as WalletResponseService,
+    WalletType,
+    WalletStatus
+)
 from ..models.wallet import WalletResponse, WalletCreateRequest, WalletUpdateRequest
 from ..models.transaction import TransactionResponse, TransactionCreateRequest
 
@@ -85,49 +93,32 @@ class WalletSignResponse(BaseModel):
     message_hash: str
     timestamp: str
 
-# In-memory wallet storage (in production, use database)
-wallets_storage: Dict[str, Dict[str, Any]] = {}
-
 @router.post("/create", response_model=WalletCreateResponse)
 async def create_wallet(request: WalletCreateRequest):
     """Create a new TRON wallet"""
     try:
-        # Generate wallet ID
-        wallet_id = secrets.token_hex(16)
+        # Convert API request to service request
+        service_request = WalletCreateRequestService(
+            name=request.name,
+            description=request.description,
+            wallet_type=WalletType.HOT,  # Default to HOT wallet
+            password=None  # Use service encryption key
+        )
         
-        # Generate private key (this is a simplified example)
-        # In production, use proper cryptographic key generation
-        private_key = secrets.token_hex(32)
+        # Create wallet using service
+        wallet_response = await wallet_manager_service.create_wallet(service_request)
         
-        # Generate address (simplified - in production use proper TRON address generation)
-        address = f"T{secrets.token_hex(33)}"
+        logger.info(f"Created wallet: {wallet_response.wallet_id} -> {wallet_response.address}")
         
-        # Create wallet data
-        wallet_data = {
-            "wallet_id": wallet_id,
-            "name": request.name,
-            "description": request.description,
-            "address": address,
-            "private_key": private_key,
-            "public_key": f"public_{secrets.token_hex(32)}",
-            "created_at": datetime.now().isoformat(),
-            "status": "active",
-            "balance_trx": 0.0,
-            "last_updated": datetime.now().isoformat()
-        }
-        
-        # Store wallet
-        wallets_storage[wallet_id] = wallet_data
-        
-        logger.info(f"Created wallet: {wallet_id} -> {address}")
-        
+        # Note: Private key is encrypted and not returned for security
+        # In production, private key should never be returned
         return WalletCreateResponse(
-            wallet_id=wallet_id,
-            address=address,
-            private_key=private_key,
-            public_key=wallet_data["public_key"],
-            created_at=wallet_data["created_at"],
-            message="Wallet created successfully"
+            wallet_id=wallet_response.wallet_id,
+            address=wallet_response.address,
+            private_key="[ENCRYPTED]",  # Private key is encrypted and stored securely
+            public_key="",  # Can be derived from address if needed
+            created_at=wallet_response.created_at,
+            message="Wallet created successfully. Private key is encrypted and stored securely."
         )
     except Exception as e:
         logger.error(f"Error creating wallet: {e}")
@@ -143,8 +134,8 @@ async def list_wallets(skip: int = 0, limit: int = 100):
         if limit <= 0 or limit > 1000:
             raise HTTPException(status_code=400, detail="Invalid limit parameter (1-1000)")
         
-        # Get wallets
-        wallet_list = list(wallets_storage.values())
+        # Get wallets from service
+        wallet_list = await wallet_manager_service.list_wallets()
         total_count = len(wallet_list)
         
         # Apply pagination
@@ -152,16 +143,16 @@ async def list_wallets(skip: int = 0, limit: int = 100):
         
         # Convert to response format
         wallets = []
-        for wallet_data in paginated_wallets:
+        for wallet_response in paginated_wallets:
             wallets.append(WalletResponse(
-                wallet_id=wallet_data["wallet_id"],
-                name=wallet_data["name"],
-                description=wallet_data.get("description"),
-                address=wallet_data["address"],
-                status=wallet_data["status"],
-                balance_trx=wallet_data["balance_trx"],
-                created_at=wallet_data["created_at"],
-                last_updated=wallet_data["last_updated"]
+                wallet_id=wallet_response.wallet_id,
+                name=wallet_response.name,
+                description=wallet_response.description,
+                address=wallet_response.address,
+                status=wallet_response.status,
+                balance_trx=wallet_response.balance_trx,
+                created_at=wallet_response.created_at,
+                last_updated=wallet_response.last_updated
             ))
         
         return WalletListResponse(
@@ -179,20 +170,20 @@ async def list_wallets(skip: int = 0, limit: int = 100):
 async def get_wallet(wallet_id: str):
     """Get wallet by ID"""
     try:
-        if wallet_id not in wallets_storage:
+        wallet_response = await wallet_manager_service.get_wallet(wallet_id)
+        
+        if not wallet_response:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        wallet_data = wallets_storage[wallet_id]
-        
         return WalletResponse(
-            wallet_id=wallet_data["wallet_id"],
-            name=wallet_data["name"],
-            description=wallet_data.get("description"),
-            address=wallet_data["address"],
-            status=wallet_data["status"],
-            balance_trx=wallet_data["balance_trx"],
-            created_at=wallet_data["created_at"],
-            last_updated=wallet_data["last_updated"]
+            wallet_id=wallet_response.wallet_id,
+            name=wallet_response.name,
+            description=wallet_response.description,
+            address=wallet_response.address,
+            status=wallet_response.status,
+            balance_trx=wallet_response.balance_trx,
+            created_at=wallet_response.created_at,
+            last_updated=wallet_response.last_updated
         )
     except HTTPException:
         raise
@@ -204,42 +195,20 @@ async def get_wallet(wallet_id: str):
 async def get_wallet_balance(wallet_id: str):
     """Get wallet balance"""
     try:
-        if wallet_id not in wallets_storage:
+        balance_data = await wallet_manager_service.get_wallet_balance(wallet_id)
+        
+        if not balance_data:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        wallet_data = wallets_storage[wallet_id]
-        address = wallet_data["address"]
-        
-        # Get balance from TRON network
-        try:
-            account_info = await tron_client.get_account_info(address)
-            balance_trx = account_info.balance_trx
-            balance_sun = account_info.balance_sun
-            energy_available = account_info.energy_available
-            bandwidth_available = account_info.bandwidth_available
-            frozen_balance = account_info.frozen_balance
-        except Exception as e:
-            logger.warning(f"Failed to get balance from network for {address}: {e}")
-            # Use cached balance
-            balance_trx = wallet_data["balance_trx"]
-            balance_sun = int(balance_trx * 1_000_000)
-            energy_available = 0
-            bandwidth_available = 0
-            frozen_balance = 0.0
-        
-        # Update cached balance
-        wallets_storage[wallet_id]["balance_trx"] = balance_trx
-        wallets_storage[wallet_id]["last_updated"] = datetime.now().isoformat()
-        
         return WalletBalanceResponse(
-            wallet_id=wallet_id,
-            address=address,
-            balance_trx=balance_trx,
-            balance_sun=balance_sun,
-            energy_available=energy_available,
-            bandwidth_available=bandwidth_available,
-            frozen_balance=frozen_balance,
-            last_updated=datetime.now().isoformat()
+            wallet_id=balance_data["wallet_id"],
+            address=balance_data["address"],
+            balance_trx=balance_data["balance_trx"],
+            balance_sun=balance_data["balance_sun"],
+            energy_available=balance_data["energy_available"],
+            bandwidth_available=balance_data["bandwidth_available"],
+            frozen_balance=balance_data.get("frozen_balance", 0.0),
+            last_updated=balance_data.get("last_updated", datetime.now().isoformat())
         )
     except HTTPException:
         raise
@@ -251,30 +220,27 @@ async def get_wallet_balance(wallet_id: str):
 async def update_wallet(wallet_id: str, request: WalletUpdateRequest):
     """Update wallet information"""
     try:
-        if wallet_id not in wallets_storage:
+        # Convert API request to service request
+        service_request = WalletUpdateRequestService(
+            name=request.name,
+            description=request.description,
+            status=WalletStatus(request.status) if request.status else None
+        )
+        
+        wallet_response = await wallet_manager_service.update_wallet(wallet_id, service_request)
+        
+        if not wallet_response:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        wallet_data = wallets_storage[wallet_id]
-        
-        # Update fields
-        if request.name is not None:
-            wallet_data["name"] = request.name
-        if request.description is not None:
-            wallet_data["description"] = request.description
-        if request.status is not None:
-            wallet_data["status"] = request.status
-        
-        wallet_data["last_updated"] = datetime.now().isoformat()
-        
         return WalletResponse(
-            wallet_id=wallet_data["wallet_id"],
-            name=wallet_data["name"],
-            description=wallet_data.get("description"),
-            address=wallet_data["address"],
-            status=wallet_data["status"],
-            balance_trx=wallet_data["balance_trx"],
-            created_at=wallet_data["created_at"],
-            last_updated=wallet_data["last_updated"]
+            wallet_id=wallet_response.wallet_id,
+            name=wallet_response.name,
+            description=wallet_response.description,
+            address=wallet_response.address,
+            status=wallet_response.status,
+            balance_trx=wallet_response.balance_trx,
+            created_at=wallet_response.created_at,
+            last_updated=wallet_response.last_updated
         )
     except HTTPException:
         raise
@@ -286,11 +252,10 @@ async def update_wallet(wallet_id: str, request: WalletUpdateRequest):
 async def delete_wallet(wallet_id: str):
     """Delete wallet"""
     try:
-        if wallet_id not in wallets_storage:
-            raise HTTPException(status_code=404, detail="Wallet not found")
+        success = await wallet_manager_service.delete_wallet(wallet_id, password=None)
         
-        # Remove wallet
-        del wallets_storage[wallet_id]
+        if not success:
+            raise HTTPException(status_code=404, detail="Wallet not found")
         
         logger.info(f"Deleted wallet: {wallet_id}")
         
@@ -307,45 +272,25 @@ async def delete_wallet(wallet_id: str):
 
 @router.post("/import", response_model=WalletCreateResponse)
 async def import_wallet(request: WalletImportRequest):
-    """Import existing wallet"""
+    """Import existing wallet - private key is encrypted and stored securely"""
     try:
         # Validate private key format
         if not request.private_key or len(request.private_key) != 64:
-            raise HTTPException(status_code=400, detail="Invalid private key format")
+            raise HTTPException(status_code=400, detail="Invalid private key format (must be 64 hex characters)")
         
-        # Generate wallet ID
-        wallet_id = secrets.token_hex(16)
-        
-        # Generate address (simplified - in production use proper TRON address generation)
-        address = f"T{secrets.token_hex(33)}"
-        
-        # Create wallet data
-        wallet_data = {
-            "wallet_id": wallet_id,
-            "name": request.name,
-            "description": request.description,
-            "address": address,
-            "private_key": request.private_key,
-            "public_key": f"public_{secrets.token_hex(32)}",
-            "created_at": datetime.now().isoformat(),
-            "status": "active",
-            "balance_trx": 0.0,
-            "last_updated": datetime.now().isoformat()
-        }
-        
-        # Store wallet
-        wallets_storage[wallet_id] = wallet_data
-        
-        logger.info(f"Imported wallet: {wallet_id} -> {address}")
-        
-        return WalletCreateResponse(
-            wallet_id=wallet_id,
-            address=address,
-            private_key=request.private_key,
-            public_key=wallet_data["public_key"],
-            created_at=wallet_data["created_at"],
-            message="Wallet imported successfully"
+        # Import wallet using service - private key will be encrypted
+        # Note: We need to create a wallet with the imported private key
+        # This requires extending the service to support import functionality
+        # For now, we'll log a warning and return an error
+        logger.warning("Wallet import via API is not yet fully implemented - use service directly")
+        raise HTTPException(
+            status_code=501, 
+            detail="Wallet import functionality is being implemented. Private keys are encrypted and never returned in responses."
         )
+        
+        # TODO: Implement proper import using wallet_manager_service
+        # The private key should be encrypted using the service's encryption
+        
     except HTTPException:
         raise
     except Exception as e:
@@ -354,29 +299,47 @@ async def import_wallet(request: WalletImportRequest):
 
 @router.post("/{wallet_id}/export")
 async def export_wallet(wallet_id: str, request: WalletExportRequest):
-    """Export wallet"""
+    """Export wallet - private keys are encrypted and require password for decryption"""
     try:
-        if wallet_id not in wallets_storage:
+        # Get wallet from service
+        wallet_response = await wallet_manager_service.get_wallet(wallet_id)
+        
+        if not wallet_response:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        wallet_data = wallets_storage[wallet_id]
+        # Log export operation for audit
+        logger.info(f"Wallet export requested for {wallet_id}, include_private_key={request.include_private_key}")
         
         export_data = {
-            "wallet_id": wallet_data["wallet_id"],
-            "name": wallet_data["name"],
-            "description": wallet_data.get("description"),
-            "address": wallet_data["address"],
-            "public_key": wallet_data["public_key"],
-            "created_at": wallet_data["created_at"],
-            "status": wallet_data["status"]
+            "wallet_id": wallet_response.wallet_id,
+            "name": wallet_response.name,
+            "description": wallet_response.description,
+            "address": wallet_response.address,
+            "wallet_type": wallet_response.wallet_type,
+            "status": wallet_response.status,
+            "created_at": wallet_response.created_at,
+            "last_updated": wallet_response.last_updated
         }
         
+        # SECURITY: Private keys are encrypted and stored securely
+        # They should NEVER be exported via API for security reasons
+        # If private key export is absolutely necessary, it should:
+        # 1. Require additional authentication/authorization
+        # 2. Require password verification
+        # 3. Be logged for audit purposes
+        # 4. Use secure channels only
+        
         if request.include_private_key:
-            export_data["private_key"] = wallet_data["private_key"]
+            logger.warning(f"Private key export requested for wallet {wallet_id} - this is a security risk")
+            raise HTTPException(
+                status_code=403,
+                detail="Private key export via API is disabled for security reasons. Use secure backup mechanisms instead."
+            )
         
         return {
             "wallet": export_data,
-            "exported_at": datetime.now().isoformat()
+            "exported_at": datetime.now().isoformat(),
+            "note": "Private keys are encrypted and stored securely. They are never returned via API."
         }
     except HTTPException:
         raise
@@ -386,30 +349,34 @@ async def export_wallet(wallet_id: str, request: WalletExportRequest):
 
 @router.post("/{wallet_id}/sign", response_model=WalletSignResponse)
 async def sign_data(wallet_id: str, request: WalletSignRequest):
-    """Sign data with wallet"""
+    """Sign data with wallet - requires wallet to be unlocked"""
     try:
-        if wallet_id not in wallets_storage:
-            raise HTTPException(status_code=404, detail="Wallet not found")
+        # Get wallet from service
+        wallet_response = await wallet_manager_service.get_wallet(wallet_id)
         
-        wallet_data = wallets_storage[wallet_id]
+        if not wallet_response:
+            raise HTTPException(status_code=404, detail="Wallet not found")
         
         # Validate data format
         if not request.data or len(request.data) % 2 != 0:
             raise HTTPException(status_code=400, detail="Invalid data format (must be hex string)")
         
-        # Generate signature (simplified - in production use proper cryptographic signing)
-        signature = secrets.token_hex(64)
-        message_hash = hashlib.sha256(request.data.encode()).hexdigest()
+        # Log signing operation for audit
+        logger.info(f"Data signing requested for wallet {wallet_id}")
         
-        logger.info(f"Signed data with wallet {wallet_id}")
+        # TODO: Implement proper signing using wallet_manager_service
+        # This requires:
+        # 1. Decrypting the private key (with password verification)
+        # 2. Using TRON library to sign the data
+        # 3. Returning the signature
         
-        return WalletSignResponse(
-            wallet_id=wallet_id,
-            signature=signature,
-            public_key=wallet_data["public_key"],
-            message_hash=message_hash,
-            timestamp=datetime.now().isoformat()
+        # For now, return a placeholder (this should be implemented properly)
+        logger.warning("Wallet signing functionality needs to be implemented using wallet_manager_service")
+        raise HTTPException(
+            status_code=501,
+            detail="Wallet signing functionality is being implemented. Private keys are encrypted and require password for operations."
         )
+        
     except HTTPException:
         raise
     except Exception as e:
@@ -420,14 +387,20 @@ async def sign_data(wallet_id: str, request: WalletSignRequest):
 async def get_wallet_transactions(wallet_id: str, skip: int = 0, limit: int = 100):
     """Get wallet transactions"""
     try:
-        if wallet_id not in wallets_storage:
+        # Validate pagination parameters
+        if skip < 0:
+            raise HTTPException(status_code=400, detail="Invalid skip parameter")
+        if limit <= 0 or limit > 1000:
+            raise HTTPException(status_code=400, detail="Invalid limit parameter (1-1000)")
+        
+        # Get wallet from service
+        wallet_response = await wallet_manager_service.get_wallet(wallet_id)
+        
+        if not wallet_response:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        wallet_data = wallets_storage[wallet_id]
-        address = wallet_data["address"]
-        
-        # This would require implementing transaction history tracking
-        # For now, return empty list
+        # TODO: Implement transaction history retrieval from wallet_manager_service
+        # For now, return empty list as transaction history tracking needs to be implemented
         transactions = []
         
         return WalletTransactionResponse(
