@@ -131,70 +131,72 @@ async def lifespan(app: FastAPI):
 
 
 # Create FastAPI application
+config = get_admin_config()
 app = FastAPI(
     title="Lucid Admin Interface",
     description="Administrative interface for Lucid RDP system management",
-    version="1.0.0",
-    docs_url="/admin/docs",
-    redoc_url="/admin/redoc",
-    openapi_url="/admin/openapi.json",
+    version=config.service.version,
+    docs_url=config.service.api_docs_path,
+    redoc_url=config.service.api_redoc_path,
+    openapi_url=config.service.api_openapi_path,
     lifespan=lifespan
 )
 
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://admin.lucid.local", "http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allow_headers=["*"],
+    allow_origins=config.cors_origins,
+    allow_credentials=config.cors_allow_credentials,
+    allow_methods=config.cors_allow_methods,
+    allow_headers=config.cors_allow_headers,
 )
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["admin.lucid.local", "localhost", "127.0.0.1"]
+    allowed_hosts=config.trusted_hosts
 )
 
 # Include routers
+config = get_admin_config()
 app.include_router(
     dashboard_router,
-    prefix="/admin/api/v1/dashboard",
+    prefix=f"{config.service.api_prefix}/dashboard",
     tags=["Dashboard"]
 )
 
 app.include_router(
     users_router,
-    prefix="/admin/api/v1/users",
+    prefix=f"{config.service.api_prefix}/users",
     tags=["User Management"]
 )
 
 app.include_router(
     sessions_router,
-    prefix="/admin/api/v1/sessions",
+    prefix=f"{config.service.api_prefix}/sessions",
     tags=["Session Management"]
 )
 
 app.include_router(
     blockchain_router,
-    prefix="/admin/api/v1/blockchain",
+    prefix=f"{config.service.api_prefix}/blockchain",
     tags=["Blockchain Management"]
 )
 
 app.include_router(
     nodes_router,
-    prefix="/admin/api/v1/nodes",
+    prefix=f"{config.service.api_prefix}/nodes",
     tags=["Node Management"]
 )
 
 app.include_router(
     audit_router,
-    prefix="/admin/api/v1/audit",
+    prefix=f"{config.service.api_prefix}/audit",
     tags=["Audit Logging"]
 )
 
 app.include_router(
     emergency_router,
-    prefix="/admin/api/v1/emergency",
+    prefix=f"{config.service.api_prefix}/emergency",
     tags=["Emergency Controls"]
 )
 

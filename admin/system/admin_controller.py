@@ -33,21 +33,15 @@ import bcrypt
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from blockchain.core.blockchain_engine import get_blockchain_engine
+from admin.config import get_admin_config
 
 logger = logging.getLogger(__name__)
 
 # Admin Constants per Spec-1c, Spec-1d
-KEY_ROTATION_INTERVAL_DAYS = int(os.getenv("KEY_ROTATION_INTERVAL_DAYS", "30"))  # Monthly key rotation
-ADMIN_SESSION_TIMEOUT_HOURS = int(os.getenv("ADMIN_SESSION_TIMEOUT_HOURS", "8"))  # 8-hour admin sessions
-GOVERNANCE_QUORUM_PCT = float(os.getenv("GOVERNANCE_QUORUM_PCT", "0.67"))  # 67% quorum required
-POLICY_CACHE_TTL_SEC = int(os.getenv("POLICY_CACHE_TTL_SEC", "300"))  # 5-minute policy cache
-
-# MongoDB Configuration
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://lucid:lucid@mongo-distroless:27019/lucid?authSource=admin&retryWrites=false&directConnection=true")
-
-# Multi-signature Configuration (per Spec-1c)
-MULTISIG_THRESHOLD = int(os.getenv("MULTISIG_THRESHOLD", "3"))  # 3-of-5 multisig
-MULTISIG_TOTAL = int(os.getenv("MULTISIG_TOTAL", "5"))
+# These are now loaded from config via get_admin_config()
+# KEY_ROTATION_INTERVAL_DAYS, ADMIN_SESSION_TIMEOUT_HOURS, GOVERNANCE_QUORUM_PCT,
+# POLICY_CACHE_TTL_SEC, MULTISIG_THRESHOLD, MULTISIG_TOTAL are loaded from config.rbac
+# MONGODB_URI is loaded from config.database.mongodb_uri
 
 
 class AdminRole(Enum):
@@ -404,10 +398,13 @@ class GovernanceManager:
             voting_deadline = datetime.now(timezone.utc) + timedelta(days=7)
             
             # Determine required signatures based on action type
+            config = get_admin_config()
+            multisig_total = config.rbac.multisig_total
+            multisig_threshold = config.rbac.multisig_threshold
             if action_type in [GovernanceAction.EMERGENCY_SHUTDOWN, GovernanceAction.KEY_ROTATION]:
-                required_signatures = max(2, int(MULTISIG_TOTAL * 0.5))  # 50% for emergency
+                required_signatures = max(2, int(multisig_total * 0.5))  # 50% for emergency
             else:
-                required_signatures = MULTISIG_THRESHOLD  # Standard 3-of-5
+                required_signatures = multisig_threshold  # Standard 3-of-5
             
             proposal = GovernanceProposal(
                 proposal_id=proposal_id,
@@ -554,7 +551,9 @@ class GovernanceManager:
                 logger.info(f"Proposal approved: {proposal_id}")
                 
             # Check if rejected (majority rejection)
-            elif rejections > (MULTISIG_TOTAL - proposal.required_signatures):
+            config = get_admin_config()
+            multisig_total = config.rbac.multisig_total
+            if rejections > (multisig_total - proposal.required_signatures):
                 await self.db["governance_proposals"].update_one(
                     {"_id": proposal_id},
                     {"$set": {"status": ProposalStatus.REJECTED.value}}
@@ -692,7 +691,13 @@ class AdminController:
     """
     
     def __init__(self):
-        self.mongo_client = AsyncIOMotorClient(MONGODB_URI)
+        config = get_admin_config()
+        mongodb_uri = config.database.mongodb_uri
+        if not mongodb_uri:
+            raise ValueError("MONGODB_URI must be set in environment variables")
+        
+        self.config = config
+        self.mongo_client = AsyncIOMotorClient(mongodb_uri)
         self.db = self.mongo_client.get_default_database()
         
         # Initialize components
@@ -775,7 +780,8 @@ class AdminController:
             )
             
             # Set key rotation schedule
-            key_rotation_due = datetime.now(timezone.utc) + timedelta(days=KEY_ROTATION_INTERVAL_DAYS)
+            config = get_admin_config()
+            key_rotation_due = datetime.now(timezone.utc) + timedelta(days=config.rbac.key_rotation_interval_days)
             
             # Create admin account
             admin = AdminAccount(
@@ -830,8 +836,9 @@ class AdminController:
                 return None
             
             # Generate session token
+            config = get_admin_config()
             session_token = secrets.token_urlsafe(32)
-            session_expiry = datetime.now(timezone.utc) + timedelta(hours=ADMIN_SESSION_TIMEOUT_HOURS)
+            session_expiry = datetime.now(timezone.utc) + timedelta(hours=config.rbac.admin_session_timeout_hours)
             
             # Update admin record
             await self.db["admin_accounts"].update_one(
@@ -944,9 +951,10 @@ class AdminController:
         """Get active policy with caching"""
         try:
             # Check cache first
+            config = get_admin_config()
             if policy_type in self.policy_cache:
                 policy, cached_at = self.policy_cache[policy_type]
-                if datetime.now(timezone.utc) - cached_at < timedelta(seconds=POLICY_CACHE_TTL_SEC):
+                if datetime.now(timezone.utc) - cached_at < timedelta(seconds=config.rbac.policy_cache_ttl_sec):
                     return policy
             
             # Query database

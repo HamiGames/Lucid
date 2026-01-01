@@ -25,13 +25,16 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-ADMIN_PORT = int(os.getenv("ADMIN_PORT", "8096"))
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")
-SESSION_RECORDER_URL = os.getenv("SESSION_RECORDER_URL", "http://session-recorder:8093")
-CHAIN_CLIENT_URL = os.getenv("CHAIN_CLIENT_URL", "http://on-system-chain-client:8094")
+# Configuration from admin config
+from admin.config import get_admin_config
+
+config = get_admin_config()
+ADMIN_PORT = config.service.port
+MONGODB_URL = config.database.mongodb_uri
+SESSION_RECORDER_URL = config.session_management_url
+CHAIN_CLIENT_URL = config.blockchain_url
 # TRON_CLIENT_URL removed for TRON isolation compliance
-TOR_SOCKS_PORT = os.getenv("TOR_SOCKS_PORT", "9050")
+TOR_SOCKS_PORT = os.getenv("TOR_SOCKS_PORT", "9050")  # Keep as env var for now
 
 
 class SessionStatus(Enum):

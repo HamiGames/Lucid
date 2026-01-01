@@ -76,7 +76,7 @@ RUN echo "LUCID_ADMIN_INTERFACE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/l
     chown -R 65532:65532 /root/.local
 
 # Builder-Stage Verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx, aiohttp, jinja2, email_validator, blake3, bcrypt, cryptography; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -136,29 +136,13 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime Verification of Packages
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
-site_packages = '/usr/local/lib/python3.11/site-packages'; \
-sys.path.insert(0, site_packages); \
-assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
-marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.exists(marker_path), 'marker file not found'; \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-import uvicorn; assert uvicorn, 'uvicorn import failed'; \
-import fastapi; assert fastapi, 'fastapi import failed'; \
-print('✅ All packages verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), site_packages + ' does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; assert os.path.exists(os.path.join(site_packages, 'jinja2')), 'jinja2 not found'; assert os.path.exists(os.path.join(site_packages, 'email_validator')) or os.path.exists(os.path.join(site_packages, 'email_validator.py')), 'email_validator not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.exists(marker_path), 'marker file not found'; assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; import uvicorn; assert uvicorn, 'uvicorn import failed'; import fastapi; assert fastapi, 'fastapi import failed'; import jinja2; assert jinja2, 'jinja2 import failed'; import email_validator; assert email_validator, 'email_validator import failed'; print('✅ All packages verified in runtime stage')"]
 
 # Application Layout COPY
 COPY --chown=65532:65532 --from=builder /build/admin /app/admin
 
 # Verify application files
-RUN ["/usr/bin/python3.11", "-c", "import os; \
-assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; \
-assert os.path.exists('/app/admin/main.py'), 'main.py not found'; \
-print('✅ Application files verified')"]
+RUN ["/usr/bin/python3.11", "-c", "import os; assert os.path.exists('/app/admin/entrypoint.py'), 'entrypoint.py not found'; assert os.path.exists('/app/admin/main.py'), 'main.py not found'; print('✅ Application files verified')"]
 
 EXPOSE 8083
 

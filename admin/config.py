@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DatabaseConfig:
     """Database configuration"""
-    mongodb_uri: str = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or ""
+    mongodb_uri: str = ""
     mongodb_database: str = "lucid"
     redis_url: str = "redis://redis-distroless:6379/0"
     elasticsearch_url: str = "http://elasticsearch-distroless:9200"
@@ -31,7 +31,7 @@ class DatabaseConfig:
 @dataclass
 class SecurityConfig:
     """Security configuration"""
-    jwt_secret_key: str = "lucid-admin-jwt-secret-key-change-in-production"
+    jwt_secret_key: str = ""
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 15
     jwt_refresh_token_expire_days: int = 7
@@ -56,6 +56,10 @@ class ServiceConfig:
     workers: int = 1
     max_connections: int = 1000
     keep_alive_timeout: int = 5
+    api_docs_path: str = "/admin/docs"
+    api_redoc_path: str = "/admin/redoc"
+    api_openapi_path: str = "/admin/openapi.json"
+    api_prefix: str = "/admin/api/v1"
 
 
 @dataclass
@@ -73,6 +77,14 @@ class RBACConfig:
         "operator": ["read_only"],
         "read_only": []
     })
+    
+    # Admin Controller specific
+    key_rotation_interval_days: int = 30
+    admin_session_timeout_hours: int = 8
+    governance_quorum_pct: float = 0.67
+    policy_cache_ttl_sec: int = 300
+    multisig_threshold: int = 3
+    multisig_total: int = 5
 
 
 @dataclass
@@ -122,6 +134,12 @@ class AdminConfig:
         "http://localhost:3000",
         "http://localhost:8083"
     ])
+    cors_allow_credentials: bool = True
+    cors_allow_methods: List[str] = field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+    cors_allow_headers: List[str] = field(default_factory=lambda: ["*"])
+    
+    # Trusted hosts
+    trusted_hosts: List[str] = field(default_factory=lambda: ["admin.lucid.local", "localhost", "127.0.0.1"])
     
     # Rate limiting
     rate_limit_requests: int = 1000
@@ -144,30 +162,36 @@ class AdminConfig:
     def _load_from_environment(self):
         """Load configuration from environment variables"""
         # Database configuration
-        self.database.mongodb_uri = os.getenv(
-            "MONGODB_URI", 
-            self.database.mongodb_uri
-        )
-        self.database.redis_url = os.getenv(
-            "REDIS_URL", 
-            self.database.redis_url
-        )
-        self.database.elasticsearch_url = os.getenv(
-            "ELASTICSEARCH_URL", 
-            self.database.elasticsearch_url
-        )
+        self.database.mongodb_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or self.database.mongodb_uri
+        self.database.mongodb_database = os.getenv("MONGODB_DATABASE", self.database.mongodb_database)
+        self.database.redis_url = os.getenv("REDIS_URL", self.database.redis_url)
+        self.database.elasticsearch_url = os.getenv("ELASTICSEARCH_URL", self.database.elasticsearch_url)
+        try:
+            self.database.connection_timeout = int(os.getenv("DATABASE_CONNECTION_TIMEOUT", str(self.database.connection_timeout)))
+            self.database.max_pool_size = int(os.getenv("DATABASE_MAX_POOL_SIZE", str(self.database.max_pool_size)))
+            self.database.min_pool_size = int(os.getenv("DATABASE_MIN_POOL_SIZE", str(self.database.min_pool_size)))
+        except ValueError:
+            pass
         
         # Security configuration
-        self.security.jwt_secret_key = os.getenv(
-            "JWT_SECRET_KEY", 
-            self.security.jwt_secret_key
-        )
-        self.security.jwt_algorithm = os.getenv(
-            "JWT_ALGORITHM", 
-            self.security.jwt_algorithm
-        )
+        self.security.jwt_secret_key = os.getenv("JWT_SECRET_KEY", self.security.jwt_secret_key)
+        self.security.jwt_algorithm = os.getenv("JWT_ALGORITHM", self.security.jwt_algorithm)
+        try:
+            self.security.jwt_access_token_expire_minutes = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", str(self.security.jwt_access_token_expire_minutes)))
+            self.security.jwt_refresh_token_expire_days = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", str(self.security.jwt_refresh_token_expire_days)))
+            self.security.password_min_length = int(os.getenv("PASSWORD_MIN_LENGTH", str(self.security.password_min_length)))
+            self.security.session_timeout_hours = int(os.getenv("SESSION_TIMEOUT_HOURS", str(self.security.session_timeout_hours)))
+            self.security.max_login_attempts = int(os.getenv("MAX_LOGIN_ATTEMPTS", str(self.security.max_login_attempts)))
+            self.security.lockout_duration_minutes = int(os.getenv("LOCKOUT_DURATION_MINUTES", str(self.security.lockout_duration_minutes)))
+            self.security.totp_window = int(os.getenv("TOTP_WINDOW", str(self.security.totp_window)))
+        except ValueError:
+            pass
+        self.security.password_require_special_chars = os.getenv("PASSWORD_REQUIRE_SPECIAL_CHARS", "true").lower() == "true"
+        self.security.totp_issuer = os.getenv("TOTP_ISSUER", self.security.totp_issuer)
         
         # Service configuration
+        self.service.service_name = os.getenv("ADMIN_INTERFACE_SERVICE_NAME", self.service.service_name)
+        self.service.version = os.getenv("ADMIN_INTERFACE_VERSION", self.service.version)
         self.service.host = os.getenv("ADMIN_INTERFACE_HOST", os.getenv("ADMIN_HOST", self.service.host))
         try:
             port_str = os.getenv("ADMIN_INTERFACE_PORT", os.getenv("ADMIN_PORT", str(self.service.port)))
@@ -176,8 +200,59 @@ class AdminConfig:
                 raise ValueError(f"Port {self.service.port} out of range")
         except ValueError as e:
             logger.warning(f"Invalid ADMIN_INTERFACE_PORT/ADMIN_PORT, using default: {self.service.port}: {e}")
-        self.service.debug = os.getenv("ADMIN_DEBUG", "false").lower() == "true"
-        self.service.log_level = os.getenv("LOG_LEVEL", self.service.log_level)
+        self.service.debug = os.getenv("ADMIN_INTERFACE_DEBUG", os.getenv("ADMIN_DEBUG", "false")).lower() == "true"
+        self.service.log_level = os.getenv("ADMIN_INTERFACE_LOG_LEVEL", os.getenv("LOG_LEVEL", self.service.log_level))
+        try:
+            self.service.workers = int(os.getenv("ADMIN_INTERFACE_WORKERS", str(self.service.workers)))
+            self.service.max_connections = int(os.getenv("ADMIN_INTERFACE_MAX_CONNECTIONS", str(self.service.max_connections)))
+            self.service.keep_alive_timeout = int(os.getenv("ADMIN_INTERFACE_KEEP_ALIVE_TIMEOUT", str(self.service.keep_alive_timeout)))
+        except ValueError:
+            pass
+        self.service.api_docs_path = os.getenv("API_DOCS_PATH", self.service.api_docs_path)
+        self.service.api_redoc_path = os.getenv("API_REDOC_PATH", self.service.api_redoc_path)
+        self.service.api_openapi_path = os.getenv("API_OPENAPI_PATH", self.service.api_openapi_path)
+        self.service.api_prefix = os.getenv("API_PREFIX", self.service.api_prefix)
+        
+        # RBAC configuration
+        self.rbac.default_role = os.getenv("RBAC_DEFAULT_ROLE", self.rbac.default_role)
+        self.rbac.super_admin_role = os.getenv("RBAC_SUPER_ADMIN_ROLE", self.rbac.super_admin_role)
+        self.rbac.admin_role = os.getenv("RBAC_ADMIN_ROLE", self.rbac.admin_role)
+        self.rbac.operator_role = os.getenv("RBAC_OPERATOR_ROLE", self.rbac.operator_role)
+        self.rbac.read_only_role = os.getenv("RBAC_READ_ONLY_ROLE", self.rbac.read_only_role)
+        try:
+            self.rbac.permission_cache_ttl = int(os.getenv("RBAC_PERMISSION_CACHE_TTL", str(self.rbac.permission_cache_ttl)))
+            self.rbac.key_rotation_interval_days = int(os.getenv("KEY_ROTATION_INTERVAL_DAYS", str(self.rbac.key_rotation_interval_days)))
+            self.rbac.admin_session_timeout_hours = int(os.getenv("ADMIN_SESSION_TIMEOUT_HOURS", str(self.rbac.admin_session_timeout_hours)))
+            self.rbac.governance_quorum_pct = float(os.getenv("GOVERNANCE_QUORUM_PCT", str(self.rbac.governance_quorum_pct)))
+            self.rbac.policy_cache_ttl_sec = int(os.getenv("POLICY_CACHE_TTL_SEC", str(self.rbac.policy_cache_ttl_sec)))
+            self.rbac.multisig_threshold = int(os.getenv("MULTISIG_THRESHOLD", str(self.rbac.multisig_threshold)))
+            self.rbac.multisig_total = int(os.getenv("MULTISIG_TOTAL", str(self.rbac.multisig_total)))
+        except ValueError:
+            pass
+        
+        # Monitoring configuration
+        self.monitoring.metrics_enabled = os.getenv("METRICS_ENABLED", "true").lower() == "true"
+        self.monitoring.performance_monitoring = os.getenv("PERFORMANCE_MONITORING", "true").lower() == "true"
+        try:
+            self.monitoring.metrics_port = int(os.getenv("METRICS_PORT", str(self.monitoring.metrics_port)))
+            self.monitoring.health_check_interval = int(os.getenv("HEALTH_CHECK_INTERVAL", str(self.monitoring.health_check_interval)))
+            self.monitoring.system_metrics_interval = int(os.getenv("SYSTEM_METRICS_INTERVAL", str(self.monitoring.system_metrics_interval)))
+            self.monitoring.log_retention_days = int(os.getenv("LOG_RETENTION_DAYS", str(self.monitoring.log_retention_days)))
+            self.monitoring.audit_log_retention_days = int(os.getenv("AUDIT_LOG_RETENTION_DAYS", str(self.monitoring.audit_log_retention_days)))
+        except ValueError:
+            pass
+        
+        # Emergency configuration
+        self.emergency.emergency_lockdown_enabled = os.getenv("EMERGENCY_LOCKDOWN_ENABLED", "true").lower() == "true"
+        self.emergency.emergency_shutdown_enabled = os.getenv("EMERGENCY_SHUTDOWN_ENABLED", "true").lower() == "true"
+        self.emergency.session_termination_enabled = os.getenv("SESSION_TERMINATION_ENABLED", "true").lower() == "true"
+        self.emergency.node_maintenance_enabled = os.getenv("NODE_MAINTENANCE_ENABLED", "true").lower() == "true"
+        self.emergency.blockchain_pause_enabled = os.getenv("BLOCKCHAIN_PAUSE_ENABLED", "true").lower() == "true"
+        emergency_emails_env = os.getenv("EMERGENCY_NOTIFICATION_EMAILS")
+        if emergency_emails_env:
+            self.emergency.emergency_notification_emails = [
+                email.strip() for email in emergency_emails_env.split(",") if email.strip()
+            ]
         
         # External service URLs
         self.api_gateway_url = os.getenv("API_GATEWAY_URL", self.api_gateway_url)
@@ -187,17 +262,39 @@ class AdminConfig:
         self.auth_service_url = os.getenv("AUTH_SERVICE_URL", self.auth_service_url)
         # self.tron_payment_url removed for TRON isolation compliance
         
-        # CORS origins
+        # CORS configuration
         cors_origins_env = os.getenv("CORS_ORIGINS")
         if cors_origins_env:
-            self.cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+            self.cors_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+        self.cors_allow_credentials = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
+        cors_methods_env = os.getenv("CORS_ALLOW_METHODS")
+        if cors_methods_env:
+            self.cors_allow_methods = [method.strip() for method in cors_methods_env.split(",") if method.strip()]
+        cors_headers_env = os.getenv("CORS_ALLOW_HEADERS")
+        if cors_headers_env:
+            self.cors_allow_headers = [header.strip() for header in cors_headers_env.split(",") if header.strip()]
         
-        # Emergency notification emails
-        emergency_emails_env = os.getenv("EMERGENCY_NOTIFICATION_EMAILS")
-        if emergency_emails_env:
-            self.emergency.emergency_notification_emails = [
-                email.strip() for email in emergency_emails_env.split(",")
-            ]
+        # Trusted hosts
+        trusted_hosts_env = os.getenv("TRUSTED_HOSTS")
+        if trusted_hosts_env:
+            self.trusted_hosts = [host.strip() for host in trusted_hosts_env.split(",") if host.strip()]
+        
+        # Rate limiting
+        try:
+            self.rate_limit_requests = int(os.getenv("RATE_LIMIT_REQUESTS", str(self.rate_limit_requests)))
+            self.rate_limit_window = int(os.getenv("RATE_LIMIT_WINDOW", str(self.rate_limit_window)))
+            self.rate_limit_burst = int(os.getenv("RATE_LIMIT_BURST", str(self.rate_limit_burst)))
+        except ValueError:
+            pass
+        
+        # File upload limits
+        try:
+            self.max_upload_size = int(os.getenv("MAX_UPLOAD_SIZE", str(self.max_upload_size)))
+        except ValueError:
+            pass
+        allowed_types_env = os.getenv("ALLOWED_FILE_TYPES")
+        if allowed_types_env:
+            self.allowed_file_types = [ftype.strip() for ftype in allowed_types_env.split(",") if ftype.strip()]
     
     def _validate_config(self):
         """Validate configuration values"""
