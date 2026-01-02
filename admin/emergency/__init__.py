@@ -15,4 +15,8 @@ __all__ = [
     "EmergencySeverity",
     "EmergencyControl",
     "EmergencyEvent"
+<<<<<<< HEAD
 ]
+=======
+]
+>>>>>>> 26c93d2cdc3302d17d83c9a4bf10e5dedf1fb22f
