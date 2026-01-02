@@ -1,4 +1,6 @@
+
 #!/usr/bin/env python3
+
 """
 Lucid Admin Interface - User Management API
 Step 23: Admin Backend APIs Implementation
@@ -155,11 +157,11 @@ async def get_audit_logger() -> AuditLogger:
     }
 )
 async def list_users(
-    status: Optional[str] = Query(None, description="Filter by user status (active, suspended, banned)", example="active"),
-    role: Optional[str] = Query(None, description="Filter by user role", example="admin"),
-    search: Optional[str] = Query(None, description="Search by username or email", example="john"),
-    limit: int = Query(50, ge=1, le=1000, description="Number of results to return", example=50),
-    offset: int = Query(0, ge=0, description="Results offset", example=0),
+    status: Optional[str] = Query(None, description="Filter by user status (active, suspended, banned)", examples=["active"]),
+    role: Optional[str] = Query(None, description="Filter by user role", examples=["admin"]),
+    search: Optional[str] = Query(None, description="Search by username or email", examples=["john"]),
+    limit: int = Query(50, ge=1, le=1000, description="Number of results to return", examples=[50]),
+    offset: int = Query(0, ge=0, description="Results offset", examples=[0]),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
@@ -329,7 +331,7 @@ async def create_user(
     }
 )
 async def get_user(
-    user_id: str = Path(..., description="User ID", example="user-123"),
+    user_id: str = Path(..., description="User ID", examples=["user-123"]),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
@@ -391,7 +393,7 @@ async def get_user(
     }
 )
 async def update_user(
-    user_id: str = Path(..., description="User ID", example="user-123"),
+    user_id: str = Path(..., description="User ID", examples=["user-123"]),
     user_data: UserUpdateRequest = Body(..., description="User update data"),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
@@ -477,7 +479,7 @@ async def update_user(
     }
 )
 async def suspend_user(
-    user_id: str = Path(..., description="User ID", example="user-123"),
+    user_id: str = Path(..., description="User ID", examples=["user-123"]),
     suspension_data: UserSuspensionRequest = Body(..., description="Suspension details"),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
@@ -567,7 +569,7 @@ async def suspend_user(
     }
 )
 async def activate_user(
-    user_id: str = Path(..., description="User ID", example="user-123"),
+    user_id: str = Path(..., description="User ID", examples=["user-123"]),
     activation_data: UserActivationRequest = Body(..., description="Activation details"),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
@@ -654,8 +656,8 @@ async def activate_user(
     }
 )
 async def assign_user_role(
-    user_id: str = Path(..., description="User ID", example="user-123"),
-    role: str = Body(..., description="Role to assign", example="admin"),
+    user_id: str = Path(..., description="User ID", examples=["user-123"]),
+    role: str = Body(..., description="Role to assign", examples=["admin"]),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
