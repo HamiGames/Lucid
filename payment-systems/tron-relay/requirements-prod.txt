@@ -1,0 +1,12 @@
+# Production dependencies for LUCID TRON Relay
+# Additional packages for production deployment
+
+# Process management
+gunicorn>=21.0.0,<22.0.0
+
+# Performance
+uvloop>=0.19.0,<1.0.0
+
+# Health checks
+psutil>=5.9.0,<6.0.0
+
