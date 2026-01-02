@@ -1,3 +1,4 @@
+
 """
 Common Models
 
@@ -13,13 +14,13 @@ import uuid
 
 class ErrorDetail(BaseModel):
     """Error detail information"""
-    code: str = Field(..., example="LUCID_ERR_1001")
-    message: str = Field(..., example="Invalid request data")
+    code: str = Field(..., examples=["LUCID_ERR_1001"])
+    message: str = Field(..., examples=["Invalid request data"])
     details: Optional[Dict[str, Any]] = Field(None)
     request_id: str = Field(...)
     timestamp: datetime = Field(...)
-    service: str = Field(..., example="api-gateway")
-    version: str = Field(..., example="v1")
+    service: str = Field(..., examples=["api-gateway"])
+    version: str = Field(..., examples=["v1"])
     
     class Config:
         json_encoders = {
@@ -48,11 +49,11 @@ class PaginationInfo(BaseModel):
 
 class ServiceInfo(BaseModel):
     """Service information response"""
-    service_name: str = Field(..., example="api-gateway")
-    version: str = Field(..., example="1.0.0")
+    service_name: str = Field(..., examples=["api-gateway"])
+    version: str = Field(..., examples=["1.0.0"])
     build_date: datetime = Field(...)
-    environment: str = Field(..., example="production")
-    features: list = Field(..., example=["authentication", "rate_limiting", "ssl_termination"])
+    environment: str = Field(..., examples=["production"])
+    features: list = Field(..., examples=[["authentication", "rate_limiting", "ssl_termination"]])
     
     class Config:
         json_encoders = {
@@ -64,8 +65,8 @@ class HealthStatus(BaseModel):
     """Health status response"""
     status: str = Field(..., pattern="^(healthy|unhealthy|degraded)$")
     timestamp: datetime = Field(...)
-    service: str = Field(..., example="api-gateway")
-    version: str = Field(..., example="1.0.0")
+    service: str = Field(..., examples=["api-gateway"])
+    version: str = Field(..., examples=["1.0.0"])
     dependencies: Dict[str, str] = Field(..., description="Dependency health status")
     uptime: int = Field(..., description="Uptime in seconds")
     response_time: float = Field(..., description="Average response time in milliseconds")
@@ -74,4 +75,3 @@ class HealthStatus(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
-

@@ -53,7 +53,7 @@ from admin.api.audit import router as audit_router
 from admin.api.emergency import router as emergency_router
 from admin.rbac.manager import RBACManager, get_rbac_manager
 from admin.audit.logger import AuditLogger
-from admin.emergency.controls import EmergencyController, get_emergency_controller
+from admin.emergency.controls import EmergencyControls, get_emergency_controls
 from admin.services import get_service_client, get_service_discovery, get_service_registry
 from admin.services.service_client import close_service_client
 from admin.services.service_discovery import close_service_discovery
@@ -72,7 +72,7 @@ security = HTTPBearer()
 # Global instances
 admin_controller: AdminController = None
 rbac_manager: RBACManager = None
-emergency_controller: EmergencyController = None
+emergency_controls: EmergencyControls = None
 audit_logger: AuditLogger = None
 service_client = None
 service_discovery = None
@@ -82,7 +82,7 @@ service_registry = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global admin_controller, rbac_manager, emergency_controller, audit_logger
+    global admin_controller, rbac_manager, emergency_controls, audit_logger
     global service_client, service_discovery, service_registry
     
     logger.info("Starting Lucid Admin Interface...")
@@ -111,8 +111,8 @@ async def lifespan(app: FastAPI):
         logger.info("RBAC manager initialized")
         
         # Initialize emergency controller
-        emergency_controller = get_emergency_controller()
-        await emergency_controller.initialize()
+        emergency_controls = get_emergency_controls()
+        await emergency_controls.initialize()
         logger.info("Emergency controller initialized")
         
         # Initialize audit logger
@@ -158,8 +158,8 @@ async def lifespan(app: FastAPI):
         
         if audit_logger:
             await audit_logger.close()
-        if emergency_controller:
-            await emergency_controller.close()
+        if emergency_controls:
+            await emergency_controls.close()
         if rbac_manager:
             await rbac_manager.close()
         if admin_controller:
@@ -308,7 +308,7 @@ async def detailed_health_check(admin = Depends(get_current_admin)):
         components = {
             "admin_controller": admin_controller is not None,
             "rbac_manager": rbac_manager is not None,
-            "emergency_controller": emergency_controller is not None,
+            "emergency_controls": emergency_controls is not None,
             "audit_logger": audit_logger is not None
         }
         
