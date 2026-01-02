@@ -1,4 +1,6 @@
+
 #!/usr/bin/env python3
+
 """
 Lucid Admin Interface - Dashboard API
 Step 23: Admin Backend APIs Implementation
@@ -247,8 +249,8 @@ async def get_dashboard_overview(
     }
 )
 async def get_dashboard_metrics(
-    timeframe: str = Query("1h", description="Time range for metrics (1h, 6h, 24h, 7d, 30d)", example="1h"),
-    metric: str = Query("cpu", description="Metric type to retrieve (cpu, memory, disk, network, sessions)", example="cpu"),
+    timeframe: str = Query("1h", description="Time range for metrics (1h, 6h, 24h, 7d, 30d)", examples=["1h"]),
+    metric: str = Query("cpu", description="Metric type to retrieve (cpu, memory, disk, network, sessions)", examples=["cpu"]),
     admin: AdminAccount = Depends(get_current_admin),
     rbac: RBACManager = Depends(get_rbac_manager),
     audit: AuditLogger = Depends(get_audit_logger)
@@ -307,11 +309,7 @@ async def get_dashboard_metrics(
         )
 
 
-@router.websocket(
-    "/stream",
-    summary="Dashboard WebSocket stream",
-    description="Real-time dashboard updates via WebSocket. Provides live updates for system metrics, session changes, node status updates, blockchain updates, and system alerts"
-)
+@router.websocket("/stream")
 async def dashboard_stream(websocket: WebSocket):
     """
     Real-time dashboard updates via WebSocket
