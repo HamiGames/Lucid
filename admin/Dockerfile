@@ -193,25 +193,7 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Verify Python executable exists and verify no venv references in copied binaries
 # CRITICAL: Distroless python3-debian12 provides /usr/bin/python3 (not python3.11)
-RUN ["/usr/bin/python3", "-c", "import os, sys; \
-# Verify Python executable exists \
-assert os.path.exists('/usr/bin/python3'), 'CRITICAL: /usr/bin/python3 not found in distroless image'; \
-print('✅ Python executable verified: /usr/bin/python3'); \
-# Verify no venv references in binaries \
-bin_dir = '/usr/local/bin'; \
-scripts = [f for f in os.listdir(bin_dir) if os.path.isfile(os.path.join(bin_dir, f)) and os.access(os.path.join(bin_dir, f), os.X_OK)]; \
-venv_refs = []; \
-for script in scripts: \
-    script_path = os.path.join(bin_dir, script); \
-    try: \
-        with open(script_path, 'rb') as f: \
-            content = f.read(500); \
-            if b'/opt/venv' in content or b'venv/bin/python' in content: \
-                venv_refs.append(script); \
-    except Exception: \
-        pass; \
-assert len(venv_refs) == 0, f'CRITICAL: Found venv references in scripts: {venv_refs}'; \
-print('✅ No venv references in binaries')"]
+RUN ["/usr/bin/python3", "-c", "import os, sys; assert os.path.exists('/usr/bin/python3'), 'CRITICAL: /usr/bin/python3 not found in distroless image'; print('✅ Python executable verified: /usr/bin/python3'); bin_dir = '/usr/local/bin'; scripts = [f for f in os.listdir(bin_dir) if os.path.isfile(os.path.join(bin_dir, f)) and os.access(os.path.join(bin_dir, f), os.X_OK)]; venv_refs = []; [venv_refs.append(script) for script in scripts if os.path.exists(os.path.join(bin_dir, script)) and (open(os.path.join(bin_dir, script), 'rb').read(500).find(b'/opt/venv') >= 0 or open(os.path.join(bin_dir, script), 'rb').read(500).find(b'venv/bin/python') >= 0)]; assert len(venv_refs) == 0, f'CRITICAL: Found venv references in scripts: {venv_refs}'; print('✅ No venv references in binaries')"]
 
 # Runtime Verification of Packages
 # Use explicit /usr/bin/python3 path (distroless provides this, not python3.11)
@@ -221,37 +203,7 @@ RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/usr/loc
 COPY --chown=65532:65532 --from=builder /build/admin /app/admin
 
 # Verify application files, config files, service modules, and entrypoint shebang
-RUN ["/usr/bin/python3", "-c", "import os, sys; \
-sys.path.insert(0, '/app'); \
-# Verify entrypoint exists and has correct shebang \
-entrypoint_path = '/app/admin/entrypoint.py'; \
-assert os.path.exists(entrypoint_path), f'CRITICAL: entrypoint.py not found at {entrypoint_path}'; \
-assert os.path.isfile(entrypoint_path), f'CRITICAL: {entrypoint_path} is not a file'; \
-with open(entrypoint_path, 'rb') as f: \
-    first_line = f.readline().decode('utf-8', errors='ignore').strip(); \
-    assert first_line.startswith('#!'), f'CRITICAL: entrypoint.py missing shebang'; \
-    assert '/usr/bin/python3' in first_line or '/usr/bin/env python3' in first_line, \
-        f'CRITICAL: entrypoint.py has incorrect shebang: {first_line}. Expected #!/usr/bin/python3'; \
-print(f'✅ entrypoint.py verified with correct shebang: {first_line}'); \
-# Verify other application files \
-assert os.path.exists('/app/admin/main.py'), 'main.py not found'; \
-assert os.path.exists('/app/admin/config.py'), 'config.py not found'; \
-assert os.path.exists('/app/admin/config/health-schema.json'), 'health-schema.json not found'; \
-assert os.path.exists('/app/admin/config/metrics-schema.json'), 'metrics-schema.json not found'; \
-assert os.path.exists('/app/admin/config/rbac-schema.json'), 'rbac-schema.json not found'; \
-assert os.path.exists('/app/admin/config/config-schema.json'), 'config-schema.json not found'; \
-assert os.path.exists('/app/admin/config/api-schemas.json'), 'api-schemas.json not found'; \
-assert os.path.exists('/app/admin/config/operational-config.json'), 'operational-config.json not found'; \
-assert os.path.exists('/app/admin/config/admin-interface-config.yaml'), 'admin-interface-config.yaml not found'; \
-assert os.path.exists('/app/admin/config/operational-config.yaml'), 'operational-config.yaml not found'; \
-assert os.path.getsize('/app/admin/config/operational-config.yaml') > 0, 'operational-config.yaml is empty'; \
-assert os.path.exists('/app/admin/services'), 'services directory not found'; \
-assert os.path.exists('/app/admin/services/__init__.py'), 'services/__init__.py not found'; \
-assert os.path.exists('/app/admin/services/service_client.py'), 'services/service_client.py not found'; \
-assert os.path.exists('/app/admin/services/service_discovery.py'), 'services/service_discovery.py not found'; \
-assert os.path.exists('/app/admin/services/service_registry.py'), 'services/service_registry.py not found'; \
-from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; \
-print('✅ Application files, config files, and cross-container service modules verified')"]
+RUN ["/usr/bin/python3", "-c", "import os, sys; sys.path.insert(0, '/app'); ep = '/app/admin/entrypoint.py'; assert os.path.exists(ep), f'CRITICAL: entrypoint.py not found'; assert os.path.isfile(ep), f'CRITICAL: {ep} is not a file'; f = open(ep, 'rb'); first_line = f.readline().decode('utf-8', errors='ignore').strip(); f.close(); assert first_line.startswith('#!'), f'CRITICAL: entrypoint.py missing shebang'; assert '/usr/bin/python3' in first_line or '/usr/bin/env python3' in first_line, f'CRITICAL: entrypoint.py has incorrect shebang: {first_line}'; print(f'✅ entrypoint.py verified: {first_line}'); assert os.path.exists('/app/admin/main.py'), 'main.py not found'; assert os.path.exists('/app/admin/config.py'), 'config.py not found'; assert os.path.exists('/app/admin/config/health-schema.json'), 'health-schema.json not found'; assert os.path.exists('/app/admin/config/metrics-schema.json'), 'metrics-schema.json not found'; assert os.path.exists('/app/admin/config/rbac-schema.json'), 'rbac-schema.json not found'; assert os.path.exists('/app/admin/config/config-schema.json'), 'config-schema.json not found'; assert os.path.exists('/app/admin/config/api-schemas.json'), 'api-schemas.json not found'; assert os.path.exists('/app/admin/config/operational-config.json'), 'operational-config.json not found'; assert os.path.exists('/app/admin/config/admin-interface-config.yaml'), 'admin-interface-config.yaml not found'; assert os.path.exists('/app/admin/config/operational-config.yaml'), 'operational-config.yaml not found'; assert os.path.getsize('/app/admin/config/operational-config.yaml') > 0, 'operational-config.yaml is empty'; assert os.path.exists('/app/admin/services'), 'services directory not found'; assert os.path.exists('/app/admin/services/__init__.py'), 'services/__init__.py not found'; assert os.path.exists('/app/admin/services/service_client.py'), 'services/service_client.py not found'; assert os.path.exists('/app/admin/services/service_discovery.py'), 'services/service_discovery.py not found'; assert os.path.exists('/app/admin/services/service_registry.py'), 'services/service_registry.py not found'; from admin.services import ServiceClient, ServiceDiscovery, ServiceRegistry; print('✅ Application files, config files, and cross-container service modules verified')"]
 
 EXPOSE 8120
 
