@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Lucid Admin Interface - Emergency API Endpoints
 Step 24: Admin Container & Integration
@@ -13,7 +14,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 
-from admin.emergency.controls import get_emergency_controller, EmergencyController, EmergencyAction, EmergencyStatus
+from admin.emergency.controls import get_emergency_controls, EmergencyControls, EmergencyAction, EmergencyStatus, EmergencySeverity
 from admin.rbac.manager import get_rbac_manager, RBACManager
 
 logger = logging.getLogger(__name__)
@@ -59,10 +60,10 @@ class EmergencyStatsResponse(BaseModel):
 
 
 # Dependency functions
-async def get_emergency_service() -> EmergencyController:
+async def get_emergency_service() -> EmergencyControls:
     """Get emergency controller service"""
     try:
-        return get_emergency_controller()
+        return get_emergency_controls()
     except Exception as e:
         logger.error(f"Failed to get emergency service: {e}")
         raise HTTPException(
@@ -87,7 +88,7 @@ async def get_rbac_service() -> RBACManager:
 @router.post("/trigger", response_model=Dict[str, str])
 async def trigger_emergency(
     request: EmergencyTriggerRequest,
-    emergency_service: EmergencyController = Depends(get_emergency_service),
+    emergency_service: EmergencyControls = Depends(get_emergency_service),
     rbac_service: RBACManager = Depends(get_rbac_service)
 ):
     """Trigger emergency action"""
@@ -107,26 +108,25 @@ async def trigger_emergency(
         
         # Validate severity
         try:
-            severity = EmergencyStatus(request.severity)
+            severity = EmergencySeverity(request.severity)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid severity level: {request.severity}"
             )
         
-        # Trigger emergency
-        event_id = await emergency_service.trigger_emergency(
-            action=action,
-            triggered_by="admin_user",  # Would be actual user ID in real implementation
-            reason=request.reason,
-            details=request.details,
-            severity=severity
+        # Trigger emergency by activating the control
+        result = await emergency_service.activate_emergency_control(
+            control_id=f"emergency_{action.value}",
+            admin_id="admin_user",  # Would be actual user ID in real implementation
+            admin_username="admin_user",
+            force=True,
+            details=request.details
         )
         
         return {
-            "event_id": event_id,
-            "message": f"Emergency action {action.value} triggered successfully",
-            "status": "triggered"
+            "status": result.get("status", "triggered"),
+            "message": f"Emergency action {action.value} triggered successfully"
         }
         
     except HTTPException:
@@ -139,67 +139,53 @@ async def trigger_emergency(
         )
 
 
-@router.post("/resolve/{event_id}", response_model=Dict[str, str])
+@router.post("/resolve/{control_id}", response_model=Dict[str, str])
 async def resolve_emergency(
-    event_id: str,
+    control_id: str,
     request: EmergencyResolveRequest,
-    emergency_service: EmergencyController = Depends(get_emergency_service)
+    emergency_service: EmergencyControls = Depends(get_emergency_service)
 ):
     """Resolve emergency event"""
     try:
-        # Resolve emergency
-        success = await emergency_service.resolve_emergency(
-            event_id=event_id,
-            resolved_by="admin_user",  # Would be actual user ID in real implementation
-            resolution_notes=request.resolution_notes
+        # Deactivate emergency control
+        result = await emergency_service.deactivate_emergency_control(
+            control_id=control_id,
+            admin_id="admin_user",  # Would be actual user ID in real implementation
+            admin_username="admin_user",
+            details={"resolution_notes": request.resolution_notes}
         )
         
-        if success:
+        if result.get("status") in ["deactivated", "already_inactive"]:
             return {
-                "event_id": event_id,
+                "control_id": control_id,
                 "message": "Emergency resolved successfully",
                 "status": "resolved"
             }
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Emergency event {event_id} not found or already resolved"
+                detail=f"Emergency control {control_id} not found"
             )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to resolve emergency {event_id}: {e}")
+        logger.error(f"Failed to resolve emergency {control_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to resolve emergency"
         )
 
 
-@router.get("/active", response_model=List[EmergencyEventResponse])
+@router.get("/active", response_model=List[Dict[str, Any]])
 async def get_active_emergencies(
-    emergency_service: EmergencyController = Depends(get_emergency_service)
+    emergency_service: EmergencyControls = Depends(get_emergency_service)
 ):
     """Get active emergency events"""
     try:
-        emergencies = await emergency_service.get_active_emergencies()
+        status = await emergency_service.get_emergency_status()
         
-        response_emergencies = []
-        for emergency in emergencies:
-            response_emergencies.append(EmergencyEventResponse(
-                event_id=emergency.event_id,
-                action=emergency.action.value,
-                status=emergency.status.value,
-                triggered_by=emergency.triggered_by,
-                triggered_at=emergency.triggered_at,
-                reason=emergency.reason,
-                details=emergency.details,
-                resolved_at=emergency.resolved_at,
-                resolved_by=emergency.resolved_by,
-                metadata=emergency.metadata
-            ))
-        
-        return response_emergencies
+        return status.get("controls", [])
         
     except Exception as e:
         logger.error(f"Failed to get active emergencies: {e}")
@@ -209,31 +195,21 @@ async def get_active_emergencies(
         )
 
 
-@router.get("/history", response_model=List[EmergencyEventResponse])
+@router.get("/history", response_model=Dict[str, Any])
 async def get_emergency_history(
     limit: int = 100,
-    emergency_service: EmergencyController = Depends(get_emergency_service)
+    offset: int = 0,
+    emergency_service: EmergencyControls = Depends(get_emergency_service)
 ):
     """Get emergency history"""
     try:
-        emergencies = await emergency_service.get_emergency_history(limit=limit)
+        from datetime import datetime, timezone
+        events = await emergency_service.get_emergency_events(
+            limit=limit,
+            offset=offset
+        )
         
-        response_emergencies = []
-        for emergency in emergencies:
-            response_emergencies.append(EmergencyEventResponse(
-                event_id=emergency.event_id,
-                action=emergency.action.value,
-                status=emergency.status.value,
-                triggered_by=emergency.triggered_by,
-                triggered_at=emergency.triggered_at,
-                reason=emergency.reason,
-                details=emergency.details,
-                resolved_at=emergency.resolved_at,
-                resolved_by=emergency.resolved_by,
-                metadata=emergency.metadata
-            ))
-        
-        return response_emergencies
+        return events
         
     except Exception as e:
         logger.error(f"Failed to get emergency history: {e}")
@@ -243,22 +219,37 @@ async def get_emergency_history(
         )
 
 
-@router.get("/stats", response_model=EmergencyStatsResponse)
+@router.get("/stats", response_model=Dict[str, Any])
 async def get_emergency_stats(
-    emergency_service: EmergencyController = Depends(get_emergency_service)
+    emergency_service: EmergencyControls = Depends(get_emergency_service)
 ):
     """Get emergency statistics"""
     try:
-        stats = await emergency_service.get_emergency_stats()
+        status = await emergency_service.get_emergency_status()
         
-        return EmergencyStatsResponse(
-            total_emergencies=stats.get("total_emergencies", 0),
-            active_emergencies=stats.get("active_emergencies", 0),
-            status_counts=stats.get("status_counts", {}),
-            action_counts=stats.get("action_counts", {}),
-            current_lockdown_level=stats.get("current_lockdown_level", "normal"),
-            config=stats.get("config", {})
-        )
+        # Get event counts
+        events = await emergency_service.get_emergency_events(limit=1000)
+        
+        status_counts = {}
+        action_counts = {}
+        
+        for event in events.get("events", []):
+            status_val = event.get("status", "unknown")
+            action_val = event.get("action", "unknown")
+            
+            status_counts[status_val] = status_counts.get(status_val, 0) + 1
+            action_counts[action_val] = action_counts.get(action_val, 0) + 1
+        
+        return {
+            "total_emergencies": events.get("total", 0),
+            "active_emergencies": status.get("active_controls", 0),
+            "status_counts": status_counts,
+            "action_counts": action_counts,
+            "current_lockdown_level": "lockdown" if status.get("is_locked_down", False) else "normal",
+            "config": {
+                "new_sessions_enabled": status.get("new_sessions_enabled", True)
+            }
+        }
         
     except Exception as e:
         logger.error(f"Failed to get emergency stats: {e}")
@@ -276,7 +267,7 @@ async def get_available_actions():
             {
                 "action": action.value,
                 "description": f"Emergency action: {action.value}",
-                "severity_levels": ["alert", "warning", "critical", "lockdown"]
+                "severity_levels": ["low", "medium", "high", "critical"]
             }
             for action in EmergencyAction
         ]
@@ -296,18 +287,17 @@ async def get_available_actions():
 
 @router.get("/status")
 async def get_emergency_status(
-    emergency_service: EmergencyController = Depends(get_emergency_service)
+    emergency_service: EmergencyControls = Depends(get_emergency_service)
 ):
     """Get current emergency status"""
     try:
-        stats = await emergency_service.get_emergency_stats()
-        active_emergencies = await emergency_service.get_active_emergencies()
+        status = await emergency_service.get_emergency_status()
         
         return {
-            "status": "operational" if stats.get("active_emergencies", 0) == 0 else "emergency",
-            "lockdown_level": stats.get("current_lockdown_level", "normal"),
-            "active_emergencies": len(active_emergencies),
-            "total_emergencies": stats.get("total_emergencies", 0),
+            "status": "operational" if status.get("active_controls", 0) == 0 else "emergency",
+            "lockdown_level": "lockdown" if status.get("is_locked_down", False) else "normal",
+            "active_emergencies": status.get("active_controls", 0),
+            "new_sessions_enabled": status.get("new_sessions_enabled", True),
             "timestamp": datetime.utcnow().isoformat()
         }
         
@@ -321,17 +311,17 @@ async def get_emergency_status(
 
 @router.get("/health")
 async def emergency_health_check(
-    emergency_service: EmergencyController = Depends(get_emergency_service)
+    emergency_service: EmergencyControls = Depends(get_emergency_service)
 ):
     """Emergency service health check"""
     try:
         # Test emergency service
-        stats = await emergency_service.get_emergency_stats()
+        status = await emergency_service.get_emergency_status()
         
         return {
             "status": "healthy",
-            "service": "emergency-controller",
-            "active_emergencies": stats.get("active_emergencies", 0),
+            "service": "emergency-controls",
+            "active_emergencies": status.get("active_controls", 0),
             "timestamp": datetime.utcnow().isoformat()
         }
         
@@ -339,7 +329,7 @@ async def emergency_health_check(
         logger.error(f"Emergency service health check failed: {e}")
         return {
             "status": "unhealthy",
-            "service": "emergency-controller",
+            "service": "emergency-controls",
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat()
         }

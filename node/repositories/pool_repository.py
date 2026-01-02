@@ -13,6 +13,7 @@ This module provides data access methods for:
 """
 
 from typing import List, Optional, Dict, Any, Tuple
+import os
 from datetime import datetime, timezone
 import logging
 import asyncio
@@ -31,7 +32,10 @@ logger = logging.getLogger(__name__)
 class PoolRepository:
     """Repository for pool management operations"""
     
-    def __init__(self, mongo_url: str = "mongodb://localhost:27017", database_name: str = "lucid"):
+    def __init__(self, mongo_url: Optional[str] = None, database_name: Optional[str] = None):
+        """Initialize pool repository"""
+        self.mongo_url = mongo_url or os.getenv("MONGODB_URL")
+        self.database_name = database_name or os.getenv("MONGODB_DATABASE", "lucid")
         """Initialize pool repository"""
         self.mongo_url = mongo_url
         self.database_name = database_name
