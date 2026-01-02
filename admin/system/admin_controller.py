@@ -29,6 +29,11 @@ import blake3
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import bcrypt
 
+from admin.config import get_admin_config
+
+# Logger must be defined before use in exception handlers
+logger = logging.getLogger(__name__)
+
 # Import blockchain engine (optional - may not be available)
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -40,10 +45,6 @@ except ImportError as e:
     BLOCKCHAIN_ENGINE_AVAILABLE = False
     def get_blockchain_engine():
         raise RuntimeError("Blockchain engine not available")
-
-from admin.config import get_admin_config
-
-logger = logging.getLogger(__name__)
 
 # Admin Constants per Spec-1c, Spec-1d
 # These are now loaded from config via get_admin_config()
