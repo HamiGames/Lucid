@@ -154,15 +154,15 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime verification (per master-docker-design.md, Dockerfile-copy-pattern.md - CRITICAL)
-RUN python3.11 -c "import sys; import os; \
+RUN python3 -c "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
 assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker missing'; \
 import uvicorn; import fastapi; \
 print('✅ Packages verified in runtime stage')" && \
-python3.11 -c "import subprocess; result = subprocess.run(['/usr/sbin/xrdp', '-v'], capture_output=True); print('✅ XRDP binary verified:', result.returncode == 0)" && \
-python3.11 -c "import subprocess; result = subprocess.run(['openssl', 'version'], capture_output=True); print('✅ OpenSSL verified')"
+python3 -c "import subprocess; result = subprocess.run(['/usr/sbin/xrdp', '-v'], capture_output=True); print('✅ XRDP binary verified:', result.returncode == 0)" && \
+python3 -c "import subprocess; result = subprocess.run(['openssl', 'version'], capture_output=True); print('✅ OpenSSL verified')"
 
 # Application layout COPY (per dockerfile-design.md)
 COPY --chown=65532:65532 --from=builder /build/xrdp /app/xrdp
@@ -174,7 +174,7 @@ COPY --chown=65532:65532 --from=builder /build/session-controller /app/session-c
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
 
 # Verify source files (per master-docker-design.md)
-RUN python3.11 -c "import os; \
+RUN python3 -c "import os; \
 assert os.path.exists('/app/xrdp/main.py'), 'main.py missing'; \
 assert os.path.exists('/app/xrdp/entrypoint.py'), 'entrypoint missing'"
 
@@ -182,7 +182,7 @@ EXPOSE 3389
 
 # Health check (per service-mesh-design.md, master-docker-design.md)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD python3.11 -c "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"
+  CMD python3 -c "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"
 
 USER 65532:65532
 
