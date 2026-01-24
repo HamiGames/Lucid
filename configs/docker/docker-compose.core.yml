@@ -305,7 +305,7 @@ services:
           "CMD",
           "/usr/bin/python3",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8086/health', timeout=5).read(); exit(0)",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8086/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
