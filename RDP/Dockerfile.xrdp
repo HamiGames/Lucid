@@ -138,7 +138,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         xrdp \
-        xrdp-sesman \
+        xrdp-pulseaudio-installer \
         openssl \
         ca-certificates \
         libssl3 \
@@ -162,7 +162,7 @@ assert os.path.exists(site_packages), site_packages + ' does not exist'; \
 assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker missing'; \
 import uvicorn; import fastapi; \
 print('✅ Packages verified in runtime stage')" && \
-python3.11 -c "import subprocess; result = subprocess.run(['/usr/sbin/xrdp', '--version'], capture_output=True); print('✅ XRDP binary verified:', result.returncode == 0)" && \
+python3.11 -c "import subprocess; result = subprocess.run(['/usr/sbin/xrdp', '-v'], capture_output=True); print('✅ XRDP binary verified:', result.returncode == 0)" && \
 python3.11 -c "import subprocess; result = subprocess.run(['openssl', 'version'], capture_output=True); print('✅ OpenSSL verified')"
 
 # Application layout COPY (per dockerfile-design.md)

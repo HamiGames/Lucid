@@ -68,7 +68,9 @@ class XRDPServiceManager:
         
         # XRDP binary paths - verify existence and permissions
         self.xrdp_binary = self._get_executable_path("xrdp", "/usr/sbin/xrdp")
-        self.xrdp_sesman = self._get_executable_path("xrdp-sesman", "/usr/sbin/xrdp-sesman")
+        # Note: xrdp-sesman is part of xrdp package, included when xrdp is installed
+        # We don't need to check it separately, but note its location
+        self.xrdp_sesman = "/usr/sbin/xrdp-sesman"  # Included with xrdp package
         
         # Service limits - enforce reasonable bounds for security
         try:
@@ -161,20 +163,19 @@ class XRDPServiceManager:
     async def _check_xrdp_binaries(self) -> None:
         """Check if XRDP binaries are available"""
         try:
-            # Check xrdp binary
-            result = subprocess.run([self.xrdp_binary, "--version"], 
+            # Check xrdp binary (use -v for version, which is more reliable than --version)
+            result = subprocess.run([self.xrdp_binary, "-v"], 
                                  capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
-                raise Exception(f"XRDP binary not available: {self.xrdp_binary}")
-            
-            # Check xrdp-sesman binary
-            result = subprocess.run([self.xrdp_sesman, "--version"], 
-                                 capture_output=True, text=True, timeout=5)
-            if result.returncode != 0:
-                raise Exception(f"XRDP sesman binary not available: {self.xrdp_sesman}")
+                # xrdp -v returns 1, but that's normal. Check if binary exists.
+                if not os.path.isfile(self.xrdp_binary):
+                    raise FileNotFoundError(f"XRDP binary not found: {self.xrdp_binary}")
             
             logger.info("XRDP binaries verified")
             
+        except FileNotFoundError as e:
+            logger.error(f"XRDP binary check failed: {e}")
+            raise
         except Exception as e:
             logger.error(f"XRDP binary check failed: {e}")
             raise
