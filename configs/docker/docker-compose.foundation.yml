@@ -300,8 +300,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
     networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.14
+      - lucid-pi-network
     ports:
       - "${AUTH_SERVICE_PORT:-8089}:${AUTH_SERVICE_PORT:-8089}"
     depends_on:
