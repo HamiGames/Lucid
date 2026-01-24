@@ -92,11 +92,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs:rw
       - blockchain-cache:/tmp/blockchain
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - BLOCKCHAIN_ENGINE_HOST=blockchain-engine
-      - BLOCKCHAIN_ENGINE_PORT=8084
-      - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - BLOCKCHAIN_ENGINE_HOST=${BLOCKCHAIN_ENGINE_HOST:-blockchain-engine}
+      - BLOCKCHAIN_ENGINE_PORT=${BLOCKCHAIN_ENGINE_PORT:-8084}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
     user: "65532:65532"
@@ -224,9 +224,10 @@ services:
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
       - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
-      - SESSION_ANCHORING_PORT=8085
-      - SESSION_ANCHORING_HEALTH_PATH=/health
-      - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
+      - SESSION_ANCHORING_HOST=${SESSION_ANCHORING_HOST:-127.0.0.1}
+      - SESSION_ANCHORING_PORT=${SESSION_ANCHORING_PORT:-8085}
+      - SESSION_ANCHORING_HEALTH_PATH=${SESSION_ANCHORING_HEALTH_PATH:-/health}
+      - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=${SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT:-10}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -281,11 +282,11 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
       - block-manager-cache:/tmp/blocks
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - BLOCK_MANAGER_HOST=0.0.0.0
-      - BLOCK_MANAGER_PORT=8086
-      - BLOCK_MANAGER_URL=http://block-manager:8086
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - BLOCK_MANAGER_HOST=${BLOCK_MANAGER_HOST:-127.0.0.1}
+      - BLOCK_MANAGER_PORT=${BLOCK_MANAGER_PORT:-8086}
+      - BLOCK_MANAGER_URL=${BLOCK_MANAGER_URL:-http://block-manager:8086}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
@@ -344,8 +345,8 @@ services:
       - data-chain-cache:/tmp/chain
       - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
     environment:
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - DATA_CHAIN_PORT=${DATA_CHAIN_PORT:-8087}
       - DATA_CHAIN_URL=${DATA_CHAIN_URL:-http://data-chain:8087}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}

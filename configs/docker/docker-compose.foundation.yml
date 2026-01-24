@@ -227,7 +227,7 @@ services:
       - redis-cache:/var/cache/redis
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD not set}
-      - REDIS_HOST=0.0.0.0
+      - REDIS_HOST=${REDIS_HOST:-0.0.0.0}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_MAX_MEMORY=${REDIS_MAX_MEMORY:-512mb}
       - REDIS_MAX_MEMORY_POLICY=${REDIS_MAX_MEMORY_POLICY:-allkeys-lru}
