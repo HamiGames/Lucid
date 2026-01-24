@@ -138,7 +138,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         xrdp \
-        xrdp-pulseaudio-installer \
         openssl \
         ca-certificates \
         libssl3 \
