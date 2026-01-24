@@ -7,6 +7,7 @@ Includes database connections, Redis settings, and other configuration options.
 
 import os
 from typing import Optional, List
+import json
 from pydantic import Field, AliasChoices, model_validator, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,7 +18,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
-        extra="ignore"
+        extra="ignore",
+        json_schema_extra={
+            "CORS_ORIGINS": "Comma-separated list or JSON array of origins"
+        }
     )
     
     # API Settings
@@ -62,11 +66,11 @@ class Settings(BaseSettings):
     BLOCK_TIME: int = int(os.getenv("BLOCK_TIME", os.getenv("LUCID_BLOCK_TIME", os.getenv("CONSENSUS_BLOCK_TIME_SECONDS", "120"))))
     MAX_TRANSACTIONS_PER_BLOCK: int = int(os.getenv("MAX_TRANSACTIONS_PER_BLOCK", os.getenv("LUCID_MAX_BLOCK_TXS", "1000")))
     
-    # CORS Settings
-    CORS_ORIGINS: List[str] = ["*"]
+    # CORS Settings - Accept string or list, will be converted to list
+    CORS_ORIGINS: str = "*"  # Changed to string to avoid JSON parsing issues
     CORS_CREDENTIALS: bool = True
-    CORS_METHODS: List[str] = ["*"]
-    CORS_HEADERS: List[str] = ["*"]
+    CORS_METHODS: str = "*"  # Changed to string
+    CORS_HEADERS: str = "*"  # Changed to string
     
     # Redis connection details (derived from REDIS_URL if needed)
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
@@ -78,13 +82,14 @@ class Settings(BaseSettings):
     def parse_cors_list(cls, v):
         """Parse CORS list fields from string or list."""
         if v is None or v == "":
-            return ["*"]  # Default to allow all
+            return "*"  # Return string instead of list
         if isinstance(v, str):
-            # Handle comma-separated strings
-            return [item.strip() for item in v.split(",") if item.strip()]
+            # Keep as string - will be converted to list in model_validator
+            return v.strip()
         if isinstance(v, list):
-            return v
-        return ["*"]  # Fallback to default
+            # Convert list to comma-separated string
+            return ",".join(str(item).strip() for item in v if item)
+        return "*"  # Fallback to default
     
     @model_validator(mode="before")
     @classmethod
@@ -98,22 +103,37 @@ class Settings(BaseSettings):
             if "SECRET_KEY" not in data and "BLOCKCHAIN_SECRET_KEY" in data:
                 data["SECRET_KEY"] = data["BLOCKCHAIN_SECRET_KEY"]
             
-            # Handle CORS_ORIGINS - parse string values before pydantic-settings tries to parse as JSON
+            # Ensure CORS fields are strings to avoid JSON parsing errors
             for cors_field in ["CORS_ORIGINS", "CORS_METHODS", "CORS_HEADERS"]:
-                if cors_field in data:
+                if cors_field in data and data[cors_field]:
                     value = data[cors_field]
-                    if value is None or value == "":
-                        data[cors_field] = ["*"]
+                    # Convert to string if it's a list
+                    if isinstance(value, list):
+                        data[cors_field] = ",".join(str(item).strip() for item in value if item)
                     elif isinstance(value, str):
-                        # Parse comma-separated string or single value
-                        if value.strip() == "*":
-                            data[cors_field] = ["*"]
-                        else:
-                            # Split comma-separated values
-                            items = [item.strip() for item in value.split(",") if item.strip()]
-                            data[cors_field] = items if items else ["*"]
-                    # If it's already a list, leave it as is
+                        # Keep as is
+                        pass
+                    else:
+                        data[cors_field] = "*"
         return data
+    
+    def get_cors_origins_list(self) -> List[str]:
+        """Convert CORS_ORIGINS string to list for FastAPI."""
+        if self.CORS_ORIGINS == "*":
+            return ["*"]
+        return [item.strip() for item in self.CORS_ORIGINS.split(",") if item.strip()]
+    
+    def get_cors_methods_list(self) -> List[str]:
+        """Convert CORS_METHODS string to list for FastAPI."""
+        if self.CORS_METHODS == "*":
+            return ["*"]
+        return [item.strip() for item in self.CORS_METHODS.split(",") if item.strip()]
+    
+    def get_cors_headers_list(self) -> List[str]:
+        """Convert CORS_HEADERS string to list for FastAPI."""
+        if self.CORS_HEADERS == "*":
+            return ["*"]
+        return [item.strip() for item in self.CORS_HEADERS.split(",") if item.strip()]
 
 # Global settings instance
 settings = Settings()
