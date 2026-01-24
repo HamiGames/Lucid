@@ -158,40 +158,40 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 # Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
 # Verifies both package existence AND functionality by actually importing them
-RUN ["/usr/bin/python3", "-c", "import sys; import os; \
-site_packages = '/usr/local/lib/python3.11/site-packages'; \
-sys.path.insert(0, site_packages); \
-assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-# Verify critical packages exist \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
-assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
-assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
-assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
-assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
-assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
-assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml (PyYAML) not found'; \
-# Verify marker file \
-marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.exists(marker_path), 'marker file not found'; \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-# Actually import packages to verify functionality \
-import uvicorn; assert uvicorn, 'uvicorn import failed'; \
-import fastapi; assert fastapi, 'fastapi import failed'; \
-import pydantic; assert pydantic, 'pydantic import failed'; \
-import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
-import motor; assert motor, 'motor import failed'; \
-import pymongo; assert pymongo, 'pymongo import failed'; \
-import async_timeout; assert async_timeout, 'async_timeout import failed'; \
-import redis; assert redis, 'redis import failed'; \
-import httpx; assert httpx, 'httpx import failed'; \
-import psutil; assert psutil, 'psutil import failed'; \
-import yaml; assert yaml, 'yaml (PyYAML) import failed'; \
-import jsonschema; assert jsonschema, 'jsonschema import failed'; \
-print('✅ All packages verified in runtime stage (existence and functionality)')"]
+RUN python3 << 'EOF'
+import sys
+import os
+site_packages = '/usr/local/lib/python3.11/site-packages'
+sys.path.insert(0, site_packages)
+assert os.path.exists(site_packages), site_packages + ' does not exist'
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'
+assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'
+assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'
+assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'
+assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'
+assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml (PyYAML) not found'
+marker_path = os.path.join(site_packages, '.lucid-marker')
+assert os.path.exists(marker_path), 'marker file not found'
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path
+import uvicorn
+import fastapi
+import pydantic
+import pydantic_settings
+import motor
+import pymongo
+import async_timeout
+import redis
+import httpx
+import psutil
+import yaml
+import jsonschema
+print('✅ All packages verified in runtime stage (existence and functionality)')
+EOF
 
 # Copy application source
 COPY --from=builder --chown=65532:65532 /build/session_controller /app/session_controller
@@ -203,44 +203,41 @@ COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
 # Verify application source files were copied (per dockerfile-design.md)
 # This verification ensures all modules and files are present before runtime
-RUN ["/usr/bin/python3", "-c", "import os; \
-# Verify main package structure \
-assert os.path.exists('/app/session_controller'), 'session_controller directory not found'; \
-assert os.path.exists('/app/session_controller/__init__.py'), 'session_controller/__init__.py not found'; \
-assert os.path.exists('/app/session_controller/entrypoint.py'), 'entrypoint.py not found'; \
-assert os.path.exists('/app/session_controller/main.py'), 'main.py not found'; \
-assert os.path.exists('/app/session_controller/session_controller.py'), 'session_controller.py not found'; \
-assert os.path.exists('/app/session_controller/connection_manager.py'), 'connection_manager.py not found'; \
-# Verify configuration files \
-assert os.path.exists('/app/session_controller/config.py'), 'config.py not found'; \
-assert os.path.exists('/app/session_controller/config.yaml'), 'config.yaml not found'; \
-assert os.path.exists('/app/session_controller/schema_validator.py'), 'schema_validator.py not found'; \
-assert os.path.exists('/app/session_controller/openapi.yaml'), 'openapi.yaml not found'; \
-assert os.path.exists('/app/session_controller/health-schema.json'), 'health-schema.json not found'; \
-assert os.path.exists('/app/session_controller/session-schema.json'), 'session-schema.json not found'; \
-assert os.path.exists('/app/session_controller/metrics-schema.json'), 'metrics-schema.json not found'; \
-# Verify integration directory and all client files \
-assert os.path.exists('/app/session_controller/integration'), 'integration directory not found'; \
-assert os.path.exists('/app/session_controller/integration/__init__.py'), 'integration/__init__.py not found'; \
-assert os.path.exists('/app/session_controller/integration/integration_manager.py'), 'integration_manager.py not found'; \
-assert os.path.exists('/app/session_controller/integration/service_base.py'), 'service_base.py not found'; \
-assert os.path.exists('/app/session_controller/integration/session_recorder_client.py'), 'session_recorder_client.py not found'; \
-assert os.path.exists('/app/session_controller/integration/session_processor_client.py'), 'session_processor_client.py not found'; \
-assert os.path.exists('/app/session_controller/integration/xrdp_client.py'), 'xrdp_client.py not found'; \
-assert os.path.exists('/app/session_controller/integration/rdp_server_manager_client.py'), 'rdp_server_manager_client.py not found'; \
-assert os.path.exists('/app/session_controller/integration/rdp_monitor_client.py'), 'rdp_monitor_client.py not found'; \
-# Verify config directory \
-assert os.path.exists('/app/session_controller/config'), 'config directory not found'; \
-assert os.path.exists('/app/session_controller/config/env.rdp-controller.template'), 'env.rdp-controller.template not found'; \
-# Verify shared modules \
-assert os.path.exists('/app/security'), 'security directory not found'; \
-assert os.path.exists('/app/security/session_validator.py'), 'security/session_validator.py not found'; \
-assert os.path.exists('/app/protocol'), 'protocol directory not found'; \
-assert os.path.exists('/app/common'), 'common directory not found'; \
-assert os.path.exists('/app/common/__init__.py'), 'common/__init__.py not found'; \
-assert os.path.exists('/app/common/models.py'), 'common/models.py not found'; \
-assert os.path.exists('/app/__init__.py'), '__init__.py not found'; \
-print('✅ All application source files verified')"]
+RUN python3 << 'EOF'
+import os
+assert os.path.exists('/app/session_controller'), 'session_controller directory not found'
+assert os.path.exists('/app/session_controller/__init__.py'), 'session_controller/__init__.py not found'
+assert os.path.exists('/app/session_controller/entrypoint.py'), 'entrypoint.py not found'
+assert os.path.exists('/app/session_controller/main.py'), 'main.py not found'
+assert os.path.exists('/app/session_controller/session_controller.py'), 'session_controller.py not found'
+assert os.path.exists('/app/session_controller/connection_manager.py'), 'connection_manager.py not found'
+assert os.path.exists('/app/session_controller/config.py'), 'config.py not found'
+assert os.path.exists('/app/session_controller/config.yaml'), 'config.yaml not found'
+assert os.path.exists('/app/session_controller/schema_validator.py'), 'schema_validator.py not found'
+assert os.path.exists('/app/session_controller/openapi.yaml'), 'openapi.yaml not found'
+assert os.path.exists('/app/session_controller/health-schema.json'), 'health-schema.json not found'
+assert os.path.exists('/app/session_controller/session-schema.json'), 'session-schema.json not found'
+assert os.path.exists('/app/session_controller/metrics-schema.json'), 'metrics-schema.json not found'
+assert os.path.exists('/app/session_controller/integration'), 'integration directory not found'
+assert os.path.exists('/app/session_controller/integration/__init__.py'), 'integration/__init__.py not found'
+assert os.path.exists('/app/session_controller/integration/integration_manager.py'), 'integration_manager.py not found'
+assert os.path.exists('/app/session_controller/integration/service_base.py'), 'service_base.py not found'
+assert os.path.exists('/app/session_controller/integration/session_recorder_client.py'), 'session_recorder_client.py not found'
+assert os.path.exists('/app/session_controller/integration/session_processor_client.py'), 'session_processor_client.py not found'
+assert os.path.exists('/app/session_controller/integration/xrdp_client.py'), 'xrdp_client.py not found'
+assert os.path.exists('/app/session_controller/integration/rdp_server_manager_client.py'), 'rdp_server_manager_client.py not found'
+assert os.path.exists('/app/session_controller/integration/rdp_monitor_client.py'), 'rdp_monitor_client.py not found'
+assert os.path.exists('/app/session_controller/config'), 'config directory not found'
+assert os.path.exists('/app/session_controller/config/env.rdp-controller.template'), 'env.rdp-controller.template not found'
+assert os.path.exists('/app/security'), 'security directory not found'
+assert os.path.exists('/app/security/session_validator.py'), 'security/session_validator.py not found'
+assert os.path.exists('/app/protocol'), 'protocol directory not found'
+assert os.path.exists('/app/common'), 'common directory not found'
+assert os.path.exists('/app/common/__init__.py'), 'common/__init__.py not found'
+assert os.path.exists('/app/common/models.py'), 'common/models.py not found'
+assert os.path.exists('/app/__init__.py'), '__init__.py not found'
+print('✅ All application source files verified')
+EOF
 
 EXPOSE 8092
 
