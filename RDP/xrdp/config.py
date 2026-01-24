@@ -64,7 +64,7 @@ class XRDPAPISettings(BaseSettings):
     @field_validator('PORT', mode='before')
     @classmethod
     def validate_port_int(cls, v):
-        """Convert PORT string to int and validate port range"""
+        """Convert PORT string to int and validate port range for security"""
         if isinstance(v, str):
             if not v:
                 return 3389  # Default port
@@ -73,10 +73,35 @@ class XRDPAPISettings(BaseSettings):
             except ValueError:
                 raise ValueError(f'Port must be an integer, got: {v}')
         if isinstance(v, int):
-            if v < 1 or v > 65535:
-                raise ValueError('Port must be between 1 and 65535')
+            # Security: Ensure port is in safe range (not privileged, not system)
+            if v < 3000 or v > 65535:
+                raise ValueError('Port must be between 3000 and 65535 for security')
             return v
         return v
+    
+    @field_validator('LOG_LEVEL', mode='before')
+    @classmethod
+    def validate_log_level(cls, v):
+        """Validate LOG_LEVEL to prevent injection attacks"""
+        valid_levels = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
+        v_upper = str(v).upper().strip()
+        if v_upper not in valid_levels:
+            raise ValueError(f'LOG_LEVEL must be one of {valid_levels}, got: {v}')
+        return v_upper
+    
+    @field_validator('XRDP_PORT', mode='before')
+    @classmethod
+    def validate_xrdp_port(cls, v):
+        """Validate XRDP_PORT - convert to int and validate range"""
+        if not v:
+            return 3389
+        try:
+            port = int(v)
+            if port < 3000 or port > 65535:
+                raise ValueError('XRDP_PORT must be between 3000 and 65535 for security')
+            return port
+        except (ValueError, TypeError):
+            raise ValueError(f'XRDP_PORT must be a valid integer, got: {v}')
     
     @field_validator('XRDP_PORT', mode='before')
     @classmethod

@@ -1,7 +1,7 @@
 # LUCID XRDP Service Manager - XRDP Service Management
-# LUCID-STRICT Layer 2 Service Integration
+# LUCID-STRICT Layer 2 Service Integration with Security Hardening
 # Multi-platform support for Pi 5 ARM64
-# Distroless container implementation
+# Hardened container implementation with security best practices
 
 from __future__ import annotations
 
@@ -58,18 +58,30 @@ class XRDPServiceManager:
         self.monitor_tasks: Dict[str, asyncio.Task] = {}
         
         # Service configuration - use writable volume mount locations
-        # /app/config and /app/logs are volume mounts (writable in distroless container)
+        # /app/config and /app/logs are volume mounts (writable in container)
         self.base_config_path = Path("/app/config/servers")
         self.base_log_path = Path("/app/logs/servers")
         self.base_session_path = Path("/app/config/sessions")
         
-        # XRDP binary paths
-        self.xrdp_binary = "/usr/sbin/xrdp"
-        self.xrdp_sesman = "/usr/sbin/xrdp-sesman"
+        # Validate base paths for security (prevent directory traversal)
+        self._validate_base_paths()
         
-        # Service limits
-        self.max_processes = int(os.getenv("MAX_XRDP_PROCESSES", "10"))
-        self.process_timeout = int(os.getenv("PROCESS_TIMEOUT", "30"))
+        # XRDP binary paths - verify existence and permissions
+        self.xrdp_binary = self._get_executable_path("xrdp", "/usr/sbin/xrdp")
+        self.xrdp_sesman = self._get_executable_path("xrdp-sesman", "/usr/sbin/xrdp-sesman")
+        
+        # Service limits - enforce reasonable bounds for security
+        try:
+            max_procs = int(os.getenv("MAX_XRDP_PROCESSES", "10"))
+            self.max_processes = max(1, min(max_procs, 100))  # Clamp between 1-100
+        except (ValueError, TypeError):
+            self.max_processes = 10
+            
+        try:
+            timeout = int(os.getenv("PROCESS_TIMEOUT", "30"))
+            self.process_timeout = max(5, min(timeout, 300))  # Clamp between 5-300 seconds
+        except (ValueError, TypeError):
+            self.process_timeout = 30
         
         # Create directories
         self._create_directories()
@@ -79,6 +91,60 @@ class XRDPServiceManager:
         for path in [self.base_config_path, self.base_log_path, self.base_session_path]:
             path.mkdir(parents=True, exist_ok=True)
             logger.info(f"Created directory: {path}")
+    
+    def _validate_base_paths(self) -> None:
+        """Validate base paths to prevent directory traversal attacks"""
+        for path in [self.base_config_path, self.base_log_path, self.base_session_path]:
+            # Ensure path is absolute and resolve symlinks
+            resolved = path.resolve()
+            # Only allow paths under /app or /var/lib
+            if not (str(resolved).startswith("/app/") or str(resolved).startswith("/var/lib/")):
+                raise ValueError(f"Security: Path {path} outside allowed directories")
+            logger.info(f"Validated path: {resolved}")
+    
+    def _get_executable_path(self, executable_name: str, default_path: str) -> str:
+        """
+        Get path to executable with security validation.
+        
+        Args:
+            executable_name: Name of the executable
+            default_path: Default absolute path to check
+            
+        Returns:
+            Validated path to executable
+            
+        Raises:
+            RuntimeError if executable not found or not executable
+        """
+        # Check environment override (allow flexibility)
+        env_path = os.getenv(f"{executable_name.upper()}_PATH")
+        paths_to_check = [env_path] if env_path else []
+        paths_to_check.append(default_path)
+        
+        for path in paths_to_check:
+            if not path:
+                continue
+            
+            # Security: Only allow absolute paths
+            if not os.path.isabs(path):
+                logger.warning(f"Security: Rejecting relative path for {executable_name}: {path}")
+                continue
+            
+            # Security: Ensure path doesn't contain suspicious patterns
+            if ".." in path or path.count("//") > 1:
+                logger.warning(f"Security: Rejecting suspicious path for {executable_name}: {path}")
+                continue
+            
+            # Check if executable exists and is actually executable
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                logger.info(f"Found executable {executable_name} at {path}")
+                return path
+        
+        raise RuntimeError(
+            f"Security: Executable '{executable_name}' not found in secure locations. "
+            f"Checked: {paths_to_check}. Override with {executable_name.upper()}_PATH env var."
+        )
+
     
     async def initialize(self) -> None:
         """Initialize XRDP service manager"""
@@ -165,23 +231,39 @@ class XRDPServiceManager:
     async def _start_xrdp_process(self, xrdp_process: XRDPProcess) -> None:
         """Start XRDP process"""
         try:
-            # Build command
+            # Validate paths for security (prevent directory traversal)
+            config_file = xrdp_process.config_path / "xrdp.ini"
+            if not str(config_file.resolve()).startswith(str(self.base_config_path.resolve())):
+                raise ValueError("Security: Config path outside allowed directory")
+            
+            log_file = xrdp_process.log_path / "xrdp.log"
+            if not str(log_file.resolve()).startswith(str(self.base_log_path.resolve())):
+                raise ValueError("Security: Log path outside allowed directory")
+            
+            # Validate port is in safe range
+            if xrdp_process.port < 3000 or xrdp_process.port > 65535:
+                raise ValueError(f"Security: Port {xrdp_process.port} outside safe range (3000-65535)")
+            
+            # Build command with safety - NEVER use shell=True
             cmd = [
                 self.xrdp_binary,
                 "--port", str(xrdp_process.port),
-                "--config", str(xrdp_process.config_path / "xrdp.ini"),
+                "--config", str(config_file),
                 "--session-path", str(xrdp_process.session_path),
-                "--log-file", str(xrdp_process.log_path / "xrdp.log"),
+                "--log-file", str(log_file),
                 "--pid-file", str(xrdp_process.log_path / "xrdp.pid")
             ]
             
-            # Start process
+            # Start process with safety measures (shell=False is critical)
             xrdp_process.process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=str(xrdp_process.session_path),
-                preexec_fn=os.setsid  # Create new process group
+                preexec_fn=os.setsid,  # Create new process group
+                shell=False,  # CRITICAL: Never allow shell interpretation
+                user=os.getuid(),  # Run as current user (container user 65532)
+                env=self._get_safe_env()  # Use minimal, safe environment
             )
             
             # Wait for startup
@@ -194,13 +276,26 @@ class XRDPServiceManager:
                 logger.info(f"XRDP process started: PID {xrdp_process.pid}")
             else:
                 xrdp_process.status = ServiceStatus.FAILED
-                logger.error(f"XRDP process failed to start: {process_id}")
+                stderr_output = xrdp_process.process.stderr.read().decode('utf-8', errors='ignore') if xrdp_process.process.stderr else ""
+                logger.error(f"XRDP process failed to start. Error: {stderr_output}")
                 raise Exception("XRDP process failed to start")
                 
         except Exception as e:
             xrdp_process.status = ServiceStatus.FAILED
             logger.error(f"XRDP process start failed: {e}")
             raise
+    
+    def _get_safe_env(self) -> Dict[str, str]:
+        """Get safe environment variables for subprocess execution"""
+        # Only pass through essential variables, not the full environment
+        safe_env = {
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "HOME": "/tmp",
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "XRDP_PORT": os.getenv("XRDP_PORT", "3389"),
+        }
+        return safe_env
     
     async def stop_xrdp_service(self, process_id: str) -> Dict[str, Any]:
         """Stop XRDP service"""
@@ -305,25 +400,30 @@ class XRDPServiceManager:
         """Update process resource usage"""
         try:
             if xrdp_process.pid:
-                # Get process info using ps
+                # Get process info using ps - use list, never concatenate user input into command
                 cmd = ["ps", "-p", str(xrdp_process.pid), "-o", "pid,ppid,pcpu,pmem,etime,comm"]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, shell=False)
                 
                 if result.returncode == 0:
                     lines = result.stdout.strip().split('\n')
                     if len(lines) > 1:
                         data = lines[1].split()
                         if len(data) >= 6:
-                            xrdp_process.resource_usage = {
-                                "pid": data[0],
-                                "ppid": data[1],
-                                "cpu_percent": float(data[2]) if data[2] != '-' else 0.0,
-                                "memory_percent": float(data[3]) if data[3] != '-' else 0.0,
-                                "elapsed_time": data[4],
-                                "command": data[5],
-                                "timestamp": datetime.now(timezone.utc).isoformat()
-                            }
+                            try:
+                                xrdp_process.resource_usage = {
+                                    "pid": int(data[0]),  # Validate as int
+                                    "ppid": int(data[1]),
+                                    "cpu_percent": float(data[2]) if data[2] != '-' else 0.0,
+                                    "memory_percent": float(data[3]) if data[3] != '-' else 0.0,
+                                    "elapsed_time": str(data[4]),  # String is safe
+                                    "command": str(data[5]),  # String is safe
+                                    "timestamp": datetime.now(timezone.utc).isoformat()
+                                }
+                            except (ValueError, IndexError) as e:
+                                logger.warning(f"Failed to parse ps output: {e}")
             
+        except subprocess.TimeoutExpired:
+            logger.warning(f"ps command timed out for PID {xrdp_process.pid}")
         except Exception as e:
             logger.error(f"Resource usage update failed: {e}")
     
