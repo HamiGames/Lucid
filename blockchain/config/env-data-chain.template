@@ -200,11 +200,11 @@ EXPOSE_METRICS=false
 # =============================================================================
 HEALTH_CHECK_PATH=/health
 DATA_CHAIN_HEALTH_PATH=${HEALTH_CHECK_PATH}
-HEALTH_CHECK_INTERVAL=30s
-HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
 DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10
 HEALTH_CHECK_RETRIES=3
-HEALTH_CHECK_START_PERIOD=90s
+HEALTH_CHECK_START_PERIOD=90
 
 # =============================================================================
 # STORAGE CONFIGURATION
@@ -297,10 +297,10 @@ BLOCKCHAIN_ENGINE_HEALTH_PATH=/health
 # =============================================================================
 # SERVICE HEALTH CHECK INTERVALS
 # =============================================================================
-DATA_CHAIN_HEALTH_CHECK_INTERVAL=30s
+DATA_CHAIN_HEALTH_CHECK_INTERVAL=30
 DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10
-BLOCKCHAIN_ENGINE_HEALTH_CHECK_INTERVAL=30s
-BLOCKCHAIN_ENGINE_HEALTH_CHECK_TIMEOUT=10s
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_INTERVAL=30
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_TIMEOUT=10
 
 # =============================================================================
 # CACHING CONFIGURATION
