@@ -37,9 +37,11 @@ COPY electron-gui/jest.e2e.config.js ./
 # Install dependencies
 # Use npm install instead of npm ci since package-lock.json may not exist in source
 # This is typical for frontend projects where lock files are often gitignored during development
-# Note: Using --no-optional to skip problematic optional dependencies during Docker build
-# Optional dependencies (hardware wallets, Tor control) are not required for the admin interface
-RUN npm install --production --no-optional --legacy-peer-deps --no-audit --no-fund
+# Clear npm cache and remove authentication tokens to avoid expired token errors
+RUN npm cache clean --force && \
+    npm config delete registry && \
+    npm config set registry https://registry.npmjs.org/ && \
+    npm install --production --no-optional --legacy-peer-deps --no-audit --no-fund
 
 # Create marker files with actual content (ensures directory structure is locked in)
 RUN echo "LUCID_ELECTRON_GUI_ADMIN_BUILT_$(date +%s)" > /build/.build-marker && \

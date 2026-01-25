@@ -37,6 +37,9 @@ from tron.services.wallet_validator import WalletValidator
 from tron.services.wallet_access_control import WalletAccessControlService
 from tron.services.wallet_recovery import WalletRecoveryService
 from tron.api.wallets import router as wallets_router
+from tron.api.backup import router as backup_router
+from tron.api import access_control as access_control_module
+from tron.api import audit as audit_module
 
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -117,6 +120,10 @@ async def lifespan(app: FastAPI):
         wallet_manager_service = WalletManagerService()
         await wallet_manager_service.initialize()
         
+        # Set global service instances for API routers
+        access_control_module.access_control_service = access_control_service
+        audit_module.audit_service = audit_service
+        
         logger.info("TRON Wallet Manager Service started successfully")
         
         yield
@@ -160,6 +167,9 @@ app.add_middleware(
 
 # Include routers
 app.include_router(wallets_router, prefix="/api/v1/tron", tags=["wallets"])
+app.include_router(backup_router, tags=["backup"])
+app.include_router(access_control_module.router, tags=["access_control"])
+app.include_router(audit_module.router, tags=["audit"])
 
 
 # Health check endpoint
