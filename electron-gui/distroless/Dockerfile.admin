@@ -35,7 +35,9 @@ COPY electron-gui/jest.config.js ./
 COPY electron-gui/jest.e2e.config.js ./
 
 # Install dependencies
-RUN npm ci --only=production
+# Use npm install instead of npm ci since package-lock.json may not exist in source
+# This is typical for frontend projects where lock files are often gitignored during development
+RUN npm install --production --legacy-peer-deps --no-audit --no-fund
 
 # Create marker files with actual content (ensures directory structure is locked in)
 RUN echo "LUCID_ELECTRON_GUI_ADMIN_BUILT_$(date +%s)" > /build/.build-marker && \
@@ -49,14 +51,20 @@ COPY electron-gui/shared/ ./shared/
 COPY electron-gui/configs/ ./configs/
 COPY electron-gui/scripts/ ./scripts/
 
-# Verify source structure
+# Verify source structure including config .json files
 RUN test -d ./main && \
     test -d ./renderer/admin && \
     test -d ./renderer/common && \
     test -d ./shared && \
+    test -d ./configs && \
+    test -f ./configs/docker.config.json && \
+    test -f ./configs/env.development.json && \
+    test -f ./configs/env.production.json && \
+    test -f ./configs/tor.config.json && \
+    test -f ./configs/api-services.conf && \
     test -f .build-marker && \
     test -f .packages-marker && \
-    echo "✅ Source structure verified"
+    echo "✅ Source structure verified (configs and .json files present)"
 
 # Build the application
 RUN npm run build:admin
@@ -91,11 +99,16 @@ COPY --from=builder --chown=65532:65532 /build/.packages-marker /app/.packages-m
 COPY --from=builder --chown=65532:65532 /build/dist/ ./dist/
 COPY --from=builder --chown=65532:65532 /build/configs/ ./configs/
 
-# Verify markers and built output
+# Verify markers, built output, and config files
 RUN test -f /app/.build-marker && \
     test -f /app/.packages-marker && \
     test -d /app/dist && \
-    echo "✅ Build artifacts verified"
+    test -d /app/configs && \
+    test -f /app/configs/docker.config.json && \
+    test -f /app/configs/env.production.json && \
+    test -f /app/configs/tor.config.json && \
+    test -f /app/configs/api-services.conf && \
+    echo "✅ Build artifacts verified (configs and .json files present)"
 
 # Set environment variables with defaults
 ENV NODE_ENV=production

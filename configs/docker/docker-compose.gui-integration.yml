@@ -226,6 +226,169 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
+
+  # ===========================================
+  # ELECTRON GUI INTERFACES (Distroless)
+  # ===========================================
+
+  # Admin Interface - Distroless Electron GUI
+  admin-interface:
+    image: pickme/lucid-admin-interface:latest-arm64
+    container_name: lucid-admin-interface
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+    ports:
+      - "8120:8120"
+      - "8100:8100"
+    environment:
+      - NODE_ENV=production
+      - ELECTRON_GUI_PROFILE=admin
+      - ELECTRON_GUI_NETWORK=lucid-pi-network
+      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8097/api/v1
+      - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services.conf
+      - ADMIN_INTERFACE_HOST=0.0.0.0
+      - ADMIN_INTERFACE_PORT=8120
+      - LOG_LEVEL=INFO
+      - LUCID_ENV=production
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
+    networks:
+      - lucid-pi-network
+      - lucid-gui-network
+    depends_on:
+      gui-api-bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8120/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=admin-interface"
+      - "com.lucid.cluster=gui-integration"
+      - "com.lucid.profile=admin"
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+
+  # User Interface - Distroless Electron GUI
+  user-interface:
+    image: pickme/lucid-user-interface:latest-arm64
+    container_name: lucid-user-interface
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - ELECTRON_GUI_PROFILE=user
+      - ELECTRON_GUI_NETWORK=lucid-pi-network
+      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8097/api/v1
+      - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-user.conf
+      - LOG_LEVEL=INFO
+      - LUCID_ENV=production
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/user-interface:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/user-interface:/app/data
+    networks:
+      - lucid-pi-network
+      - lucid-gui-network
+    depends_on:
+      gui-api-bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=user-interface"
+      - "com.lucid.cluster=gui-integration"
+      - "com.lucid.profile=user"
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+
+  # Node Operator Interface - Distroless Electron GUI
+  node-interface:
+    image: pickme/lucid-node-interface:latest-arm64
+    container_name: lucid-node-interface
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - ELECTRON_GUI_PROFILE=node_operator
+      - ELECTRON_GUI_NETWORK=lucid-pi-network
+      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8097/api/v1
+      - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-node.conf
+      - LOG_LEVEL=INFO
+      - LUCID_ENV=production
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/node-interface:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/node-interface:/app/data
+    networks:
+      - lucid-pi-network
+      - lucid-gui-network
+    depends_on:
+      gui-api-bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.lucid.phase=gui"
+      - "com.lucid.service=node-interface"
+      - "com.lucid.cluster=gui-integration"
+      - "com.lucid.profile=node_operator"
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
 # ===========================================
 # NETWORKS
 # ===========================================

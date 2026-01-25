@@ -3,6 +3,7 @@
 # Configuration via .env.support, .env.tron-payout-router, .env.secrets, .env.foundation (compose-managed)
 # Build context: project root (all COPY paths prefixed with payment-systems/tron/)
 # Target image: pickme/lucid-payout-router:latest-arm64
+# Pattern: Dockerfile-copy-pattern.md + master-docker-design.md
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -11,6 +12,9 @@ ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.12
 
+# =============================================================================
+# Stage 1: Builder
+# =============================================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
@@ -26,9 +30,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
+# Install system dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
@@ -37,47 +44,67 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libxml2-dev \
         libxslt1-dev \
         zlib1g-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Create system directory markers (ensures COPY won't fail silently in distroless)
+RUN echo "LUCID_PAYOUT_ROUTER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_PAYOUT_ROUTER_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+# Create Python virtual environment
 RUN python -m venv /opt/venv
 
+# Upgrade pip, setuptools, wheel
 RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --upgrade pip setuptools wheel
 
+# Copy requirements
 COPY payment-systems/tron/requirements.txt ./requirements.txt
 COPY payment-systems/tron/requirements-prod.txt ./requirements-prod.txt
 
+# Install Python packages
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     /opt/venv/bin/pip install --prefer-binary -r requirements.txt -r requirements-prod.txt
 
 # Create marker files with actual content (ensures directory structure is locked in)
-# Following Dockerfile-copy-pattern.md pattern
-RUN echo "LUCID_PAYOUT_ROUTER_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python3.12/site-packages/.lucid-marker && \
+# Following Dockerfile-copy-pattern.md pattern - CRITICAL for distroless
+RUN echo "LUCID_PAYOUT_ROUTER_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python${PYTHON_VERSION}/site-packages/.lucid-marker && \
     echo "LUCID_PAYOUT_ROUTER_BINARIES_INSTALLED_$(date +%s)" > /opt/venv/bin/.lucid-marker && \
     chown -R 65532:65532 /opt/venv
 
-# Verify packages are installed
+# Verify critical packages installed in builder stage
 RUN /opt/venv/bin/python -c "import fastapi, uvicorn, tronpy, httpx, aiofiles, pydantic, pydantic_settings, motor; print('✅ critical packages installed')" && \
-    /opt/venv/bin/python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
-    /opt/venv/bin/python -c "import motor; print('motor location:', motor.__file__)" && \
-    test -d /opt/venv/lib/python3.12/site-packages && \
-    echo "Directory exists: /opt/venv/lib/python3.12/site-packages" && \
-    test -f /opt/venv/lib/python3.12/site-packages/.lucid-marker && \
-    test -s /opt/venv/lib/python3.12/site-packages/.lucid-marker && \
-    echo "✅ Marker file verified in builder (non-empty)"
+    /opt/venv/bin/python -c "import uvicorn; print('✅ uvicorn location:', uvicorn.__file__)" && \
+    /opt/venv/bin/python -c "import motor; print('✅ motor location:', motor.__file__)" && \
+    test -d /opt/venv/lib/python${PYTHON_VERSION}/site-packages && \
+    echo "✅ Directory exists: /opt/venv/lib/python${PYTHON_VERSION}/site-packages" && \
+    test -f /opt/venv/lib/python${PYTHON_VERSION}/site-packages/.lucid-marker && \
+    test -s /opt/venv/lib/python${PYTHON_VERSION}/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)" && \
+    ls -la /opt/venv/lib/python${PYTHON_VERSION}/site-packages/ | head -20 && \
+    echo "✅ Package count: $(ls -1 /opt/venv/lib/python${PYTHON_VERSION}/site-packages/ | wc -l)"
 
+# Copy application code
 COPY payment-systems/tron/ ./app/
 
+# Compile Python bytecode for faster startup
 RUN /opt/venv/bin/python -m compileall -b /app
 
+# =============================================================================
+# Stage 2: Runtime
+# =============================================================================
 FROM gcr.io/distroless/python3-debian12:nonroot
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
+# OCI Image metadata and Lucid-specific labels
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
       description="Lucid Payout Router service (distroless)" \
@@ -86,41 +113,55 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Payout Router" \
       org.opencontainers.image.description="TRON payout routing service for Lucid platform" \
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.plane="support" \
       com.lucid.service="payout-router" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="8092,8102" \
+      com.lucid.expose="8092" \
       com.lucid.cluster="payment" \
       com.lucid.env.config=".env.support,.env.tron-payout-router,.env.secrets,.env.foundation" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
       com.lucid.tor.compatible="true"
 
+# Environment configuration
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
-
-WORKDIR /app
-
-COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
-COPY --from=builder --chown=nonroot:nonroot /build/app /app
-
-EXPOSE 8092 8102
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8092'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
-
-USER 65532:65532
-
-# Default environment variables (can be overridden via .env files)
-ENV SERVICE_PORT=8092 \
+    PYTHONPATH=/app \
+    SERVICE_PORT=8092 \
     WORKERS=1 \
     SERVICE_HOST=0.0.0.0 \
     LOG_LEVEL=INFO
 
+WORKDIR /app
+
+# Copy system directories from builder (with content markers already in place)
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+
+# Copy Python virtual environment (directory already populated with packages + marker files)
+COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
+
+# Copy application code
+COPY --from=builder --chown=65532:65532 /build/app /app
+
+# Expose service port
+EXPOSE 8092
+
+# Health check - verifies service is running and responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8092'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
+
+# Set non-root user (65532 = nonroot in distroless)
+USER 65532:65532
+
+# Verify packages were copied successfully (fails build if missing)
+# Critical: This catches COPY failures immediately and prevents runtime errors
+RUN ["/opt/venv/bin/python3", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.12/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; print('✅ All packages verified in runtime stage')"]
+
+# Entrypoint and command
 ENTRYPOINT ["/opt/venv/bin/python3"]
-# Call payout_router_main.py which is the dedicated payout router entrypoint
 CMD ["-m", "payout_router_main"]
