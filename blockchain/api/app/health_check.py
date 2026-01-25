@@ -164,8 +164,6 @@ async def check_database_health() -> Dict[str, Any]:
     try:
         # Placeholder implementation
         # In production, this would check actual database connection
-        await asyncio.sleep(0.1)  # Simulate database check
-        
         return {
             "status": "healthy",
             "message": "Database connection is healthy",
@@ -187,8 +185,6 @@ async def check_redis_health() -> Dict[str, Any]:
     try:
         # Placeholder implementation
         # In production, this would check actual Redis connection
-        await asyncio.sleep(0.05)  # Simulate Redis check
-        
         return {
             "status": "healthy",
             "message": "Redis connection is healthy",
@@ -210,8 +206,6 @@ async def check_blockchain_sync_health() -> Dict[str, Any]:
     try:
         # Placeholder implementation
         # In production, this would check actual blockchain sync status
-        await asyncio.sleep(0.1)  # Simulate blockchain check
-        
         return {
             "status": "healthy",
             "message": "Blockchain is synchronized",
@@ -234,8 +228,6 @@ async def check_consensus_health() -> Dict[str, Any]:
     try:
         # Placeholder implementation
         # In production, this would check actual consensus health
-        await asyncio.sleep(0.05)  # Simulate consensus check
-        
         return {
             "status": "healthy",
             "message": "Consensus mechanism is healthy",
@@ -258,8 +250,6 @@ async def check_api_performance() -> Dict[str, Any]:
     try:
         # Placeholder implementation
         # In production, this would check actual API performance
-        await asyncio.sleep(0.02)  # Simulate performance check
-        
         return {
             "status": "healthy",
             "message": "API performance is within normal ranges",
@@ -282,8 +272,8 @@ async def check_system_resources() -> Dict[str, Any]:
     try:
         import psutil
         
-        # Get system metrics
-        cpu_percent = psutil.cpu_percent(interval=1)
+        # Get system metrics - use interval=None for non-blocking call (uses last measurement)
+        cpu_percent = psutil.cpu_percent(interval=None)
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
         
