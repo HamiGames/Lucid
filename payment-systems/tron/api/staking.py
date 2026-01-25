@@ -7,6 +7,7 @@ Distroless container: lucid-tron-payment-service:latest
 import asyncio
 import logging
 import secrets
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
@@ -133,10 +134,24 @@ class StakingListResponse(BaseModel):
     total_amount: float
     timestamp: str
 
-# In-memory staking storage (in production, use database)
-stakings_storage: Dict[str, Dict[str, Any]] = {}
-votes_storage: Dict[str, Dict[str, Any]] = {}
-delegations_storage: Dict[str, Dict[str, Any]] = {}
+# Service instance - will be injected by main entrypoint
+# For backward compatibility with direct API testing, initialize with None
+# The entrypoint will set this properly
+_staking_service = None
+
+def get_staking_service():
+    """Get the staking service instance"""
+    global _staking_service
+    if _staking_service is None:
+        # Fallback: lazy import for backward compatibility
+        from ..services.trx_staking import trx_staking_service
+        _staking_service = trx_staking_service
+    return _staking_service
+
+def set_staking_service(service):
+    """Set the staking service instance (called by entrypoint)"""
+    global _staking_service
+    _staking_service = service
 
 @router.post("/stake", response_model=StakingResponse)
 async def create_staking(request: StakingRequest):
@@ -154,41 +169,38 @@ async def create_staking(request: StakingRequest):
         if request.duration <= 0 or request.duration > 365:
             raise HTTPException(status_code=400, detail="Invalid staking duration (1-365 days)")
         
-        # Generate staking ID
-        staking_id = secrets.token_hex(16)
+        # Get staking service
+        service = get_staking_service()
+        if not service:
+            raise HTTPException(status_code=503, detail="Staking service not initialized")
         
-        # Calculate expiry date
-        expires_at = datetime.now() + timedelta(days=request.duration)
+        # Convert API request to service request format
+        from ..services.trx_staking import StakingRequest as ServiceStakingRequest, StakingType, ResourceType
         
-        # Create staking data
-        staking_data = {
-            "staking_id": staking_id,
-            "address": request.address,
-            "amount": request.amount,
-            "duration": request.duration,
-            "resource": request.resource.value,
-            "status": StakingStatus.ACTIVE.value,
-            "created_at": datetime.now().isoformat(),
-            "expires_at": expires_at.isoformat(),
-            "txid": None
-        }
+        # Determine staking type (default to freeze_balance)
+        staking_type = StakingType.FREEZE_BALANCE
+        resource_type = None
         
-        # Store staking
-        stakings_storage[staking_id] = staking_data
+        if request.resource == StakingResource.ENERGY:
+            resource_type = ResourceType.ENERGY
+        elif request.resource == StakingResource.BANDWIDTH:
+            resource_type = ResourceType.BANDWIDTH
         
-        logger.info(f"Created staking: {staking_id} for {request.address}, amount: {request.amount} TRX")
-        
-        return StakingResponse(
-            staking_id=staking_id,
-            address=request.address,
-            amount=request.amount,
-            duration=request.duration,
-            resource=request.resource.value,
-            status=StakingStatus.ACTIVE.value,
-            created_at=staking_data["created_at"],
-            expires_at=staking_data["expires_at"],
-            txid=None
+        service_request = ServiceStakingRequest(
+            wallet_address=request.address,
+            staking_type=staking_type,
+            amount_trx=request.amount,
+            duration_days=request.duration,
+            resource_type=resource_type,
+            private_key=request.private_key or os.getenv("DEFAULT_PRIVATE_KEY", "")
         )
+        
+        # Call service method
+        response = await service.stake_trx(service_request)
+        
+        logger.info(f"Created staking: {response.staking_id} for {request.address}, amount: {request.amount} TRX")
+        
+        return response
     except HTTPException:
         raise
     except Exception as e:
@@ -199,37 +211,28 @@ async def create_staking(request: StakingRequest):
 async def unstake(request: UnstakingRequest):
     """Unstake TRX"""
     try:
-        if request.staking_id not in stakings_storage:
+        # Get staking service
+        service = get_staking_service()
+        if not service:
+            raise HTTPException(status_code=503, detail="Staking service not initialized")
+        
+        # Verify staking exists
+        staking_records = await service.list_staking_records()
+        if not any(s.staking_id == request.staking_id for s in staking_records):
             raise HTTPException(status_code=404, detail="Staking not found")
         
-        staking_data = stakings_storage[request.staking_id]
+        # Call service method
+        from ..services.trx_staking import UnstakingRequest as ServiceUnstakingRequest
         
-        # Check if staking can be unstaked
-        if staking_data["status"] != StakingStatus.ACTIVE.value:
-            raise HTTPException(status_code=400, detail="Staking is not active")
-        
-        # Check if staking has expired
-        expires_at = datetime.fromisoformat(staking_data["expires_at"])
-        if datetime.now() < expires_at:
-            raise HTTPException(status_code=400, detail="Staking has not expired yet")
-        
-        # Generate transaction ID (in real implementation, this would be the actual transaction)
-        txid = secrets.token_hex(32)
-        
-        # Update staking status
-        staking_data["status"] = StakingStatus.INACTIVE.value
-        staking_data["txid"] = txid
-        
-        logger.info(f"Unstaked: {request.staking_id} for {staking_data['address']}")
-        
-        return UnstakingResponse(
+        service_request = ServiceUnstakingRequest(
             staking_id=request.staking_id,
-            address=staking_data["address"],
-            amount=staking_data["amount"],
-            status=StakingStatus.INACTIVE.value,
-            txid=txid,
-            timestamp=datetime.now().isoformat()
+            private_key=request.private_key or os.getenv("DEFAULT_PRIVATE_KEY", "")
         )
+        
+        response = await service.unstake_trx(service_request)
+        
+        logger.info(f"Unstaked: {request.staking_id}")
+        return response
     except HTTPException:
         raise
     except Exception as e:
@@ -250,25 +253,10 @@ async def vote_witness(request: VoteRequest):
         if request.vote_count <= 0:
             raise HTTPException(status_code=400, detail="Invalid vote count")
         
-        # Generate vote ID
+        # Note: This is a simplified implementation
+        # Full implementation would use the TRXStakingService
         vote_id = secrets.token_hex(16)
-        
-        # Generate transaction ID (in real implementation, this would be the actual transaction)
         txid = secrets.token_hex(32)
-        
-        # Create vote data
-        vote_data = {
-            "vote_id": vote_id,
-            "address": request.address,
-            "witness_address": request.witness_address,
-            "vote_count": request.vote_count,
-            "status": "completed",
-            "txid": txid,
-            "created_at": datetime.now().isoformat()
-        }
-        
-        # Store vote
-        votes_storage[vote_id] = vote_data
         
         logger.info(f"Voted: {request.address} -> {request.witness_address}, votes: {request.vote_count}")
         
@@ -301,26 +289,10 @@ async def delegate_resource(request: DelegationRequest):
         if request.amount <= 0:
             raise HTTPException(status_code=400, detail="Invalid delegation amount")
         
-        # Generate delegation ID
+        # Note: This is a simplified implementation
+        # Full implementation would use the TRXStakingService
         delegation_id = secrets.token_hex(16)
-        
-        # Generate transaction ID (in real implementation, this would be the actual transaction)
         txid = secrets.token_hex(32)
-        
-        # Create delegation data
-        delegation_data = {
-            "delegation_id": delegation_id,
-            "address": request.address,
-            "receiver_address": request.receiver_address,
-            "amount": request.amount,
-            "resource": request.resource.value,
-            "status": "completed",
-            "txid": txid,
-            "created_at": datetime.now().isoformat()
-        }
-        
-        # Store delegation
-        delegations_storage[delegation_id] = delegation_data
         
         logger.info(f"Delegated: {request.address} -> {request.receiver_address}, amount: {request.amount} TRX")
         
@@ -354,14 +326,13 @@ async def list_stakings(
         if limit <= 0 or limit > 1000:
             raise HTTPException(status_code=400, detail="Invalid limit parameter (1-1000)")
         
-        # Get all stakings
-        all_stakings = list(stakings_storage.values())
+        # Get staking service
+        service = get_staking_service()
+        if not service:
+            raise HTTPException(status_code=503, detail="Staking service not initialized")
         
-        # Apply address filter
-        if address:
-            if not address.startswith('T') or len(address) != 34:
-                raise HTTPException(status_code=400, detail="Invalid address format")
-            all_stakings = [s for s in all_stakings if s["address"] == address]
+        # Get all stakings from service
+        all_stakings = await service.list_staking_records(address)
         
         # Apply pagination
         total_count = len(all_stakings)
@@ -370,19 +341,19 @@ async def list_stakings(
         # Convert to response format
         stakings = []
         total_amount = 0.0
-        for staking_data in paginated_stakings:
+        for staking_info in paginated_stakings:
             stakings.append(StakingResponse(
-                staking_id=staking_data["staking_id"],
-                address=staking_data["address"],
-                amount=staking_data["amount"],
-                duration=staking_data["duration"],
-                resource=staking_data["resource"],
-                status=staking_data["status"],
-                created_at=staking_data["created_at"],
-                expires_at=staking_data["expires_at"],
-                txid=staking_data.get("txid")
+                staking_id=staking_info.staking_id,
+                address=staking_info.wallet_address,
+                amount=staking_info.amount_trx,
+                duration=staking_info.duration,
+                resource=staking_info.resource_type.value if staking_info.resource_type else "energy",
+                status=staking_info.status.value,
+                created_at=staking_info.created_at.isoformat(),
+                expires_at=staking_info.expires_at.isoformat() if staking_info.expires_at else None,
+                txid=staking_info.transaction_id
             ))
-            total_amount += staking_data["amount"]
+            total_amount += staking_info.amount_trx
         
         return StakingListResponse(
             stakings=stakings,
@@ -400,21 +371,28 @@ async def list_stakings(
 async def get_staking(staking_id: str):
     """Get staking by ID"""
     try:
-        if staking_id not in stakings_storage:
+        # Get staking service
+        service = get_staking_service()
+        if not service:
+            raise HTTPException(status_code=503, detail="Staking service not initialized")
+        
+        # Get all stakings to find the one with matching ID
+        all_stakings = await service.list_staking_records()
+        staking_info = next((s for s in all_stakings if s.staking_id == staking_id), None)
+        
+        if not staking_info:
             raise HTTPException(status_code=404, detail="Staking not found")
         
-        staking_data = stakings_storage[staking_id]
-        
         return StakingResponse(
-            staking_id=staking_data["staking_id"],
-            address=staking_data["address"],
-            amount=staking_data["amount"],
-            duration=staking_data["duration"],
-            resource=staking_data["resource"],
-            status=staking_data["status"],
-            created_at=staking_data["created_at"],
-            expires_at=staking_data["expires_at"],
-            txid=staking_data.get("txid")
+            staking_id=staking_info.staking_id,
+            address=staking_info.wallet_address,
+            amount=staking_info.amount_trx,
+            duration=staking_info.duration,
+            resource=staking_info.resource_type.value if staking_info.resource_type else "energy",
+            status=staking_info.status.value,
+            created_at=staking_info.created_at.isoformat(),
+            expires_at=staking_info.expires_at.isoformat() if staking_info.expires_at else None,
+            txid=staking_info.transaction_id
         )
     except HTTPException:
         raise
@@ -426,16 +404,21 @@ async def get_staking(staking_id: str):
 async def get_staking_statistics():
     """Get staking statistics"""
     try:
-        all_stakings = list(stakings_storage.values())
-        all_delegations = list(delegations_storage.values())
-        all_votes = list(votes_storage.values())
+        # Get staking service
+        service = get_staking_service()
+        if not service:
+            raise HTTPException(status_code=503, detail="Staking service not initialized")
         
-        total_staked = sum(s["amount"] for s in all_stakings if s["status"] == StakingStatus.ACTIVE.value)
-        total_delegated = sum(d["amount"] for d in all_delegations)
-        total_votes = sum(v["vote_count"] for v in all_votes)
+        # Get all stakings from service
+        all_stakings = await service.list_staking_records()
         
-        active_stakings = len([s for s in all_stakings if s["status"] == StakingStatus.ACTIVE.value])
-        active_delegations = len(all_delegations)
+        # Calculate statistics
+        total_staked = sum(s.amount_trx for s in all_stakings if s.status.value == StakingStatus.ACTIVE.value)
+        total_delegated = 0.0  # Would need to track delegations separately
+        total_votes = 0  # Would need to track votes separately
+        
+        active_stakings = len([s for s in all_stakings if s.status.value == StakingStatus.ACTIVE.value])
+        active_delegations = 0  # Would need delegation tracking
         
         # Calculate total rewards (mock calculation)
         total_rewards = total_staked * 0.05  # 5% annual reward rate
@@ -461,13 +444,11 @@ async def get_votes_for_address(address: str):
         if not address.startswith('T') or len(address) != 34:
             raise HTTPException(status_code=400, detail="Invalid address format")
         
-        # Get votes for address
-        address_votes = [v for v in votes_storage.values() if v["address"] == address]
-        
+        # For now, return empty list (would need vote tracking in service)
         return {
             "address": address,
-            "votes": address_votes,
-            "total_count": len(address_votes),
+            "votes": [],
+            "total_count": 0,
             "timestamp": datetime.now().isoformat()
         }
     except HTTPException:
@@ -484,13 +465,11 @@ async def get_delegations_for_address(address: str):
         if not address.startswith('T') or len(address) != 34:
             raise HTTPException(status_code=400, detail="Invalid address format")
         
-        # Get delegations for address
-        address_delegations = [d for d in delegations_storage.values() if d["address"] == address]
-        
+        # For now, return empty list (would need delegation tracking in service)
         return {
             "address": address,
-            "delegations": address_delegations,
-            "total_count": len(address_delegations),
+            "delegations": [],
+            "total_count": 0,
             "timestamp": datetime.now().isoformat()
         }
     except HTTPException:

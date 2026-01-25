@@ -52,6 +52,22 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     /opt/venv/bin/pip install --prefer-binary -r requirements.txt -r requirements-prod.txt
 
+# Runtime verification - check critical packages are available
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv/bin/python3 -c " \
+import sys; \
+try: \
+    import fastapi; \
+    import uvicorn; \
+    import motor; \
+    import tronpy; \
+    import pydantic; \
+    print('✓ Runtime dependencies verified'); \
+except ImportError as e: \
+    print(f'✗ Missing dependency: {e}'); \
+    sys.exit(1) \
+"
+
 COPY payment-systems/tron/ ./app/
 
 RUN /opt/venv/bin/python -m compileall -b /app
@@ -92,7 +108,7 @@ WORKDIR /app
 COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
 COPY --from=builder --chown=nonroot:nonroot /build/app /app
 
-EXPOSE 8096 8105
+EXPOSE 8096
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD ["/opt/venv/bin/python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8096/health').read(); exit(0)"]
@@ -100,4 +116,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER 65532:65532
 
 ENTRYPOINT ["/opt/venv/bin/python3"]
-CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8096", "--workers", "1"]
+CMD ["-m", "staking_main"]

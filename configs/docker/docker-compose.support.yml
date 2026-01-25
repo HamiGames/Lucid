@@ -444,7 +444,7 @@ services:
     networks:
       - lucid-tron-isolated
     ports:
-      - "${TRX_STAKING_PORT:-8096}:${TRX_STAKING_PORT:-8096}"
+      - "${STAKING_PORT:-8096}:${STAKING_PORT:-8096}"
     volumes:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/staking:/data/staking:rw
@@ -455,12 +455,12 @@ services:
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
       - SERVICE_NAME=tron-staking
-      - SERVICE_PORT=${TRX_STAKING_PORT:-8096}
-      - SERVICE_HOST=${TRX_STAKING_HOST:-0.0.0.0}
-      - SERVICE_URL=${TRX_STAKING_URL:-http://tron-staking:8096}
-      - TRX_STAKING_HOST=tron-staking
-      - TRX_STAKING_PORT=${TRX_STAKING_PORT:-8096}
-      - TRX_STAKING_URL=${TRX_STAKING_URL:-http://tron-staking:8096}
+      - SERVICE_PORT=${STAKING_PORT:-8096}
+      - SERVICE_HOST=${STAKING_HOST:-0.0.0.0}
+      - SERVICE_URL=${STAKING_URL:-http://tron-staking:8096}
+      - STAKING_HOST=tron-staking
+      - STAKING_PORT=${STAKING_PORT:-8096}
+      - STAKING_URL=${STAKING_URL:-http://tron-staking:8096}
       - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
       - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -514,9 +514,9 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/opt/venv/bin/python3",
           "-c",
-          "import os, urllib.request, sys; port = os.getenv('TRX_STAKING_PORT', '8096'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+          "import os; import urllib.request; port = os.getenv('STAKING_PORT', '8096'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health').read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -623,9 +623,9 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/opt/venv/bin/python3",
           "-c",
-          "import os, urllib.request, sys; port = os.getenv('PAYMENT_GATEWAY_PORT', '8097'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+          "import os; import urllib.request; port = os.getenv('PAYMENT_GATEWAY_PORT', '8097'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health').read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -639,7 +639,17 @@ services:
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
     depends_on:
-      tor-proxy:
+      lucid-mongodb:
+        condition: service_started
+      lucid-redis:
+        condition: service_started
+      lucid-tron-client:
+        condition: service_started
+      tron-payout-router:
+        condition: service_started
+      tron-wallet-manager:
+        condition: service_started
+      tron-usdt-manager:
         condition: service_started
 
 volumes:

@@ -558,7 +558,7 @@ export class PayoutService {
 ### Dockerfile
 ```dockerfile
 # Multi-stage build for distroless container
-FROM node:18-alpine AS builder
+FROM node:18-bookworm-slim AS builder
 
 # Set working directory
 WORKDIR /app

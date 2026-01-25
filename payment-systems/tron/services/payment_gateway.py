@@ -11,12 +11,10 @@ import time
 import hashlib
 import json
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple, Union
 import aiofiles
-from dataclasses import dataclass, asdict
-from pydantic import BaseModel, Field
+from dataclasses import asdict
 import httpx
 from tronpy import Tron
 from tronpy.keys import PrivateKey
@@ -31,109 +29,22 @@ sys.path.insert(0, str(project_root))
 
 from app.config import get_settings
 
+# Import payment models from dedicated models file
+from ..models.payment import (
+    PaymentStatus,
+    PaymentType,
+    PaymentMethod,
+    PaymentInfo,
+    PaymentRequest,
+    PaymentCreateRequest,
+    PaymentResponse,
+    PaymentStatusRequest,
+    PaymentStatusResponse
+)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-class PaymentStatus(Enum):
-    """Payment status"""
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    REFUNDED = "refunded"
-
-class PaymentType(Enum):
-    """Payment types"""
-    TRX_TRANSFER = "trx_transfer"
-    USDT_TRANSFER = "usdt_transfer"
-    CONTRACT_PAYMENT = "contract_payment"
-    STAKING_PAYMENT = "staking_payment"
-    FEE_PAYMENT = "fee_payment"
-
-class PaymentMethod(Enum):
-    """Payment methods"""
-    WALLET = "wallet"
-    HARDWARE_WALLET = "hardware_wallet"
-    MULTISIG = "multisig"
-    DELEGATED = "delegated"
-
-@dataclass
-class PaymentInfo:
-    """Payment information"""
-    payment_id: str
-    from_address: str
-    to_address: str
-    amount: float
-    currency: str
-    payment_type: PaymentType
-    payment_method: PaymentMethod
-    status: PaymentStatus
-    transaction_id: Optional[str]
-    fee: float
-    created_at: datetime
-    processed_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    error_message: Optional[str]
-    metadata: Optional[Dict[str, Any]]
-
-@dataclass
-class PaymentRequest:
-    """Payment request"""
-    from_address: str
-    to_address: str
-    amount: float
-    currency: str
-    payment_type: PaymentType
-    payment_method: PaymentMethod
-    private_key: Optional[str]
-    metadata: Optional[Dict[str, Any]]
-
-class PaymentCreateRequest(BaseModel):
-    """Payment creation request"""
-    from_address: str = Field(..., description="Sender address")
-    to_address: str = Field(..., description="Recipient address")
-    amount: float = Field(..., gt=0, description="Payment amount")
-    currency: str = Field(..., description="Currency (TRX, USDT)")
-    payment_type: PaymentType = Field(..., description="Payment type")
-    payment_method: PaymentMethod = Field(..., description="Payment method")
-    private_key: Optional[str] = Field(None, description="Private key for signing")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
-
-class PaymentResponse(BaseModel):
-    """Payment response"""
-    payment_id: str
-    transaction_id: Optional[str]
-    status: str
-    amount: float
-    currency: str
-    from_address: str
-    to_address: str
-    fee: float
-    created_at: str
-    processed_at: Optional[str]
-    completed_at: Optional[str]
-    error_message: Optional[str]
-
-class PaymentStatusRequest(BaseModel):
-    """Payment status request"""
-    payment_id: str = Field(..., description="Payment ID")
-
-class PaymentStatusResponse(BaseModel):
-    """Payment status response"""
-    payment_id: str
-    status: str
-    transaction_id: Optional[str]
-    amount: float
-    currency: str
-    from_address: str
-    to_address: str
-    fee: float
-    created_at: str
-    processed_at: Optional[str]
-    completed_at: Optional[str]
-    error_message: Optional[str]
 
 class PaymentGatewayService:
     """Payment gateway service"""
@@ -167,15 +78,57 @@ class PaymentGatewayService:
         self.completed_payments: Dict[str, PaymentInfo] = {}
         self.failed_payments: Dict[str, PaymentInfo] = {}
         
-        # Load existing data
-        asyncio.create_task(self._load_existing_data())
+        # Background tasks
+        self.background_tasks: List[asyncio.Task] = []
+        self.is_running = False
         
-        # Start processing tasks
-        asyncio.create_task(self._process_payments())
-        asyncio.create_task(self._monitor_payments())
-        asyncio.create_task(self._cleanup_old_data())
-        
-        logger.info("PaymentGatewayService initialized")
+        logger.info("PaymentGatewayService initialized (not yet started)")
+    
+    async def initialize(self):
+        """Initialize service and start background tasks"""
+        try:
+            logger.info("Starting PaymentGatewayService...")
+            
+            # Load existing data from disk
+            await self._load_existing_data()
+            
+            # Start background processing tasks
+            self.is_running = True
+            self.background_tasks = [
+                asyncio.create_task(self._process_payments()),
+                asyncio.create_task(self._monitor_payments()),
+                asyncio.create_task(self._cleanup_old_data())
+            ]
+            
+            logger.info("PaymentGatewayService started successfully with background tasks")
+        except Exception as e:
+            logger.error(f"Error initializing PaymentGatewayService: {e}")
+            raise
+    
+    async def stop(self):
+        """Stop service and cancel background tasks"""
+        try:
+            logger.info("Stopping PaymentGatewayService...")
+            
+            # Set running flag to False
+            self.is_running = False
+            
+            # Cancel all background tasks
+            for task in self.background_tasks:
+                if task and not task.done():
+                    task.cancel()
+            
+            # Wait for all tasks to complete
+            if self.background_tasks:
+                await asyncio.gather(*self.background_tasks, return_exceptions=True)
+            
+            # Save current state
+            await self._save_payments_registry()
+            
+            logger.info("PaymentGatewayService stopped successfully")
+        except Exception as e:
+            logger.error(f"Error stopping PaymentGatewayService: {e}")
+            raise
     
     def _initialize_tron_client(self):
         """Initialize TRON client connection"""

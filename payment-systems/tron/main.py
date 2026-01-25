@@ -359,7 +359,7 @@ app.add_middleware(
 )
 
 # Include API routers
-from .api import tron_network, wallets, usdt, payouts, staking, transactions_extended
+from .api import tron_network, wallets, usdt, payouts, staking, transactions_extended, payments
 
 app.include_router(tron_network.router)
 app.include_router(wallets.router)
@@ -367,6 +367,7 @@ app.include_router(usdt.router)
 app.include_router(payouts.router)
 app.include_router(staking.router)
 app.include_router(transactions_extended.router)
+app.include_router(payments.router)
 
 # Health check endpoint - enhanced with HealthChecker
 @app.get("/health")

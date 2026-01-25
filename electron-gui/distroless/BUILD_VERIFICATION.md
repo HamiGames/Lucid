@@ -104,7 +104,7 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
-FROM --platform=${TARGETPLATFORM} node:18-alpine AS builder
+FROM --platform=${TARGETPLATFORM} node:18-bookworm-slim AS builder
 # Arguments properly available in stage
 ```
 

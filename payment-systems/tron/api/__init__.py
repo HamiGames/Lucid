@@ -12,6 +12,7 @@ from .staking import StakingAPI
 from .backup import router as backup_router
 from .access_control import router as access_control_router
 from .audit import router as audit_router
+from .payments import router as payments_router
 
 __all__ = [
     "TronNetworkAPI",
@@ -22,5 +23,6 @@ __all__ = [
     "wallets_router",
     "backup_router",
     "access_control_router",
-    "audit_router"
+    "audit_router",
+    "payments_router"
 ]
