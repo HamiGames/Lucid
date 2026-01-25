@@ -158,7 +158,7 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 # Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
 # Verifies both package existence AND functionality by actually importing them
-RUN python3 -c "import uvicorn, fastapi, pydantic, pydantic_settings, motor, pymongo, async_timeout, redis, httpx, psutil, yaml, jsonschema; print('✅ All packages verified')"
+RUN ["/usr/bin/python3", "-c", "import uvicorn, fastapi, pydantic, pydantic_settings, motor, pymongo, async_timeout, redis, httpx, psutil, yaml, jsonschema; print('✅ All packages verified')"]
 
 # Copy application source
 COPY --from=builder --chown=65532:65532 /build/session_controller /app/session_controller
@@ -170,7 +170,7 @@ COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
 # Verify application source files were copied (per dockerfile-design.md)
 # This verification ensures all modules and files are present before runtime
-RUN test -d /app/session_controller && test -f /app/session_controller/entrypoint.py && test -f /app/session_controller/main.py && test -d /app/session_controller/integration && test -f /app/common/models.py && echo "✅ All application source files verified"
+RUN ["/usr/bin/python3", "-c", "import os; assert os.path.exists('/app/session_controller') and os.path.exists('/app/session_controller/entrypoint.py') and os.path.exists('/app/session_controller/main.py') and os.path.exists('/app/session_controller/integration') and os.path.exists('/app/common/models.py'); print('✅ All application source files verified')"]
 
 EXPOSE 8092
 
