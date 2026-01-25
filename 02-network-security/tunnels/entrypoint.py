@@ -265,11 +265,25 @@ def create_onion(cookie_hex: str, old_onion: Optional[str] = None) -> str:
     # Write onion address to file
     try:
         WRITE_ENV.parent.mkdir(parents=True, exist_ok=True)
+        # Ensure directory is writable by changing permissions to 777 for the container
+        WRITE_ENV.parent.chmod(0o777)
         WRITE_ENV.write_text(f"ONION={onion}\n")
         log(f"Wrote onion address to {WRITE_ENV}")
     except (OSError, PermissionError) as exc:
-        log(f"WARNING: Failed to write onion address to {WRITE_ENV}: {exc}")
-        log(f"Onion address: {onion} (please save manually)")
+        log(f"ERROR: Failed to write onion address to {WRITE_ENV}: {exc}")
+        log(f"CRITICAL: Onion address not persisted: {onion}")
+        # Set health to unhealthy so operator knows this is a critical issue
+        if STATUS_AVAILABLE:
+            try:
+                status = get_status()
+                status.set_health("unhealthy")
+                status.set_status("error")
+            except Exception:
+                pass
+        # Exit with error to trigger container restart
+        die(f"Cannot write onion environment file to {WRITE_ENV}. "
+            f"Check directory permissions for user 65532:65532. "
+            f"Onion service {onion} created but not persisted.")
     
     return onion
 
