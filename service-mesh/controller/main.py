@@ -84,6 +84,11 @@ class ServiceMeshController:
             # Import and start FastAPI application
             try:
                 import uvicorn
+                # Import from parent directory (service-mesh package)
+                import sys
+                parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                if parent_dir not in sys.path:
+                    sys.path.insert(0, parent_dir)
                 from main import app
                 
                 config = uvicorn.Config(
@@ -99,10 +104,8 @@ class ServiceMeshController:
                 await server.serve()
                 
             except ImportError as e:
-                logger.warning(f"FastAPI/uvicorn not available: {e}")
-                # Keep running without HTTP server
-                while self.running:
-                    await asyncio.sleep(1)
+                logger.error(f"FastAPI/uvicorn or main app import failed: {e}")
+                raise
                     
         except Exception as e:
             logger.error(f"Error in Service Mesh Controller: {e}")

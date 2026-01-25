@@ -138,6 +138,18 @@ class TronClientService:
         # Account cache
         self.account_cache: Dict[str, AccountInfo] = {}
         
+        # Concurrency protection locks
+        self._cache_lock = asyncio.Lock()
+        self._network_info_lock = asyncio.Lock()
+        self._transaction_lock = asyncio.Lock()
+        
+        # Error recovery and retry configuration
+        self.max_retries = int(os.getenv("TRON_MAX_RETRIES", "3"))
+        self.retry_backoff_factor = float(os.getenv("TRON_RETRY_BACKOFF", "2.0"))
+        self.initial_retry_delay = float(os.getenv("TRON_INITIAL_RETRY_DELAY", "1"))
+        self.connection_retry_count = 0
+        self.max_connection_retries = int(os.getenv("TRON_MAX_CONNECTION_RETRIES", "5"))
+        
         # Monitoring tasks
         self.monitoring_tasks = []
         
@@ -163,8 +175,30 @@ class TronClientService:
         
         return os.getenv("TRON_RPC_URL_MAINNET", os.getenv("TRON_HTTP_ENDPOINT", get_network_endpoint()))
     
+    async def _with_retry(self, func, *args, **kwargs):
+        """Execute function with exponential backoff retry logic"""
+        last_exception = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+                
+                if attempt < self.max_retries - 1:
+                    delay = self.initial_retry_delay * (self.retry_backoff_factor ** attempt)
+                    logger.warning(
+                        f"Attempt {attempt + 1}/{self.max_retries} failed: {str(e)}. "
+                        f"Retrying in {delay:.2f}s..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"All {self.max_retries} attempts failed: {str(e)}")
+        
+        raise last_exception or RuntimeError("Operation failed after all retries")
+    
     def _initialize_tron_client(self):
-        """Initialize TRON client with network configuration"""
+        """Initialize TRON client with network configuration and connection retry"""
         try:
             headers = {}
             # Get API key from environment or config
@@ -177,10 +211,17 @@ class TronClientService:
                 client=httpx.Client(headers=headers, timeout=int(os.getenv("TRON_TIMEOUT", "30")))
             )
             self.tron = Tron(provider=provider)
+            self.connection_retry_count = 0
             
             logger.info(f"TRON client connected to {self.network} at {self.node_url}")
         except Exception as e:
-            logger.error(f"Failed to initialize TRON client: {e}")
+            self.connection_retry_count += 1
+            logger.error(f"Failed to initialize TRON client (attempt {self.connection_retry_count}): {e}")
+            
+            if self.connection_retry_count < self.max_connection_retries:
+                logger.info(f"Will retry connection initialization")
+            else:
+                logger.critical(f"Maximum connection retries ({self.max_connection_retries}) exceeded")
             raise
     
     async def _start_monitoring(self):
@@ -212,90 +253,107 @@ class TronClientService:
             logger.error(f"Error starting monitoring: {e}")
     
     async def get_network_info(self) -> NetworkInfo:
-        """Get current network information"""
-        try:
-            # Get latest block
-            latest_block = self.tron.get_latest_block()
-            block_number = latest_block["block_header"]["raw_data"]["number"]
-            block_timestamp = latest_block["block_header"]["raw_data"]["timestamp"]
-            
-            # Get network parameters
-            network_params = self.tron.get_chain_parameters()
-            
-            # Create network info
-            network_info = NetworkInfo(
-                network_name=self.network,
-                network_id=self.tron.chain_id,
-                chain_id=hex(self.tron.chain_id),
-                latest_block=block_number,
-                block_timestamp=block_timestamp,
-                node_url=self.node_url,
-                status=NetworkStatus.CONNECTED,
-                last_updated=datetime.now(),
-                sync_progress=100.0,  # Assume synced
-                node_count=len(self.tron.get_nodes()),
-                total_supply=network_params.get("getTotalSupply", 0),
-                total_transactions=network_params.get("getTotalTransactionCount", 0)
-            )
-            
-            # Update connection status
-            self.connection_status = NetworkStatus.CONNECTED
-            self.network_info = network_info
-            self.last_sync_time = datetime.now()
-            
-            # Save network info
-            await self._save_network_info(network_info)
-            
-            logger.info(f"Network info updated: block {block_number}")
-            return network_info
-            
-        except Exception as e:
-            logger.error(f"Error getting network info: {e}")
-            self.connection_status = NetworkStatus.ERROR
-            raise
+        """Get current network information with retry logic"""
+        async with self._network_info_lock:
+            try:
+                # Define the actual network info fetch operation
+                async def fetch_network_info():
+                    # Get latest block
+                    latest_block = self.tron.get_latest_block()
+                    block_number = latest_block["block_header"]["raw_data"]["number"]
+                    block_timestamp = latest_block["block_header"]["raw_data"]["timestamp"]
+                    
+                    # Get network parameters
+                    network_params = self.tron.get_chain_parameters()
+                    
+                    # Create network info
+                    network_info = NetworkInfo(
+                        network_name=self.network,
+                        network_id=self.tron.chain_id,
+                        chain_id=hex(self.tron.chain_id),
+                        latest_block=block_number,
+                        block_timestamp=block_timestamp,
+                        node_url=self.node_url,
+                        status=NetworkStatus.CONNECTED,
+                        last_updated=datetime.now(),
+                        sync_progress=100.0,  # Assume synced
+                        node_count=len(self.tron.get_nodes()),
+                        total_supply=network_params.get("getTotalSupply", 0),
+                        total_transactions=network_params.get("getTotalTransactionCount", 0)
+                    )
+                    
+                    return network_info
+                
+                # Retry with exponential backoff
+                network_info = await self._with_retry(fetch_network_info)
+                
+                # Update connection status
+                self.connection_status = NetworkStatus.CONNECTED
+                self.network_info = network_info
+                self.last_sync_time = datetime.now()
+                
+                # Save network info
+                await self._save_network_info(network_info)
+                
+                logger.info(f"Network info updated: block {network_info.latest_block}")
+                return network_info
+                
+            except Exception as e:
+                logger.error(f"Error getting network info: {e}")
+                self.connection_status = NetworkStatus.ERROR
+                raise
     
     async def get_account_info(self, address: str) -> AccountInfo:
-        """Get account information"""
-        try:
-            # Check cache first
-            if address in self.account_cache:
-                cached_account = self.account_cache[address]
-                # Return cached if less than 5 minutes old
-                if datetime.now() - cached_account.last_updated < timedelta(minutes=5):
-                    return cached_account
-            
-            # Get account from TRON network
-            account = self.tron.get_account(address)
-            
-            # Get account resources
-            account_resources = self.tron.get_account_resources(address)
-            
-            # Create account info
-            account_info = AccountInfo(
-                address=address,
-                balance_trx=account.get("balance", 0) / 1_000_000,  # Convert sun to TRX
-                balance_sun=account.get("balance", 0),
-                energy_available=account_resources.get("EnergyLimit", 0),
-                bandwidth_available=account_resources.get("NetLimit", 0),
-                frozen_balance=account.get("frozen", [{}])[0].get("frozen_balance", 0) / 1_000_000,
-                delegated_energy=account_resources.get("delegated_frozenV2_energy", 0),
-                delegated_bandwidth=account_resources.get("delegated_frozenV2_bandwidth", 0),
-                last_updated=datetime.now(),
-                transaction_count=account.get("transaction_count", 0)
-            )
-            
-            # Update cache
-            self.account_cache[address] = account_info
-            
-            # Save account info
-            await self._save_account_info(account_info)
-            
-            logger.info(f"Account info updated: {address}")
-            return account_info
-            
-        except Exception as e:
-            logger.error(f"Error getting account info for {address}: {e}")
-            raise
+        """Get account information with concurrency protection and retry logic"""
+        async with self._cache_lock:
+            try:
+                # Check cache first
+                if address in self.account_cache:
+                    cached_account = self.account_cache[address]
+                    # Return cached if less than 5 minutes old
+                    if datetime.now() - cached_account.last_updated < timedelta(minutes=5):
+                        logger.debug(f"Returning cached account info for {address}")
+                        return cached_account
+                
+                # Define the actual account fetch operation
+                async def fetch_account_info():
+                    # Get account from TRON network
+                    account = self.tron.get_account(address)
+                    
+                    # Get account resources
+                    account_resources = self.tron.get_account_resources(address)
+                    
+                    # Create account info
+                    account_info = AccountInfo(
+                        address=address,
+                        balance_trx=account.get("balance", 0) / 1_000_000,  # Convert sun to TRX
+                        balance_sun=account.get("balance", 0),
+                        energy_available=account_resources.get("EnergyLimit", 0),
+                        bandwidth_available=account_resources.get("NetLimit", 0),
+                        frozen_balance=account.get("frozen", [{}])[0].get("frozen_balance", 0) / 1_000_000,
+                        delegated_energy=account_resources.get("delegated_frozenV2_energy", 0),
+                        delegated_bandwidth=account_resources.get("delegated_frozenV2_bandwidth", 0),
+                        last_updated=datetime.now(),
+                        transaction_count=account.get("transaction_count", 0)
+                    )
+                    
+                    return account_info
+                
+                # Retry with exponential backoff
+                account_info = await self._with_retry(fetch_account_info)
+                
+                # Update cache (protected by lock)
+                self.account_cache[address] = account_info
+                
+                # Save account info
+                await self._save_account_info(account_info)
+                
+                logger.info(f"Account info updated: {address}")
+                return account_info
+                
+            except Exception as e:
+                logger.error(f"Error getting account info for {address}: {e}")
+                raise
     
     async def get_balance(self, address: str) -> float:
         """Get TRX balance for address"""
@@ -354,24 +412,33 @@ class TronClientService:
             return None
     
     async def broadcast_transaction(self, transaction_data: Dict[str, Any]) -> str:
-        """Broadcast transaction to TRON network"""
-        try:
-            # Build transaction
-            txn = self.tron.trx.transfer(
-                transaction_data["from_address"],
-                transaction_data["to_address"],
-                transaction_data["amount"]
-            ).build()
-            
-            # Sign transaction if private key provided
-            if "private_key" in transaction_data:
-                private_key = PrivateKey(bytes.fromhex(transaction_data["private_key"]))
-                txn = txn.sign(private_key)
-            
-            # Broadcast transaction
-            result = txn.broadcast()
-            
-            if result.get("result"):
+        """Broadcast transaction to TRON network with retry logic"""
+        async with self._transaction_lock:
+            try:
+                # Define the actual broadcast operation
+                async def do_broadcast():
+                    # Build transaction
+                    txn = self.tron.trx.transfer(
+                        transaction_data["from_address"],
+                        transaction_data["to_address"],
+                        transaction_data["amount"]
+                    ).build()
+                    
+                    # Sign transaction if private key provided
+                    if "private_key" in transaction_data:
+                        private_key = PrivateKey(bytes.fromhex(transaction_data["private_key"]))
+                        txn = txn.sign(private_key)
+                    
+                    # Broadcast transaction
+                    result = txn.broadcast()
+                    
+                    if not result.get("result"):
+                        raise RuntimeError(f"Transaction broadcast failed: {result}")
+                    
+                    return result
+                
+                # Retry with exponential backoff
+                result = await self._with_retry(do_broadcast)
                 txid = result["txid"]
                 
                 # Create transaction info
@@ -390,7 +457,7 @@ class TronClientService:
                     raw_data=result
                 )
                 
-                # Add to pending transactions
+                # Add to pending transactions (protected by lock)
                 self.pending_transactions[txid] = transaction_info
                 
                 # Save transaction info
@@ -398,12 +465,10 @@ class TronClientService:
                 
                 logger.info(f"Transaction broadcasted: {txid}")
                 return txid
-            else:
-                raise RuntimeError(f"Transaction broadcast failed: {result}")
-                
-        except Exception as e:
-            logger.error(f"Error broadcasting transaction: {e}")
-            raise
+                    
+            except Exception as e:
+                logger.error(f"Error broadcasting transaction: {e}")
+                raise
     
     async def wait_for_confirmation(self, txid: str, timeout_seconds: Optional[int] = None) -> bool:
         """Wait for transaction confirmation"""
