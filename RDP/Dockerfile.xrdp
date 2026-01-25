@@ -189,4 +189,4 @@ USER 65532:65532
 ENTRYPOINT []
 
 # CMD (per master-docker-design.md)
-CMD ["/usr/bin/python3.11", "/app/xrdp/entrypoint.py"]
+CMD ["/usr/bin/python3", "/app/xrdp/entrypoint.py"]
