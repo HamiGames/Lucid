@@ -643,7 +643,70 @@ services:
         condition: service_started
 
 volumes:
-  # NOTE: admin-interface-cache removed - admin-interface now in docker-compose.gui-integration.yml
+  # Payment Systems & TRON Services
+  # ================================
+  # Data volumes
+  payment-systems-data:
+    driver: local
+    name: lucid-payment-systems-data
+
+  tron-data:
+    driver: local
+    name: lucid-tron-data
+
+  wallets-data:
+    driver: local
+    name: lucid-wallets-data
+
+  usdt-data:
+    driver: local
+    name: lucid-usdt-data
+
+  gateway-data:
+    driver: local
+    name: lucid-gateway-data
+
+  keys-data:
+    driver: local
+    name: lucid-keys-data
+
+  batches-data:
+    driver: local
+    name: lucid-batches-data
+
+  payouts-data:
+    driver: local
+    name: lucid-payouts-data
+
+  # Log volumes
+  tron-client-logs:
+    driver: local
+    name: lucid-tron-client-logs
+
+  payout-router-logs:
+    driver: local
+    name: lucid-payout-router-logs
+
+  wallet-manager-logs:
+    driver: local
+    name: lucid-wallet-manager-logs
+
+  usdt-manager-logs:
+    driver: local
+    name: lucid-usdt-manager-logs
+
+  payment-gateway-logs:
+    driver: local
+    name: lucid-payment-gateway-logs
+
+  # Tor volumes
+  tor-data:
+    driver: local
+    name: lucid-tor-data
+
+  tor-logs:
+    driver: local
+    name: lucid-tor-logs
 
 networks:
   lucid-pi-network:

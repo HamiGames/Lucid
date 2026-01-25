@@ -25,7 +25,7 @@ module.exports = {
   externals: {
     'electron': 'commonjs electron',
     'dockerode': 'commonjs dockerode',
-    'tor-control': 'commonjs tor-control',
+    'tor-ctrl': 'commonjs tor-ctrl',
     'socks-proxy-agent': 'commonjs socks-proxy-agent',
   },
   
