@@ -59,8 +59,9 @@ RUN echo "LUCID_PAYOUT_ROUTER_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/py
     chown -R 65532:65532 /opt/venv
 
 # Verify packages are installed
-RUN /opt/venv/bin/python -c "import fastapi, uvicorn, tronpy, httpx, aiofiles, pydantic, pydantic_settings; print('✅ critical packages installed')" && \
+RUN /opt/venv/bin/python -c "import fastapi, uvicorn, tronpy, httpx, aiofiles, pydantic, pydantic_settings, motor; print('✅ critical packages installed')" && \
     /opt/venv/bin/python -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    /opt/venv/bin/python -c "import motor; print('motor location:', motor.__file__)" && \
     test -d /opt/venv/lib/python3.12/site-packages && \
     echo "Directory exists: /opt/venv/lib/python3.12/site-packages" && \
     test -f /opt/venv/lib/python3.12/site-packages/.lucid-marker && \
@@ -121,5 +122,5 @@ ENV SERVICE_PORT=8092 \
     LOG_LEVEL=INFO
 
 ENTRYPOINT ["/opt/venv/bin/python3"]
-# Call main.py which reads from environment variables
-CMD ["-m", "main"]
+# Call payout_router_main.py which is the dedicated payout router entrypoint
+CMD ["-m", "payout_router_main"]

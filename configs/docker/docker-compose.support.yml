@@ -235,6 +235,11 @@ services:
       - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
       - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payout-router}
       - LOG_FILE=${LOG_FILE:-/app/logs/payout-router.log}
+      - PAYOUT_BATCH_SIZE=${PAYOUT_BATCH_SIZE:-50}
+      - PAYOUT_BATCH_INTERVAL=${PAYOUT_BATCH_INTERVAL:-300}
+      - MAX_PAYOUT_AMOUNT=${MAX_PAYOUT_AMOUNT:-1000.0}
+      - MIN_PAYOUT_AMOUNT=${MIN_PAYOUT_AMOUNT:-0.01}
+      - DAILY_PAYOUT_LIMIT=${DAILY_PAYOUT_LIMIT:-10000.0}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
@@ -288,7 +293,9 @@ services:
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
     depends_on:
-      tor-proxy:
+      lucid-mongodb:
+        condition: service_started
+      lucid-redis:
         condition: service_started
 
   tron-wallet-manager:

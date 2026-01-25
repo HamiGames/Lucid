@@ -31,6 +31,9 @@ pydantic-settings==2.1.0
 tronpy==0.4.0
 eth-account==0.9.0
 
+# Production database drivers
+motor==3.3.2
+
 # Production data validation
 email-validator==2.1.0
 python-multipart==0.0.6

@@ -2,72 +2,111 @@
 # Target Platform: Raspberry Pi (linux/arm64)
 # Network: lucid-pi-network (172.20.0.0/16)
 # Date: 2025-01-24
+# Build Context: Project root (/mnt/myssd/Lucid/Lucid)
+# Build Command: docker build -f electron-gui/distroless/Dockerfile.admin -t pickme/lucid-admin-interface:latest-arm64 .
 
-# Multi-stage build for distroless admin package
-FROM --platform=linux/arm64 node:18-alpine AS builder
-
+ARG BUILDPLATFORM=linux/amd64
+ARG TARGETPLATFORM=linux/arm64
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
-# Set working directory
-WORKDIR /app
+############################
+# Stage 1: Builder
+############################
+FROM --platform=${TARGETPLATFORM} node:18-alpine AS builder
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY webpack*.js ./
-COPY jest.config.js ./
-COPY jest.e2e.config.js ./
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+ENV NODE_ENV=production \
+    NODE_OPTIONS="--max-old-space-size=1024"
+
+WORKDIR /build
+
+# Copy package files (project root relative paths)
+COPY electron-gui/package*.json ./
+COPY electron-gui/tsconfig*.json ./
+COPY electron-gui/webpack*.js ./
+COPY electron-gui/jest.config.js ./
+COPY electron-gui/jest.e2e.config.js ./
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY main/ ./main/
-COPY renderer/admin/ ./renderer/admin/
-COPY renderer/common/ ./renderer/common/
-COPY shared/ ./shared/
-COPY configs/ ./configs/
-COPY scripts/ ./scripts/
+# Create marker files with actual content (ensures directory structure is locked in)
+RUN echo "LUCID_ELECTRON_GUI_ADMIN_BUILT_$(date +%s)" > /build/.build-marker && \
+    echo "LUCID_ELECTRON_GUI_ADMIN_PACKAGES_INSTALLED_$(date +%s)" > /build/.packages-marker
+
+# Copy source code (project root relative paths)
+COPY electron-gui/main/ ./main/
+COPY electron-gui/renderer/admin/ ./renderer/admin/
+COPY electron-gui/renderer/common/ ./renderer/common/
+COPY electron-gui/shared/ ./shared/
+COPY electron-gui/configs/ ./configs/
+COPY electron-gui/scripts/ ./scripts/
+
+# Verify source structure
+RUN test -d ./main && \
+    test -d ./renderer/admin && \
+    test -d ./renderer/common && \
+    test -d ./shared && \
+    test -f .build-marker && \
+    test -f .packages-marker && \
+    echo "✅ Source structure verified"
 
 # Build the application
 RUN npm run build:admin
 
-# Create distroless runtime image
-FROM --platform=linux/arm64 gcr.io/distroless/nodejs18-debian11
+############################
+# Stage 2: Runtime (Distroless)
+############################
+FROM --platform=${TARGETPLATFORM} gcr.io/distroless/nodejs18-debian11
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Lucid Admin Interface - Distroless" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.title="Lucid Admin Interface" \
+      org.opencontainers.image.description="Electron-GUI Admin Interface - Distroless" \
       org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="admin-interface" \
-      com.lucid.plane="support" \
-      com.lucid.platform="arm64"
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="support" \
+      com.lucid.security="distroless"
 
-# Set working directory
 WORKDIR /app
 
-# Copy built application
-COPY --from=builder /app/dist/ ./
-COPY --from=builder /app/configs/ ./configs/
+# Copy marker files to verify COPY succeeded (per Dockerfile-copy-pattern.md)
+COPY --from=builder --chown=65532:65532 /build/.build-marker /app/.build-marker
+COPY --from=builder --chown=65532:65532 /build/.packages-marker /app/.packages-marker
 
-# Set environment variables
+# Copy built application
+COPY --from=builder --chown=65532:65532 /build/dist/ ./dist/
+COPY --from=builder --chown=65532:65532 /build/configs/ ./configs/
+
+# Verify markers and built output
+RUN test -f /app/.build-marker && \
+    test -f /app/.packages-marker && \
+    test -d /app/dist && \
+    echo "✅ Build artifacts verified"
+
+# Set environment variables with defaults
 ENV NODE_ENV=production
 ENV ELECTRON_GUI_PROFILE=admin
 ENV ELECTRON_GUI_NETWORK=lucid-pi-network
-ENV ELECTRON_GUI_API_BASE_URL=${ADMIN_INTERFACE_URL:-http://172.20.0.10:8080/api/v1}
+ENV ELECTRON_GUI_API_BASE_URL=http://172.20.0.10:8080/api/v1
 ENV ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services.conf
-ENV ADMIN_INTERFACE_HOST=${ADMIN_INTERFACE_HOST:-0.0.0.0}
-ENV ADMIN_INTERFACE_PORT=${ADMIN_INTERFACE_PORT:-8120}
-ENV LOG_LEVEL=${LOG_LEVEL:-info}
-ENV LUCID_ENV=${LUCID_ENV:-production}
+ENV ADMIN_INTERFACE_HOST=0.0.0.0
+ENV ADMIN_INTERFACE_PORT=8120
+ENV LOG_LEVEL=info
+ENV LUCID_ENV=production
 
 # Expose ports
 EXPOSE 8120 8100
@@ -79,6 +118,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Set user (distroless uses nonroot by default)
 USER nonroot:nonroot
 
-# Entrypoint and command
-ENTRYPOINT ["/nodejs/bin/node"]
-CMD ["dist/main/index.js"]
+# Run the application
+CMD ["/app/dist/main/index.js"]
