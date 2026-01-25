@@ -365,11 +365,13 @@ volumes:
     driver: local
     name: lucid-auth-cache
   tor-config:
+    driver: local
     name: lucid-tor-config
-    external: true
+    external: false
   onion-state:
+    driver: local
     name: lucid-onion-state
-    external: true
+    external: false
 
 networks:
   lucid-pi-network:
