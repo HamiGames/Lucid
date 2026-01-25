@@ -127,7 +127,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
 
 # Verify packages were copied (this will fail the build if packages are missing)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
+RUN ["/usr/bin/python3", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; print('Packages verified in runtime stage')"]
 
 COPY --from=builder --chown=65532:65532 /build/app /opt/lucid/app
 
@@ -136,11 +136,11 @@ WORKDIR /opt/lucid/app
 EXPOSE 8092
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8092)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 ENTRYPOINT []
-CMD ["/usr/bin/python3.11", "-m", "uvicorn", "session_controller.main:app", "--host", "0.0.0.0", "--port", "8092"]
+CMD ["/usr/bin/python3", "-m", "uvicorn", "session_controller.main:app", "--host", "0.0.0.0", "--port", "8092"]
 
 # All configuration obtained from .env.application, .env.core, .env.secrets, .env.foundation
