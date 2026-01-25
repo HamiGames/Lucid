@@ -22,9 +22,6 @@ app_dir = '/app'
 if app_dir not in sys.path:
     sys.path.insert(0, app_dir)
 
-import sys
-from pathlib import Path
-
 # Add payment-systems directory to path
 payment_systems_dir = Path(__file__).parent.parent
 if str(payment_systems_dir) not in sys.path:

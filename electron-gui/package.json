@@ -47,7 +47,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socks-proxy-agent": "^8.0.2",
-    "tor-ctrl": "^1.2.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
@@ -81,6 +80,7 @@
   "optionalDependencies": {
     "@ledgerhq/hw-app-tron": "^6.27.11",
     "@trezor/connect": "^9.2.16",
-    "@keepkey/hdwallet": "^0.46.1"
+    "@keepkey/hdwallet": "^0.46.1",
+    "tor-control-ts": "^1.0.0"
   }
 }

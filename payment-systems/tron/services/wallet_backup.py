@@ -7,11 +7,15 @@ import logging
 import os
 import json
 import asyncio
+import base64
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import aiofiles
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
 import hashlib
 
 logger = logging.getLogger(__name__)
@@ -33,13 +37,20 @@ class WalletBackupService:
         
         # Encryption setup
         if encryption_key:
-            key = hashlib.sha256(encryption_key.encode()).digest()
-            self.cipher = Fernet(Fernet.generate_key())  # Use proper key derivation
-            # In production, derive key properly from encryption_key
-            key_b32 = hashlib.sha256(encryption_key.encode()).digest()[:32]
-            self.cipher = Fernet(Fernet.generate_key())  # Simplified - use proper key derivation
+            # Derive a proper Fernet key from the encryption_key using PBKDF2
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=b'lucid_wallet_backup_salt',  # In production, use random salt from config
+                iterations=100000,
+                backend=default_backend()
+            )
+            derived_key = base64.urlsafe_b64encode(kdf.derive(encryption_key.encode()))
+            self.cipher = Fernet(derived_key)
+            logger.info("Wallet backup encryption initialized with AES-256")
         else:
             self.cipher = None
+            logger.warning("Wallet backup encryption disabled - backups will be unencrypted")
         
         self.backup_interval = backup_interval
         self.retention_days = retention_days
