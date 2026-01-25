@@ -183,6 +183,7 @@ USER 65532:65532
 ENTRYPOINT []
 
 # Use entrypoint.py script
-CMD ["/usr/bin/python3.11", "/app/session_controller/entrypoint.py"]
+CMD ["/usr/bin/python3", "/app/session_controller/entrypoint.py"]
 
 # All configuration obtained from .env.application, .env.core, .env.secrets, .env.foundation
+
