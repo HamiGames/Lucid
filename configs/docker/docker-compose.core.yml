@@ -224,7 +224,7 @@ services:
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
       - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
-      - SESSION_ANCHORING_HOST=${SESSION_ANCHORING_HOST:-127.0.0.1}
+      - SESSION_ANCHORING_HOST=${SESSION_ANCHORING_HOST:-0.0.0.0}
       - SESSION_ANCHORING_PORT=${SESSION_ANCHORING_PORT:-8085}
       - SESSION_ANCHORING_HEALTH_PATH=${SESSION_ANCHORING_HEALTH_PATH:-/health}
       - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=${SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT:-10}
@@ -277,6 +277,8 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
     networks:
       - lucid-pi-network
+    ports:
+      - "8086:8086"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
@@ -284,7 +286,7 @@ services:
     environment:
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
-      - BLOCK_MANAGER_HOST=${BLOCK_MANAGER_HOST:-127.0.0.1}
+      - BLOCK_MANAGER_HOST=${BLOCK_MANAGER_HOST:-0.0.0.0}
       - BLOCK_MANAGER_PORT=${BLOCK_MANAGER_PORT:-8086}
       - BLOCK_MANAGER_URL=${BLOCK_MANAGER_URL:-http://block-manager:8086}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
@@ -296,6 +298,8 @@ services:
       - seccomp:unconfined
     cap_drop:
       - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
@@ -303,9 +307,9 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
-          "import urllib.request, sys; urllib.request.urlopen('http://127.0.0.1:8086/health', timeout=8).read(); sys.exit(0)",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8086)); s.close(); exit(0 if result == 0 else 1)",
         ]
       interval: 30s
       timeout: 10s
