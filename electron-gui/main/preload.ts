@@ -1,328 +1,249 @@
-/// <reference types="electron" />
-/// <reference types="node" />
+/**
+ * LUCID Electron Preload Script - Secure Context Bridge
+ * Provides safe IPC communication between renderer and main processes
+ * SPEC-1B Implementation with security hardening
+ */
 
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import {
-  RENDERER_TO_MAIN_CHANNELS,
-  MAIN_TO_RENDERER_CHANNELS,
-  BIDIRECTIONAL_CHANNELS,
+import { contextBridge, ipcRenderer } from 'electron';
+import type {
+  IPCMessage,
+  IPCResponse,
 } from '../shared/ipc-channels';
-import {
-  API_ENDPOINTS,
-  SERVICE_PORTS,
-  TOR_CONFIG,
-  WINDOW_CONFIGS,
-  LUCID_ERROR_CODES,
-  TIMEOUTS,
-  DOCKER_CONFIG,
-  DOCKER_COMPOSE_FILES,
-  SERVICE_NAMES,
-  PATHS,
-  CHUNK_CONFIG,
-  HARDWARE_WALLET_TYPES,
-  USER_ROLES,
-  SESSION_STATUSES,
-  NODE_STATUSES,
-  PAYOUT_STATUSES,
-} from '../shared/constants';
+import { isValidChannel, IPCChannels } from '../shared/ipc-channels';
 
-type Listener = (data: unknown) => void;
-type WrappedListener = (event: IpcRendererEvent, data: unknown) => void;
+/**
+ * Secure API object exposed to renderer process
+ * All communication goes through validated IPC channels
+ */
+const api = {
+  /**
+   * Send message to main process with validation
+   */
+  send: (channel: string, ...args: any[]): void => {
+    if (!isValidChannel(channel)) {
+      console.error(`Invalid IPC channel: ${channel}`);
+      return;
+    }
+    ipcRenderer.send(channel, ...args);
+  },
 
-const validMainChannels = new Set<string>(Object.values(MAIN_TO_RENDERER_CHANNELS));
-const listenerRegistry = new Map<string, Map<Listener, WrappedListener>>();
+  /**
+   * Send message and wait for response
+   */
+  invoke: async (channel: string, ...args: any[]): Promise<any> => {
+    if (!isValidChannel(channel)) {
+      throw new Error(`Invalid IPC channel: ${channel}`);
+    }
+    try {
+      return await ipcRenderer.invoke(channel, ...args);
+    } catch (error) {
+      console.error(`IPC invoke error on channel ${channel}:`, error);
+      throw error;
+    }
+  },
 
-const validateMainChannel = (channel: string): boolean => {
-  if (!validMainChannels.has(channel)) {
-    console.warn(`Invalid main channel: ${channel}`);
-    return false;
-  }
-  return true;
-};
+  /**
+   * Listen for messages from main process
+   */
+  on: (channel: string, listener: (event: any, ...args: any[]) => void): void => {
+    if (!isValidChannel(channel)) {
+      console.error(`Invalid IPC channel: ${channel}`);
+      return;
+    }
 
-const registerListener = (channel: string, listener: Listener): void => {
-  if (!validateMainChannel(channel)) return;
+    // Create wrapper to prevent message flooding
+    const validListener = (event: any, ...args: any[]) => {
+      listener(event, ...args);
+    };
 
-  const wrapped: WrappedListener = (_event, data) => listener(data);
-  const channelMap = listenerRegistry.get(channel) ?? new Map<Listener, WrappedListener>();
-  channelMap.set(listener, wrapped);
-  listenerRegistry.set(channel, channelMap);
+    ipcRenderer.on(channel, validListener);
+  },
 
-  ipcRenderer.on(channel, wrapped);
-};
+  /**
+   * Listen for one message from main process
+   */
+  once: (channel: string, listener: (event: any, ...args: any[]) => void): void => {
+    if (!isValidChannel(channel)) {
+      console.error(`Invalid IPC channel: ${channel}`);
+      return;
+    }
+    ipcRenderer.once(channel, listener);
+  },
 
-const unregisterListener = (channel: string, listener: Listener): void => {
-  if (!validateMainChannel(channel)) return;
+  /**
+   * Remove listener for channel
+   */
+  off: (channel: string, listener: (event: any, ...args: any[]) => void): void => {
+    if (!isValidChannel(channel)) {
+      console.error(`Invalid IPC channel: ${channel}`);
+      return;
+    }
+    ipcRenderer.off(channel, listener);
+  },
 
-  const channelMap = listenerRegistry.get(channel);
-  const wrapped = channelMap?.get(listener);
-  if (!wrapped) return;
-
-  ipcRenderer.off(channel, wrapped);
-  channelMap?.delete(listener);
-
-  if (channelMap && channelMap.size === 0) {
-    listenerRegistry.delete(channel);
-  }
-};
-
-const removeAllRegisteredListeners = (channel: string): void => {
-  if (!validateMainChannel(channel)) return;
-
-  const channelMap = listenerRegistry.get(channel);
-  if (!channelMap) return;
-
-  for (const wrapped of channelMap.values()) {
-    ipcRenderer.off(channel, wrapped);
-  }
-  listenerRegistry.delete(channel);
-};
-
-contextBridge.exposeInMainWorld('electronAPI', {
+  /**
+   * TOR management methods
+   */
   tor: {
-    start: (config?: Record<string, unknown>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_START, config),
-    stop: (force?: boolean) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_STOP, { force }),
-    restart: (config?: Record<string, unknown>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_RESTART, config),
-    getStatus: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_GET_STATUS),
-    getMetrics: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_GET_METRICS),
-    testConnection: (url: string, timeout?: number) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_TEST_CONNECTION, { url, timeout }),
-    healthCheck: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.TOR_HEALTH_CHECK),
-    getDefaults: () => ({
-      socksPort: TOR_CONFIG.SOCKS_PORT,
-      controlPort: TOR_CONFIG.CONTROL_PORT,
-      dataDir: TOR_CONFIG.DATA_DIR,
-      configFile: TOR_CONFIG.CONFIG_FILE,
-      bootstrapTimeout: TOR_CONFIG.BOOTSTRAP_TIMEOUT,
-      circuitBuildTimeout: TOR_CONFIG.CIRCUIT_BUILD_TIMEOUT,
-      dockerExpose: '9050,9051,8888',
-    }),
-  },
-
-  window: {
-    minimize: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_MINIMIZE),
-    maximize: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_MAXIMIZE),
-    restore: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_RESTORE),
-    close: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_CLOSE),
-    setSize: (width: number, height: number) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_SET_SIZE, { width, height }),
-    setPosition: (x: number, y: number) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_SET_POSITION, { x, y }),
-    center: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_CENTER),
-    setAlwaysOnTop: (alwaysOnTop: boolean) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, { alwaysOnTop }),
-  },
-
-  docker: {
-    startServices: (services: string[], level?: keyof typeof DOCKER_COMPOSE_FILES) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.DOCKER_START_SERVICES, { services, level }),
-    stopServices: (services: string[]) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.DOCKER_STOP_SERVICES, { services }),
-    restartServices: (services: string[], level?: keyof typeof DOCKER_COMPOSE_FILES) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.DOCKER_RESTART_SERVICES, { services, level }),
-    getServiceStatus: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.DOCKER_GET_SERVICE_STATUS),
-    getContainerLogs: (containerId: string, lines?: number, follow?: boolean) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.DOCKER_GET_CONTAINER_LOGS, {
-        containerId,
-        lines,
-        follow,
-      }),
-    execCommand: (
-      containerId: string,
-      command: string[],
-      workingDir?: string,
-      env?: Record<string, string>,
-    ) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.DOCKER_EXEC_COMMAND, {
-        containerId,
-        command,
-        workingDir,
-        env,
-      }),
-    getConfig: () => ({
-      host: DOCKER_CONFIG.PI_HOST,
-      sshUser: DOCKER_CONFIG.SSH_USER,
-      sshPort: DOCKER_CONFIG.SSH_PORT,
-      deployDir: DOCKER_CONFIG.DEPLOY_DIR,
-      composeFiles: DOCKER_COMPOSE_FILES,
-      serviceNames: SERVICE_NAMES,
-    }),
-  },
-
-  api: {
-    request: (method: string, url: string, data?: unknown, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_REQUEST, { method, url, data, headers }),
-    get: (url: string, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_GET, { url, headers }),
-    post: (url: string, data?: unknown, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_POST, { url, data, headers }),
-    put: (url: string, data?: unknown, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_PUT, { url, data, headers }),
-    delete: (url: string, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_DELETE, { url, headers }),
-    upload: (url: string, file: File, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_UPLOAD, { url, file, headers }),
-    download: (url: string, headers?: Record<string, string>) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.API_DOWNLOAD, { url, headers }),
-  },
-
-  auth: {
-    login: (email: string, signature: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.AUTH_LOGIN, { email, signature }),
-    logout: (token: string) => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.AUTH_LOGOUT, { token }),
-    verifyToken: (token: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.AUTH_VERIFY_TOKEN, { token }),
-    refreshToken: (token: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.AUTH_REFRESH_TOKEN, { token }),
-  },
-
-  config: {
-    get: (key: string) => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.CONFIG_GET, { key }),
-    set: (key: string, value: unknown) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.CONFIG_SET, { key, value }),
-    reset: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.CONFIG_RESET),
-    export: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.CONFIG_EXPORT),
-    import: (config: unknown) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.CONFIG_IMPORT, { config }),
-  },
-
-  file: {
-    open: (filters?: unknown) => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.FILE_OPEN, { filters }),
-    save: (data: unknown, filename?: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.FILE_SAVE, { data, filename }),
-    saveAs: (data: unknown, filename?: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.FILE_SAVE_AS, { data, filename }),
-    select: (filters?: unknown) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.FILE_SELECT, { filters }),
-    download: (url: string, filename?: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.FILE_DOWNLOAD, { url, filename }),
-  },
-
-  system: {
-    getInfo: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.SYSTEM_GET_INFO),
-    getResources: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.SYSTEM_GET_RESOURCES),
-    getNetworkInfo: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.SYSTEM_GET_NETWORK_INFO),
-    showNotification: (title: string, body: string, icon?: string, actions?: unknown[]) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.SYSTEM_SHOW_NOTIFICATION, {
-        title,
-        body,
-        icon,
-        actions,
-      }),
-    openExternal: (url: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.SYSTEM_OPEN_EXTERNAL, { url }),
-  },
-
-  log: {
-    info: (message: string) => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.LOG_INFO, { message }),
-    warn: (message: string) => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.LOG_WARN, { message }),
-    error: (message: string) => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.LOG_ERROR, { message }),
-    debug: (message: string) =>
-      ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.LOG_DEBUG, { message }),
-  },
-
-  update: {
-    check: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.UPDATE_CHECK),
-    download: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.UPDATE_DOWNLOAD),
-    install: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.UPDATE_INSTALL),
-    restart: () => ipcRenderer.invoke(RENDERER_TO_MAIN_CHANNELS.UPDATE_RESTART),
-  },
-
-  communication: {
-    sendMessage: (targetWindow: string, channel: string, data: unknown) =>
-      ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.WINDOW_SEND_MESSAGE, {
-        targetWindow,
-        channel,
-        data,
-      }),
-    broadcast: (channel: string, data: unknown) =>
-      ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.WINDOW_BROADCAST, { channel, data }),
-    syncData: (key: string, data: unknown, timestamp: number) =>
-      ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.DATA_SYNC, { key, data, timestamp }),
-    getData: (key: string) => ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.DATA_GET, { key }),
-    setData: (key: string, data: unknown) =>
-      ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.DATA_SET, { key, data }),
-    deleteData: (key: string) => ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.DATA_DELETE, { key }),
-    subscribeEvent: (event: string, callback: string) =>
-      ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.EVENT_SUBSCRIBE, { event, callback }),
-    unsubscribeEvent: (subscriptionId: string) =>
-      ipcRenderer.invoke(BIDIRECTIONAL_CHANNELS.EVENT_UNSUBSCRIBE, { subscriptionId }),
-  },
-
-  events: {
-    on: (channel: string, callback: Listener) => registerListener(channel, callback),
-    off: (channel: string, callback: Listener) => unregisterListener(channel, callback),
-    once: (channel: string, callback: Listener) => {
-      if (!validateMainChannel(channel)) return;
-      const wrapped: WrappedListener = (_event, data) => callback(data);
-      ipcRenderer.once(channel, wrapped);
+    start: (): Promise<any> => ipcRenderer.invoke(IPCChannels.TOR_START),
+    stop: (): Promise<any> => ipcRenderer.invoke(IPCChannels.TOR_STOP),
+    restart: (): Promise<any> => ipcRenderer.invoke(IPCChannels.TOR_RESTART),
+    getStatus: (): Promise<any> => ipcRenderer.invoke(IPCChannels.TOR_GET_STATUS),
+    getMetrics: (): Promise<any> => ipcRenderer.invoke(IPCChannels.TOR_GET_METRICS),
+    testConnection: (url: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.TOR_TEST_CONNECTION, { url }),
+    healthCheck: (): Promise<any> => ipcRenderer.invoke(IPCChannels.TOR_HEALTH_CHECK),
+    onStatusUpdate: (listener: (status: any) => void): void => {
+      ipcRenderer.on(IPCChannels.TOR_STATUS_UPDATE, (event, status) => listener(status));
     },
-    removeAll: (channel: string) => removeAllRegisteredListeners(channel),
   },
-});
 
-contextBridge.exposeInMainWorld('utils', {
-  platform: process.platform,
-  isWindows: process.platform === 'win32',
-  isMac: process.platform === 'darwin',
-  isLinux: process.platform === 'linux',
-  isDevelopment: process.env.NODE_ENV === 'development',
-  isProduction: process.env.NODE_ENV === 'production',
-  electronVersion: process.versions.electron,
-  nodeVersion: process.versions.node,
-  chromeVersion: process.versions.chrome,
-  generateId: () => Math.random().toString(36).substring(2) + Date.now().toString(36),
-  generateUUID: () =>
-    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
-      const random = (Math.random() * 16) | 0;
-      const value = character === 'x' ? random : (random & 0x3) | 0x8;
-      return value.toString(16);
-    }),
-  formatDate: (date: Date | string) => new Date(date).toLocaleString('en-US', { hour12: false }),
-  formatRelativeTime: (date: Date | string) => {
-    const now = Date.now();
-    const then = new Date(date).getTime();
-    const diffSeconds = Math.floor((now - then) / 1000);
-
-    if (diffSeconds < 60) return `${diffSeconds}s ago`;
-    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
-    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
-    return `${Math.floor(diffSeconds / 86400)}d ago`;
+  /**
+   * Docker management methods
+   */
+  docker: {
+    getStatus: (): Promise<any> => ipcRenderer.invoke(IPCChannels.DOCKER_GET_STATUS),
+    connectSSH: (config: any): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_CONNECT_SSH, config),
+    disconnect: (): Promise<any> => ipcRenderer.invoke(IPCChannels.DOCKER_DISCONNECT),
+    getContainers: (): Promise<any> => ipcRenderer.invoke(IPCChannels.DOCKER_GET_CONTAINERS),
+    getContainer: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_GET_CONTAINER, id),
+    startContainer: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_START_CONTAINER, id),
+    stopContainer: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_STOP_CONTAINER, id),
+    restartContainer: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_RESTART_CONTAINER, id),
+    removeContainer: (id: string, force?: boolean): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_REMOVE_CONTAINER, { id, force }),
+    getLogs: (id: string, lines?: number): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_GET_LOGS, { id, lines }),
+    getStats: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_GET_STATS, id),
+    getAllStats: (): Promise<any> => ipcRenderer.invoke(IPCChannels.DOCKER_GET_ALL_STATS),
+    pullImage: (imageName: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.DOCKER_PULL_IMAGE, imageName),
+    getImages: (): Promise<any> => ipcRenderer.invoke(IPCChannels.DOCKER_GET_IMAGES),
+    onContainerUpdate: (listener: (data: any) => void): void => {
+      ipcRenderer.on(IPCChannels.DOCKER_CONTAINER_UPDATE, (event, data) => listener(data));
+    },
   },
-  formatBytes: (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+
+  /**
+   * API proxy methods
+   */
+  api: {
+    request: (request: any): Promise<any> => ipcRenderer.invoke(IPCChannels.API_REQUEST, request),
+    get: (url: string, config?: any): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.API_GET, { url, config }),
+    post: (url: string, data?: any, config?: any): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.API_POST, { url, data, config }),
+    put: (url: string, data?: any, config?: any): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.API_PUT, { url, data, config }),
+    delete: (url: string, config?: any): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.API_DELETE, { url, config }),
   },
-  truncate: (value: string, maxLength: number) =>
-    value.length <= maxLength ? value : `${value.slice(0, maxLength - 3)}...`,
-  capitalize: (value: string) => value.charAt(0).toUpperCase() + value.slice(1),
-});
 
-contextBridge.exposeInMainWorld('constants', {
-  API_ENDPOINTS,
-  SERVICE_PORTS,
-  TOR_CONFIG,
-  WINDOW_CONFIGS,
-  LUCID_ERROR_CODES,
-  TIMEOUTS,
-  DOCKER_CONFIG,
-  DOCKER_COMPOSE_FILES,
-  SERVICE_NAMES,
-  PATHS,
-  CHUNK_CONFIG,
-  HARDWARE_WALLET_TYPES,
-  USER_ROLES,
-  SESSION_STATUSES,
-  NODE_STATUSES,
-  PAYOUT_STATUSES,
-});
+  /**
+   * Authentication methods
+   */
+  auth: {
+    login: (email: string, signature: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.AUTH_LOGIN, { email, signature }),
+    logout: (): Promise<any> => ipcRenderer.invoke(IPCChannels.AUTH_LOGOUT),
+    verifyToken: (token: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.AUTH_VERIFY_TOKEN, { token }),
+    refreshToken: (): Promise<any> => ipcRenderer.invoke(IPCChannels.AUTH_REFRESH_TOKEN),
+    onStatusChange: (listener: (status: any) => void): void => {
+      ipcRenderer.on(IPCChannels.AUTH_STATUS_CHANGED, (event, status) => listener(status));
+    },
+    onTokenExpired: (listener: () => void): void => {
+      ipcRenderer.on(IPCChannels.AUTH_TOKEN_EXPIRED, () => listener());
+    },
+  },
 
-delete (window as any).require;
-delete (window as any).exports;
-delete (window as any).module;
+  /**
+   * Configuration methods
+   */
+  config: {
+    get: (key?: string): Promise<any> => ipcRenderer.invoke(IPCChannels.CONFIG_GET, key),
+    set: (key: string, value: any): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.CONFIG_SET, { key, value }),
+    reset: (key?: string): Promise<any> => ipcRenderer.invoke(IPCChannels.CONFIG_RESET, key),
+    export: (): Promise<any> => ipcRenderer.invoke(IPCChannels.CONFIG_EXPORT),
+    import: (data: any): Promise<any> => ipcRenderer.invoke(IPCChannels.CONFIG_IMPORT, data),
+    onUpdate: (listener: (update: any) => void): void => {
+      ipcRenderer.on(IPCChannels.CONFIG_UPDATED, (event, update) => listener(update));
+    },
+  },
+
+  /**
+   * System methods
+   */
+  system: {
+    getInfo: (): Promise<any> => ipcRenderer.invoke(IPCChannels.SYSTEM_GET_INFO),
+    getResources: (): Promise<any> => ipcRenderer.invoke(IPCChannels.SYSTEM_GET_RESOURCES),
+    getNetworkInfo: (): Promise<any> => ipcRenderer.invoke(IPCChannels.SYSTEM_GET_NETWORK_INFO),
+    showNotification: (title: string, body: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.SYSTEM_SHOW_NOTIFICATION, { title, body }),
+    openExternal: (url: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.SYSTEM_OPEN_EXTERNAL, url),
+  },
+
+  /**
+   * Logging methods
+   */
+  log: {
+    info: (message: string, context?: any): void => 
+      ipcRenderer.send(IPCChannels.LOG_INFO, { message, context }),
+    warn: (message: string, context?: any): void => 
+      ipcRenderer.send(IPCChannels.LOG_WARN, { message, context }),
+    error: (message: string, context?: any): void => 
+      ipcRenderer.send(IPCChannels.LOG_ERROR, { message, context }),
+    debug: (message: string, context?: any): void => 
+      ipcRenderer.send(IPCChannels.LOG_DEBUG, { message, context }),
+  },
+
+  /**
+   * Update methods
+   */
+  update: {
+    check: (): Promise<any> => ipcRenderer.invoke(IPCChannels.UPDATE_CHECK),
+    download: (): Promise<any> => ipcRenderer.invoke(IPCChannels.UPDATE_DOWNLOAD),
+    install: (): Promise<any> => ipcRenderer.invoke(IPCChannels.UPDATE_INSTALL),
+    restart: (): Promise<any> => ipcRenderer.invoke(IPCChannels.UPDATE_RESTART),
+    onAvailable: (listener: (update: any) => void): void => {
+      ipcRenderer.on(IPCChannels.UPDATE_AVAILABLE, (event, update) => listener(update));
+    },
+    onProgress: (listener: (progress: any) => void): void => {
+      ipcRenderer.on(IPCChannels.UPDATE_PROGRESS, (event, progress) => listener(progress));
+    },
+  },
+
+  /**
+   * Window management methods
+   */
+  window: {
+    create: (type: string, options?: any): Promise<string> => 
+      ipcRenderer.invoke(IPCChannels.WINDOW_CREATE, { type, options }),
+    close: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.WINDOW_CLOSE, id),
+    minimize: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.WINDOW_MINIMIZE, id),
+    maximize: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.WINDOW_MAXIMIZE, id),
+    restore: (id: string): Promise<any> => 
+      ipcRenderer.invoke(IPCChannels.WINDOW_RESTORE, id),
+    getList: (): Promise<any> => ipcRenderer.invoke(IPCChannels.WINDOW_GET_LIST),
+    getStatistics: (): Promise<any> => ipcRenderer.invoke(IPCChannels.WINDOW_GET_STATISTICS),
+  },
+};
+
+/**
+ * Expose API to renderer process via contextBridge
+ * This ensures security by preventing direct access to ipcRenderer
+ */
+contextBridge.exposeInMainWorld('lucidAPI', api);
+
+export type LucidAPI = typeof api;

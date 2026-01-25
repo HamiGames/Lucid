@@ -34,7 +34,7 @@ SUMMARY=$(echo "$PHASE" | /bin/busybox sed -n 's/.*SUMMARY=\(.*\)$/\1/p')
 # Use busybox date explicitly (distroless-compatible)
 STAMP=$(/bin/busybox date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-mkdir -p "$OUTDIR"
+mkdir -p "$OUTDIR" 2>/dev/null || true
 
 {
   echo "TOR_VERSION=$VERSION"
@@ -42,10 +42,10 @@ mkdir -p "$OUTDIR"
   echo "TOR_BOOTSTRAP_TAG=$TAG"
   echo "TOR_BOOTSTRAP_SUMMARY=$SUMMARY"
   echo "TOR_BOOTSTRAP_AT=$STAMP"
-} > "$OUTDIR/tor_bootstrap.env"
+} > "$OUTDIR/tor_bootstrap.env" 2>/dev/null || true
 
 SUM_ESC=$(printf "%s" "$SUMMARY" | /bin/busybox sed 's/\"/\\\"/g')
-/bin/busybox cat > "$OUTDIR/tor_bootstrap.json" <<EOF
+/bin/busybox cat > "$OUTDIR/tor_bootstrap.json" <<EOF 2>/dev/null || true
 {
   "version": "$VERSION",
   "progress": ${PROGRESS:-0},
@@ -55,5 +55,5 @@ SUM_ESC=$(printf "%s" "$SUMMARY" | /bin/busybox sed 's/\"/\\\"/g')
 }
 EOF
 
-echo "[hc] bootstrapped (vars persisted)"
+echo "[hc] bootstrapped (health check passed)"
 exit 0

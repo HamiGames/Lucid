@@ -405,8 +405,12 @@ export class DockerService {
 
   private async executeCommand(command: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const child = spawn('sh', ['-c', command], {
-        stdio: ['pipe', 'pipe', 'pipe']
+      const shell = process.platform === 'win32' ? 'cmd.exe' : 'sh';
+      const shellArgs = process.platform === 'win32' ? ['/c', command] : ['-c', command];
+
+      const child = spawn(shell, shellArgs, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: process.platform === 'win32' ? true : false,
       });
 
       let stdout = '';

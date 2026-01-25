@@ -2,7 +2,7 @@
 # Lucid Tor Proxy — entrypoint for distroless runtime
 # Aligned with @constants: TOR_PROXY_* env vars, CREATE_ONION=0 default, /run/lucid/onion state
 
-set -Eeuo pipefail
+set -eu
 
 log() { printf '[tor-entrypoint] %s\n' "$*"; }
 

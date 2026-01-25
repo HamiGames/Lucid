@@ -108,10 +108,14 @@ export interface EmergencyControlRequest {
 
 export class AdminAPIService extends LucidAPIClient {
   private adminToken: string | null = null;
+  private tokenExpiry: Date | null = null;
+  private tokenRefreshTimer: NodeJS.Timeout | null = null;
+  private readonly tokenRefreshThreshold = 300000; // 5 minutes before expiry
 
   constructor(baseURL: string = API_ENDPOINTS.ADMIN) {
     super(baseURL);
     this.adminToken = this.getAdminToken();
+    this.setupTokenRefresh();
   }
 
   private getAdminToken(): string | null {
@@ -121,6 +125,40 @@ export class AdminAPIService extends LucidAPIClient {
   private async validateAdminAccess(): Promise<void> {
     if (!this.adminToken) {
       throw new Error(`${LUCID_ERROR_CODES.AUTHORIZATION_DENIED}: Admin authentication required`);
+    }
+
+    // Check if token is expired
+    if (this.tokenExpiry && new Date() > this.tokenExpiry) {
+      await this.refreshToken();
+    }
+  }
+
+  private setupTokenRefresh(): void {
+    // Check every minute if token needs refresh
+    setInterval(() => {
+      if (this.adminToken && this.tokenExpiry) {
+        const timeUntilExpiry = this.tokenExpiry.getTime() - Date.now();
+        if (timeUntilExpiry < this.tokenRefreshThreshold && timeUntilExpiry > 0) {
+          this.refreshToken().catch((error) => {
+            console.error('Auto token refresh failed:', error);
+          });
+        }
+      }
+    }, 60000);
+  }
+
+  private async refreshToken(): Promise<void> {
+    try {
+      console.log('Refreshing admin token...');
+      
+      // TODO: Implement actual token refresh with backend
+      // For now, extend the current token expiry
+      if (this.tokenExpiry) {
+        this.tokenExpiry = new Date(Date.now() + 3600000); // Extend by 1 hour
+      }
+    } catch (error) {
+      console.error('Failed to refresh admin token:', error);
+      throw error;
     }
   }
 
