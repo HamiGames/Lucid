@@ -680,6 +680,368 @@ class WalletManagerService:
         except Exception as e:
             logger.error(f"Error getting service stats: {e}")
             return {"error": str(e)}
+    
+    async def import_wallet(self, private_key: str, name: str, description: Optional[str] = None) -> WalletResponse:
+        """Import wallet from private key"""
+        try:
+            # Validate private key format
+            if not private_key or len(private_key) != 64:
+                raise ValueError("Invalid private key format (must be 64 hex characters)")
+            
+            # Validate hex format
+            try:
+                private_key_bytes = bytes.fromhex(private_key)
+            except ValueError:
+                raise ValueError("Invalid private key format (must be valid hex)")
+            
+            # Create PrivateKey object to get address
+            private_key_obj = PrivateKey(private_key_bytes)
+            address = private_key_obj.public_key.to_checksum_address()
+            
+            # Check if wallet with this address already exists
+            for existing_wallet in self.wallets.values():
+                if existing_wallet.address == address:
+                    raise ValueError(f"Wallet with address {address} already exists")
+            
+            # Generate wallet ID
+            wallet_id = hashlib.sha256(f"{address}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+            
+            # Encrypt private key
+            encrypted_private_key = self._encrypt_private_key(private_key)
+            
+            # Create wallet info
+            wallet_info = WalletInfo(
+                wallet_id=wallet_id,
+                name=name,
+                description=description,
+                address=address,
+                private_key_encrypted=encrypted_private_key,
+                wallet_type=WalletType.HOT,
+                status=WalletStatus.ACTIVE,
+                created_at=datetime.now(),
+                last_used=None
+            )
+            
+            # Store wallet
+            self.wallets[wallet_id] = wallet_info
+            
+            # Update balance
+            await self._update_wallet_balance(wallet_info)
+            
+            # Save registry
+            await self._save_wallets_registry()
+            
+            # Log import
+            await self._log_wallet_event(wallet_id, "wallet_imported", {
+                "address": address,
+                "name": name
+            })
+            
+            logger.info(f"Imported wallet: {wallet_id} -> {address}")
+            
+            return WalletResponse(
+                wallet_id=wallet_info.wallet_id,
+                name=wallet_info.name,
+                description=wallet_info.description,
+                address=wallet_info.address,
+                wallet_type=wallet_info.wallet_type.value,
+                status=wallet_info.status.value,
+                balance_trx=wallet_info.balance_trx,
+                created_at=wallet_info.created_at.isoformat(),
+                last_updated=wallet_info.created_at.isoformat()
+            )
+            
+        except Exception as e:
+            logger.error(f"Error importing wallet: {e}")
+            raise
+    
+    async def sign_transaction(self, wallet_id: str, password: Optional[str], transaction_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Sign transaction data with wallet private key"""
+        try:
+            if wallet_id not in self.wallets:
+                raise ValueError("Wallet not found")
+            
+            wallet_info = self.wallets[wallet_id]
+            
+            # Verify password if provided
+            if password and not self._verify_wallet_password(wallet_id, password):
+                raise ValueError("Invalid password")
+            
+            # Decrypt private key
+            try:
+                private_key_str = self._decrypt_private_key(wallet_info.private_key_encrypted, password)
+            except Exception as e:
+                raise ValueError(f"Failed to decrypt private key: {str(e)}")
+            
+            # Create PrivateKey object
+            private_key_obj = PrivateKey(bytes.fromhex(private_key_str))
+            
+            # Sign transaction based on type
+            if transaction_data.get("type") == "trx_transfer":
+                # TRX transfer transaction
+                to_address = transaction_data.get("to_address")
+                amount_sun = int(transaction_data.get("amount", 0) * 1_000_000)
+                
+                if not to_address:
+                    raise ValueError("to_address is required for TRX transfer")
+                
+                # Build transaction
+                txn = (
+                    self.tron.trx.transfer(wallet_info.address, to_address, amount_sun)
+                    .build()
+                    .sign(private_key_obj)
+                )
+                
+                # Get transaction hash
+                txid = txn.txid
+                
+                result = {
+                    "wallet_id": wallet_id,
+                    "txid": txid,
+                    "signed_transaction": txn.to_json(),
+                    "from_address": wallet_info.address,
+                    "to_address": to_address,
+                    "amount": transaction_data.get("amount", 0),
+                    "status": "signed",
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+            elif transaction_data.get("type") == "data_sign":
+                # Sign arbitrary data
+                data_hex = transaction_data.get("data")
+                if not data_hex:
+                    raise ValueError("data is required for data signing")
+                
+                data_bytes = bytes.fromhex(data_hex)
+                signature = private_key_obj.sign_msg_hash(data_bytes)
+                
+                result = {
+                    "wallet_id": wallet_id,
+                    "signature": signature.hex(),
+                    "public_key": private_key_obj.public_key.to_hex(),
+                    "data_hash": hashlib.sha256(data_bytes).hexdigest(),
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                raise ValueError(f"Unsupported transaction type: {transaction_data.get('type')}")
+            
+            # Log signing operation
+            await self._log_wallet_event(wallet_id, "transaction_signed", {
+                "txid": result.get("txid"),
+                "type": transaction_data.get("type")
+            })
+            
+            logger.info(f"Signed transaction for wallet {wallet_id}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error signing transaction for wallet {wallet_id}: {e}")
+            raise
+    
+    async def get_wallet_transactions(self, wallet_id: str, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get wallet transaction history"""
+        try:
+            if wallet_id not in self.wallets:
+                return []
+            
+            # Get transactions from storage
+            transactions = self.wallet_transactions.get(wallet_id, [])
+            
+            # Sort by timestamp (newest first)
+            transactions.sort(key=lambda x: x.timestamp if isinstance(x.timestamp, int) else 0, reverse=True)
+            
+            # Apply pagination
+            paginated = transactions[skip:skip + limit]
+            
+            # Convert to dict format
+            result = []
+            for tx in paginated:
+                result.append({
+                    "transaction_id": tx.transaction_id,
+                    "wallet_id": tx.wallet_id,
+                    "txid": tx.txid,
+                    "from_address": tx.from_address,
+                    "to_address": tx.to_address,
+                    "amount": tx.amount,
+                    "currency": tx.currency,
+                    "fee": tx.fee,
+                    "status": tx.status,
+                    "block_number": tx.block_number,
+                    "timestamp": tx.timestamp,
+                    "created_at": tx.created_at.isoformat() if isinstance(tx.created_at, datetime) else str(tx.created_at)
+                })
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting transactions for wallet {wallet_id}: {e}")
+            return []
+    
+    async def create_backup(self, wallet_id: str) -> Dict[str, Any]:
+        """Create backup of wallet"""
+        try:
+            if wallet_id not in self.wallets:
+                raise ValueError("Wallet not found")
+            
+            wallet_info = self.wallets[wallet_id]
+            
+            # Create backup data
+            backup_data = {
+                "wallet_id": wallet_info.wallet_id,
+                "name": wallet_info.name,
+                "description": wallet_info.description,
+                "address": wallet_info.address,
+                "private_key_encrypted": wallet_info.private_key_encrypted,
+                "wallet_type": wallet_info.wallet_type.value,
+                "status": wallet_info.status.value,
+                "created_at": wallet_info.created_at.isoformat(),
+                "backup_created_at": datetime.now().isoformat()
+            }
+            
+            # Save backup to file
+            backup_dir = Path(self.data_dir) / "backups"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            
+            backup_file = backup_dir / f"{wallet_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            
+            async with aiofiles.open(backup_file, "w") as f:
+                await f.write(json.dumps(backup_data, indent=2))
+            
+            backup_id = backup_file.stem
+            
+            # Log backup creation
+            await self._log_wallet_event(wallet_id, "backup_created", {
+                "backup_id": backup_id,
+                "backup_file": str(backup_file)
+            })
+            
+            logger.info(f"Created backup for wallet {wallet_id}: {backup_id}")
+            
+            return {
+                "backup_id": backup_id,
+                "wallet_id": wallet_id,
+                "backup_file": str(backup_file),
+                "created_at": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error creating backup for wallet {wallet_id}: {e}")
+            raise
+    
+    async def restore_backup(self, wallet_id: str, backup_id: str, password: Optional[str] = None) -> WalletResponse:
+        """Restore wallet from backup"""
+        try:
+            # Find backup file
+            backup_dir = Path(self.data_dir) / "backups"
+            backup_file = backup_dir / f"{backup_id}.json"
+            
+            if not backup_file.exists():
+                raise ValueError(f"Backup {backup_id} not found")
+            
+            # Load backup data
+            async with aiofiles.open(backup_file, "r") as f:
+                backup_data = json.loads(await f.read())
+            
+            # Verify wallet_id matches
+            if backup_data.get("wallet_id") != wallet_id:
+                raise ValueError("Backup wallet_id does not match")
+            
+            # Restore wallet info
+            wallet_info = WalletInfo(
+                wallet_id=backup_data["wallet_id"],
+                name=backup_data["name"],
+                description=backup_data.get("description"),
+                address=backup_data["address"],
+                private_key_encrypted=backup_data["private_key_encrypted"],
+                wallet_type=WalletType(backup_data["wallet_type"]),
+                status=WalletStatus(backup_data["status"]),
+                created_at=datetime.fromisoformat(backup_data["created_at"]),
+                last_used=None
+            )
+            
+            # Update wallet
+            self.wallets[wallet_id] = wallet_info
+            
+            # Update balance
+            await self._update_wallet_balance(wallet_info)
+            
+            # Save registry
+            await self._save_wallets_registry()
+            
+            # Log restore
+            await self._log_wallet_event(wallet_id, "wallet_restored", {
+                "backup_id": backup_id,
+                "backup_created_at": backup_data.get("backup_created_at")
+            })
+            
+            logger.info(f"Restored wallet {wallet_id} from backup {backup_id}")
+            
+            return WalletResponse(
+                wallet_id=wallet_info.wallet_id,
+                name=wallet_info.name,
+                description=wallet_info.description,
+                address=wallet_info.address,
+                wallet_type=wallet_info.wallet_type.value,
+                status=wallet_info.status.value,
+                balance_trx=wallet_info.balance_trx,
+                created_at=wallet_info.created_at.isoformat(),
+                last_updated=datetime.now().isoformat()
+            )
+            
+        except Exception as e:
+            logger.error(f"Error restoring wallet {wallet_id} from backup {backup_id}: {e}")
+            raise
+    
+    async def verify_password(self, wallet_id: str, password: str) -> bool:
+        """Verify wallet password"""
+        try:
+            return self._verify_wallet_password(wallet_id, password)
+        except Exception as e:
+            logger.error(f"Error verifying password for wallet {wallet_id}: {e}")
+            return False
+    
+    async def get_recovery_info(self, wallet_id: str) -> Dict[str, Any]:
+        """Get recovery information for wallet"""
+        try:
+            if wallet_id not in self.wallets:
+                raise ValueError("Wallet not found")
+            
+            wallet_info = self.wallets[wallet_id]
+            
+            # List available backups
+            backup_dir = Path(self.data_dir) / "backups"
+            backups = []
+            
+            if backup_dir.exists():
+                for backup_file in backup_dir.glob(f"{wallet_id}_*.json"):
+                    try:
+                        async with aiofiles.open(backup_file, "r") as f:
+                            backup_data = json.loads(await f.read())
+                            backups.append({
+                                "backup_id": backup_file.stem,
+                                "created_at": backup_data.get("backup_created_at"),
+                                "file": str(backup_file)
+                            })
+                    except Exception:
+                        continue
+            
+            # Sort backups by creation time
+            backups.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+            
+            return {
+                "wallet_id": wallet_id,
+                "address": wallet_info.address,
+                "has_backups": len(backups) > 0,
+                "backup_count": len(backups),
+                "backups": backups,
+                "last_backup": backups[0] if backups else None,
+                "recovery_methods": ["backup_restore"],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting recovery info for wallet {wallet_id}: {e}")
+            raise
 
 # Global instance - will be initialized async
 wallet_manager_service = WalletManagerService()
@@ -712,6 +1074,34 @@ async def list_wallets(status: Optional[WalletStatus] = None) -> List[WalletResp
 async def get_service_stats() -> Dict[str, Any]:
     """Get service statistics"""
     return await wallet_manager_service.get_service_stats()
+
+async def import_wallet(private_key: str, name: str, description: Optional[str] = None) -> WalletResponse:
+    """Import wallet from private key"""
+    return await wallet_manager_service.import_wallet(private_key, name, description)
+
+async def sign_transaction(wallet_id: str, password: Optional[str], transaction_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Sign transaction with wallet"""
+    return await wallet_manager_service.sign_transaction(wallet_id, password, transaction_data)
+
+async def get_wallet_transactions(wallet_id: str, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
+    """Get wallet transaction history"""
+    return await wallet_manager_service.get_wallet_transactions(wallet_id, skip, limit)
+
+async def create_backup(wallet_id: str) -> Dict[str, Any]:
+    """Create wallet backup"""
+    return await wallet_manager_service.create_backup(wallet_id)
+
+async def restore_backup(wallet_id: str, backup_id: str, password: Optional[str] = None) -> WalletResponse:
+    """Restore wallet from backup"""
+    return await wallet_manager_service.restore_backup(wallet_id, backup_id, password)
+
+async def verify_password(wallet_id: str, password: str) -> bool:
+    """Verify wallet password"""
+    return await wallet_manager_service.verify_password(wallet_id, password)
+
+async def get_recovery_info(wallet_id: str) -> Dict[str, Any]:
+    """Get wallet recovery information"""
+    return await wallet_manager_service.get_recovery_info(wallet_id)
 
 if __name__ == "__main__":
     # Example usage - DO NOT USE IN PRODUCTION

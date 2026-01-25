@@ -81,6 +81,7 @@
     "@ledgerhq/hw-app-tron": "^6.27.11",
     "@trezor/connect": "^9.2.16",
     "@keepkey/hdwallet": "^0.46.1",
-    "tor-control-ts": "^1.0.0"
+    "tor-control-ts": "^1.0.0",
+    "tor-ctrl": "^1.0.0"
   }
 }

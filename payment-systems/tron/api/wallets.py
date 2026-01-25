@@ -23,7 +23,11 @@ from ..services.wallet_manager import (
     WalletType,
     WalletStatus
 )
-from ..models.wallet import WalletResponse, WalletCreateRequest, WalletUpdateRequest
+from ..models.wallet import (
+    WalletResponse, WalletCreateRequest, WalletUpdateRequest,
+    WalletSignRequest, WalletSignResponse,
+    WalletImportRequest, WalletExportResponse
+)
 from ..models.transaction import TransactionResponse, TransactionCreateRequest
 
 # Configure logging
@@ -68,30 +72,10 @@ class WalletCreateResponse(BaseModel):
     created_at: str
     message: str
 
-class WalletImportRequest(BaseModel):
-    """Wallet import request"""
-    private_key: str = Field(..., description="Private key in hex format")
-    name: str = Field(..., description="Wallet name")
-    description: Optional[str] = Field(None, description="Wallet description")
-
 class WalletExportRequest(BaseModel):
     """Wallet export request"""
     wallet_id: str = Field(..., description="Wallet ID to export")
     include_private_key: bool = Field(False, description="Include private key in export")
-
-class WalletSignRequest(BaseModel):
-    """Wallet sign request"""
-    wallet_id: str = Field(..., description="Wallet ID")
-    data: str = Field(..., description="Data to sign (hex string)")
-    message: Optional[str] = Field(None, description="Human readable message")
-
-class WalletSignResponse(BaseModel):
-    """Wallet sign response"""
-    wallet_id: str
-    signature: str
-    public_key: str
-    message_hash: str
-    timestamp: str
 
 @router.post("/create", response_model=WalletCreateResponse)
 async def create_wallet(request: WalletCreateRequest):
@@ -275,31 +259,47 @@ async def import_wallet(request: WalletImportRequest):
     """Import existing wallet - private key is encrypted and stored securely"""
     try:
         # Validate private key format
-        if not request.private_key or len(request.private_key) != 64:
+        if not request.private_key:
+            raise HTTPException(status_code=400, detail="Private key is required")
+        
+        if len(request.private_key) != 64:
             raise HTTPException(status_code=400, detail="Invalid private key format (must be 64 hex characters)")
         
+        # Validate hex format
+        try:
+            bytes.fromhex(request.private_key)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid private key format (must be valid hex)")
+        
         # Import wallet using service - private key will be encrypted
-        # Note: We need to create a wallet with the imported private key
-        # This requires extending the service to support import functionality
-        # For now, we'll log a warning and return an error
-        logger.warning("Wallet import via API is not yet fully implemented - use service directly")
-        raise HTTPException(
-            status_code=501, 
-            detail="Wallet import functionality is being implemented. Private keys are encrypted and never returned in responses."
+        wallet_response = await wallet_manager_service.import_wallet(
+            private_key=request.private_key,
+            name=request.name,
+            description=request.description
         )
         
-        # TODO: Implement proper import using wallet_manager_service
-        # The private key should be encrypted using the service's encryption
+        logger.info(f"Imported wallet via API: {wallet_response.wallet_id} -> {wallet_response.address}")
+        
+        return WalletCreateResponse(
+            wallet_id=wallet_response.wallet_id,
+            address=wallet_response.address,
+            private_key="[ENCRYPTED]",
+            public_key="",
+            created_at=wallet_response.created_at,
+            message="Wallet imported successfully. Private key is encrypted and stored securely."
+        )
         
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error importing wallet: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to import wallet: {str(e)}")
 
-@router.post("/{wallet_id}/export")
+@router.post("/{wallet_id}/export", response_model=WalletExportResponse)
 async def export_wallet(wallet_id: str, request: WalletExportRequest):
-    """Export wallet - private keys are encrypted and require password for decryption"""
+    """Export wallet data - private keys are encrypted and never exported via API"""
     try:
         # Get wallet from service
         wallet_response = await wallet_manager_service.get_wallet(wallet_id)
@@ -310,13 +310,18 @@ async def export_wallet(wallet_id: str, request: WalletExportRequest):
         # Log export operation for audit
         logger.info(f"Wallet export requested for {wallet_id}, include_private_key={request.include_private_key}")
         
+        # Get wallet balance for export
+        balance_data = await wallet_manager_service.get_wallet_balance(wallet_id)
+        
         export_data = {
             "wallet_id": wallet_response.wallet_id,
             "name": wallet_response.name,
             "description": wallet_response.description,
             "address": wallet_response.address,
-            "wallet_type": wallet_response.wallet_type,
+            "wallet_type": wallet_response.wallet_type if hasattr(wallet_response, 'wallet_type') else "hot",
             "status": wallet_response.status,
+            "balance_trx": balance_data.get("balance_trx", 0.0) if balance_data else 0.0,
+            "balance_sun": balance_data.get("balance_sun", 0) if balance_data else 0,
             "created_at": wallet_response.created_at,
             "last_updated": wallet_response.last_updated
         }
@@ -336,11 +341,11 @@ async def export_wallet(wallet_id: str, request: WalletExportRequest):
                 detail="Private key export via API is disabled for security reasons. Use secure backup mechanisms instead."
             )
         
-        return {
-            "wallet": export_data,
-            "exported_at": datetime.now().isoformat(),
-            "note": "Private keys are encrypted and stored securely. They are never returned via API."
-        }
+        return WalletExportResponse(
+            wallet=export_data,
+            exported_at=datetime.now().isoformat(),
+            note="Private keys are encrypted and stored securely. They are never returned via API. Use backup/restore for secure wallet migration."
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -349,7 +354,7 @@ async def export_wallet(wallet_id: str, request: WalletExportRequest):
 
 @router.post("/{wallet_id}/sign", response_model=WalletSignResponse)
 async def sign_data(wallet_id: str, request: WalletSignRequest):
-    """Sign data with wallet - requires wallet to be unlocked"""
+    """Sign data or transaction with wallet - requires password for private key decryption"""
     try:
         # Get wallet from service
         wallet_response = await wallet_manager_service.get_wallet(wallet_id)
@@ -357,41 +362,73 @@ async def sign_data(wallet_id: str, request: WalletSignRequest):
         if not wallet_response:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        # Validate data format
-        if not request.data or len(request.data) % 2 != 0:
-            raise HTTPException(status_code=400, detail="Invalid data format (must be hex string)")
+        # Validate password is provided
+        if not request.password:
+            raise HTTPException(status_code=400, detail="Password is required for signing operations")
         
-        # Log signing operation for audit
-        logger.info(f"Data signing requested for wallet {wallet_id}")
+        # Prepare transaction data based on type
+        transaction_data = {
+            "type": request.transaction_type
+        }
         
-        # TODO: Implement proper signing using wallet_manager_service
-        # This requires:
-        # 1. Decrypting the private key (with password verification)
-        # 2. Using TRON library to sign the data
-        # 3. Returning the signature
+        if request.transaction_type == "trx_transfer":
+            if not request.to_address:
+                raise HTTPException(status_code=400, detail="to_address is required for TRX transfer")
+            if not request.amount or request.amount <= 0:
+                raise HTTPException(status_code=400, detail="amount must be greater than 0")
+            
+            transaction_data["to_address"] = request.to_address
+            transaction_data["amount"] = request.amount
+        elif request.transaction_type == "data_sign":
+            if not request.data:
+                raise HTTPException(status_code=400, detail="data is required for data signing")
+            
+            # Validate hex format
+            try:
+                bytes.fromhex(request.data)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid data format (must be valid hex)")
+            
+            transaction_data["data"] = request.data
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported transaction type: {request.transaction_type}")
         
-        # For now, return a placeholder (this should be implemented properly)
-        logger.warning("Wallet signing functionality needs to be implemented using wallet_manager_service")
-        raise HTTPException(
-            status_code=501,
-            detail="Wallet signing functionality is being implemented. Private keys are encrypted and require password for operations."
+        # Sign transaction using service
+        sign_result = await wallet_manager_service.sign_transaction(
+            wallet_id=wallet_id,
+            password=request.password,
+            transaction_data=transaction_data
+        )
+        
+        logger.info(f"Signed {request.transaction_type} for wallet {wallet_id}")
+        
+        return WalletSignResponse(
+            wallet_id=wallet_id,
+            signature=sign_result.get("signature"),
+            txid=sign_result.get("txid"),
+            signed_transaction=sign_result.get("signed_transaction"),
+            public_key=sign_result.get("public_key"),
+            message_hash=sign_result.get("data_hash"),
+            timestamp=sign_result.get("timestamp", datetime.now().isoformat())
         )
         
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error signing data with wallet {wallet_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to sign data: {str(e)}")
 
 @router.get("/{wallet_id}/transactions", response_model=WalletTransactionResponse)
 async def get_wallet_transactions(wallet_id: str, skip: int = 0, limit: int = 100):
-    """Get wallet transactions"""
+    """Get wallet transaction history"""
     try:
         # Validate pagination parameters
         if skip < 0:
-            raise HTTPException(status_code=400, detail="Invalid skip parameter")
+            raise HTTPException(status_code=400, detail="Invalid skip parameter (must be >= 0)")
         if limit <= 0 or limit > 1000:
-            raise HTTPException(status_code=400, detail="Invalid limit parameter (1-1000)")
+            raise HTTPException(status_code=400, detail="Invalid limit parameter (must be 1-1000)")
         
         # Get wallet from service
         wallet_response = await wallet_manager_service.get_wallet(wallet_id)
@@ -399,14 +436,35 @@ async def get_wallet_transactions(wallet_id: str, skip: int = 0, limit: int = 10
         if not wallet_response:
             raise HTTPException(status_code=404, detail="Wallet not found")
         
-        # TODO: Implement transaction history retrieval from wallet_manager_service
-        # For now, return empty list as transaction history tracking needs to be implemented
+        # Get transaction history from service
+        transaction_list = await wallet_manager_service.get_wallet_transactions(
+            wallet_id=wallet_id,
+            skip=skip,
+            limit=limit
+        )
+        
+        # Convert to TransactionResponse format
         transactions = []
+        for tx_data in transaction_list:
+            transactions.append(TransactionResponse(
+                transaction_id=tx_data.get("transaction_id", ""),
+                wallet_id=tx_data.get("wallet_id", wallet_id),
+                txid=tx_data.get("txid", ""),
+                from_address=tx_data.get("from_address", ""),
+                to_address=tx_data.get("to_address", ""),
+                amount=tx_data.get("amount", 0.0),
+                currency=tx_data.get("currency", "TRX"),
+                fee=tx_data.get("fee", 0.0),
+                status=tx_data.get("status", "pending"),
+                block_number=tx_data.get("block_number", 0),
+                timestamp=tx_data.get("timestamp", 0),
+                created_at=tx_data.get("created_at", datetime.now().isoformat())
+            ))
         
         return WalletTransactionResponse(
             wallet_id=wallet_id,
             transactions=transactions,
-            total_count=0,
+            total_count=len(transaction_list),
             timestamp=datetime.now().isoformat()
         )
     except HTTPException:

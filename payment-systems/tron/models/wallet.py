@@ -148,3 +148,38 @@ class WalletStats(BaseModel):
                 "created_at": "2025-01-01T00:00:00Z"
             }
         }
+
+class WalletSignRequest(BaseModel):
+    """Wallet sign request model"""
+    data: Optional[str] = Field(None, description="Data to sign (hex string) - required for data_sign type")
+    password: str = Field(..., description="Wallet password for decryption", min_length=1)
+    message: Optional[str] = Field(None, description="Human readable message")
+    transaction_type: str = Field("data_sign", description="Transaction type: data_sign or trx_transfer")
+    to_address: Optional[str] = Field(None, description="Recipient address (required for trx_transfer)")
+    amount: Optional[float] = Field(None, description="Amount in TRX (required for trx_transfer)")
+
+class WalletSignResponse(BaseModel):
+    """Wallet sign response model"""
+    wallet_id: str = Field(..., description="Wallet ID")
+    signature: Optional[str] = Field(None, description="Transaction signature")
+    txid: Optional[str] = Field(None, description="Transaction ID (for transfers)")
+    signed_transaction: Optional[Dict[str, Any]] = Field(None, description="Signed transaction data")
+    public_key: Optional[str] = Field(None, description="Public key")
+    message_hash: Optional[str] = Field(None, description="Message hash")
+    timestamp: str = Field(..., description="Signing timestamp")
+
+class WalletImportRequest(BaseModel):
+    """Wallet import request model"""
+    private_key: str = Field(..., description="Private key in hex format (64 characters)")
+    name: str = Field(..., description="Wallet name", min_length=1, max_length=100)
+    description: Optional[str] = Field(None, description="Wallet description", max_length=500)
+
+class WalletExportResponse(BaseModel):
+    """Wallet export response model"""
+    wallet: Dict[str, Any] = Field(..., description="Wallet data")
+    exported_at: str = Field(..., description="Export timestamp")
+    note: str = Field(..., description="Export note")
+
+class PasswordVerifyRequest(BaseModel):
+    """Password verification request model"""
+    password: str = Field(..., description="Password to verify", min_length=1)
