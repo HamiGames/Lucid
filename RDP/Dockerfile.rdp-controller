@@ -115,7 +115,7 @@ RUN test -f ./session_controller/config.yaml || (echo "ERROR: config.yaml not fo
 ############################
 # Stage 2 – Runtime
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -183,7 +183,6 @@ USER 65532:65532
 ENTRYPOINT []
 
 # Use entrypoint.py script
-CMD ["/usr/bin/python3", "/app/session_controller/entrypoint.py"]
+CMD ["/usr/bin/python3.11", "/app/session_controller/entrypoint.py"]
 
 # All configuration obtained from .env.application, .env.core, .env.secrets, .env.foundation
-
