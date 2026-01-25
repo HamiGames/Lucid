@@ -98,7 +98,7 @@ COPY --from=builder --chown=nonroot:nonroot /build/app /app
 EXPOSE 8094 8104
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3","-c","import urllib.request; urllib.request.urlopen('http://localhost:8094/health').read()"]
+    CMD ["/opt/venv/bin/python3","-c","import urllib.request; urllib.request.urlopen('http://localhost:8094/health').read(); exit(0)"]
 
 USER 65532:65532
 

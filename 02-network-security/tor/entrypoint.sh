@@ -113,16 +113,14 @@ copy_cookie_to_shared() {
   # This is pure bash - no external commands required
   local dest_dir="${cookie_dest%/*}"
   
-  # Ensure destination directory exists and is writable
+  # Ensure destination directory exists and is writable (best-effort)
   if ! mkdir -p "$dest_dir" 2>/dev/null; then
-    log "ERROR: Cannot create destination directory: $dest_dir"
-    return 1
+    log "WARNING: Cannot create destination directory: $dest_dir (continuing anyway)"
   fi
   
-  # Check if directory is writable
+  # Check if directory is writable (best-effort)
   if [ ! -w "$dest_dir" ]; then
-    log "ERROR: Destination directory is not writable: $dest_dir"
-    return 1
+    log "WARNING: Destination directory is not writable: $dest_dir (continuing anyway)"
   fi
   
   # Copy with world-readable permissions so tunnel-tools (UID 65532) can read it
@@ -144,10 +142,11 @@ copy_cookie_to_shared() {
       log "Cookie copied using cat method to $cookie_dest"
       return 0
     else
-      log "ERROR: Failed to copy cookie to shared volume (both cp and cat methods failed)"
+      log "WARNING: Failed to copy cookie to shared volume (both cp and cat methods failed)"
       log "Source: $cookie_src (exists: $([ -f "$cookie_src" ] && echo 'yes' || echo 'no'))"
       log "Destination: $cookie_dest (dir writable: $([ -w "$dest_dir" ] && echo 'yes' || echo 'no'))"
-      return 1
+      log "Continuing anyway - tunnel-tools will try to access direct mount"
+      return 0  # Non-fatal: allow tor-proxy to continue
     fi
   fi
 }
