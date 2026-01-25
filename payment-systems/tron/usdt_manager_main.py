@@ -22,6 +22,7 @@ if str(payment_systems_dir) not in sys.path:
 
 from tron.services.usdt_manager import USDTManagerService
 from tron.api.usdt import router as usdt_router
+from tron.api.usdt_manager import router as usdt_manager_router
 
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -85,7 +86,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(usdt_router, prefix="/api/v1/tron", tags=["USDT Manager"])
+app.include_router(usdt_router, tags=["USDT Operations"])
+app.include_router(usdt_manager_router, tags=["USDT Manager"])
 
 
 # Health check endpoints
@@ -104,14 +106,14 @@ async def health_check():
         if usdt_service:
             health_status["service_initialized"] = True
             try:
-                stats = await usdt_service.get_service_stats()
-                health_status["usdt"] = {
-                    "total_tokens": stats.get("total_tokens", 0),
-                    "active_tokens": stats.get("active_tokens", 0),
-                    "total_balances": stats.get("total_balances", 0)
+                metrics = await usdt_service.get_metrics()
+                health_status["metrics"] = {
+                    "total_transfers": metrics.get("metrics", {}).get("total_transfers", 0),
+                    "total_stakes": metrics.get("metrics", {}).get("total_stakes", 0),
+                    "total_swaps": metrics.get("metrics", {}).get("total_swaps", 0),
                 }
             except Exception as e:
-                logger.warning(f"Failed to get USDT stats: {e}")
+                logger.warning(f"Failed to get USDT metrics: {e}")
                 health_status["status"] = "degraded"
         else:
             health_status["service_initialized"] = False
@@ -168,11 +170,11 @@ async def service_status():
         if not usdt_service:
             return {"status": "not_initialized"}, 503
         
-        stats = await usdt_service.get_service_stats()
+        metrics = await usdt_service.get_metrics()
         return {
             "service": "tron-usdt-manager",
             "status": "running",
-            "statistics": stats,
+            "metrics": metrics,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:

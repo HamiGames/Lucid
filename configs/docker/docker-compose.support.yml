@@ -25,14 +25,17 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:rw
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/tron-client:/app/logs:rw
     environment:
+      # ==============================================================================
+      # SERVICE CONFIGURATION
+      # ==============================================================================
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
       - SERVICE_NAME=lucid-tron-client
-      - SERVICE_PORT=${TRON_CLIENT_PORT:-8091}
-      - SERVICE_HOST=${TRON_CLIENT_HOST:-0.0.0.0}
-      - SERVICE_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
-      - TRON_CLIENT_HOST=lucid-tron-client
+      - SERVICE_PORT=${SERVICE_PORT:-8091}
+      - SERVICE_HOST=${SERVICE_HOST:-0.0.0.0}
+      - SERVICE_URL=${SERVICE_URL:-http://lucid-tron-client:8091}
+      - TRON_CLIENT_HOST=${TRON_CLIENT_HOST:-lucid-tron-client}
       - TRON_CLIENT_PORT=${TRON_CLIENT_PORT:-8091}
       - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
       - WORKERS=${WORKERS:-1}
@@ -41,41 +44,171 @@ services:
       - DEBUG=${DEBUG:-false}
       - ACCESS_LOG=${ACCESS_LOG:-true}
       - BIND_ADDRESS=${BIND_ADDRESS:-0.0.0.0}
+      # ==============================================================================
+      # TRON NETWORK CONFIGURATION
+      # ==============================================================================
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
       - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
       - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
       - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRON_RPC_URL_TESTNET=${TRON_RPC_URL_TESTNET:-https://api.shasta.trongrid.io}
       - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT}
       - TRONGRID_API_KEY=${TRONGRID_API_KEY}
-      - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_API_KEY=${TRON_API_KEY:-${TRONGRID_API_KEY}}
       - TRON_NODE_URL=${TRON_NODE_URL}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
       - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      # ==============================================================================
+      # USDT CONTRACT CONFIGURATION
+      # ==============================================================================
       - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
+      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
+      - USDT_CONTRACT_ADDRESS_SHASTA=${USDT_CONTRACT_ADDRESS_SHASTA:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
+      - USDT_DECIMALS=${USDT_DECIMALS:-6}
+      - TRON_CHAIN_ID_MAINNET=${TRON_CHAIN_ID_MAINNET:-0x2b6653dc}
+      - TRON_CHAIN_ID_TESTNET=${TRON_CHAIN_ID_TESTNET:-0x94a9059e}
+      - TRON_CHAIN_ID_SHASTA=${TRON_CHAIN_ID_SHASTA:-0x94a9059e}
+      - TRON_NETWORK_NAME_MAINNET=${TRON_NETWORK_NAME_MAINNET:-TRON Mainnet}
+      - TRON_NETWORK_NAME_TESTNET=${TRON_NETWORK_NAME_TESTNET:-TRON Testnet}
+      - TRON_NETWORK_NAME_SHASTA=${TRON_NETWORK_NAME_SHASTA:-TRON Shasta}
+      # ==============================================================================
+      # DATA STORAGE CONFIGURATION
+      # ==============================================================================
       - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
       - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/tron-client}
       - LOG_FILE=${LOG_FILE:-/app/logs/tron-client.log}
+      - TRON_LOG_FILE=${TRON_LOG_FILE:-/app/logs/tron-client.log}
+      # ==============================================================================
+      # DATABASE CONFIGURATION
+      # ==============================================================================
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
-      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # ==============================================================================
+      # SECURITY CONFIGURATION
+      # ==============================================================================
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY not set}
+      - JWT_SECRET=${JWT_SECRET_KEY}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:?WALLET_ENCRYPTION_KEY not set}
+      - ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - API_KEY=${API_KEY}
+      # ==============================================================================
+      # PAYMENT CONFIGURATION
+      # ==============================================================================
+      - MIN_PAYMENT_AMOUNT=${MIN_PAYMENT_AMOUNT:-0.01}
+      - MAX_PAYMENT_AMOUNT=${MAX_PAYMENT_AMOUNT:-10000.0}
+      - DAILY_PAYMENT_LIMIT=${DAILY_PAYMENT_LIMIT:-100000.0}
+      - PAYMENT_TIMEOUT=${PAYMENT_TIMEOUT:-300}
+      # ==============================================================================
+      # STAKING CONFIGURATION
+      # ==============================================================================
+      - MIN_STAKING_AMOUNT=${MIN_STAKING_AMOUNT:-1.0}
+      - MAX_STAKING_AMOUNT=${MAX_STAKING_AMOUNT:-1000000.0}
+      - STAKING_DURATION_MIN=${STAKING_DURATION_MIN:-1}
+      - STAKING_DURATION_MAX=${STAKING_DURATION_MAX:-365}
+      # ==============================================================================
+      # WALLET CONFIGURATION
+      # ==============================================================================
+      - MAX_WALLETS_PER_USER=${MAX_WALLETS_PER_USER:-10}
+      - WALLET_BACKUP_ENABLED=${WALLET_BACKUP_ENABLED:-true}
+      - WALLET_ENCRYPTION_ENABLED=${WALLET_ENCRYPTION_ENABLED:-true}
+      # ==============================================================================
+      # MONITORING & HEALTH CHECK CONFIGURATION
+      # ==============================================================================
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      # ==============================================================================
+      # RATE LIMITING CONFIGURATION
+      # ==============================================================================
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_BURST=${RATE_LIMIT_BURST:-200}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      # ==============================================================================
+      # CIRCUIT BREAKER CONFIGURATION
+      # ==============================================================================
+      - CIRCUIT_BREAKER_ENABLED=${CIRCUIT_BREAKER_ENABLED:-true}
+      - CIRCUIT_BREAKER_FAILURE_THRESHOLD=${CIRCUIT_BREAKER_FAILURE_THRESHOLD:-5}
+      - CIRCUIT_BREAKER_TIMEOUT=${CIRCUIT_BREAKER_TIMEOUT:-60}
+      - CIRCUIT_BREAKER_RECOVERY_TIMEOUT=${CIRCUIT_BREAKER_RECOVERY_TIMEOUT:-300}
+      # ==============================================================================
+      # RETRY CONFIGURATION
+      # ==============================================================================
+      - RETRY_MAX_RETRIES=${RETRY_MAX_RETRIES:-3}
+      - RETRY_INITIAL_DELAY=${RETRY_INITIAL_DELAY:-1}
+      - RETRY_MAX_DELAY=${RETRY_MAX_DELAY:-60}
+      - RETRY_EXPONENTIAL_BASE=${RETRY_EXPONENTIAL_BASE:-2}
+      - RETRY_JITTER=${RETRY_JITTER:-true}
+      # ==============================================================================
+      # CONNECTION POOL CONFIGURATION
+      # ==============================================================================
+      - CONNECTION_POOL_MAX_CONNECTIONS=${CONNECTION_POOL_MAX_CONNECTIONS:-1000}
+      - CONNECTION_POOL_MAX_KEEPALIVE_CONNECTIONS=${CONNECTION_POOL_MAX_KEEPALIVE_CONNECTIONS:-100}
+      - CONNECTION_POOL_KEEPALIVE_EXPIRY=${CONNECTION_POOL_KEEPALIVE_EXPIRY:-30}
+      - CONNECTION_POOL_TIMEOUT=${CONNECTION_POOL_TIMEOUT:-30}
+      - CONNECTION_POOL_CONNECT_TIMEOUT=${CONNECTION_POOL_CONNECT_TIMEOUT:-10}
+      - CONNECTION_POOL_READ_TIMEOUT=${CONNECTION_POOL_READ_TIMEOUT:-30}
+      - CONNECTION_POOL_WRITE_TIMEOUT=${CONNECTION_POOL_WRITE_TIMEOUT:-30}
+      - CONNECTION_POOL_POOL_TIMEOUT=${CONNECTION_POOL_POOL_TIMEOUT:-10}
+      # ==============================================================================
+      # TRANSACTION CONFIGURATION
+      # ==============================================================================
+      - TRON_TRANSACTION_CONFIRMATION_TIMEOUT=${TRON_TRANSACTION_CONFIRMATION_TIMEOUT:-300}
+      - TRON_MAX_CONFIRMATION_TIMEOUT=${TRON_MAX_CONFIRMATION_TIMEOUT:-600}
+      - TRON_CONFIRMATION_CHECK_INTERVAL=${TRON_CONFIRMATION_CHECK_INTERVAL:-10}
+      - TRON_TEST_ADDRESS=${TRON_TEST_ADDRESS}
+      # ==============================================================================
+      # NOTIFICATION CONFIGURATION
+      # ==============================================================================
+      - NOTIFICATION_ENABLED=${NOTIFICATION_ENABLED:-true}
+      - EMAIL_NOTIFICATIONS=${EMAIL_NOTIFICATIONS:-false}
+      - WEBHOOK_NOTIFICATIONS=${WEBHOOK_NOTIFICATIONS:-true}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      # ==============================================================================
+      # EXTERNAL SERVICE URLs
+      # ==============================================================================
       - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - USDT_MANAGER_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
+      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
+      - PAYMENT_GATEWAY_URL=${PAYMENT_GATEWAY_URL:-http://tron-payment-gateway:8097}
+      - TRX_STAKING_URL=${TRX_STAKING_URL:-http://tron-staking:8096}
+      # ==============================================================================
+      # CORS CONFIGURATION
+      # ==============================================================================
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      # ==============================================================================
+      # TRUSTED HOSTS CONFIGURATION
+      # ==============================================================================
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
-      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
-      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
-      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
-      - METRICS_ENABLED=${METRICS_ENABLED:-true}
-      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      # ==============================================================================
+      # LOGGING CONFIGURATION
+      # ==============================================================================
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - LOG_ROTATION_SIZE=${LOG_ROTATION_SIZE:-100MB}
+      - LOG_RETENTION_DAYS=${LOG_RETENTION_DAYS:-30}
+      # ==============================================================================
+      # BACKUP CONFIGURATION
+      # ==============================================================================
+      - BACKUP_ENABLED=${BACKUP_ENABLED:-true}
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL:-3600}
+      - RETENTION_DAYS=${RETENTION_DAYS:-30}
+      # ==============================================================================
+      # DEVELOPMENT CONFIGURATION
+      # ==============================================================================
+      - MOCK_TRANSACTIONS=${MOCK_TRANSACTIONS:-false}
+      - TEST_MODE=${TEST_MODE:-false}
+      # ==============================================================================
+      # MAX CONNECTIONS CONFIGURATION
+      # ==============================================================================
+      - MAX_CONNECTIONS=${MAX_CONNECTIONS:-1000}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -91,7 +224,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/opt/venv/bin/python3",
           "-c",
           "import os, urllib.request, sys; port = os.getenv('TRON_CLIENT_PORT', '8091'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
@@ -142,6 +275,14 @@ services:
       - PAYOUT_ROUTER_HOST=tron-payout-router
       - PAYOUT_ROUTER_PORT=${PAYOUT_ROUTER_PORT:-8092}
       - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
+      - WORKERS=${WORKERS:-1}
+      - TIMEOUT=${TIMEOUT:-30}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - ACCESS_LOG=${ACCESS_LOG:-true}
+      # ==============================================================================
+      # TRON CONFIGURATION
+      # ==============================================================================
       - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
       - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
@@ -151,40 +292,60 @@ services:
       - TRONGRID_API_KEY=${TRONGRID_API_KEY}
       - TRON_API_KEY=${TRON_API_KEY}
       - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
-      - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
-      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
-      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payout-router}
-      - LOG_FILE=${LOG_FILE:-/app/logs/payout-router.log}
+      # ==============================================================================
+      # PAYOUT CONFIGURATION
+      # ==============================================================================
       - PAYOUT_BATCH_SIZE=${PAYOUT_BATCH_SIZE:-50}
       - PAYOUT_BATCH_INTERVAL=${PAYOUT_BATCH_INTERVAL:-300}
       - MAX_PAYOUT_AMOUNT=${MAX_PAYOUT_AMOUNT:-1000.0}
       - MIN_PAYOUT_AMOUNT=${MIN_PAYOUT_AMOUNT:-0.01}
       - DAILY_PAYOUT_LIMIT=${DAILY_PAYOUT_LIMIT:-10000.0}
+      # ==============================================================================
+      # MONGODB CONFIGURATION
+      # ==============================================================================
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      # ==============================================================================
+      # REDIS CONFIGURATION
+      # ==============================================================================
       - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      # ==============================================================================
+      # SECURITY
+      # ==============================================================================
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      # ==============================================================================
+      # CORS CONFIGURATION
+      # ==============================================================================
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      # ==============================================================================
+      # RATE LIMITING
+      # ==============================================================================
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      # ==============================================================================
+      # METRICS AND MONITORING
+      # ==============================================================================
       - METRICS_ENABLED=${METRICS_ENABLED:-true}
       - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DEBUG=${DEBUG:-false}
+      # ==============================================================================
+      # DATA STORAGE
+      # ==============================================================================
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payout-router}
+      - LOG_FILE=${LOG_FILE:-/app/logs/payout-router.log}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -242,53 +403,106 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/wallet-manager:/app/logs:rw
     environment:
-      - LUCID_ENV=${LUCID_ENV:-production}
-      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
-      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
-      - SERVICE_NAME=tron-wallet-manager
-      - SERVICE_PORT=${WALLET_MANAGER_PORT:-8093}
-      - SERVICE_HOST=${WALLET_MANAGER_HOST:-0.0.0.0}
-      - SERVICE_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
-      - WALLET_MANAGER_HOST=tron-wallet-manager
-      - WALLET_MANAGER_PORT=${WALLET_MANAGER_PORT:-8093}
-      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      # ============================================================================
+      # DATABASE CONFIGURATION (Required)
+      # ============================================================================
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - MONGODB_SERVER_SELECTION_TIMEOUT_MS=${MONGODB_SERVER_SELECTION_TIMEOUT_MS:-5000}
+      - MONGODB_CONNECT_TIMEOUT_MS=${MONGODB_CONNECT_TIMEOUT_MS:-10000}
+      - MONGODB_SOCKET_TIMEOUT_MS=${MONGODB_SOCKET_TIMEOUT_MS:-20000}
+      - MONGODB_MAX_POOL_SIZE=${MONGODB_MAX_POOL_SIZE:-50}
+      - MONGODB_MIN_POOL_SIZE=${MONGODB_MIN_POOL_SIZE:-5}
+      - MONGODB_MAX_IDLE_TIME_MS=${MONGODB_MAX_IDLE_TIME_MS:-30000}
+      - MONGODB_RETRY_WRITES=${MONGODB_RETRY_WRITES:-true}
+      - MONGODB_RETRY_READS=${MONGODB_RETRY_READS:-true}
+      # ============================================================================
+      # ENCRYPTION KEYS (Required - from .env.secrets)
+      # ============================================================================
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # ============================================================================
+      # BACKUP CONFIGURATION
+      # ============================================================================
+      - BACKUP_DIRECTORY=${BACKUP_DIRECTORY:-/data/wallets/backups}
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL:-3600}
+      - RETENTION_DAYS=${RETENTION_DAYS:-30}
+      # ============================================================================
+      # TRON NETWORK CONFIGURATION
+      # ============================================================================
       - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
       - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
       - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
       - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
-      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-https://api.shasta.trongrid.io}
       - TRONGRID_API_KEY=${TRONGRID_API_KEY}
       - TRON_API_KEY=${TRON_API_KEY}
       - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
-      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
-      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/wallet-manager}
-      - LOG_FILE=${LOG_FILE:-/app/logs/wallet-manager.log}
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
-      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
-      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      # ============================================================================
+      # CACHE CONFIGURATION
+      # ============================================================================
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      # ============================================================================
+      # SERVICE CONFIGURATION
+      # ============================================================================
+      - SERVICE_NAME=tron-wallet-manager
+      - WALLET_MANAGER_PORT=${WALLET_MANAGER_PORT:-8093}
+      - SERVICE_PORT=${WALLET_MANAGER_PORT:-8093}
+      - WALLET_MANAGER_HOST=0.0.0.0
+      - SERVICE_HOST=0.0.0.0
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - SERVICE_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      # ============================================================================
+      # JWT AND SECURITY (from .env.secrets)
+      # ============================================================================
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:-}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      # ============================================================================
+      # CORS CONFIGURATION
+      # ============================================================================
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+      # ============================================================================
+      # TRUSTED HOSTS
+      # ============================================================================
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      # ============================================================================
+      # RATE LIMITING
+      # ============================================================================
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      # ============================================================================
+      # METRICS AND MONITORING
+      # ============================================================================
       - METRICS_ENABLED=${METRICS_ENABLED:-true}
       - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      # ============================================================================
+      # LOGGING CONFIGURATION
+      # ============================================================================
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=${LOG_FILE:-/app/logs/wallet-manager.log}
+      - ACCESS_LOG=${ACCESS_LOG:-true}
       - DEBUG=${DEBUG:-false}
+      # ============================================================================
+      # APPLICATION CONFIGURATION
+      # ============================================================================
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/wallet-manager}
+      - WORKERS=${WORKERS:-1}
+      - TIMEOUT=${TIMEOUT:-30}
+      - BIND_ADDRESS=${BIND_ADDRESS:-0.0.0.0}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -304,7 +518,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/opt/venv/bin/python3",
           "-c",
           "import os, urllib.request, sys; port = os.getenv('WALLET_MANAGER_PORT', '8093'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
@@ -344,58 +558,98 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/usdt-manager:/app/logs:rw
     environment:
+      # ==============================================================================
+      # SERVICE CONFIGURATION
+      # ==============================================================================
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
       - SERVICE_NAME=tron-usdt-manager
-      - SERVICE_PORT=${USDT_MANAGER_PORT:-8094}
       - SERVICE_HOST=${USDT_MANAGER_HOST:-0.0.0.0}
-      - SERVICE_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
-      - USDT_MANAGER_HOST=tron-usdt-manager
+      - SERVICE_PORT=${USDT_MANAGER_PORT:-8094}
       - USDT_MANAGER_PORT=${USDT_MANAGER_PORT:-8094}
+      - USDT_MANAGER_HOST=tron-usdt-manager
       - USDT_MANAGER_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
-      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
-      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=${LOG_FILE:-/app/logs/usdt-manager.log}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - DEBUG=${DEBUG:-false}
+      - ACCESS_LOG=${ACCESS_LOG:-true}
+      # ==============================================================================
+      # TRON NETWORK CONFIGURATION
+      # ==============================================================================
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
       - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
       - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
       - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
-      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-https://api.trongrid.io}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
       - TRONGRID_API_KEY=${TRONGRID_API_KEY}
       - TRON_API_KEY=${TRON_API_KEY}
       - TRON_NODE_URL=${TRON_NODE_URL}
-      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
-      - TRON_ADDRESS=${TRON_ADDRESS}
-      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      # ==============================================================================
+      # TRON CLIENT & WALLET MANAGER INTEGRATION
+      # ==============================================================================
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
+      # ==============================================================================
+      # USDT CONTRACT CONFIGURATION
+      # ==============================================================================
       - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
-      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}}
+      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
       - USDT_CONTRACT_ADDRESS_SHASTA=${USDT_CONTRACT_ADDRESS_SHASTA:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
       - USDT_DECIMALS=${USDT_DECIMALS:-6}
-      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
-      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/usdt-manager}
-      - LOG_FILE=${LOG_FILE:-/app/logs/usdt-manager.log}
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+      # ==============================================================================
+      # PRIVATE KEY & WALLET CONFIGURATION
+      # ==============================================================================
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+      - TRON_ADDRESS=${TRON_ADDRESS}
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # ==============================================================================
+      # DATABASE CONFIGURATION (MONGODB)
+      # ==============================================================================
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid-mongodb:27017}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid-mongodb:27017}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      # ==============================================================================
+      # REDIS CACHE CONFIGURATION
+      # ==============================================================================
       - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      # ==============================================================================
+      # SECURITY CONFIGURATION
+      # ==============================================================================
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      # ==============================================================================
+      # CORS & TRUSTED HOSTS
+      # ==============================================================================
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      # ==============================================================================
+      # RATE LIMITING
+      # ==============================================================================
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      # ==============================================================================
+      # METRICS AND MONITORING
+      # ==============================================================================
       - METRICS_ENABLED=${METRICS_ENABLED:-true}
       - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DEBUG=${DEBUG:-false}
+      # ==============================================================================
+      # DATA STORAGE
+      # ==============================================================================
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+      - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/usdt-manager}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -411,7 +665,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/opt/venv/bin/python3",
           "-c",
           "import os, urllib.request, sys; port = os.getenv('USDT_MANAGER_PORT', '8094'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
@@ -451,6 +705,9 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/trx-staking:/app/logs:rw
     environment:
+      # ==============================================================================
+      # SERVICE CONFIGURATION
+      # ==============================================================================
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
@@ -461,6 +718,14 @@ services:
       - STAKING_HOST=tron-staking
       - STAKING_PORT=${STAKING_PORT:-8096}
       - STAKING_URL=${STAKING_URL:-http://tron-staking:8096}
+      - WORKERS=${WORKERS:-1}
+      - TIMEOUT=${TIMEOUT:-30}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+      - ACCESS_LOG=${ACCESS_LOG:-true}
+      # ==============================================================================
+      # TRON CONFIGURATION
+      # ==============================================================================
       - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
       - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -471,34 +736,56 @@ services:
       - TRONGRID_API_KEY=${TRONGRID_API_KEY}
       - TRON_API_KEY=${TRON_API_KEY}
       - TRON_NODE_URL=${TRON_NODE_URL}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      # ==============================================================================
+      # DATA STORAGE
+      # ==============================================================================
       - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
       - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/trx-staking}
       - LOG_FILE=${LOG_FILE:-/app/logs/trx-staking.log}
+      # ==============================================================================
+      # MONGODB CONFIGURATION
+      # ==============================================================================
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
       - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      # ==============================================================================
+      # REDIS CONFIGURATION
+      # ==============================================================================
       - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      # ==============================================================================
+      # SECURITY
+      # ==============================================================================
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      # ==============================================================================
+      # CORS CONFIGURATION
+      # ==============================================================================
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      # ==============================================================================
+      # RATE LIMITING
+      # ==============================================================================
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      # ==============================================================================
+      # METRICS AND MONITORING
+      # ==============================================================================
       - METRICS_ENABLED=${METRICS_ENABLED:-true}
       - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DEBUG=${DEBUG:-false}
+      # ==============================================================================
+      # API GATEWAY
+      # ==============================================================================
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -554,60 +841,129 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payment-gateway:/app/logs:rw
     environment:
+      # ==============================================================================
+      # APPLICATION CONFIGURATION
+      # ==============================================================================
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
       - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+      - DEBUG=${DEBUG:-false}
+      - PRODUCTION_MODE=${PRODUCTION_MODE:-true}
+      # ==============================================================================
+      # SERVICE CONFIGURATION
+      # ==============================================================================
       - SERVICE_NAME=tron-payment-gateway
+      - SERVICE_HOST=0.0.0.0
       - SERVICE_PORT=${PAYMENT_GATEWAY_PORT:-8097}
-      - SERVICE_HOST=${PAYMENT_GATEWAY_HOST:-0.0.0.0}
       - SERVICE_URL=${PAYMENT_GATEWAY_URL:-http://tron-payment-gateway:8097}
       - PAYMENT_GATEWAY_HOST=tron-payment-gateway
       - PAYMENT_GATEWAY_PORT=${PAYMENT_GATEWAY_PORT:-8097}
       - PAYMENT_GATEWAY_URL=${PAYMENT_GATEWAY_URL:-http://tron-payment-gateway:8097}
+      - WORKERS=${WORKERS:-1}
+      - TIMEOUT=${TIMEOUT:-30}
+      # ==============================================================================
+      # DATABASE CONFIGURATION (Required)
+      # ==============================================================================
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid-mongodb:27017}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid-mongodb:27017}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
+      - MONGODB_SERVER_SELECTION_TIMEOUT_MS=${MONGODB_SERVER_SELECTION_TIMEOUT_MS:-5000}
+      - MONGODB_CONNECT_TIMEOUT_MS=${MONGODB_CONNECT_TIMEOUT_MS:-10000}
+      - MONGODB_SOCKET_TIMEOUT_MS=${MONGODB_SOCKET_TIMEOUT_MS:-20000}
+      - MONGODB_MAX_POOL_SIZE=${MONGODB_MAX_POOL_SIZE:-50}
+      - MONGODB_MIN_POOL_SIZE=${MONGODB_MIN_POOL_SIZE:-5}
+      - MONGODB_MAX_IDLE_TIME_MS=${MONGODB_MAX_IDLE_TIME_MS:-30000}
+      - MONGODB_RETRY_WRITES=${MONGODB_RETRY_WRITES:-true}
+      - MONGODB_RETRY_READS=${MONGODB_RETRY_READS:-true}
+      # ==============================================================================
+      # CACHE CONFIGURATION (Redis)
+      # ==============================================================================
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      # ==============================================================================
+      # ENCRYPTION KEYS (Required - from .env.secrets)
+      # ==============================================================================
+      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # ==============================================================================
+      # PAYMENT GATEWAY CONFIGURATION
+      # ==============================================================================
       - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
-      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
       - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://tron-wallet-manager:8093}
       - USDT_MANAGER_URL=${USDT_MANAGER_URL:-http://tron-usdt-manager:8094}
+      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://tron-payout-router:8092}
+      - PAYMENT_BATCH_SIZE=${PAYMENT_BATCH_SIZE:-50}
+      - PAYMENT_BATCH_INTERVAL=${PAYMENT_BATCH_INTERVAL:-300}
+      - PAYMENT_TIMEOUT=${PAYMENT_TIMEOUT:-300}
+      - MAX_PAYMENT_AMOUNT=${MAX_PAYMENT_AMOUNT:-1000000.0}
+      - MIN_PAYMENT_AMOUNT=${MIN_PAYMENT_AMOUNT:-0.01}
+      - DAILY_PAYMENT_LIMIT=${DAILY_PAYMENT_LIMIT:-10000000.0}
+      - HOURLY_PAYMENT_LIMIT=${HOURLY_PAYMENT_LIMIT:-1000000.0}
+      # ==============================================================================
+      # TRON NETWORK CONFIGURATION
+      # ==============================================================================
       - TRON_NETWORK=${TRON_NETWORK:-mainnet}
       - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
       - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
       - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
-      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT}
       - TRONGRID_API_KEY=${TRONGRID_API_KEY}
       - TRON_API_KEY=${TRON_API_KEY}
+      - TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT:-https://api.trongrid.io}
+      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
       - TRON_NODE_URL=${TRON_NODE_URL}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
       - TRON_ADDRESS=${TRON_ADDRESS}
-      - TRON_TIMEOUT=${TRON_TIMEOUT:-30}
+      # ==============================================================================
+      # CONTRACT CONFIGURATION
+      # ==============================================================================
       - USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
-      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}}
+      - USDT_CONTRACT_ADDRESS_MAINNET=${USDT_CONTRACT_ADDRESS_MAINNET:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}
       - USDT_CONTRACT_ADDRESS_SHASTA=${USDT_CONTRACT_ADDRESS_SHASTA:-TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs}
       - USDT_DECIMALS=${USDT_DECIMALS:-6}
+      # ==============================================================================
+      # DATA STORAGE CONFIGURATION
+      # ==============================================================================
       - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
       - TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payment-gateway}
-      - LOG_FILE=${LOG_FILE:-/app/logs/payment-gateway.log}
-      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
-      - MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
-      - MONGODB_DATABASE=${MONGODB_DATABASE:-lucid_payments}
-      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      - PAYMENT_RETENTION_DAYS=${PAYMENT_RETENTION_DAYS:-90}
+      # ==============================================================================
+      # SECURITY & JWT CONFIGURATION (from .env.secrets)
+      # ==============================================================================
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-3600}
+      - API_KEY=${API_KEY}
+      # ==============================================================================
+      # CORS & NETWORK CONFIGURATION
+      # ==============================================================================
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
       - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
       - CORS_HEADERS=${CORS_HEADERS:-*}
       - CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
       - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+      # ==============================================================================
+      # RATE LIMITING & THROTTLING
+      # ==============================================================================
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
       - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - RATE_LIMIT_BURST=${RATE_LIMIT_BURST:-200}
+      # ==============================================================================
+      # MONITORING & METRICS
+      # ==============================================================================
       - METRICS_ENABLED=${METRICS_ENABLED:-true}
       - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+      # ==============================================================================
+      # LOGGING CONFIGURATION
+      # ==============================================================================
+      - LOG_FILE=${LOG_FILE:-/app/logs/payment-gateway.log}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DEBUG=${DEBUG:-false}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - ACCESS_LOG=${ACCESS_LOG:-true}
+      # ==============================================================================
+      # API GATEWAY
+      # ==============================================================================
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -650,6 +1006,142 @@ services:
       tron-wallet-manager:
         condition: service_started
       tron-usdt-manager:
+        condition: service_started
+
+  tron-relay:
+    image: pickme/lucid-tron-relay:latest-arm64
+    container_name: tron-relay
+    hostname: tron-relay
+    restart: unless-stopped
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-relay
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+    networks:
+      - lucid-tron-isolated
+    ports:
+      - "${TRON_RELAY_PORT:-8098}:${TRON_RELAY_PORT:-8098}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/tron-relay:/data/tron-relay:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/cache:/data/cache:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/tron-relay:/app/logs:rw
+    environment:
+      # ==============================================================================
+      # SERVICE IDENTIFICATION
+      # ==============================================================================
+      - SERVICE_NAME=lucid-tron-relay
+      - SERVICE_VERSION=1.0.0
+      - RELAY_ID=${RELAY_ID:-relay-001}
+      - NODE_ID=${NODE_ID}
+      # ==============================================================================
+      # SERVICE CONFIGURATION
+      # ==============================================================================
+      - SERVICE_PORT=${TRON_RELAY_PORT:-8098}
+      - SERVICE_HOST=0.0.0.0
+      - BIND_ADDRESS=0.0.0.0
+      - TRON_RELAY_PORT=${TRON_RELAY_PORT:-8098}
+      - WORKERS=${WORKERS:-1}
+      - RELAY_MODE=${RELAY_MODE:-full}
+      # ==============================================================================
+      # TRON NETWORK CONFIGURATION (READ-ONLY ACCESS)
+      # ==============================================================================
+      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_RPC_URL=${TRON_RPC_URL:-https://api.trongrid.io}
+      - TRON_RPC_URL_MAINNET=${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}
+      - TRON_RPC_URL_SHASTA=${TRON_RPC_URL_SHASTA:-https://api.shasta.trongrid.io}
+      - TRONGRID_API_KEY=${TRONGRID_API_KEY}
+      - TRON_API_KEY=${TRON_API_KEY}
+      # ==============================================================================
+      # MASTER SERVICE CONNECTION
+      # ==============================================================================
+      - TRON_MASTER_URL=${TRON_MASTER_URL:-http://lucid-tron-client:8091}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - MASTER_REGISTRATION_ENABLED=${MASTER_REGISTRATION_ENABLED:-true}
+      - MASTER_HEARTBEAT_INTERVAL=${MASTER_HEARTBEAT_INTERVAL:-60}
+      # ==============================================================================
+      # CACHE CONFIGURATION
+      # ==============================================================================
+      - CACHE_ENABLED=${CACHE_ENABLED:-true}
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-60}
+      - CACHE_MAX_SIZE_MB=${CACHE_MAX_SIZE_MB:-500}
+      - CACHE_BLOCK_TTL=${CACHE_BLOCK_TTL:-300}
+      - CACHE_TRANSACTION_TTL=${CACHE_TRANSACTION_TTL:-3600}
+      - CACHE_ACCOUNT_TTL=${CACHE_ACCOUNT_TTL:-30}
+      # ==============================================================================
+      # VERIFICATION CONFIGURATION
+      # ==============================================================================
+      - VERIFICATION_ENABLED=${VERIFICATION_ENABLED:-true}
+      - CONFIRMATION_THRESHOLD=${CONFIRMATION_THRESHOLD:-20}
+      - VERIFICATION_TIMEOUT=${VERIFICATION_TIMEOUT:-30}
+      # ==============================================================================
+      # RATE LIMITING
+      # ==============================================================================
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      # ==============================================================================
+      # MONITORING
+      # ==============================================================================
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - METRICS_PORT=${METRICS_PORT:-9098}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-30}
+      # ==============================================================================
+      # LOGGING
+      # ==============================================================================
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=${LOG_FILE:-/app/logs/tron-relay.log}
+      - DEBUG=${DEBUG:-false}
+      # ==============================================================================
+      # DATA DIRECTORIES
+      # ==============================================================================
+      - DATA_DIRECTORY=${DATA_DIRECTORY:-/data/tron-relay}
+      - CACHE_DIRECTORY=${CACHE_DIRECTORY:-/data/cache}
+      # ==============================================================================
+      # CORS CONFIGURATION
+      # ==============================================================================
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-*}
+      # ==============================================================================
+      # APPLICATION CONFIGURATION
+      # ==============================================================================
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - PROJECT_ROOT=${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('SERVICE_PORT', os.getenv('TRON_RELAY_PORT', '8098')); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=tron-relay"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      lucid-tron-client:
         condition: service_started
 
 volumes:

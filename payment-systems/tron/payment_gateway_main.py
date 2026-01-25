@@ -1,7 +1,7 @@
 """
-LUCID TRON Payout Router Service - Main Entry Point
-Dedicated container: tron-payout-router
-Port: 8092
+LUCID TRON Payment Gateway Service - Main Entry Point
+Dedicated container: tron-payment-gateway
+Port: 8097
 """
 
 import logging
@@ -13,15 +13,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-import uvicorn
 
-# Add app directory to path for imports
-app_dir = Path(__file__).parent
-if str(app_dir) not in sys.path:
-    sys.path.insert(0, str(app_dir))
+# Add payment-systems directory to path
+payment_systems_dir = Path(__file__).parent.parent
+if str(payment_systems_dir) not in sys.path:
+    sys.path.insert(0, str(payment_systems_dir))
 
-from services.payout_router import PayoutRouterService
-from api.payouts import router as payouts_router
+from tron.services.payment_gateway_extended import PaymentGatewayService
+from tron.api.payment_gateway import router as payment_gateway_router
 
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -32,44 +31,44 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global service instance
-payout_service: Optional[PayoutRouterService] = None
+payment_service: Optional[PaymentGatewayService] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global payout_service
+    global payment_service
     
     # Startup
-    logger.info("Starting TRON Payout Router Service...")
+    logger.info("Starting TRON Payment Gateway Service...")
     
     try:
-        # Initialize payout router service
-        payout_service = PayoutRouterService()
-        logger.info("TRON Payout Router Service initialized successfully")
+        # Initialize payment gateway service
+        payment_service = PaymentGatewayService()
+        logger.info("TRON Payment Gateway Service initialized successfully")
         
         yield
         
     except Exception as e:
-        logger.error(f"Failed to start TRON Payout Router Service: {e}", exc_info=True)
+        logger.error(f"Failed to start TRON Payment Gateway Service: {e}", exc_info=True)
         raise
     
     finally:
         # Shutdown
-        logger.info("Shutting down TRON Payout Router Service...")
+        logger.info("Shutting down TRON Payment Gateway Service...")
         
         try:
-            if payout_service:
+            if payment_service:
                 # Service cleanup
-                logger.info("Payout router service stopped")
+                logger.info("Payment gateway service stopped")
         except Exception as e:
             logger.error(f"Error during shutdown: {e}", exc_info=True)
 
 
 # Create FastAPI application
 app = FastAPI(
-    title="TRON Payout Router Service",
-    description="Payout routing and processing service for LUCID platform",
+    title="TRON Payment Gateway Service",
+    description="Payment processing and gateway operations for LUCID platform",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -85,34 +84,33 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(payouts_router, prefix="/api/v1/tron", tags=["Payout Router"])
+app.include_router(payment_gateway_router, tags=["Payment Gateway"])
 
 
 # Health check endpoints
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    global payout_service
+    global payment_service
     try:
         health_status = {
             "status": "healthy",
-            "service": "tron-payout-router",
+            "service": "tron-payment-gateway",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
         # Check if service is initialized
-        if payout_service:
+        if payment_service:
             health_status["service_initialized"] = True
             try:
-                stats = await payout_service.get_payout_stats()
-                health_status["payouts"] = {
-                    "pending": stats.get("pending_payouts", 0),
-                    "processing": stats.get("processing_payouts", 0),
-                    "completed": stats.get("completed_payouts", 0),
-                    "failed": stats.get("failed_payouts", 0)
+                metrics = await payment_service.get_metrics()
+                health_status["metrics"] = {
+                    "total_payments": metrics.get("metrics", {}).get("total_payments", 0),
+                    "successful_payments": metrics.get("metrics", {}).get("successful_payments", 0),
+                    "batches_processed": metrics.get("metrics", {}).get("batches_processed", 0),
                 }
             except Exception as e:
-                logger.warning(f"Failed to get payout stats: {e}")
+                logger.warning(f"Failed to get payment metrics: {e}")
                 health_status["status"] = "degraded"
         else:
             health_status["service_initialized"] = False
@@ -145,9 +143,9 @@ async def liveness_check():
 @app.get("/health/ready")
 async def readiness_check():
     """Readiness probe - is the service ready to serve requests?"""
-    global payout_service
+    global payment_service
     try:
-        if payout_service:
+        if payment_service:
             return {
                 "status": "ready",
                 "timestamp": datetime.now(timezone.utc).isoformat()
@@ -164,16 +162,16 @@ async def readiness_check():
 @app.get("/status")
 async def service_status():
     """Get service status"""
-    global payout_service
+    global payment_service
     try:
-        if not payout_service:
+        if not payment_service:
             return {"status": "not_initialized"}, 503
         
-        stats = await payout_service.get_payout_stats()
+        metrics = await payment_service.get_metrics()
         return {
-            "service": "tron-payout-router",
+            "service": "tron-payment-gateway",
             "status": "running",
-            "statistics": stats,
+            "metrics": metrics,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
@@ -185,13 +183,13 @@ async def service_status():
 async def root():
     """Root endpoint"""
     return {
-        "service": "tron-payout-router",
+        "service": "tron-payment-gateway",
         "status": "running",
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
             "status": "/status",
-            "payouts_api": "/api/v1/tron/payouts",
+            "payments_api": "/api/v1/payments",
             "docs": "/docs",
             "redoc": "/redoc"
         }
@@ -206,12 +204,12 @@ async def metrics_endpoint():
         if not metrics_enabled:
             raise HTTPException(status_code=404, detail="Metrics not enabled")
         
-        # Placeholder for metrics
-        return {
-            "service": "tron-payout-router",
-            "metrics_enabled": True,
-            "note": "Full Prometheus metrics implementation required"
-        }
+        global payment_service
+        if not payment_service:
+            return {"error": "Service not initialized"}, 503
+        
+        metrics = await payment_service.get_metrics()
+        return metrics
     except Exception as e:
         logger.error(f"Metrics endpoint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -222,19 +220,20 @@ def main():
     try:
         # Get configuration from environment variables
         host = os.getenv("SERVICE_HOST", "0.0.0.0")
-        port = int(os.getenv("SERVICE_PORT", os.getenv("PAYOUT_ROUTER_PORT", "8092")))
+        port = int(os.getenv("SERVICE_PORT", os.getenv("PAYMENT_GATEWAY_PORT", "8097")))
         workers = int(os.getenv("WORKERS", "1"))
         timeout = int(os.getenv("TIMEOUT", "30"))
         log_level_str = os.getenv("LOG_LEVEL", "INFO").lower()
         debug_mode = os.getenv("DEBUG", "false").lower() == "true"
         access_log = os.getenv("ACCESS_LOG", "true").lower() == "true"
         
-        logger.info(f"Starting TRON Payout Router on {host}:{port}")
+        logger.info(f"Starting TRON Payment Gateway on {host}:{port}")
         logger.info(f"Configuration: workers={workers}, timeout={timeout}, debug={debug_mode}")
         
         # Start the application
+        import uvicorn
         uvicorn.run(
-            "payout_router_main:app",
+            "payment_gateway_main:app",
             host=host,
             port=port,
             workers=workers,

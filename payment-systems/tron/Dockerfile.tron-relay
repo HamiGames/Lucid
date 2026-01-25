@@ -1,9 +1,12 @@
-# LUCID TRON CLIENT - SPEC-1B Implementation
-# Distroless TRON client (Phase 4 support services) aligned with plan/constants/
-# Configuration: .env.support, .env.tron-client, .env.secrets, .env.foundation via docker-compose
+# LUCID TRON RELAY - SPEC-1B Implementation
+# Distroless TRON relay service (Phase 4 support) aligned with plan/constants/
+# Configuration: .env.support, .env.tron-relay, .env.secrets, .env.foundation via docker-compose
 # Build context: project root (all COPY statements use payment-systems/tron/ prefixes)
-# Target image: pickme/lucid-tron-client:latest-arm64
+# Target image: pickme/lucid-tron-relay:latest-arm64
 # Pattern: Dockerfile-copy-pattern.md + dockerfile-design.md
+#
+# NOTE: This service is READ-ONLY and has NO private key access
+#       It only caches blockchain data and verifies transactions
 
 # syntax=docker/dockerfile:1.5
 
@@ -53,8 +56,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create system directory markers (ensures COPY won't fail silently in distroless)
-RUN echo "LUCID_TRON_CLIENT_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_TRON_CLIENT_LIB_DIRECTORY" > /var/lib/.keep && \
+RUN echo "LUCID_TRON_RELAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_TRON_RELAY_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 # Create Python virtual environment
@@ -75,8 +78,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Create marker files with actual content (ensures directory structure is locked in)
 # Following Dockerfile-copy-pattern.md pattern - CRITICAL for distroless
-RUN echo "LUCID_TRON_CLIENT_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python${PYTHON_VERSION}/site-packages/.lucid-marker && \
-    echo "LUCID_TRON_CLIENT_BINARIES_INSTALLED_$(date +%s)" > /opt/venv/bin/.lucid-marker && \
+RUN echo "LUCID_TRON_RELAY_PACKAGES_INSTALLED_$(date +%s)" > /opt/venv/lib/python${PYTHON_VERSION}/site-packages/.lucid-marker && \
+    echo "LUCID_TRON_RELAY_BINARIES_INSTALLED_$(date +%s)" > /opt/venv/bin/.lucid-marker && \
     chown -R 65532:65532 /opt/venv
 
 # Verify critical packages installed in builder stage
@@ -108,22 +111,22 @@ ARG VERSION
 # OCI Image metadata and Lucid-specific labels
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
-      description="Lucid TRON Client service (distroless)" \
+      description="Lucid TRON Relay service (distroless)" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.title="Lucid TRON Client" \
-      org.opencontainers.image.description="TRON client for Lucid payment operations" \
+      org.opencontainers.image.title="Lucid TRON Relay" \
+      org.opencontainers.image.description="TRON blockchain relay service for Lucid platform (read-only)" \
       org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.plane="support" \
-      com.lucid.service="tron-client" \
+      com.lucid.service="tron-relay" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
-      com.lucid.expose="8091,8101" \
+      com.lucid.expose="8098,9098" \
       com.lucid.cluster="payment" \
-      com.lucid.env.config=".env.support,.env.tron-client,.env.secrets,.env.foundation" \
+      com.lucid.env.config=".env.support,.env.tron-relay,.env.secrets,.env.foundation" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
       com.lucid.tor.compatible="true"
 
@@ -135,7 +138,7 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    SERVICE_PORT=8091 \
+    SERVICE_PORT=8098 \
     WORKERS=1 \
     SERVICE_HOST=0.0.0.0 \
     LOG_LEVEL=INFO
@@ -156,11 +159,11 @@ COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
 COPY --from=builder --chown=65532:65532 /build/app /app
 
 # Expose service ports
-EXPOSE 8091 8101
+EXPOSE 8098 9098
 
 # Health check - verifies service is running and responding
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8091'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
+    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', os.getenv('TRON_RELAY_PORT', '8098')); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
 
 # Set non-root user (65532 = nonroot in distroless)
 USER 65532:65532
@@ -171,4 +174,4 @@ RUN ["/opt/venv/bin/python3", "-c", "import sys; import os; site_packages = '/op
 
 # Entrypoint and command
 ENTRYPOINT []
-CMD ["/opt/venv/bin/python3", "tron_client_entrypoint.py"]
+CMD ["/opt/venv/bin/python3", "relay_entrypoint.py"]

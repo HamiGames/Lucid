@@ -1,21 +1,23 @@
 # LUCID PAYOUT ROUTER - SPEC-1B Implementation
-# Distroless TRON payout router (Phase 4 support services)
-# Configuration via .env.support, .env.tron-payout-router, .env.secrets, .env.foundation (compose-managed)
-# Build context: project root (all COPY paths prefixed with payment-systems/tron/)
+# Distroless TRON payout router (Phase 4 support services) aligned with plan/constants/
+# Configuration: .env.support, .env.tron-payout-router, .env.secrets, .env.foundation via docker-compose
+# Build context: project root (all COPY statements use payment-systems/tron/ prefixes)
 # Target image: pickme/lucid-payout-router:latest-arm64
-# Pattern: Dockerfile-copy-pattern.md + master-docker-design.md
+# Pattern: Dockerfile-copy-pattern.md + dockerfile-design.md
+
+# syntax=docker/dockerfile:1.5
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.11
 
 # =============================================================================
 # Stage 1: Builder
 # =============================================================================
-FROM python:${PYTHON_VERSION}-slim-bookworm AS builder
+FROM --platform=$TARGETPLATFORM python:${PYTHON_VERSION}-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -98,7 +100,7 @@ RUN /opt/venv/bin/python -m compileall -b /app
 # =============================================================================
 # Stage 2: Runtime
 # =============================================================================
-FROM gcr.io/distroless/python3-debian12:nonroot
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -130,7 +132,10 @@ LABEL maintainer="Lucid Development Team" \
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app \
+    PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     SERVICE_PORT=8092 \
     WORKERS=1 \
     SERVICE_HOST=0.0.0.0 \
@@ -141,6 +146,9 @@ WORKDIR /app
 # Copy system directories from builder (with content markers already in place)
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+
+# Copy CA certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy Python virtual environment (directory already populated with packages + marker files)
 COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
@@ -160,8 +168,8 @@ USER 65532:65532
 
 # Verify packages were copied successfully (fails build if missing)
 # Critical: This catches COPY failures immediately and prevents runtime errors
-RUN ["/opt/venv/bin/python3", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.12/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; print('✅ All packages verified in runtime stage')"]
+RUN ["/opt/venv/bin/python3", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('✅ All packages verified in runtime stage')"]
 
 # Entrypoint and command
-ENTRYPOINT ["/opt/venv/bin/python3"]
-CMD ["-m", "payout_router_main"]
+ENTRYPOINT []
+CMD ["/opt/venv/bin/python3", "payout_router_entrypoint.py"]

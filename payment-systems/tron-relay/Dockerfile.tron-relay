@@ -112,27 +112,10 @@ LABEL maintainer="Lucid Development Team" \
 ENV PATH="/opt/venv/bin:/usr/local/bin:/usr/bin:/bin" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH="/app:/opt/venv/lib/python3.11/site-packages" \
+    PYTHONPATH="/app:/opt/venv/lib/python${PYTHON_VERSION}/site-packages" \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    # Service configuration
-    SERVICE_NAME=lucid-tron-relay \
-    SERVICE_PORT=8098 \
-    SERVICE_HOST=0.0.0.0 \
-    RELAY_MODE=full \
-    WORKERS=1 \
-    LOG_LEVEL=INFO \
-    # TRON network (read-only)
-    TRON_NETWORK=mainnet \
-    TRON_RPC_URL=https://api.trongrid.io \
-    # Cache settings
-    CACHE_ENABLED=true \
-    CACHE_TTL_SECONDS=60 \
-    CACHE_MAX_SIZE_MB=500 \
-    # Verification settings
-    VERIFICATION_ENABLED=true \
-    CONFIRMATION_THRESHOLD=20
+    LC_ALL=C.UTF-8
 
 # Copy system directories
 COPY --from=builder --chown=65532:65532 /var/run /var/run
@@ -151,14 +134,14 @@ WORKDIR /app
 # Set user (non-root)
 USER 65532:65532
 
-# Expose port
-EXPOSE 8098
+# Expose port (ports are configured in docker-compose)
+# EXPOSE removed - ports come from docker-compose configuration
 
 # Health check (uses Python since distroless has no curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', '8098'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
+    CMD ["/opt/venv/bin/python3", "-c", "import os; import urllib.request; port = os.getenv('SERVICE_PORT', os.getenv('TRON_RELAY_PORT', '8098')); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)"]
 
 # Entry point
 ENTRYPOINT ["/opt/venv/bin/python3"]
-CMD ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8098"]
+CMD ["entrypoint.py"]
 
