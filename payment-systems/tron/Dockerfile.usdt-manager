@@ -50,6 +50,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pip/wheels \
     /opt/venv/bin/pip install --prefer-binary -r requirements.txt -r requirements-prod.txt
 
+# Verify builder stage packages were installed correctly
+RUN /opt/venv/bin/python -c "import sys; import os; site_packages = '/opt/venv/lib/python3.12/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; print('✅ All builder packages verified')"
+
 COPY payment-systems/tron/ ./app/
 
 RUN /opt/venv/bin/python -m compileall -b /app
@@ -95,6 +98,10 @@ WORKDIR /app
 COPY --from=builder --chown=nonroot:nonroot /opt/venv /opt/venv
 COPY --from=builder --chown=nonroot:nonroot /build/app /app
 
+# Verify packages were copied successfully (fails build if missing)
+# Critical: This catches COPY failures immediately and prevents runtime errors
+RUN ["/opt/venv/bin/python3", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.12/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; print('✅ All runtime packages verified')"]
+
 EXPOSE 8094 8104
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -103,4 +110,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 USER 65532:65532
 
 ENTRYPOINT ["/opt/venv/bin/python3"]
-CMD ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8094", "--workers", "1"]
+CMD ["-m", "usdt_manager_main"]
