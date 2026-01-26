@@ -1,0 +1,86 @@
+# Multi-stage build for gui-tor-manager following dockerfile-design.md and Dockerfile-copy-pattern.md
+# ===========================================================================================
+
+# Stage 1: Builder
+# ===========================================================================================
+FROM python:3.11-slim-bookworm as builder
+
+# Set working directory
+WORKDIR /build
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python packages with pip caching
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Create marker files to verify all packages were installed
+RUN python3 -c "import fastapi; print('fastapi=' + fastapi.__version__)" > /build/.lucid-fastapi && \
+    python3 -c "import stem; print('stem=' + stem.__version__)" > /build/.lucid-stem && \
+    python3 -c "import httpx; print('httpx imported')" > /build/.lucid-httpx && \
+    python3 -c "import pydantic; print('pydantic=' + pydantic.__version__)" > /build/.lucid-pydantic && \
+    python3 -c "import redis; print('redis imported')" > /build/.lucid-redis
+
+# Copy application code
+COPY gui-tor-manager /build/gui-tor-manager
+
+# Stage 2: Runtime (Distroless)
+# ===========================================================================================
+FROM gcr.io/distroless/python3-debian12:latest
+
+# Labels for container identification
+LABEL service="lucid-gui-tor-manager" \
+      component="gui-tor-manager" \
+      org.lucid.phase="gui" \
+      org.lucid.version="1.0.0"
+
+# Copy Python packages from builder
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+# Copy application code
+COPY --from=builder --chown=65532:65532 /build/gui-tor-manager /app/gui-tor-manager
+
+# Copy marker files for verification
+COPY --from=builder --chown=65532:65532 /build/.lucid-* /app/
+
+# Set Python path
+ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Create app directories
+RUN mkdir -p /app/logs /app/data /app/tor-data /tmp
+
+# Set working directory
+WORKDIR /app
+
+# Verify marker files exist (assertion)
+RUN test -f /app/.lucid-fastapi && \
+    test -f /app/.lucid-stem && \
+    test -f /app/.lucid-httpx && \
+    test -f /app/.lucid-pydantic && \
+    test -f /app/.lucid-redis
+
+# Set user and permissions (non-root)
+USER 65532:65532
+
+# Set default environment variables
+ENV PORT=8097 \
+    HOST=0.0.0.0 \
+    LOG_LEVEL=INFO \
+    DEBUG=false
+
+# Health check using Python socket (distroless compatible)
+HEALTHCHECK --interval=60s --timeout=10s --retries=3 --start-period=60s \
+    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8097)); s.close(); exit(0 if result == 0 else 1)"]
+
+# Run entrypoint
+ENTRYPOINT ["/usr/bin/python3.11", "/app/gui-tor-manager/entrypoint.py"]

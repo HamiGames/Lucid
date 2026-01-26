@@ -27,17 +27,18 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
-      - GUI_INTEGRATION_ENABLED=true
-      - TOR_PROXY_ENABLED=true
-      - TOR_SOCKS_PORT=9050
-      - TOR_CONTROL_PORT=9051
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
       - API_GATEWAY_URL=http://lucid-api-gateway:8080
-      - BLOCKCHAIN_CORE_URL=http://lucid-blockchain-core:8084
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - SESSION_API_URL=http://lucid-session-api:8087
+      - SESSION_API_URL=http://lucid-session-api:8113
       - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
       - ADMIN_INTERFACE_URL=http://lucid-admin-interface:8083
       - TRON_PAYMENT_URL=http://lucid-tron-client:8091
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/gui-api-bridge:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/gui-api-bridge:/app/data
@@ -48,7 +49,13 @@ services:
       lucid-api-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8102/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8102)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -88,12 +95,17 @@ services:
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DOCKER_API_VERSION=1.40
       - GUI_ACCESS_LEVELS_ENABLED=true
       - USER_SERVICES=foundation,core
       - DEVELOPER_SERVICES=foundation,core,application
       - ADMIN_SERVICES=foundation,core,application,support
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /mnt/myssd/Lucid/Lucid/logs/gui-docker-manager:/app/logs
@@ -102,7 +114,13 @@ services:
       - lucid-pi-network
       - lucid-gui-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8098)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -134,31 +152,45 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
     ports:
-      - "9050:9050" # SOCKS5 proxy
-      - "9051:9051" # Control port
+      - "8097:8097" # API port (FIXED: was 9050/9051)
     environment:
       - SERVICE_NAME=lucid-gui-tor-manager
-      - TOR_SOCKS_PORT=9050
-      - TOR_CONTROL_PORT=9051
+      - PORT=8097 # ADDED: FastAPI port
+      - HOST=0.0.0.0 # ADDED: FastAPI host
+      - SERVICE_URL=http://lucid-gui-tor-manager:8097 # ADDED: Service URL
+      - LUCID_ENV=production # ADDED
+      - LUCID_PLATFORM=arm64 # ADDED
+      - LOG_LEVEL=INFO # ADDED
+      - DEBUG=false # ADDED
+      - TOR_PROXY_URL=http://tor-proxy:9051 # ADDED: Connection to tor-proxy
+      - TOR_PROXY_HOST=tor-proxy # ADDED: tor-proxy service name
+      - TOR_SOCKS_PORT=9050 # Reference: tor-proxy SOCKS port
+      - TOR_CONTROL_PORT=9051 # Reference: tor-proxy control port
       - TOR_DATA_DIR=/app/tor-data
       - TOR_LOG_LEVEL=notice
       - GUI_TOR_INTEGRATION=true
       - ONION_ADDRESS_MASKING=true
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/tor:/app/tor-data
-      - /mnt/myssd/Lucid/Lucid/logs/gui-tor-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/tor:/app/tor-data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/gui-tor-manager:/app/logs:rw
+      - onion-state:/run/lucid/onion:ro # ADDED: Read onion state from tor-proxy
     networks:
       - lucid-gui-network
+      - lucid-pi-network # ADDED: To connect to tor-proxy
+    depends_on:
+      tor-proxy: # ADDED: Dependency on foundation tor-proxy
+        condition: service_started
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -f --socks5-hostname localhost:9050 http://check.torproject.org/api/ip || exit 1",
-        ]
+      test: [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8097)); s.close(); exit(0 if result == 0 else 1)",
+        ] # FIXED: Python socket check
       interval: 60s
-      timeout: 30s
+      timeout: 10s
       retries: 3
-      start_period: 120s
+      start_period: 60s
     labels:
       - "com.lucid.phase=gui"
       - "com.lucid.service=gui-tor-manager"
@@ -174,10 +206,10 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
-  # GUI Hardware Wallet Service
-  gui-hardware-wallet:
-    image: pickme/lucid-gui-hardware-wallet:latest-arm64
-    container_name: lucid-gui-hardware-wallet
+  # GUI Hardware Manager Service
+  gui-hardware-manager:
+    image: pickme/lucid-gui-hardware-manager:latest-arm64
+    container_name: lucid-gui-hardware-manager
     restart: unless-stopped
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
@@ -185,35 +217,72 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-hardware-manager
     ports:
       - "8099:8099"
     environment:
-      - SERVICE_NAME=lucid-gui-hardware-wallet
+      - SERVICE_NAME=lucid-gui-hardware-manager
+      - GUI_HARDWARE_MANAGER_HOST=0.0.0.0
+      - GUI_HARDWARE_MANAGER_PORT=8099
+      - GUI_HARDWARE_MANAGER_URL=http://gui-hardware-manager:8099
       - PORT=8099
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      # Hardware Configuration
       - HARDWARE_WALLET_ENABLED=true
       - LEDGER_ENABLED=true
+      - LEDGER_VENDOR_ID=0x2c97
       - TREZOR_ENABLED=true
       - KEEPKEY_ENABLED=true
       - TRON_WALLET_SUPPORT=true
+      # Database URLs (from .env.secrets)
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
+      # Integration Service URLs
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - GUI_API_BRIDGE_URL=http://gui-api-bridge:8102
+      # Security
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
-      - /dev/bus/usb:/dev/bus/usb:ro
-      - /mnt/myssd/Lucid/Lucid/logs/gui-hardware-wallet:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/gui-hardware-wallet:/app/data
+      - /mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager:/app/logs
+      - /mnt/myssd/Lucid/Lucid/data/gui-hardware-manager:/app/data
+      # Writable tmpfs for USB device access
+      - /tmp/usb-devices:/run/usb:rw
     networks:
+      - lucid-pi-network
       - lucid-gui-network
-    privileged: true
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+      gui-api-bridge:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8099)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     labels:
       - "com.lucid.phase=gui"
-      - "com.lucid.service=gui-hardware-wallet"
+      - "com.lucid.service=gui-hardware-manager"
       - "com.lucid.cluster=gui-integration"
     user: "65532:65532"
     security_opt:
@@ -222,7 +291,7 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      - NET_BIND_SERVICE # Only for services that bind ports
+      - NET_BIND_SERVICE
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
@@ -389,6 +458,16 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  # Onion state shared between tor-proxy and gui-tor-manager
+  onion-state:
+    name: onion-state
+    driver: local
+
 # ===========================================
 # NETWORKS
 # ===========================================

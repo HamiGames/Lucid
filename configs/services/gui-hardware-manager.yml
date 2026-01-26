@@ -1,0 +1,221 @@
+# GUI Hardware Manager Service Configuration
+# Manages hardware wallets (Ledger, Trezor, KeepKey) for Lucid Electron GUI
+
+service:
+  name: gui-hardware-manager
+  version: "1.0.0"
+  description: "Hardware wallet management service for Electron GUI"
+  cluster: gui-integration
+  phase: gui
+
+# Service Port Configuration
+port:
+  host: "0.0.0.0"
+  port: 8099
+  url: "http://gui-hardware-manager:8099"
+
+# Database Configuration
+database:
+  mongodb_url: "${MONGODB_URL}"
+  redis_url: "${REDIS_URL}"
+
+# Integration Service URLs
+integration:
+  api_gateway_url: "http://api-gateway:8080"
+  auth_service_url: "http://lucid-auth-service:8089"
+  gui_api_bridge_url: "http://gui-api-bridge:8102"
+
+# Hardware Wallet Configuration
+hardware_wallets:
+  ledger:
+    enabled: true
+    vendor_id: "0x2c97"
+    supported_products:
+      - name: "Nano S"
+        product_id: "0x0001"
+      - name: "Nano X"
+        product_id: "0x0004"
+      - name: "Nano S Plus"
+        product_id: "0x0005"
+    timeout: 30
+    
+  trezor:
+    enabled: true
+    vendor_id: "0x534c"
+    supported_products:
+      - name: "Trezor One"
+        product_id: "0x0001"
+      - name: "Trezor T"
+        product_id: "0x0002"
+    timeout: 30
+    
+  keepkey:
+    enabled: true
+    vendor_id: "0x2b24"
+    supported_products:
+      - name: "KeepKey"
+        product_id: "0x0001"
+    timeout: 30
+
+# TRON Blockchain Support
+blockchain:
+  tron:
+    enabled: true
+    rpc_url: "${TRON_RPC_URL}"
+    api_key: "${TRON_API_KEY}"
+
+# Device Management
+device_management:
+  scan_interval: 5  # seconds
+  connection_timeout: 60  # seconds
+  max_concurrent_devices: 5
+  discovery_timeout: 30  # seconds
+
+# Transaction Signing
+transaction_signing:
+  timeout: 300  # seconds
+  max_pending_requests: 100
+  retry_count: 3
+  retry_delay: 1  # seconds
+
+# Security Configuration
+security:
+  jwt_secret_key: "${JWT_SECRET_KEY}"
+  cors_enabled: true
+  cors_origins: "*"
+  cors_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  cors_headers: ["*"]
+  cors_allow_credentials: true
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_window: 100
+  window_duration: 60  # seconds
+  burst_size: 200
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  rotation:
+    size: "100MB"
+    retention_days: 30
+
+# Storage Configuration
+storage:
+  data_path: "/mnt/myssd/Lucid/Lucid/data/gui-hardware-manager"
+  logs_path: "/mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager"
+  cache_path: "/tmp/gui-hardware-manager"
+
+# Monitoring & Health Check
+monitoring:
+  metrics_enabled: true
+  health_check_interval: 60  # seconds
+  health_check_endpoints:
+    - "/health"
+    - "/api/v1/hardware/status"
+
+# API Endpoints
+api:
+  version: "v1"
+  base_path: "/api/v1"
+  endpoints:
+    health:
+      path: "/health"
+      method: "GET"
+      description: "Health check endpoint"
+    
+    devices:
+      path: "/hardware/devices"
+      method: "GET"
+      description: "List connected hardware devices"
+    
+    device_info:
+      path: "/hardware/devices/{id}"
+      method: "GET"
+      description: "Get device information"
+    
+    wallets:
+      path: "/hardware/wallets"
+      method: "GET"
+      description: "List wallet connections"
+    
+    wallet_connect:
+      path: "/hardware/wallets"
+      method: "POST"
+      description: "Connect to hardware wallet"
+    
+    wallet_disconnect:
+      path: "/hardware/wallets/{id}"
+      method: "DELETE"
+      description: "Disconnect from hardware wallet"
+    
+    sign_transaction:
+      path: "/hardware/sign"
+      method: "POST"
+      description: "Sign transaction with hardware wallet"
+    
+    sign_status:
+      path: "/hardware/sign/{tx_id}"
+      method: "GET"
+      description: "Get signature status"
+    
+    ledger_version:
+      path: "/ledger/version"
+      method: "GET"
+      description: "Get Ledger app version"
+    
+    trezor_version:
+      path: "/trezor/version"
+      method: "GET"
+      description: "Get Trezor version"
+    
+    keepkey_version:
+      path: "/keepkey/version"
+      method: "GET"
+      description: "Get KeepKey version"
+    
+    hardware_events:
+      path: "/ws/hardware/events"
+      method: "WS"
+      description: "WebSocket for hardware device events"
+
+# Middleware Configuration
+middleware:
+  authentication:
+    enabled: true
+    jwt_validation: true
+    
+  cors:
+    enabled: true
+    
+  logging:
+    enabled: true
+    
+  rate_limit:
+    enabled: true
+
+# Docker Configuration
+docker:
+  image: "pickme/lucid-gui-hardware-manager:latest-arm64"
+  container_name: "lucid-gui-hardware-manager"
+  restart_policy: "unless-stopped"
+  networks:
+    - "lucid-pi-network"
+    - "lucid-gui-network"
+  ports:
+    - "8099:8099"
+  volumes:
+    - "/mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager:/app/logs"
+    - "/mnt/myssd/Lucid/Lucid/data/gui-hardware-manager:/app/data"
+  security:
+    user: "65532:65532"
+    no_new_privileges: true
+    seccomp: "unconfined"
+    capabilities:
+      drop: ["ALL"]
+      add: ["NET_BIND_SERVICE"]
+  readonly: true
+  tmpfs:
+    - "/tmp:noexec,nosuid,size=100m"
