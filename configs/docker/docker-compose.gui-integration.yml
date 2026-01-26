@@ -20,10 +20,10 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
     ports:
-      - "8097:8097"
+      - "8102:8102"
     environment:
       - SERVICE_NAME=lucid-gui-api-bridge
-      - PORT=8097
+      - PORT=8102
       - HOST=0.0.0.0
       - LOG_LEVEL=INFO
       - DEBUG=false
@@ -37,7 +37,7 @@ services:
       - SESSION_API_URL=http://lucid-session-api:8087
       - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
       - ADMIN_INTERFACE_URL=http://lucid-admin-interface:8083
-      - TRON_PAYMENT_URL=http://lucid-tron-client:8096
+      - TRON_PAYMENT_URL=http://lucid-tron-client:8091
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/gui-api-bridge:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/gui-api-bridge:/app/data
@@ -48,7 +48,7 @@ services:
       lucid-api-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8102/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -249,7 +249,7 @@ services:
       - NODE_ENV=production
       - ELECTRON_GUI_PROFILE=admin
       - ELECTRON_GUI_NETWORK=lucid-pi-network
-      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8097/api/v1
+      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8102/api/v1
       - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services.conf
       - ADMIN_INTERFACE_HOST=0.0.0.0
       - ADMIN_INTERFACE_PORT=8120
@@ -303,7 +303,7 @@ services:
       - NODE_ENV=production
       - ELECTRON_GUI_PROFILE=user
       - ELECTRON_GUI_NETWORK=lucid-pi-network
-      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8097/api/v1
+      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8102/api/v1
       - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-user.conf
       - LOG_LEVEL=INFO
       - LUCID_ENV=production
@@ -355,7 +355,7 @@ services:
       - NODE_ENV=production
       - ELECTRON_GUI_PROFILE=node_operator
       - ELECTRON_GUI_NETWORK=lucid-pi-network
-      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8097/api/v1
+      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8102/api/v1
       - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-node.conf
       - LOG_LEVEL=INFO
       - LUCID_ENV=production

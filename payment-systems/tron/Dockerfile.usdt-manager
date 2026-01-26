@@ -17,7 +17,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1: Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:${PYTHON_VERSION}-slim-bookworm AS builder
+FROM python:${PYTHON_VERSION}-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -97,10 +97,14 @@ COPY payment-systems/tron/ ./app/
 # Compile Python bytecode for faster startup
 RUN /opt/venv/bin/python -m compileall -b /app
 
+# Verify packages in builder stage (before distroless transition)
+# Critical: Validation must occur in builder where Python runtime is available
+RUN /opt/venv/bin/python3 -c "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('✅ All packages verified in builder stage')"
+
 ############################
 # Stage 2: Runtime
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -169,10 +173,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Set non-root user (65532 = nonroot in distroless)
 USER 65532:65532
-
-# Verify packages were copied successfully (fails build if missing)
-# Critical: This catches COPY failures immediately and prevents runtime errors
-RUN ["/opt/venv/bin/python3", "-c", "import sys; import os; site_packages = '/opt/venv/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist'; assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; assert os.path.exists(os.path.join(site_packages, 'tronpy')), 'tronpy not found'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; print('✅ All packages verified in runtime stage')"]
 
 # Entrypoint and command
 ENTRYPOINT []
