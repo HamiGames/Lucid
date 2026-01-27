@@ -2,7 +2,7 @@
 """
 Lucid Tunnel Tools entrypoint — manages ephemeral onions through pickme/lucid-tor-proxy.
 Assumes:
-  * `/var/lib/tor/control_auth_cookie` is mounted from the tor-proxy container
+  * `/data/tor/control_auth_cookie` is mounted from the tor-proxy container
   * The tunnel container can reach the tor ControlPort (default tor-proxy:9051)
   * Environment variables mirror the compose stack
 """
@@ -29,7 +29,7 @@ CONTROL_HOST = os.getenv("CONTROL_HOST", "tor-proxy")
 CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
 # Cookie file locations (check shared volume first, then fallback to direct mount)
 COOKIE_FILE_SHARED = Path(os.getenv("COOKIE_FILE_SHARED", "/run/lucid/onion/control_auth_cookie"))
-COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/var/lib/tor/control_auth_cookie"))
+COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/data/tor/control_auth_cookie"))
 ONION_PORTS = os.getenv("ONION_PORTS", "80 api-gateway:8080")
 WRITE_ENV = Path(os.getenv("WRITE_ENV", "/run/lucid/onion/.onion.env"))
 ROTATE_INTERVAL = int(os.getenv("ROTATE_INTERVAL", "0"))  # minutes; 0 = create once
