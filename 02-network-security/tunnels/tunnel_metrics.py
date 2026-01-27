@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
 # Load configuration from environment
-METRICS_JSON_PATH = Path(os.getenv("METRICS_JSON_PATH", "/var/lib/tunnel/metrics.json"))
+METRICS_JSON_PATH = Path(os.getenv("METRICS_JSON_PATH", "/data/tunnel/metrics.json"))
 METRICS_ENABLED = os.getenv("METRICS_ENABLED", "true").lower() == "true"
 METRICS_UPDATE_INTERVAL = int(os.getenv("METRICS_UPDATE_INTERVAL", "60"))
 METRICS_RETENTION_DAYS = int(os.getenv("METRICS_RETENTION_DAYS", "7"))
