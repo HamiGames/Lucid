@@ -15,7 +15,7 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.admin
+
     networks:
       - lucid-tron-isolated
     ports:
@@ -256,7 +256,7 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payout-router
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.admin
+
     networks:
       - lucid-tron-isolated
     ports:
@@ -396,7 +396,7 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-wallet-manager
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.admin
+
     networks:
       - lucid-tron-isolated
     ports:
@@ -552,7 +552,7 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-usdt-manager
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.admin
+
     networks:
       - lucid-tron-isolated
     ports:
@@ -700,7 +700,6 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-staking
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.admin
     networks:
       - lucid-tron-isolated
     ports:
