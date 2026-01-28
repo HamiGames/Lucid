@@ -4,7 +4,6 @@ services:
     image: pickme/lucid-tor-proxy:latest-arm64
     container_name: tor-proxy
     restart: unless-stopped
-    user: "0:0"
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
@@ -23,7 +22,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
       - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
       - tor-config:/etc/tor
-      - onion-state:/run/lucid/onion:rw
+      - onion-state:/run/lucid/onion
     healthcheck:
       test: ["CMD", "/bin/bash", "/usr/local/bin/tor-health"]
       interval: 30s
@@ -375,7 +374,6 @@ volumes:
     name: lucid-tor-config
   onion-state:
     name: lucid-onion-state
-    driver: local
 
 networks:
   lucid-pi-network:
