@@ -50,7 +50,7 @@ WORKDIR /app
 
 # Create application and data directories with proper ownership
 # Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
-RUN sudo mkdir -p /app/scripts /data/tunnel /var/lib/tunnel /var/log/tunnel /run  \
+RUN mkdir -p /app/scripts /var/lib/tunnel /var/log/tunnel /run \
     && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)" > /app/scripts/.lucid-keep \
     && echo "LUCID_TUNNEL_TOOLS_LIB_DIRECTORY_$(date +%s)" > /var/lib/tunnel/.lucid-keep \
     && echo "LUCID_TUNNEL_TOOLS_LOG_DIRECTORY_$(date +%s)" > /var/log/tunnel/.lucid-keep \
