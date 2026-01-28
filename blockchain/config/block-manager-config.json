@@ -64,6 +64,22 @@
     "metrics_enabled": true,
     "expose_health": true,
     "expose_metrics": false
+  }, 
+  "error_handling": {
+    "enabled": true,
+    "max_retries": 3,
+    "retry_delay_seconds": 1,
+    "exponential_backoff": true,
+    "backoff_multiplier": 2,
+    "max_backoff_seconds": 60
+  },
+  "healthcheck": {
+    "path": "/health",
+    "interval_seconds": 30,
+    "timeout_seconds": 10,
+    "retries": 3,
+    "start_period_seconds": 40
   }
 }
+
 
