@@ -466,7 +466,7 @@ volumes:
   # Onion state shared between tor-proxy and gui-tor-manager
   onion-state:
     name: onion-state
-    driver: local
+    external: true
 
 # ===========================================
 # NETWORKS

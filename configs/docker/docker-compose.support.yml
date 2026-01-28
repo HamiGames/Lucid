@@ -1215,6 +1215,10 @@ volumes:
     driver: local
     name: lucid-tor-logs
 
+  onion-state:
+    name: lucid-onion-state
+    external: true
+
 networks:
   lucid-pi-network:
     external: true

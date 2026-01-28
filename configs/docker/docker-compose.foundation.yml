@@ -374,6 +374,7 @@ volumes:
     name: lucid-tor-config
   onion-state:
     name: lucid-onion-state
+    external: true
 
 networks:
   lucid-pi-network:

@@ -157,7 +157,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8091)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8091)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -282,7 +288,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8113)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8113)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -539,7 +551,13 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8093)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8093)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -596,7 +614,13 @@ services:
       - /tmp:noexec,nosuid,size=100m,uid=65532,gid=65532
       - /app/cache:noexec,nosuid,size=50m,uid=65532,gid=65532
     healthcheck:
-      test: ["CMD", "/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)"]
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8095)); s.close(); exit(0 if result == 0 else 1)",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -661,6 +685,10 @@ volumes:
     name: lucid-blockchain-cache
   api-gateway-tmp:
     name: lucid-api-gateway-tmp
+
+  onion-state:
+    name: lucid-onion-state
+    external: true
 
 networks:
   lucid-pi-network:
