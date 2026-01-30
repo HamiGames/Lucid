@@ -127,6 +127,21 @@ COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tunnel /var/lib/tunnel
 COPY --from=tunnel-builder --chown=65532:65532 /var/log/tunnel /var/log/tunnel
 COPY --from=tunnel-builder --chown=65532:65532 /run /run
 
+# Copy essential shell and utilities from builder
+COPY --from=tunnel-builder /bin/bash            /bin/bash
+COPY --from=tunnel-builder /bin/cat             /bin/cat
+COPY --from=tunnel-builder /bin/sh              /bin/sh
+COPY --from=tunnel-builder /usr/bin/curl        /usr/bin/curl
+COPY --from=tunnel-builder /usr/bin/jq          /usr/bin/jq
+COPY --from=tunnel-builder /usr/bin/nc          /usr/bin/nc
+COPY --from=tunnel-builder /usr/bin/socat       /usr/bin/socat
+COPY --from=tunnel-builder /usr/bin/xxd         /usr/bin/xxd
+COPY --from=tunnel-builder /usr/bin/timeout     /usr/bin/timeout
+
+# Copy required libraries for these utilities
+COPY --from=tunnel-builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+COPY --from=tunnel-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+COPY --from=tunnel-builder /usr/lib /usr/lib
 # Runtime verification: Verify entrypoint exists and modules can be imported
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; \
 sys.path.insert(0, '/app'); \
@@ -138,16 +153,7 @@ import tunnel_metrics; \
 import tunnel_status; \
 print('✅ All tunnel-tools modules verified')"]
 
-# =============================================================================
-# ENVIRONMENT VARIABLES - MINIMAL DEFAULTS ONLY
-# All configuration should come from .env.tunnel-tools, .env.secrets, .env.foundation
-# via docker-compose env_file directive. These are fallback defaults only.
-# NOTE: These defaults align with tor-proxy service from docker-compose.foundation.yml:
-#   - tor-proxy container_name: tor-proxy (line 5)
-#   - TOR_CONTROL_PORT: 9051 (line 16)
-#   - TOR_PROXY_SOCKS_PORT: 9050 (line 15)
-# These values are overridden by docker-compose.core.yml environment section (lines 394-405)
-# =============================================================================
+
 ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
     COOKIE_FILE=/var/lib/tor/control_auth_cookie \
