@@ -10,7 +10,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
       lucid-pi-network:
-        ipv4_address: 172.20.0.9
+        ipv4_address: ${TOR_PROXY_IP}
     ports:
       - "${TOR_PROXY_SOCKS_PORT:-9050}:${TOR_PROXY_SOCKS_PORT:-9050}"
       - "${TOR_PROXY_CONTROL_PORT:-9051}:${TOR_PROXY_CONTROL_PORT:-9051}"

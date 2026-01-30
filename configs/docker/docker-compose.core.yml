@@ -404,6 +404,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tunnel-tools
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
     networks:
       - lucid-pi-network
     ports:
@@ -423,7 +424,7 @@ services:
       - COOKIE_FILE=/var/lib/tor/control_auth_cookie
       - TOR_PROXY=tor-proxy:9050
       - TOR_PROXY_HOST=tor-proxy
-      - TOR_PROXY_PORT=9050
+      - TOR_PROXY_PORT=${TOR_PROXY_PORT}
       # Onion Service Configuration
       - ONION_PORTS=80 api-gateway:8080
       - UPSTREAM_SERVICE=api-gateway
