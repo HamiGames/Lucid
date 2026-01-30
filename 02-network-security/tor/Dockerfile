@@ -93,7 +93,8 @@ COPY --from=tor-builder /usr/bin/nc          /usr/bin/nc
 COPY --from=tor-builder /usr/bin/xxd         /usr/bin/xxd
 COPY --from=tor-builder /usr/bin/curl        /usr/bin/curl
 COPY --from=tor-builder /usr/bin/jq          /usr/bin/jq
-
+COPY --from=tor-builder /bin/cat             /bin/cat
+COPY --from=tor-builder /usr/bin/timeout     /usr/bin/timeout
 # Required libraries (include systemd/selinux/cap and loader)
 COPY --from=tor-builder /lib/*/libc.so.6        /lib/
 COPY --from=tor-builder /lib/*/libcrypto.so.3   /lib/
