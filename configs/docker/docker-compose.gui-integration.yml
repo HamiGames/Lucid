@@ -29,8 +29,8 @@ services:
       - DEBUG=false
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
-      - API_GATEWAY_URL=http://lucid-api-gateway:8080
-      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
       - SESSION_API_URL=http://lucid-session-api:8113
       - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
@@ -46,7 +46,7 @@ services:
       - lucid-pi-network
       - lucid-gui-network
     depends_on:
-      lucid-api-gateway:
+      api-gateway:
         condition: service_healthy
     healthcheck:
       test:
