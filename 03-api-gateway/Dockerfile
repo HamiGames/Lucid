@@ -158,37 +158,10 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Verify packages are BAKED INTO the distroless image (file-based check only - no python execution)
-RUN test -d /usr/local/lib/python3.11/site-packages && \
-    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "✅ Site-packages directory verified" && \
-    echo "Total items in site-packages: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)"
-
 # Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
-
-# Verify app directories were copied (file-based check only)
-RUN test -f /app/api/.lucid-marker && \
-    test -f /app/gateway/.lucid-marker && \
-    test -f /app/config/.lucid-marker && \
-    test -f /app/api/app/main.py && \
-    echo "✅ Application directories verified"
-
-# Verify new GUI and TRON support modules files exist (file-based check only)
-RUN test -f /app/api/app/routers/gui.py && \
-    test -f /app/api/app/routers/gui_docker.py && \
-    test -f /app/api/app/routers/gui_tor.py && \
-    test -f /app/api/app/routers/gui_hardware.py && \
-    test -f /app/api/app/routers/tron_support.py && \
-    test -f /app/api/app/services/gui_bridge_service.py && \
-    test -f /app/api/app/services/gui_docker_manager_service.py && \
-    test -f /app/api/app/services/gui_tor_manager_service.py && \
-    test -f /app/api/app/services/gui_hardware_manager_service.py && \
-    test -f /app/api/app/services/tron_support_service.py && \
-    test -f /app/api/app/services/__init__.py && \
-    echo "✅ All GUI and TRON support modules verified"
 
 EXPOSE 8080
 

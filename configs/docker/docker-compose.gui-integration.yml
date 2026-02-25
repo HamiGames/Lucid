@@ -113,6 +113,13 @@ services:
     networks:
       - lucid-pi-network
       - lucid-gui-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
     healthcheck:
       test:
         [

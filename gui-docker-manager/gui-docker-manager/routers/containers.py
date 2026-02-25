@@ -117,3 +117,54 @@ async def get_container_stats(container_id: str, manager = Depends(get_docker_ma
     except Exception as e:
         logger.error(f"Failed to get stats for container {container_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{container_id}/pause")
+async def pause_container(container_id: str, manager = Depends(get_docker_manager)):
+    """Pause a running container (freeze its processes)"""
+    try:
+        result = await manager.pause_container(container_id)
+        return {
+            "status": "success",
+            "message": f"Container {container_id} paused",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to pause container {container_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{container_id}/unpause")
+async def unpause_container(container_id: str, manager = Depends(get_docker_manager)):
+    """Unpause a paused container (resume its processes)"""
+    try:
+        result = await manager.unpause_container(container_id)
+        return {
+            "status": "success",
+            "message": f"Container {container_id} unpaused",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to unpause container {container_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{container_id}")
+async def remove_container(container_id: str, force: bool = False, manager = Depends(get_docker_manager)):
+    """
+    Remove a container
+
+    Parameters:
+    - container_id: Container ID or name
+    - force: Force removal even if running (default: false)
+    """
+    try:
+        result = await manager.remove_container(container_id, force=force)
+        return {
+            "status": "success",
+            "message": f"Container {container_id} removed",
+            "data": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to remove container {container_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

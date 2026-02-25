@@ -8,6 +8,7 @@ import asyncio
 import logging
 import signal
 import sys
+import os
 from contextlib import asynccontextmanager
 from typing import Optional
 from datetime import datetime
@@ -18,6 +19,9 @@ from fastapi.responses import JSONResponse, Response
 from .docker_manager_service import DockerManagerService
 from .config import get_config
 from .routers import containers_router, services_router, compose_router, health_router
+from .routers import networks_router, volumes_router, events_router
+from .services.authentication_service import AuthenticationService
+from .middleware.auth import AuthenticationMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -29,6 +33,7 @@ logger = logging.getLogger(__name__)
 # Global instances
 docker_manager: Optional[DockerManagerService] = None
 config_manager = get_config()
+auth_service: Optional[AuthenticationService] = None
 
 
 def setup_signal_handlers():
@@ -44,7 +49,7 @@ def setup_signal_handlers():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global docker_manager
+    global docker_manager, auth_service
     
     logger.info("Starting Lucid GUI Docker Manager Service")
     
@@ -52,6 +57,15 @@ async def lifespan(app: FastAPI):
         # Validate configuration
         if not config_manager.get_config_dict():
             raise RuntimeError("Docker Manager configuration validation failed")
+        
+        # Initialize Authentication Service
+        jwt_secret = os.getenv('JWT_SECRET_KEY', '')
+        if not jwt_secret:
+            logger.warning("JWT_SECRET_KEY not set - authentication may be disabled")
+            jwt_secret = 'default-insecure-key'
+        
+        auth_service = AuthenticationService(secret_key=jwt_secret)
+        logger.info("Authentication service initialized")
         
         # Initialize Docker Manager Service
         docker_manager = DockerManagerService(config_manager)
@@ -87,7 +101,7 @@ app = FastAPI(
 )
 
 # Add CORS middleware
-cors_origins_str = os.getenv('CORS_ORIGINS', '*') if 'os' in dir() else '*'
+cors_origins_str = os.getenv('CORS_ORIGINS', '*')
 if cors_origins_str == "*":
     cors_origins = ["*"]
 else:
@@ -101,10 +115,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add authentication middleware (if JWT_SECRET_KEY is set)
+jwt_secret = os.getenv('JWT_SECRET_KEY', '')
+if jwt_secret and jwt_secret != 'default-insecure-key':
+    auth_middleware_instance = AuthenticationMiddleware(
+        auth_service=auth_service or AuthenticationService(secret_key=jwt_secret)
+    )
+    app.add_middleware(lambda app: auth_middleware_instance(app))
+    logger.info("Authentication middleware enabled")
+else:
+    logger.warning("Authentication middleware disabled - JWT_SECRET_KEY not configured")
+
 # Include routers
 app.include_router(containers_router, prefix="/api/v1/containers", tags=["containers"])
 app.include_router(services_router, prefix="/api/v1/services", tags=["services"])
 app.include_router(compose_router, prefix="/api/v1/compose", tags=["compose"])
+app.include_router(networks_router, prefix="/api/v1/networks", tags=["networks"])
+app.include_router(volumes_router, prefix="/api/v1/volumes", tags=["volumes"])
+app.include_router(events_router, prefix="/api/v1/events", tags=["events"])
 app.include_router(health_router, prefix="/api/v1", tags=["health"])
 
 # Global exception handler
@@ -186,7 +214,3 @@ async def get_metrics():
     except Exception as e:
         logger.error(f"Failed to get metrics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# Import os at module level for CORS_ORIGINS
-import os
