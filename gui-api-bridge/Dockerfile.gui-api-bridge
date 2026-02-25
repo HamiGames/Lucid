@@ -65,10 +65,11 @@ RUN echo "LUCID_GUI_API_BRIDGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/li
     echo "LUCID_GUI_API_BRIDGE_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
     chown -R 65532:65532 /root/.local
 
-# Verify critical packages
-RUN python3 -c "import fastapi, uvicorn, pydantic, httpx, websockets; print('✅ critical packages installed')" && \
+# Verify critical packages (aligned with api-gateway)
+RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, websockets; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
-    test -d /root/.local/lib/python3.11/site-packages
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Copy application source (direct copy, no nesting)
 COPY gui-api-bridge/gui-api-bridge/ ./gui-api-bridge/
@@ -136,7 +137,7 @@ COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridg
 RUN python3 -c 'import sys; import os; app_dir = "/app/gui-api-bridge"; assert os.path.exists(app_dir), app_dir + " does not exist"; assert os.path.exists(os.path.join(app_dir, "entrypoint.py")), "entrypoint.py not found in " + app_dir; assert os.path.exists(os.path.join(app_dir, "main.py")), "main.py not found"; assert os.path.exists(os.path.join(app_dir, "config.py")), "config.py not found"; assert os.path.isdir(os.path.join(app_dir, "routers")), "routers directory not found"; assert os.path.isdir(os.path.join(app_dir, "services")), "services directory not found"; assert os.path.isdir(os.path.join(app_dir, "middleware")), "middleware directory not found"; assert os.path.isdir(os.path.join(app_dir, "models")), "models directory not found"; print("✅ Application files verified in runtime stage")'
 
 # Runtime Python imports verification
-RUN python3 -c 'import sys; sys.path.insert(0, "/app"); from gui_api_bridge.main import app; from gui_api_bridge.config import GuiApiConfig; from gui_api_bridge.gui_api_bridge_service import GuiBridgeService; print("✅ All critical module imports successful"); print(f"✅ FastAPI app instance: {app}"); print(f"✅ Config class: {GuiApiConfig}"); print(f"✅ Bridge service: {GuiBridgeService}")'
+RUN python3 -c 'import sys; sys.path.insert(0, "/app"); from gui_api_bridge.main import app; from gui_api_bridge.config import GuiAPIBridgeSettings, GuiAPIBridgeConfigManager; from gui_api_bridge.gui_api_bridge_service import GuiBridgeService; print("✅ All critical module imports successful"); print(f"✅ FastAPI app instance: {app}"); print(f"✅ Config class: {GuiAPIBridgeSettings}"); print(f"✅ Bridge service: {GuiBridgeService}")'
 
 EXPOSE 8102
 

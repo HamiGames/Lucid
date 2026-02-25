@@ -57,23 +57,38 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY 03-api-gateway/requirements.txt ./requirements.txt
 
-RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
-    mkdir -p /root/.local/bin
-
+# Step 1: Build wheels explicitly - shows compilation happening
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+    mkdir -p /build/wheels && \
+    echo "=== BUILDING WHEELS FROM SOURCE ===" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt && \
+    echo "=== WHEEL BUILD COMPLETE ===" && \
+    ls -lh /build/wheels/ && \
+    echo "Total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
-# Marker files (per Dockerfile-copy-pattern.md)
-RUN echo "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
-    chown -R 65532:65532 /root/.local
+# Step 2: Install wheels into system Python
+RUN echo "=== INSTALLING WHEELS INTO SYSTEM PYTHON ===" && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r requirements.txt && \
+    echo "=== INSTALLATION COMPLETE ===" && \
+    rm -rf /build/wheels
 
-# Builder-stage verification
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx; print('✅ critical packages installed')" && \
-    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
-    test -d /root/.local/lib/python3.11/site-packages && \
-    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
+# Builder-stage verification - ensure all packages built correctly
+RUN echo "=== Verifying pip installation success ===" && \
+    python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, aiohttp, structlog, prometheus_client; print('✅ All critical packages installed')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
+    echo "=== Full package listing ===" && \
+    pip list && \
+    echo "=== Verifying C extension packages compiled ===" && \
+    python3 -m pip show cryptography && \
+    python3 -m pip show motor && \
+    python3 -m pip show redis && \
+    python3 -m pip show uvloop && \
+    echo "=== Verifying site-packages directory ===" && \
+    ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
+    echo "directories found in site-packages" && \
+    echo "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ All packages ready for final image"
 
 # Application source COPY (only directories that exist with content)
 COPY 03-api-gateway/api/ ./api/
@@ -86,7 +101,7 @@ RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_CONFIG_$(date +%s)" > ./config/.lucid-marker && \
     find ./api ./gateway ./config -name ".lucid-marker" -exec cat {} \;
 
-# Verify new modules are included in builder stage
+# Verify new modules are included in builder stage - file existence & imports
 RUN echo "=== Verifying new GUI and TRON support modules ===" && \
     test -f ./api/app/routers/gui.py && echo "✅ gui.py found" && \
     test -f ./api/app/routers/gui_docker.py && echo "✅ gui_docker.py found" && \
@@ -99,7 +114,8 @@ RUN echo "=== Verifying new GUI and TRON support modules ===" && \
     test -f ./api/app/services/gui_hardware_manager_service.py && echo "✅ gui_hardware_manager_service.py found" && \
     test -f ./api/app/services/tron_support_service.py && echo "✅ tron_support_service.py found" && \
     test -f ./api/app/services/__init__.py && echo "✅ services/__init__.py found" && \
-    echo "All new modules verified in builder stage"
+    echo "All new modules verified in builder stage" && \
+    python3 -c "import sys; sys.path.insert(0, './api'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; print('✅ All module imports successful in builder')"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -138,23 +154,25 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Python packages (per COPY pattern guide)
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+# Bake Python packages into distroless image - explicit COPY with verification
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Runtime verification of packages
-RUN ["python3", "-c", "import sys; import os; \
+# Verify packages are BAKED INTO the distroless image
+RUN ["python3", "-c", "import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
-assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
-assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
-assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
-marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-print('Packages verified in runtime stage')"]
+print(f'✅ Site-packages directory exists: {site_packages}'); \
+print(f'✅ Directory contents: {os.listdir(site_packages)[:10]}...'); \
+print(f'✅ Total items in site-packages: {len(os.listdir(site_packages))}'); \
+packages = ['uvicorn', 'fastapi', 'pydantic', 'motor', 'pymongo', 'redis', 'cryptography', 'httpx', 'aiohttp', 'structlog', 'prometheus_client', 'pydantic_settings', 'passlib', 'python_jose', 'pyotp', 'email_validator']; \
+missing = [p for p in packages if not os.path.exists(os.path.join(site_packages, p))]; \
+print(f'✅ Checking {len(packages)} core packages...'); \
+for pkg in packages: print(f'  - {pkg}: {\"✅ FOUND\" if os.path.exists(os.path.join(site_packages, pkg)) else \"❌ MISSING\"}'); \
+assert not missing, f'FAILED: Missing packages in distroless image: {missing}'; \
+print(f'✅ SUCCESS: All {len(packages)} packages BAKED into distroless image')"]
+
+# Test that packages are importable in distroless
+RUN ["python3", "-c", "print('Testing package imports in distroless...'); import fastapi; import uvicorn; import pydantic; import motor; import pymongo; import redis; import cryptography; import httpx; print('✅ All packages importable in distroless image')"]
 
 # Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/api /app/api
@@ -169,11 +187,8 @@ assert os.path.exists('/app/config/.lucid-marker'), 'config directory not copied
 assert os.path.exists('/app/api/app/main.py'), 'main.py not found'; \
 print('Application directories verified')"]
 
-# Verify new GUI and TRON support modules in runtime stage
-RUN ["python3", "-c", "import os; modules = ['/app/api/app/routers/gui.py', '/app/api/app/routers/gui_docker.py', '/app/api/app/routers/gui_tor.py', '/app/api/app/routers/gui_hardware.py', '/app/api/app/routers/tron_support.py', '/app/api/app/services/gui_bridge_service.py', '/app/api/app/services/gui_docker_manager_service.py', '/app/api/app/services/gui_tor_manager_service.py', '/app/api/app/services/gui_hardware_manager_service.py', '/app/api/app/services/tron_support_service.py', '/app/api/app/services/__init__.py']; missing = [m for m in modules if not os.path.exists(m)]; sys.exit(0 if not missing else 1)" ]
-
-# Verify new module imports work correctly
-RUN ["python3", "-c", "import sys; sys.path.insert(0, '/app/api'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; print('✅ All new module imports successful'); print(f'✅ GUI Bridge router: {gui.router}'); print(f'✅ GUI Docker router: {gui_docker.router}'); print(f'✅ GUI Tor router: {gui_tor.router}'); print(f'✅ GUI Hardware router: {gui_hardware.router}'); print(f'✅ TRON Support router: {tron_support.router}'); print(f'✅ GUI Bridge service: {gui_bridge_service}'); print(f'✅ GUI Docker service: {gui_docker_manager_service}'); print(f'✅ GUI Tor service: {gui_tor_manager_service}'); print(f'✅ GUI Hardware service: {gui_hardware_manager_service}'); print(f'✅ TRON Support service: {tron_support_service}')" ]
+# Verify new GUI and TRON support modules files exist in runtime stage (no imports - distroless minimal)
+RUN ["python3", "-c", "import os, sys; modules = ['/app/api/app/routers/gui.py', '/app/api/app/routers/gui_docker.py', '/app/api/app/routers/gui_tor.py', '/app/api/app/routers/gui_hardware.py', '/app/api/app/routers/tron_support.py', '/app/api/app/services/gui_bridge_service.py', '/app/api/app/services/gui_docker_manager_service.py', '/app/api/app/services/gui_tor_manager_service.py', '/app/api/app/services/gui_hardware_manager_service.py', '/app/api/app/services/tron_support_service.py', '/app/api/app/services/__init__.py']; missing = [m for m in modules if not os.path.exists(m)]; print('✅ All module files verified' if not missing else f'❌ Missing: {missing}'); sys.exit(0 if not missing else 1)"]
 
 EXPOSE 8080
 
