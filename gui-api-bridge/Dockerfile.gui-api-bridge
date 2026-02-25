@@ -160,20 +160,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
 
-# Verify packages were properly copied to runtime stage (file existence only - no Python imports in distroless)
-RUN test -d /usr/local/lib/python3.11/site-packages && \
-    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    test -d /usr/local/bin && \
-    test -f /usr/local/bin/.lucid-marker && \
-    test -d /app/gui-api-bridge && \
-    test -f /app/gui-api-bridge/entrypoint.py && \
-    test -f /app/gui-api-bridge/main.py && \
-    test -f /app/gui-api-bridge/config.py && \
-    test -d /app/gui-api-bridge/routers && \
-    test -d /app/gui-api-bridge/services && \
-    test -d /app/gui-api-bridge/middleware && \
-    test -d /app/gui-api-bridge/models && \
-    echo "✅ All package and application directories verified in runtime stage"
+# Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
+RUN ["/usr/bin/python3.11", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; app_files = ['/app/gui-api-bridge/entrypoint.py', '/app/gui-api-bridge/main.py', '/app/gui-api-bridge/config.py']; app_dirs = ['/app/gui-api-bridge', '/app/gui-api-bridge/routers', '/app/gui-api-bridge/services', '/app/gui-api-bridge/middleware', '/app/gui-api-bridge/models']; checks = [os.path.isdir(site_packages), os.path.isfile(os.path.join(site_packages, '.lucid-marker')), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs] + [os.path.isfile(f) for f in app_files]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(os.path.join(site_packages, \".lucid-marker\"))}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}, app_files={[os.path.isfile(f) for f in app_files]}'; print('✅ All package and application directories verified in runtime stage')"]
 
 EXPOSE 8102
 

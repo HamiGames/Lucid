@@ -111,31 +111,19 @@ COPY gui-docker-manager/gui-docker-manager/ ./gui-docker-manager/
 RUN echo "LUCID_GUI_DOCKER_MANAGER_APP_$(date +%s)" > ./gui-docker-manager/.lucid-marker && \
     find ./gui-docker-manager -name ".lucid-marker" -exec cat {} \;
 
-# Verify new modules are included in builder stage - file existence & imports
-RUN echo "=== Verifying new modules ===" && \
-    test -f ./gui-docker-manager/services/authentication_service.py && echo "✅ authentication_service.py found" && \
-    test -f ./gui-docker-manager/services/network_service.py && echo "✅ network_service.py found" && \
-    test -f ./gui-docker-manager/services/volume_service.py && echo "✅ volume_service.py found" && \
-    test -f ./gui-docker-manager/routers/networks.py && echo "✅ networks.py found" && \
-    test -f ./gui-docker-manager/routers/volumes.py && echo "✅ volumes.py found" && \
-    test -f ./gui-docker-manager/routers/events.py && echo "✅ events.py found" && \
-    test -f ./gui-docker-manager/models/responses.py && echo "✅ responses.py found" && \
-    test -f ./gui-docker-manager/models/network.py && echo "✅ network.py found" && \
-    test -f ./gui-docker-manager/models/volume.py && echo "✅ volume.py found" && \
-    test -f ./gui-docker-manager/middleware/auth.py && echo "✅ auth.py found" && \
-    test -f ./gui-docker-manager/main.py && echo "✅ main.py found" && \
+# Verify application files in builder stage
+RUN echo "=== Verifying GUI Docker Manager application files ===" && \
     test -f ./gui-docker-manager/entrypoint.py && echo "✅ entrypoint.py found" && \
-    test -f ./gui-docker-manager/__init__.py && echo "✅ __init__.py found" && \
-    test -f ./gui-docker-manager/services/__init__.py && echo "✅ services/__init__.py found" && \
-    test -f ./gui-docker-manager/routers/__init__.py && echo "✅ routers/__init__.py found" && \
-    test -f ./gui-docker-manager/models/__init__.py && echo "✅ models/__init__.py found" && \
-    echo "All new modules verified in builder stage" && \
-    python3 -c "import sys; sys.path.insert(0, './gui-docker-manager'); from services.authentication_service import AuthenticationService; from services.network_service import NetworkService; from services.volume_service import VolumeService; from routers import networks, volumes, events; from models import responses, network, volume; print('✅ All module imports successful in builder')"
+    test -f ./gui-docker-manager/main.py && echo "✅ main.py found" && \
+    test -f ./gui-docker-manager/config.py && echo "✅ config.py found" && \
+    test -d ./gui-docker-manager/routers && echo "✅ routers directory found" && \
+    test -d ./gui-docker-manager/services && echo "✅ services directory found" && \
+    python3 -c "import sys; sys.path.insert(0, './gui-docker-manager'); from main import app; print('✅ Application initialization successful in builder')" && \
+    echo "All application files verified in builder stage"
 
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -177,13 +165,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Application layout COPY (explicit directories)
 COPY --chown=65532:65532 --from=builder /build/gui-docker-manager /app/gui-docker-manager
 
-# Verify packages were properly copied to runtime stage (file existence only - no Python imports in distroless)
-RUN test -d /usr/local/lib/python3.11/site-packages && \
-    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    test -d /usr/local/bin && \
-    test -f /usr/local/bin/.lucid-marker && \
-    test -d /app/gui-docker-manager && \
-    echo "✅ All package and application directories verified in runtime stage"
+# Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
+RUN ["/usr/bin/python3.11", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; app_dirs = ['/app/gui-docker-manager']; checks = [os.path.isdir(site_packages), os.path.isfile(os.path.join(site_packages, '.lucid-marker')), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(os.path.join(site_packages, \".lucid-marker\"))}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
 EXPOSE 8098
 

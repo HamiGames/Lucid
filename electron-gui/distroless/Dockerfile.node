@@ -95,16 +95,8 @@ COPY --from=builder --chown=65532:65532 /build/.packages-marker /app/.packages-m
 COPY --from=builder --chown=65532:65532 /build/dist/ ./dist/
 COPY --from=builder --chown=65532:65532 /build/configs/ ./configs/
 
-# Verify markers, built output, and config files
-RUN test -f /app/.build-marker && \
-    test -f /app/.packages-marker && \
-    test -d /app/dist && \
-    test -d /app/configs && \
-    test -f /app/configs/api-services-node.conf && \
-    test -f /app/configs/docker.config.json && \
-    test -f /app/configs/env.production.json && \
-    test -f /app/configs/tor.config.json && \
-    echo "✅ Build artifacts verified (configs files present)"
+# Verify markers, built output, and config files (distroless-compatible - Node.js based)
+RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), nodeConf: fs.existsSync('/app/configs/api-services-node.conf'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json') }; if (!Object.values(checks).every(v => v)) { console.error('❌ Verification failed:', checks); process.exit(1); } console.log('✅ Build artifacts verified (configs files present)');"]
 
 # Set environment variables with defaults
 ENV NODE_ENV=production
