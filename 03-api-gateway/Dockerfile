@@ -55,7 +55,7 @@ RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY 03-api-gateway/requirements.txt ./requirements.txt
+COPY requirements.txt ./requirements.txt
 
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
@@ -76,9 +76,9 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, crypto
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Application source COPY (only directories that exist with content)
-COPY 03-api-gateway/api/ ./api/
-COPY 03-api-gateway/gateway/ ./gateway/
-COPY 03-api-gateway/config/ ./config/
+COPY api/ ./api/
+COPY gateway/ ./gateway/
+COPY config/ ./config/
 
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
