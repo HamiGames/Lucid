@@ -178,15 +178,8 @@ COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
 
-# Verify packages were properly copied to runtime stage (file existence only - no Python imports)
-RUN test -d /usr/local/lib/python3.11/site-packages && \
-    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    test -d /usr/local/bin && \
-    test -f /usr/local/bin/.lucid-marker && \
-    test -d /app/api && \
-    test -d /app/gateway && \
-    test -d /app/config && \
-    echo "✅ All package and application directories verified in runtime stage"
+# Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
+RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
 EXPOSE 8080
 
