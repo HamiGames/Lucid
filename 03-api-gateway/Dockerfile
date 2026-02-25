@@ -87,8 +87,22 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "=== Verifying site-packages directory ===" && \
     ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" && \
-    echo "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     echo "✅ All packages ready for final image"
+
+# Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
+RUN echo "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.lucid-marker && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chmod 644 /usr/local/bin/.lucid-marker && \
+    echo "✅ Marker files created to lock in directory structure"
+
+# Verify marker files exist with content (critical for distroless COPY)
+RUN echo "=== Verifying marker files ===" && \
+    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    cat /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    test -f /usr/local/bin/.lucid-marker && \
+    cat /usr/local/bin/.lucid-marker && \
+    echo "✅ Both marker files verified with content"
 
 # Application source COPY (only directories that exist with content)
 COPY 03-api-gateway/api/ ./api/
@@ -155,13 +169,31 @@ COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Bake Python packages into distroless image - explicit COPY with verification
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+# Copy entire Python installation directory (includes site-packages and runtime libraries)
+COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
+
+# Verify packages were properly copied to runtime stage (fails build if missing)
+RUN python3 -c "import os, sys; \
+    site_packages = '/usr/local/lib/python3.11/site-packages'; \
+    assert os.path.exists(site_packages), f'{site_packages} does not exist in runtime'; \
+    assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'site-packages marker not found'; \
+    marker_content = open(os.path.join(site_packages, '.lucid-marker')).read().strip(); \
+    assert 'LUCID_API_GATEWAY_PACKAGES_INSTALLED' in marker_content, f'Invalid marker content: {marker_content}'; \
+    print(f'✅ site-packages verified with marker: {marker_content}'); \
+    import fastapi, uvicorn, motor, redis; \
+    print('✅ Critical packages verified in runtime stage')" && \
+    python3 -c "import os; \
+    bin_marker = '/usr/local/bin/.lucid-marker'; \
+    assert os.path.exists(bin_marker), 'bin marker not found'; \
+    marker_content = open(bin_marker).read().strip(); \
+    assert 'LUCID_API_GATEWAY_BINARIES_INSTALLED' in marker_content, f'Invalid bin marker: {marker_content}'; \
+    print(f'✅ /usr/local/bin verified with marker: {marker_content}')"
 
 EXPOSE 8080
 
