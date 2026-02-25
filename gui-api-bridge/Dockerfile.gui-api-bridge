@@ -127,41 +127,16 @@ COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-package
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 
 # Runtime verification of packages
-RUN ["python3", "-c", "import sys; import os; \
-site_packages = '/usr/local/lib/python3.11/site-packages'; \
-assert os.path.exists(site_packages), site_packages + ' does not exist'; \
-assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
-assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
-assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'marker file not found'; \
-marker_path = os.path.join(site_packages, '.lucid-marker'); \
-assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
-print('✅ Packages verified in runtime stage')"]
+RUN python3 -c 'import sys; import os; site_packages = "/usr/local/lib/python3.11/site-packages"; assert os.path.exists(site_packages), site_packages + " does not exist"; assert os.path.exists(os.path.join(site_packages, "uvicorn")), "uvicorn not found"; assert os.path.exists(os.path.join(site_packages, "fastapi")), "fastapi not found"; assert os.path.exists(os.path.join(site_packages, ".lucid-marker")), "marker file not found"; marker_path = os.path.join(site_packages, ".lucid-marker"); assert os.path.getsize(marker_path) > 0, "marker file is empty: " + marker_path; print("✅ Packages verified in runtime stage")'
 
 # Copy application code
 COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
 
 # Runtime verification of application files
-RUN ["python3", "-c", "import sys; import os; \
-app_dir = '/app/gui-api-bridge'; \
-assert os.path.exists(app_dir), app_dir + ' does not exist'; \
-assert os.path.exists(os.path.join(app_dir, 'entrypoint.py')), 'entrypoint.py not found in ' + app_dir; \
-assert os.path.exists(os.path.join(app_dir, 'main.py')), 'main.py not found'; \
-assert os.path.exists(os.path.join(app_dir, 'config.py')), 'config.py not found'; \
-assert os.path.isdir(os.path.join(app_dir, 'routers')), 'routers directory not found'; \
-assert os.path.isdir(os.path.join(app_dir, 'services')), 'services directory not found'; \
-assert os.path.isdir(os.path.join(app_dir, 'middleware')), 'middleware directory not found'; \
-assert os.path.isdir(os.path.join(app_dir, 'models')), 'models directory not found'; \
-print('✅ Application files verified in runtime stage')"]
+RUN python3 -c 'import sys; import os; app_dir = "/app/gui-api-bridge"; assert os.path.exists(app_dir), app_dir + " does not exist"; assert os.path.exists(os.path.join(app_dir, "entrypoint.py")), "entrypoint.py not found in " + app_dir; assert os.path.exists(os.path.join(app_dir, "main.py")), "main.py not found"; assert os.path.exists(os.path.join(app_dir, "config.py")), "config.py not found"; assert os.path.isdir(os.path.join(app_dir, "routers")), "routers directory not found"; assert os.path.isdir(os.path.join(app_dir, "services")), "services directory not found"; assert os.path.isdir(os.path.join(app_dir, "middleware")), "middleware directory not found"; assert os.path.isdir(os.path.join(app_dir, "models")), "models directory not found"; print("✅ Application files verified in runtime stage")'
 
 # Runtime Python imports verification
-RUN ["python3", "-c", "import sys; sys.path.insert(0, '/app'); \
-from gui_api_bridge.main import app; \
-from gui_api_bridge.config import GuiApiConfig; \
-from gui_api_bridge.gui_api_bridge_service import GuiBridgeService; \
-print('✅ All critical module imports successful'); \
-print(f'✅ FastAPI app instance: {app}'); \
-print(f'✅ Config class: {GuiApiConfig}'); \
-print(f'✅ Bridge service: {GuiBridgeService}')"]
+RUN python3 -c 'import sys; sys.path.insert(0, "/app"); from gui_api_bridge.main import app; from gui_api_bridge.config import GuiApiConfig; from gui_api_bridge.gui_api_bridge_service import GuiBridgeService; print("✅ All critical module imports successful"); print(f"✅ FastAPI app instance: {app}"); print(f"✅ Config class: {GuiApiConfig}"); print(f"✅ Bridge service: {GuiBridgeService}")'
 
 EXPOSE 8102
 
