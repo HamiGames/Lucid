@@ -34,7 +34,12 @@ from app.routers import (
     manifests,
     trust,
     chain,
-    wallets
+    wallets,
+    gui,
+    gui_docker,
+    gui_tor,
+    gui_hardware,
+    tron_support
 )
 from app.database.connection import init_database
 from app.utils.logging import setup_logging
@@ -58,6 +63,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Blockchain Core: {settings.BLOCKCHAIN_CORE_URL}")
     logger.info(f"TRON Payment (isolated): {settings.TRON_PAYMENT_URL}")
+    logger.info(f"GUI API Bridge: {settings.GUI_API_BRIDGE_URL}")
+    logger.info(f"GUI Docker Manager: {settings.GUI_DOCKER_MANAGER_URL}")
+    logger.info(f"GUI Tor Manager: {settings.GUI_TOR_MANAGER_URL}")
+    logger.info(f"GUI Hardware Manager: {settings.GUI_HARDWARE_MANAGER_URL}")
+    logger.info(f"TRON Payout Router: {settings.TRON_PAYOUT_ROUTER_URL}")
+    logger.info(f"TRON Wallet Manager: {settings.TRON_WALLET_MANAGER_URL}")
+    logger.info(f"TRON USDT Manager: {settings.TRON_USDT_MANAGER_URL}")
     
     await init_database()
     logger.info("Database initialized")
@@ -111,6 +123,11 @@ app.include_router(manifests.router, prefix="/api/v1/manifests", tags=["Manifest
 app.include_router(trust.router, prefix="/api/v1/trust", tags=["Trust"])
 app.include_router(chain.router, prefix="/api/v1/chain", tags=["Chain"])
 app.include_router(wallets.router, prefix="/api/v1/wallets", tags=["Wallets"])
+app.include_router(gui.router, prefix="/api/v1/gui", tags=["GUI Bridge"])
+app.include_router(gui_docker.router, prefix="/api/v1/gui/docker", tags=["GUI Docker Manager"])
+app.include_router(gui_tor.router, prefix="/api/v1/gui/tor", tags=["GUI Tor Manager"])
+app.include_router(gui_hardware.router, prefix="/api/v1/gui/hardware", tags=["GUI Hardware Manager"])
+app.include_router(tron_support.router, prefix="/api/v1/tron", tags=["TRON Support Services"])
 
 # Global exception handlers
 @app.exception_handler(RequestValidationError)

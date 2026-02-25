@@ -42,7 +42,14 @@ async def health_check():
         "mongodb": "healthy",
         "redis": "healthy",
         "blockchain_core": "unknown",
-        "tron_payment": "unknown"
+        "tron_payment": "unknown",
+        "gui_api_bridge": "unknown",
+        "gui_docker_manager": "unknown",
+        "gui_tor_manager": "unknown",
+        "gui_hardware_manager": "unknown",
+        "tron_payout_router": "unknown",
+        "tron_wallet_manager": "unknown",
+        "tron_usdt_manager": "unknown"
     }
     
     return HealthStatus(

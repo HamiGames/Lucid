@@ -86,6 +86,21 @@ RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_CONFIG_$(date +%s)" > ./config/.lucid-marker && \
     find ./api ./gateway ./config -name ".lucid-marker" -exec cat {} \;
 
+# Verify new modules are included in builder stage
+RUN echo "=== Verifying new GUI and TRON support modules ===" && \
+    test -f ./api/app/routers/gui.py && echo "✅ gui.py found" && \
+    test -f ./api/app/routers/gui_docker.py && echo "✅ gui_docker.py found" && \
+    test -f ./api/app/routers/gui_tor.py && echo "✅ gui_tor.py found" && \
+    test -f ./api/app/routers/gui_hardware.py && echo "✅ gui_hardware.py found" && \
+    test -f ./api/app/routers/tron_support.py && echo "✅ tron_support.py found" && \
+    test -f ./api/app/services/gui_bridge_service.py && echo "✅ gui_bridge_service.py found" && \
+    test -f ./api/app/services/gui_docker_manager_service.py && echo "✅ gui_docker_manager_service.py found" && \
+    test -f ./api/app/services/gui_tor_manager_service.py && echo "✅ gui_tor_manager_service.py found" && \
+    test -f ./api/app/services/gui_hardware_manager_service.py && echo "✅ gui_hardware_manager_service.py found" && \
+    test -f ./api/app/services/tron_support_service.py && echo "✅ tron_support_service.py found" && \
+    test -f ./api/app/services/__init__.py && echo "✅ services/__init__.py found" && \
+    echo "All new modules verified in builder stage"
+
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
@@ -153,6 +168,42 @@ assert os.path.exists('/app/gateway/.lucid-marker'), 'gateway directory not copi
 assert os.path.exists('/app/config/.lucid-marker'), 'config directory not copied'; \
 assert os.path.exists('/app/api/app/main.py'), 'main.py not found'; \
 print('Application directories verified')"]
+
+# Verify new GUI and TRON support modules in runtime stage
+RUN ["python3", "-c", "import os; \
+modules_required = [ \
+    '/app/api/app/routers/gui.py', \
+    '/app/api/app/routers/gui_docker.py', \
+    '/app/api/app/routers/gui_tor.py', \
+    '/app/api/app/routers/gui_hardware.py', \
+    '/app/api/app/routers/tron_support.py', \
+    '/app/api/app/services/gui_bridge_service.py', \
+    '/app/api/app/services/gui_docker_manager_service.py', \
+    '/app/api/app/services/gui_tor_manager_service.py', \
+    '/app/api/app/services/gui_hardware_manager_service.py', \
+    '/app/api/app/services/tron_support_service.py', \
+    '/app/api/app/services/__init__.py' \
+]; \
+missing = [m for m in modules_required if not os.path.exists(m)]; \
+if missing: \
+    raise AssertionError(f'New modules not found: {missing}'); \
+print(f'✅ All {len(modules_required)} new GUI and TRON support modules verified')"]
+
+# Verify new module imports work correctly
+RUN ["python3", "-c", "import sys; sys.path.insert(0, '/app/api'); \
+from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; \
+from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; \
+print('✅ All new module imports successful'); \
+print(f'✅ GUI Bridge router: {gui.router}'); \
+print(f'✅ GUI Docker router: {gui_docker.router}'); \
+print(f'✅ GUI Tor router: {gui_tor.router}'); \
+print(f'✅ GUI Hardware router: {gui_hardware.router}'); \
+print(f'✅ TRON Support router: {tron_support.router}'); \
+print(f'✅ GUI Bridge service: {gui_bridge_service}'); \
+print(f'✅ GUI Docker service: {gui_docker_manager_service}'); \
+print(f'✅ GUI Tor service: {gui_tor_manager_service}'); \
+print(f'✅ GUI Hardware service: {gui_hardware_manager_service}'); \
+print(f'✅ TRON Support service: {tron_support_service}')"]
 
 EXPOSE 8080
 

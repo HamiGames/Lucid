@@ -106,15 +106,24 @@ class ProxyService:
     Handles proxying to:
     - Blockchain Core (Cluster 02)
     - Session Management (Cluster 03)
-    - Node Management (Cluster 05)
+    - TRON Payment Service (Support Cluster)
+    - GUI Services (GUI Integration Cluster)
+    - TRON Support Services (Support Cluster)
     """
     
     def __init__(self):
         # Backend service URLs
         self.service_urls = {
-            "blockchain": settings.BLOCKCHAIN_SERVICE_URL,
-            "session": settings.SESSION_SERVICE_URL,
-            "node": settings.NODE_SERVICE_URL,
+            "blockchain": settings.BLOCKCHAIN_CORE_URL,
+            "session": settings.SESSION_MANAGEMENT_URL,
+            "tron": settings.TRON_PAYMENT_URL,
+            "gui_api_bridge": settings.GUI_API_BRIDGE_URL,
+            "gui_docker_manager": settings.GUI_DOCKER_MANAGER_URL,
+            "gui_tor_manager": settings.GUI_TOR_MANAGER_URL,
+            "gui_hardware_manager": settings.GUI_HARDWARE_MANAGER_URL,
+            "tron_payout_router": settings.TRON_PAYOUT_ROUTER_URL,
+            "tron_wallet_manager": settings.TRON_WALLET_MANAGER_URL,
+            "tron_usdt_manager": settings.TRON_USDT_MANAGER_URL,
         }
         
         # Circuit breakers for each service

@@ -18,7 +18,6 @@ settings = get_settings()
 _mongodb_client: Optional[AsyncIOMotorClient] = None
 _redis_client: Optional[redis.Redis] = None
 
-
 async def init_database() -> None:
     """Initialize database connections"""
     global _mongodb_client, _redis_client
@@ -26,6 +25,8 @@ async def init_database() -> None:
     try:
         # Initialize MongoDB (supports both MONGODB_URI and MONGODB_URL)
         mongodb_uri = settings.mongodb_connection_string
+        if not mongodb_uri:
+            raise RuntimeError("No MongoDB connection string configured (set MONGODB_URL or MONGODB_URI)")
         logger.info(f"Connecting to MongoDB: {mongodb_uri[:50]}...")
         _mongodb_client = AsyncIOMotorClient(mongodb_uri)
         
