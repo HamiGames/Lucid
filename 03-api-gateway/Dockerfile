@@ -170,40 +170,45 @@ assert os.path.exists('/app/api/app/main.py'), 'main.py not found'; \
 print('Application directories verified')"]
 
 # Verify new GUI and TRON support modules in runtime stage
-RUN ["python3", "-c", "import os; \
-modules_required = [ \
-    '/app/api/app/routers/gui.py', \
-    '/app/api/app/routers/gui_docker.py', \
-    '/app/api/app/routers/gui_tor.py', \
-    '/app/api/app/routers/gui_hardware.py', \
-    '/app/api/app/routers/tron_support.py', \
-    '/app/api/app/services/gui_bridge_service.py', \
-    '/app/api/app/services/gui_docker_manager_service.py', \
-    '/app/api/app/services/gui_tor_manager_service.py', \
-    '/app/api/app/services/gui_hardware_manager_service.py', \
-    '/app/api/app/services/tron_support_service.py', \
-    '/app/api/app/services/__init__.py' \
-]; \
-missing = [m for m in modules_required if not os.path.exists(m)]; \
-if missing: \
-    raise AssertionError(f'New modules not found: {missing}'); \
-print(f'✅ All {len(modules_required)} new GUI and TRON support modules verified')"]
+RUN python3 << 'EOF'
+import os
+modules_required = [
+    '/app/api/app/routers/gui.py',
+    '/app/api/app/routers/gui_docker.py',
+    '/app/api/app/routers/gui_tor.py',
+    '/app/api/app/routers/gui_hardware.py',
+    '/app/api/app/routers/tron_support.py',
+    '/app/api/app/services/gui_bridge_service.py',
+    '/app/api/app/services/gui_docker_manager_service.py',
+    '/app/api/app/services/gui_tor_manager_service.py',
+    '/app/api/app/services/gui_hardware_manager_service.py',
+    '/app/api/app/services/tron_support_service.py',
+    '/app/api/app/services/__init__.py'
+]
+missing = [m for m in modules_required if not os.path.exists(m)]
+if missing:
+    raise AssertionError(f'New modules not found: {missing}')
+print(f'✅ All {len(modules_required)} new GUI and TRON support modules verified')
+EOF
 
 # Verify new module imports work correctly
-RUN ["python3", "-c", "import sys; sys.path.insert(0, '/app/api'); \
-from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; \
-from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; \
-print('✅ All new module imports successful'); \
-print(f'✅ GUI Bridge router: {gui.router}'); \
-print(f'✅ GUI Docker router: {gui_docker.router}'); \
-print(f'✅ GUI Tor router: {gui_tor.router}'); \
-print(f'✅ GUI Hardware router: {gui_hardware.router}'); \
-print(f'✅ TRON Support router: {tron_support.router}'); \
-print(f'✅ GUI Bridge service: {gui_bridge_service}'); \
-print(f'✅ GUI Docker service: {gui_docker_manager_service}'); \
-print(f'✅ GUI Tor service: {gui_tor_manager_service}'); \
-print(f'✅ GUI Hardware service: {gui_hardware_manager_service}'); \
-print(f'✅ TRON Support service: {tron_support_service}')"]
+RUN python3 << 'EOF'
+import sys
+sys.path.insert(0, '/app/api')
+from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support
+from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service
+print('✅ All new module imports successful')
+print(f'✅ GUI Bridge router: {gui.router}')
+print(f'✅ GUI Docker router: {gui_docker.router}')
+print(f'✅ GUI Tor router: {gui_tor.router}')
+print(f'✅ GUI Hardware router: {gui_hardware.router}')
+print(f'✅ TRON Support router: {tron_support.router}')
+print(f'✅ GUI Bridge service: {gui_bridge_service}')
+print(f'✅ GUI Docker service: {gui_docker_manager_service}')
+print(f'✅ GUI Tor service: {gui_tor_manager_service}')
+print(f'✅ GUI Hardware service: {gui_hardware_manager_service}')
+print(f'✅ TRON Support service: {tron_support_service}')
+EOF
 
 EXPOSE 8080
 
