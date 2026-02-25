@@ -70,11 +70,22 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, httpx, websockets; print('✅
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages
 
-# Copy application source
-COPY gui-api-bridge/ ./gui-api-bridge-src/
+# Copy application source (direct copy, no nesting)
+COPY gui-api-bridge/gui-api-bridge/ ./gui-api-bridge/
 
-RUN cp -r ./gui-api-bridge-src/gui-api-bridge ./gui-api-bridge && \
-    rm -rf ./gui-api-bridge-src
+# Verify application files in builder stage
+RUN echo "=== Verifying GUI API Bridge application files ===" && \
+    test -f ./gui-api-bridge/entrypoint.py && echo "✅ entrypoint.py found" && \
+    test -f ./gui-api-bridge/main.py && echo "✅ main.py found" && \
+    test -f ./gui-api-bridge/config.py && echo "✅ config.py found" && \
+    test -f ./gui-api-bridge/gui_api_bridge_service.py && echo "✅ gui_api_bridge_service.py found" && \
+    test -d ./gui-api-bridge/routers && echo "✅ routers directory found" && \
+    test -d ./gui-api-bridge/services && echo "✅ services directory found" && \
+    test -d ./gui-api-bridge/middleware && echo "✅ middleware directory found" && \
+    test -d ./gui-api-bridge/models && echo "✅ models directory found" && \
+    test -d ./gui-api-bridge/integration && echo "✅ integration directory found" && \
+    test -d ./gui-api-bridge/utils && echo "✅ utils directory found" && \
+    echo "All application files verified in builder stage"
 
 ############################
 # Stage 2 – Runtime
@@ -128,6 +139,29 @@ print('✅ Packages verified in runtime stage')"]
 
 # Copy application code
 COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
+
+# Runtime verification of application files
+RUN ["python3", "-c", "import sys; import os; \
+app_dir = '/app/gui-api-bridge'; \
+assert os.path.exists(app_dir), app_dir + ' does not exist'; \
+assert os.path.exists(os.path.join(app_dir, 'entrypoint.py')), 'entrypoint.py not found in ' + app_dir; \
+assert os.path.exists(os.path.join(app_dir, 'main.py')), 'main.py not found'; \
+assert os.path.exists(os.path.join(app_dir, 'config.py')), 'config.py not found'; \
+assert os.path.isdir(os.path.join(app_dir, 'routers')), 'routers directory not found'; \
+assert os.path.isdir(os.path.join(app_dir, 'services')), 'services directory not found'; \
+assert os.path.isdir(os.path.join(app_dir, 'middleware')), 'middleware directory not found'; \
+assert os.path.isdir(os.path.join(app_dir, 'models')), 'models directory not found'; \
+print('✅ Application files verified in runtime stage')"]
+
+# Runtime Python imports verification
+RUN ["python3", "-c", "import sys; sys.path.insert(0, '/app'); \
+from gui_api_bridge.main import app; \
+from gui_api_bridge.config import GuiApiConfig; \
+from gui_api_bridge.gui_api_bridge_service import GuiBridgeService; \
+print('✅ All critical module imports successful'); \
+print(f'✅ FastAPI app instance: {app}'); \
+print(f'✅ Config class: {GuiApiConfig}'); \
+print(f'✅ Bridge service: {GuiBridgeService}')"]
 
 EXPOSE 8102
 

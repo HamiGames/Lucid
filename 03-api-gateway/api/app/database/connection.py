@@ -8,7 +8,7 @@ Purpose: MongoDB and Redis connection initialization and management
 import logging
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-import redis.asyncio as redis
+import redis.asyncio as redis  # pyright: ignore[reportMissingImports]
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)

@@ -12,7 +12,7 @@ Architecture Notes:
 import os
 from typing import List, Optional
 from pydantic import Field, field_validator, model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings  # pyright: ignore[reportMissingImports]
 from functools import lru_cache
 
 
