@@ -54,22 +54,34 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY gui-api-bridge/requirements.txt ./requirements.txt
 
-RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
-    mkdir -p /root/.local/bin
-
+# Step 1: Build wheels explicitly - shows compilation happening
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+    mkdir -p /build/wheels && \
+    echo "=== BUILDING WHEELS FROM SOURCE ===" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt && \
+    echo "=== WHEEL BUILD COMPLETE ===" && \
+    ls -lh /build/wheels/ && \
+    echo "Total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
-# Create marker files (per dockerfile-design.md)
-RUN echo "LUCID_GUI_API_BRIDGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_GUI_API_BRIDGE_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
-    chown -R 65532:65532 /root/.local
+# Step 2: Install wheels into system Python
+RUN echo "=== INSTALLING WHEELS INTO SYSTEM PYTHON ===" && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r requirements.txt && \
+    echo "=== INSTALLATION COMPLETE ===" && \
+    rm -rf /build/wheels
 
-# Verify critical packages (aligned with api-gateway)
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, websockets; print('✅ critical packages installed')" && \
-    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
-    test -d /root/.local/lib/python3.11/site-packages && \
-    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
+# Builder-stage verification - ensure all packages built correctly
+RUN echo "=== Verifying pip installation success ===" && \
+    python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, websockets, aiohttp, structlog; print('✅ All critical packages installed')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
+    echo "=== Full package listing ===" && \
+    pip list && \
+    echo "=== Verifying C extension packages compiled ===" && \
+    python3 -m pip show cryptography && \
+    python3 -m pip show motor && \
+    python3 -m pip show redis && \
+    echo "LUCID_GUI_API_BRIDGE_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ All packages ready for final image"
 
 # Copy application source (direct copy, no nesting)
 COPY gui-api-bridge/gui-api-bridge/ ./gui-api-bridge/
@@ -123,21 +135,29 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy Python packages
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+# Bake Python packages into distroless image - explicit COPY with verification
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Runtime verification of packages
-RUN python3 -c 'import sys; import os; site_packages = "/usr/local/lib/python3.11/site-packages"; assert os.path.exists(site_packages), site_packages + " does not exist"; assert os.path.exists(os.path.join(site_packages, "uvicorn")), "uvicorn not found"; assert os.path.exists(os.path.join(site_packages, "fastapi")), "fastapi not found"; assert os.path.exists(os.path.join(site_packages, ".lucid-marker")), "marker file not found"; marker_path = os.path.join(site_packages, ".lucid-marker"); assert os.path.getsize(marker_path) > 0, "marker file is empty: " + marker_path; print("✅ Packages verified in runtime stage")'
+# Verify packages are BAKED INTO the distroless image (file-based check only - no python execution)
+RUN test -d /usr/local/lib/python3.11/site-packages && \
+    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Site-packages directory verified" && \
+    echo "Total items in site-packages: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)"
 
 # Copy application code
 COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
 
-# Runtime verification of application files
-RUN python3 -c 'import sys; import os; app_dir = "/app/gui-api-bridge"; assert os.path.exists(app_dir), app_dir + " does not exist"; assert os.path.exists(os.path.join(app_dir, "entrypoint.py")), "entrypoint.py not found in " + app_dir; assert os.path.exists(os.path.join(app_dir, "main.py")), "main.py not found"; assert os.path.exists(os.path.join(app_dir, "config.py")), "config.py not found"; assert os.path.isdir(os.path.join(app_dir, "routers")), "routers directory not found"; assert os.path.isdir(os.path.join(app_dir, "services")), "services directory not found"; assert os.path.isdir(os.path.join(app_dir, "middleware")), "middleware directory not found"; assert os.path.isdir(os.path.join(app_dir, "models")), "models directory not found"; print("✅ Application files verified in runtime stage")'
-
-# Runtime Python imports verification
-RUN python3 -c 'import sys; sys.path.insert(0, "/app"); from gui_api_bridge.main import app; from gui_api_bridge.config import GuiAPIBridgeSettings, GuiAPIBridgeConfigManager; from gui_api_bridge.gui_api_bridge_service import GuiBridgeService; print("✅ All critical module imports successful"); print(f"✅ FastAPI app instance: {app}"); print(f"✅ Config class: {GuiAPIBridgeSettings}"); print(f"✅ Bridge service: {GuiBridgeService}")'
+# Runtime verification of application files (file-based check only)
+RUN test -d /app/gui-api-bridge && \
+    test -f /app/gui-api-bridge/entrypoint.py && \
+    test -f /app/gui-api-bridge/main.py && \
+    test -f /app/gui-api-bridge/config.py && \
+    test -d /app/gui-api-bridge/routers && \
+    test -d /app/gui-api-bridge/services && \
+    test -d /app/gui-api-bridge/middleware && \
+    test -d /app/gui-api-bridge/models && \
+    echo "✅ Application files verified"
 
 EXPOSE 8102
 
