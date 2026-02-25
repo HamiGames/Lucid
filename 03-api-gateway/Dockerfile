@@ -179,21 +179,9 @@ COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
 
 # Verify packages were properly copied to runtime stage (fails build if missing)
-RUN python3 -c "import os, sys; \
-    site_packages = '/usr/local/lib/python3.11/site-packages'; \
-    assert os.path.exists(site_packages), f'{site_packages} does not exist in runtime'; \
-    assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'site-packages marker not found'; \
-    marker_content = open(os.path.join(site_packages, '.lucid-marker')).read().strip(); \
-    assert 'LUCID_API_GATEWAY_PACKAGES_INSTALLED' in marker_content, f'Invalid marker content: {marker_content}'; \
-    print(f'✅ site-packages verified with marker: {marker_content}'); \
-    import fastapi, uvicorn, motor, redis; \
-    print('✅ Critical packages verified in runtime stage')" && \
-    python3 -c "import os; \
-    bin_marker = '/usr/local/bin/.lucid-marker'; \
-    assert os.path.exists(bin_marker), 'bin marker not found'; \
-    marker_content = open(bin_marker).read().strip(); \
-    assert 'LUCID_API_GATEWAY_BINARIES_INSTALLED' in marker_content, f'Invalid bin marker: {marker_content}'; \
-    print(f'✅ /usr/local/bin verified with marker: {marker_content}')"
+RUN ["python3", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), f'{site_packages} does not exist in runtime'; assert os.path.exists(os.path.join(site_packages, '.lucid-marker')), 'site-packages marker not found'; marker_content = open(os.path.join(site_packages, '.lucid-marker')).read().strip(); assert 'LUCID_API_GATEWAY_PACKAGES_INSTALLED' in marker_content, f'Invalid marker content: {marker_content}'; print(f'✅ site-packages verified with marker: {marker_content}'); import fastapi, uvicorn, motor, redis; print('✅ Critical packages verified in runtime stage')"]
+
+RUN ["python3", "-c", "import os; bin_marker = '/usr/local/bin/.lucid-marker'; assert os.path.exists(bin_marker), 'bin marker not found'; marker_content = open(bin_marker).read().strip(); assert 'LUCID_API_GATEWAY_BINARIES_INSTALLED' in marker_content, f'Invalid bin marker: {marker_content}'; print(f'✅ /usr/local/bin verified with marker: {marker_content}')"]
 
 EXPOSE 8080
 
