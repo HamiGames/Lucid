@@ -58,17 +58,17 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
 # Copy requirements
-COPY 03-api-gateway/requirements.txt ./requirements.txt
-COPY 03-api-gateway/api/ ./api/
-COPY 03-api-gateway/gateway/ ./gateway/
-COPY 03-api-gateway/config/ ./config/
-COPY 03-api-gateway/database/ ./database/
-COPY 03-api-gateway/middleware/ ./middleware/
-COPY 03-api-gateway/models/ ./models/
-COPY 03-api-gateway/schemas/ ./schemas/
-COPY 03-api-gateway/utils/ ./utils/
-COPY 03-api-gateway/tests/ ./tests/
-COPY 03-api-gateway/scripts/ ./scripts/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/requirements.txt ./requirements.txt
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/api/ ./api/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/gateway/ ./gateway/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/config/ ./config/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/database/ ./database/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/middleware/ ./middleware/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/models/ ./models/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/schemas/ ./schemas/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/utils/ ./utils/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/tests/ ./tests/
+COPY /mnt/myssd/Lucid/Lucid/03-api-gateway/scripts/ ./scripts/
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
