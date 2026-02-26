@@ -8,8 +8,8 @@ import asyncio
 from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
 
-from utils.logging import get_logger
-from utils.errors import GuiTorManagerException
+from ..utils.logging import get_logger
+from ..utils.errors import GuiTorManagerException
 
 logger = get_logger(__name__)
 

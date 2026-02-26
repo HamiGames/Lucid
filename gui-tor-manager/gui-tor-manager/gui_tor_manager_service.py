@@ -6,10 +6,10 @@ Main orchestration logic for Tor operations
 from typing import Optional, List, Dict, Any
 import asyncio
 
-from config import get_config
-from integration.tor_proxy_client import TorProxyClient
-from utils.logging import get_logger
-from utils.errors import TorProxyConnectionError, TorOperationError
+from .config import get_config
+from .integration.tor_proxy_client import TorProxyClient
+from .utils.logging import get_logger
+from .utils.errors import TorProxyConnectionError, TorOperationError
 
 logger = get_logger(__name__)
 

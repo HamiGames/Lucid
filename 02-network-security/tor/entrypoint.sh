@@ -28,8 +28,8 @@ ensure_runtime() {
 start_tor() {
   log "Starting Tor as debian-tor user..."
   tor -f /etc/tor/torrc &
-  echo $! > "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || true
-  log "Tor started with PID: $(cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo 'unknown')"
+  /bin/busybox sh -c "echo \$! > '${TOR_DATA_DIR}/tor.pid'" 2>/dev/null || true
+  log "Tor started with PID: $(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo 'unknown')"
 }
 
 wait_for_file() {
@@ -243,7 +243,7 @@ main() {
 
   log "Tor proxy ready - waiting for process..."
   if [ -f "${TOR_DATA_DIR}/tor.pid" ]; then
-    wait "$(cat "${TOR_DATA_DIR}/tor.pid")" 2>/dev/null || true
+    wait "$(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid")" 2>/dev/null || true
   else
     wait || true
   fi

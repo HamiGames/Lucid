@@ -9,7 +9,7 @@ import asyncio
 import socket
 from datetime import datetime
 
-from config import get_config
+from .config import get_config
 
 
 class HealthStatus(str, Enum):

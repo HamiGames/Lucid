@@ -4,6 +4,7 @@ Enables cross-origin requests for Electron GUI
 """
 
 from fastapi.middleware.cors import CORSMiddleware
+from ..config import get_config
 
 
 def setup_cors_middleware(app, allowed_origins: list[str] = None):
@@ -12,16 +13,21 @@ def setup_cors_middleware(app, allowed_origins: list[str] = None):
     
     Args:
         app: FastAPI application instance
-        allowed_origins: List of allowed origins (default: local GUI origins)
+        allowed_origins: List of allowed origins (from environment)
     """
     if allowed_origins is None:
+        # Build allowed origins from environment configuration
+        # These come from the docker-compose service definitions
         allowed_origins = [
-            "http://localhost:3001",  # User Interface
-            "http://localhost:3002",  # Node Interface
-            "http://localhost:8120",  # Admin Interface
-            "http://127.0.0.1:3001",
-            "http://127.0.0.1:3002",
-            "http://127.0.0.1:8120",
+            "http://user-interface:3001",      # User Interface (docker)
+            "http://node-interface:3002",      # Node Interface (docker)
+            "http://admin-interface:8120",     # Admin Interface (docker)
+            "http://localhost:3001",           # Local development
+            "http://localhost:3002",           # Local development
+            "http://localhost:8120",           # Local development
+            "http://127.0.0.1:3001",          # Local development
+            "http://127.0.0.1:3002",          # Local development
+            "http://127.0.0.1:8120",          # Local development
         ]
     
     app.add_middleware(

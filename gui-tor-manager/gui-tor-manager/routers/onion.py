@@ -4,14 +4,14 @@ Provides endpoints for onion service management
 """
 
 from fastapi import APIRouter, HTTPException, status
-from gui_tor_manager_service import get_service
-from models.onion import (
+from ..gui_tor_manager_service import get_service
+from ..models.onion import (
     OnionService, OnionServiceList, CreateOnionServiceRequest,
     CreateOnionServiceResponse, DeleteOnionServiceRequest,
     DeleteOnionServiceResponse, OnionServiceStatus, OnionServiceType
 )
-from models.common import ErrorResponse
-from utils.errors import TorOperationError
+from ..models.common import ErrorResponse
+from ..utils.errors import TorOperationError
 from datetime import datetime
 
 router = APIRouter(tags=["onion"])

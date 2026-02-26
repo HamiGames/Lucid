@@ -1,5 +1,6 @@
 """
 FastAPI Main Application for GUI Hardware Manager
+Handles initialization, middleware setup, and router integration
 """
 
 import logging
@@ -16,7 +17,7 @@ from gui_hardware_manager.services.hardware_service import HardwareService
 
 logger = logging.getLogger(__name__)
 
-# Global state
+# Global state for service management
 app_state = {
     "hardware_service": None,
     "settings": None
@@ -30,11 +31,18 @@ async def lifespan(app: FastAPI):
     logger.info("Starting GUI Hardware Manager...")
     settings = get_settings()
     app_state["settings"] = settings
-    app_state["hardware_service"] = HardwareService(settings)
+    
+    # Log configuration
+    logger.info(f"Service: {settings.SERVICE_NAME}")
+    logger.info(f"Port: {settings.PORT}")
+    logger.info(f"Environment: {settings.LUCID_ENV}")
+    logger.info(f"Platform: {settings.LUCID_PLATFORM}")
+    logger.info(f"Hardware Support - Ledger: {settings.LEDGER_ENABLED}, Trezor: {settings.TREZOR_ENABLED}, KeepKey: {settings.KEEPKEY_ENABLED}")
     
     # Initialize hardware service
+    app_state["hardware_service"] = HardwareService(settings)
     await app_state["hardware_service"].initialize()
-    logger.info("Hardware service initialized")
+    logger.info("Hardware service initialized successfully")
     
     yield
     
@@ -56,22 +64,24 @@ app = FastAPI(
 # Get settings for middleware configuration
 settings = get_settings()
 
-# Add CORS middleware
-if settings.cors_enabled:
+# Add CORS middleware if enabled
+if settings.CORS_ENABLED:
+    logger.info("CORS middleware enabled")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.get_cors_origins_list(),
-        allow_credentials=settings.cors_allow_credentials,
+        allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
         allow_methods=settings.get_cors_methods_list(),
         allow_headers=settings.get_cors_headers_list(),
     )
 
 # Add custom middleware
 app.add_middleware(LoggingMiddleware)
-if settings.rate_limit_enabled:
+if settings.RATE_LIMIT_ENABLED:
+    logger.info(f"Rate limiting enabled: {settings.RATE_LIMIT_REQUESTS} req/min")
     app.add_middleware(RateLimitMiddleware, 
-                      requests_per_minute=settings.rate_limit_requests,
-                      burst_size=settings.rate_limit_burst)
+                      requests_per_minute=settings.RATE_LIMIT_REQUESTS,
+                      burst_size=settings.RATE_LIMIT_BURST)
 
 # Include routers
 app.include_router(health.router, prefix="/api/v1", tags=["Health"])
@@ -92,11 +102,21 @@ async def global_exception_handler(request, exc):
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint - service information"""
     return {
         "service": "GUI Hardware Manager",
         "version": "1.0.0",
-        "status": "running"
+        "status": "operational",
+        "environment": settings.LUCID_ENV,
+    }
+
+
+@app.get("/version")
+async def version():
+    """Version endpoint"""
+    return {
+        "version": "1.0.0",
+        "service": "gui-hardware-manager",
     }
 
 
@@ -105,7 +125,7 @@ if __name__ == "__main__":
     settings = get_settings()
     uvicorn.run(
         app,
-        host=settings.gui_hardware_manager_host,
-        port=settings.gui_hardware_manager_port,
-        log_level="info"
+        host=settings.HOST,
+        port=settings.PORT,
+        log_level=settings.LOG_LEVEL.lower()
     )

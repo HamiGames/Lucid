@@ -10,7 +10,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import StreamingResponse
 
-from utils.logging import get_logger
+from ..utils.logging import get_logger
 
 logger = get_logger(__name__)
 

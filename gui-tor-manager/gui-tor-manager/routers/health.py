@@ -4,8 +4,8 @@ Provides health check endpoints
 """
 
 from fastapi import APIRouter, HTTPException, status
-from healthcheck import get_health_check
-from models.common import HealthCheckResponse
+from ..healthcheck import get_health_check
+from ..models.common import HealthCheckResponse
 
 router = APIRouter(tags=["health"])
 

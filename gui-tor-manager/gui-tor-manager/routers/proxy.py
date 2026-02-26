@@ -4,7 +4,8 @@ Provides endpoints for SOCKS proxy management and testing
 """
 
 from fastapi import APIRouter, HTTPException, status
-from gui_tor_manager_service import get_service
+from ..gui_tor_manager_service import get_service
+from ..config import get_config
 from pydantic import BaseModel
 from typing import Optional
 
@@ -43,12 +44,11 @@ async def get_proxy_status():
         ProxyStatusResponse with proxy status
     """
     try:
-        service = await get_service()
-        config = service.config.settings
+        config = get_config().settings
         
         return ProxyStatusResponse(
             status="operational",
-            host="localhost",
+            host=config.TOR_PROXY_HOST,
             port=config.TOR_SOCKS_PORT,
             available=True,
             message="SOCKS5 proxy is available",

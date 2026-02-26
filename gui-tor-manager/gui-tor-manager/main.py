@@ -8,13 +8,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 
-from config import get_config
-from healthcheck import get_health_check
-from utils.logging import setup_logging, get_logger
-from middleware.cors import setup_cors_middleware
-from middleware.logging import LoggingMiddleware
-from middleware.auth import AuthMiddleware
-from middleware.rate_limit import RateLimitMiddleware
+from .config import get_config
+from .healthcheck import get_health_check
+from .utils.logging import setup_logging, get_logger
+from .middleware.cors import setup_cors_middleware
+from .middleware.logging import LoggingMiddleware
+from .middleware.auth import AuthMiddleware
+from .middleware.rate_limit import RateLimitMiddleware
 
 # Setup logging
 logger = setup_logging(level="INFO", service_name="gui-tor-manager")
@@ -106,14 +106,13 @@ async def api_v1_root():
     }
 
 
-# Import and include routers (will be created)
-# These will be uncommented as routers are created
-# from routers import tor, onion, proxy, health
-# 
-# app.include_router(tor.router, prefix="/api/v1/tor", tags=["tor"])
-# app.include_router(onion.router, prefix="/api/v1/onion", tags=["onion"])
-# app.include_router(proxy.router, prefix="/api/v1/proxy", tags=["proxy"])
-# app.include_router(health.router, tags=["health"])
+# Import and include routers
+from routers import tor, onion, proxy, health
+
+app.include_router(tor.router, prefix="/api/v1/tor", tags=["tor"])
+app.include_router(onion.router, prefix="/api/v1/onion", tags=["onion"])
+app.include_router(proxy.router, prefix="/api/v1/proxy", tags=["proxy"])
+app.include_router(health.router, prefix="/api/v1/health", tags=["health"])
 
 
 if __name__ == "__main__":

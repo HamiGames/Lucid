@@ -4,10 +4,10 @@ Provides endpoints for Tor status and operations
 """
 
 from fastapi import APIRouter, HTTPException, status
-from gui_tor_manager_service import get_service
-from models.tor import TorStatusResponse, TorStatus, CircuitList, Circuit, TorStatusRequest
-from models.common import ErrorResponse
-from utils.errors import TorOperationError
+from ..gui_tor_manager_service import get_service
+from ..models.tor import TorStatusResponse, TorStatus, CircuitList, Circuit, TorStatusRequest
+from ..models.common import ErrorResponse
+from ..utils.errors import TorOperationError
 
 router = APIRouter(tags=["tor"])
 

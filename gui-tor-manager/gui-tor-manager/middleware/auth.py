@@ -8,8 +8,8 @@ from fastapi import Request, Response, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from jose import JWTError, jwt
 
-from config import get_config
-from utils.logging import get_logger
+from ..config import get_config
+from ..utils.logging import get_logger
 
 logger = get_logger(__name__)
 
