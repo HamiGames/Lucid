@@ -48,9 +48,9 @@ ctl() {
   local cmd="$1"
   [ -f "$COOKIE_FILE" ] || { log "ERROR: Cookie file not found: $COOKIE_FILE"; return 1; }
   local cookie_hex
-  cookie_hex=$(xxd -p "$COOKIE_FILE" 2>/dev/null | tr -d '\n' || echo "")
+  cookie_hex=$(/bin/busybox xxd -p "$COOKIE_FILE" 2>/dev/null | tr -d '\n' || echo "")
   [ -n "$cookie_hex" ] || { log "ERROR: Failed to read cookie file"; return 1; }
-  printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" | nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
+  printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" | /bin/busybox nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
 }
 
 resolve_upstream_ip() {

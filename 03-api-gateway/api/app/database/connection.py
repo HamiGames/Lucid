@@ -22,38 +22,104 @@ _mongodb_client: Optional[AsyncIOMotorClient] = None
 _redis_client: Optional[redis.Redis] = None
 
 
-async def _wait_for_tor_proxy(host: str = "tor-proxy", port: int = 9051, timeout: int = 180, retry_interval: int = 5) -> None:
-    """Wait for tor-proxy to bootstrap and be ready
+async def _wait_for_tor_proxy(host: str = "tor-proxy", port: int = 9051, timeout: int = 180, retry_interval: int = 15) -> None:
+    """Wait for tor-proxy to bootstrap and reach 100% completion
+    
+    Queries Tor's control port to check bootstrap progress (PROGRESS=100).
+    Only returns when bootstrap is fully complete.
     
     Args:
         host: Tor proxy hostname
         port: Tor control port
         timeout: Maximum time to wait in seconds
-        retry_interval: Time between connection attempts in seconds
+        retry_interval: Time between bootstrap checks in seconds (default: 15s)
     """
-    logger.info(f"Waiting for tor-proxy bootstrap at {host}:{port} (timeout: {timeout}s)")
+    logger.info(f"Waiting for tor-proxy bootstrap at {host}:{port} (timeout: {timeout}s, checking every {retry_interval}s)")
     start_time = asyncio.get_event_loop().time()
     
     while True:
         try:
-            # Try to connect to tor control port
+            elapsed = asyncio.get_event_loop().time() - start_time
+            if elapsed > timeout:
+                logger.error(f"✗ Timeout waiting for tor-proxy bootstrap after {elapsed:.1f}s")
+                raise RuntimeError(f"tor-proxy failed to bootstrap within {timeout}s")
+            
+            # Connect to tor control port
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(host, port),
                 timeout=5
             )
-            writer.close()
-            await writer.wait_closed()
-            logger.info(f"✓ tor-proxy is ready at {host}:{port}")
-            return
             
-        except (ConnectionRefusedError, asyncio.TimeoutError, OSError) as e:
+            try:
+                # First, authenticate with empty string (for localhost, no cookie required)
+                auth_cmd = b"AUTHENTICATE \"\"\r\n"
+                writer.write(auth_cmd)
+                await writer.drain()
+                
+                # Read auth response
+                auth_response = await asyncio.wait_for(
+                    reader.read(4096),
+                    timeout=5
+                )
+                auth_response_str = auth_response.decode('utf-8', errors='ignore')
+                
+                # Check if authentication failed
+                if '515' in auth_response_str:
+                    logger.debug(f"Authentication with empty string failed, trying GETINFO anyway...")
+                
+                # Send GETINFO command to check bootstrap progress
+                command = b"GETINFO status/bootstrap-phase\r\n"
+                writer.write(command)
+                await writer.drain()
+                
+                # Read response
+                response = await asyncio.wait_for(
+                    reader.read(4096),
+                    timeout=5
+                )
+                response_str = response.decode('utf-8', errors='ignore')
+                
+                # Check for PROGRESS=100 in response
+                if 'PROGRESS=100' in response_str:
+                    logger.info(f"✓ tor-proxy bootstrap complete (PROGRESS=100)")
+                    writer.close()
+                    await writer.wait_closed()
+                    return
+                
+                # Extract progress value for logging
+                progress = "unknown"
+                for line in response_str.split('\n'):
+                    if 'PROGRESS=' in line:
+                        try:
+                            progress = line.split('PROGRESS=')[1].split(' ')[0]
+                        except (IndexError, ValueError):
+                            pass
+                        break
+                
+                remaining = timeout - elapsed
+                logger.info(f"tor-proxy bootstrapping (PROGRESS={progress}, {elapsed:.1f}s elapsed, {remaining:.1f}s remaining)")
+                writer.close()
+                await writer.wait_closed()
+                
+            except Exception as e:
+                try:
+                    writer.close()
+                    await writer.wait_closed()
+                except:
+                    pass
+                raise e
+            
+            # Wait before next check
+            await asyncio.sleep(retry_interval)
+            
+        except (ConnectionRefusedError, asyncio.TimeoutError, OSError, Exception) as e:
             elapsed = asyncio.get_event_loop().time() - start_time
             if elapsed > timeout:
-                logger.error(f"✗ Timeout waiting for tor-proxy after {elapsed:.1f}s")
+                logger.error(f"✗ Timeout waiting for tor-proxy after {elapsed:.1f}s: {e}")
                 raise RuntimeError(f"tor-proxy failed to start within {timeout}s: {e}")
             
             remaining = timeout - elapsed
-            logger.warning(f"tor-proxy not ready yet ({elapsed:.1f}s elapsed, {remaining:.1f}s remaining): {e}")
+            logger.debug(f"tor-proxy not responding yet ({elapsed:.1f}s elapsed, {remaining:.1f}s remaining): {e}")
             await asyncio.sleep(retry_interval)
 
 
