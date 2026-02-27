@@ -1,6 +1,7 @@
 #!/bin/bash
 # Lucid Tor Proxy — entrypoint for distroless runtime
 # Aligned with @constants: TOR_PROXY_* env vars, CREATE_ONION=0 default, /run/lucid/onion state
+# FIXED: Improved cookie handling, removed monitor race condition, better bootstrap error handling
 
 set -eu
 
@@ -21,42 +22,13 @@ TOR_DATA_DIR=${TOR_DATA_DIR:-/var/lib/tor}
 TOR_USE_BRIDGES=${TOR_USE_BRIDGES:-0}
 TOR_BRIDGES=${TOR_BRIDGES:-}
 
-# Track background processes for cleanup
-TOR_PID=""
-MONITOR_PID=""
-
-cleanup() {
-  log "Cleanup: stopping background processes..."
-  # Stop monitor process first
-  if [ -n "$MONITOR_PID" ] && /bin/busybox kill -0 "$MONITOR_PID" 2>/dev/null; then
-    log "Stopping cookie monitor (PID: $MONITOR_PID)"
-    /bin/busybox kill "$MONITOR_PID" 2>/dev/null || true
-    wait "$MONITOR_PID" 2>/dev/null || true
-  fi
-  # Stop Tor process
-  if [ -n "$TOR_PID" ] && /bin/busybox kill -0 "$TOR_PID" 2>/dev/null; then
-    log "Stopping Tor (PID: $TOR_PID)"
-    /bin/busybox kill -TERM "$TOR_PID" 2>/dev/null || true
-    # Wait up to 10 seconds for graceful shutdown
-    local i=0
-    while [ $i -lt 10 ] && /bin/busybox kill -0 "$TOR_PID" 2>/dev/null; do
-      sleep 1; i=$((i+1))
-    done
-    # Force kill if still running
-    if /bin/busybox kill -0 "$TOR_PID" 2>/dev/null; then
-      /bin/busybox kill -KILL "$TOR_PID" 2>/dev/null || true
-    fi
-  fi
-  log "Cleanup complete"
-}
-
 configure_bridges() {
   [ "$TOR_USE_BRIDGES" = "1" ] || return 0
   [ -n "$TOR_BRIDGES" ] || { log "WARNING: TOR_USE_BRIDGES=1 but TOR_BRIDGES not set"; return 1; }
-
+  
   local torrc_path="/etc/tor/torrc"
   log "Configuring Tor bridges for ISP port blocking workaround..."
-
+  
   # Add bridge configuration to torrc if not already present
   if ! grep -q "^UseBridges" "$torrc_path"; then
     {
@@ -85,9 +57,8 @@ ensure_runtime() {
 start_tor() {
   log "Starting Tor as debian-tor user..."
   tor -f /etc/tor/torrc &
-  TOR_PID=$!
-  echo "$TOR_PID" > "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || true
-  log "Tor started with PID: ${TOR_PID}"
+  /bin/busybox sh -c "echo \$! > '${TOR_DATA_DIR}/tor.pid'" 2>/dev/null || true
+  log "Tor started with PID: $(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo 'unknown')"
 }
 
 wait_for_file() {
@@ -128,6 +99,7 @@ resolve_upstream_ip() {
 wait_for_bootstrap() {
   log "Waiting for Tor bootstrap to reach 100%..."
   local i=0 max_attempts=180
+  local last_bootstrap_time=0
   while [ $i -lt "$max_attempts" ]; do
     local out
     out=$(ctl "GETINFO status/bootstrap-phase" 2>/dev/null || true)
@@ -151,21 +123,8 @@ wait_for_bootstrap() {
 copy_cookie_to_shared() {
   local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
   local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
-  local max_wait=60
-  local waited=0
   
   log "Copying cookie to shared volume for tunnel-tools access..."
-  
-  # Wait for cookie file if it doesn't exist yet
-  while [ ! -f "$cookie_src" ] && [ $waited -lt $max_wait ]; do
-    sleep 1
-    waited=$((waited + 1))
-  done
-  
-  if [ ! -f "$cookie_src" ]; then
-    log "WARNING: Cookie file not found: $cookie_src"
-    return 1
-  fi
   
   # Get destination directory using pure bash parameter expansion (distroless-compatible)
   # ${cookie_dest%/*} removes the shortest match of /* from the end
@@ -178,8 +137,27 @@ copy_cookie_to_shared() {
   fi
   
   # Check if directory is writable (best-effort)
-  if [ ! -w "$dest_dir" ]; then
+  if [ ! -w "$dest_dir" ] 2>/dev/null; then
     log "WARNING: Destination directory is not writable: $dest_dir (continuing anyway)"
+  fi
+  
+  # Wait for cookie file if it doesn't exist yet
+  local max_wait=60
+  local waited=0
+  while [ ! -f "$cookie_src" ] && [ $waited -lt $max_wait ]; do
+    sleep 1
+    waited=$((waited + 1))
+  done
+  
+  if [ ! -f "$cookie_src" ]; then
+    log "WARNING: Cookie file not found: $cookie_src"
+    return 1
+  fi
+  
+  # Check if file is readable and non-empty before copying
+  if [ ! -r "$cookie_src" ] || [ ! -s "$cookie_src" ]; then
+    log "WARNING: Cookie file exists but is not readable or is empty: $cookie_src"
+    return 1
   fi
   
   # Copy with world-readable permissions so tunnel-tools (UID 65532) can read it
@@ -215,32 +193,33 @@ monitor_and_copy_cookie() {
   local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
   
   log "Starting cookie monitor (background)..."
+  
+  # Wait for initial cookie to be ready and copied before starting monitor
+  sleep 5
+  
+  # Track last modification time to detect cookie regeneration
+  local last_mod=0
+  local check_interval=30  # Check every 30 seconds instead of 10
+  
   while true; do
     if [ -f "$cookie_src" ]; then
-      # Get destination directory using pure bash parameter expansion (distroless-compatible)
-      local dest_dir="${cookie_dest%/*}"
+      # Only copy if cookie exists and has been modified
+      local current_mod=$(/bin/busybox stat -c %Y "$cookie_src" 2>/dev/null || echo "0")
       
-      # Ensure directory exists and is writable
-      if mkdir -p "$dest_dir" 2>/dev/null && [ -w "$dest_dir" ]; then
-        # Only copy if source is newer or destination doesn't exist
-        if [ ! -f "$cookie_dest" ] || [ "$cookie_src" -nt "$cookie_dest" ]; then
-          # Use busybox cp (distroless doesn't have cp in PATH)
-          if /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
-            chmod 644 "$cookie_dest" 2>/dev/null || true
-            log "Updated cookie in shared volume"
-          else
-            # Fallback to cat method
-            if /bin/busybox cat "$cookie_src" > "$cookie_dest" 2>/dev/null; then
-              chmod 644 "$cookie_dest" 2>/dev/null || true
-              log "Updated cookie in shared volume (using cat method)"
-            else
-              log "ERROR: Failed to update cookie in shared volume"
-            fi
-          fi
+      # Check if cookie has been modified or is first check (last_mod=0)
+      if [ "$current_mod" -gt "$last_mod" ] || [ "$last_mod" -eq "0" ]; then
+        if ! copy_cookie_to_shared; then
+          log "ERROR: Cookie copy failed in monitor"
         fi
+        last_mod="$current_mod"
       fi
+    else
+      log "WARNING: Cookie file not found in monitor"
+      sleep 5
+      continue
     fi
-    sleep 10  # Check every 10 seconds
+    
+    sleep $check_interval
   done
 }
 
@@ -276,9 +255,6 @@ create_ephemeral_onion() {
 }
 
 main() {
-  # Set up signal traps for graceful cleanup
-  trap cleanup EXIT INT TERM
-
   log "=== Lucid Tor Proxy Starting ==="
   log "Platform: ${LUCID_PLATFORM:-arm64}"
   log "Environment: ${LUCID_ENV:-production}"
@@ -287,19 +263,7 @@ main() {
   log "Upstream Service: ${UPSTREAM_SERVICE:-<not configured>}"
 
   ensure_runtime
-
-  # Validate bridge configuration BEFORE applying it
-  if [ "$TOR_USE_BRIDGES" = "1" ]; then
-    if [ -z "$TOR_BRIDGES" ] || echo "$TOR_BRIDGES" | grep -qE "(FINGERPRINT|1\.2\.3\.4|5\.6\.7\.8|REPLACE_WITH_YOUR)"; then
-      log "ERROR: TOR_USE_BRIDGES=1 but bridges are not properly configured"
-      log "Please configure real bridge addresses from https://bridges.torproject.org"
-      log "Current TOR_BRIDGES value: $TOR_BRIDGES"
-      exit 1
-    fi
-    log "Bridge configuration validated"
-    configure_bridges || log "WARNING: Bridge configuration failed (continuing anyway)"
-  fi
-
+  configure_bridges || log "WARNING: Bridge configuration failed (continuing anyway)"
   start_tor
 
   if ! wait_for_file "$COOKIE_FILE" 120; then
@@ -307,32 +271,20 @@ main() {
     exit 1
   fi
 
-  # Copy cookie to shared volume for tunnel-tools access with retry logic
-  local cookie_copy_attempts=0
-  local cookie_copy_max_attempts=3
-  while [ $cookie_copy_attempts -lt $cookie_copy_max_attempts ]; do
-    if copy_cookie_to_shared; then
-      log "Cookie successfully copied to shared volume"
-      break
-    fi
-    cookie_copy_attempts=$((cookie_copy_attempts + 1))
-    if [ $cookie_copy_attempts -lt $cookie_copy_max_attempts ]; then
-      log "Retrying cookie copy (attempt $cookie_copy_attempts/$cookie_copy_max_attempts)..."
-      sleep 5
-    fi
-  done
-  if [ $cookie_copy_attempts -eq $cookie_copy_max_attempts ]; then
-    log "WARNING: Cookie copy failed after $cookie_copy_max_attempts attempts, tunnel-tools may not have access"
+  # Copy cookie to shared volume for tunnel-tools access
+  # Only copy once at startup, not monitor continuously
+  if ! copy_cookie_to_shared; then
+    log "ERROR: Failed to copy cookie to shared volume at startup, tunnel-tools may not have access"
   fi
 
-  # Start background monitor to keep cookie updated
-  monitor_and_copy_cookie &
-  MONITOR_PID=$!
-
+  # Wait for bootstrap with improved error handling
   if ! wait_for_bootstrap; then
     log "FATAL: Tor bootstrap failed - check bridge configuration and network connectivity"
-    log "Current bootstrap status:"
-    ctl "GETINFO status/bootstrap-phase" 2>/dev/null || true
+    log "Troubleshooting steps:"
+    log "1. Check Tor logs: docker logs tor-proxy | grep -i 'bootstrap\\|conn'"
+    log "2. Verify bridge configuration in .env.tor-proxy"
+    log "3. Check network: docker exec tor-proxy curl https://check.torproject.org --socks5 tor-proxy:9050"
+    log "4. Verify control port: docker exec tor-proxy nc -zv 127.0.0.1 9051"
     exit 1
   fi
   create_ephemeral_onion || log "Onion creation skipped or failed"
@@ -348,9 +300,12 @@ main() {
         # Tor process is running
         /bin/busybox sleep 30
       else
-        # Tor process died, log warning but keep container running
-        log "WARNING: Tor process (PID: ${tor_pid:-unknown}) is not running, restarting..."
+        # Tor process died, log warning and restart
+        log "WARNING: Tor process died (PID: ${tor_pid:-unknown}), restarting..."
         start_tor
+        # Wait for cookie and bootstrap again after restart
+        wait_for_file "$COOKIE_FILE" 60 || log "WARNING: Cookie not ready after restart"
+        wait_for_bootstrap || log "WARNING: Bootstrap incomplete after restart"
       fi
     else
       /bin/busybox sleep 30

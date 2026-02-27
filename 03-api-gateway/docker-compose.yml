@@ -1,5 +1,7 @@
 # 03-api-gateway/docker-compose.yml
-# Lucid API Gateway – relies on foundation MongoDB/Redis
+# Lucid API Gateway – relies on foundation MongoDB/Redis and tor-proxy
+# Aligned with @constants: TOR_PROXY_* env vars, onion-state volume
+# SECURITY NOTE: All sensitive variables are loaded from .env files, not exposed here
 
 version: "3.8"
 
@@ -10,39 +12,23 @@ services:
     restart: unless-stopped
     env_file:
       - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
+      - ../configs/environment/.env.tor-proxy
+      - ../configs/environment/.env.api-gateway
       - ../configs/environment/.env.secrets
     ports:
-      - "8080:8080"
+      - "${HTTP_PORT:-8080}:8080"
     environment:
-      - SERVICE_NAME=api-gateway
-      - API_VERSION=v1
-      - DEBUG=false
-      - ENVIRONMENT=production
-      - HTTP_PORT=8080
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_ALGORITHM=HS256
-      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
-      - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid_gateway?authSource=admin
-      - MONGODB_DATABASE=lucid_gateway
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
-      - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
-      - SESSION_MANAGEMENT_URL=http://lucid-session-api:8087
-      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - TRON_PAYMENT_URL=http://tron-client:8091
-      - RATE_LIMIT_ENABLED=true
-      - RATE_LIMIT_REQUESTS_PER_MINUTE=1000
-      - RATE_LIMIT_BURST_SIZE=2000
-      - SSL_ENABLED=false
-      - ALLOWED_HOSTS=api.lucid-blockchain.org,localhost
-      - CORS_ORIGINS=https://app.lucid-blockchain.org,http://localhost:3000
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-      - METRICS_ENABLED=true
+      # Service Identification
+      - SERVICE_NAME=lucid-api-gateway
+      - SERVICE_VERSION=${SERVICE_VERSION:-1.0.0}
+      - API_VERSION=${API_VERSION:-v1}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - HTTP_PORT=${HTTP_PORT:-8080}
+      - HOST=${HOST:-0.0.0.0}
     networks:
       lucid-pi-network:
-        ipv4_address: 172.20.0.18
+        ipv4_address: ${API_GATEWAY_IP:-172.20.0.18}
     volumes:
       - api-gateway-certs:/certs:ro
       - api-gateway-logs:/app/logs
@@ -54,14 +40,25 @@ services:
           "CMD",
           "python3",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/v1/meta/health')",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/v1/meta/health', timeout=5)",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    # MongoDB/Redis are provided by the foundation stack; ensure those stacks are up first
-    depends_on: []
+    # Depend on tor-proxy for outbound connections, and foundation services
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    labels:
+      - "lucid.service=lucid-api-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=application"
 
 networks:
   lucid-pi-network:
