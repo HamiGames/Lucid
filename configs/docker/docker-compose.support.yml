@@ -18,9 +18,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
 
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.91
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${TRON_CLIENT_PORT:-8091}:${TRON_CLIENT_PORT:-8091}"
       - "8101:8101"
@@ -266,9 +265,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
 
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.92
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${PAYOUT_ROUTER_PORT:-8092}:${PAYOUT_ROUTER_PORT:-8092}"
     volumes:
@@ -411,9 +409,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
 
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.93
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${WALLET_MANAGER_PORT:-8093}:${WALLET_MANAGER_PORT:-8093}"
     volumes:
@@ -574,9 +571,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
 
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.94
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${USDT_MANAGER_PORT:-8094}:${USDT_MANAGER_PORT:-8094}"
     volumes:
@@ -728,9 +724,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.96
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${STAKING_PORT:-8096}:${STAKING_PORT:-8096}"
     volumes:
@@ -871,9 +866,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.97
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${PAYMENT_GATEWAY_PORT:-8097}:${PAYMENT_GATEWAY_PORT:-8097}"
     volumes:
@@ -1062,9 +1056,8 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
-      lucid-tron-isolated:
-      lucid-pi-network:
-        ipv4_address: 172.20.1.98
+      - lucid-tron-isolated
+      - lucid-pi-network
     ports:
       - "${TRON_RELAY_PORT:-8098}:${TRON_RELAY_PORT:-8098}"
     volumes:
