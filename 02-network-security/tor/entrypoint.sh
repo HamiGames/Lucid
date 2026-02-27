@@ -21,13 +21,42 @@ TOR_DATA_DIR=${TOR_DATA_DIR:-/var/lib/tor}
 TOR_USE_BRIDGES=${TOR_USE_BRIDGES:-0}
 TOR_BRIDGES=${TOR_BRIDGES:-}
 
+# Track background processes for cleanup
+TOR_PID=""
+MONITOR_PID=""
+
+cleanup() {
+  log "Cleanup: stopping background processes..."
+  # Stop monitor process first
+  if [ -n "$MONITOR_PID" ] && /bin/busybox kill -0 "$MONITOR_PID" 2>/dev/null; then
+    log "Stopping cookie monitor (PID: $MONITOR_PID)"
+    /bin/busybox kill "$MONITOR_PID" 2>/dev/null || true
+    wait "$MONITOR_PID" 2>/dev/null || true
+  fi
+  # Stop Tor process
+  if [ -n "$TOR_PID" ] && /bin/busybox kill -0 "$TOR_PID" 2>/dev/null; then
+    log "Stopping Tor (PID: $TOR_PID)"
+    /bin/busybox kill -TERM "$TOR_PID" 2>/dev/null || true
+    # Wait up to 10 seconds for graceful shutdown
+    local i=0
+    while [ $i -lt 10 ] && /bin/busybox kill -0 "$TOR_PID" 2>/dev/null; do
+      sleep 1; i=$((i+1))
+    done
+    # Force kill if still running
+    if /bin/busybox kill -0 "$TOR_PID" 2>/dev/null; then
+      /bin/busybox kill -KILL "$TOR_PID" 2>/dev/null || true
+    fi
+  fi
+  log "Cleanup complete"
+}
+
 configure_bridges() {
   [ "$TOR_USE_BRIDGES" = "1" ] || return 0
   [ -n "$TOR_BRIDGES" ] || { log "WARNING: TOR_USE_BRIDGES=1 but TOR_BRIDGES not set"; return 1; }
-  
+
   local torrc_path="/etc/tor/torrc"
   log "Configuring Tor bridges for ISP port blocking workaround..."
-  
+
   # Add bridge configuration to torrc if not already present
   if ! grep -q "^UseBridges" "$torrc_path"; then
     {
@@ -56,8 +85,9 @@ ensure_runtime() {
 start_tor() {
   log "Starting Tor as debian-tor user..."
   tor -f /etc/tor/torrc &
-  /bin/busybox sh -c "echo \$! > '${TOR_DATA_DIR}/tor.pid'" 2>/dev/null || true
-  log "Tor started with PID: $(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo 'unknown')"
+  TOR_PID=$!
+  echo "$TOR_PID" > "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || true
+  log "Tor started with PID: ${TOR_PID}"
 }
 
 wait_for_file() {
@@ -246,6 +276,9 @@ create_ephemeral_onion() {
 }
 
 main() {
+  # Set up signal traps for graceful cleanup
+  trap cleanup EXIT INT TERM
+
   log "=== Lucid Tor Proxy Starting ==="
   log "Platform: ${LUCID_PLATFORM:-arm64}"
   log "Environment: ${LUCID_ENV:-production}"
@@ -254,8 +287,8 @@ main() {
   log "Upstream Service: ${UPSTREAM_SERVICE:-<not configured>}"
 
   ensure_runtime
-  configure_bridges || log "WARNING: Bridge configuration failed (continuing anyway)"
-  # Validate bridge configuration if bridges are enabled
+
+  # Validate bridge configuration BEFORE applying it
   if [ "$TOR_USE_BRIDGES" = "1" ]; then
     if [ -z "$TOR_BRIDGES" ] || echo "$TOR_BRIDGES" | grep -qE "(FINGERPRINT|1\.2\.3\.4|5\.6\.7\.8|REPLACE_WITH_YOUR)"; then
       log "ERROR: TOR_USE_BRIDGES=1 but bridges are not properly configured"
@@ -264,7 +297,9 @@ main() {
       exit 1
     fi
     log "Bridge configuration validated"
+    configure_bridges || log "WARNING: Bridge configuration failed (continuing anyway)"
   fi
+
   start_tor
 
   if ! wait_for_file "$COOKIE_FILE" 120; then
@@ -272,11 +307,27 @@ main() {
     exit 1
   fi
 
-  # Copy cookie to shared volume for tunnel-tools access
-  copy_cookie_to_shared || log "WARNING: Cookie copy failed, tunnel-tools may not have access"
-  
+  # Copy cookie to shared volume for tunnel-tools access with retry logic
+  local cookie_copy_attempts=0
+  local cookie_copy_max_attempts=3
+  while [ $cookie_copy_attempts -lt $cookie_copy_max_attempts ]; do
+    if copy_cookie_to_shared; then
+      log "Cookie successfully copied to shared volume"
+      break
+    fi
+    cookie_copy_attempts=$((cookie_copy_attempts + 1))
+    if [ $cookie_copy_attempts -lt $cookie_copy_max_attempts ]; then
+      log "Retrying cookie copy (attempt $cookie_copy_attempts/$cookie_copy_max_attempts)..."
+      sleep 5
+    fi
+  done
+  if [ $cookie_copy_attempts -eq $cookie_copy_max_attempts ]; then
+    log "WARNING: Cookie copy failed after $cookie_copy_max_attempts attempts, tunnel-tools may not have access"
+  fi
+
   # Start background monitor to keep cookie updated
   monitor_and_copy_cookie &
+  MONITOR_PID=$!
 
   if ! wait_for_bootstrap; then
     log "FATAL: Tor bootstrap failed - check bridge configuration and network connectivity"
