@@ -38,6 +38,7 @@ from .utils.health_check import get_health_checker
 from .utils.config_loader import get_config_loader, load_yaml_config
 from .utils.circuit_breaker import get_circuit_breaker_manager, CircuitBreakerConfig
 from .utils.rate_limiter import get_rate_limiter_manager, RateLimitConfig
+from .utils.tor_proxy_client import initialize_tor_proxy_client, get_tor_proxy_client_manager
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", config.log_level.value if hasattr(config.log_level, 'value') else str(config.log_level))
@@ -63,6 +64,10 @@ health_checker = get_health_checker()
 config_loader = get_config_loader()
 circuit_breaker_manager = get_circuit_breaker_manager()
 rate_limiter_manager = get_rate_limiter_manager()
+
+# Initialize tor-proxy client manager
+tor_proxy_manager = initialize_tor_proxy_client(config)
+logger.info(f"Tor-proxy integration initialized: {tor_proxy_manager}")
 
 # Load YAML configurations
 try:

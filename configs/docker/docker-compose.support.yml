@@ -12,12 +12,15 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
 
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.91
     ports:
       - "${TRON_CLIENT_PORT:-8091}:${TRON_CLIENT_PORT:-8091}"
       - "8101:8101"
@@ -243,7 +246,11 @@ services:
       - "lucid.network=tron-isolated"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
 
   tron-payout-router:
     image: pickme/lucid-tron-payout-router:latest-arm64
@@ -254,11 +261,14 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payout-router
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
 
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.92
     ports:
       - "${PAYOUT_ROUTER_PORT:-8092}:${PAYOUT_ROUTER_PORT:-8092}"
     volumes:
@@ -380,10 +390,12 @@ services:
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
     depends_on:
+      tor-proxy:
+        condition: service_healthy
       lucid-mongodb:
-        condition: service_started
+        condition: service_healthy
       lucid-redis:
-        condition: service_started
+        condition: service_healthy
 
   tron-wallet-manager:
     image: pickme/lucid-tron-wallet-manager:latest-arm64
@@ -394,11 +406,14 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-wallet-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
 
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.93
     ports:
       - "${WALLET_MANAGER_PORT:-8093}:${WALLET_MANAGER_PORT:-8093}"
     volumes:
@@ -539,7 +554,11 @@ services:
       - "lucid.network=tron-isolated"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
 
   tron-usdt-manager:
     image: pickme/lucid-tron-usdt-manager:latest-arm64
@@ -550,11 +569,14 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-usdt-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
 
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.94
     ports:
       - "${USDT_MANAGER_PORT:-8094}:${USDT_MANAGER_PORT:-8094}"
     volumes:
@@ -687,10 +709,14 @@ services:
       - "lucid.network=tron-isolated"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
 
   tron-staking:
-    image: pickme/lucid-tron-staking:latest-arm64
+    image: pickme/lucid-trx-staking:latest-arm64
     container_name: tron-staking
     hostname: tron-staking
     restart: unless-stopped
@@ -698,10 +724,13 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-staking
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.96
     ports:
       - "${STAKING_PORT:-8096}:${STAKING_PORT:-8096}"
     volumes:
@@ -823,7 +852,11 @@ services:
       - "lucid.network=tron-isolated"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
 
   tron-payment-gateway:
     image: pickme/lucid-tron-payment-gateway:latest-arm64
@@ -834,10 +867,13 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payment-gateway
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.97
     ports:
       - "${PAYMENT_GATEWAY_PORT:-8097}:${PAYMENT_GATEWAY_PORT:-8097}"
     volumes:
@@ -1022,10 +1058,13 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-relay
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
     networks:
-      - lucid-tron-isolated
+      lucid-tron-isolated:
+      lucid-pi-network:
+        ipv4_address: 172.20.1.98
     ports:
       - "${TRON_RELAY_PORT:-8098}:${TRON_RELAY_PORT:-8098}"
     volumes:
@@ -1146,8 +1185,18 @@ services:
       - "lucid.cluster=support"
       - "lucid.network=tron-isolated"
     depends_on:
+      tor-proxy:
+        condition: service_healthy
       lucid-tron-client:
         condition: service_started
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-tron-isolated:
+    external: true
+    name: lucid-tron-isolated
 
 volumes:
   # Payment Systems & TRON Services

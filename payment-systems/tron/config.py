@@ -105,6 +105,20 @@ class TRONPaymentConfig(BaseSettings):
     mock_transactions: bool = Field(default_factory=lambda: os.getenv("MOCK_TRANSACTIONS", "false").lower() == "true", description="Enable mock transactions")
     test_mode: bool = Field(default_factory=lambda: os.getenv("TEST_MODE", "false").lower() == "true", description="Enable test mode")
     
+    # Tor Proxy Configuration - from environment variables
+    tor_proxy_host: str = Field(default_factory=lambda: os.getenv("TOR_PROXY_HOST", "tor-proxy"), description="Tor proxy hostname")
+    tor_proxy_socks_port: int = Field(default_factory=lambda: int(os.getenv("TOR_PROXY_SOCKS_PORT", "9050")), description="Tor SOCKS5 port")
+    tor_proxy_control_port: int = Field(default_factory=lambda: int(os.getenv("TOR_PROXY_CONTROL_PORT", "9051")), description="Tor control port")
+    tor_proxy_http_port: int = Field(default_factory=lambda: int(os.getenv("TOR_PROXY_HTTP_PORT", "8888")), description="Tor HTTP proxy port")
+    use_tor_for_external_calls: bool = Field(default_factory=lambda: os.getenv("USE_TOR_FOR_EXTERNAL_CALLS", "true").lower() == "true", description="Route external calls through tor-proxy")
+    tor_route_rpc: bool = Field(default_factory=lambda: os.getenv("TOR_ROUTE_RPC", "true").lower() == "true", description="Route TRON RPC calls through tor-proxy")
+    tor_circuit_rotation_enabled: bool = Field(default_factory=lambda: os.getenv("TOR_CIRCUIT_ROTATION_ENABLED", "true").lower() == "true", description="Enable tor circuit rotation")
+    tor_circuit_rotation_interval: int = Field(default_factory=lambda: int(os.getenv("TOR_CIRCUIT_ROTATION_INTERVAL", "3600")), description="Tor circuit rotation interval in seconds")
+    tor_prevent_dns_leaks: bool = Field(default_factory=lambda: os.getenv("TOR_PREVENT_DNS_LEAKS", "true").lower() == "true", description="Prevent DNS leaks through tor")
+    tor_health_check_interval: int = Field(default_factory=lambda: int(os.getenv("TOR_HEALTH_CHECK_INTERVAL", "60")), description="Tor health check interval in seconds")
+    tor_connectivity_timeout: int = Field(default_factory=lambda: int(os.getenv("TOR_CONNECTIVITY_TIMEOUT", "30")), description="Tor connectivity timeout in seconds")
+    tor_max_latency_ms: int = Field(default_factory=lambda: int(os.getenv("TOR_MAX_LATENCY_MS", "5000")), description="Maximum acceptable tor latency in milliseconds")
+    
     class Config:
         env_prefix = "TRON_PAYMENT_"
         case_sensitive = False
