@@ -47,9 +47,12 @@ wait_for_file() {
 ctl() {
   local cmd="$1"
   [ -f "$COOKIE_FILE" ] || { log "ERROR: Cookie file not found: $COOKIE_FILE"; return 1; }
-  local cookie_hex
-  cookie_hex=$(/usr/bin/xxd -p "$COOKIE_FILE" 2>/dev/null | /bin/busybox tr -d '\n' || echo "")
-  [ -n "$cookie_hex" ] || { log "ERROR: Failed to read cookie file"; return 1; }
+  local cookie_hex cookie_output
+  cookie_output=$(/usr/bin/xxd -p "$COOKIE_FILE" 2>/dev/null)
+  [ -n "$cookie_output" ] || { log "ERROR: Failed to read cookie file"; return 1; }
+  # Remove ALL newlines using bash parameter expansion (pure bash, no external commands)
+  cookie_hex="${cookie_output//$'\n'/}"
+  [ -n "$cookie_hex" ] || { log "ERROR: Cookie hex is empty after newline removal"; return 1; }
   printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" | /usr/bin/nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
 }
 
