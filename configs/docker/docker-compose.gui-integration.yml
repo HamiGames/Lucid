@@ -19,26 +19,9 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-api-bridge
     ports:
       - "8102:8102"
-    environment:
-      - SERVICE_NAME=lucid-gui-api-bridge
-      - PORT=8102
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - API_GATEWAY_URL=http://api-gateway:8080
-      - BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
-      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - SESSION_API_URL=http://lucid-session-api:8113
-      - NODE_MANAGEMENT_URL=http://lucid-node-management:8095
-      - ADMIN_INTERFACE_URL=http://lucid-admin-interface:8083
-      - TRON_PAYMENT_URL=http://lucid-tron-client:8091
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/gui-api-bridge:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/gui-api-bridge:/app/data
@@ -87,25 +70,9 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-docker-manager
     ports:
       - "8098:8098"
-    environment:
-      - SERVICE_NAME=lucid-gui-docker-manager
-      - PORT=8098
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - DOCKER_API_VERSION=1.40
-      - GUI_ACCESS_LEVELS_ENABLED=true
-      - USER_SERVICES=foundation,core
-      - DEVELOPER_SERVICES=foundation,core,application
-      - ADMIN_SERVICES=foundation,core,application,support
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /mnt/myssd/Lucid/Lucid/logs/gui-docker-manager:/app/logs
@@ -158,25 +125,9 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-tor-manager
     ports:
-      - "8097:8097" # API port (FIXED: was 9050/9051)
-    environment:
-      - SERVICE_NAME=lucid-gui-tor-manager
-      - PORT=8097 # ADDED: FastAPI port
-      - HOST=0.0.0.0 # ADDED: FastAPI host
-      - SERVICE_URL=http://lucid-gui-tor-manager:8097 # ADDED: Service URL
-      - LUCID_ENV=production # ADDED
-      - LUCID_PLATFORM=arm64 # ADDED
-      - LOG_LEVEL=INFO # ADDED
-      - DEBUG=false # ADDED
-      - TOR_PROXY_URL=http://tor-proxy:9051 # ADDED: Connection to tor-proxy
-      - TOR_PROXY_HOST=tor-proxy # ADDED: tor-proxy service name
-      - TOR_SOCKS_PORT=9050 # Reference: tor-proxy SOCKS port
-      - TOR_CONTROL_PORT=9051 # Reference: tor-proxy control port
-      - TOR_DATA_DIR=/app/tor-data
-      - TOR_LOG_LEVEL=notice
-      - GUI_TOR_INTEGRATION=true
-      - ONION_ADDRESS_MASKING=true
+      - "8097:8097"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/tor:/app/tor-data:rw
       - /mnt/myssd/Lucid/Lucid/logs/gui-tor-manager:/app/logs:rw
@@ -227,44 +178,6 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-hardware-manager
     ports:
       - "8099:8099"
-    environment:
-      - SERVICE_NAME=lucid-gui-hardware-manager
-      - GUI_HARDWARE_MANAGER_HOST=0.0.0.0
-      - GUI_HARDWARE_MANAGER_PORT=8099
-      - GUI_HARDWARE_MANAGER_URL=http://gui-hardware-manager:8099
-      - PORT=8099
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - LUCID_ENV=production
-      - LUCID_PLATFORM=arm64
-      # Hardware Configuration
-      - HARDWARE_WALLET_ENABLED=true
-      - LEDGER_ENABLED=true
-      - LEDGER_VENDOR_ID=0x2c97
-      - TREZOR_ENABLED=true
-      - KEEPKEY_ENABLED=true
-      - TRON_WALLET_SUPPORT=true
-      # Database URLs (from .env.secrets)
-      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
-      # Integration Service URLs
-      - API_GATEWAY_URL=http://api-gateway:8080
-      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
-      - GUI_API_BRIDGE_URL=http://gui-api-bridge:8102
-      - TOR_PROXY_URL=http://tor-proxy:9051
-      # CORS Configuration
-      - CORS_ENABLED=true
-      - CORS_ORIGINS=http://user-interface:3001,http://node-interface:3002,http://admin-interface:8120,http://localhost:3001,http://localhost:3002,http://localhost:8120
-      - CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
-      - CORS_HEADERS=*
-      - CORS_ALLOW_CREDENTIALS=true
-      # Rate Limiting
-      - RATE_LIMIT_ENABLED=true
-      - RATE_LIMIT_REQUESTS=100
-      - RATE_LIMIT_BURST=200
-      # Security
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/gui-hardware-manager:/app/data
@@ -329,19 +242,10 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.admin-interface
     ports:
       - "8120:8120"
       - "8100:8100"
-    environment:
-      - NODE_ENV=production
-      - ELECTRON_GUI_PROFILE=admin
-      - ELECTRON_GUI_NETWORK=lucid-pi-network
-      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8102/api/v1
-      - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services.conf
-      - ADMIN_INTERFACE_HOST=0.0.0.0
-      - ADMIN_INTERFACE_PORT=8120
-      - LOG_LEVEL=INFO
-      - LUCID_ENV=production
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
@@ -384,16 +288,9 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.user-interface
     ports:
       - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - ELECTRON_GUI_PROFILE=user
-      - ELECTRON_GUI_NETWORK=lucid-pi-network
-      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8102/api/v1
-      - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-user.conf
-      - LOG_LEVEL=INFO
-      - LUCID_ENV=production
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/user-interface:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/user-interface:/app/data
@@ -436,16 +333,9 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.node-interface
     ports:
       - "3002:3002"
-    environment:
-      - NODE_ENV=production
-      - ELECTRON_GUI_PROFILE=node_operator
-      - ELECTRON_GUI_NETWORK=lucid-pi-network
-      - ELECTRON_GUI_API_BASE_URL=http://lucid-gui-api-bridge:8102/api/v1
-      - ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-node.conf
-      - LOG_LEVEL=INFO
-      - LUCID_ENV=production
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/node-interface:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/node-interface:/app/data

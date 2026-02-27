@@ -241,12 +241,25 @@ main() {
   wait_for_bootstrap || log "Continuing despite bootstrap warning..."
   create_ephemeral_onion || log "Onion creation skipped or failed"
 
-  log "Tor proxy ready - waiting for process..."
-  if [ -f "${TOR_DATA_DIR}/tor.pid" ]; then
-    wait "$(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid")" 2>/dev/null || true
-  else
-    wait || true
-  fi
+  log "Tor proxy ready - monitoring for stability..."
+  # Keep the container running; Tor should be backgrounded and self-managed
+  # Monitor the Tor process and log status every 30 seconds
+  while true; do
+    if [ -f "${TOR_DATA_DIR}/tor.pid" ]; then
+      local tor_pid
+      tor_pid=$(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo "")
+      if [ -n "$tor_pid" ] && /bin/busybox kill -0 "$tor_pid" 2>/dev/null; then
+        # Tor process is running
+        /bin/busybox sleep 30
+      else
+        # Tor process died, log warning but keep container running
+        log "WARNING: Tor process (PID: ${tor_pid:-unknown}) is not running, restarting..."
+        start_tor
+      fi
+    else
+      /bin/busybox sleep 30
+    fi
+  done
 }
 
 main "$@"
