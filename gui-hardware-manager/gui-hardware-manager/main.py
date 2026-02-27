@@ -12,14 +12,16 @@ from contextlib import asynccontextmanager
 from gui_hardware_manager.config import get_settings
 from gui_hardware_manager.middleware.logging import LoggingMiddleware
 from gui_hardware_manager.middleware.rate_limit import RateLimitMiddleware
-from gui_hardware_manager.routers import health, devices, wallets, sign
+from gui_hardware_manager.routers import health, devices, wallets, sign, tor
 from gui_hardware_manager.services.hardware_service import HardwareService
+from gui_hardware_manager.integration.tor_integration import TorIntegrationManager
 
 logger = logging.getLogger(__name__)
 
 # Global state for service management
 app_state = {
     "hardware_service": None,
+    "tor_manager": None,
     "settings": None
 }
 
@@ -38,16 +40,38 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.LUCID_ENV}")
     logger.info(f"Platform: {settings.LUCID_PLATFORM}")
     logger.info(f"Hardware Support - Ledger: {settings.LEDGER_ENABLED}, Trezor: {settings.TREZOR_ENABLED}, KeepKey: {settings.KEEPKEY_ENABLED}")
+    logger.info(f"Tor Proxy: {settings.TOR_PROXY_URL}")
+    
+    # Initialize Tor integration if configured
+    if settings.TOR_PROXY_URL:
+        try:
+            logger.info(f"Initializing Tor integration with {settings.TOR_PROXY_URL}")
+            tor_manager = TorIntegrationManager(settings.TOR_PROXY_URL)
+            success = await tor_manager.initialize()
+            if success:
+                app_state["tor_manager"] = tor_manager
+                logger.info("Tor integration initialized successfully")
+            else:
+                logger.warning("Tor proxy not responding, continuing without Tor integration")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Tor integration: {e}")
     
     # Initialize hardware service
     app_state["hardware_service"] = HardwareService(settings)
     await app_state["hardware_service"].initialize()
     logger.info("Hardware service initialized successfully")
     
+    # Store in app state for router access
+    app.state.hardware_service = app_state["hardware_service"]
+    app.state.tor_manager = app_state.get("tor_manager")
+    
     yield
     
     # Shutdown
     logger.info("Shutting down GUI Hardware Manager...")
+    if app_state.get("tor_manager"):
+        await app_state["tor_manager"].cleanup()
+        logger.info("Tor integration cleanup complete")
     if app_state["hardware_service"]:
         await app_state["hardware_service"].cleanup()
     logger.info("Hardware service cleanup complete")
@@ -88,6 +112,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["Health"])
 app.include_router(devices.router, prefix="/api/v1", tags=["Devices"])
 app.include_router(wallets.router, prefix="/api/v1", tags=["Wallets"])
 app.include_router(sign.router, prefix="/api/v1", tags=["Signing"])
+app.include_router(tor.router, prefix="/api/v1", tags=["Tor"])
 
 # Global exception handler
 @app.exception_handler(Exception)

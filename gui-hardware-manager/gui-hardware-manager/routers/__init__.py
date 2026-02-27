@@ -1,2 +1,2 @@
 """Routers module initialization"""
-__all__ = ["health", "devices", "wallets", "sign"]
+__all__ = ["health", "devices", "wallets", "sign", "tor"]

@@ -252,13 +252,24 @@ services:
       - API_GATEWAY_URL=http://api-gateway:8080
       - AUTH_SERVICE_URL=http://lucid-auth-service:8089
       - GUI_API_BRIDGE_URL=http://gui-api-bridge:8102
+      - TOR_PROXY_URL=http://tor-proxy:9051
+      # CORS Configuration
+      - CORS_ENABLED=true
+      - CORS_ORIGINS=http://user-interface:3001,http://node-interface:3002,http://admin-interface:8120,http://localhost:3001,http://localhost:3002,http://localhost:8120
+      - CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
+      - CORS_HEADERS=*
+      - CORS_ALLOW_CREDENTIALS=true
+      # Rate Limiting
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_BURST=200
       # Security
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager:/app/logs
       - /mnt/myssd/Lucid/Lucid/data/gui-hardware-manager:/app/data
-      # Writable tmpfs for USB device access
-      - /tmp/usb-devices:/run/usb:rw
+      # Writable tmpfs for USB device access (environment-aware path)
+      - /run/usb-devices:/run/usb:rw
     networks:
       - lucid-pi-network
       - lucid-gui-network
