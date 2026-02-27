@@ -1268,3 +1268,5 @@ networks:
   lucid-tron-isolated:
     external: true
     name: lucid-tron-isolated
+    external: true
+    name: lucid-tron-isolated

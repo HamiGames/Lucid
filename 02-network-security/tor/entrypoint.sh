@@ -17,6 +17,34 @@ UPSTREAM_PORT=${UPSTREAM_PORT:-8081}
 CREATE_ONION=${CREATE_ONION:-0}
 
 TOR_DATA_DIR=${TOR_DATA_DIR:-/var/lib/tor}
+# Bridge configuration (ISP port blocking workaround)
+TOR_USE_BRIDGES=${TOR_USE_BRIDGES:-0}
+TOR_BRIDGES=${TOR_BRIDGES:-}
+
+configure_bridges() {
+  [ "$TOR_USE_BRIDGES" = "1" ] || return 0
+  [ -n "$TOR_BRIDGES" ] || { log "WARNING: TOR_USE_BRIDGES=1 but TOR_BRIDGES not set"; return 1; }
+  
+  local torrc_path="/etc/tor/torrc"
+  log "Configuring Tor bridges for ISP port blocking workaround..."
+  
+  # Add bridge configuration to torrc if not already present
+  if ! grep -q "^UseBridges" "$torrc_path"; then
+    {
+      echo ""
+      echo "# Bridge configuration (added by entrypoint)"
+      echo "UseBridges 1"
+      echo "ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy"
+      echo "ReachableAddresses *:80,*:443"
+      echo ""
+      echo "# Bridge addresses"
+      echo "$TOR_BRIDGES"
+    } >> "$torrc_path"
+    log "Bridge configuration added to torrc"
+  else
+    log "Bridge configuration already present in torrc"
+  fi
+}
 
 ensure_runtime() {
   mkdir -p /run /var/lib/tor /var/log/tor || true
@@ -226,6 +254,17 @@ main() {
   log "Upstream Service: ${UPSTREAM_SERVICE:-<not configured>}"
 
   ensure_runtime
+  configure_bridges || log "WARNING: Bridge configuration failed (continuing anyway)"
+  # Validate bridge configuration if bridges are enabled
+  if [ "$TOR_USE_BRIDGES" = "1" ]; then
+    if [ -z "$TOR_BRIDGES" ] || echo "$TOR_BRIDGES" | grep -qE "(FINGERPRINT|1\.2\.3\.4|5\.6\.7\.8|REPLACE_WITH_YOUR)"; then
+      log "ERROR: TOR_USE_BRIDGES=1 but bridges are not properly configured"
+      log "Please configure real bridge addresses from https://bridges.torproject.org"
+      log "Current TOR_BRIDGES value: $TOR_BRIDGES"
+      exit 1
+    fi
+    log "Bridge configuration validated"
+  fi
   start_tor
 
   if ! wait_for_file "$COOKIE_FILE" 120; then
@@ -239,7 +278,12 @@ main() {
   # Start background monitor to keep cookie updated
   monitor_and_copy_cookie &
 
-  wait_for_bootstrap || log "Continuing despite bootstrap warning..."
+  if ! wait_for_bootstrap; then
+    log "FATAL: Tor bootstrap failed - check bridge configuration and network connectivity"
+    log "Current bootstrap status:"
+    ctl "GETINFO status/bootstrap-phase" 2>/dev/null || true
+    exit 1
+  fi
   create_ephemeral_onion || log "Onion creation skipped or failed"
 
   log "Tor proxy ready - monitoring for stability..."
