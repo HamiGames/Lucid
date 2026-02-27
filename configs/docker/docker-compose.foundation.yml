@@ -302,6 +302,7 @@ services:
     restart: unless-stopped
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.authentication
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
@@ -311,7 +312,7 @@ services:
       - "${AUTH_SERVICE_PORT:-8089}:${AUTH_SERVICE_PORT:-8089}"
     depends_on:
       tor-proxy:
-        condition: service_started
+        condition: service_healthy
       lucid-mongodb:
         condition: service_healthy
       lucid-redis:
@@ -327,6 +328,14 @@ services:
       - REDIS_URI=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379/1
       # API Gateway Integration (REQUIRED by auth/config.py)
       - API_GATEWAY_URL=${API_GATEWAY_URL:?API_GATEWAY_URL not set}
+      - TOR_PROXY_HOST=${TOR_PROXY_HOST:-tor-proxy}
+      - TOR_PROXY_SOCKS_PORT=${TOR_PROXY_SOCKS_PORT:-9050}
+      - TOR_PROXY_CONTROL_PORT=${TOR_PROXY_CONTROL_PORT:-9051}
+      - TOR_PROXY_HTTP_PORT=${TOR_PROXY_HTTP_PORT:-8888}
+      - SOCKS5_PROXY=socks5://${TOR_PROXY_HOST:-tor-proxy}:${TOR_PROXY_SOCKS_PORT:-9050}
+      - HTTP_PROXY=http://${TOR_PROXY_HOST:-tor-proxy}:${TOR_PROXY_HTTP_PORT:-8888}
+      - HTTPS_PROXY=http://${TOR_PROXY_HOST:-tor-proxy}:${TOR_PROXY_HTTP_PORT:-8888}
+      - NO_PROXY=lucid-mongodb,lucid-redis,lucid-auth-service,lucid-api-gateway
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true

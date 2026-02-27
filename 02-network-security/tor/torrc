@@ -9,7 +9,7 @@ DataDirectory /var/lib/tor
 # Hidden service is disabled during foundation phase to avoid parse errors and
 # to rely on ephemeral onions created by the controller.
 # Uncomment and adjust only when the upstream is ready and reachable.
-#HiddenServiceDir /var/lib/tor/hidden_service
+HiddenServiceDir /var/lib/tor/hidden_service
 #HiddenServiceVersion 3
 #HiddenServicePort 80 127.0.0.1:8081
 
