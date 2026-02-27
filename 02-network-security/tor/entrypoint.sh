@@ -188,41 +188,6 @@ copy_cookie_to_shared() {
   fi
 }
 
-monitor_and_copy_cookie() {
-  local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
-  local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
-  
-  log "Starting cookie monitor (background)..."
-  
-  # Wait for initial cookie to be ready and copied before starting monitor
-  sleep 5
-  
-  # Track last modification time to detect cookie regeneration
-  local last_mod=0
-  local check_interval=30  # Check every 30 seconds instead of 10
-  
-  while true; do
-    if [ -f "$cookie_src" ]; then
-      # Only copy if cookie exists and has been modified
-      local current_mod=$(/bin/busybox stat -c %Y "$cookie_src" 2>/dev/null || echo "0")
-      
-      # Check if cookie has been modified or is first check (last_mod=0)
-      if [ "$current_mod" -gt "$last_mod" ] || [ "$last_mod" -eq "0" ]; then
-        if ! copy_cookie_to_shared; then
-          log "ERROR: Cookie copy failed in monitor"
-        fi
-        last_mod="$current_mod"
-      fi
-    else
-      log "WARNING: Cookie file not found in monitor"
-      sleep 5
-      continue
-    fi
-    
-    sleep $check_interval
-  done
-}
-
 create_ephemeral_onion() {
   [ "$CREATE_ONION" = "1" ] || { log "CREATE_ONION=0 — skipping onion creation"; return 0; }
   [ -n "$UPSTREAM_SERVICE" ] || { log "No UPSTREAM_SERVICE configured — skipping onion creation"; return 0; }

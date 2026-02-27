@@ -15,7 +15,6 @@ services:
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
       - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
 
     networks:
       - lucid-tron-isolated
