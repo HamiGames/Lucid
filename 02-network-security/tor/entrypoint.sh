@@ -214,6 +214,22 @@ ensure_runtime() {
     log "WARNING: Failed to create some runtime directories"
   }
 
+  # CRITICAL: Clean the cookie file before Tor starts
+  # This ensures Tor writes a fresh, uncorrupted cookie
+  local cookie_file="/var/lib/tor/control_auth_cookie"
+  
+  if [ -f "$cookie_file" ]; then
+    log "Removing old control_auth_cookie to ensure clean write..."
+    rm -f "$cookie_file" 2>/dev/null || true
+    
+    # Verify it's deleted
+    if [ -f "$cookie_file" ]; then
+      log "WARNING: Could not remove old cookie file"
+    else
+      log "✓ Old cookie file removed"
+    fi
+  fi
+
   # Set base permissions on tor directory
   chmod 755 /var/lib/tor 2>/dev/null || true
 
