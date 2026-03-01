@@ -1,6 +1,0 @@
-# Authentication Service Requirements - Hardware Wallet Dependencies
-# Hardware wallet support
-ledgerblue==0.1.50
-trezor==0.13.8
-keepkey==6.3.1
-

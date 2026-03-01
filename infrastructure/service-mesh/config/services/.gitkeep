@@ -1,4 +1,0 @@
-# This directory is for optional service-specific configuration files
-# Files in this directory will be loaded by config_manager.py
-# Format: One YAML file per service (e.g., lucid-auth-service.yaml)
-

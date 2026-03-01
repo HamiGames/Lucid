@@ -1,7 +1,0 @@
-﻿# Additional requirements for Lucid RDP components
-cryptography>=41.0.0
-blake3>=0.3.0
-docker>=6.0.0
-requests>=2.31.0
-zstandard>=0.21.0
-pymongo>=4.5.0
