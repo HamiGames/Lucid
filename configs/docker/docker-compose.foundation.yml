@@ -21,7 +21,6 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
       - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
       - tor-config:/etc/tor
-      - /var/lib/tor/control_auth_cookie:/var/lib/tor/control_auth_cookie:rw
       - onion-state:/run/lucid/onion
     healthcheck:
       test: ["CMD", "/bin/bash", "/usr/local/bin/tor-health"]
