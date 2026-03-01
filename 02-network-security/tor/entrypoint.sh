@@ -297,37 +297,7 @@ wait_for_file() {
 # Purpose: Send a command to Tor control port (localhost:9051)
 # Uses cookie authentication for security
 # ============================================================================
-ctl() {
-  local cmd="$1"
-  
-  if [ ! -f "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file not found: $COOKIE_FILE"
-    return 1
-  fi
 
-  if [ ! -s "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file is empty: $COOKIE_FILE"
-    return 1
-  fi
-
-  # Convert cookie to hex format for authentication
-  local cookie_hex
-  cookie_hex=$(/var/bin/xxd -p "$COOKIE_FILE" 2>/dev/null | /bin/busybox tr -d '\n')
-
-  if [ -z "$cookie_hex" ]; then
-    log "ERROR: Failed to read or convert cookie file to hex"
-    return 1
-  fi
-
-  # Send authenticated command to Tor control port
-  # AUTHENTICATE: send hex-encoded cookie
-  # Command: user's command
-  # QUIT: close connection cleanly
-  printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" | \
-    /usr/bin/nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
-
-  return 0
-}
 
 # ============================================================================
 # FUNCTION: resolve_upstream_ip
@@ -370,35 +340,82 @@ wait_for_bootstrap() {
   local i=0
   local max_attempts=300  # 10 minutes maximum (300 * 2 second polls)
   local last_progress=""
+  local cookie_failed=0
 
   while [ $i -lt "$max_attempts" ]; do
     # Query bootstrap status from Tor
     local response
     response=$(ctl "GETINFO status/bootstrap-phase" 2>/dev/null || true)
 
+    # Check if response is empty (indicates ctl command failed)
+    if [ -z "$response" ]; then
+      cookie_failed=$((cookie_failed + 1))
+      
+      # Log every 30 seconds if control connection keeps failing
+      if [ $((i % 15)) -eq 0 ]; then
+        log "WARNING: Control port not responding (attempt $((cookie_failed)))... retrying"
+      fi
+      
+      # If cookie problems persist, something is very wrong
+      if [ $cookie_failed -gt 20 ]; then
+        log "FATAL: Cannot reach Tor control port after many attempts"
+        log "Check if Tor process is running: ps aux | grep tor"
+        log "Check cookie file: ls -la /var/lib/tor/control_auth_cookie"
+        return 1
+      fi
+      
+      sleep 2
+      i=$((i + 1))
+      continue
+    fi
+
+    # Reset cookie failure counter on successful response
+    cookie_failed=0
+
     # Normalize response: remove CR/LF, convert newlines to spaces, collapse whitespace
     local cleaned
-    cleaned=$(echo "$response" | \
+    cleaned=$(printf '%s' "$response" | \
       /bin/busybox tr -d '\r' | \
       /bin/busybox tr '\n' ' ' | \
       /bin/busybox sed 's/  */ /g')
 
-    # Extract progress percentage
+    # Verify we got a valid response (should contain "PROGRESS")
+    if ! echo "$cleaned" | /bin/busybox grep -q 'PROGRESS'; then
+      if [ $((i % 15)) -eq 0 ]; then
+        log "WARNING: Invalid response from control port"
+        log "Response was: $cleaned"
+      fi
+      sleep 2
+      i=$((i + 1))
+      continue
+    fi
+
+    # Extract progress percentage (safely handle extraction)
     local progress
-    progress=$(echo "$cleaned" | \
+    progress=$(/bin/busybox printf '%s' "$cleaned" | \
       /bin/busybox grep -o 'PROGRESS=[0-9]*' | \
-      head -1 || echo "PROGRESS=unknown")
+      /bin/busybox head -1)
+    
+    # Fallback if extraction failed
+    if [ -z "$progress" ]; then
+      progress="PROGRESS=unknown"
+    fi
 
     # Check if bootstrap is complete (PROGRESS=100)
-    if echo "$cleaned" | /bin/busybox grep -q 'PROGRESS=100'; then
+    if /bin/busybox printf '%s' "$cleaned" | /bin/busybox grep -q 'PROGRESS=100'; then
       log "✓ Bootstrap complete (100%)"
       
       # Also log the summary for debugging
       local tag
-      tag=$(echo "$cleaned" | \
+      tag=$(/bin/busybox printf '%s' "$cleaned" | \
         /bin/busybox grep -o 'TAG=[^ ]*' | \
-        head -1 || echo "TAG=unknown")
-      log "  Final status: $progress, $tag"
+        /bin/busybox head -1)
+      
+      if [ -n "$tag" ]; then
+        log "  Final status: $progress, $tag"
+      else
+        log "  Final status: $progress"
+      fi
       
       return 0
     fi
@@ -407,12 +424,18 @@ wait_for_bootstrap() {
     if [ $((i % 15)) -eq 0 ] && [ $i -gt 0 ]; then
       # Extract tag (phase description)
       local tag
-      tag=$(echo "$cleaned" | \
+      tag=$(/bin/busybox printf '%s' "$cleaned" | \
         /bin/busybox grep -o 'TAG=[^ ]*' | \
-        head -1 || echo "TAG=unknown")
+        /bin/busybox head -1)
       
+      local display_tag=""
+      if [ -n "$tag" ]; then
+        display_tag=", $tag"
+      fi
+      
+      # Only log if progress changed
       if [ "$progress" != "$last_progress" ]; then
-        log "Bootstrap in progress: $progress, $tag (attempt $i/$max_attempts)"
+        log "Bootstrap in progress: $progress$display_tag (attempt $i/$max_attempts)"
         last_progress="$progress"
       fi
     fi
@@ -423,7 +446,60 @@ wait_for_bootstrap() {
 
   log "ERROR: Tor bootstrap did not reach 100% within timeout ($max_attempts attempts = 10 minutes)"
   log "Last known status: $progress"
+  log "This usually means:"
+  log "  1. ISP is blocking Tor ports (configure bridges)"
+  log "  2. Network connectivity issues"
+  log "  3. Tor consensus is unavailable"
+  log ""
+  log "Troubleshooting:"
+  log "  - Check Tor logs: docker logs tor-proxy | grep -i bootstrap"
+  log "  - Verify network: docker exec tor-proxy ping 8.8.8.8"
+  log "  - Use bridges: TOR_USE_BRIDGES=1 TOR_BRIDGES='...'"
   return 1
+}
+
+# ============================================================================
+# FUNCTION: ctl (IMPROVED VERSION)
+# Purpose: Send a command to Tor control port with better error handling
+# ============================================================================
+ctl() {
+  local cmd="$1"
+  
+  # Verify cookie file exists and is readable
+  if [ ! -f "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file not found: $COOKIE_FILE"
+    return 1
+  fi
+
+  if [ ! -r "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file not readable: $COOKIE_FILE"
+    return 1
+  fi
+
+  if [ ! -s "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file is empty: $COOKIE_FILE"
+    return 1
+  fi
+
+  # Convert cookie to hex format for authentication
+  local cookie_hex
+  cookie_hex=$(/var/bin/xxd -p "$COOKIE_FILE" 2>/dev/null | /bin/busybox tr -d '\n')
+
+  if [ -z "$cookie_hex" ]; then
+    log "ERROR: Failed to read or convert cookie file to hex"
+    return 1
+  fi
+
+  # Send authenticated command to Tor control port
+  # Use timeout to prevent hanging
+  local timeout_val=5
+  {
+    printf 'AUTHENTICATE %s\r\n' "$cookie_hex"
+    printf '%s\r\n' "$cmd"
+    printf 'QUIT\r\n'
+  } | timeout "$timeout_val" /usr/bin/nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
+
+  return $?
 }
 
 # ============================================================================
