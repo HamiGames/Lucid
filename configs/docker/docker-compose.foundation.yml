@@ -9,8 +9,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
-      lucid-pi-network:
-        ipv4_address: ${TOR_PROXY_IP}
+      - lucid-pi-network
     ports:
       - "${TOR_PROXY_SOCKS_PORT:-9050}:${TOR_PROXY_SOCKS_PORT:-9050}"
       - "${TOR_PROXY_CONTROL_PORT:-9051}:${TOR_PROXY_CONTROL_PORT:-9051}"
@@ -22,6 +21,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
       - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
       - tor-config:/etc/tor
+      - /var/lib/tor/control_auth_cookie:/var/lib/tor/control_auth_cookie:rw
       - onion-state:/run/lucid/onion
     healthcheck:
       test: ["CMD", "/bin/bash", "/usr/local/bin/tor-health"]
@@ -45,8 +45,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
-      lucid-pi-network:
-        ipv4_address: ${LUCID_BASE_IP}
+      - lucid-pi-network
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/base:/var/log/lucid-base:rw
     labels:
@@ -65,8 +64,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
-      lucid-pi-network:
-        ipv4_address: ${LUCID_BASE_PY_IP}
+      - lucid-pi-network
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/python-base:/var/log/python-base:rw
     labels:
@@ -85,8 +83,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
     networks:
-      lucid-pi-network:
-        ipv4_address: ${LUCID_BASE_JAVA_IP}
+      - lucid-pi-network
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/java-base:/var/log/java-base:rw
     labels:
@@ -110,8 +107,7 @@ services:
       lucid-redis:
         condition: service_healthy
     networks:
-      lucid-pi-network:
-        ipv4_address: ${LUCID_SERVER_TOOLS_IP}
+      - lucid-pi-network
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/server-tools:/var/log/server-tools:rw
     healthcheck:
@@ -139,8 +135,7 @@ services:
       - PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages
       - SERVICE_MESH_CONFIG_PATH=/config
     networks:
-      lucid-pi-network:
-        ipv4_address: ${LUCID_SERVICE_MESH_IP}
+      - lucid-pi-network
     volumes:
       - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
       - /mnt/myssd/Lucid/Lucid/infrastructure/service-mesh/config:/config:ro
@@ -162,18 +157,15 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME:-lucid}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
-      - MONGO_INITDB_DATABASE=lucid
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE:-lucid}
       - MONGODB_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
       - MONGODB_PORT=${MONGODB_PORT:-27017}
-    networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.11
     ports:
       - "${MONGODB_PORT}:${MONGODB_PORT}"
-    # Entrypoint script handles MongoDB initialization and user creation
-    # No need to override command - script manages mongod startup
+    networks:
+      - lucid-pi-network
     depends_on:
       tor-proxy:
         condition: service_started
@@ -210,11 +202,10 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
-    networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.12
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
+    networks:
+      - lucid-pi-network
     depends_on:
       tor-proxy:
         condition: service_started
@@ -233,16 +224,10 @@ services:
       - redis-cache:/var/cache/redis
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD not set}
-      - REDIS_HOST=0.0.0.0
+      - REDIS_HOST=${REDIS_HOST:-lucid-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_MAX_MEMORY=${REDIS_MAX_MEMORY:-512mb}
       - REDIS_MAX_MEMORY_POLICY=${REDIS_MAX_MEMORY_POLICY:-allkeys-lru}
-    healthcheck:
-      test: ["CMD", "/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     labels:
       - "lucid.service=redis"
       - "lucid.type=distroless"
@@ -257,9 +242,7 @@ services:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
-    networks:
-      lucid-pi-network:
-        ipv4_address: 172.20.0.13
+
     ports:
       - "${ELASTICSEARCH_HTTP_PORT:-9200}:${ELASTICSEARCH_HTTP_PORT:-9200}"
       - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:${ELASTICSEARCH_TRANSPORT_PORT:-9300}"
@@ -267,6 +250,8 @@ services:
       # DO NOT define ES_JAVA_OPTS here; it becomes an unknown ES setting in this image
       - "discovery.type=single-node"
       - "xpack.security.enabled=false"
+    networks:
+      - lucid-pi-network
     depends_on:
       tor-proxy:
         condition: service_started
