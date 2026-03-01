@@ -297,7 +297,44 @@ wait_for_file() {
 # Purpose: Send a command to Tor control port (localhost:9051)
 # Uses cookie authentication for security
 # ============================================================================
+ctl() {
+  local cmd="$1"
+  
+  # Verify cookie file exists and is readable
+  if [ ! -f "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file not found: $COOKIE_FILE"
+    return 1
+  fi
 
+  if [ ! -r "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file not readable: $COOKIE_FILE"
+    return 1
+  fi
+
+  if [ ! -s "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file is empty: $COOKIE_FILE"
+    return 1
+  fi
+
+  # Convert cookie to hex format for authentication
+  local cookie_hex
+  cookie_hex=$(/var/bin/xxd -p "$COOKIE_FILE" 2>/dev/null | /bin/busybox tr -d '\n')
+
+  if [ -z "$cookie_hex" ]; then
+    log "ERROR: Failed to read or convert cookie file to hex"
+    return 1
+  fi
+
+  # Send authenticated command to Tor control port
+  # Use timeout to prevent hanging
+  {
+    printf 'AUTHENTICATE %s\r\n' "$cookie_hex"
+    printf '%s\r\n' "$cmd"
+    printf 'QUIT\r\n'
+  } | timeout 5 /usr/bin/nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
+
+  return $?
+}
 
 # ============================================================================
 # FUNCTION: resolve_upstream_ip
@@ -450,56 +487,7 @@ wait_for_bootstrap() {
   log "  1. ISP is blocking Tor ports (configure bridges)"
   log "  2. Network connectivity issues"
   log "  3. Tor consensus is unavailable"
-  log ""
-  log "Troubleshooting:"
-  log "  - Check Tor logs: docker logs tor-proxy | grep -i bootstrap"
-  log "  - Verify network: docker exec tor-proxy ping 8.8.8.8"
-  log "  - Use bridges: TOR_USE_BRIDGES=1 TOR_BRIDGES='...'"
   return 1
-}
-
-# ============================================================================
-# FUNCTION: ctl (IMPROVED VERSION)
-# Purpose: Send a command to Tor control port with better error handling
-# ============================================================================
-ctl() {
-  local cmd="$1"
-  
-  # Verify cookie file exists and is readable
-  if [ ! -f "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file not found: $COOKIE_FILE"
-    return 1
-  fi
-
-  if [ ! -r "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file not readable: $COOKIE_FILE"
-    return 1
-  fi
-
-  if [ ! -s "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file is empty: $COOKIE_FILE"
-    return 1
-  fi
-
-  # Convert cookie to hex format for authentication
-  local cookie_hex
-  cookie_hex=$(/var/bin/xxd -p "$COOKIE_FILE" 2>/dev/null | /bin/busybox tr -d '\n')
-
-  if [ -z "$cookie_hex" ]; then
-    log "ERROR: Failed to read or convert cookie file to hex"
-    return 1
-  fi
-
-  # Send authenticated command to Tor control port
-  # Use timeout to prevent hanging
-  local timeout_val=5
-  {
-    printf 'AUTHENTICATE %s\r\n' "$cookie_hex"
-    printf '%s\r\n' "$cmd"
-    printf 'QUIT\r\n'
-  } | timeout "$timeout_val" /usr/bin/nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
-
-  return $?
 }
 
 # ============================================================================
