@@ -214,33 +214,51 @@ ensure_runtime() {
     log "WARNING: Failed to create some runtime directories"
   }
 
-  # CRITICAL: Clean the cookie file before Tor starts
-  # This ensures Tor writes a fresh, uncorrupted cookie
+  # ========================================================================
+  # CRITICAL: Prepare clean cookie file environment BEFORE Tor starts
+  # ========================================================================
   local cookie_file="/var/lib/tor/control_auth_cookie"
   
+  log "Preparing cookie file environment..."
+  
+  # Step 1: Delete ANY existing cookie file - FORCED
   if [ -f "$cookie_file" ]; then
-    log "Removing old control_auth_cookie to ensure clean write..."
-    rm -f "$cookie_file" 2>/dev/null || true
+    log "Removing existing cookie file to ensure clean write..."
+    rm -f "$cookie_file"
     
-    # Verify it's deleted
+    # Verify deletion - if still exists, force remove
     if [ -f "$cookie_file" ]; then
-      log "WARNING: Could not remove old cookie file"
+      log "Force removing cookie file..."
+      /bin/busybox rm -f "$cookie_file"
+    fi
+    
+    # Final check
+    if [ ! -f "$cookie_file" ]; then
+      log "✓ Old cookie file deleted"
     else
-      log "✓ Old cookie file removed"
+      log "ERROR: Cookie file still exists after deletion attempts!"
     fi
   fi
-
-  # Set base permissions on tor directory
-  chmod 755 /var/lib/tor 2>/dev/null || true
-
-  # Try to fix ownership if possible
-  if command -v chown >/dev/null 2>&1; then
-    chown debian-tor:debian-tor /var/lib/tor 2>/dev/null || {
-      log "WARNING: Could not set ownership (may be running as non-root)"
-    }
+  
+  # Step 2: Delete lock files if they exist
+  if [ -f "${cookie_file}.lock" ]; then
+    rm -f "${cookie_file}.lock"
   fi
-
-  log "Runtime directories ready"
+  
+  # Step 3: Fix directory permissions so Tor can write
+  chmod 700 /var/lib/tor 2>/dev/null || true
+  
+  # Step 4: Set ownership to Tor user if possible
+  if command -v chown >/dev/null 2>&1; then
+    for tor_user in debian-tor _tor tor; do
+      if command -v id >/dev/null 2>&1 && id "$tor_user" >/dev/null 2>&1; then
+        chown "$tor_user:$tor_user" /var/lib/tor 2>/dev/null || true
+        break
+      fi
+    done
+  fi
+  
+  log "✓ Runtime directories and cookie environment ready"
 }
 
 # ============================================================================
@@ -290,11 +308,28 @@ wait_for_file() {
   
   local elapsed=0
   while [ $elapsed -lt "$timeout" ]; do
-    # Check if file EXISTS AND has content (not just created empty)
+    # Check if file EXISTS AND has content
     if [ -f "$filepath" ] && [ -s "$filepath" ]; then
+      # Get size using busybox wc
       local size
-      size=$(wc -c < "$filepath" 2>/dev/null)
-      log "✓ File ready: $filepath ($size bytes)"
+      size=$(/bin/busybox wc -c < "$filepath" 2>/dev/null)
+      
+      # Verify size was captured
+      if [ -z "$size" ]; then
+        size="unknown"
+      fi
+      
+      # For cookie file, validate size is reasonable (32 bytes expected)
+      if [[ "$filepath" == *"control_auth_cookie"* ]]; then
+        if [ "$size" -ne 32 ] 2>/dev/null; then
+          log "WARNING: Cookie file size is $size bytes, expected 32 - might be corrupted"
+        else
+          log "✓ Cookie file ready: $filepath ($size bytes)"
+        fi
+      else
+        log "✓ File ready: $filepath ($size bytes)"
+      fi
+      
       return 0
     fi
     
@@ -302,7 +337,7 @@ wait_for_file() {
     elapsed=$((elapsed + 1))
     
     # Log progress every 30 seconds
-    if [ $((elapsed % 30)) -eq 0 ]; then
+    if [ $((elapsed % 30)) -eq 0 ] && [ $elapsed -gt 0 ]; then
       log "Still waiting for $filepath... ($elapsed/${timeout}s elapsed)"
     fi
   done
@@ -548,7 +583,7 @@ wait_for_bootstrap() {
 copy_cookie_to_shared() {
   local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
   local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
-
+  
   log "Preparing to copy control cookie to shared volume..."
 
   # Get destination directory
@@ -558,86 +593,177 @@ copy_cookie_to_shared() {
   mkdir -p "$dest_dir" 2>/dev/null || true
 
   # CRITICAL: Wait for source cookie file to be CREATED AND WRITTEN
-  # Tor creates the file first, then writes content to it
   log "Waiting for source cookie file to be created and written..."
   local waited=0
   local max_wait=120
   
   while [ $waited -lt $max_wait ]; do
-    # Check if file exists AND has content (not just created empty)
+    # Check if file exists AND has content
     if [ -f "$cookie_src" ] && [ -s "$cookie_src" ]; then
+      # Get actual size
       local size
-      size=$(wc -c < "$cookie_src" 2>/dev/null)
-      log "✓ Cookie file ready: $cookie_src ($size bytes)"
-      break
-    fi
-    
-    # Show progress every 10 seconds
-    if [ $((waited % 10)) -eq 0 ] && [ $waited -gt 0 ]; then
-      log "Waiting for cookie... ($waited/${max_wait}s)"
+      size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
+      
+      # Verify size
+      if [ "$size" -gt 0 ]; then
+        log "✓ Cookie file ready: $cookie_src ($size bytes)"
+        break
+      fi
     fi
     
     sleep 1
     waited=$((waited + 1))
   done
 
-  # Check if we actually got a valid source file
+  # Check if we got a valid source file
   if [ ! -f "$cookie_src" ] || [ ! -s "$cookie_src" ]; then
-    log "ERROR: Source cookie file did not appear or is empty after ${max_wait}s"
+    log "ERROR: Source cookie file did not appear after ${max_wait}s"
     return 1
   fi
 
-  # Verify source is readable
-  if [ ! -r "$cookie_src" ]; then
-    log "ERROR: Source cookie file not readable: $cookie_src"
-    return 1
-  fi
-
-  # Get source file size
+  # Get source file size - CRITICAL: Store in variable
   local src_size
-  src_size=$(wc -c < "$cookie_src" 2>/dev/null)
+  src_size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
+  
+  if [ -z "$src_size" ] || [ "$src_size" -eq 0 ]; then
+    log "ERROR: Cookie file size is 0 or cannot be determined"
+    return 1
+  fi
 
-  log "Copying cookie ($src_size bytes) to shared volume..."
+  log "Copying cookie file ($src_size bytes) to shared volume..."
+  log "  Source: $cookie_src"
+  log "  Destination: $cookie_dest"
 
-  # Copy with multiple fallback methods
+  # Remove destination first if it exists
+  rm -f "$cookie_dest" 2>/dev/null || true
+
+  # === METHOD 1: Use dd (most reliable for binary files) ===
+  log "Attempting copy with /bin/busybox dd..."
+  if /bin/busybox dd if="$cookie_src" of="$cookie_dest" bs=32 count=1 2>/dev/null; then
+    local dst_size
+    dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
+    
+    if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
+      chmod 644 "$cookie_dest" 2>/dev/null || true
+      log "✓ Cookie copied successfully with dd: $cookie_dest ($dst_size bytes)"
+      
+      # Copy to additional locations
+      copy_to_additional_locations "$cookie_src"
+      return 0
+    fi
+  fi
+
+  # === METHOD 2: Use cat with output redirection (EOF write method) ===
+  log "Attempting copy with cat EOF method..."
+  (
+    /bin/busybox cat "$cookie_src"
+  ) > "$cookie_dest" 2>/dev/null
+  
+  local dst_size
+  dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
+  
+  if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
+    chmod 644 "$cookie_dest" 2>/dev/null || true
+    log "✓ Cookie copied successfully with cat EOF: $cookie_dest ($dst_size bytes)"
+    
+    # Copy to additional locations
+    copy_to_additional_locations "$cookie_src"
+    return 0
+  fi
+
+  # === METHOD 3: Use busybox cp ===
+  log "Attempting copy with /bin/busybox cp..."
   if /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
-    # Method 1 worked, verify destination
     local dst_size
-    dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
+    dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
     
-    if [ "$dst_size" -gt 0 ] && [ "$dst_size" -eq "$src_size" ]; then
+    if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
       chmod 644 "$cookie_dest" 2>/dev/null || true
-      log "✓ Cookie copied successfully: $cookie_dest ($dst_size bytes)"
+      log "✓ Cookie copied successfully with cp: $cookie_dest ($dst_size bytes)"
+      
+      # Copy to additional locations
+      copy_to_additional_locations "$cookie_src"
       return 0
     fi
   fi
 
-  # Method 2: Try cat
-  if /bin/busybox cat "$cookie_src" > "$cookie_dest" 2>/dev/null; then
-    local dst_size
-    dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
-    
-    if [ "$dst_size" -gt 0 ] && [ "$dst_size" -eq "$src_size" ]; then
-      chmod 644 "$cookie_dest" 2>/dev/null || true
-      log "✓ Cookie copied with cat: $cookie_dest ($dst_size bytes)"
-      return 0
+  # === METHOD 4: Use hexdump and printf (manual byte write) ===
+  log "Attempting copy with hexdump method..."
+  if command -v /bin/busybox >/dev/null 2>&1; then
+    # Try to read and write using busybox
+    rm -f "$cookie_dest"
+    if /bin/busybox dd if="$cookie_src" of="$cookie_dest" 2>/dev/null; then
+      local dst_size
+      dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
+      
+      if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
+        chmod 644 "$cookie_dest" 2>/dev/null || true
+        log "✓ Cookie copied successfully with final dd attempt: $cookie_dest ($dst_size bytes)"
+        
+        # Copy to additional locations
+        copy_to_additional_locations "$cookie_src"
+        return 0
+      fi
     fi
   fi
 
-  # Method 3: Try dd
-  if /bin/busybox dd if="$cookie_src" of="$cookie_dest" 2>/dev/null; then
-    local dst_size
-    dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
-    
-    if [ "$dst_size" -gt 0 ] && [ "$dst_size" -eq "$src_size" ]; then
-      chmod 644 "$cookie_dest" 2>/dev/null || true
-      log "✓ Cookie copied with dd: $cookie_dest ($dst_size bytes)"
-      return 0
-    fi
-  fi
-
+  # All methods failed
   log "ERROR: Failed to copy cookie using all methods"
+  log "Source: $cookie_src (size: $src_size bytes)"
+  log "Destination: $cookie_dest"
+  
+  # Log what methods are available
+  log "Available tools:"
+  /bin/busybox dd --version >/dev/null 2>&1 && log "  ✓ dd available" || log "  ✗ dd not available"
+  /bin/busybox cp --version >/dev/null 2>&1 && log "  ✓ cp available" || log "  ✗ cp not available"
+  /bin/busybox cat --version >/dev/null 2>&1 && log "  ✓ cat available" || log "  ✗ cat not available"
+  
   return 1
+}
+
+# ============================================================================
+# FUNCTION: copy_to_additional_locations
+# Purpose: Copy cookie to other required locations
+# ============================================================================
+copy_to_additional_locations() {
+  local cookie_src="$1"
+  
+  if [ ! -f "$cookie_src" ]; then
+    return 0
+  fi
+  
+  local src_size
+  src_size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
+  
+  # List of additional locations
+  local additional_locations=(
+    "/run/lucid/onion/control_auth_cookie"
+    "/tmp/control_auth_cookie"
+  )
+  
+  for dest in "${additional_locations[@]}"; do
+    # Skip if destination is same as source
+    [ "$dest" = "$cookie_src" ] && continue
+    
+    local dest_dir="${dest%/*}"
+    
+    # Create directory
+    mkdir -p "$dest_dir" 2>/dev/null || continue
+    
+    # Remove old destination
+    rm -f "$dest" 2>/dev/null || true
+    
+    # Copy file
+    if /bin/busybox dd if="$cookie_src" of="$dest" bs=32 count=1 2>/dev/null; then
+      local dst_size
+      dst_size=$(/bin/busybox wc -c < "$dest" 2>/dev/null)
+      
+      if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
+        chmod 644 "$dest" 2>/dev/null || true
+        log "✓ Cookie also copied to: $dest ($dst_size bytes)"
+      fi
+    fi
+  done
 }
 
 # ============================================================================
