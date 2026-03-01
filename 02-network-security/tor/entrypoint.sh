@@ -274,8 +274,11 @@ wait_for_file() {
   
   local elapsed=0
   while [ $elapsed -lt "$timeout" ]; do
+    # Check if file EXISTS AND has content (not just created empty)
     if [ -f "$filepath" ] && [ -s "$filepath" ]; then
-      log "✓ File ready: $filepath"
+      local size
+      size=$(wc -c < "$filepath" 2>/dev/null)
+      log "✓ File ready: $filepath ($size bytes)"
       return 0
     fi
     
@@ -531,108 +534,94 @@ copy_cookie_to_shared() {
   local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
 
   log "Preparing to copy control cookie to shared volume..."
-  log "  Source: $cookie_src"
-  log "  Destination: $cookie_dest"
 
-  # Extract destination directory using pure bash
+  # Get destination directory
   local dest_dir="${cookie_dest%/*}"
 
-  # Ensure destination directory exists
-  if ! mkdir -p "$dest_dir" 2>/dev/null; then
-    log "WARNING: Cannot create destination directory: $dest_dir"
-    return 0  # Non-fatal, allow Tor to continue
-  fi
+  # Create destination directory
+  mkdir -p "$dest_dir" 2>/dev/null || true
 
-  # Wait for source cookie file (up to 60 seconds)
-  log "Waiting for source cookie file..."
+  # CRITICAL: Wait for source cookie file to be CREATED AND WRITTEN
+  # Tor creates the file first, then writes content to it
+  log "Waiting for source cookie file to be created and written..."
   local waited=0
-  local max_wait=60
+  local max_wait=120
   
-  while [ ! -f "$cookie_src" ] && [ $waited -lt $max_wait ]; do
+  while [ $waited -lt $max_wait ]; do
+    # Check if file exists AND has content (not just created empty)
+    if [ -f "$cookie_src" ] && [ -s "$cookie_src" ]; then
+      local size
+      size=$(wc -c < "$cookie_src" 2>/dev/null)
+      log "✓ Cookie file ready: $cookie_src ($size bytes)"
+      break
+    fi
+    
+    # Show progress every 10 seconds
+    if [ $((waited % 10)) -eq 0 ] && [ $waited -gt 0 ]; then
+      log "Waiting for cookie... ($waited/${max_wait}s)"
+    fi
+    
     sleep 1
     waited=$((waited + 1))
   done
 
-  # Verify source cookie exists and is readable
-  if [ ! -f "$cookie_src" ]; then
-    log "WARNING: Source cookie file not found: $cookie_src"
-    return 0  # Non-fatal
+  # Check if we actually got a valid source file
+  if [ ! -f "$cookie_src" ] || [ ! -s "$cookie_src" ]; then
+    log "ERROR: Source cookie file did not appear or is empty after ${max_wait}s"
+    return 1
   fi
 
+  # Verify source is readable
   if [ ! -r "$cookie_src" ]; then
-    log "WARNING: Source cookie file not readable: $cookie_src"
-    return 0  # Non-fatal
+    log "ERROR: Source cookie file not readable: $cookie_src"
+    return 1
   fi
 
-  # Check source file size
+  # Get source file size
   local src_size
-  src_size=$(wc -c < "$cookie_src" 2>/dev/null || echo 0)
-  
-  if [ "$src_size" -eq 0 ]; then
-    log "WARNING: Source cookie file is empty: $cookie_src"
-    return 0  # Non-fatal
-  fi
+  src_size=$(wc -c < "$cookie_src" 2>/dev/null)
 
-  log "Source cookie verified - size: $src_size bytes"
+  log "Copying cookie ($src_size bytes) to shared volume..."
 
-  # Copy file using /bin/busybox cp
-  log "Copying cookie file..."
-  if ! /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
-    log "WARNING: Failed to copy cookie using busybox cp"
+  # Copy with multiple fallback methods
+  if /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
+    # Method 1 worked, verify destination
+    local dst_size
+    dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
     
-    # Fallback: use /bin/busybox cat
-    log "Trying fallback copy method..."
-    if ! /bin/busybox cat "$cookie_src" > "$cookie_dest" 2>/dev/null; then
-      log "WARNING: Failed to copy cookie using cat method"
-      return 0  # Non-fatal
+    if [ "$dst_size" -gt 0 ] && [ "$dst_size" -eq "$src_size" ]; then
+      chmod 644 "$cookie_dest" 2>/dev/null || true
+      log "✓ Cookie copied successfully: $cookie_dest ($dst_size bytes)"
+      return 0
     fi
   fi
 
-  # Verify destination file was created
-  if [ ! -f "$cookie_dest" ]; then
-    log "ERROR: Destination file was not created: $cookie_dest"
-    return 0  # Non-fatal
-  fi
-
-  # Verify destination file has content (CRITICAL!)
-  local dst_size
-  dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
-
-  if [ "$dst_size" -eq 0 ]; then
-    log "ERROR: Destination cookie file is EMPTY after copy!"
-    log "Source size: $src_size bytes"
-    log "Destination size: $dst_size bytes"
-    log "This indicates a copy failure - the file was created but is empty"
+  # Method 2: Try cat
+  if /bin/busybox cat "$cookie_src" > "$cookie_dest" 2>/dev/null; then
+    local dst_size
+    dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
     
-    # Try one more time with different method
-    log "Attempting emergency copy with dd..."
-    if /bin/busybox dd if="$cookie_src" of="$cookie_dest" 2>/dev/null; then
-      dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
-      if [ "$dst_size" -gt 0 ]; then
-        log "✓ Emergency copy succeeded with dd: $cookie_dest ($dst_size bytes)"
-        chmod 644 "$cookie_dest" 2>/dev/null || true
-        return 0
-      fi
+    if [ "$dst_size" -gt 0 ] && [ "$dst_size" -eq "$src_size" ]; then
+      chmod 644 "$cookie_dest" 2>/dev/null || true
+      log "✓ Cookie copied with cat: $cookie_dest ($dst_size bytes)"
+      return 0
     fi
+  fi
+
+  # Method 3: Try dd
+  if /bin/busybox dd if="$cookie_src" of="$cookie_dest" 2>/dev/null; then
+    local dst_size
+    dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
     
-    log "ERROR: All copy attempts failed - file remains empty"
-    return 0  # Non-fatal but log the error
+    if [ "$dst_size" -gt 0 ] && [ "$dst_size" -eq "$src_size" ]; then
+      chmod 644 "$cookie_dest" 2>/dev/null || true
+      log "✓ Cookie copied with dd: $cookie_dest ($dst_size bytes)"
+      return 0
+    fi
   fi
 
-  # Verify sizes match
-  if [ "$src_size" -ne "$dst_size" ]; then
-    log "WARNING: Source and destination sizes don't match"
-    log "  Source: $src_size bytes"
-    log "  Destination: $dst_size bytes"
-  fi
-
-  # Set proper permissions (readable by other services)
-  if ! chmod 644 "$cookie_dest" 2>/dev/null; then
-    log "WARNING: Could not set permissions on $cookie_dest"
-  fi
-
-  log "✓ Cookie copied successfully: $cookie_dest ($dst_size bytes)"
-  return 0
+  log "ERROR: Failed to copy cookie using all methods"
+  return 1
 }
 
 # ============================================================================
