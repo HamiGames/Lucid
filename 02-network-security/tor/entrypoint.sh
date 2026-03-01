@@ -316,51 +316,27 @@ ctl() {
     return 1
   fi
 
-  # Convert cookie file to hex using ONLY tools available in distroless
-  # Distroless has /bin/busybox with od, xxd, and tr built-in
-  local cookie_hex=""
-
-  # Primary method: busybox od (available in ALL distroless containers)
-  # od -A n -t x1 outputs hex bytes separated by spaces: "1f 2a 3b 4c"
-  # tr -d ' \n' removes spaces and newlines: "1f2a3b4c"
+  # Extract cookie hex with proper spacing cleanup
+  # od outputs hex bytes with spacing, we need to clean it up properly
+  local cookie_hex
   cookie_hex=$(/bin/busybox od -A n -t x1 "$COOKIE_FILE" 2>/dev/null | \
-    /bin/busybox tr -d ' \n' 2>/dev/null)
+    /bin/busybox sed 's/[[:space:]]\+/ /g' | \
+    /bin/busybox sed 's/^ //; s/ $//' | \
+    /bin/busybox tr -d ' \n')
 
   if [ -z "$cookie_hex" ]; then
-    # Fallback method: busybox xxd
-    if /bin/busybox xxd -p "$COOKIE_FILE" >/dev/null 2>&1; then
-      cookie_hex=$(/bin/busybox xxd -p "$COOKIE_FILE" 2>/dev/null | \
-        /bin/busybox tr -d '\n' 2>/dev/null)
-    fi
-  fi
-
-  if [ -z "$cookie_hex" ]; then
-    # Last resort: use printf and read file byte by byte
-    # This is slow but works with just bash builtins
-    local byte_val
-    while IFS= read -r -n 1 -d '' byte_val; do
-      /bin/busybox printf '%02x' "'$byte_val"
-    done < "$COOKIE_FILE"
-    cookie_hex=$(/bin/busybox printf '%s\n' "$cookie_hex")
-  fi
-
-  # Validate we got hex output
-  if [ -z "$cookie_hex" ]; then
-    log "ERROR: Failed to convert cookie file to hex using all methods"
-    log "Cookie file: $COOKIE_FILE (size: $(wc -c < "$COOKIE_FILE") bytes)"
+    log "ERROR: Failed to extract valid hex from cookie file"
     return 1
   fi
 
-  # Validate hex format (should be continuous hex chars)
-  if ! echo "$cookie_hex" | /bin/busybox grep -qE '^[0-9a-fA-F]+$'; then
-    log "ERROR: Invalid hex format from cookie conversion"
+  # Validate hex format (should be 60-80 hex characters for 32-byte cookie)
+  if ! echo "$cookie_hex" | /bin/busybox grep -qE '^[0-9a-fA-F]{60,80}$'; then
+    log "ERROR: Invalid cookie hex format (got ${#cookie_hex} chars)"
     return 1
   fi
 
-  # Send authenticated command to Tor control port
-  # AUTHENTICATE: send hex-encoded cookie
-  # Command: user's command
-  # QUIT: close connection cleanly
+  # Send command to Tor control port with proper authentication
+  # Format: AUTHENTICATE <hex_cookie>\r\n<command>\r\nQUIT\r\n
   {
     printf 'AUTHENTICATE %s\r\n' "$cookie_hex"
     printf '%s\r\n' "$cmd"
@@ -409,9 +385,31 @@ wait_for_bootstrap() {
   log "This may take 30 seconds to 5 minutes depending on network conditions"
   
   local i=0
-  local max_attempts=300  # 10 minutes maximum (300 * 2 second polls)
+  local max_attempts=300  # 10 minutes maximum
   local last_progress=""
   local cookie_failed=0
+
+  # Validate cookie before starting
+  if [ ! -s "$COOKIE_FILE" ]; then
+    log "ERROR: Cookie file is missing or empty before bootstrap"
+    return 1
+  fi
+
+  # Try to extract cookie hex for validation
+  local test_hex
+  test_hex=$(/bin/busybox od -A n -t x1 "$COOKIE_FILE" 2>/dev/null | \
+    /bin/busybox sed 's/[[:space:]]\+/ /g' | \
+    /bin/busybox sed 's/^ //; s/ $//' | \
+    /bin/busybox tr -d ' \n')
+
+  if [ -z "$test_hex" ] || ! echo "$test_hex" | /bin/busybox grep -qE '^[0-9a-fA-F]{60,80}$'; then
+    log "ERROR: Cookie file contains invalid hex data"
+    log "Cookie file size: $(wc -c < "$COOKIE_FILE") bytes"
+    log "Cookie hex length: ${#test_hex} chars"
+    return 1
+  fi
+
+  log "DEBUG: Cookie validation passed (${#test_hex} hex chars)"
 
   while [ $i -lt "$max_attempts" ]; do
     # Query bootstrap status from Tor
@@ -430,8 +428,8 @@ wait_for_bootstrap() {
       # If cookie problems persist, something is very wrong
       if [ $cookie_failed -gt 20 ]; then
         log "FATAL: Cannot reach Tor control port after many attempts"
-        log "Check if Tor process is running: ps aux | grep tor"
-        log "Check cookie file: ls -la /var/lib/tor/control_auth_cookie"
+        log "Cookie file exists: $([ -f "$COOKIE_FILE" ] && echo 'yes' || echo 'no')"
+        log "Cookie file size: $(wc -c < "$COOKIE_FILE") bytes"
         return 1
       fi
       
@@ -454,7 +452,6 @@ wait_for_bootstrap() {
     if ! echo "$cleaned" | /bin/busybox grep -q 'PROGRESS'; then
       if [ $((i % 15)) -eq 0 ]; then
         log "WARNING: Invalid response from control port"
-        log "Response was: $cleaned"
       fi
       sleep 2
       i=$((i + 1))
@@ -537,75 +534,105 @@ copy_cookie_to_shared() {
   log "  Source: $cookie_src"
   log "  Destination: $cookie_dest"
 
-  # Extract destination directory using pure bash (no external dependencies)
+  # Extract destination directory using pure bash
   local dest_dir="${cookie_dest%/*}"
 
-  # Try to create destination directory (best-effort)
+  # Ensure destination directory exists
   if ! mkdir -p "$dest_dir" 2>/dev/null; then
-    log "WARNING: Could not create destination directory: $dest_dir"
-    log "Continuing anyway - direct mount may work"
+    log "WARNING: Cannot create destination directory: $dest_dir"
+    return 0  # Non-fatal, allow Tor to continue
   fi
 
-  # Check if destination directory is writable
-  if [ ! -w "$dest_dir" ] 2>/dev/null; then
-    log "WARNING: Destination directory is not writable: $dest_dir"
-  fi
-
-  # Wait for source cookie file to be created (up to 60 seconds)
-  local max_wait=60
+  # Wait for source cookie file (up to 60 seconds)
+  log "Waiting for source cookie file..."
   local waited=0
+  local max_wait=60
+  
   while [ ! -f "$cookie_src" ] && [ $waited -lt $max_wait ]; do
     sleep 1
     waited=$((waited + 1))
   done
 
-  # Verify source cookie exists
+  # Verify source cookie exists and is readable
   if [ ! -f "$cookie_src" ]; then
     log "WARNING: Source cookie file not found: $cookie_src"
-    log "Continuing - tunnel-tools may access directly or fail gracefully"
-    return 1
+    return 0  # Non-fatal
   fi
 
-  # Verify source cookie is readable and non-empty
   if [ ! -r "$cookie_src" ]; then
-    log "WARNING: Source cookie file is not readable: $cookie_src"
-    return 1
+    log "WARNING: Source cookie file not readable: $cookie_src"
+    return 0  # Non-fatal
   fi
 
-  if [ ! -s "$cookie_src" ]; then
+  # Check source file size
+  local src_size
+  src_size=$(wc -c < "$cookie_src" 2>/dev/null || echo 0)
+  
+  if [ "$src_size" -eq 0 ]; then
     log "WARNING: Source cookie file is empty: $cookie_src"
-    return 1
+    return 0  # Non-fatal
   fi
 
-  log "Source cookie verified - copying to shared volume..."
+  log "Source cookie verified - size: $src_size bytes"
 
-  # Attempt copy with busybox cp (preferred, more reliable)
-  if /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
-    # Set permissions so tunnel-tools (non-root user) can read
-    if chmod 644 "$cookie_dest" 2>/dev/null; then
-      log "✓ Cookie copied and readable: $cookie_dest (644)"
-      return 0
-    else
-      log "WARNING: Cookie copied but could not set readable permissions"
-      log "Continuing - tunnel-tools may still work with current permissions"
-      return 0
+  # Copy file using /bin/busybox cp
+  log "Copying cookie file..."
+  if ! /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
+    log "WARNING: Failed to copy cookie using busybox cp"
+    
+    # Fallback: use /bin/busybox cat
+    log "Trying fallback copy method..."
+    if ! /bin/busybox cat "$cookie_src" > "$cookie_dest" 2>/dev/null; then
+      log "WARNING: Failed to copy cookie using cat method"
+      return 0  # Non-fatal
     fi
   fi
 
-  # Fallback: try cat method if busybox cp failed
-  log "Busybox cp failed, trying cat method..."
-  if /bin/busybox cat "$cookie_src" > "$cookie_dest" 2>/dev/null; then
-    chmod 644 "$cookie_dest" 2>/dev/null || true
-    log "✓ Cookie copied via cat method: $cookie_dest"
-    return 0
+  # Verify destination file was created
+  if [ ! -f "$cookie_dest" ]; then
+    log "ERROR: Destination file was not created: $cookie_dest"
+    return 0  # Non-fatal
   fi
 
-  # Both methods failed
-  log "ERROR: Failed to copy cookie to shared volume"
-  log "  - cp method failed"
-  log "  - cat method failed"
-  log "Continuing anyway - tunnel-tools will try direct mount or fail gracefully"
-  return 0  # Non-fatal error - allow Tor to continue running
+  # Verify destination file has content (CRITICAL!)
+  local dst_size
+  dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
+
+  if [ "$dst_size" -eq 0 ]; then
+    log "ERROR: Destination cookie file is EMPTY after copy!"
+    log "Source size: $src_size bytes"
+    log "Destination size: $dst_size bytes"
+    log "This indicates a copy failure - the file was created but is empty"
+    
+    # Try one more time with different method
+    log "Attempting emergency copy with dd..."
+    if /bin/busybox dd if="$cookie_src" of="$cookie_dest" 2>/dev/null; then
+      dst_size=$(wc -c < "$cookie_dest" 2>/dev/null || echo 0)
+      if [ "$dst_size" -gt 0 ]; then
+        log "✓ Emergency copy succeeded with dd: $cookie_dest ($dst_size bytes)"
+        chmod 644 "$cookie_dest" 2>/dev/null || true
+        return 0
+      fi
+    fi
+    
+    log "ERROR: All copy attempts failed - file remains empty"
+    return 0  # Non-fatal but log the error
+  fi
+
+  # Verify sizes match
+  if [ "$src_size" -ne "$dst_size" ]; then
+    log "WARNING: Source and destination sizes don't match"
+    log "  Source: $src_size bytes"
+    log "  Destination: $dst_size bytes"
+  fi
+
+  # Set proper permissions (readable by other services)
+  if ! chmod 644 "$cookie_dest" 2>/dev/null; then
+    log "WARNING: Could not set permissions on $cookie_dest"
+  fi
+
+  log "✓ Cookie copied successfully: $cookie_dest ($dst_size bytes)"
+  return 0
 }
 
 # ============================================================================
