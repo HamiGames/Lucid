@@ -1,0 +1,101 @@
+version: "3.8"
+
+services:
+  # Swagger UI service for API documentation
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: lucid-swagger-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - SWAGGER_JSON=/app/openapi/api-gateway.yaml
+      - BASE_URL=/
+      - API_URL=https://api.lucid-blockchain.org/api/v1
+    volumes:
+      - ./openapi:/app/openapi:ro
+      - ./swagger-ui-config.yaml:/app/config.yaml:ro
+    networks:
+      - lucid-docs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ReDoc service for alternative documentation
+  redoc:
+    image: redocly/redoc:latest
+    container_name: lucid-redoc
+    ports:
+      - "8081:8080"
+    environment:
+      - SPEC_URL=/app/openapi/api-gateway.yaml
+    volumes:
+      - ./openapi:/app/openapi:ro
+    networks:
+      - lucid-docs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx reverse proxy for documentation
+  nginx:
+    image: nginx:alpine
+    container_name: lucid-docs-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./openapi:/usr/share/nginx/html/openapi:ro
+      - ./swagger-ui:/usr/share/nginx/html/swagger-ui:ro
+      - ./redoc:/usr/share/nginx/html/redoc:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - lucid-docs
+    restart: unless-stopped
+    depends_on:
+      - swagger-ui
+      - redoc
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Documentation generator service
+  docs-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: lucid-docs-generator
+    volumes:
+      - ./openapi:/app/openapi:ro
+      - ./generated:/app/generated
+      - ./swagger-ui:/app/swagger-ui
+      - ./redoc:/app/redoc
+    networks:
+      - lucid-docs
+    command: ["node", "generate-docs.js"]
+    restart: "no"
+
+networks:
+  lucid-docs:
+    driver: bridge
+    name: lucid-docs-network
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
+
+volumes:
+  docs-data:
+    driver: local

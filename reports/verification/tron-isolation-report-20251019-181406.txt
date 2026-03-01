@@ -1,0 +1,39 @@
+TRON Isolation Verification Report
+Generated: Sun, Oct 19, 2025  6:14:07 PM
+Project Root: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid
+
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/blockchain_anchor.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/core/blockchain_engine.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/core/models.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/core/__init__.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/deployment/contract_deployment.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/governance/integrate_timelock.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/governance/spin_up_timelock.py contains 'payment'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/blockchain/__init__.py contains 'payment'
+Blockchain core scan: 8 violations found in 708 files
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/api/tron_network.py contains blockchain reference 'blockchain'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/api/usdt.py contains blockchain reference 'blockchain'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/main.py contains blockchain reference 'blockchain'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/tron_payment_service.py contains blockchain reference 'blockchain'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/tron_service.py contains blockchain reference 'blockchain'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/api/tron_network.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/api/usdt.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/main.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/models/transaction.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/models/wallet.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/services/tron_client.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/services/trx_staking.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/services/usdt_manager.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/services/wallet_manager.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/tron_payment_service.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/tron_service.py contains blockchain reference 'block'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/api/tron_network.py contains blockchain reference 'node'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/services/payout_router.py contains blockchain reference 'node'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/services/tron_client.py contains blockchain reference 'node'
+VIOLATION: /c/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/payment-systems/tron/api/tron_network.py contains blockchain reference 'peer'
+Payment systems scan: 12 TRON files found, 20 blockchain references
+✓ blockchain/core exists
+✓ blockchain/api exists
+✓ payment-systems/tron exists
+✓ No TRON/payment files in blockchain directory
+Directory structure: 4/4 checks passed

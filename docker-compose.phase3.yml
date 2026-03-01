@@ -1,0 +1,347 @@
+# Phase 3 Container Builds - All Application Services
+# Step 32: Phase 3 Container Builds
+# Combines Session Management, RDP Services, and Node Management
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # SESSION MANAGEMENT SERVICES (5 containers)
+  # ===========================================
+  
+  # Session Pipeline Manager
+  session-pipeline:
+    image: pickme/lucid-session-pipeline:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-session-pipeline
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVICE_NAME=lucid-session-pipeline
+      - PORT=8083
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Session Recorder
+  session-recorder:
+    image: pickme/lucid-session-recorder:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-session-recorder
+    ports:
+      - "8084:8084"
+    environment:
+      - SERVICE_NAME=lucid-session-recorder
+      - PORT=8084
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Session Processor
+  session-processor:
+    image: pickme/lucid-session-processor:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-session-processor
+    ports:
+      - "8085:8085"
+    environment:
+      - SERVICE_NAME=lucid-session-processor
+      - PORT=8085
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Session Storage
+  session-storage:
+    image: pickme/lucid-session-storage:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-session-storage
+    ports:
+      - "8086:8086"
+    environment:
+      - SERVICE_NAME=lucid-session-storage
+      - PORT=8086
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    volumes:
+      - session_data:/data/sessions
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Session API Gateway
+  session-api:
+    image: pickme/lucid-session-api:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-session-api
+    ports:
+      - "8087:8087"
+    environment:
+      - SERVICE_NAME=lucid-session-api
+      - PORT=8087
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+      - session-pipeline
+      - session-recorder
+      - session-processor
+      - session-storage
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================
+  # RDP SERVICES (4 containers)
+  # ===========================================
+
+  # RDP Server Manager
+  rdp-server-manager:
+    image: pickme/lucid-rdp-server-manager:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-rdp-server-manager
+    ports:
+      - "8090:8090"
+    environment:
+      - SERVICE_NAME=lucid-rdp-server-manager
+      - PORT=8090
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # XRDP Integration
+  rdp-xrdp:
+    image: pickme/lucid-xrdp:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-xrdp
+    ports:
+      - "8091:8091"
+    environment:
+      - SERVICE_NAME=lucid-xrdp
+      - PORT=8091
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+      - rdp-server-manager
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RDP Session Controller
+  rdp-controller:
+    image: pickme/lucid-rdp-controller:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-rdp-controller
+    ports:
+      - "8092:8092"
+    environment:
+      - SERVICE_NAME=lucid-rdp-controller
+      - PORT=8092
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+      - rdp-server-manager
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RDP Resource Monitor
+  rdp-monitor:
+    image: pickme/lucid-rdp-monitor:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-rdp-monitor
+    ports:
+      - "8093:8093"
+    environment:
+      - SERVICE_NAME=lucid-rdp-monitor
+      - PORT=8093
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================
+  # NODE MANAGEMENT (1 container)
+  # ===========================================
+
+  # Node Management Service
+  node-management:
+    image: pickme/lucid-node-management:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-node-management
+    ports:
+      - "8095:8095"
+    environment:
+      - SERVICE_NAME=lucid-node-management
+      - PORT=8095
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - MONGODB_URI=mongodb://mongodb:27017/lucid
+      - REDIS_URI=redis://redis:6379/0
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===========================================
+  # EXTERNAL DEPENDENCIES
+  # ===========================================
+
+  # MongoDB Database
+  mongodb:
+    image: pickme/lucid-mongodb:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid_password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: pickme/lucid-redis:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  session_data:
+  mongodb_data:
+  redis_data:
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  lucid-dev:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

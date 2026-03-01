@@ -1,0 +1,953 @@
+# Path: infrastructure/docker/compose/docker-compose.prod.yml
+# Production infrastructure Docker Compose file for Lucid project
+# Production-ready configuration with high availability, security, and monitoring
+
+version: '3.8'
+
+services:
+  # Load Balancer (Nginx)
+  lucid-loadbalancer:
+    image: nginx:alpine
+    container_name: lucid-loadbalancer
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - lucid_nginx_logs:/var/log/nginx
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-api-1
+      - lucid-api-2
+      - lucid-sessions-1
+      - lucid-sessions-2
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # MongoDB Database Cluster (Production)
+  lucid-mongodb-1:
+    image: mongo:7.0
+    container_name: lucid-mongodb-1
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+      MONGO_INITDB_DATABASE: ${LUCID_MONGODB_DATABASE:-lucid}
+    volumes:
+      - lucid_mongodb_1_data:/data/db
+      - lucid_mongodb_1_config:/data/configdb
+      - ./mongodb/mongod-prod.conf:/etc/mongod.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["mongod", "--config", "/etc/mongod.conf", "--replSet", "lucid-replica-set"]
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  lucid-mongodb-2:
+    image: mongo:7.0
+    container_name: lucid-mongodb-2
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+      MONGO_INITDB_DATABASE: ${LUCID_MONGODB_DATABASE:-lucid}
+    volumes:
+      - lucid_mongodb_2_data:/data/db
+      - lucid_mongodb_2_config:/data/configdb
+      - ./mongodb/mongod-prod.conf:/etc/mongod.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["mongod", "--config", "/etc/mongod.conf", "--replSet", "lucid-replica-set"]
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  lucid-mongodb-3:
+    image: mongo:7.0
+    container_name: lucid-mongodb-3
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LUCID_MONGODB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+      MONGO_INITDB_DATABASE: ${LUCID_MONGODB_DATABASE:-lucid}
+    volumes:
+      - lucid_mongodb_3_data:/data/db
+      - lucid_mongodb_3_config:/data/configdb
+      - ./mongodb/mongod-prod.conf:/etc/mongod.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["mongod", "--config", "/etc/mongod.conf", "--replSet", "lucid-replica-set"]
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Redis Cache Cluster (Production)
+  lucid-redis-master:
+    image: redis:7-alpine
+    container_name: lucid-redis-master
+    restart: unless-stopped
+    volumes:
+      - lucid_redis_master_data:/data
+      - ./redis/redis-master.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+  lucid-redis-slave:
+    image: redis:7-alpine
+    container_name: lucid-redis-slave
+    restart: unless-stopped
+    volumes:
+      - lucid_redis_slave_data:/data
+      - ./redis/redis-slave.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    depends_on:
+      - lucid-redis-master
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+  # PostgreSQL Cluster (Production)
+  lucid-postgres-master:
+    image: postgres:15-alpine
+    container_name: lucid-postgres-master
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${LUCID_POSTGRES_DB:-lucid}
+      POSTGRES_USER: ${LUCID_POSTGRES_USER:-lucid}
+      POSTGRES_PASSWORD: ${LUCID_POSTGRES_PASSWORD:-lucid_password}
+      POSTGRES_REPLICATION_USER: ${LUCID_POSTGRES_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${LUCID_POSTGRES_REPLICATION_PASSWORD:-replicator_password}
+    volumes:
+      - lucid_postgres_master_data:/var/lib/postgresql/data
+      - ./postgres/postgresql-master.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  lucid-postgres-slave:
+    image: postgres:15-alpine
+    container_name: lucid-postgres-slave
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${LUCID_POSTGRES_DB:-lucid}
+      POSTGRES_USER: ${LUCID_POSTGRES_USER:-lucid}
+      POSTGRES_PASSWORD: ${LUCID_POSTGRES_PASSWORD:-lucid_password}
+      POSTGRES_REPLICATION_USER: ${LUCID_POSTGRES_REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${LUCID_POSTGRES_REPLICATION_PASSWORD:-replicator_password}
+    volumes:
+      - lucid_postgres_slave_data:/var/lib/postgresql/data
+      - ./postgres/postgresql-slave.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    depends_on:
+      - lucid-postgres-master
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Elasticsearch Cluster (Production)
+  lucid-elasticsearch-1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: lucid-elasticsearch-1
+    restart: unless-stopped
+    environment:
+      - node.name=elasticsearch-1
+      - cluster.name=lucid-cluster
+      - discovery.seed_hosts=lucid-elasticsearch-2,lucid-elasticsearch-3
+      - cluster.initial_master_nodes=elasticsearch-1,elasticsearch-2,elasticsearch-3
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    volumes:
+      - lucid_elasticsearch_1_data:/usr/share/elasticsearch/data
+    networks:
+      - lucid-infra-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  lucid-elasticsearch-2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: lucid-elasticsearch-2
+    restart: unless-stopped
+    environment:
+      - node.name=elasticsearch-2
+      - cluster.name=lucid-cluster
+      - discovery.seed_hosts=lucid-elasticsearch-1,lucid-elasticsearch-3
+      - cluster.initial_master_nodes=elasticsearch-1,elasticsearch-2,elasticsearch-3
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    volumes:
+      - lucid_elasticsearch_2_data:/usr/share/elasticsearch/data
+    networks:
+      - lucid-infra-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  lucid-elasticsearch-3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: lucid-elasticsearch-3
+    restart: unless-stopped
+    environment:
+      - node.name=elasticsearch-3
+      - cluster.name=lucid-cluster
+      - discovery.seed_hosts=lucid-elasticsearch-1,lucid-elasticsearch-2
+      - cluster.initial_master_nodes=elasticsearch-1,elasticsearch-2,elasticsearch-3
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    volumes:
+      - lucid_elasticsearch_3_data:/usr/share/elasticsearch/data
+    networks:
+      - lucid-infra-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  # Kibana (Production)
+  lucid-kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: lucid-kibana
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+      ELASTICSEARCH_USERNAME: ${LUCID_ELASTICSEARCH_USERNAME:-elastic}
+      ELASTICSEARCH_PASSWORD: ${LUCID_ELASTICSEARCH_PASSWORD:-elastic_password}
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-elasticsearch-1
+      - lucid-elasticsearch-2
+      - lucid-elasticsearch-3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Prometheus (Production)
+  lucid-prometheus:
+    image: prom/prometheus:latest
+    container_name: lucid-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus-prod.yml:/etc/prometheus/prometheus.yml:ro
+      - lucid_prometheus_data:/prometheus
+    networks:
+      - lucid-infra-prod-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Grafana (Production)
+  lucid-grafana:
+    image: grafana/grafana:latest
+    container_name: lucid-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${LUCID_GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_SECRET_KEY: ${LUCID_GRAFANA_SECRET_KEY:-lucid_grafana_secret}
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: lucid-postgres-master:5432
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: grafana
+      GF_DATABASE_PASSWORD: ${LUCID_GRAFANA_DB_PASSWORD:-grafana_password}
+    volumes:
+      - lucid_grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-prometheus
+      - lucid-postgres-master
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Jaeger (Production)
+  lucid-jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: lucid-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+      SPAN_STORAGE_TYPE: elasticsearch
+      ES_SERVER_URLS: http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-elasticsearch-1
+      - lucid-elasticsearch-2
+      - lucid-elasticsearch-3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # MinIO Cluster (Production)
+  lucid-minio-1:
+    image: minio/minio:latest
+    container_name: lucid-minio-1
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${LUCID_MINIO_USER:-lucid}
+      MINIO_ROOT_PASSWORD: ${LUCID_MINIO_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_minio_1_data:/data1
+      - lucid_minio_1_data2:/data2
+    networks:
+      - lucid-infra-prod-network
+    command: server http://lucid-minio-{1...4}/data{1...2} --console-address ":9001"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  lucid-minio-2:
+    image: minio/minio:latest
+    container_name: lucid-minio-2
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${LUCID_MINIO_USER:-lucid}
+      MINIO_ROOT_PASSWORD: ${LUCID_MINIO_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_minio_2_data:/data1
+      - lucid_minio_2_data2:/data2
+    networks:
+      - lucid-infra-prod-network
+    command: server http://lucid-minio-{1...4}/data{1...2} --console-address ":9001"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  lucid-minio-3:
+    image: minio/minio:latest
+    container_name: lucid-minio-3
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${LUCID_MINIO_USER:-lucid}
+      MINIO_ROOT_PASSWORD: ${LUCID_MINIO_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_minio_3_data:/data1
+      - lucid_minio_3_data2:/data2
+    networks:
+      - lucid-infra-prod-network
+    command: server http://lucid-minio-{1...4}/data{1...2} --console-address ":9001"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  lucid-minio-4:
+    image: minio/minio:latest
+    container_name: lucid-minio-4
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${LUCID_MINIO_USER:-lucid}
+      MINIO_ROOT_PASSWORD: ${LUCID_MINIO_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_minio_4_data:/data1
+      - lucid_minio_4_data2:/data2
+    networks:
+      - lucid-infra-prod-network
+    command: server http://lucid-minio-{1...4}/data{1...2} --console-address ":9001"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Vault (Production)
+  lucid-vault:
+    image: vault:latest
+    container_name: lucid-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+    volumes:
+      - lucid_vault_data:/vault/data
+      - ./vault/vault-prod.hcl:/vault/config/vault.hcl:ro
+    networks:
+      - lucid-infra-prod-network
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Consul Cluster (Production)
+  lucid-consul-1:
+    image: consul:latest
+    container_name: lucid-consul-1
+    restart: unless-stopped
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    volumes:
+      - lucid_consul_1_data:/consul/data
+      - ./consul/consul-1.json:/consul/config/consul.json:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["consul", "agent", "-server", "-ui", "-node=server-1", "-bootstrap-expect=3", "-client=0.0.0.0", "-config-file=/consul/config/consul.json"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  lucid-consul-2:
+    image: consul:latest
+    container_name: lucid-consul-2
+    restart: unless-stopped
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    volumes:
+      - lucid_consul_2_data:/consul/data
+      - ./consul/consul-2.json:/consul/config/consul.json:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["consul", "agent", "-server", "-ui", "-node=server-2", "-bootstrap-expect=3", "-client=0.0.0.0", "-config-file=/consul/config/consul.json"]
+    depends_on:
+      - lucid-consul-1
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  lucid-consul-3:
+    image: consul:latest
+    container_name: lucid-consul-3
+    restart: unless-stopped
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    volumes:
+      - lucid_consul_3_data:/consul/data
+      - ./consul/consul-3.json:/consul/config/consul.json:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["consul", "agent", "-server", "-ui", "-node=server-3", "-bootstrap-expect=3", "-client=0.0.0.0", "-config-file=/consul/config/consul.json"]
+    depends_on:
+      - lucid-consul-1
+      - lucid-consul-2
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # NATS Cluster (Production)
+  lucid-nats-1:
+    image: nats:latest
+    container_name: lucid-nats-1
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+    volumes:
+      - lucid_nats_1_data:/data
+      - ./nats/nats-server-1.conf:/etc/nats/nats-server.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  lucid-nats-2:
+    image: nats:latest
+    container_name: lucid-nats-2
+    restart: unless-stopped
+    volumes:
+      - lucid_nats_2_data:/data
+      - ./nats/nats-server-2.conf:/etc/nats/nats-server.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    depends_on:
+      - lucid-nats-1
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  lucid-nats-3:
+    image: nats:latest
+    container_name: lucid-nats-3
+    restart: unless-stopped
+    volumes:
+      - lucid_nats_3_data:/data
+      - ./nats/nats-server-3.conf:/etc/nats/nats-server.conf:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["-c", "/etc/nats/nats-server.conf"]
+    depends_on:
+      - lucid-nats-1
+      - lucid-nats-2
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # API Gateway (Production - Multiple Instances)
+  lucid-api-1:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api:${LUCID_TAG:-latest}
+    container_name: lucid-api-1
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb-1:27017,lucid-mongodb-2:27017,lucid-mongodb-3:27017/lucid?authSource=admin&replicaSet=lucid-replica-set
+      - LUCID_REDIS_URL=redis://lucid-redis-master:6379
+      - LUCID_POSTGRES_URL=postgresql://lucid:lucid_password@lucid-postgres-master:5432/lucid
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+      - LUCID_JAEGER_URL=http://lucid-jaeger:14268/api/traces
+      - LUCID_MINIO_URL=http://lucid-minio-1:9000,http://lucid-minio-2:9000,http://lucid-minio-3:9000,http://lucid-minio-4:9000
+      - LUCID_VAULT_URL=http://lucid-vault:8200
+      - LUCID_CONSUL_URL=http://lucid-consul-1:8500,http://lucid-consul-2:8500,http://lucid-consul-3:8500
+      - LUCID_NATS_URL=nats://lucid-nats-1:4222,nats://lucid-nats-2:4222,nats://lucid-nats-3:4222
+      - LUCID_WORKERS=4
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_api_1_logs:/app/logs
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-mongodb-1
+      - lucid-redis-master
+      - lucid-postgres-master
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  lucid-api-2:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/api:${LUCID_TAG:-latest}
+    container_name: lucid-api-2
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb-1:27017,lucid-mongodb-2:27017,lucid-mongodb-3:27017/lucid?authSource=admin&replicaSet=lucid-replica-set
+      - LUCID_REDIS_URL=redis://lucid-redis-master:6379
+      - LUCID_POSTGRES_URL=postgresql://lucid:lucid_password@lucid-postgres-master:5432/lucid
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+      - LUCID_JAEGER_URL=http://lucid-jaeger:14268/api/traces
+      - LUCID_MINIO_URL=http://lucid-minio-1:9000,http://lucid-minio-2:9000,http://lucid-minio-3:9000,http://lucid-minio-4:9000
+      - LUCID_VAULT_URL=http://lucid-vault:8200
+      - LUCID_CONSUL_URL=http://lucid-consul-1:8500,http://lucid-consul-2:8500,http://lucid-consul-3:8500
+      - LUCID_NATS_URL=nats://lucid-nats-1:4222,nats://lucid-nats-2:4222,nats://lucid-nats-3:4222
+      - LUCID_WORKERS=4
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_api_2_logs:/app/logs
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-mongodb-1
+      - lucid-redis-master
+      - lucid-postgres-master
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Session Management Service (Production - Multiple Instances)
+  lucid-sessions-1:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/sessions:${LUCID_TAG:-latest}
+    container_name: lucid-sessions-1
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb-1:27017,lucid-mongodb-2:27017,lucid-mongodb-3:27017/lucid?authSource=admin&replicaSet=lucid-replica-set
+      - LUCID_REDIS_URL=redis://lucid-redis-master:6379
+      - LUCID_API_URL=http://lucid-loadbalancer
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+      - LUCID_MINIO_URL=http://lucid-minio-1:9000,http://lucid-minio-2:9000,http://lucid-minio-3:9000,http://lucid-minio-4:9000
+      - LUCID_NATS_URL=nats://lucid-nats-1:4222,nats://lucid-nats-2:4222,nats://lucid-nats-3:4222
+      - LUCID_WORKERS=4
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_sessions_1_data:/app/data
+      - lucid_sessions_1_logs:/app/logs
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-mongodb-1
+      - lucid-redis-master
+      - lucid-api-1
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  lucid-sessions-2:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/sessions:${LUCID_TAG:-latest}
+    container_name: lucid-sessions-2
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb-1:27017,lucid-mongodb-2:27017,lucid-mongodb-3:27017/lucid?authSource=admin&replicaSet=lucid-replica-set
+      - LUCID_REDIS_URL=redis://lucid-redis-master:6379
+      - LUCID_API_URL=http://lucid-loadbalancer
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+      - LUCID_MINIO_URL=http://lucid-minio-1:9000,http://lucid-minio-2:9000,http://lucid-minio-3:9000,http://lucid-minio-4:9000
+      - LUCID_NATS_URL=nats://lucid-nats-1:4222,nats://lucid-nats-2:4222,nats://lucid-nats-3:4222
+      - LUCID_WORKERS=4
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_sessions_2_data:/app/data
+      - lucid_sessions_2_logs:/app/logs
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-mongodb-1
+      - lucid-redis-master
+      - lucid-api-1
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Storage Service (Production)
+  lucid-storage:
+    image: ${LUCID_REGISTRY:-ghcr.io}/${LUCID_IMAGE_NAME:-HamiGames/Lucid}/storage:${LUCID_TAG:-latest}
+    container_name: lucid-storage
+    restart: unless-stopped
+    environment:
+      - LUCID_MONGODB_URL=mongodb://lucid:lucid_password@lucid-mongodb-1:27017,lucid-mongodb-2:27017,lucid-mongodb-3:27017/lucid?authSource=admin&replicaSet=lucid-replica-set
+      - LUCID_STORAGE_ROOT=/app/storage
+      - LUCID_MINIO_URL=http://lucid-minio-1:9000,http://lucid-minio-2:9000,http://lucid-minio-3:9000,http://lucid-minio-4:9000
+      - LUCID_ELASTICSEARCH_URL=http://lucid-elasticsearch-1:9200,http://lucid-elasticsearch-2:9200,http://lucid-elasticsearch-3:9200
+      - LUCID_WORKERS=4
+      - LUCID_LOG_LEVEL=INFO
+    volumes:
+      - lucid_storage_data:/app/storage
+      - lucid_storage_logs:/app/logs
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-mongodb-1
+      - lucid-minio-1
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Backup Service (Production)
+  lucid-backup:
+    image: postgres:15-alpine
+    container_name: lucid-backup
+    restart: "no"
+    environment:
+      PGPASSWORD: ${LUCID_MONGODB_ROOT_PASSWORD:-lucid_password}
+    volumes:
+      - lucid_backup_data:/backups
+      - ./backup/scripts:/scripts:ro
+    networks:
+      - lucid-infra-prod-network
+    command: ["sh", "-c", "while true; do sleep 86400; done"]
+    depends_on:
+      - lucid-mongodb-1
+      - lucid-postgres-master
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Log Aggregator (Production)
+  lucid-log-aggregator:
+    image: fluent/fluent-bit:latest
+    container_name: lucid-log-aggregator
+    restart: unless-stopped
+    volumes:
+      - ./fluent-bit/fluent-bit-prod.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - lucid_logs:/var/log
+    networks:
+      - lucid-infra-prod-network
+    depends_on:
+      - lucid-elasticsearch-1
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+# Networks
+networks:
+  lucid-infra-prod-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+# Volumes (Production)
+volumes:
+  # Database volumes
+  lucid_mongodb_1_data:
+    driver: local
+  lucid_mongodb_1_config:
+    driver: local
+  lucid_mongodb_2_data:
+    driver: local
+  lucid_mongodb_2_config:
+    driver: local
+  lucid_mongodb_3_data:
+    driver: local
+  lucid_mongodb_3_config:
+    driver: local
+  lucid_redis_master_data:
+    driver: local
+  lucid_redis_slave_data:
+    driver: local
+  lucid_postgres_master_data:
+    driver: local
+  lucid_postgres_slave_data:
+    driver: local
+  
+  # Search and logging volumes
+  lucid_elasticsearch_1_data:
+    driver: local
+  lucid_elasticsearch_2_data:
+    driver: local
+  lucid_elasticsearch_3_data:
+    driver: local
+  
+  # Monitoring volumes
+  lucid_prometheus_data:
+    driver: local
+  lucid_grafana_data:
+    driver: local
+  
+  # Storage volumes
+  lucid_minio_1_data:
+    driver: local
+  lucid_minio_1_data2:
+    driver: local
+  lucid_minio_2_data:
+    driver: local
+  lucid_minio_2_data2:
+    driver: local
+  lucid_minio_3_data:
+    driver: local
+  lucid_minio_3_data2:
+    driver: local
+  lucid_minio_4_data:
+    driver: local
+  lucid_minio_4_data2:
+    driver: local
+  
+  # Infrastructure volumes
+  lucid_vault_data:
+    driver: local
+  lucid_consul_1_data:
+    driver: local
+  lucid_consul_2_data:
+    driver: local
+  lucid_consul_3_data:
+    driver: local
+  lucid_nats_1_data:
+    driver: local
+  lucid_nats_2_data:
+    driver: local
+  lucid_nats_3_data:
+    driver: local
+  
+  # Application volumes
+  lucid_api_1_logs:
+    driver: local
+  lucid_api_2_logs:
+    driver: local
+  lucid_sessions_1_data:
+    driver: local
+  lucid_sessions_1_logs:
+    driver: local
+  lucid_sessions_2_data:
+    driver: local
+  lucid_sessions_2_logs:
+    driver: local
+  lucid_storage_data:
+    driver: local
+  lucid_storage_logs:
+    driver: local
+  lucid_backup_data:
+    driver: local
+  lucid_logs:
+    driver: local
+  lucid_nginx_logs:
+    driver: local

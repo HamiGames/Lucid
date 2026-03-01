@@ -1,0 +1,477 @@
+﻿# Current File Tree — 2025-09-25_02-59-15 UTC
+
+- Repo: Lucid
+
+- Commit: c4d47f6 2025-09-25 02:42:25 +0000 HamiGames update: lucid-dev.yaml & compose_up_dev.sh
+
+- Tracked files: 234
+
+## Files
+
+- .devcontainer/dev_preinstall.ps1
+
+- .devcontainer/dev_preinstall.sh
+
+- .devcontainer/devcontainer.json
+
+- .devcontainer/Dockerfile
+
+- .devcontainer/requirements-dev.txt
+
+- .env.api
+
+- .env.user
+
+- .gitignore
+
+- .pre-comit-config.yaml
+
+- .pre-commit-config.yaml
+
+- .ssh/id_ed25519
+
+- .ssh/id_ed25519.pub
+
+- __init__.py
+
+- _compose_resolved.yaml
+
+- 00-foundation/fix_editor_env.sh
+
+- 00-foundation/workspace/tasks/format_all.sh
+
+- 00-foundation/workspace/tasks/lint_all.sh
+
+- 00-foundation/workspace/tasks/test_all.sh
+
+- 02-network-security/tor/Dockerfile
+
+- 02-network-security/tor/entrypoint.sh
+
+- 02-network-security/tor/scripts/check_tor_bootstrap.sh
+
+- 02-network-security/tor/scripts/create_ephemeral_onion.sh
+
+- 02-network-security/tor/scripts/start_tor.sh
+
+- 02-network-security/tor/scripts/tor_env.sh
+
+- 02-network-security/tor/tor-health.sh
+
+- 02-network-security/tor/torrc
+
+- 02-network-security/tor/tor-show-onion.sh
+
+- 02-network-security/tunnels/Dockerfile
+
+- 02-network-security/tunnels/entrypoint.sh
+
+- 02-network-security/tunnels/scripts/_lib.sh
+
+- 02-network-security/tunnels/scripts/create_ephemeral_onion.sh
+
+- 02-network-security/tunnels/scripts/create_tunnel.sh
+
+- 02-network-security/tunnels/scripts/list_tunnels.sh
+
+- 02-network-security/tunnels/scripts/refresh_tunnel.sh
+
+- 02-network-security/tunnels/scripts/rotate_onion.sh
+
+- 02-network-security/tunnels/scripts/teardown_tunnel.sh
+
+- 02-network-security/tunnels/scripts/tunnel_status.sh
+
+- 02-network-security/tunnels/scripts/verify_tunnel.sh
+
+- 02-network-security/tunnels/verify_tunnel.sh
+
+- 03-api-gateway/__init__.py
+
+- 03-api-gateway/api/.env.api
+
+- 03-api-gateway/api/__init__.py
+
+- 03-api-gateway/api/app/__init__.py
+
+- 03-api-gateway/api/app/config.py
+
+- 03-api-gateway/api/app/db/__init__.py
+
+- 03-api-gateway/api/app/db/connection.py
+
+- 03-api-gateway/api/app/db/models/__init__.py
+
+- 03-api-gateway/api/app/db/models/session.py
+
+- 03-api-gateway/api/app/db/models/user.py
+
+- 03-api-gateway/api/app/db/users_repo.py
+
+- 03-api-gateway/api/app/deps.py
+
+- 03-api-gateway/api/app/main.py
+
+- 03-api-gateway/api/app/middleware/__init__.py
+
+- 03-api-gateway/api/app/middleware/auth.py
+
+- 03-api-gateway/api/app/middleware/logging.py
+
+- 03-api-gateway/api/app/routes/auth.py
+
+- 03-api-gateway/api/app/routes/chain_proxy.py
+
+- 03-api-gateway/api/app/routes/db_health.py
+
+- 03-api-gateway/api/app/routes/health.py
+
+- 03-api-gateway/api/app/routes/init.py
+
+- 03-api-gateway/api/app/routes/meta.py
+
+- 03-api-gateway/api/app/routes/users.py
+
+- 03-api-gateway/api/app/routes/wallets_proxy.py
+
+- 03-api-gateway/api/app/schemas/__init__.py
+
+- 03-api-gateway/api/app/schemas/auth.py
+
+- 03-api-gateway/api/app/schemas/errors.py
+
+- 03-api-gateway/api/app/schemas/meta.py
+
+- 03-api-gateway/api/app/schemas/users.py
+
+- 03-api-gateway/api/app/scripts/__init__.py
+
+- 03-api-gateway/api/app/scripts/ensure_indexes.py
+
+- 03-api-gateway/api/app/scripts/seed_dev.py
+
+- 03-api-gateway/api/app/security/__init__.py
+
+- 03-api-gateway/api/app/security/jwt.py
+
+- 03-api-gateway/api/app/services/__init__.py
+
+- 03-api-gateway/api/app/services/blockchain_service.py
+
+- 03-api-gateway/api/app/services/mongo_service.py
+
+- 03-api-gateway/api/app/utils/__init__.py
+
+- 03-api-gateway/api/app/utils/config.py
+
+- 03-api-gateway/api/app/utils/logger.py
+
+- 03-api-gateway/api/Dockerfile.api
+
+- 03-api-gateway/api/lucid_api.egg-info/dependency_links.txt
+
+- 03-api-gateway/api/lucid_api.egg-info/PKG-INFO
+
+- 03-api-gateway/api/lucid_api.egg-info/requires.txt
+
+- 03-api-gateway/api/lucid_api.egg-info/SOURCES.txt
+
+- 03-api-gateway/api/lucid_api.egg-info/top_level.txt
+
+- 03-api-gateway/api/pyproject.toml
+
+- 03-api-gateway/api/requirements.txt
+
+- 03-api-gateway/docs/swagger/dist/absolute-path.js
+
+- 03-api-gateway/docs/swagger/dist/favicon-16x16.png
+
+- 03-api-gateway/docs/swagger/dist/favicon-32x32.png
+
+- 03-api-gateway/docs/swagger/dist/index.css
+
+- 03-api-gateway/docs/swagger/dist/index.html
+
+- 03-api-gateway/docs/swagger/dist/index.js
+
+- 03-api-gateway/docs/swagger/dist/LICENSE
+
+- 03-api-gateway/docs/swagger/dist/log.bundle-sizes.swagger-ui.txt
+
+- 03-api-gateway/docs/swagger/dist/log.es-bundle-core-sizes.swagger-ui.txt
+
+- 03-api-gateway/docs/swagger/dist/log.es-bundle-sizes.swagger-ui.txt
+
+- 03-api-gateway/docs/swagger/dist/NOTICE
+
+- 03-api-gateway/docs/swagger/dist/oauth2-redirect.html
+
+- 03-api-gateway/docs/swagger/dist/package.json
+
+- 03-api-gateway/docs/swagger/dist/README.md
+
+- 03-api-gateway/docs/swagger/dist/swagger-initializer.js
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui.css
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui.css.map
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui.js
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui.js.map
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-bundle.js
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-bundle.js.LICENSE.txt
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-bundle.js.map
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-es-bundle.js
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-es-bundle.js.LICENSE.txt
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-es-bundle.js.map
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-es-bundle-core.js
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-es-bundle-core.js.LICENSE.txt
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-es-bundle-core.js.map
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-standalone-preset.js
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-standalone-preset.js.LICENSE.txt
+
+- 03-api-gateway/docs/swagger/dist/swagger-ui-standalone-preset.js.map
+
+- 03-api-gateway/gateway/Dockerfile.gateway
+
+- 03-api-gateway/gateway/openapi.override.yaml
+
+- 03-api-gateway/gateway/openapi.yaml
+
+- 03-api-gateway/scripts/check_contract.sh
+
+- 03-api-gateway/scripts/dev_env.ps1
+
+- 03-api-gateway/scripts/dev_server.sh
+
+- 03-api-gateway/scripts/lint_contract.sh
+
+- 03-api-gateway/scripts/mongo_27019.ps1
+
+- 03-api-gateway/scripts/port-tools.ps1
+
+- 03-api-gateway/scripts/probe_api.ps1
+
+- 03-api-gateway/scripts/run_api.ps1
+
+- 03-api-gateway/scripts/validate_contract.sh
+
+- 04-blockchain-core/api/app/__init__.py
+
+- 04-blockchain-core/api/app/config.py
+
+- 04-blockchain-core/api/app/crypto/__init__.py
+
+- 04-blockchain-core/api/app/crypto/keys.py
+
+- 04-blockchain-core/api/app/db/__init__.py
+
+- 04-blockchain-core/api/app/db/connection.py
+
+- 04-blockchain-core/api/app/main.py
+
+- 04-blockchain-core/api/app/repo/__init__.py
+
+- 04-blockchain-core/api/app/repo/wallets_repo.py
+
+- 04-blockchain-core/api/app/routes/chain.py
+
+- 04-blockchain-core/api/app/routes/wallets.py
+
+- 04-blockchain-core/api/app/schemas/__init__.py
+
+- 04-blockchain-core/api/app/schemas/wallets.py
+
+- 04-blockchain-core/api/app/services/__init__.py
+
+- 04-blockchain-core/api/app/services/tron_client.py
+
+- 04-blockchain-core/api/Dockerfile
+
+- 04-blockchain-core/api/requirements.txt
+
+- 04-blockchain-core/scripts/run_blockchain_core.ps1
+
+- 06-orchestration-runtime/compose/.env.example
+
+- 06-orchestration-runtime/compose/bootstrap-dev.ps1
+
+- 06-orchestration-runtime/compose/clean_buildx.sh
+
+- 06-orchestration-runtime/compose/compose_build_api.sh
+
+- 06-orchestration-runtime/compose/compose_build_tor.sh
+
+- 06-orchestration-runtime/compose/compose_clean.sh
+
+- 06-orchestration-runtime/compose/compose_down_dev.sh
+
+- 06-orchestration-runtime/compose/compose_logs_dev.sh
+
+- 06-orchestration-runtime/compose/compose_restart_api.sh
+
+- 06-orchestration-runtime/compose/compose_restart_tor.sh
+
+- 06-orchestration-runtime/compose/compose_status_dev.sh
+
+- 06-orchestration-runtime/compose/compose_up_dev.sh
+
+- 06-orchestration-runtime/compose/compose_up_local.sh
+
+- 06-orchestration-runtime/compose/dev.override.yaml
+
+- 06-orchestration-runtime/compose/dev_rebuild_with_devenv.ps1
+
+- 06-orchestration-runtime/compose/fix_api_root.ps1
+
+- 06-orchestration-runtime/compose/lucid-blockchain-core.dev.yaml
+
+- 06-orchestration-runtime/compose/lucid-dev.override.yaml.disabled
+
+- 06-orchestration-runtime/compose/lucid-dev.yaml
+
+- 06-orchestration-runtime/compose/rebuild_dev.ps1
+
+- 06-orchestration-runtime/compose/seed_env.sh
+
+- 06-orchestration-runtime/compose/tor_healthcheck.sh
+
+- 06-orchestration-runtime/net/sanity_containers.ps1
+
+- 06-orchestration-runtime/net/setup_lucid_net.ps1
+
+- 06-orchestration-runtime/scripts/install_watcher.sh
+
+- 06-orchestration-runtime/scripts/pi_watcher.sh
+
+- 06-orchestration-runtime/tools/lucid_smoke.sh
+
+- 06-orchestration-runtime/tools/write_tor_bootstrap_env.sh
+
+- 08-quality/scripts/ci_quality_gate.sh
+
+- 08-quality/scripts/coverage_report.sh
+
+- 08-quality/scripts/lint_contract.sh
+
+- 08-quality/scripts/run_all_tests.sh
+
+- blockchain/__init__.py
+
+- blockchain/block.py
+
+- blockchain/config.py
+
+- blockchain/consensus.py
+
+- blockchain/crypto.py
+
+- blockchain/mempool.py
+
+- blockchain/network.py
+
+- blockchain/node.py
+
+- blockchain/state.py
+
+- blockchain/storage.py
+
+- blockchain/transaction.py
+
+- Build_guide_docs/images_before.txt
+
+- Build_guide_docs/mode_LUCID-STRICT.md
+
+- Build_guide_docs/volumes_before.txt
+
+- Clean-LucidFromLists.ps1
+
+- containers_before.txt
+
+- create_pytest_ini.sh
+
+- docker/tor/tor-health.sh
+
+- force_push_all.sh
+
+- lucid_pi_bootstrap.sh
+
+- mypy.ini
+
+- openapitools.json
+
+- pytest.ini
+
+- README.md
+
+- reports/CURRENT_FILE_TREE_2025-09-11_20-20-17.md
+
+- reports/filetree_2025-09-11_20-04-30.txt
+
+- reports/filetree_2025-09-11_20-05-41.txt
+
+- reports/filetree_2025-09-11_20-20-17.txt
+
+- reports/openapi.merged.dev.yaml
+
+- reports/scripts_index_2025-09-11_20-04-30.csv
+
+- reports/scripts_index_2025-09-11_20-05-41.csv
+
+- reports/scripts_index_2025-09-11_20-20-17.csv
+
+- setup_pytest.sh
+
+- src/lucid_rdp.egg-info/dependency_links.txt
+
+- src/lucid_rdp.egg-info/PKG-INFO
+
+- src/lucid_rdp.egg-info/requires.txt
+
+- src/lucid_rdp.egg-info/SOURCES.txt
+
+- src/lucid_rdp.egg-info/top_level.txt
+
+- tests/__init__.py
+
+- tests/conftest.py
+
+- tests/test_auth_middleware.py
+
+- tests/test_blockchain_service.py
+
+- tests/test_compose_scripts.py
+
+- tests/test_db_connection.py
+
+- tests/test_health.py
+
+- tests/test_logging_middleware.py
+
+- tests/test_models.py
+
+- tests/test_mongo_service.py
+
+- tests/test_utils_config.py
+
+- tests/test_utils_logger.py
+
+- tools/yq.exe
+
+- tree.clean.txt
+
+- wallet/__init__.py
+
+- wallet/keys.py

@@ -1,0 +1,514 @@
+name: lucid-support
+services:
+  # NOTE: admin-interface moved to docker-compose.gui-integration.yml
+  # The Electron GUI distroless version is now the canonical admin interface
+
+  lucid-tron-client:
+    image: pickme/lucid-tron-client:latest-arm64
+    container_name: lucid-tron-client
+    hostname: lucid-tron-client
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${TRON_CLIENT_PORT:-8091}:${TRON_CLIENT_PORT:-8091}"
+      - "${TRON_CLIENT_DEBUG_PORT:-8101}:${TRON_CLIENT_DEBUG_PORT:-8101}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/tron:/data/tron:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/tron-client:/app/logs:rw
+
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('TRON_CLIENT_PORT'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=${HEALTH_CHECK_REQUEST_TIMEOUT:-10}).read(); sys.exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-client"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  tron-payout-router:
+    image: pickme/lucid-tron-payout-router:latest-arm64
+    container_name: tron-payout-router
+    hostname: tron-payout-router
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payout-router
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${PAYOUT_ROUTER_PORT:-8092}:${PAYOUT_ROUTER_PORT:-8092}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payments:/data/payouts:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/batches:/data/batches:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payout-router:/app/logs:rw
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('SERVICE_PORT'); urllib.request.urlopen(f'http://localhost:{port}/health').read(); exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-payout-router"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  tron-wallet-manager:
+    image: pickme/lucid-tron-wallet-manager:latest-arm64
+    container_name: tron-wallet-manager
+    hostname: tron-wallet-manager
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-wallet-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${WALLET_MANAGER_PORT:-8093}:${WALLET_MANAGER_PORT:-8093}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/wallets:/data/wallets:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/wallet-manager:/app/logs:rw
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('WALLET_MANAGER_PORT'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=${HEALTH_CHECK_REQUEST_TIMEOUT:-10}).read(); sys.exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-wallet-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  tron-usdt-manager:
+    image: pickme/lucid-tron-usdt-manager:latest-arm64
+    container_name: tron-usdt-manager
+    hostname: tron-usdt-manager
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-usdt-manager
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${USDT_MANAGER_PORT:-8094}:${USDT_MANAGER_PORT:-8094}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/usdt:/data/usdt:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/usdt-manager:/app/logs:rw
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('USDT_MANAGER_PORT'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=${HEALTH_CHECK_REQUEST_TIMEOUT:-10}).read(); sys.exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-usdt-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  tron-staking:
+    image: pickme/lucid-trx-staking:latest-arm64
+    container_name: tron-staking
+    hostname: tron-staking
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-staking
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${STAKING_PORT:-8096}:${STAKING_PORT:-8096}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/staking:/data/staking:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/trx-staking:/app/logs:rw
+
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('STAKING_PORT'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health').read(); exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-staking"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  tron-payment-gateway:
+    image: pickme/lucid-tron-payment-gateway:latest-arm64
+    container_name: tron-payment-gateway
+    hostname: tron-payment-gateway
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payment-gateway
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${PAYMENT_GATEWAY_PORT:-8097}:${PAYMENT_GATEWAY_PORT:-8097}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/gateway:/data/gateway:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payment-gateway:/app/logs:rw
+
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os; import urllib.request; port = os.getenv('PAYMENT_GATEWAY_PORT'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health').read(); exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-payment-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      lucid-mongodb:
+        condition: service_started
+      lucid-redis:
+        condition: service_started
+      lucid-tron-client:
+        condition: service_started
+      tron-payout-router:
+        condition: service_started
+      tron-wallet-manager:
+        condition: service_started
+      tron-usdt-manager:
+        condition: service_started
+
+  tron-relay:
+    image: pickme/lucid-tron-relay:latest-arm64
+    container_name: tron-relay
+    hostname: tron-relay
+    restart: ${CONTAINER_RESTART:-unless-stopped}
+    env_file:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-relay
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+    networks:
+      - lucid-tron-isolated
+      - lucid-pi-network
+    ports:
+      - "${TRON_RELAY_PORT:-8098}:${TRON_RELAY_PORT:-8098}"
+    volumes:
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/tron-relay:/data/tron-relay:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/cache:/data/cache:rw
+      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/tron-relay:/app/logs:rw
+    user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=${TMPFS_SIZE:-100m}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/venv/bin/python3",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('SERVICE_PORT', os.getenv('TRON_RELAY_PORT')); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=${HEALTH_CHECK_REQUEST_TIMEOUT:-10}).read(); sys.exit(0)",
+        ]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-40s}
+    labels:
+      - "lucid.service=tron-relay"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.network=tron-isolated"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-tron-client:
+        condition: service_started
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-tron-isolated:
+    external: true
+    name: lucid-tron-isolated
+
+volumes:
+  # Payment Systems & TRON Services
+  # ================================
+  # Data volumes
+  payment-systems-data:
+    driver: local
+    name: lucid-payment-systems-data
+
+  tron-data:
+    driver: local
+    name: lucid-tron-data
+
+  wallets-data:
+    driver: local
+    name: lucid-wallets-data
+
+  usdt-data:
+    driver: local
+    name: lucid-usdt-data
+
+  gateway-data:
+    driver: local
+    name: lucid-gateway-data
+
+  keys-data:
+    driver: local
+    name: lucid-keys-data
+
+  batches-data:
+    driver: local
+    name: lucid-batches-data
+
+  payouts-data:
+    driver: local
+    name: lucid-payouts-data
+
+  # Log volumes
+  tron-client-logs:
+    driver: local
+    name: lucid-tron-client-logs
+
+  payout-router-logs:
+    driver: local
+    name: lucid-payout-router-logs
+
+  wallet-manager-logs:
+    driver: local
+    name: lucid-wallet-manager-logs
+
+  usdt-manager-logs:
+    driver: local
+    name: lucid-usdt-manager-logs
+
+  payment-gateway-logs:
+    driver: local
+    name: lucid-payment-gateway-logs
+
+  # Tor volumes
+  tor-data:
+    driver: local
+    name: lucid-tor-data
+
+  tor-logs:
+    driver: local
+    name: lucid-tor-logs
+
+  onion-state:
+    name: lucid-onion-state
+    external: true

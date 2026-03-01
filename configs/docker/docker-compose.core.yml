@@ -1,0 +1,502 @@
+name: lucid-foundation
+services:
+  api-gateway:
+    image: pickme/lucid-api-gateway:latest-arm64
+    container_name: api-gateway
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.api-gateway
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    networks:
+      - lucid-pi-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/api-gateway/cache:/app/cache:rw
+      - /mnt/myssd/Lucid/Lucid/configs/api-gateway:/app/config:ro
+      - /mnt/myssd/Lucid/Lucid/certs/api-gateway:/certs:ro
+      - api-gateway-tmp:/tmp/api
+      - onion-state:/run/lucid/onion:ro
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - API_GATEWAY_HOST=api-gateway
+      - API_GATEWAY_PORT=8080
+      - API_GATEWAY_URL=http://api-gateway:8080
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - BLOCKCHAIN_CORE_URL=http://blockchain-engine:8084
+      - SESSION_MANAGEMENT_URL=http://session-anchoring:8085
+      - TRON_PAYMENT_URL=${TRON_PAYMENT_URL:-http://tron-client:8091}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5).read(); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=api-gateway"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+
+  blockchain-engine:
+    image: pickme/lucid-blockchain-engine:latest-arm64
+    container_name: blockchain-engine
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-governance
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-ledger
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-sessions-data
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-api
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-vm
+    networks:
+      - lucid-pi-network
+    ports:
+      - "8084:8084"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs:rw
+      - blockchain-cache:/tmp/blockchain
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - BLOCKCHAIN_ENGINE_HOST=${BLOCKCHAIN_ENGINE_HOST:-blockchain-engine}
+      - BLOCKCHAIN_ENGINE_PORT=${BLOCKCHAIN_ENGINE_PORT:-8084}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8084/health', timeout=5).read(); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=blockchain-engine"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  service-mesh:
+    image: pickme/lucid-service-mesh:latest-arm64
+    container_name: service-mesh
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.service-mesh
+    networks:
+      - lucid-pi-network
+    ports:
+      - "8500:8500"
+      - "8088:8088"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/data/service-mesh/config:/app/config:rw
+      - /mnt/myssd/Lucid/Lucid/data/service-mesh/certificates:/app/certificates:rw
+      - /mnt/myssd/Lucid/Lucid/data/service-mesh/envoy-configs:/app/envoy-configs:rw
+      - service-mesh-cache:/tmp/mesh
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - SERVICE_MESH_HOST=0.0.0.0
+      - SERVICE_MESH_PORT=8500
+      - SERVICE_MESH_URL=http://service-mesh:8500
+      - HTTP_PORT=8088
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8088/health', timeout=5).read(); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=service-mesh"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+
+  session-anchoring:
+    image: pickme/lucid-session-anchoring:latest-arm64
+    container_name: session-anchoring
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-anchoring
+    networks:
+      - lucid-pi-network
+    ports:
+      - "8085:8085"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw
+      - session-anchoring-cache:/tmp/anchoring
+      - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
+    environment:
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+      - SECRET_KEY=${SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-${JWT_SECRET_KEY}}}
+      - SESSION_ANCHORING_HOST=${SESSION_ANCHORING_HOST:-0.0.0.0}
+      - SESSION_ANCHORING_PORT=${SESSION_ANCHORING_PORT:-8085}
+      - SESSION_ANCHORING_HEALTH_PATH=${SESSION_ANCHORING_HEALTH_PATH:-/health}
+      - SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=${SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT:-10}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import sys; sys.argv = ['data-health.py', 'session-anchoring']; exec(open('/tmp/data-health.py').read())",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "lucid.service=session-anchoring"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      blockchain-engine:
+        condition: service_healthy
+      data-chain:
+        condition: service_started
+
+  block-manager:
+    image: pickme/lucid-block-manager:latest-arm64
+    container_name: block-manager
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    networks:
+      - lucid-pi-network
+    ports:
+      - "8086:8086"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
+      - block-manager-cache:/tmp/blocks
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - BLOCK_MANAGER_HOST=${BLOCK_MANAGER_HOST:-0.0.0.0}
+      - BLOCK_MANAGER_PORT=${BLOCK_MANAGER_PORT:-8086}
+      - BLOCK_MANAGER_URL=${BLOCK_MANAGER_URL:-http://block-manager:8086}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8086)); s.close(); exit(0 if result == 0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "lucid.service=block-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      blockchain-engine:
+        condition: service_healthy
+  data-chain:
+    image: pickme/lucid-data-chain:latest-arm64
+    container_name: data-chain
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.data-chain
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${DATA_CHAIN_PORT:-8087}:${DATA_CHAIN_PORT:-8087}"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
+      - data-chain-cache:/tmp/chain
+      - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
+      - DATA_CHAIN_PORT=${DATA_CHAIN_PORT:-8087}
+      - DATA_CHAIN_URL=${DATA_CHAIN_URL:-http://data-chain:8087}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      - DATA_CHAIN_HEALTH_PATH=${DATA_CHAIN_HEALTH_PATH:-/health}
+      - DATA_CHAIN_HEALTH_CHECK_TIMEOUT=${DATA_CHAIN_HEALTH_CHECK_TIMEOUT:-10}
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('DATA_CHAIN_PORT', '8087'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+        ]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "lucid.service=data-chain"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=core"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      blockchain-engine:
+        condition: service_healthy
+
+  lucid-tunnel-tools:
+    image: pickme/lucid-tunnel-tools:latest-arm64
+    container_name: lucid-tunnel-tools
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tunnel-tools
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
+    networks:
+      - lucid-pi-network
+    ports:
+      - "7000:7000"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:ro
+      - onion-state:/run/lucid/onion:rw
+      - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
+      - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      # Tor Proxy Configuration (can be overridden by .env.tunnel-tools)
+      - TOR_CONTAINER_NAME=tor-proxy
+      - CONTROL_HOST=tor-proxy
+      - CONTROL_PORT=9051
+      - COOKIE_FILE=/run/lucid/onion/control_auth_cookie
+      - TOR_PROXY=tor-proxy:9050
+      - TOR_PROXY_HOST=tor-proxy
+      - TOR_PROXY_PORT=${TOR_PROXY_PORT}
+      # Onion Service Configuration
+      - ONION_PORTS=80 api-gateway:8080
+      - UPSTREAM_SERVICE=api-gateway
+      - UPSTREAM_PORT=8080
+      - WRITE_ENV=/run/lucid/onion/.onion.env
+      - ENV_FILE=/run/lucid/onion/.onion.env
+      - ROTATE_INTERVAL=0
+      # Tunnel Configuration
+      - TUNNEL_PORT=7000
+      - TUNNEL_MODE=client
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import socket; s=socket.socket(); s.connect(('tor-proxy', 9051)); s.close(); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      api-gateway:
+        condition: service_healthy
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+
+volumes:
+  api-gateway-tmp:
+    driver: local
+    name: lucid-api-gateway-tmp
+    external: false
+  blockchain-cache:
+    driver: local
+    name: lucid-blockchain-cache
+    external: false
+  service-mesh-cache:
+    driver: local
+    name: lucid-service-mesh-cache
+    external: false
+  session-anchoring-cache:
+    driver: local
+    name: lucid-session-anchoring-cache
+    external: false
+  block-manager-cache:
+    driver: local
+    name: lucid-block-manager-cache
+    external: false
+  data-chain-cache:
+    driver: local
+    name: lucid-data-chain-cache
+    external: false
+  onion-state:
+    name: lucid-onion-state
+    external: true

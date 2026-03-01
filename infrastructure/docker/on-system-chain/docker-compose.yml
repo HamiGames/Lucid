@@ -1,0 +1,171 @@
+# On-System Chain Docker Compose Configuration
+# EVM-compatible blockchain service for Lucid session anchoring
+
+version: '3.8'
+
+services:
+  on-system-chain:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: final
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    image: pickme/lucid:on-system-chain
+    container_name: lucid-on-system-chain
+    hostname: on-system-chain
+    
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.support
+      - ../../../configs/environment/.env.tron-staking
+    
+    environment:
+      # On-System Chain Configuration
+      - ON_SYSTEM_CHAIN_NETWORK=mainnet
+      - ON_SYSTEM_CHAIN_RPC_PORT=8545
+      - ON_SYSTEM_CHAIN_WS_PORT=8546
+      - ON_SYSTEM_CHAIN_P2P_PORT=30303
+      - ON_SYSTEM_CHAIN_DATA_DIR=/app/data/chaindata
+      - ON_SYSTEM_CHAIN_KEYSTORE_DIR=/app/data/keystore
+      
+      # Smart Contract Configuration
+      - LUCID_ANCHORS_ADDRESS=0x1234567890abcdef1234567890abcdef12345678
+      - LUCID_CHUNK_STORE_ADDRESS=0xabcdef1234567890abcdef1234567890abcdef12
+      
+      # Consensus Configuration
+      - CONSENSUS_ENGINE=proof-of-stake
+      - BLOCK_TIME_SECONDS=12
+      - GAS_LIMIT=30000000
+      
+      # Logging Configuration
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      
+      # Security Configuration
+      - PRIVATE_KEY_FILE=/app/configs/private-key.pem
+      - TLS_CERT_FILE=/app/configs/tls.crt
+      - TLS_KEY_FILE=/app/configs/tls.key
+    
+    ports:
+      - "8545:8545"  # JSON-RPC HTTP
+      - "8546:8546"  # JSON-RPC WebSocket
+      - "30303:30303"  # P2P TCP
+      - "30303:30303/udp"  # P2P UDP
+    
+    volumes:
+      # Persistent data storage
+      - on-system-chain-data:/app/data
+      - on-system-chain-logs:/app/logs
+      
+      # Configuration files
+      - ./configs:/app/configs:ro
+      - ./scripts:/app/scripts:ro
+      
+      # Smart contract artifacts
+      - ./contracts/build:/app/contracts/build:ro
+    
+    networks:
+      - lucid-tron-isolated
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545", "-X", "POST", "-H", "Content-Type: application/json", "-d", '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # On-System Chain monitoring service
+  on-system-chain-monitor:
+    image: prom/node-exporter:latest
+    container_name: lucid-on-system-chain-monitor
+    hostname: on-system-chain-monitor
+    
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.support
+    
+    ports:
+      - "9100:9100"
+    
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    
+    networks:
+      - lucid-tron-isolated
+    
+    restart: unless-stopped
+
+  # On-System Chain backup service
+  on-system-chain-backup:
+    image: alpine:3.18
+    container_name: lucid-on-system-chain-backup
+    hostname: on-system-chain-backup
+    
+    env_file:
+      - ../../../configs/environment/.env.foundation
+      - ../../../configs/environment/.env.support
+    
+    environment:
+      - BACKUP_SCHEDULE=0 2 * * *  # Daily at 2 AM
+      - BACKUP_RETENTION_DAYS=30
+      - BACKUP_S3_BUCKET=lucid-on-system-chain-backups
+    
+    volumes:
+      - on-system-chain-data:/backup/source:ro
+      - ./backups:/backup/destination
+      - ./scripts/backup:/scripts:ro
+    
+    command: >
+      sh -c "
+        apk add --no-cache dcron aws-cli &&
+        echo '${BACKUP_SCHEDULE} /scripts/backup-chain.sh' | crontab - &&
+        crond -f
+      "
+    
+    networks:
+      - lucid-tron-isolated
+    
+    restart: unless-stopped
+
+volumes:
+  on-system-chain-data:
+    name: lucid-on-system-chain-data
+    driver: local
+  on-system-chain-logs:
+    name: lucid-on-system-chain-logs
+    driver: local
+
+networks:
+  lucid-tron-isolated:
+    name: lucid-tron-isolated
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1

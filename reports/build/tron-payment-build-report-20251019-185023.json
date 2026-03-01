@@ -1,0 +1,53 @@
+{
+    "component": "tron-payment",
+    "environment": "production",
+    "architecture": "arm64",
+    "network": "mainnet",
+    "registry": "pickme",
+    "tag": "latest",
+    "distroless": true,
+    "push": true,
+    "buildTime": "2025-10-19T10:50:23Z",
+    "success": true,
+    "services": {
+        "trx-staking": {
+            "image": "pickme/lucid-trx-staking:latest",
+            "port": "8095",
+            "dockerfile": "Dockerfile.trx-staking"
+        }
+,
+        "wallet-manager": {
+            "image": "pickme/lucid-wallet-manager:latest",
+            "port": "8093",
+            "dockerfile": "Dockerfile.wallet-manager"
+        }
+,
+        "payment-gateway": {
+            "image": "pickme/lucid-payment-gateway:latest",
+            "port": "8096",
+            "dockerfile": "Dockerfile.payment-gateway"
+        }
+,
+        "tron-client": {
+            "image": "pickme/lucid-tron-client:latest",
+            "port": "8091",
+            "dockerfile": "Dockerfile.tron-client"
+        }
+,
+        "usdt-manager": {
+            "image": "pickme/lucid-usdt-manager:latest",
+            "port": "8094",
+            "dockerfile": "Dockerfile.usdt-manager"
+        }
+,
+        "payout-router": {
+            "image": "pickme/lucid-payout-router:latest",
+            "port": "8092",
+            "dockerfile": "Dockerfile.payout-router"
+        }
+    },
+    "networkConfig": {
+        "network": "mainnet",
+        "url": "https://api.trongrid.io"
+    }
+}

@@ -1,0 +1,412 @@
+#cloud-config
+# Lucid GUI Services Cloud-Init Configuration
+# Automated setup for GUI services on Pi deployment
+
+# Update system packages
+package_update: true
+package_upgrade: true
+
+# Install required packages
+packages:
+  - qrencode
+  - curl
+  - jq
+  - docker.io
+  - docker-compose
+  - tor
+
+# Create systemd service for GUI management
+write_files:
+  - path: /etc/systemd/system/lucid-gui.service
+    content: |
+      [Unit]
+      Description=Lucid GUI Services
+      After=docker.service tor.service
+      Requires=docker.service tor.service
+      
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/lucid-gui-start.sh
+      RemainAfterExit=yes
+      
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /usr/local/bin/lucid-gui-start.sh
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      
+      echo "Starting Lucid GUI services..."
+      
+      # Wait for Docker and Tor
+      until docker info >/dev/null 2>&1; do 
+        echo "Waiting for Docker..."
+        sleep 2
+      done
+      
+      until nc -z localhost 9050; do 
+        echo "Waiting for Tor..."
+        sleep 2
+      done
+      
+      # Start GUI services
+      cd /opt/lucid
+      docker compose --profile gui up -d
+      
+      # Wait for services to be ready
+      sleep 30
+      
+      # Display QR codes
+      /usr/local/bin/lucid-gui-qr.sh
+      
+      echo "Lucid GUI services started successfully"
+
+  - path: /usr/local/bin/lucid-gui-qr.sh
+    content: |
+      #!/bin/bash
+      # Lucid GUI QR Code Bootstrap Script
+      # Generates QR codes for all GUI services
+      
+      set -euo pipefail
+      
+      # Colors for output
+      RED='\033[0;31m'
+      GREEN='\033[0;32m'
+      YELLOW='\033[1;33m'
+      BLUE='\033[0;34m'
+      NC='\033[0m' # No Color
+      
+      # Function to log messages
+      log_info() {
+          echo -e "${BLUE}[INFO]${NC} $1"
+      }
+      
+      log_success() {
+          echo -e "${GREEN}[SUCCESS]${NC} $1"
+      }
+      
+      log_warning() {
+          echo -e "${YELLOW}[WARNING]${NC} $1"
+      }
+      
+      log_error() {
+          echo -e "${RED}[ERROR]${NC} $1"
+      }
+      
+      # Check if qrencode is installed
+      check_dependencies() {
+          if ! command -v qrencode &> /dev/null; then
+              log_error "qrencode is not installed. Installing..."
+              apt-get update && apt-get install -y qrencode
+          fi
+      }
+      
+      # Generate QR codes for GUI services
+      generate_qr_codes() {
+          log_info "Generating QR codes for Lucid GUI services..."
+          
+          # Check if Tor hidden service directories exist
+          local user_onion=""
+          local admin_onion=""
+          local node_onion=""
+          
+          if [ -f "/var/lib/tor/lucid-user-gui/hostname" ]; then
+              user_onion=$(cat /var/lib/tor/lucid-user-gui/hostname)
+              log_success "User GUI .onion: $user_onion"
+          else
+              log_warning "User GUI .onion service not found"
+          fi
+          
+          if [ -f "/var/lib/tor/lucid-admin-gui/hostname" ]; then
+              admin_onion=$(cat /var/lib/tor/lucid-admin-gui/hostname)
+              log_success "Admin GUI .onion: $admin_onion"
+          else
+              log_warning "Admin GUI .onion service not found"
+          fi
+          
+          if [ -f "/var/lib/tor/lucid-node-gui/hostname" ]; then
+              node_onion=$(cat /var/lib/tor/lucid-node-gui/hostname)
+              log_success "Node GUI .onion: $node_onion"
+          else
+              log_warning "Node GUI .onion service not found"
+          fi
+          
+          echo ""
+          echo "=============================================="
+          echo "          Lucid RDP GUI Access Codes"
+          echo "=============================================="
+          echo ""
+          
+          if [ -n "$user_onion" ]; then
+              echo "📱 USER GUI (End Users)"
+              echo "   URL: https://$user_onion"
+              echo "   Purpose: Session management and control"
+              echo ""
+              qrencode -t ANSI256 "https://$user_onion" || qrencode -t UTF8 "https://$user_onion"
+              echo ""
+              echo "----------------------------------------------"
+              echo ""
+          fi
+          
+          if [ -n "$admin_onion" ]; then
+              echo "⚙️  ADMIN GUI (Operators)"
+              echo "   URL: https://$admin_onion"
+              echo "   Purpose: Pi administration and provisioning"
+              echo ""
+              qrencode -t ANSI256 "https://$admin_onion" || qrencode -t UTF8 "https://$admin_onion"
+              echo ""
+              echo "----------------------------------------------"
+              echo ""
+          fi
+          
+          if [ -n "$node_onion" ]; then
+              echo "🖥️  NODE GUI (Node Workers)"
+              echo "   URL: https://$node_onion"
+              echo "   Purpose: Node monitoring and PoOT management"
+              echo ""
+              qrencode -t ANSI256 "https://$node_onion" || qrencode -t UTF8 "https://$node_onion"
+              echo ""
+              echo "----------------------------------------------"
+              echo ""
+          fi
+          
+          echo "📋 Instructions:"
+          echo "   1. Scan the appropriate QR code with your device"
+          echo "   2. Open the .onion URL in Tor Browser"
+          echo "   3. Authenticate to access the GUI"
+          echo ""
+          echo "🔒 Security Note:"
+          echo "   All GUI access is via Tor .onion addresses only"
+          echo "   No clearnet ingress is available"
+          echo ""
+          echo "=============================================="
+      }
+      
+      # Check GUI service health
+      check_gui_health() {
+          log_info "Checking GUI service health..."
+          
+          local services=("lucid-user-gui:3001" "lucid-admin-gui:3002" "lucid-node-gui:3003")
+          local healthy_count=0
+          
+          for service in "${services[@]}"; do
+              local name=$(echo "$service" | cut -d: -f1)
+              local port=$(echo "$service" | cut -d: -f2)
+              
+              if curl -f -s "http://localhost:$port/health" > /dev/null 2>&1; then
+                  log_success "$name is healthy"
+                  ((healthy_count++))
+              else
+                  log_warning "$name is not responding"
+              fi
+          done
+          
+          if [ $healthy_count -eq ${#services[@]} ]; then
+              log_success "All GUI services are healthy"
+          else
+              log_warning "$healthy_count/${#services[@]} GUI services are healthy"
+          fi
+      }
+      
+      # Main function
+      main() {
+          log_info "Starting Lucid GUI QR code generation..."
+          
+          check_dependencies
+          check_gui_health
+          generate_qr_codes
+          
+          log_success "QR code generation completed"
+      }
+      
+      # Run main function
+      main
+
+  - path: /opt/lucid/docker-compose.yml
+    content: |
+      # Lucid GUI Services Docker Compose Configuration
+      # This file is automatically generated by cloud-init
+      
+      version: '3.8'
+      
+      services:
+        # User GUI Service
+        lucid-user-gui:
+          build:
+            context: ./apps/gui-user
+            dockerfile: Dockerfile
+            target: production
+          image: ghcr.io/hamigames/lucid/user-gui:latest
+          container_name: lucid-user-gui
+          restart: unless-stopped
+          ports:
+            - "3001:3001"
+          environment:
+            - NODE_ENV=production
+            - PORT=3001
+            - TOR_SOCKS_PORT=9050
+            - TOR_CONTROL_PORT=9051
+            - API_BASE_URL=https://sessions-gateway.onion
+          volumes:
+            - lucid_user_gui_data:/app/data
+            - lucid_user_gui_logs:/app/logs
+          networks:
+            - lucid-network
+          depends_on:
+            - lucid-tor
+          labels:
+            - "com.lucid.plane=ops"
+            - "com.lucid.service=gui"
+            - "com.lucid.gui-type=user"
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+
+        # Admin GUI Service
+        lucid-admin-gui:
+          build:
+            context: ./apps/gui-admin
+            dockerfile: Dockerfile
+            target: production
+          image: ghcr.io/hamigames/lucid/admin-gui:latest
+          container_name: lucid-admin-gui
+          restart: unless-stopped
+          ports:
+            - "3002:3002"
+          environment:
+            - NODE_ENV=production
+            - PORT=3002
+            - TOR_SOCKS_PORT=9050
+            - TOR_CONTROL_PORT=9051
+            - API_BASE_URL=https://blockchain-core.onion
+          volumes:
+            - lucid_admin_gui_data:/app/data
+            - lucid_admin_gui_logs:/app/logs
+          networks:
+            - lucid-network
+          depends_on:
+            - lucid-tor
+          labels:
+            - "com.lucid.plane=ops"
+            - "com.lucid.service=gui"
+            - "com.lucid.gui-type=admin"
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+
+        # Node GUI Service
+        lucid-node-gui:
+          build:
+            context: ./apps/gui-node
+            dockerfile: Dockerfile
+            target: production
+          image: ghcr.io/hamigames/lucid/node-gui:latest
+          container_name: lucid-node-gui
+          restart: unless-stopped
+          ports:
+            - "3003:3003"
+          environment:
+            - NODE_ENV=production
+            - PORT=3003
+            - TOR_SOCKS_PORT=9050
+            - TOR_CONTROL_PORT=9051
+            - API_BASE_URL=https://tron-payment-service.onion
+          volumes:
+            - lucid_node_gui_data:/app/data
+            - lucid_node_gui_logs:/app/logs
+          networks:
+            - lucid-network
+          depends_on:
+            - lucid-tor
+          labels:
+            - "com.lucid.plane=ops"
+            - "com.lucid.service=gui"
+            - "com.lucid.gui-type=node"
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+
+        # Tor Service
+        lucid-tor:
+          image: ghcr.io/hamigames/lucid/tor:latest
+          container_name: lucid-tor
+          restart: unless-stopped
+          ports:
+            - "9050:9050"  # SOCKS proxy
+            - "9051:9051"  # Control port
+          volumes:
+            - lucid_tor_data:/var/lib/tor
+            - lucid_tor_config:/etc/tor
+          networks:
+            - lucid-network
+
+      networks:
+        lucid-network:
+          driver: bridge
+
+      volumes:
+        lucid_user_gui_data:
+          driver: local
+        lucid_user_gui_logs:
+          driver: local
+        lucid_admin_gui_data:
+          driver: local
+        lucid_admin_gui_logs:
+          driver: local
+        lucid_node_gui_data:
+          driver: local
+        lucid_node_gui_logs:
+          driver: local
+        lucid_tor_data:
+          driver: local
+        lucid_tor_config:
+          driver: local
+
+  - path: /etc/tor/torrc
+    content: |
+      # Tor configuration for Lucid GUI services
+      SocksPort 9050
+      ControlPort 9051
+      CookieAuthentication 1
+      
+      # User GUI Hidden Service
+      HiddenServiceDir /var/lib/tor/lucid-user-gui
+      HiddenServicePort 80 127.0.0.1:3001
+      HiddenServiceVersion 3
+      
+      # Admin GUI Hidden Service  
+      HiddenServiceDir /var/lib/tor/lucid-admin-gui
+      HiddenServicePort 80 127.0.0.1:3002
+      HiddenServiceVersion 3
+      
+      # Node GUI Hidden Service
+      HiddenServiceDir /var/lib/tor/lucid-node-gui
+      HiddenServicePort 80 127.0.0.1:3003
+      HiddenServiceVersion 3
+      
+      # Additional configuration
+      SafeLogging 1
+      Log notice file /var/log/tor/notices.log
+
+# Set permissions
+runcmd:
+  - chmod +x /usr/local/bin/lucid-gui-start.sh
+  - chmod +x /usr/local/bin/lucid-gui-qr.sh
+  - systemctl enable lucid-gui.service
+  - systemctl start lucid-gui.service
+  - systemctl enable tor
+  - systemctl start tor
+  - usermod -aG docker ubuntu
+
+# Final message
+final_message: "Lucid GUI services setup completed. QR codes will be displayed after services start."

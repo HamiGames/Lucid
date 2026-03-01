@@ -1,0 +1,55 @@
+Component,Category,File Path,Status,Description,Features,Dependencies,Import Updates,Key Functions,API Endpoints
+Schemas,Data Models,src/api/schemas/auth.py,✅ Created,Authentication request/response models,Login/refresh/logout requests,Token validation,Pydantic models,LoginRequest RefreshRequest LogoutRequest TokenPair,/auth/login /auth/refresh /auth/logout
+Schemas,Data Models,src/api/schemas/users.py,✅ Created,User data models and pagination,User CRUD operations,Email validation,Pydantic models,UserPublic RegisterRequest PaginatedUsers,/users (GET POST DELETE)
+Schemas,Data Models,src/api/schemas/errors.py,✅ Created,Error response models,Standardized error handling,Error codes,Pydantic models,ErrorResponse,All endpoints (error responses)
+Schemas,Data Models,src/api/schemas/meta.py,✅ Created,Meta response models,Service metadata,Health responses,Pydantic models,HealthResponse,/health /meta/ping
+Schemas,Data Models,src/api/schemas/__init__.py,✅ Created,Schema exports,Centralized imports,All schemas,Module exports,All schema classes,N/A
+Services,Business Logic,src/api/services/mongo_service.py,✅ Created,MongoDB service layer,Database operations,MongoDB connection,PyMongo,get_db ping _mongo_url,Database health checks
+Services,Business Logic,src/api/services/blockchain_service.py,✅ Created,Blockchain service integration,Node health monitoring,Async HTTP client,aiohttp,node_health,Blockchain health checks
+Services,Business Logic,src/api/services/__init__.py,✅ Created,Service exports,Centralized imports,All services,Module exports,All service functions,N/A
+Middleware,Request Processing,src/api/middleware/auth.py,✅ Created,API key authentication middleware,Request authentication,Environment variables,Starlette,AuthMiddleware,All protected endpoints
+Middleware,Request Processing,src/api/middleware/logging.py,✅ Created,Request logging middleware,HTTP request logging,Structured logging,Starlette,LoggingMiddleware,All endpoints (logging)
+Middleware,Request Processing,src/api/middleware/__init__.py,✅ Created,Middleware exports,Centralized imports,All middleware,Module exports,All middleware classes,N/A
+Database Layer,Data Access,src/api/db/connection.py,✅ Created,MongoDB connection management,Singleton client pattern,Thread safety,PyMongo,get_client get_db ping close_client,Database operations
+Database Layer,Data Access,src/api/db/users_repo.py,✅ Created,User repository with CRUD operations,User data management,Bcrypt password hashing,PyMongo Bcrypt,UsersRepo CRUD operations,User management endpoints
+Database Layer,Data Models,src/api/db/models/session.py,✅ Created,Session data models,RDP session tracking,Session lifecycle,Pydantic models,RDPSession,/sessions endpoints
+Database Layer,Data Models,src/api/db/models/user.py,✅ Created,User data models,User profile management,Email validation,Pydantic models,User,/users endpoints
+Database Layer,Data Models,src/api/db/models/__init__.py,✅ Created,Model exports,Centralized imports,All models,Module exports,All model classes,N/A
+Database Layer,Data Access,src/api/db/__init__.py,✅ Created,Database exports,Centralized imports,All database components,Module exports,All database functions,N/A
+Utilities,Helper Functions,src/api/utils/config.py,✅ Created,Configuration utilities,Environment configuration,Container detection,OS utilities,in_container mongo_conn_str service_name service_version mongo_timeouts_ms,Configuration management
+Utilities,Helper Functions,src/api/utils/logger.py,✅ Created,Structured logging utilities,JSON logging,Log formatting,Python logging,JsonFormatter get_logger,All components (logging)
+Utilities,Helper Functions,src/api/utils/__init__.py,✅ Created,Utility exports,Centralized imports,All utilities,Module exports,All utility functions,N/A
+Scripts,Development Tools,src/api/scripts/ensure_indexes.py,✅ Created,Database index management,MongoDB index creation,Database optimization,PyMongo,_ensure_index _has_index main,Database setup
+Scripts,Development Tools,src/api/scripts/seed_dev.py,✅ Created,Development data seeding,User creation for development,Bcrypt password hashing,PyMongo Bcrypt,_ensure_user _hash_password main,Development setup
+Scripts,Development Tools,src/api/scripts/__init__.py,✅ Created,Script exports,Centralized imports,All scripts,Module exports,All script functions,N/A
+Main Application,Application Core,src/api/main.py,✅ Created,FastAPI application with all routes,Complete API server,All components,FastAPI,create_app _configure_logging _request_logger,All API endpoints
+Main Application,Configuration,src/api/config.py,✅ Created,Application configuration,Pydantic settings,Environment variables,Pydantic,Settings get_settings,Configuration management
+Main Application,Dependencies,src/api/requirements.txt,✅ Created,Python dependencies,All required packages,Version constraints,Pip requirements,All dependencies,N/A
+Main Application,Module Exports,src/api/__init__.py,✅ Created,Module exports and documentation,API module interface,All components,Module exports,app create_app Settings get_settings,N/A
+Routes,API Endpoints,src/api/routes/auth.py,✅ Updated,Authentication routes (imports updated),Login/refresh/logout endpoints,Authentication schemas,FastAPI,login refresh logout,POST /auth/login /auth/refresh /auth/logout
+Routes,API Endpoints,src/api/routes/users.py,✅ Updated,User management routes (imports updated),User CRUD operations,User repository,FastAPI,list_users get_user create_user delete_user,GET POST DELETE /users
+Routes,API Endpoints,src/api/routes/health.py,✅ Updated,Health check routes (imports updated),Service health monitoring,Database connectivity,FastAPI,health db_health,GET /health /health/db
+Routes,API Endpoints,src/api/routes/meta.py,✅ Updated,Meta routes (imports updated),Service metadata,Service information,FastAPI,ping,GET /meta/ping
+Routes,API Endpoints,src/api/routes/blockchain.py,✅ Updated,Blockchain proxy routes (imports updated),Blockchain service proxying,HTTP client,FastAPI httpx,chain_info chain_height chain_balance,GET /chain/info /chain/height /chain/balance
+Routes,API Endpoints,src/api/routes/wallets.py,✅ Updated,Wallet proxy routes (imports updated),Wallet service proxying,HTTP client,FastAPI httpx,list_wallets create_wallet get_wallet transfer,GET POST /wallets
+Routes,API Endpoints,src/api/routes/__init__.py,✅ Updated,Route exports (imports updated),Centralized route imports,All routes,Module exports,All route routers,N/A
+Integration,Import Updates,All Route Files,✅ Completed,Updated import paths from app.* to src.api.*,Consistent module imports,All API components,Import statements,All functions,All endpoints
+Integration,Import Updates,All Service Files,✅ Completed,Updated import paths from app.* to src.api.*,Consistent module imports,All API components,Import statements,All functions,N/A
+Integration,Import Updates,All Database Files,✅ Completed,Updated import paths from app.* to src.api.*,Consistent module imports,All API components,Import statements,All functions,N/A
+Integration,Import Updates,All Utility Files,✅ Completed,Updated import paths from app.* to src.api.*,Consistent module imports,All API components,Import statements,All functions,N/A
+Integration,Import Updates,All Middleware Files,✅ Completed,Updated import paths from app.* to src.api.*,Consistent module imports,All API components,Import statements,All functions,N/A
+Integration,Import Updates,All Script Files,✅ Completed,Updated import paths from app.* to src.api.*,Consistent module imports,All API components,Import statements,All functions,N/A
+Quality Assurance,Linting,src/api/ (all files),✅ Passed,No linting errors found,Code quality validation,All dependencies,Linting tools,All functions,All endpoints
+Quality Assurance,Code Quality,All Files,✅ Completed,Comprehensive error handling,Proper HTTP status codes,Type safety,All libraries,All functions,All endpoints
+Quality Assurance,Documentation,All Files,✅ Completed,Comprehensive docstrings,API documentation,Code comments,All libraries,All functions,All endpoints
+Ready to Use,Server,uvicorn src.api.main:app,✅ Ready,Run API server with uvicorn,Development server,All dependencies,uvicorn,create_app,All endpoints
+Ready to Use,Documentation,http://localhost:8000/docs,✅ Ready,Swagger UI documentation,Interactive API docs,All endpoints,FastAPI,All routes,All endpoints
+Ready to Use,Documentation,http://localhost:8000/redoc,✅ Ready,ReDoc documentation,Alternative API docs,All endpoints,FastAPI,All routes,All endpoints
+Ready to Use,Development,Database Scripts,✅ Ready,Run development scripts,Database setup,All dependencies,Python scripts,ensure_indexes seed_dev,Database setup
+Ready to Use,Endpoints,Root Endpoint,✅ Ready,GET / - Root endpoint,Service information,Basic info,FastAPI,Root handler,GET /
+Ready to Use,Endpoints,Health Endpoint,✅ Ready,GET /health - Service health,Health monitoring,Database connectivity,FastAPI,Health handler,GET /health
+Ready to Use,Endpoints,Auth Endpoints,✅ Ready,POST /auth/* - Authentication,User authentication,Token management,FastAPI,Auth handlers,POST /auth/login /auth/refresh /auth/logout
+Ready to Use,Endpoints,User Endpoints,✅ Ready,GET/POST/DELETE /users/* - User management,User CRUD operations,Password hashing,FastAPI,User handlers,GET POST DELETE /users
+Ready to Use,Endpoints,Blockchain Endpoints,✅ Ready,GET /chain/* - Blockchain proxy,Blockchain service integration,HTTP proxying,FastAPI httpx,Blockchain handlers,GET /chain/info /chain/height /chain/balance
+Ready to Use,Endpoints,Wallet Endpoints,✅ Ready,GET/POST /wallets/* - Wallet proxy,Wallet service integration,HTTP proxying,FastAPI httpx,Wallet handlers,GET POST /wallets
+Ready to Use,Endpoints,Meta Endpoints,✅ Ready,GET /meta/* - Meta information,Service metadata,Dependency checks,FastAPI,Meta handlers,GET /meta/ping
