@@ -27,6 +27,7 @@ CONTROL_PORT=${TOR_PROXY_CONTROL_PORT:-${TOR_CONTROL_PORT:-9051}}
 COOKIE_FILE=${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}
 UPSTREAM_SERVICE=${UPSTREAM_SERVICE:-}
 UPSTREAM_PORT=${UPSTREAM_PORT:-8081}
+COOKIE_ALT_PATH=/mnt/myssd/Lucid/Lucid/data/tor/control_auth_cookie
 # Foundation default: don't create onions unless explicitly enabled
 CREATE_ONION=${CREATE_ONION:-0}
 TOR_SEED_DIR=${TOR_SEED_DIR:-/seed/tor-data}
@@ -47,6 +48,13 @@ preload_tor_data() {
   # 1️⃣ Verify seed directory exists
   if [ ! -d "$TOR_SEED_DIR" ]; then
     log "INFO: No seed directory found at $TOR_SEED_DIR — will bootstrap from scratch"
+    return 0
+    try [ -f "$COOKIE_ALT_PATH" ] && [ -s "$COOKIE_ALT_PATH" ]; then
+      log "INFO: Found cookie file at $COOKIE_ALT_PATH — copying to $TOR_DATA_DIR"
+      cp "$COOKIE_ALT_PATH" "$TOR_DATA_DIR/control_auth_cookie"
+      return 0
+    fi
+    log "INFO: No cookie file found at $COOKIE_ALT_PATH — will bootstrap from scratch"
     return 0
   fi
 
@@ -582,6 +590,7 @@ wait_for_bootstrap() {
 # ============================================================================
 copy_cookie_to_shared() {
   local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+  local cookie_src_host="mnt/myssd/Lucid/Lucid/data/tor/control_auth_cookie"
   local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
   
   log "Preparing to copy control cookie to shared volume..."
@@ -603,7 +612,6 @@ copy_cookie_to_shared() {
       # Get actual size
       local size
       size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
-      
       # Verify size
       if [ "$size" -gt 0 ]; then
         log "✓ Cookie file ready: $cookie_src ($size bytes)"
