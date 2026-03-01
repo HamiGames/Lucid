@@ -44,3 +44,5 @@ configs/environment/
 htmlcov/
 .coverage
 
+nul
+
