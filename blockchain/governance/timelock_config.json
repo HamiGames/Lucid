@@ -1,0 +1,23 @@
+{
+  "min_delay_seconds": 3600,
+  "max_delay_seconds": 2592000,
+  "default_grace_period": 604800,
+  "max_grace_period": 2592000,
+  "admin_addresses": [
+    "TAdminAddress1",
+    "TAdminAddress2"
+  ],
+  "emergency_addresses": [
+    "TEmergencyAddress1"
+  ],
+  "required_signatures": {
+    "parameter_change": 1,
+    "contract_upgrade": 2,
+    "emergency_shutdown": 3,
+    "key_rotation": 2,
+    "node_provisioning": 1,
+    "policy_update": 1,
+    "fee_adjustment": 1,
+    "consensus_change": 3
+  }
+}

@@ -1,0 +1,232 @@
+# Lucid Session Storage - Storage Configuration
+# Optional YAML configuration for session storage service
+# File: sessions/config/storage-config.yaml
+# Purpose: Define storage policies, retention rules, and data management
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
+
+# Global Storage Configuration
+global:
+  service_name: "lucid-session-storage"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  storage_backend: "mongodb"  # Options: mongodb, filesystem, s3, ipfs
+
+# Storage Paths
+# NOTE: Storage paths come from volumes mounted in docker-compose.application.yml
+paths:
+  base_path: "/app/data"
+  sessions_path: "/app/data/sessions"
+  chunks_path: "/app/data/chunks"
+  temp_path: "/tmp/sessions"
+  cache_path: "/app/cache"
+
+# Chunk Storage Configuration
+chunk_storage:
+  enabled: true
+  chunk_size_mb: 10
+  max_chunk_size_mb: 100
+  min_chunk_size_mb: 1
+  compression_enabled: true
+  compression_level: 6
+  compression_algorithm: "gzip"  # Options: gzip, zstd, lz4
+  encryption_enabled: false
+  deduplication_enabled: true
+
+# Session Storage Configuration
+session_storage:
+  enabled: true
+  max_session_size_gb: 100
+  max_session_duration_hours: 24
+  store_metadata: true
+  store_chunks: true
+  store_merkle_trees: true
+  store_proofs: true
+
+# Retention Policies
+retention:
+  # Session Retention
+  sessions:
+    retention_strategy: "time_based"  # Options: time_based, count_based, size_based
+    retention_days: 30
+    archive_after_days: 7
+    delete_after_days: 90
+  
+  # Chunk Retention
+  chunks:
+    retention_days: 30
+    archive_after_days: 7
+    delete_after_days: 90
+    orphan_chunk_cleanup: true
+    orphan_chunk_retention_days: 7
+  
+  # Merkle Tree Retention
+  merkle_trees:
+    retention_days: 365
+    archive_after_days: 30
+    delete_after_days: -1  # Never delete
+  
+  # Archive Storage
+  archive:
+    enabled: true
+    archive_backend: "s3"  # Options: s3, filesystem, ipfs
+    archive_compression: true
+    archive_encryption: true
+    archive_path: "/archive/sessions"
+
+# Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
+database:
+  mongodb:
+    url: ""  # Set via MONGODB_URL env var (required)
+    database: "lucid_sessions"
+    collections:
+      sessions: "sessions"
+      chunks: "chunks"
+      merkle_trees: "merkle_trees"
+      proofs: "proofs"
+    connection_pool_size: 20
+    write_concern: "majority"
+    read_concern: "majority"
+  
+  redis:
+    url: ""  # Set via REDIS_URL env var
+    cache_ttl_seconds: 3600
+    max_cache_size_mb: 500
+  
+  elasticsearch:
+    url: ""  # Set via ELASTICSEARCH_URL env var
+    index_prefix: "lucid_sessions"
+    index_retention_days: 90
+
+# Network Configuration
+# NOTE: Host and port MUST come from environment variables:
+# - SESSION_STORAGE_HOST (default: session-storage)
+# - SESSION_STORAGE_PORT (default: 8082)
+# - SESSION_STORAGE_URL (default: http://session-storage:8082)
+network:
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8082  # Override with SESSION_STORAGE_PORT env var
+
+# Indexing Configuration
+indexing:
+  enabled: true
+  indexes:
+    # Session Indexes
+    - collection: "sessions"
+      fields: ["session_id"]
+      unique: true
+    - collection: "sessions"
+      fields: ["user_id", "created_at"]
+    - collection: "sessions"
+      fields: ["status", "created_at"]
+    - collection: "sessions"
+      fields: ["expires_at"]
+      ttl: true
+    
+    # Chunk Indexes
+    - collection: "chunks"
+      fields: ["chunk_id"]
+      unique: true
+    - collection: "chunks"
+      fields: ["session_id", "chunk_index"]
+    - collection: "chunks"
+      fields: ["session_id", "created_at"]
+    - collection: "chunks"
+      fields: ["expires_at"]
+      ttl: true
+
+# Caching Configuration
+caching:
+  enabled: true
+  cache_backend: "redis"
+  cache_recent_sessions: true
+  cache_recent_chunks: true
+  cache_merkle_trees: true
+  cache_ttl_seconds: 3600
+  max_cache_size_mb: 1000
+
+# Performance Optimization
+performance:
+  batch_operations:
+    enabled: true
+    batch_size: 1000
+    batch_timeout_seconds: 5
+  
+  parallel_processing:
+    enabled: true
+    max_worker_threads: 8
+    chunk_processing_threads: 4
+  
+  connection_pooling:
+    enabled: true
+    pool_size: 20
+    max_overflow: 10
+    pool_timeout_seconds: 30
+
+# Cleanup Configuration
+cleanup:
+  enabled: true
+  cleanup_interval_hours: 6
+  cleanup_batch_size: 100
+  verify_before_delete: true
+  backup_before_delete: false
+  
+  cleanup_tasks:
+    - name: "expired_sessions"
+      enabled: true
+      schedule: "0 */6 * * *"  # Every 6 hours
+    - name: "orphan_chunks"
+      enabled: true
+      schedule: "0 2 * * *"  # Daily at 2 AM
+    - name: "old_merkle_trees"
+      enabled: false
+      schedule: "0 3 * * 0"  # Weekly on Sunday at 3 AM
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "storage_size_bytes"
+    - "session_count"
+    - "chunk_count"
+    - "merkle_tree_count"
+    - "storage_operations_per_second"
+    - "cache_hit_rate"
+    - "cleanup_operations"
+    - "retention_operations"
+  
+  alerts:
+    storage_size_threshold_gb: 1000
+    storage_utilization_threshold_percent: 80
+    cleanup_failure_threshold: 3
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    verify_integrity_on_recovery: true
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  data_privacy:
+    encrypt_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_data_in_logs: true

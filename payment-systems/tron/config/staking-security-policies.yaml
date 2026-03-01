@@ -1,0 +1,364 @@
+# LUCID TRON Staking Service - Security Policies Configuration
+# File: payment-systems/tron/config/staking-security-policies.yaml
+# Purpose: Security, compliance, and operational policies for staking service
+
+# Role-Based Access Control (RBAC)
+rbac:
+  roles:
+    admin:
+      description: "Full access to staking operations and configuration"
+      permissions:
+        - "stake:create"
+        - "stake:read"
+        - "stake:update"
+        - "stake:delete"
+        - "stake:cancel"
+        - "vote:create"
+        - "vote:read"
+        - "vote:delete"
+        - "delegate:create"
+        - "delegate:read"
+        - "delegate:delete"
+        - "config:read"
+        - "config:write"
+        - "logs:read"
+        - "audit:read"
+      max_staking_amount: null  # Unlimited
+      max_daily_volume: null    # Unlimited
+      rate_limit: 1000
+    
+    manager:
+      description: "Can manage stakings and view reports"
+      permissions:
+        - "stake:create"
+        - "stake:read"
+        - "stake:update"
+        - "stake:cancel"
+        - "vote:create"
+        - "vote:read"
+        - "delegate:create"
+        - "delegate:read"
+        - "logs:read"
+      max_staking_amount: 100000  # TRX
+      max_daily_volume: 500000    # TRX
+      rate_limit: 500
+    
+    operator:
+      description: "Can create and monitor stakings"
+      permissions:
+        - "stake:create"
+        - "stake:read"
+        - "vote:create"
+        - "vote:read"
+        - "delegate:read"
+        - "logs:read"
+      max_staking_amount: 10000   # TRX
+      max_daily_volume: 50000     # TRX
+      rate_limit: 200
+    
+    viewer:
+      description: "Read-only access"
+      permissions:
+        - "stake:read"
+        - "vote:read"
+        - "delegate:read"
+        - "logs:read"
+      max_staking_amount: 0
+      max_daily_volume: 0
+      rate_limit: 100
+
+# JWT/Token Security
+jwt_security:
+  algorithm: "HS256"
+  expiration_hours: 24
+  refresh_token_expiration_days: 7
+  required_claims:
+    - "sub"
+    - "role"
+    - "iat"
+    - "exp"
+  secret_rotation_days: 30
+
+# Encryption Standards
+encryption:
+  algorithm: "AES-256-GCM"
+  key_derivation: "PBKDF2"
+  hash_algorithm: "SHA-256"
+  sensitive_fields:
+    - "private_key"
+    - "wallet_address"
+    - "witness_address"
+    - "delegate_address"
+
+# API Security Headers
+api_security:
+  required_headers:
+    - "X-API-Key"
+    - "Authorization"
+    - "Content-Type"
+  disable_methods:
+    - "OPTIONS"
+  enforce_https: true
+  hsts_max_age: 31536000
+
+# Approval Workflows
+approval_workflows:
+  high_value_staking:
+    trigger: "amount >= 50000 TRX"
+    required_approvers: 2
+    timeout_hours: 24
+    notification: true
+  
+  witness_voting:
+    trigger: "vote_count >= 1000"
+    required_approvers: 1
+    timeout_hours: 12
+    notification: true
+  
+  large_delegation:
+    trigger: "amount >= 100000 TRX"
+    required_approvers: 2
+    timeout_hours: 24
+    notification: true
+
+# AML/KYC Policies
+aml_kyc:
+  kyc_required: true
+  kyc_verification_levels:
+    - level: "basic"
+      max_staking_per_transaction: 10000
+      max_daily_volume: 50000
+      max_annual_volume: 500000
+    
+    - level: "intermediate"
+      max_staking_per_transaction: 100000
+      max_daily_volume: 500000
+      max_annual_volume: 5000000
+    
+    - level: "advanced"
+      max_staking_per_transaction: 1000000
+      max_daily_volume: 5000000
+      max_annual_volume: 50000000
+  
+  sanctions_check:
+    enabled: true
+    check_frequency: "daily"
+    sources:
+      - "OFAC"
+      - "OFAC_SDN"
+      - "UN_SC"
+  
+  pep_check:
+    enabled: true
+    check_frequency: "quarterly"
+  
+  risk_scoring:
+    enabled: true
+    high_risk_threshold: 75
+    medium_risk_threshold: 50
+    actions:
+      high_risk: "block_transaction"
+      medium_risk: "require_approval"
+      low_risk: "allow"
+
+# Transaction Monitoring
+transaction_monitoring:
+  enabled: true
+  velocity_checks:
+    - check: "transactions_per_minute"
+      max: 10
+      action: "rate_limit"
+    
+    - check: "transactions_per_hour"
+      max: 100
+      action: "alert"
+    
+    - check: "transactions_per_day"
+      max: 500
+      action: "alert"
+  
+  amount_checks:
+    - check: "single_transaction_max"
+      max: 1000000
+      action: "require_approval"
+    
+    - check: "daily_total_max"
+      max: 5000000
+      action: "alert"
+  
+  pattern_detection:
+    enabled: true
+    check_unusual_patterns: true
+    check_round_amounts: true
+
+# Transaction Limits
+transaction_limits:
+  min_staking_amount: 1  # TRX
+  max_staking_amount: 10000000  # TRX
+  min_vote_count: 1
+  max_vote_count: 1000000
+  min_delegation_amount: 1  # TRX
+  max_delegation_amount: 10000000  # TRX
+  min_staking_duration_days: 1
+  max_staking_duration_days: 365
+
+# Rate Limiting
+rate_limiting:
+  global:
+    requests_per_second: 100
+    requests_per_minute: 5000
+  
+  per_ip:
+    requests_per_second: 10
+    requests_per_minute: 500
+  
+  per_user:
+    requests_per_second: 5
+    requests_per_minute: 300
+  
+  per_endpoint:
+    "/stake":
+      requests_per_minute: 60
+      requests_per_hour: 1000
+    
+    "/unstake":
+      requests_per_minute: 60
+      requests_per_hour: 1000
+    
+    "/vote":
+      requests_per_minute: 100
+      requests_per_hour: 2000
+    
+    "/delegate":
+      requests_per_minute: 100
+      requests_per_hour: 2000
+
+# IP Whitelisting
+ip_whitelisting:
+  enabled: false
+  whitelist:
+    - "127.0.0.1"
+    - "::1"
+  blacklist: []
+
+# Audit Logging
+audit_logging:
+  enabled: true
+  log_level: "INFO"
+  sensitive_field_masking: true
+  mask_characters: "***"
+  events_to_log:
+    - "stake_created"
+    - "stake_cancelled"
+    - "vote_registered"
+    - "delegation_created"
+    - "delegation_revoked"
+    - "authentication_attempt"
+    - "authorization_failure"
+    - "configuration_change"
+    - "error_occurred"
+  
+  retention_days: 90
+  archive_old_logs: true
+  archive_location: "/data/logs/archive"
+
+# Incident Response
+incident_response:
+  enabled: true
+  alert_channels:
+    - type: "email"
+      recipients:
+        - "security@lucid.local"
+    
+    - type: "slack"
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+  
+  high_risk_incidents:
+    - "repeated_failed_authentication"
+    - "high_velocity_transactions"
+    - "sanctions_list_hit"
+    - "unusual_pattern_detected"
+    - "critical_error"
+  
+  incident_escalation:
+    level_1_delay_minutes: 5
+    level_2_delay_minutes: 15
+    level_3_delay_minutes: 30
+
+# Maintenance & Compliance
+maintenance:
+  maintenance_windows:
+    - day: "Sunday"
+      start_hour: 02
+      end_hour: 04
+      timezone: "UTC"
+  
+  backup_frequency: "daily"
+  backup_retention_days: 30
+  
+  security_audit_frequency: "quarterly"
+  penetration_testing_frequency: "annually"
+
+# Notification Policies
+notifications:
+  high_value_staking: true
+  failed_transactions: true
+  daily_summary: true
+  weekly_report: true
+  monthly_compliance_report: true
+  
+  notification_channels:
+    - type: "email"
+      enabled: true
+    
+    - type: "webhook"
+      enabled: true
+    
+    - type: "sms"
+      enabled: false
+
+# Compliance Requirements
+compliance:
+  standards:
+    - "SOC2"
+    - "AML"
+    - "KYC"
+    - "GDPR"
+  
+  data_retention_policy:
+    transaction_records: 7  # years
+    audit_logs: 5  # years
+    personal_data: 3  # years
+  
+  data_residency:
+    required_jurisdiction: "US"
+    allowed_regions:
+      - "US"
+      - "EU"
+
+# High-Risk Activity Detection
+high_risk_detection:
+  enabled: true
+  
+  thresholds:
+    - activity: "rapid_multiple_stakings"
+      count: 10
+      time_window_minutes: 60
+      risk_score: 85
+    
+    - activity: "large_single_transaction"
+      amount_threshold: 5000000
+      risk_score: 75
+    
+    - activity: "unusual_time_of_day"
+      check: true
+      risk_score: 40
+    
+    - activity: "geographic_anomaly"
+      check: true
+      risk_score: 60
+  
+  actions:
+    high_risk: "block_and_alert"
+    medium_risk: "require_approval"
+    low_risk: "log_only"

@@ -1,0 +1,93 @@
+# RDP Controller - Configuration
+# Optional YAML configuration for RDP Controller service
+# File: RDP/session-controller/config.yaml
+# Purpose: Define RDP Controller parameters and settings
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
+
+# Global Service Configuration
+service_name: lucid-rdp-controller
+service_version: "1.0.0"
+debug: false
+log_level: INFO  # Override with LOG_LEVEL env var
+
+# Network Configuration
+# NOTE: Host and port MUST come from environment variables:
+# - RDP_CONTROLLER_HOST (default: rdp-controller)
+# - RDP_CONTROLLER_PORT (default: 8092)
+network:
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8092  # Override with RDP_CONTROLLER_PORT env var
+
+# Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+database:
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
+
+# Integration Service URLs
+# NOTE: All URLs MUST come from environment variables:
+integration:
+  rdp_xrdp_url: ""  # Set via RDP_XRDP_URL env var
+  rdp_server_manager_url: ""  # Set via RDP_SERVER_MANAGER_URL env var
+  rdp_monitor_url: ""  # Set via RDP_MONITOR_URL env var
+  session_recorder_url: ""  # Set via SESSION_RECORDER_URL env var
+  session_processor_url: ""  # Set via SESSION_PROCESSOR_URL env var
+  session_api_url: ""  # Set via SESSION_API_URL env var
+  session_storage_url: ""  # Set via SESSION_STORAGE_URL env var
+  session_pipeline_url: ""  # Set via SESSION_PIPELINE_URL env var
+
+# Service Timeout Configuration
+service_timeout:
+  timeout_seconds: 30.0  # Override with SERVICE_TIMEOUT_SECONDS env var
+  retry_count: 3  # Override with SERVICE_RETRY_COUNT env var
+  retry_delay_seconds: 1.0  # Override with SERVICE_RETRY_DELAY_SECONDS env var
+
+# Storage Configuration
+# Storage paths come from volumes mounted in docker-compose.application.yml
+storage:
+  data_path: "/app/data"
+  logs_path: "/app/logs"
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "session_count"
+    - "connection_count"
+    - "server_count"
+    - "resource_usage"
+  
+  health_check:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 10
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1.0
+    exponential_backoff: true
+  
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 60
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  data_privacy:
+    encrypt_data: false
+    mask_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+

@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  dev-distroless:
+    image: pickme/lucid-base:latest-arm64
+    container_name: dev-distroless
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-dev
+    environment:
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=development
+      - DEBUG=true
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=dev-distroless"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=development"
+      - "lucid.mode=development"
+
+  dev-minimal:
+    image: pickme/lucid-base:latest-arm64
+    container_name: dev-minimal
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-dev
+    environment:
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=minimal-development
+      - DEBUG=true
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=dev-minimal"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=development"
+      - "lucid.mode=minimal"
+
+  dev-tools:
+    image: pickme/lucid-base:latest-arm64
+    container_name: dev-tools
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-dev
+    environment:
+      - LUCID_ENV=development
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=dev-tools
+      - DEBUG=true
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=300m
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=dev-tools"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=development"
+      - "lucid.mode=tools"
+
+networks:
+  lucid-distroless-dev:
+    driver: bridge
+    name: lucid-distroless-dev
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+          gateway: 172.24.0.1

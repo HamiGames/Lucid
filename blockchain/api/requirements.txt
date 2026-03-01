@@ -1,0 +1,41 @@
+# Blockchain API Dependencies
+# Core FastAPI dependencies
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Database dependencies
+motor==3.3.2  # Async MongoDB driver
+pymongo==4.6.0
+
+# Redis dependencies
+redis==5.0.1
+aioredis==2.0.1
+
+# Security dependencies
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# HTTP client dependencies
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Utility dependencies
+python-dotenv==1.0.0
+structlog==23.2.0
+tenacity==8.2.3
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Production dependencies
+gunicorn==21.2.0
+prometheus-client==0.19.0

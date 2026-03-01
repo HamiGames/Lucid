@@ -1,0 +1,247 @@
+# ============================================================================
+# Lucid Authentication Service - Docker Build Context Exclusions
+# Step 6: Authentication Container Build
+# Cluster 09: Authentication Service
+# ============================================================================
+#
+# This file specifies which files and directories should be excluded from
+# the Docker build context to optimize build performance and reduce image size.
+#
+# File Reference: infrastructure/containers/auth/.dockerignore
+# Associated Dockerfile: Dockerfile.auth-service
+#
+# ============================================================================
+
+# ============================================================================
+# Python Runtime Files
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ============================================================================
+# Virtual Environments
+# ============================================================================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# Version Control
+# ============================================================================
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ============================================================================
+# Documentation and Notes
+# ============================================================================
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+*.txt.bak
+*.txt.old
+
+# ============================================================================
+# Testing and Development
+# ============================================================================
+tests/
+test_*.py
+*_test.py
+.tox/
+.nox/
+.coverage
+nosetests.xml
+coverage.xml
+*.log
+*.log.*
+test-results/
+.pytest_cache/
+
+# ============================================================================
+# CI/CD and Deployment
+# ============================================================================
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+Jenkinsfile
+.circleci/
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# ============================================================================
+# Security and Secrets (CRITICAL - Never include in build)
+# ============================================================================
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+*.secret
+credentials/
+.credentials/
+private/
+*.private
+
+# ============================================================================
+# Build Artifacts and Temporary Files
+# ============================================================================
+*.tar
+*.tar.gz
+*.zip
+*.rar
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.orig
+
+# ============================================================================
+# Database and Cache Files
+# ============================================================================
+*.db
+*.sqlite
+*.sqlite3
+*.cache
+cache/
+.cache/
+
+# ============================================================================
+# Logs and Monitoring
+# ============================================================================
+logs/
+*.log
+*.log.*
+log/
+audit/
+*.audit
+
+# ============================================================================
+# Node Modules (if any JavaScript tooling)
+# ============================================================================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# ============================================================================
+# Jupyter Notebooks
+# ============================================================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================================================
+# OS-Specific Files
+# ============================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============================================================================
+# Container-Specific Exclusions
+# ============================================================================
+# Development docker files
+docker-compose.dev.yml
+docker-compose.override.yml
+
+# Scripts that aren't needed in container
+scripts/
+*.sh
+
+# Development configuration
+*.dev.py
+*.local.py
+
+# ============================================================================
+# Authentication Service Specific Exclusions
+# ============================================================================
+# Hardware wallet testing files (not needed in production)
+hardware_wallet_tests/
+
+# Mock data and fixtures
+fixtures/
+mocks/
+
+# Performance testing
+benchmarks/
+load_tests/
+
+# Development utilities
+dev_utils/
+debug/
+
+# ============================================================================
+# KEEP IN BUILD CONTEXT (Important files to include)
+# ============================================================================
+# The following files ARE included in the build:
+# - auth/*.py (all Python source files)
+# - auth/api/*.py (API route handlers)
+# - auth/middleware/*.py (middleware components)
+# - auth/models/*.py (data models)
+# - auth/utils/*.py (utility functions)
+# - requirements.txt (Python dependencies)
+# - config.py (configuration)
+#
+# ============================================================================
+# Build Optimization Notes:
+# ============================================================================
+# This .dockerignore file is designed to:
+# 1. Reduce Docker build context size
+# 2. Speed up image builds
+# 3. Prevent sensitive data from being included
+# 4. Exclude unnecessary development files
+# 5. Maintain security best practices
+#
+# The distroless image will only contain:
+# - Python runtime
+# - Required Python packages
+# - Application source code
+# - Minimal dependencies for service operation
+#
+# ============================================================================
+

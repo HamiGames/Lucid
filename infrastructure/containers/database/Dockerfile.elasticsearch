@@ -1,0 +1,177 @@
+# LUCID Elasticsearch Container - SPEC-1B Implementation
+# Distroless container for Elasticsearch search engine
+# CRITICAL: Follows Dockerfile-copy-pattern.md with runtime verification
+
+# syntax=docker/dockerfile:1.7
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+
+# =============================================================================
+# Stage 1: Builder - Install dependencies and prepare Elasticsearch
+# =============================================================================
+FROM --platform=$TARGETPLATFORM elasticsearch:8.11.0 AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    DEBCONF_NONINTERACTIVE_SEEN=true
+
+# Switch to root for package installation
+USER root
+
+# Install additional tools required for Elasticsearch startup scripts
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+        coreutils \
+        bash \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Switch back to elasticsearch user
+USER elasticsearch
+
+# Create custom Elasticsearch configuration with actual content
+# Following Dockerfile-copy-pattern.md: Create files with actual content
+RUN cat > /usr/share/elasticsearch/config/elasticsearch.yml <<'EOFCONFIG'
+cluster.name: lucid-cluster
+node.name: lucid-node
+discovery.type: single-node
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
+bootstrap.memory_lock: false
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+EOFCONFIG
+
+# CRITICAL FIX: Create Elasticsearch keystore during build to prevent runtime creation
+# This is the permanent fix for "Read-only file system" errors in distroless containers
+# Elasticsearch will use this pre-created keystore instead of trying to create it at runtime
+RUN /usr/share/elasticsearch/bin/elasticsearch-keystore create && \
+    chown elasticsearch:elasticsearch /usr/share/elasticsearch/config/elasticsearch.keystore && \
+    echo "✅ Elasticsearch keystore created during build"
+
+# Following Dockerfile-copy-pattern.md Step 3: Verify in Builder Stage
+RUN test -f /usr/share/elasticsearch/bin/elasticsearch && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.yml && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.keystore && \
+    test -f /usr/bin/basename && \
+    test -f /usr/bin/dirname && \
+    test -f /usr/bin/uname && \
+    test -f /usr/bin/curl && \
+    test -f /bin/bash && \
+    test -f /lib/ld-linux-aarch64.so.1 && \
+    test -d /lib/aarch64-linux-gnu && \
+    test -f /etc/ssl/certs/ca-certificates.crt && \
+    ls -la /usr/share/elasticsearch/bin/elasticsearch && \
+    head -1 /usr/share/elasticsearch/bin/elasticsearch && \
+    echo "✅ Elasticsearch files and dependencies verified in builder stage"
+
+# =============================================================================
+# Stage 2: Runtime - Distroless with Java
+# =============================================================================
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Distroless Elasticsearch for Lucid core search support" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Elasticsearch" \
+      org.opencontainers.image.description="Distroless Elasticsearch search engine" \
+      com.lucid.service="elasticsearch" \
+      com.lucid.platform="arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.cluster="foundation" \
+      com.lucid.elasticsearch.version="8.11.0"
+
+# Set environment variables
+ENV ES_HOME=/usr/share/elasticsearch \
+    PATH=/usr/share/elasticsearch/bin:/usr/bin:/bin \
+    CLUSTER_NAME=lucid-cluster \
+    NODE_NAME=lucid-node \
+    DISCOVERY_TYPE=single-node \
+    XPACK_SECURITY_ENABLED=false
+
+# Set working directory
+WORKDIR /usr/share/elasticsearch
+
+# Following Dockerfile-copy-pattern.md Step 4: Copy entire directories
+# Copy Elasticsearch files (directory already populated with config + binaries + keystore)
+COPY --from=builder --chown=65532:65532 /usr/share/elasticsearch /usr/share/elasticsearch
+
+# Copy runtime utilities required by Elasticsearch startup scripts
+COPY --from=builder /usr/bin/basename /usr/bin/basename
+COPY --from=builder /usr/bin/dirname /usr/bin/dirname
+COPY --from=builder /usr/bin/uname /usr/bin/uname
+COPY --from=builder /usr/bin/curl /usr/bin/curl
+COPY --from=builder /bin/bash /bin/bash
+
+# Distroless lacks any default shell; point RUN to the copied bash binary
+SHELL ["/bin/bash", "-c"]
+
+# Note: elasticsearch-cli is included automatically via the directory copy above
+# It will be verified conditionally in the verification step below
+
+# Copy dynamic linker for ARM64
+COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+
+# Copy arch-specific libraries directory (entire directory)
+COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+
+# Copy CA certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Following Dockerfile-copy-pattern.md Step 5: Verify in Runtime Stage (CRITICAL)
+# Use bash to verify all critical files exist - FAILS BUILD if any are missing
+# This catches silent COPY failures that would otherwise pass undetected
+RUN /bin/bash -c ' \
+    test -d /usr/share/elasticsearch || { echo "CRITICAL: elasticsearch directory missing"; exit 1; } && \
+    test -f /usr/share/elasticsearch/bin/elasticsearch || { echo "CRITICAL: elasticsearch binary missing"; exit 1; } && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.yml || { echo "CRITICAL: elasticsearch config missing"; exit 1; } && \
+    test -f /usr/share/elasticsearch/config/elasticsearch.keystore || { echo "CRITICAL: keystore missing"; exit 1; } && \
+    test -f /bin/bash || { echo "CRITICAL: bash missing"; exit 1; } && \
+    test -f /usr/bin/basename || { echo "CRITICAL: basename missing"; exit 1; } && \
+    test -f /usr/bin/dirname || { echo "CRITICAL: dirname missing"; exit 1; } && \
+    test -f /usr/bin/uname || { echo "CRITICAL: uname missing"; exit 1; } && \
+    test -f /usr/bin/curl || { echo "CRITICAL: curl missing"; exit 1; } && \
+    test -f /lib/ld-linux-aarch64.so.1 || { echo "CRITICAL: dynamic linker missing"; exit 1; } && \
+    test -d /lib/aarch64-linux-gnu || { echo "CRITICAL: arch libraries directory missing"; exit 1; } && \
+    test -f /etc/ssl/certs/ca-certificates.crt || { echo "CRITICAL: CA certificates missing"; exit 1; } && \
+    if [ -f /usr/share/elasticsearch/bin/elasticsearch-cli ]; then \
+        echo "✅ elasticsearch-cli present"; \
+    else \
+        echo "ℹ️  elasticsearch-cli not present (optional)"; \
+    fi && \
+    echo "✅ All critical files verified in runtime stage" \
+    '
+
+# Health check configuration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/usr/bin/curl", "-f", "http://localhost:9200/_cluster/health"]
+
+# Expose ports
+EXPOSE 9200 9300
+
+# Use non-root user (UID 65532 from distroless)
+USER 65532:65532
+
+# Run Elasticsearch, ensuring ES_JAVA_OPTS is not present in the environment
+# ES 8.x treats any ES_* env var as a setting when run directly, so we must
+# clear ES_JAVA_OPTS (inherited from the base image) before starting.
+ENTRYPOINT ["/bin/bash", "-c", "unset ES_JAVA_OPTS; exec /usr/share/elasticsearch/bin/elasticsearch"]
+CMD []

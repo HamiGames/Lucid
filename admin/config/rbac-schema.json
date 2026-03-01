@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Admin Interface RBAC Schema",
+  "description": "JSON schema for RBAC role and permission definitions",
+  "type": "object",
+  "required": ["roles", "permissions"],
+  "properties": {
+    "roles": {
+      "type": "array",
+      "description": "List of RBAC roles",
+      "items": {
+        "type": "object",
+        "required": ["name", "permissions"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "minLength": 3,
+            "maxLength": 50,
+            "description": "Role name (must be unique)",
+            "example": "super_admin"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable role description",
+            "example": "Super administrator with full system access"
+          },
+          "permissions": {
+            "type": "array",
+            "description": "List of permissions granted by this role",
+            "items": {
+              "type": "string"
+            },
+            "example": ["*", "system:read", "system:write"]
+          },
+          "inherits": {
+            "type": "array",
+            "description": "List of role names this role inherits permissions from",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+$"
+            },
+            "example": ["admin", "operator"]
+          },
+          "is_system": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is a system role (cannot be deleted)"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "description": "List of available permissions",
+      "items": {
+        "type": "object",
+        "required": ["name", "resource", "action"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Permission identifier",
+            "example": "system:read"
+          },
+          "resource": {
+            "type": "string",
+            "enum": ["users", "sessions", "nodes", "blockchain", "system", "audit", "emergency", "config"],
+            "description": "Resource type this permission applies to"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["read", "write", "delete", "manage"],
+            "description": "Action type this permission allows"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable permission description",
+            "example": "Read access to system information"
+          }
+        }
+      }
+    },
+    "default_role": {
+      "type": "string",
+      "default": "read_only",
+      "description": "Default role assigned to new users",
+      "example": "read_only"
+    },
+    "permission_cache": {
+      "type": "object",
+      "description": "Permission cache configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether permission caching is enabled"
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 300,
+          "description": "Permission cache TTL in seconds"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "roles": [
+        {
+          "name": "super_admin",
+          "description": "Super administrator with full system access",
+          "permissions": ["*"],
+          "inherits": [],
+          "is_system": true
+        },
+        {
+          "name": "admin",
+          "description": "Administrator with system management access",
+          "permissions": ["system:read", "system:write", "users:read", "users:write"],
+          "inherits": ["operator", "read_only"],
+          "is_system": true
+        }
+      ],
+      "permissions": [
+        {
+          "name": "system:read",
+          "resource": "system",
+          "action": "read",
+          "description": "Read access to system information"
+        },
+        {
+          "name": "users:write",
+          "resource": "users",
+          "action": "write",
+          "description": "Write access to user management"
+        }
+      ],
+      "default_role": "read_only",
+      "permission_cache": {
+        "enabled": true,
+        "ttl_seconds": 300
+      }
+    }
+  ]
+}
+

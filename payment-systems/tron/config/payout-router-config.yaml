@@ -1,0 +1,178 @@
+# Lucid TRON Payout Router - Payout Router Configuration
+# Optional YAML configuration for payout router service
+# File: payment-systems/tron/config/payout-router-config.yaml
+# Purpose: Define payout routing, processing, and batch management
+
+# Global Payout Router Configuration
+global:
+  service_name: "lucid-tron-payout-router"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8092
+
+# Payout Configuration
+payout:
+  # Payout Types
+  types:
+    immediate:
+      enabled: true
+      description: "Immediate payout processing"
+      processing_timeout_seconds: 60
+    
+    scheduled:
+      enabled: true
+      description: "Scheduled payout processing"
+      max_schedule_days: 30
+    
+    batch:
+      enabled: true
+      description: "Batch payout processing"
+      batch_size: 10
+      batch_timeout_seconds: 300
+    
+    emergency:
+      enabled: true
+      description: "Emergency payout processing"
+      require_authorization: true
+      processing_timeout_seconds: 30
+  
+  # Payout Reasons
+  reasons:
+    - "session_relay"
+    - "storage_proof"
+    - "validation_signature"
+    - "uptime_reward"
+    - "governance_participation"
+    - "custom"
+  
+  # Payout Limits
+  limits:
+    min_amount_usdt: 0.01
+    max_amount_usdt: 10000.0
+    daily_limit_usdt: 100000.0
+    monthly_limit_usdt: 3000000.0
+    max_payouts_per_user_per_day: 100
+  
+  # Payout Processing
+  processing:
+    confirmation_blocks: 20
+    timeout_seconds: 300
+    max_retries: 3
+    retry_delay_seconds: 5
+    auto_retry_failed: true
+    require_confirmation: true
+
+# Batch Processing Configuration
+batch:
+  enabled: true
+  batch_size: 10
+  batch_timeout_seconds: 300
+  max_batch_size: 100
+  min_batch_size: 1
+  batch_interval_seconds: 60
+  
+  # Batch Scheduling
+  scheduling:
+    enabled: true
+    schedule_interval_seconds: 3600  # 1 hour
+    max_scheduled_batches: 100
+  
+  # Batch Validation
+  validation:
+    enabled: true
+    validate_recipients: true
+    validate_amounts: true
+    validate_limits: true
+    require_approval: false
+
+# TRON Network Integration
+tron:
+  network_type: "mainnet"
+  tron_client_url: "${TRON_CLIENT_URL:-http://lucid-tron-client:8091}"
+  timeout_seconds: 30
+  retry_attempts: 3
+  
+  # USDT Configuration
+  usdt:
+    contract_address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    decimals: 6
+    min_transfer: 1
+    max_transfer: 1000000
+
+# Database Configuration
+database:
+  mongodb:
+    url: "${MONGODB_URL:-${MONGODB_URI:-mongodb://lucid-mongodb:27017/lucid_payments}}"
+    database: "lucid_payments"
+    collections:
+      payouts: "payouts"
+      batches: "payout_batches"
+      transactions: "payout_transactions"
+  
+  redis:
+    url: "${REDIS_URL:-redis://lucid-redis:6379/0}"
+    cache_ttl_seconds: 300
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  payout_metrics:
+    enabled: true
+    track_processing_time: true
+    track_success_rate: true
+    track_failure_rate: true
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  failure_handling:
+    log_failures: true
+    notify_on_failure: false
+    queue_failed_payouts: true
+    retry_failed_payouts: true
+    max_retry_attempts: 5
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  payout_validation:
+    validate_recipients: true
+    validate_amounts: true
+    validate_limits: true
+    require_approval: false
+  
+  audit:
+    enabled: true
+    log_payouts: true
+    log_batches: true
+    audit_log_retention_days: 90
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+  burst_size: 200
+  window_seconds: 60
+

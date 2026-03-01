@@ -1,0 +1,297 @@
+# LUCID TRON Payout Router Configuration
+# Extended payout routing and management service
+
+service:
+  name: lucid-tron-payout-router
+  version: 1.0.0
+  description: TRON payout router and management service
+  type: router
+
+router:
+  # Available routing paths
+  routes:
+    v0:
+      name: V0 Router
+      capacity: 1000
+      max_amount: 1000000
+      min_amount: 100
+      success_rate_target: 99.5
+      average_time_minutes: 5.2
+      fee_percentage: 0.1
+      requires_kyc: false
+      
+    kyc:
+      name: KYC Router
+      capacity: 500
+      max_amount: 500000
+      min_amount: 100
+      success_rate_target: 98.8
+      average_time_minutes: 7.1
+      fee_percentage: 0.15
+      requires_kyc: true
+      
+    direct:
+      name: Direct Router
+      capacity: 100
+      max_amount: 100000
+      min_amount: 1000
+      success_rate_target: 97.2
+      average_time_minutes: 3.5
+      fee_percentage: 0.2
+      requires_kyc: false
+  
+  # Routing strategy options
+  strategies:
+    optimal: "Select best route based on all factors"
+    balanced: "Balance between cost and speed"
+    fast: "Prioritize speed over cost"
+    cost_efficient: "Prioritize cost over speed"
+  
+  # Priority levels
+  priorities:
+    low:
+      timeout_hours: 24
+      retry_attempts: 1
+      fee_discount_percent: 10
+    
+    normal:
+      timeout_hours: 6
+      retry_attempts: 3
+      fee_discount_percent: 0
+    
+    high:
+      timeout_hours: 2
+      retry_attempts: 5
+      fee_discount_percent: 0
+    
+    critical:
+      timeout_hours: 1
+      retry_attempts: 10
+      fee_discount_percent: -10
+
+batch_processing:
+  # Batch configuration
+  enabled: true
+  max_batch_size: 1000
+  min_batch_size: 1
+  default_strategy: optimal
+  
+  # Batch processing options
+  concurrent_processing: true
+  max_concurrent_batches: 10
+  max_concurrent_payouts_per_batch: 50
+
+payout_limits:
+  # Payout amount limits
+  min_amount: 1
+  max_single_payout: 1000000
+  max_daily_total: 100000000
+  max_monthly_total: 1000000000
+  
+  # Concurrent payout limits
+  max_concurrent_payouts: 10000
+  max_payouts_per_hour: 50000
+
+queueing:
+  # Payout queuing configuration
+  enabled: true
+  max_queue_size: 50000
+  queue_timeout_hours: 24
+  priority_queue: true
+  
+  # Queue monitoring
+  monitor_enabled: true
+  monitor_interval_seconds: 60
+
+routing_selection:
+  # Route selection criteria
+  consider_amount: true
+  consider_priority: true
+  consider_load: true
+  consider_success_rate: true
+  consider_cost: true
+  
+  # Selection weights
+  amount_weight: 0.25
+  priority_weight: 0.25
+  load_weight: 0.20
+  success_rate_weight: 0.15
+  cost_weight: 0.15
+
+retry_policy:
+  # Retry configuration
+  enabled: true
+  max_retries: 3
+  initial_delay_seconds: 5
+  max_delay_seconds: 300
+  exponential_backoff: true
+  backoff_multiplier: 2
+
+fee_management:
+  # Fee configuration
+  calculate_fee: true
+  
+  # Fee types
+  transaction_fee_percent: 0.1
+  network_fee_percent: 0.05
+  platform_fee_percent: 0.05
+  
+  # Fee adjustment based on conditions
+  fee_discounts:
+    high_volume: 10
+    bulk_routing: 15
+    low_priority: 5
+  
+  fee_surcharges:
+    high_priority: 10
+    peak_hours: 5
+    network_congestion: 20
+
+failure_handling:
+  # Failure handling configuration
+  
+  # Retry strategy
+  retry_enabled: true
+  max_retries: 3
+  retry_delay_seconds: 30
+  
+  # Fallback routes
+  fallback_enabled: true
+  fallback_strategy: "balanced"
+  
+  # Error tracking
+  track_errors: true
+  error_threshold: 0.1
+  circuit_breaker_enabled: true
+  circuit_breaker_threshold: 5
+
+monitoring:
+  # Monitoring configuration
+  metrics_enabled: true
+  metrics_interval_seconds: 60
+  
+  # Metrics collection
+  collect_metrics:
+    - total_routed_count
+    - total_routed_amount
+    - success_count
+    - failure_count
+    - average_routing_time
+    - route_distribution
+    - fee_collected
+  
+  # Performance metrics
+  track_performance: true
+  performance_tracking:
+    - p50_latency
+    - p95_latency
+    - p99_latency
+    - success_rate
+
+health_check:
+  # Health check configuration
+  enabled: true
+  interval_seconds: 30
+  timeout_seconds: 10
+  
+  # Route health checks
+  check_route_availability: true
+  check_route_capacity: true
+  check_route_performance: true
+
+logging:
+  # Logging configuration
+  level: INFO
+  format: json
+  
+  # Log events
+  log_route_assignments: true
+  log_payout_completions: true
+  log_failures: true
+  log_retries: true
+  
+  # Audit logging
+  audit_enabled: true
+  audit_log_path: /app/logs/payout-router-audit.log
+
+database:
+  # Database configuration (if using persistent storage)
+  enabled: false
+  type: mongodb
+  
+  # Collections
+  collections:
+    - name: payouts
+      ttl_hours: 30
+    - name: batches
+      ttl_hours: 30
+    - name: routes
+      ttl_hours: 1
+    - name: metrics
+      ttl_hours: 7
+
+security:
+  # Security configuration
+  validate_amounts: true
+  validate_recipients: true
+  prevent_duplicate_routing: true
+  
+  # Rate limiting
+  rate_limiting:
+    enabled: true
+    requests_per_second: 1000
+    burst_size: 5000
+  
+  # Circuit breaker
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 50
+    recovery_timeout_seconds: 300
+
+api:
+  # API configuration
+  base_url: /api/v1/payout-router
+  
+  # API endpoints
+  endpoints:
+    - path: /assign-route
+      method: POST
+      description: Assign route for single payout
+    
+    - path: /assign-batch
+      method: POST
+      description: Assign routes for batch of payouts
+    
+    - path: /routes/health
+      method: GET
+      description: Get routes health status
+    
+    - path: /routes/analytics
+      method: GET
+      description: Get routes analytics
+    
+    - path: /optimize-routes
+      method: POST
+      description: Optimize route selection
+
+performance:
+  # Performance configuration
+  
+  # Caching
+  cache_enabled: true
+  cache_ttl_seconds: 300
+  
+  # Connection pooling
+  connection_pool_size: 50
+  
+  # Async processing
+  async_enabled: true
+  max_concurrent_operations: 1000
+
+deployment:
+  # Deployment configuration
+  environment: production
+  platform: arm64
+  service_port: 8092
+  service_host: 0.0.0.0
+  workers: 4

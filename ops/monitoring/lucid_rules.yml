@@ -1,0 +1,441 @@
+# Prometheus alerting rules for Lucid RDP system
+groups:
+  - name: lucid-system
+    rules:
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is above 90% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: SystemLoadHigh
+        expr: node_load1 > 4
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High system load detected"
+          description: "System load is above 4 for more than 5 minutes on {{ $labels.instance }}"
+
+  - name: lucid-docker
+    rules:
+      # Docker container alerts (distroless-compatible)
+      - alert: ContainerDown
+        expr: up{job=~"lucid-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: docker
+        annotations:
+          summary: "Lucid container is down"
+          description: "Container {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is above 80% for more than 5 minutes"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container high memory usage"
+          description: "Container {{ $labels.name }} memory usage is above 85% for more than 5 minutes"
+
+      - alert: ContainerRestarting
+        expr: rate(container_start_time_seconds[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container restarting frequently"
+          description: "Container {{ $labels.name }} is restarting more than 0.1 times per second"
+
+      - alert: ContainerHealthCheckFailure
+        expr: container_health_status{status="unhealthy"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          service: docker
+        annotations:
+          summary: "Container health check failed"
+          description: "Container {{ $labels.name }} health check has been failing for more than 2 minutes"
+
+  - name: lucid-blockchain
+    rules:
+      # Blockchain service alerts
+      - alert: BlockchainRPCDown
+        expr: up{job="lucid-blockchain"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: blockchain
+        annotations:
+          summary: "Blockchain RPC is down"
+          description: "Blockchain RPC service has been down for more than 1 minute"
+
+      - alert: BlockchainSyncLag
+        expr: blockchain_sync_lag_blocks > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+        annotations:
+          summary: "Blockchain sync lag detected"
+          description: "Blockchain is {{ $value }} blocks behind for more than 5 minutes"
+
+      - alert: BlockchainHighLatency
+        expr: histogram_quantile(0.95, rate(blockchain_rpc_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+        annotations:
+          summary: "High blockchain RPC latency"
+          description: "95th percentile blockchain RPC latency is above 5 seconds for more than 5 minutes"
+
+      - alert: BlockchainTransactionFailures
+        expr: rate(blockchain_transaction_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+        annotations:
+          summary: "High blockchain transaction failure rate"
+          description: "Blockchain transaction failure rate is above 0.1 per second for more than 5 minutes"
+
+  - name: lucid-payment
+    rules:
+      # Payment service alerts (TRON payment-only)
+      - alert: PaymentServiceDown
+        expr: up{job="lucid-payment-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: payment
+        annotations:
+          summary: "Payment service is down"
+          description: "TRON payment service has been down for more than 1 minute"
+
+      - alert: PaymentNetworkConnection
+        expr: payment_network_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: payment
+        annotations:
+          summary: "Payment network connection lost"
+          description: "TRON payment service is not connected to the network for more than 2 minutes"
+
+      - alert: PaymentHighFees
+        expr: payment_transaction_fees > 1000000000  # 1000 TRX
+        for: 5m
+        labels:
+          severity: warning
+          service: payment
+        annotations:
+          summary: "High payment transaction fees"
+          description: "TRON payment transaction fees are above 1000 TRX for more than 5 minutes"
+
+      - alert: PaymentTransactionFailures
+        expr: rate(payment_transaction_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: payment
+        annotations:
+          summary: "High payment transaction failure rate"
+          description: "TRON payment transaction failure rate is above 0.05 per second for more than 5 minutes"
+
+  - name: lucid-sessions
+    rules:
+      # Session service alerts
+      - alert: SessionServiceDown
+        expr: up{job="lucid-sessions"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sessions
+        annotations:
+          summary: "Session service is down"
+          description: "Session service has been down for more than 1 minute"
+
+      - alert: HighSessionLatency
+        expr: histogram_quantile(0.95, rate(session_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: sessions
+        annotations:
+          summary: "High session request latency"
+          description: "95th percentile session request latency is above 2 seconds for more than 5 minutes"
+
+      - alert: SessionRecordingFailures
+        expr: rate(session_recording_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: sessions
+        annotations:
+          summary: "High session recording failure rate"
+          description: "Session recording failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: SessionStorageFull
+        expr: session_storage_usage_bytes / session_storage_capacity_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: sessions
+        annotations:
+          summary: "Session storage nearly full"
+          description: "Session storage usage is above 90% for more than 5 minutes"
+
+  - name: lucid-storage
+    rules:
+      # Storage service alerts
+      - alert: StorageServiceDown
+        expr: up{job="lucid-storage"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: storage
+        annotations:
+          summary: "Storage service is down"
+          description: "Storage service has been down for more than 1 minute"
+
+      - alert: StorageHighLatency
+        expr: histogram_quantile(0.95, rate(storage_operation_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: storage
+        annotations:
+          summary: "High storage operation latency"
+          description: "95th percentile storage operation latency is above 1 second for more than 5 minutes"
+
+      - alert: StorageOperationFailures
+        expr: rate(storage_operation_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: storage
+        annotations:
+          summary: "High storage operation failure rate"
+          description: "Storage operation failure rate is above 0.05 per second for more than 5 minutes"
+
+  - name: lucid-network
+    rules:
+      # Network connectivity alerts
+      - alert: TorConnectionDown
+        expr: up{job="tor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Tor connection is down"
+          description: "Tor service has been down for more than 2 minutes"
+
+      - alert: TorHealthCheckFailure
+        expr: tor_health_check_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Tor health check failed"
+          description: "Tor health check endpoint is not responding for more than 2 minutes"
+
+      - alert: TorCircuitFailures
+        expr: rate(tor_circuit_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High Tor circuit failure rate"
+          description: "Tor circuit failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: NetworkConnectivity
+        expr: up{job="blackbox"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Network connectivity issue"
+          description: "External connectivity check failed for {{ $labels.instance }} for more than 1 minute"
+
+      - alert: HighNetworkLatency
+        expr: probe_duration_seconds > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network latency"
+          description: "Network latency is above 5 seconds for {{ $labels.instance }} for more than 5 minutes"
+
+  - name: lucid-database
+    rules:
+      # MongoDB alerts
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB service has been down for more than 1 minute"
+
+      - alert: MongoDBHealthCheckFailure
+        expr: mongodb_health_check_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "MongoDB health check failed"
+          description: "MongoDB health check endpoint is not responding for more than 2 minutes"
+
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections_current > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High MongoDB connection count"
+          description: "MongoDB connection count is above 80 for more than 5 minutes"
+
+      - alert: MongoDBSlowQueries
+        expr: rate(mongodb_operation_duration_seconds_bucket{le="1"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High MongoDB slow query rate"
+          description: "MongoDB slow query rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: MongoDBReplicationLag
+        expr: mongodb_replication_lag_seconds > 60
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "MongoDB replication lag"
+          description: "MongoDB replication lag is above 60 seconds for more than 5 minutes"
+
+  - name: lucid-security
+    rules:
+      # Security alerts
+      - alert: FailedLoginAttempts
+        expr: rate(auth_failed_login_attempts_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High failed login attempt rate"
+          description: "Failed login attempt rate is above 10 per second for more than 2 minutes"
+
+      - alert: UnauthorizedAccess
+        expr: rate(auth_unauthorized_access_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: security
+        annotations:
+          summary: "High unauthorized access rate"
+          description: "Unauthorized access rate is above 5 per second for more than 1 minute"
+
+      - alert: CertificateExpiry
+        expr: (ssl_certificate_expiry_timestamp_seconds - time()) / 86400 < 30
+        for: 0m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+
+  - name: lucid-application
+    rules:
+      # Application-specific alerts
+      - alert: AdminUIDown
+        expr: up{job="lucid-admin-ui"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: admin-ui
+        annotations:
+          summary: "Admin UI is down"
+          description: "Admin UI service has been down for more than 1 minute"
+
+      - alert: APIGatewayDown
+        expr: up{job="lucid-api-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api-gateway
+        annotations:
+          summary: "API Gateway is down"
+          description: "API Gateway service has been down for more than 1 minute"
+
+      - alert: HighAPIErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: api-gateway
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is above 5% for more than 5 minutes"
+
+      - alert: APIRateLimitExceeded
+        expr: rate(http_requests_total{status="429"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: api-gateway
+        annotations:
+          summary: "API rate limit exceeded"
+          description: "API rate limit exceeded rate is above 1 per second for more than 2 minutes"

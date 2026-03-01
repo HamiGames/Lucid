@@ -1,0 +1,424 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TRON Client API Schemas",
+  "description": "JSON schemas for TRON client API request/response validation",
+  "definitions": {
+    "TRONAddress": {
+      "type": "string",
+      "pattern": "^T[A-Za-z1-9]{33}$",
+      "minLength": 34,
+      "maxLength": 34,
+      "description": "TRON address format"
+    },
+    "TransactionID": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}$",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "Transaction ID (64 hex characters)"
+    },
+    "Amount": {
+      "type": "number",
+      "minimum": 0.000001,
+      "maximum": 1000000.0,
+      "description": "Amount in TRX"
+    },
+    "AmountSUN": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000000000,
+      "description": "Amount in SUN (1 SUN = 0.000001 TRX)"
+    },
+    "NetworkType": {
+      "type": "string",
+      "enum": ["mainnet", "testnet", "shasta"],
+      "description": "TRON network type"
+    },
+    "TransactionType": {
+      "type": "string",
+      "enum": [
+        "trx_transfer",
+        "usdt_transfer",
+        "contract_call",
+        "freeze_balance",
+        "unfreeze_balance",
+        "vote_witness",
+        "delegate_resource",
+        "undelegate_resource"
+      ],
+      "description": "Transaction type"
+    },
+    "TransactionStatus": {
+      "type": "string",
+      "enum": ["pending", "confirmed", "failed", "unknown"],
+      "description": "Transaction status"
+    }
+  },
+  "schemas": {
+    "NetworkInfoRequest": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "NetworkInfoResponse": {
+      "type": "object",
+      "properties": {
+        "network_name": {
+          "type": "string"
+        },
+        "network_id": {
+          "type": "string"
+        },
+        "chain_id": {
+          "type": "string"
+        },
+        "latest_block": {
+          "type": "integer"
+        },
+        "block_timestamp": {
+          "type": "integer"
+        },
+        "node_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "status": {
+          "$ref": "#/definitions/TransactionStatus"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sync_progress": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "node_count": {
+          "type": "integer"
+        },
+        "total_supply": {
+          "type": "integer"
+        },
+        "total_transactions": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "network_name",
+        "network_id",
+        "latest_block",
+        "status",
+        "last_updated"
+      ],
+      "additionalProperties": false
+    },
+    "AccountInfoRequest": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/TRONAddress"
+        }
+      },
+      "required": ["address"],
+      "additionalProperties": false
+    },
+    "AccountInfoResponse": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "balance_trx": {
+          "type": "number",
+          "minimum": 0
+        },
+        "balance_sun": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "energy_available": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bandwidth_available": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "frozen_balance": {
+          "type": "number",
+          "minimum": 0
+        },
+        "delegated_energy": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "delegated_bandwidth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "transaction_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "address",
+        "balance_trx",
+        "balance_sun",
+        "last_updated"
+      ],
+      "additionalProperties": false
+    },
+    "BalanceRequest": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/TRONAddress"
+        }
+      },
+      "required": ["address"],
+      "additionalProperties": false
+    },
+    "BalanceResponse": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "balance_trx": {
+          "type": "number",
+          "minimum": 0
+        },
+        "balance_sun": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "address",
+        "balance_trx",
+        "balance_sun"
+      ],
+      "additionalProperties": false
+    },
+    "TransactionInfoRequest": {
+      "type": "object",
+      "properties": {
+        "txid": {
+          "$ref": "#/definitions/TransactionID"
+        }
+      },
+      "required": ["txid"],
+      "additionalProperties": false
+    },
+    "TransactionInfoResponse": {
+      "type": "object",
+      "properties": {
+        "txid": {
+          "$ref": "#/definitions/TransactionID"
+        },
+        "block_number": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timestamp": {
+          "type": "integer"
+        },
+        "from_address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "to_address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "amount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "token_type": {
+          "type": "string"
+        },
+        "fee": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "energy_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bandwidth_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "$ref": "#/definitions/TransactionStatus"
+        }
+      },
+      "required": [
+        "txid",
+        "timestamp",
+        "from_address",
+        "to_address",
+        "amount",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "BroadcastTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "from_address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "to_address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "amount": {
+          "$ref": "#/definitions/AmountSUN"
+        },
+        "token_type": {
+          "type": "string",
+          "default": "TRX"
+        },
+        "fee": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "private_key": {
+          "type": "string",
+          "description": "Private key for signing (hex format)"
+        }
+      },
+      "required": [
+        "from_address",
+        "to_address",
+        "amount"
+      ],
+      "additionalProperties": false
+    },
+    "BroadcastTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "txid": {
+          "$ref": "#/definitions/TransactionID"
+        },
+        "status": {
+          "$ref": "#/definitions/TransactionStatus"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": ["txid", "status"],
+      "additionalProperties": false
+    },
+    "WaitForConfirmationRequest": {
+      "type": "object",
+      "properties": {
+        "txid": {
+          "$ref": "#/definitions/TransactionID"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "default": 300
+        }
+      },
+      "required": ["txid"],
+      "additionalProperties": false
+    },
+    "WaitForConfirmationResponse": {
+      "type": "object",
+      "properties": {
+        "txid": {
+          "$ref": "#/definitions/TransactionID"
+        },
+        "confirmed": {
+          "type": "boolean"
+        },
+        "block_number": {
+          "type": "integer"
+        },
+        "confirmation_time": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["txid", "confirmed"],
+      "additionalProperties": false
+    },
+    "ServiceStatsResponse": {
+      "type": "object",
+      "properties": {
+        "network": {
+          "type": "string"
+        },
+        "node_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "connection_status": {
+          "type": "string"
+        },
+        "pending_transactions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confirmed_transactions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cached_accounts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "monitoring_tasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_sync_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "network",
+        "node_url",
+        "connection_status",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["error_code", "message", "timestamp"],
+      "additionalProperties": false
+    }
+  }
+}
+

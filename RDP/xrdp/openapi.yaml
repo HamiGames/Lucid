@@ -1,0 +1,719 @@
+openapi: 3.0.3
+info:
+  title: Lucid XRDP API
+  description: |
+    XRDP service management API for Lucid RDP system.
+    
+    Features:
+    - XRDP service lifecycle management (start, stop, restart)
+    - XRDP configuration management (create, validate, cleanup)
+    - Process monitoring and status tracking
+    - Service statistics and resource usage
+  version: 1.0.0
+  contact:
+    name: Lucid Development Team
+    email: dev@lucid-blockchain.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://rdp-xrdp:3389
+    description: Docker container service (internal)
+  - url: http://localhost:3389
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Health check and service info endpoints
+  - name: Services
+    description: XRDP service lifecycle management endpoints
+  - name: Configuration
+    description: XRDP configuration management endpoints
+  - name: Statistics
+    description: Service statistics and metrics endpoints
+
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Root endpoint
+      description: Returns basic service information
+      operationId: getRoot
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootResponse'
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      description: Returns service health status and basic information
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is not available or not fully initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services:
+    post:
+      tags:
+        - Services
+      summary: Start XRDP service
+      description: Start a new XRDP service instance
+      operationId: startService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartServiceRequest'
+      responses:
+        '200':
+          description: Service started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to start service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Services
+      summary: List all XRDP services
+      description: Get a list of all active XRDP service instances
+      operationId: listServices
+      responses:
+        '200':
+          description: List of services
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicesListResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to list services
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services/{process_id}:
+    get:
+      tags:
+        - Services
+      summary: Get XRDP service status
+      description: Get status and information for a specific XRDP service instance
+      operationId: getService
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: Process ID of the XRDP service
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatusResponse'
+        '404':
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get service status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services/{process_id}/stop:
+    post:
+      tags:
+        - Services
+      summary: Stop XRDP service
+      description: Stop a running XRDP service instance
+      operationId: stopService
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: Process ID of the XRDP service
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service stopped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOperationResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to stop service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /services/{process_id}/restart:
+    post:
+      tags:
+        - Services
+      summary: Restart XRDP service
+      description: Restart a running XRDP service instance
+      operationId: restartService
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: Process ID of the XRDP service
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service restarted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOperationResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to restart service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /config/create:
+    post:
+      tags:
+        - Configuration
+      summary: Create XRDP configuration
+      description: Create configuration files for an XRDP server instance
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+      responses:
+        '200':
+          description: Configuration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to create configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /config/validate:
+    post:
+      tags:
+        - Configuration
+      summary: Validate XRDP configuration
+      description: Validate an XRDP configuration file
+      operationId: validateConfig
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - config_path
+              properties:
+                config_path:
+                  type: string
+                  description: Path to the configuration file to validate
+      responses:
+        '200':
+          description: Configuration validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigValidationResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to validate configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /config/{server_id}:
+    delete:
+      tags:
+        - Configuration
+      summary: Cleanup XRDP configuration
+      description: Remove configuration files for an XRDP server instance
+      operationId: cleanupConfig
+      parameters:
+        - name: server_id
+          in: path
+          required: true
+          description: Server ID of the configuration to cleanup
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Configuration cleaned up successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigCleanupResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to cleanup configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /statistics:
+    get:
+      tags:
+        - Statistics
+      summary: Get service statistics
+      description: Get statistics about all XRDP service instances
+      operationId: getStatistics
+      responses:
+        '200':
+          description: Service statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+        '503':
+          description: Service not initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to get statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RootResponse:
+      type: object
+      required:
+        - service
+        - status
+      properties:
+        service:
+          type: string
+          example: xrdp-service
+          description: Service name
+        status:
+          type: string
+          example: running
+          description: Service status
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - timestamp
+        - active_processes
+        - max_processes
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+          description: Health status
+        service:
+          type: string
+          example: xrdp-service
+          description: Service name
+        version:
+          type: string
+          example: "1.0.0"
+          description: Service version
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the health check
+        active_processes:
+          type: integer
+          minimum: 0
+          description: Number of currently active XRDP processes
+        max_processes:
+          type: integer
+          minimum: 0
+          description: Maximum number of concurrent XRDP processes
+
+    StartServiceRequest:
+      type: object
+      required:
+        - process_id
+        - port
+        - config_path
+        - log_path
+        - session_path
+      properties:
+        process_id:
+          type: string
+          description: Unique process ID for the XRDP service
+        port:
+          type: integer
+          minimum: 1024
+          maximum: 65535
+          description: Port number for the XRDP service
+        config_path:
+          type: string
+          description: Path to the configuration directory
+        log_path:
+          type: string
+          description: Path to the log directory
+        session_path:
+          type: string
+          description: Path to the session directory
+
+    ServiceResponse:
+      type: object
+      required:
+        - process_id
+        - status
+        - port
+        - started_at
+      properties:
+        process_id:
+          type: string
+          description: Process ID of the XRDP service
+        status:
+          type: string
+          enum: [starting, running, stopping, stopped, failed, restarting]
+          description: Service status
+        port:
+          type: integer
+          description: Port number
+        started_at:
+          type: string
+          format: date-time
+          description: Timestamp when the service started
+        pid:
+          type: integer
+          nullable: true
+          description: Process ID (PID) of the XRDP process
+
+    ServiceStatusResponse:
+      type: object
+      required:
+        - process_id
+        - status
+        - port
+      properties:
+        process_id:
+          type: string
+          description: Process ID of the XRDP service
+        status:
+          type: string
+          enum: [starting, running, stopping, stopped, failed, restarting]
+          description: Service status
+        port:
+          type: integer
+          description: Port number
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the service started
+        stopped_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the service stopped
+        pid:
+          type: integer
+          nullable: true
+          description: Process ID (PID) of the XRDP process
+        resource_usage:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Resource usage information
+
+    ServiceOperationResponse:
+      type: object
+      required:
+        - process_id
+        - status
+        - message
+      properties:
+        process_id:
+          type: string
+          description: Process ID of the XRDP service
+        status:
+          type: string
+          description: Operation status
+        message:
+          type: string
+          description: Status message
+
+    ServicesListResponse:
+      type: object
+      required:
+        - services
+        - total
+        - max_processes
+      properties:
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              process_id:
+                type: string
+              port:
+                type: integer
+              status:
+                type: string
+              pid:
+                type: integer
+                nullable: true
+              started_at:
+                type: string
+                format: date-time
+                nullable: true
+          description: List of active XRDP services
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of services
+        max_processes:
+          type: integer
+          minimum: 0
+          description: Maximum number of concurrent processes
+
+    CreateConfigRequest:
+      type: object
+      required:
+        - server_id
+        - port
+        - user_id
+        - session_id
+      properties:
+        server_id:
+          type: string
+          description: Server ID for the configuration
+        port:
+          type: integer
+          minimum: 1024
+          maximum: 65535
+          description: Port number
+        user_id:
+          type: string
+          description: User ID
+        session_id:
+          type: string
+          description: Session ID
+        display_config:
+          type: object
+          additionalProperties: true
+          description: Display configuration (optional)
+        security_level:
+          type: string
+          enum: [low, medium, high, maximum]
+          default: high
+          description: Security level
+
+    ConfigResponse:
+      type: object
+      required:
+        - server_id
+        - port
+        - config_path
+        - log_path
+        - session_path
+        - security_level
+        - ssl_enabled
+      properties:
+        server_id:
+          type: string
+          description: Server ID
+        port:
+          type: integer
+          description: Port number
+        config_path:
+          type: string
+          description: Path to configuration directory
+        log_path:
+          type: string
+          description: Path to log directory
+        session_path:
+          type: string
+          description: Path to session directory
+        security_level:
+          type: string
+          enum: [low, medium, high, maximum]
+          description: Security level
+        ssl_enabled:
+          type: boolean
+          description: Whether SSL is enabled
+
+    ConfigValidationResponse:
+      type: object
+      required:
+        - config_path
+        - valid
+      properties:
+        config_path:
+          type: string
+          description: Path to the configuration file
+        valid:
+          type: boolean
+          description: Whether the configuration is valid
+
+    ConfigCleanupResponse:
+      type: object
+      required:
+        - server_id
+        - cleaned
+      properties:
+        server_id:
+          type: string
+          description: Server ID
+        cleaned:
+          type: boolean
+          description: Whether cleanup was successful
+
+    StatisticsResponse:
+      type: object
+      required:
+        - timestamp
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the statistics
+        total_processes:
+          type: integer
+          minimum: 0
+          description: Total number of processes
+        active_processes:
+          type: integer
+          minimum: 0
+          description: Number of active processes
+        stopped_processes:
+          type: integer
+          minimum: 0
+          description: Number of stopped processes
+        failed_processes:
+          type: integer
+          minimum: 0
+          description: Number of failed processes
+        max_processes:
+          type: integer
+          minimum: 0
+          description: Maximum number of concurrent processes
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: LUCID_ERR_2400
+              description: Error code
+            message:
+              type: string
+              example: Internal server error
+              description: Error message
+            service:
+              type: string
+              example: xrdp-service
+              description: Service name
+            version:
+              type: string
+              example: "1.0.0"
+              description: Service version
+            details:
+              type: string
+              description: Additional error details
+        detail:
+          type: string
+          description: Error detail message (alternative format)
+

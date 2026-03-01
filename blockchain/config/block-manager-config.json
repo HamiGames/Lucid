@@ -1,0 +1,85 @@
+{
+  "service": {
+    "name": "block-manager",
+    "host": "${BLOCK_MANAGER_HOST:-block-manager}",
+    "port": "${BLOCK_MANAGER_PORT:-8086}",
+    "url": "${BLOCK_MANAGER_URL:-http://block-manager:8086}",
+    "environment": "${LUCID_ENV:-production}",
+    "platform": "${LUCID_PLATFORM:-arm64}"
+  },
+  "dependencies": {
+    "mongodb_url": "${MONGODB_URL}",
+    "redis_url": "${REDIS_URL}",
+    "blockchain_engine_url": "${BLOCKCHAIN_ENGINE_URL}",
+    "healthcheck": {
+      "path": "/health",
+      "interval_seconds": 30,
+      "timeout_seconds": 10,
+      "retries": 3,
+      "start_period_seconds": 40
+    }
+  },
+  "storage": {
+    "blocks_path": "/app/data/blocks",
+    "cache_path": "/tmp/blocks",
+    "ensure_permissions": true,
+    "owner": "65532:65532"
+  },
+  "logging": {
+    "directory": "/app/logs",
+    "level": "INFO",
+    "format": "standard",
+    "rotate": {
+      "enabled": true,
+      "max_size_mb": 10,
+      "backups": 5
+    }
+  },
+  "synchronization": {
+    "engine_url": "${BLOCKCHAIN_ENGINE_URL}",
+    "sync_timeout_seconds": "${SYNC_TIMEOUT:-30}",
+    "fetch_batch_size": 100
+  },
+  "api": {
+    "base_path": "/api/v1",
+    "blocks": {
+      "list": "/blocks/",
+      "by_id": "/blocks/{block_id}",
+      "by_height": "/blocks/height/{height}",
+      "latest": "/blocks/latest",
+      "validate": "/blocks/validate"
+    }
+  },
+  "rate_limits": {
+    "enabled": true,
+    "window_seconds": 60,
+    "max_requests": 500
+  },
+  "security": {
+    "user": 65532,
+    "group": 65532,
+    "read_only_root": true
+  },
+  "monitoring": {
+    "metrics_enabled": true,
+    "expose_health": true,
+    "expose_metrics": false
+  }, 
+  "error_handling": {
+    "enabled": true,
+    "max_retries": 3,
+    "retry_delay_seconds": 1,
+    "exponential_backoff": true,
+    "backoff_multiplier": 2,
+    "max_backoff_seconds": 60
+  },
+  "healthcheck": {
+    "path": "/health",
+    "interval_seconds": 30,
+    "timeout_seconds": 10,
+    "retries": 3,
+    "start_period_seconds": 40
+  }
+}
+
+

@@ -1,0 +1,139 @@
+# Multi-Stage Testing Configuration for Lucid Project
+# Configuration for testing multi-stage containers and builds
+
+version: '3.8'
+
+services:
+  # Multi-stage testing environment
+  test-multi-stage:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - TEST_MODE=true
+      - BUILD_STAGE=testing
+      - COVERAGE_ENABLED=true
+    networks:
+      - lucid-test
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
+      - /mnt/myssd/Lucid/Lucid/tests:/app/tests:ro
+      - /mnt/myssd/Lucid/Lucid/test-logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/coverage:/app/coverage:rw
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Starting multi-stage testing environment...' &&
+        pytest /app/tests/ -v --cov=/app/src --cov-report=html:/app/coverage
+      "
+
+  # Multi-stage build testing
+  test-build:
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - BUILD_STAGE=builder
+      - TEST_BUILD=true
+      - BUILD_VALIDATION=true
+    networks:
+      - lucid-test
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
+      - /mnt/myssd/Lucid/Lucid/build-tests:/app/build-tests:ro
+      - /mnt/myssd/Lucid/Lucid/test-artifacts:/artifacts:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Starting multi-stage build testing...' &&
+        python /app/build-tests/test_build_process.py
+      "
+
+  # Test database for integration testing
+  test-database:
+    image: mongo:7.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${TEST_DB_USER:-test_admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${TEST_DB_PASSWORD:-test_password}
+      - MONGO_INITDB_DATABASE=${TEST_DB_NAME:-lucid_test}
+    networks:
+      - lucid-test
+    restart: "no"
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/test-data:/data/db:rw
+      - /mnt/myssd/Lucid/Lucid/test-scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "27018:27017"
+    healthcheck:
+      test: ["mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # Test result aggregator
+  test-aggregator:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - TEST_AGGREGATION=true
+      - REPORT_GENERATION=true
+    networks:
+      - lucid-test
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/test-logs:/logs:ro
+      - /mnt/myssd/Lucid/Lucid/coverage:/coverage:ro
+      - /mnt/myssd/Lucid/Lucid/test-reports:/reports:rw
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    depends_on:
+      - test-multi-stage
+      - test-build
+    command: >
+      sh -c "
+        echo 'Aggregating test results...' &&
+        python /app/scripts/aggregate_test_results.py
+      "
+
+networks:
+  lucid-test:  # ✅ Acceptable for testing
+    driver: bridge
+    name: lucid-multi-stage-test
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16  # ✅ Matches constants for multi-stage
+          gateway: 172.25.0.1
+
+volumes:
+  test-logs:
+    name: lucid-multi-stage-test-logs
+  coverage:
+    name: lucid-multi-stage-coverage
+  test-artifacts:
+    name: lucid-multi-stage-test-artifacts
+  test-data:
+    name: lucid-multi-stage-test-data
+  test-reports:
+    name: lucid-multi-stage-test-reports

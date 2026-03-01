@@ -1,0 +1,200 @@
+# XRDP Service Logging Configuration
+# File: RDP/xrdp/config/logging-config.yaml
+# Purpose: Structured logging configuration for rdp-xrdp container
+
+# Logging Configuration
+logging:
+  version: 1
+  disable_existing_loggers: false
+  
+  # Root Logger Configuration
+  root:
+    level: "INFO"
+    handlers:
+      - console
+      - file
+      - json_file
+  
+  # Loggers
+  loggers:
+    # Application Logger
+    xrdp:
+      level: "INFO"
+      handlers:
+        - console
+        - file
+        - json_file
+      propagate: false
+    
+    # FastAPI Logger
+    uvicorn:
+      level: "INFO"
+      handlers:
+        - console
+        - file
+      propagate: false
+    
+    # Access Logger
+    uvicorn.access:
+      level: "INFO"
+      handlers:
+        - access_file
+      propagate: false
+    
+    # Error Logger
+    uvicorn.error:
+      level: "ERROR"
+      handlers:
+        - error_file
+      propagate: false
+  
+  # Handlers
+  handlers:
+    # Console Handler (Human-readable)
+    console:
+      class: "logging.StreamHandler"
+      level: "INFO"
+      formatter: "console"
+      stream: "ext://sys.stdout"
+    
+    # File Handler (Human-readable)
+    file:
+      class: "logging.handlers.RotatingFileHandler"
+      level: "INFO"
+      formatter: "detailed"
+      filename: "/app/logs/xrdp-service.log"
+      maxBytes: 10485760  # 10MB
+      backupCount: 5
+      encoding: "utf-8"
+    
+    # JSON File Handler (Machine-readable)
+    json_file:
+      class: "logging.handlers.RotatingFileHandler"
+      level: "INFO"
+      formatter: "json"
+      filename: "/app/logs/xrdp-service.json.log"
+      maxBytes: 10485760  # 10MB
+      backupCount: 5
+      encoding: "utf-8"
+    
+    # Access Log Handler
+    access_file:
+      class: "logging.handlers.RotatingFileHandler"
+      level: "INFO"
+      formatter: "access"
+      filename: "/app/logs/xrdp-access.log"
+      maxBytes: 10485760  # 10MB
+      backupCount: 5
+      encoding: "utf-8"
+    
+    # Error Log Handler
+    error_file:
+      class: "logging.handlers.RotatingFileHandler"
+      level: "ERROR"
+      formatter: "detailed"
+      filename: "/app/logs/xrdp-error.log"
+      maxBytes: 10485760  # 10MB
+      backupCount: 10
+      encoding: "utf-8"
+  
+  # Formatters
+  formatters:
+    # Console Formatter (Human-readable, compact)
+    console:
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      datefmt: "%Y-%m-%d %H:%M:%S"
+    
+    # Detailed Formatter (Human-readable, verbose)
+    detailed:
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(funcName)s() - %(message)s"
+      datefmt: "%Y-%m-%d %H:%M:%S"
+    
+    # JSON Formatter (Machine-readable, structured)
+    json:
+      format: "%(asctime)s"
+      datefmt: "%Y-%m-%dT%H:%M:%S.%fZ"
+      class: "pythonjsonlogger.jsonlogger.JsonFormatter"
+      # JSON fields will be added programmatically
+    
+    # Access Formatter (HTTP access logs)
+    access:
+      format: "%(asctime)s - %(client_addr)s - %(method)s %(path)s - %(status_code)s - %(duration_ms)sms"
+      datefmt: "%Y-%m-%d %H:%M:%S"
+
+# Structured Logging Fields
+structured_logging:
+  enabled: true
+  include_fields:
+    - "timestamp"
+    - "level"
+    - "service"
+    - "version"
+    - "message"
+    - "process_id"
+    - "endpoint"
+    - "method"
+    - "status_code"
+    - "duration_ms"
+    - "error_type"
+    - "error_message"
+    - "stack_trace"
+    - "request_id"
+    - "user_id"
+    - "session_id"
+  
+  # Field Mappings
+  field_mappings:
+    timestamp: "asctime"
+    level: "levelname"
+    service: "name"
+    version: "version"
+    message: "message"
+    process_id: "process_id"
+    endpoint: "pathname"
+    method: "method"
+    status_code: "status_code"
+    duration_ms: "duration_ms"
+    error_type: "exc_type"
+    error_message: "exc_message"
+    stack_trace: "exc_info"
+    request_id: "request_id"
+    user_id: "user_id"
+    session_id: "session_id"
+
+# Log Rotation
+log_rotation:
+  enabled: true
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  when: "midnight"
+  interval: 1
+  encoding: "utf-8"
+  delay: false
+  utc: true
+
+# Log Retention
+log_retention:
+  enabled: true
+  retention_days: 30
+  cleanup_interval_hours: 24
+  compress_after_days: 7
+  delete_after_days: 30
+
+# Log Levels by Environment
+log_levels:
+  development: "DEBUG"
+  staging: "INFO"
+  production: "INFO"
+
+# Sensitive Data Filtering
+sensitive_data_filtering:
+  enabled: true
+  filter_fields:
+    - "password"
+    - "token"
+    - "secret"
+    - "api_key"
+    - "authorization"
+    - "cookie"
+  replacement: "[REDACTED]"
+

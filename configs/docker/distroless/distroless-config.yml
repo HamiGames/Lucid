@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  base:
+    image: pickme/lucid-base:latest-arm64
+    container_name: lucid-base
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/base:/app/logs:rw
+      - base-cache:/tmp/cache
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=base"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+
+  minimal-base:
+    image: pickme/lucid-base:latest-arm64
+    container_name: lucid-minimal-base
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_MODE=minimal
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/minimal-base:/app/logs:rw
+      - minimal-base-cache:/tmp/cache
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=minimal-base"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+
+  arm64-base:
+    image: pickme/lucid-base:latest-arm64
+    container_name: lucid-arm64-base
+    restart: unless-stopped
+    networks:
+      - lucid-distroless-production
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - LUCID_ARCHITECTURE=linux/arm64
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/arm64-base:/app/logs:rw
+      - arm64-base-cache:/tmp/cache
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=arm64-base"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+
+volumes:
+  base-cache:
+    driver: local
+    name: lucid-base-cache
+  minimal-base-cache:
+    driver: local
+    name: lucid-minimal-base-cache
+  arm64-base-cache:
+    driver: local
+    name: lucid-arm64-base-cache
+
+networks:
+  lucid-distroless-production:
+    driver: bridge
+    name: lucid-distroless-production
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1

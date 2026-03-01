@@ -1,0 +1,373 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LUCID TRON USDT Manager API Schemas",
+  "description": "JSON schemas for USDT manager API request/response validation",
+  "version": "1.0.0",
+
+  "definitions": {
+    "tronAddress": {
+      "type": "string",
+      "pattern": "^T[1-9A-HJ-NP-Z]{33}$",
+      "description": "Valid TRON address (starts with T, 34 characters)"
+    },
+    
+    "contractAddress": {
+      "type": "string",
+      "pattern": "^T[1-9A-HJ-NP-Z]{33}$",
+      "description": "Valid TRON contract address"
+    },
+    
+    "transactionHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Valid transaction hash (64 hex characters)"
+    },
+    
+    "usdtAmount": {
+      "type": "number",
+      "minimum": 0.000001,
+      "maximum": 1000000000.0,
+      "description": "USDT amount with 6 decimal precision"
+    },
+    
+    "usdtAmountRaw": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000000000000,
+      "description": "Raw USDT amount (6 decimal places as integer)"
+    },
+    
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "suspended", "pending", "confirmed", "failed", "cancelled"],
+      "description": "Status of token or transaction"
+    }
+  },
+
+  "schemas": {
+    "USDTContractInfo": {
+      "type": "object",
+      "description": "USDT contract information response",
+      "properties": {
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "symbol": { "type": "string", "pattern": "^USDT$" },
+        "decimals": { "type": "integer", "const": 6 },
+        "total_supply": { "type": "integer" },
+        "network": { "type": "string", "enum": ["mainnet", "testnet", "shasta"] },
+        "last_updated": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["contract_address", "name", "symbol", "decimals", "total_supply", "network", "last_updated"]
+    },
+
+    "USDTBalanceRequest": {
+      "type": "object",
+      "description": "Request to get USDT balance",
+      "properties": {
+        "address": { "$ref": "#/definitions/tronAddress" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" }
+      },
+      "required": ["address"]
+    },
+
+    "USDTBalanceResponse": {
+      "type": "object",
+      "description": "USDT balance response",
+      "properties": {
+        "address": { "$ref": "#/definitions/tronAddress" },
+        "balance_usdt": { "$ref": "#/definitions/usdtAmount" },
+        "balance_raw": { "$ref": "#/definitions/usdtAmountRaw" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "last_updated": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["address", "balance_usdt", "balance_raw", "contract_address", "last_updated"]
+    },
+
+    "USDTTransferRequest": {
+      "type": "object",
+      "description": "Request to transfer USDT tokens",
+      "properties": {
+        "from_address": { "$ref": "#/definitions/tronAddress" },
+        "to_address": { "$ref": "#/definitions/tronAddress" },
+        "amount": { "$ref": "#/definitions/usdtAmount" },
+        "private_key": { "type": "string", "description": "Private key for signing (optional)" },
+        "memo": { "type": "string", "maxLength": 200, "description": "Optional transaction memo" }
+      },
+      "required": ["from_address", "to_address", "amount"]
+    },
+
+    "USDTTransferResponse": {
+      "type": "object",
+      "description": "USDT transfer response",
+      "properties": {
+        "txid": { "$ref": "#/definitions/transactionHash" },
+        "from_address": { "$ref": "#/definitions/tronAddress" },
+        "to_address": { "$ref": "#/definitions/tronAddress" },
+        "amount": { "$ref": "#/definitions/usdtAmount" },
+        "amount_raw": { "$ref": "#/definitions/usdtAmountRaw" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "failed"] },
+        "timestamp": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["txid", "from_address", "to_address", "amount", "amount_raw", "contract_address", "status", "timestamp"]
+    },
+
+    "USDTTransactionResponse": {
+      "type": "object",
+      "description": "USDT transaction details",
+      "properties": {
+        "txid": { "$ref": "#/definitions/transactionHash" },
+        "block_number": { "type": "integer", "minimum": 0 },
+        "timestamp": { "type": "integer", "description": "Unix timestamp in milliseconds" },
+        "from_address": { "$ref": "#/definitions/tronAddress" },
+        "to_address": { "$ref": "#/definitions/tronAddress" },
+        "amount": { "$ref": "#/definitions/usdtAmount" },
+        "amount_raw": { "$ref": "#/definitions/usdtAmountRaw" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "fee": { "type": "integer", "description": "Transaction fee in SUN" },
+        "energy_used": { "type": "integer" },
+        "bandwidth_used": { "type": "integer" },
+        "status": { "type": "string", "enum": ["SUCCESS", "FAILED", "PENDING"] },
+        "memo": { "type": "string", "description": "Optional transaction memo" }
+      },
+      "required": ["txid", "block_number", "timestamp", "from_address", "to_address", "amount", "amount_raw", "contract_address", "fee", "status"]
+    },
+
+    "USDTAllowanceRequest": {
+      "type": "object",
+      "description": "Request to get USDT allowance",
+      "properties": {
+        "owner": { "$ref": "#/definitions/tronAddress" },
+        "spender": { "$ref": "#/definitions/tronAddress" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" }
+      },
+      "required": ["owner", "spender"]
+    },
+
+    "USDTAllowanceResponse": {
+      "type": "object",
+      "description": "USDT allowance response",
+      "properties": {
+        "owner": { "$ref": "#/definitions/tronAddress" },
+        "spender": { "$ref": "#/definitions/tronAddress" },
+        "allowance": { "$ref": "#/definitions/usdtAmount" },
+        "allowance_raw": { "$ref": "#/definitions/usdtAmountRaw" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "last_updated": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["owner", "spender", "allowance", "allowance_raw", "contract_address", "last_updated"]
+    },
+
+    "USDTApproveRequest": {
+      "type": "object",
+      "description": "Request to approve USDT spending",
+      "properties": {
+        "owner_address": { "$ref": "#/definitions/tronAddress" },
+        "spender_address": { "$ref": "#/definitions/tronAddress" },
+        "amount": { "$ref": "#/definitions/usdtAmount" },
+        "private_key": { "type": "string", "description": "Private key for signing (optional)" }
+      },
+      "required": ["owner_address", "spender_address", "amount"]
+    },
+
+    "USDTTransactionHistoryRequest": {
+      "type": "object",
+      "description": "Request USDT transaction history",
+      "properties": {
+        "address": { "$ref": "#/definitions/tronAddress" },
+        "skip": { "type": "integer", "minimum": 0, "default": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 }
+      },
+      "required": ["address"]
+    },
+
+    "USDTTransactionHistoryResponse": {
+      "type": "object",
+      "description": "USDT transaction history response",
+      "properties": {
+        "address": { "$ref": "#/definitions/tronAddress" },
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "transactions": {
+          "type": "array",
+          "items": { "$ref": "#/schemas/USDTTransactionResponse" }
+        },
+        "total_count": { "type": "integer", "minimum": 0 },
+        "skip": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 1 },
+        "timestamp": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["address", "contract_address", "transactions", "total_count", "skip", "limit", "timestamp"]
+    },
+
+    "USDTStatisticsResponse": {
+      "type": "object",
+      "description": "USDT statistics response",
+      "properties": {
+        "contract_address": { "$ref": "#/definitions/contractAddress" },
+        "network": { "type": "string", "enum": ["mainnet", "testnet", "shasta"] },
+        "total_supply": { "type": "string", "description": "Total supply as string to preserve precision" },
+        "decimals": { "type": "integer", "const": 6 },
+        "name": { "type": "string" },
+        "symbol": { "type": "string" },
+        "timestamp": { "$ref": "#/definitions/timestamp" }
+      },
+      "required": ["contract_address", "network", "total_supply", "decimals", "name", "symbol", "timestamp"]
+    },
+
+    "HealthCheck": {
+      "type": "object",
+      "description": "Service health check response",
+      "properties": {
+        "status": { "type": "string", "enum": ["healthy", "degraded", "unhealthy"] },
+        "service": { "type": "string", "const": "tron-usdt-manager" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "service_initialized": { "type": "boolean" }
+      },
+      "required": ["status", "service", "timestamp"]
+    },
+
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Error response",
+      "properties": {
+        "error_code": { "type": "string", "pattern": "^USDT_ERR_[0-9]{3}$|^USDT_[0-9]{3}$" },
+        "message": { "type": "string" },
+        "details": { "type": "object" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "request_id": { "type": "string" }
+      },
+      "required": ["error_code", "message", "timestamp"]
+    },
+
+    "PaginationParams": {
+      "type": "object",
+      "description": "Pagination parameters",
+      "properties": {
+        "skip": { "type": "integer", "minimum": 0, "default": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 100 }
+      }
+    }
+  },
+
+  "endpoints": {
+    "GET_CONTRACT_INFO": {
+      "path": "/api/v1/tron/usdt/contract/info",
+      "method": "GET",
+      "description": "Get USDT contract information",
+      "responses": {
+        "200": { "$ref": "#/schemas/USDTContractInfo" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "GET_BALANCE": {
+      "path": "/api/v1/tron/usdt/balance/{address}",
+      "method": "GET",
+      "description": "Get USDT balance for address",
+      "parameters": {
+        "address": { "$ref": "#/definitions/tronAddress" }
+      },
+      "responses": {
+        "200": { "$ref": "#/schemas/USDTBalanceResponse" },
+        "400": { "$ref": "#/schemas/ErrorResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "TRANSFER": {
+      "path": "/api/v1/tron/usdt/transfer",
+      "method": "POST",
+      "description": "Transfer USDT tokens",
+      "requestBody": { "$ref": "#/schemas/USDTTransferRequest" },
+      "responses": {
+        "202": { "$ref": "#/schemas/USDTTransferResponse" },
+        "400": { "$ref": "#/schemas/ErrorResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "GET_TRANSACTION": {
+      "path": "/api/v1/tron/usdt/transaction/{txid}",
+      "method": "GET",
+      "description": "Get USDT transaction details",
+      "parameters": {
+        "txid": { "$ref": "#/definitions/transactionHash" }
+      },
+      "responses": {
+        "200": { "$ref": "#/schemas/USDTTransactionResponse" },
+        "400": { "$ref": "#/schemas/ErrorResponse" },
+        "404": { "$ref": "#/schemas/ErrorResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "GET_ALLOWANCE": {
+      "path": "/api/v1/tron/usdt/allowance/{owner}/{spender}",
+      "method": "GET",
+      "description": "Get USDT allowance",
+      "parameters": {
+        "owner": { "$ref": "#/definitions/tronAddress" },
+        "spender": { "$ref": "#/definitions/tronAddress" }
+      },
+      "responses": {
+        "200": { "$ref": "#/schemas/USDTAllowanceResponse" },
+        "400": { "$ref": "#/schemas/ErrorResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "APPROVE": {
+      "path": "/api/v1/tron/usdt/approve",
+      "method": "POST",
+      "description": "Approve USDT spending",
+      "requestBody": { "$ref": "#/schemas/USDTApproveRequest" },
+      "responses": {
+        "202": { "$ref": "#/schemas/USDTTransferResponse" },
+        "400": { "$ref": "#/schemas/ErrorResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "GET_TRANSACTIONS": {
+      "path": "/api/v1/tron/usdt/transactions/{address}",
+      "method": "GET",
+      "description": "Get USDT transaction history",
+      "parameters": {
+        "address": { "$ref": "#/definitions/tronAddress" },
+        "skip": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      },
+      "responses": {
+        "200": { "$ref": "#/schemas/USDTTransactionHistoryResponse" },
+        "400": { "$ref": "#/schemas/ErrorResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "GET_STATS": {
+      "path": "/api/v1/tron/usdt/stats",
+      "method": "GET",
+      "description": "Get USDT statistics",
+      "responses": {
+        "200": { "$ref": "#/schemas/USDTStatisticsResponse" },
+        "500": { "$ref": "#/schemas/ErrorResponse" }
+      }
+    },
+
+    "HEALTH_CHECK": {
+      "path": "/health",
+      "method": "GET",
+      "description": "Service health check",
+      "responses": {
+        "200": { "$ref": "#/schemas/HealthCheck" },
+        "503": { "$ref": "#/schemas/HealthCheck" }
+      }
+    }
+  }
+}

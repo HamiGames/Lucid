@@ -1,0 +1,250 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Admin Interface API Request/Response Schemas",
+  "description": "JSON schemas for validating common API request/response structures",
+  "definitions": {
+    "user_request": {
+      "type": "object",
+      "required": ["username", "email"],
+      "properties": {
+        "username": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Username (alphanumeric, underscore, hyphen only)"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 12,
+          "description": "User password (minimum 12 characters)"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "admin", "operator", "read_only"],
+          "description": "User role"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended", "disabled"],
+          "default": "active",
+          "description": "User account status"
+        }
+      },
+      "additionalProperties": false
+    },
+    "user_response": {
+      "type": "object",
+      "required": ["id", "username", "email", "role", "status", "created_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "User unique identifier"
+        },
+        "username": {
+          "type": "string",
+          "description": "Username"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "admin", "operator", "read_only"],
+          "description": "User role"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "suspended", "disabled"],
+          "description": "User account status"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account creation timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "last_login": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Last login timestamp"
+        }
+      },
+      "additionalProperties": false
+    },
+    "login_request": {
+      "type": "object",
+      "required": ["username", "password"],
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Username or email"
+        },
+        "password": {
+          "type": "string",
+          "description": "User password"
+        },
+        "totp_code": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{6}$",
+          "description": "TOTP code for two-factor authentication"
+        }
+      },
+      "additionalProperties": false
+    },
+    "login_response": {
+      "type": "object",
+      "required": ["access_token", "token_type", "expires_in"],
+      "properties": {
+        "access_token": {
+          "type": "string",
+          "description": "JWT access token"
+        },
+        "refresh_token": {
+          "type": "string",
+          "description": "JWT refresh token"
+        },
+        "token_type": {
+          "type": "string",
+          "const": "Bearer",
+          "description": "Token type"
+        },
+        "expires_in": {
+          "type": "integer",
+          "description": "Token expiration time in seconds"
+        },
+        "user": {
+          "$ref": "#/definitions/user_response"
+        }
+      },
+      "additionalProperties": false
+    },
+    "error_response": {
+      "type": "object",
+      "required": ["error", "message"],
+      "properties": {
+        "error": {
+          "type": "string",
+          "description": "Error type/code",
+          "example": "validation_error"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Error timestamp"
+        },
+        "path": {
+          "type": "string",
+          "description": "API path where error occurred"
+        }
+      },
+      "additionalProperties": false
+    },
+    "session_request": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Session identifier"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["terminate", "suspend", "resume"],
+          "description": "Action to perform on session"
+        }
+      },
+      "additionalProperties": false
+    },
+    "emergency_action_request": {
+      "type": "object",
+      "required": ["action", "reason"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["lockdown", "shutdown", "session_termination", "node_maintenance", "blockchain_pause"],
+          "description": "Emergency action type"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "Reason for emergency action"
+        },
+        "confirm": {
+          "type": "boolean",
+          "default": false,
+          "description": "Confirmation flag for critical actions"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dashboard_overview_response": {
+      "type": "object",
+      "required": ["system_status", "active_sessions", "node_status", "blockchain_status"],
+      "properties": {
+        "system_status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy"],
+          "description": "Overall system health status"
+        },
+        "active_sessions": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of active sessions"
+        },
+        "active_users": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of active admin users"
+        },
+        "node_status": {
+          "type": "object",
+          "properties": {
+            "total": {"type": "integer", "minimum": 0},
+            "active": {"type": "integer", "minimum": 0},
+            "inactive": {"type": "integer", "minimum": 0}
+          }
+        },
+        "blockchain_status": {
+          "type": "object",
+          "properties": {
+            "status": {"type": "string", "enum": ["running", "paused", "error"]},
+            "latest_block": {"type": "integer", "minimum": 0},
+            "transactions_pending": {"type": "integer", "minimum": 0}
+          }
+        },
+        "resource_usage": {
+          "type": "object",
+          "properties": {
+            "cpu_percent": {"type": "number", "minimum": 0, "maximum": 100},
+            "memory_percent": {"type": "number", "minimum": 0, "maximum": 100},
+            "disk_percent": {"type": "number", "minimum": 0, "maximum": 100}
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

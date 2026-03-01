@@ -1,0 +1,58 @@
+# Grafana datasources configuration for Lucid RDP system
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableRecordingRules: false
+      incrementalQueryOverlapWindow: 10m
+      queryTimeout: 60s
+      timeInterval: 15s
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 1000
+
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://lucid-elasticsearch:9200
+    database: "lucid-logs-*"
+    editable: true
+    jsonData:
+      esVersion: "8.0.0"
+      logLevelField: "level"
+      logMessageField: "message"
+      maxConcurrentShardRequests: 5
+      timeField: "@timestamp"
+      interval: Daily
+
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    editable: true
+    jsonData:
+      implementation: prometheus
+
+  - name: TestData
+    type: testdata
+    access: direct
+    editable: true
+    jsonData:
+      scenario: random_walk
+      

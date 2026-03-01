@@ -1,0 +1,91 @@
+# Multi-stage Dockerfile for Storage Services (Specialized)
+# Builds distroless containers for a generic storage service
+# Aligned with essentials.md: pickme/lucid-storage:latest-arm64, port 8104
+
+# Stage 1: Build stage
+FROM --platform=linux/arm64 python:3.11-slim AS builder
+
+# Set build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    make \
+    pkg-config \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY storage/requirements.storage.txt ./storage/requirements.storage.txt
+RUN pip install --no-cache-dir -r ./storage/requirements.storage.txt
+# Copy source code
+COPY storage/ ./storage/
+COPY storage/__init__.py ./__init__.py
+COPY src/ ./src/
+COPY common/ ./common/
+COPY database/ ./database/
+
+# Build the application
+RUN python -m compileall -b .
+
+# Stage 2: Runtime stage (distroless)
+FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+
+# Set metadata
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Storage Service" \
+      org.opencontainers.image.description="Distroless storage service for Lucid platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="Lucid" \
+      org.opencontainers.image.licenses="MIT" \
+      lucid.service="storage" \
+      lucid.type="distroless" \
+      lucid.platform="arm64" \
+      lucid.security="hardened"
+
+# Set environment variables (aligned with essentials.md)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LUCID_ENV=production \
+    LUCID_PLATFORM=arm64
+ENV STORAGE_HOST=172.20.0.X
+ENV STORAGE_URL=http://lucid-storage:8104
+ENV API_URL=http://lucid-storage:8104
+ENV HEALTHCHECK_PORT=8104
+ENV PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+
+# Create non-root user
+USER 65532:65532
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application from builder stage
+COPY --from=builder --chown=65532:65532 /app /app
+
+# Expose port (aligned with essentials.md: port 8104)
+EXPOSE 8104
+
+# Health check (aligned with essentials.md: port 8104)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8104/health')"]
+
+# Run the application
+CMD ["python3", "main.py"]

@@ -1,0 +1,213 @@
+# syntax=docker/dockerfile:1.5
+
+# LUCID SESSION RECORDER - Distroless Container
+# Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md, block-manager-design.md
+# Session Recorder service (lucid-session-recorder) - Port 8090
+# Image: pickme/lucid-session-recorder:latest-arm64
+# Build Context: . (project root)
+# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
+
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        libzstd-dev \
+        liblz4-dev \
+        libavcodec-dev \
+        libavformat-dev \
+        libavutil-dev \
+        libswscale-dev \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /build
+
+# Ensures /var/run and /var/lib exist with real content (COPY won't be silent)
+RUN echo "LUCID_SESSION_RECORDER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_SESSION_RECORDER_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
+
+COPY sessions/requirements.recorder.txt ./requirements.txt
+
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+
+# Marker files (per Dockerfile-copy-pattern.md)
+RUN echo "LUCID_SESSION_RECORDER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_SESSION_RECORDER_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+# Verify packages are installed and verify directory structure
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, httpx, aiofiles, motor, pymongo, cv2, PIL, numpy, psutil, netifaces, structlog, lz4, zstandard, zstd, blake3, yaml; print('✅ critical packages installed')" && \
+    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    python3 -c "import yaml; print('yaml location:', yaml.__file__)" && \
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
+
+# Application source COPY
+COPY sessions/recorder/ ./recorder/
+COPY sessions/core/ ./core/
+COPY sessions/pipeline/__init__.py ./pipeline/__init__.py
+COPY sessions/pipeline/integration/ ./pipeline/integration/
+COPY sessions/__init__.py ./__init__.py
+COPY sessions/config/recorder-config.yaml ./config/recorder-config.yaml
+
+############################
+# Stage 2 – Runtime
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Session Recorder" \
+      org.opencontainers.image.description="Distroless session recorder service for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="session-recorder" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="application" \
+      com.lucid.security="distroless"
+
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    SESSION_RECORDER_PORT=8090 \
+    SESSION_RECORDER_HOST=0.0.0.0
+
+WORKDIR /app
+
+# System directories & certificates
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+
+# Distroless base already has correct linker/runtime; only copy CA certs
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Python packages (per COPY pattern guide)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+
+# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# This will fail the build if packages are missing (catches COPY failures immediately)
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.isdir(site_packages), site_packages + ' is not a directory'; \
+# Verify critical packages exist as directories/files \
+uvicorn_path = os.path.join(site_packages, 'uvicorn'); \
+assert os.path.exists(uvicorn_path), 'uvicorn not found at ' + uvicorn_path; \
+assert os.path.isdir(uvicorn_path) or os.path.isfile(uvicorn_path), 'uvicorn path exists but is not dir/file'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pymongo')), 'pymongo not found'; \
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
+assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'yaml not found'; \
+# Verify marker file exists and is non-empty (ensures COPY worked) \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found at ' + marker_path; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+# Actually import packages to verify they work (catches import errors) \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+print('uvicorn imported successfully, location:', uvicorn.__file__); \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import pymongo; assert pymongo, 'pymongo import failed'; \
+import httpx; assert httpx, 'httpx import failed'; \
+import aiofiles; assert aiofiles, 'aiofiles import failed'; \
+import yaml; assert yaml, 'yaml import failed'; \
+import zstd; assert zstd, 'zstd import failed'; \
+import blake3; assert blake3, 'blake3 import failed'; \
+print('✅ All packages verified in runtime stage')"]
+
+# Application layout COPY (per Dockerfile-copy-pattern.md - copy entire directories)
+COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/recorder /app/sessions/recorder
+COPY --chown=65532:65532 --from=builder /build/pipeline/__init__.py /app/sessions/pipeline/__init__.py
+COPY --chown=65532:65532 --from=builder /build/pipeline/integration /app/sessions/pipeline/integration
+COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
+COPY --chown=65532:65532 --from=builder /build/config/recorder-config.yaml /app/sessions/config/recorder-config.yaml
+
+# Verify application source files were copied (prevents silent COPY failures)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/sessions/recorder'), 'recorder directory not found'; \
+assert os.path.exists('/app/sessions/recorder/entrypoint.py'), 'entrypoint.py not found'; \
+assert os.path.exists('/app/sessions/recorder/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/core'), 'core directory not found'; \
+assert os.path.exists('/app/sessions/pipeline/__init__.py'), 'pipeline/__init__.py not found'; \
+assert os.path.exists('/app/sessions/pipeline/integration'), 'pipeline/integration directory not found'; \
+assert os.path.exists('/app/sessions/__init__.py'), 'sessions/__init__.py not found'; \
+assert os.path.exists('/app/sessions/config/recorder-config.yaml'), 'recorder-config.yaml not found'; \
+print('✅ All application source files verified')"]
+
+EXPOSE 8090
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8090)); s.close(); exit(0 if result == 0 else 1)"]
+
+USER 65532:65532
+
+# Clear base ENTRYPOINT so CMD works as expected
+ENTRYPOINT []
+
+CMD ["/usr/bin/python3.11", "/app/sessions/recorder/entrypoint.py"]

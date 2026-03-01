@@ -1,0 +1,321 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: lucid-system
+  labels:
+    app.kubernetes.io/name: lucid-system
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: lucid-blockchain
+
+namespace: lucid-system
+
+resources:
+  # Namespace and basic configuration
+  - 00-namespace.yaml
+  
+  # ConfigMaps
+  - 01-configmaps/api-gateway-config.yaml
+  - 01-configmaps/blockchain-core-config.yaml
+  - 01-configmaps/session-management-config.yaml
+  - 01-configmaps/rdp-services-config.yaml
+  - 01-configmaps/node-management-config.yaml
+  - 01-configmaps/admin-interface-config.yaml
+  - 01-configmaps/tron-payment-config.yaml
+  - 01-configmaps/auth-service-config.yaml
+  - 01-configmaps/database-config.yaml
+  - 01-configmaps/service-discovery-config.yaml
+  
+  # Secrets
+  - 02-secrets/jwt-secrets.yaml
+  
+  # Databases
+  - 03-databases/mongodb.yaml
+  - 03-databases/redis.yaml
+  - 03-databases/elasticsearch.yaml
+  
+  # Auth service
+  - 04-auth/auth-service.yaml
+  
+  # Core services
+  - 05-core/api-gateway.yaml
+  - 05-core/blockchain-engine.yaml
+  - 05-core/service-mesh.yaml
+  - 05-core/session-anchoring.yaml
+  - 05-core/block-manager.yaml
+  - 05-core/data-chain.yaml
+  
+  # Application services
+  - 06-application/session-management.yaml
+  - 06-application/session-pipeline.yaml
+  - 06-application/session-recorder.yaml
+  - 06-application/chunk-processor.yaml
+  - 06-application/session-storage.yaml
+  - 06-application/session-api.yaml
+  - 06-application/rdp-services.yaml
+  - 06-application/rdp-server-manager.yaml
+  - 06-application/rdp-xrdp.yaml
+  - 06-application/rdp-controller.yaml
+  - 06-application/rdp-monitor.yaml
+  - 06-application/node-management.yaml
+  
+  # Support services
+  - 07-support/admin-interface.yaml
+  - 07-support/tron-payment.yaml
+  - 07-support/tron-client.yaml
+  - 07-support/payout-router.yaml
+  - 07-support/wallet-manager.yaml
+  - 07-support/usdt-manager.yaml
+  - 07-support/trx-staking.yaml
+  - 07-support/payment-gateway.yaml
+  
+  # GUI services
+  - 08-gui/gui-api-bridge.yaml
+  - 08-gui/gui-tor-manager.yaml
+  - 08-gui/gui-hardware-wallet.yaml
+  - 08-gui/gui-docker-manager.yaml
+  
+  # Network policies
+  - 04-network/lucid-network-policies.yaml
+  
+  # Ingress
+  - 09-ingress/lucid-ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: lucid
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/part-of: lucid-blockchain
+
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: api-gateway
+      namespace: lucid-system
+    spec:
+      template:
+        spec:
+          containers:
+          - name: api-gateway
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "256Mi"
+              limits:
+                cpu: "1"
+                memory: "2Gi"
+
+images:
+  - name: pickme/lucid-api-gateway
+    newTag: latest-arm64
+  - name: pickme/lucid-blockchain-engine
+    newTag: latest-arm64
+  - name: pickme/lucid-service-mesh-controller
+    newTag: latest-arm64
+  - name: pickme/lucid-session-anchoring
+    newTag: latest-arm64
+  - name: pickme/lucid-block-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-data-chain
+    newTag: latest-arm64
+  - name: pickme/lucid-session-pipeline
+    newTag: latest-arm64
+  - name: pickme/lucid-session-recorder
+    newTag: latest-arm64
+  - name: pickme/lucid-chunk-processor
+    newTag: latest-arm64
+  - name: pickme/lucid-session-storage
+    newTag: latest-arm64
+  - name: pickme/lucid-session-api
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-server-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-xrdp
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-controller
+    newTag: latest-arm64
+  - name: pickme/lucid-rdp-monitor
+    newTag: latest-arm64
+  - name: pickme/lucid-node-management
+    newTag: latest-arm64
+  - name: pickme/lucid-admin-interface
+    newTag: latest-arm64
+  - name: pickme/lucid-tron-client
+    newTag: latest-arm64
+  - name: pickme/lucid-payout-router
+    newTag: latest-arm64
+  - name: pickme/lucid-wallet-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-usdt-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-trx-staking
+    newTag: latest-arm64
+  - name: pickme/lucid-payment-gateway
+    newTag: latest-arm64
+  - name: pickme/lucid-auth-service
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-api-bridge
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-tor-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-hardware-wallet
+    newTag: latest-arm64
+  - name: pickme/lucid-gui-docker-manager
+    newTag: latest-arm64
+  - name: pickme/lucid-mongodb
+    newTag: latest-arm64
+  - name: pickme/lucid-redis
+    newTag: latest-arm64
+  - name: pickme/lucid-elasticsearch
+    newTag: latest-arm64
+
+configMapGenerator:
+  - name: lucid-config
+    literals:
+      - PROJECT_NAME=Lucid
+      - PROJECT_VERSION=0.1.0
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - PI_USER=pickme
+      - PI_HOST=192.168.0.75
+      - LUCID_PI_NETWORK=lucid-pi-network
+      - LUCID_PI_SUBNET=172.20.0.0/16
+      - LUCID_PI_GATEWAY=172.20.0.1
+      - LUCID_TRON_ISOLATED=lucid-tron-isolated
+      - LUCID_TRON_SUBNET=172.21.0.0/16
+      - LUCID_TRON_GATEWAY=172.21.0.1
+      - LUCID_GUI_NETWORK=lucid-gui-network
+      - LUCID_GUI_SUBNET=172.22.0.0/16
+      - LUCID_GUI_GATEWAY=172.22.0.1
+
+secretGenerator:
+  - name: lucid-secrets
+    envs:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    type: Opaque
+
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: api-gateway
+      namespace: lucid-system
+    path: patches/api-gateway-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: blockchain-engine
+      namespace: lucid-system
+    path: patches/blockchain-engine-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: session-management
+      namespace: lucid-system
+    path: patches/session-management-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: rdp-services
+      namespace: lucid-system
+    path: patches/rdp-services-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: node-management
+      namespace: lucid-system
+    path: patches/node-management-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: admin-interface
+      namespace: lucid-system
+    path: patches/admin-interface-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: tron-payment
+      namespace: lucid-system
+    path: patches/tron-payment-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: auth-service
+      namespace: lucid-system
+    path: patches/auth-service-patch.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: service-mesh-controller
+      namespace: lucid-system
+    path: patches/service-mesh-controller-patch.yaml
+
+replicas:
+  - name: api-gateway
+    count: 1
+  - name: blockchain-engine
+    count: 1
+  - name: service-mesh-controller
+    count: 1
+  - name: session-anchoring
+    count: 1
+  - name: block-manager
+    count: 1
+  - name: data-chain
+    count: 1
+  - name: session-pipeline
+    count: 1
+  - name: session-recorder
+    count: 1
+  - name: chunk-processor
+    count: 1
+  - name: session-storage
+    count: 1
+  - name: session-api
+    count: 1
+  - name: rdp-server-manager
+    count: 1
+  - name: rdp-xrdp
+    count: 1
+  - name: rdp-controller
+    count: 1
+  - name: rdp-monitor
+    count: 1
+  - name: node-management
+    count: 1
+  - name: admin-interface
+    count: 1
+  - name: tron-client
+    count: 1
+  - name: payout-router
+    count: 1
+  - name: wallet-manager
+    count: 1
+  - name: usdt-manager
+    count: 1
+  - name: trx-staking
+    count: 1
+  - name: payment-gateway
+    count: 1
+  - name: auth-service
+    count: 1
+  - name: gui-api-bridge
+    count: 1
+  - name: gui-tor-manager
+    count: 1
+  - name: gui-hardware-wallet
+    count: 1
+  - name: gui-docker-manager
+    count: 1

@@ -1,0 +1,187 @@
+# Lucid Session API - API Configuration
+# Optional YAML configuration for session API service
+# File: sessions/config/api-config.yaml
+# Purpose: Define API endpoints, rate limiting, and session management rules
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
+
+# Global API Configuration
+global:
+  service_name: "lucid-session-api"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  # Network configuration from environment:
+  # - SESSION_API_HOST (default: session-api)
+  # - SESSION_API_PORT (default: 8087)
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  port: 8087  # Override with SESSION_API_PORT env var
+
+# API Configuration
+api:
+  # API Versioning
+  version: "v1"
+  base_path: "/api/v1"
+  
+  # CORS Configuration
+  cors:
+    enabled: true
+    # CORS origins should be configured via environment variables in production
+    allow_origins: []
+    allow_credentials: true
+    allow_methods: ["*"]
+    allow_headers: ["*"]
+  
+  # Rate Limiting
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 1000
+    burst_size: 100
+    window_seconds: 60
+    per_endpoint_limits:
+      "/api/v1/sessions":
+        requests_per_minute: 200
+        burst_size: 20
+      "/api/v1/sessions/{session_id}":
+        requests_per_minute: 100
+        burst_size: 10
+      "/api/v1/sessions/create":
+        requests_per_minute: 10
+        burst_size: 3
+
+# Session Management Configuration
+session_management:
+  # Session Creation
+  creation:
+    max_concurrent_sessions_per_user: 5
+    max_sessions_per_user: 100
+    session_timeout_seconds: 7200  # 2 hours
+    default_retention_days: 30
+  
+  # Session Lifecycle
+  lifecycle:
+    states:
+      - "created"
+      - "starting"
+      - "recording"
+      - "paused"
+      - "stopped"
+      - "processing"
+      - "completed"
+      - "failed"
+      - "deleted"
+    
+    state_transitions:
+      - from: "created"
+        to: ["starting", "deleted"]
+      - from: "starting"
+        to: ["recording", "failed"]
+      - from: "recording"
+        to: ["paused", "stopped", "failed"]
+      - from: "paused"
+        to: ["recording", "stopped"]
+      - from: "stopped"
+        to: ["processing", "deleted"]
+      - from: "processing"
+        to: ["completed", "failed"]
+      - from: "completed"
+        to: ["deleted"]
+      - from: "failed"
+        to: ["deleted"]
+  
+  # Session Limits
+  limits:
+    max_session_duration_hours: 24
+    max_session_size_gb: 100
+    max_chunks_per_session: 10000
+    max_concurrent_recordings: 10
+
+# Storage Integration
+# NOTE: Service URLs MUST come from environment variables:
+# - SESSION_STORAGE_URL (from docker-compose.application.yml)
+storage:
+  storage_service_url: ""  # Set via SESSION_STORAGE_URL env var (http://session-storage:8082)
+  chunk_storage_url: ""  # Set via SESSION_STORAGE_URL env var
+  timeout_seconds: 30
+  retry_attempts: 3
+  retry_delay_seconds: 1
+
+# Pipeline Integration
+# NOTE: Service URL MUST come from environment variable:
+# - SESSION_PIPELINE_URL (from docker-compose.application.yml)
+pipeline:
+  pipeline_service_url: ""  # Set via SESSION_PIPELINE_URL env var (http://session-pipeline:8083)
+  timeout_seconds: 60
+  retry_attempts: 3
+  auto_start_pipeline: true
+
+# Blockchain Integration
+# NOTE: Service URLs MUST come from environment variables:
+# - BLOCKCHAIN_ENGINE_URL (from docker-compose.core.yml)
+# - SESSION_ANCHORING_URL would be derived from BLOCKCHAIN_ENGINE_URL
+blockchain:
+  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (http://blockchain-engine:8084)
+  session_anchoring_url: ""  # Derived from BLOCKCHAIN_ENGINE_URL
+  auto_anchor_on_complete: true
+  anchoring_timeout_seconds: 60
+
+# Database Configuration
+# NOTE: Database URLs MUST come from environment variables:
+# - MONGODB_URL (required, from .env.secrets)
+# - REDIS_URL (from .env.core or .env.secrets)
+# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
+database:
+  mongodb_url: ""  # Set via MONGODB_URL env var (required)
+  redis_url: ""    # Set via REDIS_URL env var
+  elasticsearch_url: ""  # Set via ELASTICSEARCH_URL env var
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  logging:
+    enabled: true
+    format: "json"
+    level: "INFO"
+    include_request_body: false
+    include_response_body: false
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  
+  error_responses:
+    include_stack_trace: false
+    include_details: true
+    log_errors: true
+
+# Security Configuration
+security:
+  authentication:
+    require_authentication: true
+    jwt_validation: true
+    token_expiry_seconds: 900  # 15 minutes
+  
+  authorization:
+    require_authorization: true
+    role_based_access: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  data_privacy:
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_sensitive_data: true

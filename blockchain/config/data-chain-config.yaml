@@ -1,0 +1,225 @@
+# Lucid Data Chain Service - Data Chain Configuration
+# Optional YAML configuration for data chain operations
+# File: blockchain/config/data-chain-config.yaml
+# Purpose: Define data chunk management, Merkle tree construction, and integrity verification
+
+# Global Data Chain Configuration
+global:
+  enabled: true
+  chunk_size_bytes: 1048576  # 1MB default chunk size
+  max_chunk_size_bytes: 10485760  # 10MB maximum
+  min_chunk_size_bytes: 1024  # 1KB minimum
+  compression_enabled: true
+  encryption_enabled: false
+
+# Chunk Management
+chunk_management:
+  # Chunk Creation
+  creation:
+    auto_split_large_data: true
+    split_threshold_bytes: 1048576  # 1MB
+    chunk_overlap_bytes: 0
+    preserve_boundaries: true  # Preserve natural data boundaries when possible
+
+  # Chunk Storage
+  storage:
+    backend: "mongodb"  # Options: mongodb, filesystem, s3, ipfs
+    store_metadata: true
+    store_content: true
+    store_hashes: true
+    compression_algorithm: "gzip"  # Options: gzip, lz4, zstd, none
+    deduplication_enabled: true
+
+  # Chunk Retrieval
+  retrieval:
+    cache_enabled: true
+    cache_ttl_seconds: 3600
+    cache_size_mb: 500
+    parallel_retrieval: true
+    max_parallel_requests: 10
+
+# Merkle Tree Configuration
+# ALIGNED WITH: blockchain/core/merkle_tree_builder.py, blockchain/utils/crypto.py
+merkle_tree:
+  enabled: true
+  algorithm: "blake3"  # ALIGNED: blockchain/core/merkle_tree_builder.py:32 (HASH_ALGORITHM = "blake3")
+  tree_type: "binary"  # Options: binary, ternary, k_ary
+  leaf_hash_size_bytes: 32
+  node_hash_size_bytes: 32
+  max_tree_height: 20  # ALIGNED: blockchain/core/merkle_tree_builder.py:31 (MERKLE_TREE_HEIGHT_MAX = 20)
+  
+  # Tree Construction
+  construction:
+    build_on_chunk_add: false
+    build_on_demand: true
+    batch_build_enabled: true
+    batch_size: 100
+    batch_timeout_seconds: 300
+    parallel_construction: true
+    max_parallel_workers: 4
+
+  # Tree Storage
+  storage:
+    store_complete_tree: false
+    store_root_only: true
+    store_proof_paths: true
+    store_intermediate_nodes: false
+    cache_tree_structure: true
+
+  # Proof Generation
+  proofs:
+    enabled: true
+    generate_on_demand: true
+    cache_proofs: true
+    proof_cache_ttl_seconds: 3600
+    include_sibling_hashes: true
+    include_path_indices: true
+
+# Integrity Verification
+integrity:
+  # Hash Verification
+  hash_verification:
+    enabled: true
+    verify_chunk_hashes: true
+    verify_merkle_root: true
+    verify_proof_paths: true
+    hash_algorithm: "blake3"  # ALIGNED: blockchain/utils/crypto.py:28 (HASH_ALGORITHM = "blake3")
+    verification_on_retrieval: true
+    verification_on_storage: true
+
+  # Data Integrity Checks
+  data_checks:
+    enabled: true
+    checksum_verification: true
+    size_verification: true
+    format_verification: false
+    corruption_detection: true
+
+  # Periodic Verification
+  periodic_verification:
+    enabled: true
+    verification_interval_hours: 24
+    verify_all_chunks: false
+    verify_sample_percentage: 10
+    auto_repair_on_corruption: false
+
+# Chunk Linking and Ordering
+chunk_linking:
+  enabled: true
+  maintain_sequence: true
+  link_method: "linked_list"  # Options: linked_list, array_index, merkle_sequence
+  store_previous_hash: true
+  store_next_hash: true
+  verify_chain_integrity: true
+
+# Data Deduplication
+deduplication:
+  enabled: true
+  method: "content_hash"  # Options: content_hash, semantic_hash
+  hash_algorithm: "blake3"  # ALIGNED: blockchain/utils/crypto.py:28 (HASH_ALGORITHM = "blake3")
+  store_references: true
+  reference_counting: true
+  garbage_collection_enabled: true
+  gc_interval_hours: 24
+
+# Performance Optimization
+performance:
+  # Batch Operations
+  batching:
+    enabled: true
+    batch_size: 100
+    batch_timeout_seconds: 5
+    parallel_batch_processing: true
+
+  # Caching
+  caching:
+    enabled: true
+    cache_recent_chunks: true
+    cache_merkle_trees: true
+    cache_proofs: true
+    cache_size_mb: 1000
+    cache_ttl_seconds: 3600
+
+  # Parallel Processing
+  parallel_processing:
+    enabled: true
+    max_worker_threads: 8
+    chunk_processing_threads: 4
+    tree_construction_threads: 2
+
+# Storage Configuration
+storage:
+  # Primary Storage
+  primary:
+    backend: "mongodb"
+    connection_pool_size: 20
+    write_concern: "majority"
+    read_concern: "majority"
+
+  # Secondary Storage (Archive)
+  archive:
+    enabled: true
+    backend: "s3"  # Options: s3, filesystem, ipfs
+    archive_after_days: 90
+    compression: true
+    encryption: true
+
+  # Backup Storage
+  backup:
+    enabled: true
+    backup_interval_hours: 24
+    backup_retention_days: 30
+    incremental_backup: true
+
+# Error Handling and Recovery
+error_handling:
+  # Retry Policies
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+    backoff_multiplier: 2
+
+  # Failure Recovery
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 60
+    verify_integrity_on_recovery: true
+    rebuild_merkle_tree_on_recovery: true
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "chunk_count"
+    - "total_data_size_bytes"
+    - "merkle_tree_count"
+    - "chunk_operations_per_second"
+    - "integrity_verification_rate"
+    - "deduplication_ratio"
+    - "cache_hit_rate"
+    - "storage_utilization_percent"
+
+  alerts:
+    storage_size_threshold_gb: 1000
+    chunk_operation_latency_threshold_ms: 1000
+    integrity_verification_failure_rate_threshold: 0.01
+    corruption_detection_threshold: 1
+
+# Security Configuration
+security:
+  # Access Control
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+
+  # Data Privacy
+  privacy:
+    encrypt_sensitive_chunks: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_data_in_logs: true
+

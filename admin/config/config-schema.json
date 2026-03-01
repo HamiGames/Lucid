@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Admin Interface Configuration Schema",
+  "description": "JSON schema for validating admin interface configuration structure",
+  "type": "object",
+  "required": ["service", "security", "rbac"],
+  "properties": {
+    "service": {
+      "type": "object",
+      "required": ["name", "port"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "lucid-admin-interface",
+          "description": "Service name"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Service version",
+          "example": "1.0.0"
+        },
+        "host": {
+          "type": "string",
+          "default": "0.0.0.0",
+          "description": "Host to bind to"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 8120,
+          "description": "Port to listen on (configurable via ADMIN_INTERFACE_PORT environment variable)",
+          "description": "Port to listen on"
+        },
+        "debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug mode"
+        },
+        "log_level": {
+          "type": "string",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+          "default": "INFO",
+          "description": "Logging level"
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "required": ["jwt"],
+      "properties": {
+        "jwt": {
+          "type": "object",
+          "required": ["algorithm"],
+          "properties": {
+            "secret_key": {
+              "type": "string",
+              "minLength": 32,
+              "description": "JWT secret key (should be set via environment variable)"
+            },
+            "algorithm": {
+              "type": "string",
+              "enum": ["HS256", "HS384", "HS512", "RS256", "RS384", "RS512"],
+              "default": "HS256",
+              "description": "JWT signing algorithm"
+            },
+            "access_token_expire_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 15,
+              "description": "Access token expiration time in minutes"
+            },
+            "refresh_token_expire_days": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 7,
+              "description": "Refresh token expiration time in days"
+            }
+          }
+        },
+        "password": {
+          "type": "object",
+          "properties": {
+            "min_length": {
+              "type": "integer",
+              "minimum": 8,
+              "default": 12,
+              "description": "Minimum password length"
+            },
+            "require_special_chars": {
+              "type": "boolean",
+              "default": true,
+              "description": "Require special characters in passwords"
+            },
+            "require_uppercase": {
+              "type": "boolean",
+              "default": true,
+              "description": "Require uppercase letters in passwords"
+            },
+            "require_lowercase": {
+              "type": "boolean",
+              "default": true,
+              "description": "Require lowercase letters in passwords"
+            },
+            "require_numbers": {
+              "type": "boolean",
+              "default": true,
+              "description": "Require numbers in passwords"
+            }
+          }
+        },
+        "session": {
+          "type": "object",
+          "properties": {
+            "timeout_hours": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 8,
+              "description": "Session timeout in hours"
+            },
+            "max_login_attempts": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 5,
+              "description": "Maximum login attempts before lockout"
+            },
+            "lockout_duration_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 30,
+              "description": "Account lockout duration in minutes"
+            }
+          }
+        }
+      }
+    },
+    "rbac": {
+      "$ref": "#/definitions/rbac"
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "mongodb": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "MongoDB connection URL"
+            },
+            "database": {
+              "type": "string",
+              "default": "lucid",
+              "description": "MongoDB database name"
+            },
+            "connection_timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 30,
+              "description": "Connection timeout in seconds"
+            }
+          }
+        },
+        "redis": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Redis connection URL"
+            }
+          }
+        }
+      }
+    },
+    "cors": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CORS"
+        },
+        "allow_origins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Allowed CORS origins"
+        },
+        "allow_credentials": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow credentials in CORS requests"
+        }
+      }
+    },
+    "rate_limiting": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable rate limiting"
+        },
+        "requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000,
+          "description": "Requests per minute limit"
+        },
+        "window_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 60,
+          "description": "Rate limit window in seconds"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "rbac": {
+      "type": "object",
+      "required": ["roles"],
+      "properties": {
+        "roles": {
+          "type": "array",
+          "description": "List of RBAC roles"
+        },
+        "permissions": {
+          "type": "array",
+          "description": "List of available permissions"
+        },
+        "default_role": {
+          "type": "string",
+          "default": "read_only"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
+

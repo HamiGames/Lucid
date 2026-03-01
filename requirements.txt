@@ -1,0 +1,158 @@
+# Lucid - Unified Requirements & Operational Pre-Requisites
+# Location: /c:/Users/surba/Desktop/personal/THE_FUCKER/lucid_2/Lucid/requirements.txt
+# Purpose:
+# - Aggregates ALL Python dependency files using recursive includes (-r)
+# - Documents system toolchains (Windows host + Raspberry Pi target)
+# - Captures Node/Java tool versions and install instructions
+# - Records network/service prerequisites per plan/constants
+
+# =========================
+# PYTHON DEPENDENCIES (pip)
+# =========================
+# Install via: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+# Core service requirements
+-r 03-api-gateway/requirements.txt
+-r 03-api-gateway/api/requirements.txt
+-r admin/requirements.txt
+-r auth/requirements.txt
+-r auth/requirements.auth.txt
+-r auth/requirements.authentication-service.txt
+-r blockchain/requirements.txt
+-r blockchain/api/requirements.txt
+-r blockchain/governance/requirements.timelock.txt
+-r common/requirements.txt
+-r core/requirements.txt
+-r docs/api/requirements.txt
+-r gui/requirements.txt
+-r node/requirements.txt
+-r payment-systems/requirements.txt
+-r payment-systems/tron/requirements.txt
+-r payment-systems/tron/requirements-prod.txt
+-r sessions/requirements.txt
+-r sessions/requirements.api.txt
+-r sessions/requirements.processor.txt
+-r sessions/requirements.recorder.txt
+-r sessions/requirements.storage.txt
+-r sessions/requirements.pipeline.txt
+-r sessions/encryption/requirements.encryptor.txt
+-r sessions/core/requirements.orchestrator.txt
+-r sessions/core/requirements.merkle_builder.txt
+-r sessions/core/requirements.merkle.txt
+-r sessions/core/requirements.chunker.txt
+-r storage/requirements.storage.txt
+-r user_content/requirements.txt
+-r wallet/requirements.txt
+-r RDP/requirements.txt
+-r RDP/requirements.monitor.txt
+-r RDP/requirements.xrdp.txt
+-r RDP/requirements.server-manager.txt
+-r RDP/security/requirements.security.txt
+-r RDP/session-controller/requirements.txt
+
+# Infrastructure/base images (keep last to avoid pin conflicts)
+-r infrastructure/containers/base/requirements-minimal.txt
+-r infrastructure/containers/base/requirements.txt
+-r infrastructure/docker/distroless/base/requirements-minimal.txt
+-r infrastructure/docker/distroless/base/requirements.txt
+-r build/distroless/base/requirements.txt
+-r infrastructure/docker/multi-stage/requirements.database.txt
+-r infrastructure/docker/multi-stage/requirements.storage.txt
+-r infrastructure/docker/multi-stage/requirements.vm.txt
+-r database/requirements.database.txt
+-r database/elasticsearch/requirements.txt
+-r database/redis/requirements.txt
+-r database/mongodb/requirements.txt
+-r database/services/monitoring/requirements-monitoring.txt
+-r database/services/backup/requirements-backup.txt
+# ====================
+# VM requirements
+-r vm/requirements.vm.txt
+
+# =========================
+# storage requirements
+-r storage/requirements.storage.txt
+# =========================
+# Node requirements
+-r node/requirements.txt
+# =========================
+# Required Python: >= 3.11 (configs/pyproject.toml, 03-api-gateway/api/pyproject.toml)
+# Windows host (PowerShell):
+#   py --version
+#   py -3.11 -m pip install --upgrade pip
+# Raspberry Pi (arm64):
+#   sudo apt-get update
+#   sudo apt-get install -y python3.11 python3.11-venv python3-pip build-essential libssl-dev libffi-dev
+
+# ==============
+# NODE (JavaScript)
+# ==============
+# Engines:
+#   electron-gui/package.json: node >=18, npm >=9
+#   docs/api/package.json: node >=18, npm >=8
+# Windows host:
+#   winget install OpenJS.NodeJS.LTS
+#   node -v  (expect >=18)
+#   npm -v   (expect >=9)
+# Raspberry Pi:
+#   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+#   sudo apt-get install -y nodejs
+#   node -v  (>=18), npm -v (>=9)
+# Install Node deps:
+#   cd electron-gui && npm ci
+#   cd docs/api && npm ci
+
+# =====
+# JAVA
+# =====
+# Required for base images/tooling (distroless/java base; OpenAPI/ES toolchains as needed)
+# Version: OpenJDK 17 (recommended)
+# Windows host:
+#   winget install EclipseAdoptium.Temurin.17.JDK
+#   java -version  (expect 17)
+# Raspberry Pi:
+#   sudo apt-get update
+#   sudo apt-get install -y openjdk-17-jre-headless
+#   java -version  (expect 17)
+
+# =======
+# DOCKER
+# =======
+# Required for all services and networks per plan/constants
+# Windows host:
+#   Install Docker Desktop (WSL2 backend) and enable Linux containers
+# Raspberry Pi:
+#   curl -fsSL https://get.docker.com | sh
+#   sudo usermod -aG docker $USER
+#   sudo apt-get install -y docker-compose-plugin
+# Validate:
+#   docker --version
+#   docker compose version
+
+# ================
+# NETWORK SERVICES
+# ================
+# Networks (from plan/constants):
+#   lucid-pi-network (172.20.0.0/16)
+#   lucid-tron-isolated (172.21.0.0/16) [optional]
+#   lucid-gui-network (172.22.0.0/16)
+#   lucid-distroless-production (172.23.0.0/16)
+#   lucid-distroless-dev (172.24.0.0/16)
+#   lucid-multi-stage-network (172.25.0.0/16)
+# These are created by docker-compose files under configs/docker/* and infrastructure/compose/*
+
+# =====================
+# FOUNDATION CONTAINERS
+# =====================
+# Will be pulled/started via compose; host installs are NOT required:
+#   MongoDB (27017), Redis (6379), Elasticsearch (9200/9300)
+# Ensure env files exist per plan/constants/Network_conig_requirements.md
+
+# =========================
+# OPTIONAL DEV/QA UTILITIES
+# =========================
+# Windows host:
+#   winget install Git.Git
+#   winget install Microsoft.VisualStudioCode
+# Raspberry Pi:
+#   sudo apt-get install -y git curl make jq netcat-openbsd ca-certificates

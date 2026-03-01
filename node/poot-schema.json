@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Node Management PoOT Schema",
+  "description": "JSON schema for Proof of Operational Time (PoOT) models used by the Node Management service",
+  "definitions": {
+    "ProofType": {
+      "type": "string",
+      "enum": ["stake_proof", "balance_proof", "delegation_proof", "custody_proof", "liquidity_proof"],
+      "description": "PoOT proof type enumeration"
+    },
+    "PoOTProof": {
+      "type": "object",
+      "required": [
+        "node_id",
+        "proof_type",
+        "stake_amount",
+        "challenge",
+        "proof_hash",
+        "signature",
+        "timestamp",
+        "valid_until",
+        "confidence_score"
+      ],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "description": "Node identifier",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "example": "node_abc123"
+        },
+        "proof_type": {
+          "$ref": "#/definitions/ProofType",
+          "description": "Type of proof"
+        },
+        "stake_amount": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "description": "Stake amount used for proof (in USDT)",
+          "example": 1000.0
+        },
+        "challenge": {
+          "type": "string",
+          "description": "Challenge string used for proof generation",
+          "minLength": 1,
+          "example": "abc123def456..."
+        },
+        "proof_hash": {
+          "type": "string",
+          "description": "Proof hash (SHA-256)",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "example": "a1b2c3d4e5f6..."
+        },
+        "signature": {
+          "type": "string",
+          "description": "Cryptographic signature of the proof",
+          "minLength": 1,
+          "example": "0x1234567890abcdef..."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Proof generation timestamp (ISO 8601)",
+          "example": "2025-01-27T12:00:00Z"
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Proof validity expiration timestamp (ISO 8601)",
+          "example": "2025-01-27T12:15:00Z"
+        },
+        "confidence_score": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "maximum": 1.0,
+          "description": "Confidence score for the proof (0.0-1.0)",
+          "example": 0.95
+        },
+        "score": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "maximum": 1.0,
+          "description": "PoOT score (0.0-1.0)",
+          "example": 0.85
+        },
+        "operational_time_hours": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "description": "Operational time in hours",
+          "example": 720.5
+        },
+        "uptime_percentage": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Uptime percentage",
+          "example": 95.5
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

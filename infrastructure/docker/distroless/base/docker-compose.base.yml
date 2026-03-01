@@ -1,0 +1,100 @@
+services:
+  lucid-base:
+    image: pickme/lucid-base:latest-arm64
+    container_name: lucid-base
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    networks:
+      lucid-pi-network:
+        ipv4_address: ${LUCID_BASE_IP}
+    command: ["/usr/local/bin/lucid-base-bootstrap"]
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/base:/var/log/lucid-base:rw
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    labels:
+      - "lucid.service=base-core"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=foundation"
+
+  lucid-base-python:
+    image: pickme/lucid-base:python-distroless-arm64
+    container_name: lucid-base-python
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    networks:
+      lucid-pi-network:
+        ipv4_address: ${LUCID_BASE_PY_IP}
+    command: ["/usr/local/bin/python-base-bootstrap"]
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/python-base:/var/log/python-base:rw
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    labels:
+      - "lucid.service=base-python"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=foundation"
+
+  lucid-base-java:
+    image: pickme/lucid-base:java-distroless-arm64
+    container_name: lucid-base-java
+    restart: unless-stopped
+    env_file:
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    networks:
+      lucid-pi-network:
+        ipv4_address: ${LUCID_BASE_JAVA_IP}
+
+    command: ["/usr/local/bin/java-base-bootstrap"]
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/logs/java-base:/var/log/java-base:rw
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    labels:
+      - "lucid.service=base-java"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=foundation"
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network

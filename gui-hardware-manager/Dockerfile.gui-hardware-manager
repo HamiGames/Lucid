@@ -1,0 +1,145 @@
+# syntax=docker/dockerfile:1.5
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# System dependencies
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        libudev-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /build
+
+# Create system markers
+RUN echo "LUCID_GUI_HARDWARE_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_GUI_HARDWARE_MANAGER_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+# Python dependencies
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
+
+COPY gui-hardware-manager/requirements.txt ./requirements.txt
+
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+
+# Create marker files
+RUN echo "LUCID_GUI_HARDWARE_MANAGER_PACKAGES_INSTALLED_$(date +%s)" > \
+       /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_GUI_HARDWARE_MANAGER_BINARIES_INSTALLED_$(date +%s)" > \
+    /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Verification
+RUN python3 -c "import fastapi, uvicorn, pydantic; print('✅ critical packages installed')" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
+
+# Application source
+COPY gui-hardware-manager/gui-hardware-manager ./gui-hardware-manager
+
+############################
+# Stage 2 – Runtime
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid GUI Hardware Manager" \
+      org.opencontainers.image.description="Hardware wallet management service for Lucid Electron GUI" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="gui-hardware-manager" \
+      com.lucid.platform="arm64" \
+      com.lucid.security="distroless"
+
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    GUI_HARDWARE_MANAGER_PORT=8099 \
+    GUI_HARDWARE_MANAGER_HOST=0.0.0.0
+
+WORKDIR /app
+
+# System directories and certificates
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Python packages
+COPY --from=builder --chown=65532:65532 \
+    /root/.local/lib/python3.11/site-packages \
+    /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 \
+    /root/.local/bin /usr/local/bin
+
+# Runtime verification
+RUN ["python3", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty'; \
+import uvicorn; import fastapi; \
+print('✅ All packages verified in runtime stage')"]
+
+# Application code
+COPY --chown=65532:65532 --from=builder /build/gui-hardware-manager /app/gui-hardware-manager
+
+EXPOSE 8099
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["python3", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8099)); s.close(); exit(0 if result == 0 else 1)"]
+
+USER 65532:65532
+
+ENTRYPOINT []
+CMD ["python3", "/app/gui-hardware-manager/entrypoint.py"]

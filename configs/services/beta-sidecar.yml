@@ -1,0 +1,449 @@
+# Beta Sidecar Configuration
+# Implements Beta sidecar pattern for service isolation and security
+# Based on architecture documents and service mesh requirements
+
+beta_sidecar:
+  version: "1.0.0"
+  description: "Beta sidecar configuration for Lucid service isolation"
+  last_updated: "2025-01-10T19:08:00Z"
+
+# Sidecar Configuration
+sidecar:
+  name: "lucid-beta-sidecar"
+  image: "pickme/lucid-beta-sidecar:latest-arm64"
+  version: "1.0.0"
+  
+  # Sidecar deployment
+  deployment:
+    replicas: 1
+    strategy: "RollingUpdate"
+    max_unavailable: 1
+    max_surge: 1
+    
+  # Resource limits
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# Network Configuration
+networking:
+  # Multi-network attachment
+  networks:
+    - name: "lucid-pi-network"
+      subnet: "172.20.0.0/16"
+      gateway: "172.20.0.1"
+      
+    - name: "lucid-tron-isolated"
+      subnet: "172.21.0.0/16"
+      gateway: "172.21.0.1"
+      isolated: true
+      
+    - name: "lucid-gui-network"
+      subnet: "172.22.0.0/16"
+      gateway: "172.22.0.1"
+  
+  # Network policies
+  policies:
+    enabled: true
+    default_policy: "deny"
+    
+    # Allow policies
+    allow_policies:
+      # Operations plane access
+      - name: "ops-plane-access"
+        source: "ops_plane"
+        destination: "*"
+        ports: ["80", "443", "8080-8099"]
+        protocols: ["tcp", "http"]
+        
+      # Chain plane access
+      - name: "chain-plane-access"
+        source: "chain_plane"
+        destination: "chain_plane"
+        ports: ["8080", "8084"]
+        protocols: ["http"]
+        
+      # Wallet plane access (isolated)
+      - name: "wallet-plane-access"
+        source: "wallet_plane"
+        destination: "wallet_plane"
+        ports: ["8096-8099"]
+        protocols: ["http"]
+        
+      # GUI plane access
+      - name: "gui-plane-access"
+        source: "gui_plane"
+        destination: "*"
+        ports: ["80", "443", "8080-8099", "9050", "9051"]
+        protocols: ["tcp", "http", "socks5"]
+        
+      # Cross-plane communication (restricted)
+      - name: "chain-to-wallet"
+        source: "chain_plane"
+        destination: "wallet_plane"
+        ports: ["8096"]  # Only TRON client
+        protocols: ["http"]
+        restrictions:
+          - "payment_operations_only"
+          - "no_consensus_participation"
+          
+      - name: "gui-to-all"
+        source: "gui_plane"
+        destination: "*"
+        ports: ["8080-8099"]
+        protocols: ["http"]
+        restrictions:
+          - "gui_operations_only"
+
+# Access Control Lists (ACLs)
+access_control_lists:
+  enabled: true
+  
+  # Service ACLs
+  services:
+    # Operations plane services
+    ops_plane:
+      lucid-admin-interface:
+        allowed_operations: ["*"]
+        allowed_destinations: ["*"]
+        restrictions: []
+        
+      lucid-service-mesh-controller:
+        allowed_operations: ["*"]
+        allowed_destinations: ["*"]
+        restrictions: []
+        
+      lucid-gui-docker-manager:
+        allowed_operations: ["docker_management"]
+        allowed_destinations: ["docker_daemon"]
+        restrictions: ["access_level_based"]
+        
+    # Chain plane services
+    chain_plane:
+      lucid-api-gateway:
+        allowed_operations: ["api_routing", "rate_limiting", "auth"]
+        allowed_destinations: ["chain_plane", "ops_plane"]
+        restrictions: ["no_wallet_access"]
+        
+      lucid-blockchain-core:
+        allowed_operations: ["consensus", "blockchain_operations", "session_anchoring"]
+        allowed_destinations: ["chain_plane", "ops_plane"]
+        restrictions: ["no_payment_operations", "no_tron_access"]
+        
+    # Wallet plane services (isolated)
+    wallet_plane:
+      lucid-tron-client:
+        allowed_operations: ["tron_transactions", "usdt_transfers", "trx_staking"]
+        allowed_destinations: ["wallet_plane", "external_tron"]
+        restrictions: ["no_blockchain_access", "no_consensus_participation"]
+        
+      lucid-payout-router:
+        allowed_operations: ["payout_processing", "batch_operations"]
+        allowed_destinations: ["wallet_plane"]
+        restrictions: ["no_blockchain_access"]
+        
+      lucid-wallet-manager:
+        allowed_operations: ["wallet_management", "key_management"]
+        allowed_destinations: ["wallet_plane"]
+        restrictions: ["no_blockchain_access"]
+        
+    # GUI plane services
+    gui_plane:
+      lucid-gui-api-bridge:
+        allowed_operations: ["api_proxy", "service_discovery"]
+        allowed_destinations: ["*"]
+        restrictions: ["gui_operations_only"]
+        
+      lucid-gui-tor-manager:
+        allowed_operations: ["tor_proxy", "onion_routing"]
+        allowed_destinations: ["external"]
+        restrictions: ["tor_operations_only"]
+        
+      lucid-gui-hardware-wallet:
+        allowed_operations: ["hardware_wallet_management"]
+        allowed_destinations: ["usb_devices"]
+        restrictions: ["hardware_wallet_only"]
+
+# Service Isolation Rules
+isolation_rules:
+  # TRON isolation rules
+  tron_isolation:
+    enabled: true
+    rules:
+      - name: "no_tron_in_blockchain"
+        description: "Blockchain services cannot access TRON code"
+        enforcement: "strict"
+        violations:
+          - "TRON imports in blockchain/"
+          - "Payment logic in blockchain core"
+          - "TRON dependencies in blockchain services"
+          
+      - name: "tron_wallet_isolation"
+        description: "TRON services isolated to wallet plane"
+        enforcement: "strict"
+        restrictions:
+          - "no_consensus_participation"
+          - "no_session_anchoring"
+          - "no_blockchain_operations"
+          - "payment_operations_only"
+          
+  # Service plane isolation
+  plane_isolation:
+    enabled: true
+    rules:
+      - name: "wallet_plane_isolation"
+        description: "Wallet plane completely isolated"
+        enforcement: "strict"
+        restrictions:
+          - "no_access_to_other_planes"
+          - "external_access_only_to_tron_networks"
+          - "no_internal_service_discovery"
+          
+      - name: "chain_plane_isolation"
+        description: "Chain plane isolated from wallet operations"
+        enforcement: "strict"
+        restrictions:
+          - "no_payment_operations"
+          - "no_tron_access"
+          - "blockchain_operations_only"
+
+# Traffic Management
+traffic_management:
+  enabled: true
+  
+  # Load balancing
+  load_balancing:
+    algorithm: "round_robin"
+    health_check: true
+    sticky_sessions: false
+    
+  # Circuit breaker
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    recovery_timeout: 30
+    half_open_max_calls: 3
+    
+  # Retry policy
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    retry_on: ["5xx", "reset", "connect-failure"]
+    retry_timeout: 30
+    
+  # Timeout policy
+  timeout_policy:
+    enabled: true
+    request_timeout: 30
+    idle_timeout: 60
+    connection_timeout: 10
+
+# Security Configuration
+security:
+  enabled: true
+  
+  # mTLS configuration
+  mtls:
+    enabled: true
+    ca_cert: "/etc/beta/ca.crt"
+    cert_file: "/etc/beta/beta.crt"
+    key_file: "/etc/beta/beta.key"
+    verify_client_cert: true
+    
+  # Encryption
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation_interval: 86400  # 24 hours
+    
+  # Authentication
+  authentication:
+    enabled: true
+    method: "jwt"
+    jwt:
+      secret_key_env: "BETA_JWT_SECRET"
+      token_expiry: 3600  # 1 hour
+      
+  # Authorization
+  authorization:
+    enabled: true
+    rbac:
+      enabled: true
+      roles:
+        ops_admin:
+          permissions: ["*"]
+          services: ["ops_plane", "chain_plane", "gui_plane"]
+        chain_operator:
+          permissions: ["blockchain_operations"]
+          services: ["chain_plane"]
+        wallet_operator:
+          permissions: ["payment_operations"]
+          services: ["wallet_plane"]
+        gui_user:
+          permissions: ["gui_operations"]
+          services: ["gui_plane"]
+
+# Monitoring and Observability
+monitoring:
+  enabled: true
+  
+  # Metrics collection
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    interval: 30  # seconds
+    
+    # Custom metrics
+    custom_metrics:
+      - name: "beta_sidecar_requests_total"
+        type: "counter"
+        description: "Total requests processed by Beta sidecar"
+        
+      - name: "beta_sidecar_request_duration_seconds"
+        type: "histogram"
+        description: "Request duration in seconds"
+        
+      - name: "beta_sidecar_active_connections"
+        type: "gauge"
+        description: "Number of active connections"
+        
+      - name: "beta_sidecar_acl_violations_total"
+        type: "counter"
+        description: "Total ACL violations"
+        
+  # Logging
+  logging:
+    enabled: true
+    level: "info"
+    format: "json"
+    
+    # Structured logging
+    structured:
+      enabled: true
+      fields:
+        - "service_name"
+        - "service_id"
+        - "request_id"
+        - "user_id"
+        - "operation"
+        - "destination"
+        - "result"
+        - "duration_ms"
+        
+  # Tracing
+  tracing:
+    enabled: true
+    jaeger_endpoint: "http://jaeger:14268/api/traces"
+    sample_rate: 0.1
+    
+    # Trace context propagation
+    context_propagation:
+      enabled: true
+      headers:
+        - "x-trace-id"
+        - "x-span-id"
+        - "x-parent-span-id"
+
+# Health Checks
+health_checks:
+  enabled: true
+  
+  # Sidecar health check
+  sidecar:
+    type: "http"
+    path: "/health"
+    port: 8080
+    interval: 30
+    timeout: 10
+    retries: 3
+    
+  # Service health checks
+  services:
+    enabled: true
+    interval: 30
+    timeout: 10
+    
+    # Health check endpoints
+    endpoints:
+      - name: "lucid-api-gateway"
+        url: "http://lucid-api-gateway:8080/health"
+        
+      - name: "lucid-blockchain-core"
+        url: "http://lucid-blockchain-core:8084/health"
+        
+      - name: "lucid-auth-service"
+        url: "http://lucid-auth-service:8089/health"
+        
+      - name: "lucid-tron-client"
+        url: "http://lucid-tron-client:8096/health"
+        network: "lucid-tron-isolated"
+
+# Configuration Management
+configuration:
+  # Dynamic configuration
+  dynamic:
+    enabled: true
+    update_interval: 60  # seconds
+    
+  # Configuration validation
+  validation:
+    enabled: true
+    strict_mode: true
+    
+  # Configuration backup
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention_days: 30
+
+# Error Handling
+error_handling:
+  enabled: true
+  
+  # Error logging
+  logging:
+    enabled: true
+    log_levels: ["ERROR", "WARNING"]
+    include_stack_trace: false
+    
+  # Error recovery
+  recovery:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: "exponential"
+    
+  # Error reporting
+  reporting:
+    enabled: true
+    endpoint: "/errors"
+    batch_size: 100
+    flush_interval: 30  # seconds
+
+# Performance Optimization
+performance:
+  # Connection pooling
+  connection_pooling:
+    enabled: true
+    max_connections: 100
+    max_idle_connections: 10
+    connection_timeout: 30000
+    idle_timeout: 60000
+    
+  # Caching
+  caching:
+    enabled: true
+    cache_type: "redis"
+    redis_url: "redis://lucid-redis:6379/3"
+    default_ttl: 300  # seconds
+    max_ttl: 3600  # seconds
+    
+  # Compression
+  compression:
+    enabled: true
+    algorithm: "gzip"
+    level: 6
+    threshold: 1024  # bytes

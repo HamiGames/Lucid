@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node Management - Lucid Admin</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <script src="/static/js/dashboard.js" defer></script>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Navigation Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <h1 class="admin-title">Node Management</h1>
+                <span class="admin-version">v1.0.0</span>
+            </div>
+            <div class="header-right">
+                <div class="admin-user">
+                    <span class="user-name" id="user-name">Admin User</span>
+                    <button class="logout-btn" id="logout-btn">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Node Management Controls -->
+            <section class="management-section">
+                <div class="management-header">
+                    <h2>Worker Nodes</h2>
+                    <div class="management-actions">
+                        <button class="btn primary" id="add-node-btn">
+                            <span class="btn-icon">➕</span>
+                            Add Node
+                        </button>
+                        <button class="btn secondary" id="refresh-nodes-btn">
+                            <span class="btn-icon">🔄</span>
+                            Refresh Status
+                        </button>
+                        <button class="btn secondary" id="export-nodes-btn">
+                            <span class="btn-icon">📤</span>
+                            Export Nodes
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Node Filters -->
+                <div class="filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="node-status-filter">Status</label>
+                            <select id="node-status-filter">
+                                <option value="">All Status</option>
+                                <option value="online">Online</option>
+                                <option value="offline">Offline</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="node-type-filter">Type</label>
+                            <select id="node-type-filter">
+                                <option value="">All Types</option>
+                                <option value="worker">Worker</option>
+                                <option value="storage">Storage</option>
+                                <option value="compute">Compute</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="node-search">Search</label>
+                            <input type="text" id="node-search" placeholder="Search by hostname or IP...">
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn primary" id="apply-node-filters">Apply Filters</button>
+                            <button class="btn secondary" id="clear-node-filters">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nodes Table -->
+                <div class="table-section">
+                    <div class="table-container">
+                        <table class="nodes-table" id="nodes-table">
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-col">
+                                        <input type="checkbox" id="select-all-nodes">
+                                    </th>
+                                    <th class="node-id-col">Node ID</th>
+                                    <th class="hostname-col">Hostname</th>
+                                    <th class="status-col">Status</th>
+                                    <th class="ip-col">IP Address</th>
+                                    <th class="load-col">Load Average</th>
+                                    <th class="memory-col">Memory Usage</th>
+                                    <th class="disk-col">Disk Usage</th>
+                                    <th class="sessions-col">Active Sessions</th>
+                                    <th class="last-heartbeat-col">Last Heartbeat</th>
+                                    <th class="actions-col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nodes-table-body">
+                                <!-- Nodes will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-section">
+                        <div class="pagination-info">
+                            <span id="node-pagination-info">Showing 0-0 of 0 nodes</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn secondary" id="prev-node-page" disabled>Previous</button>
+                            <span class="page-numbers" id="node-page-numbers"></span>
+                            <button class="btn secondary" id="next-node-page" disabled>Next</button>
+                        </div>
+                        <div class="pagination-size">
+                            <label for="node-page-size">Per page:</label>
+                            <select id="node-page-size">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Node Statistics -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <h3>Node Statistics</h3>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Nodes</span>
+                                <span class="stat-value" id="total-nodes-count">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Online Nodes</span>
+                                <span class="stat-value" id="online-nodes-count">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Offline Nodes</span>
+                                <span class="stat-value" id="offline-nodes-count">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Maintenance Mode</span>
+                                <span class="stat-value" id="maintenance-nodes-count">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <h3>Resource Usage</h3>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-item">
+                                <span class="stat-label">Average CPU Usage</span>
+                                <span class="stat-value" id="avg-cpu-usage">0%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Average Memory Usage</span>
+                                <span class="stat-value" id="avg-memory-usage">0%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Average Disk Usage</span>
+                                <span class="stat-value" id="avg-disk-usage">0%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Active Sessions</span>
+                                <span class="stat-value" id="total-active-sessions">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Navigation Sidebar -->
+        <nav class="admin-sidebar">
+            <div class="sidebar-content">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="/admin/dashboard" class="nav-link">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/sessions" class="nav-link">
+                            <span class="nav-icon">🖥️</span>
+                            <span class="nav-text">Sessions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/users" class="nav-link">
+                            <span class="nav-icon">👥</span>
+                            <span class="nav-text">Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="/admin/nodes" class="nav-link">
+                            <span class="nav-icon">🖥️</span>
+                            <span class="nav-text">Nodes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/blockchain" class="nav-link">
+                            <span class="nav-icon">⛓️</span>
+                            <span class="nav-text">Blockchain</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/audit" class="nav-link">
+                            <span class="nav-icon">📋</span>
+                            <span class="nav-text">Audit Logs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/config" class="nav-link">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-text">Configuration</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Add Node Modal -->
+    <div class="modal" id="add-node-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Node</h3>
+                <button class="modal-close" id="close-add-node">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-node-form">
+                    <div class="form-group">
+                        <label for="node-hostname">Hostname</label>
+                        <input type="text" id="node-hostname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="node-ip">IP Address</label>
+                        <input type="text" id="node-ip" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="node-port">Port</label>
+                        <input type="number" id="node-port" value="8080" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="node-type">Node Type</label>
+                        <select id="node-type" required>
+                            <option value="worker">Worker</option>
+                            <option value="storage">Storage</option>
+                            <option value="compute">Compute</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="node-description">Description</label>
+                        <textarea id="node-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" id="cancel-add-node">Cancel</button>
+                <button class="btn primary" id="submit-add-node">Add Node</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node Details Modal -->
+    <div class="modal" id="node-details-modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Node Details</h3>
+                <button class="modal-close" id="close-node-details">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="node-details-content" id="node-details-content">
+                    <!-- Node details will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" id="cancel-node-details">Close</button>
+                <button class="btn danger" id="restart-node">Restart Node</button>
+                <button class="btn warning" id="maintenance-node">Maintenance Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+</body>
+</html>

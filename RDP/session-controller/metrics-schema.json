@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RDP Controller Metrics Schema",
+  "description": "Schema for RDP Controller service metrics",
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "string",
+      "description": "Service name",
+      "example": "rdp-controller"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Metrics timestamp"
+    },
+    "session_metrics": {
+      "type": "object",
+      "description": "Session-related metrics",
+      "properties": {
+        "total_sessions": {
+          "type": "integer",
+          "description": "Total number of sessions"
+        },
+        "active_sessions": {
+          "type": "integer",
+          "description": "Number of active sessions"
+        },
+        "completed_sessions": {
+          "type": "integer",
+          "description": "Number of completed sessions"
+        },
+        "failed_sessions": {
+          "type": "integer",
+          "description": "Number of failed sessions"
+        }
+      }
+    },
+    "connection_metrics": {
+      "type": "object",
+      "description": "Connection-related metrics",
+      "properties": {
+        "total_connections": {
+          "type": "integer",
+          "description": "Total number of connections"
+        },
+        "active_connections": {
+          "type": "integer",
+          "description": "Number of active connections"
+        },
+        "failed_connections": {
+          "type": "integer",
+          "description": "Number of failed connections"
+        }
+      }
+    },
+    "server_metrics": {
+      "type": "object",
+      "description": "Server-related metrics",
+      "properties": {
+        "total_servers": {
+          "type": "integer",
+          "description": "Total number of servers"
+        },
+        "active_servers": {
+          "type": "integer",
+          "description": "Number of active servers"
+        },
+        "stopped_servers": {
+          "type": "integer",
+          "description": "Number of stopped servers"
+        }
+      }
+    },
+    "resource_metrics": {
+      "type": "object",
+      "description": "Resource usage metrics",
+      "properties": {
+        "cpu_usage_percent": {
+          "type": "number",
+          "description": "CPU usage percentage"
+        },
+        "memory_usage_mb": {
+          "type": "number",
+          "description": "Memory usage in MB"
+        },
+        "memory_usage_percent": {
+          "type": "number",
+          "description": "Memory usage percentage"
+        },
+        "disk_usage_mb": {
+          "type": "number",
+          "description": "Disk usage in MB"
+        },
+        "disk_usage_percent": {
+          "type": "number",
+          "description": "Disk usage percentage"
+        }
+      }
+    },
+    "integration_health": {
+      "type": "object",
+      "description": "Health status of integration services",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "unhealthy", "not_initialized", "error"]
+          },
+          "last_check": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "service",
+    "timestamp"
+  ]
+}
+

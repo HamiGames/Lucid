@@ -1,0 +1,189 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tron-payment
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: tron-payment
+    app.kubernetes.io/component: payment
+    app.kubernetes.io/part-of: lucid-blockchain
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tron-payment
+      app.kubernetes.io/component: payment
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tron-payment
+        app.kubernetes.io/component: payment
+        app.kubernetes.io/part-of: lucid-blockchain
+    spec:
+      containers:
+      - name: tron-payment
+        image: pickme/lucid-tron-payment:latest-arm64
+        ports:
+        - containerPort: 8091
+          name: tron-client
+        - containerPort: 8092
+          name: payout-router
+        - containerPort: 8093
+          name: wallet-manager
+        - containerPort: 8094
+          name: usdt-manager
+        - containerPort: 8096
+          name: trx-staking
+        - containerPort: 8097
+          name: payment-gateway
+        env:
+        - name: SERVICE_NAME
+          value: "tron-payment"
+        - name: TRON_CLIENT_PORT
+          value: "8091"
+        - name: PAYOUT_ROUTER_PORT
+          value: "8092"
+        - name: WALLET_MANAGER_PORT
+          value: "8093"
+        - name: USDT_MANAGER_PORT
+          value: "8094"
+        - name: TRX_STAKING_PORT
+          value: "8096"
+        - name: PAYMENT_GATEWAY_PORT
+          value: "8097"
+        - name: TRON_NETWORK
+          value: "mainnet"
+        - name: TRON_NODE_URL
+          value: "https://api.trongrid.io"
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-service:27017/lucid_tron"
+        - name: REDIS_URL
+          value: "redis://redis-service:6379/5"
+        - name: TRON_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tron-secrets
+              key: TRON_API_KEY
+        - name: TRON_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tron-secrets
+              key: TRON_PRIVATE_KEY
+        - name: USDT_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tron-secrets
+              key: USDT_PRIVATE_KEY
+        - name: WALLET_CREATION_ENABLED
+          value: "true"
+        - name: WALLET_BACKUP_ENABLED
+          value: "true"
+        - name: WALLET_ENCRYPTION_ENABLED
+          value: "true"
+        - name: USDT_CONTRACT_ADDRESS
+          value: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+        - name: USDT_DECIMALS
+          value: "6"
+        - name: USDT_MIN_TRANSFER
+          value: "1"
+        - name: PAYOUT_V0_ENABLED
+          value: "true"
+        - name: PAYOUT_KYC_ENABLED
+          value: "true"
+        - name: PAYOUT_BATCH_SIZE
+          value: "100"
+        - name: PAYOUT_TIMEOUT
+          value: "300"
+        - name: TRX_STAKING_ENABLED
+          value: "true"
+        - name: STAKING_MIN_AMOUNT
+          value: "1000000"
+        - name: STAKING_REWARD_RATE
+          value: "0.05"
+        - name: TRANSACTION_SIGNING_ENABLED
+          value: "true"
+        - name: MULTI_SIG_ENABLED
+          value: "false"
+        - name: AUDIT_LOGGING_ENABLED
+          value: "true"
+        volumeMounts:
+        - name: tron-config
+          mountPath: /app/config
+        - name: tron-data
+          mountPath: /data/tron
+        resources:
+          requests:
+            cpu: "300m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8091
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8091
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: tron-config
+        configMap:
+          name: tron-payment-config
+      - name: tron-data
+        persistentVolumeClaim:
+          claimName: tron-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tron-payment-service
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: tron-payment
+    app.kubernetes.io/component: payment
+    app.kubernetes.io/part-of: lucid-blockchain
+spec:
+  selector:
+    app.kubernetes.io/name: tron-payment
+    app.kubernetes.io/component: payment
+  ports:
+  - port: 8091
+    targetPort: 8091
+    name: tron-client
+  - port: 8092
+    targetPort: 8092
+    name: payout-router
+  - port: 8093
+    targetPort: 8093
+    name: wallet-manager
+  - port: 8094
+    targetPort: 8094
+    name: usdt-manager
+  - port: 8096
+    targetPort: 8096
+    name: trx-staking
+  - port: 8097
+    targetPort: 8097
+    name: payment-gateway
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tron-data-pvc
+  namespace: lucid-system
+  labels:
+    app.kubernetes.io/name: tron-payment
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: lucid-blockchain
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi

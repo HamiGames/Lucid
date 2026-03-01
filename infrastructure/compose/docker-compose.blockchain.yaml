@@ -1,0 +1,459 @@
+# LUCID BLOCKCHAIN SERVICES - Distroless Deployment
+# Phase 3: Blockchain Services (API, Governance, VM, Ledger, Sessions Data)
+# Aligned with essentials.md Phase 2 and service-ip-configuration.md
+# Project Root: /mnt/myssd/Lucid/Lucid/
+
+services:
+  lucid-blockchain-engine:
+    image: pickme/lucid-blockchain-engine:latest-arm64
+    container_name: lucid-blockchain-engine
+    hostname: lucid-blockchain-engine
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.blockchain-api
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - BLOCKCHAIN_API_PORT=8084
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - BLOCKCHAIN_ENGINE_HOST=172.20.0.15
+      - BLOCKCHAIN_NETWORK=lucid-mainnet
+      - BLOCKCHAIN_CONSENSUS=PoOT
+      - ANCHORING_ENABLED=true
+      - BLOCK_INTERVAL=10
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/blockchain:/data/blockchain:rw
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs:rw
+      - blockchain-engine-cache:/tmp/blockchain
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.15
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD", "/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('BLOCKCHAIN_ENGINE_PORT', '8084'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+    labels:
+      - "lucid.service=blockchain-engine"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=blockchain"
+
+  lucid-blockchain-governance:
+    image: pickme/lucid-blockchain-governance:latest-arm64
+    container_name: lucid-blockchain-governance
+    hostname: lucid-blockchain-governance
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.blockchain-governance
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - GOVERNANCE_PORT=8085
+      - TRON_NETWORK=mainnet
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/governance:/data/governance:rw
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-governance:/app/logs:rw
+      - blockchain-governance-cache:/tmp/governance
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.16
+    depends_on:
+      lucid-blockchain-engine:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8085/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    labels:
+      - "lucid.service=blockchain-governance"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=blockchain"
+
+  lucid-block-manager:
+    image: pickme/lucid-block-manager:latest-arm64
+    container_name: lucid-block-manager
+    hostname: lucid-block-manager
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - BLOCK_MANAGER_PORT=8086
+      - BLOCK_MANAGER_URL=http://lucid-block-manager:8086
+      - BLOCK_MANAGER_HOST=172.20.0.17
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/blockchain:/data/blockchain:rw
+      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
+      - block-manager-cache:/tmp/block-manager
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.17
+    depends_on:
+      lucid-blockchain-engine:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8086/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    labels:
+      - "lucid.service=block-manager"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=blockchain"
+
+  lucid-data-chain:
+    image: pickme/lucid-data-chain:latest-arm64
+    container_name: lucid-data-chain
+    hostname: lucid-data-chain
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - DATA_CHAIN_PORT=8087
+      - DATA_CHAIN_URL=http://lucid-data-chain:8087
+      - DATA_CHAIN_HOST=172.20.0.18
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/chain:/data/chain:rw
+      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
+      - data-chain-cache:/tmp/data-chain
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.18
+    depends_on:
+      lucid-blockchain-engine:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8087:8087"
+    healthcheck:
+      test: ["CMD", "/usr/bin/python3", "-c", "import os, urllib.request; port = os.getenv('DATA_CHAIN_PORT', '8087'); urllib.request.urlopen(f'http://localhost:{port}/health', timeout=5).read(); exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    labels:
+      - "lucid.service=data-chain"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=blockchain"
+
+  lucid-blockchain-vm:
+    image: pickme/lucid-vm:latest-arm64
+    container_name: lucid-blockchain-vm
+    hostname: lucid-blockchain-vm
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - VM_SERVICE_PORT=8088
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/vm:/data/vm:rw
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-vm:/app/logs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - blockchain-vm-cache:/tmp/vm
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-blockchain-engine:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8088/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+    labels:
+      - "lucid.service=blockchain-vm"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=blockchain"
+
+  lucid-blockchain-ledger:
+    image: pickme/lucid-blockchain-ledger:latest-arm64
+    container_name: lucid-blockchain-ledger
+    hostname: lucid-blockchain-ledger
+    platform: linux/arm64
+    restart: unless-stopped
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../infrastructure/docker/blockchain/env/.env.blockchain-ledger
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - LEDGER_PORT=8089
+      - TRON_NETWORK=mainnet
+      - TRON_RPC_URL=https://api.trongrid.io
+      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - API_GATEWAY_URL=http://lucid-api-gateway:8080
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/ledger:/data/ledger:rw
+      - /mnt/myssd/Lucid/Lucid/logs/blockchain-ledger:/app/logs:rw
+      - blockchain-ledger-cache:/tmp/ledger
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-blockchain-engine:
+        condition: service_healthy
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    ports:
+      - "8089:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8089/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    labels:
+      - "lucid.service=blockchain-ledger"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=blockchain"
+
+volumes:
+  blockchain-engine-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/cache/blockchain-engine
+  blockchain-governance-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/cache/blockchain-governance
+  block-manager-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/cache/block-manager
+  data-chain-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/cache/data-chain
+  blockchain-vm-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/cache/blockchain-vm
+  blockchain-ledger-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data/cache/blockchain-ledger
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1

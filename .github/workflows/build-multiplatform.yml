@@ -1,0 +1,485 @@
+name: Multi-Platform Build
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to build (comma-separated or phase)'
+        required: false
+        default: 'all'
+        type: string
+      tag:
+        description: 'Tag to use'
+        required: false
+        default: 'latest'
+        type: string
+      platforms:
+        description: 'Target platforms'
+        required: false
+        default: 'linux/amd64,linux/arm64'
+        type: string
+      push:
+        description: 'Push to registry'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: pickme
+  REPOSITORY: lucid
+  BUILDER_NAME: lucid-multiplatform
+
+jobs:
+  setup:
+    name: Setup Multi-Platform Builder
+    runs-on: ubuntu-latest
+    outputs:
+      builder-name: ${{ steps.setup.outputs.builder-name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.5
+          platforms: linux/amd64,linux/arm64
+
+      - name: Create builder
+        id: setup
+        run: |
+          # Create custom builder for multi-platform builds
+          docker buildx create \
+            --name ${{ env.BUILDER_NAME }} \
+            --driver docker-container \
+            --platform linux/amd64,linux/arm64 \
+            --use
+          
+          echo "builder-name=${{ env.BUILDER_NAME }}" >> $GITHUB_OUTPUT
+          
+          # Verify builder
+          docker buildx inspect ${{ env.BUILDER_NAME }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+  build-phase1:
+    name: Build Phase 1 (Foundation)
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.inputs.services, 'phase1') || github.event.inputs.services == 'all' || github.event.inputs.services == '' }}
+    strategy:
+      matrix:
+        service: [auth-service, storage-database, mongodb, redis, elasticsearch]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.5
+          platforms: linux/amd64,linux/arm64
+
+      - name: Use custom builder
+        run: |
+          docker buildx use ${{ needs.setup.outputs.builder-name }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Find Dockerfile
+        id: dockerfile
+        run: |
+          # Check common locations for Dockerfiles
+          locations=(
+            "${{ matrix.service }}/Dockerfile"
+            "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "build/distroless/${{ matrix.service }}"
+          )
+          
+          for location in "${locations[@]}"; do
+            if [[ -f "$location" ]]; then
+              echo "dockerfile=$location" >> $GITHUB_OUTPUT
+              echo "context=$(dirname $location)" >> $GITHUB_OUTPUT
+              break
+            fi
+          done
+          
+          if [[ -z "${{ steps.dockerfile.outputs.dockerfile }}" ]]; then
+            echo "Dockerfile not found for ${{ matrix.service }}"
+            exit 1
+          fi
+
+      - name: Build and push
+        if: steps.dockerfile.outputs.dockerfile != ''
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.dockerfile }}
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64,linux/arm64' }}
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push == 'true' || github.ref == 'refs/heads/main') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+  build-phase2:
+    name: Build Phase 2 (Core Services)
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.inputs.services, 'phase2') || github.event.inputs.services == 'all' || github.event.inputs.services == '' }}
+    strategy:
+      matrix:
+        service: [api-gateway, blockchain-core, blockchain-engine, session-anchoring, block-manager, data-chain, service-mesh-controller]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.5
+          platforms: linux/amd64,linux/arm64
+
+      - name: Use custom builder
+        run: |
+          docker buildx use ${{ needs.setup.outputs.builder-name }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Find Dockerfile
+        id: dockerfile
+        run: |
+          # Check common locations for Dockerfiles
+          locations=(
+            "${{ matrix.service }}/Dockerfile"
+            "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "build/distroless/${{ matrix.service }}"
+          )
+          
+          for location in "${locations[@]}"; do
+            if [[ -f "$location" ]]; then
+              echo "dockerfile=$location" >> $GITHUB_OUTPUT
+              echo "context=$(dirname $location)" >> $GITHUB_OUTPUT
+              break
+            fi
+          done
+          
+          if [[ -z "${{ steps.dockerfile.outputs.dockerfile }}" ]]; then
+            echo "Dockerfile not found for ${{ matrix.service }}"
+            exit 1
+          fi
+
+      - name: Build and push
+        if: steps.dockerfile.outputs.dockerfile != ''
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.dockerfile }}
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64,linux/arm64' }}
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push == 'true' || github.ref == 'refs/heads/main') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+  build-phase3:
+    name: Build Phase 3 (Application Services)
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.inputs.services, 'phase3') || github.event.inputs.services == 'all' || github.event.inputs.services == '' }}
+    strategy:
+      matrix:
+        service: [session-pipeline, session-recorder, session-processor, session-storage, session-api, rdp-server-manager, rdp-xrdp, rdp-controller, rdp-monitor, node-management]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.5
+          platforms: linux/amd64,linux/arm64
+
+      - name: Use custom builder
+        run: |
+          docker buildx use ${{ needs.setup.outputs.builder-name }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Find Dockerfile
+        id: dockerfile
+        run: |
+          # Check common locations for Dockerfiles
+          locations=(
+            "${{ matrix.service }}/Dockerfile"
+            "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "build/distroless/${{ matrix.service }}"
+            "sessions/${{ matrix.service }}/Dockerfile"
+            "RDP/${{ matrix.service }}/Dockerfile"
+            "node/${{ matrix.service }}/Dockerfile"
+          )
+          
+          for location in "${locations[@]}"; do
+            if [[ -f "$location" ]]; then
+              echo "dockerfile=$location" >> $GITHUB_OUTPUT
+              echo "context=$(dirname $location)" >> $GITHUB_OUTPUT
+              break
+            fi
+          done
+          
+          if [[ -z "${{ steps.dockerfile.outputs.dockerfile }}" ]]; then
+            echo "Dockerfile not found for ${{ matrix.service }}"
+            exit 1
+          fi
+
+      - name: Build and push
+        if: steps.dockerfile.outputs.dockerfile != ''
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.dockerfile }}
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64,linux/arm64' }}
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push == 'true' || github.ref == 'refs/heads/main') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+  build-phase4:
+    name: Build Phase 4 (Support Services)
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ contains(github.event.inputs.services, 'phase4') || github.event.inputs.services == 'all' || github.event.inputs.services == '' }}
+    strategy:
+      matrix:
+        service: [admin-interface, tron-client, tron-payout-router, tron-wallet-manager, tron-usdt-manager, tron-staking, tron-payment-gateway]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.5
+          platforms: linux/amd64,linux/arm64
+
+      - name: Use custom builder
+        run: |
+          docker buildx use ${{ needs.setup.outputs.builder-name }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Find Dockerfile
+        id: dockerfile
+        run: |
+          # Check common locations for Dockerfiles
+          locations=(
+            "${{ matrix.service }}/Dockerfile"
+            "${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile"
+            "infrastructure/containers/${{ matrix.service }}/Dockerfile.${{ matrix.service }}"
+            "build/distroless/${{ matrix.service }}"
+            "admin/${{ matrix.service }}/Dockerfile"
+            "payment-systems/tron/Dockerfile.${{ matrix.service }}"
+          )
+          
+          for location in "${locations[@]}"; do
+            if [[ -f "$location" ]]; then
+              echo "dockerfile=$location" >> $GITHUB_OUTPUT
+              echo "context=$(dirname $location)" >> $GITHUB_OUTPUT
+              break
+            fi
+          done
+          
+          if [[ -z "${{ steps.dockerfile.outputs.dockerfile }}" ]]; then
+            echo "Dockerfile not found for ${{ matrix.service }}"
+            exit 1
+          fi
+
+      - name: Build and push
+        if: steps.dockerfile.outputs.dockerfile != ''
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.dockerfile }}
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64,linux/arm64' }}
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push == 'true' || github.ref == 'refs/heads/main') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+  verify-manifests:
+    name: Verify Multi-Platform Manifests
+    needs: [build-phase1, build-phase2, build-phase3, build-phase4]
+    runs-on: ubuntu-latest
+    if: always() && github.event_name != 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify manifests
+        run: |
+          # List of services to verify
+          services=(
+            "auth-service" "storage-database" "mongodb" "redis" "elasticsearch"
+            "api-gateway" "blockchain-core" "blockchain-engine" "session-anchoring"
+            "block-manager" "data-chain" "service-mesh-controller"
+            "session-pipeline" "session-recorder" "session-processor" "session-storage"
+            "session-api" "rdp-server-manager" "rdp-xrdp" "rdp-controller" "rdp-monitor"
+            "node-management" "admin-interface" "tron-client" "tron-payout-router"
+            "tron-wallet-manager" "tron-usdt-manager" "tron-staking" "tron-payment-gateway"
+          )
+          
+          echo "Verifying multi-platform manifests..."
+          
+          for service in "${services[@]}"; do
+            image="${{ env.REGISTRY }}/${{ env.REPOSITORY }}/$service:latest"
+            
+            if docker manifest inspect "$image" >/dev/null 2>&1; then
+              echo "✅ $service: Multi-platform manifest found"
+              
+              # Show platform details
+              platforms=$(docker manifest inspect "$image" | jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture)"' 2>/dev/null || echo "unknown")
+              echo "   Platforms: $platforms"
+            else
+              echo "❌ $service: Multi-platform manifest not found"
+            fi
+          done
+
+  cleanup:
+    name: Cleanup
+    needs: [setup, build-phase1, build-phase2, build-phase3, build-phase4, verify-manifests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Remove custom builder
+        run: |
+          docker buildx rm ${{ env.BUILDER_NAME }} || true
+
+      - name: Clean up build cache
+        run: |
+          docker buildx prune -f || true

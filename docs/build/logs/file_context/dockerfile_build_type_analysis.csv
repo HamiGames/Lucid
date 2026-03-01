@@ -1,0 +1,84 @@
+Service Category,Service Name,Dockerfile Path,Build Type,Base Image,Multi-Stage,Distroless Runtime,Notes
+distroless,node,infrastructure/docker/distroless/node/Dockerfile.node.distroless,distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Pure distroless build
+distroless,rdp,infrastructure/docker/distroless/rdp/Dockerfile.rdp.distroless,distroless,gcr.io/distroless/python3-debian12,Yes,Yes,Pure distroless build
+distroless,blockchain,infrastructure/docker/distroless/blockchain/Dockerfile.blockchain.distroless,distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Pure distroless build
+distroless,arm64-base,infrastructure/docker/distroless/base/Dockerfile.arm64-base.distroless,distroless,gcr.io/distroless/python3-debian12,Yes,Yes,Pure distroless build
+distroless,minimal-base,infrastructure/docker/distroless/base/Dockerfile.minimal-base.distroless,distroless,gcr.io/distroless/python3-debian12,Yes,Yes,Pure distroless build
+distroless,base,infrastructure/docker/distroless/base/Dockerfile.base.distroless,distroless,gcr.io/distroless/python3-debian12,Yes,Yes,Pure distroless build
+distroless,gui,infrastructure/docker/distroless/gui/Dockerfile.gui.distroless,distroless,gcr.io/distroless/python3-debian12,Yes,Yes,Pure distroless build
+admin,admin-ui,infrastructure/docker/admin/Dockerfile.admin-ui,multi-stage-distroless,gcr.io/distroless/nodejs20-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+auth,authentication,infrastructure/docker/auth/Dockerfile.authentication,multi-stage-distroless,gcr.io/distroless/python3-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+blockchain,blockchain-api,infrastructure/docker/blockchain/Dockerfile.blockchain-api,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,contract-deployment-simple,infrastructure/docker/blockchain/Dockerfile.contract-deployment.simple,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,tron-node-client,infrastructure/docker/blockchain/Dockerfile.tron-node-client,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,contract-compiler,infrastructure/docker/blockchain/Dockerfile.contract-compiler,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,deployment-orchestrator,infrastructure/docker/blockchain/Dockerfile.deployment-orchestrator,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,on-system-chain-client,infrastructure/docker/blockchain/Dockerfile.on-system-chain-client,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,blockchain-ledger,infrastructure/docker/blockchain/Dockerfile.blockchain-ledger,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,blockchain-governance,infrastructure/docker/blockchain/Dockerfile.blockchain-governance,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,blockchain-vm,infrastructure/docker/blockchain/Dockerfile.blockchain-vm,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,blockchain-sessions-data,infrastructure/docker/blockchain/Dockerfile.blockchain-sessions-data,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,distroless,infrastructure/docker/blockchain/Dockerfile.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+blockchain,lucid-anchors-client,infrastructure/docker/blockchain/Dockerfile.lucid-anchors-client.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,on-system-chain-client-distroless,infrastructure/docker/blockchain/Dockerfile.on-system-chain-client.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,chain-client,infrastructure/docker/blockchain/Dockerfile.chain-client,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,contract-deployment,infrastructure/docker/blockchain/Dockerfile.contract-deployment,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+blockchain,blockchain-main,infrastructure/docker/blockchain/Dockerfile,multi-stage-distroless,gcr.io/distroless/python3-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+common,timelock,infrastructure/docker/common/Dockerfile.timelock.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+common,lucid-governor,infrastructure/docker/common/Dockerfile.lucid-governor.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+common,common,infrastructure/docker/common/Dockerfile,multi-stage-distroless,gcr.io/distroless/base-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+common,common-common,infrastructure/docker/common/Dockerfile.common,multi-stage-distroless,gcr.io/distroless/base-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+common,common-distroless,infrastructure/docker/common/Dockerfile.distroless,multi-stage-distroless,gcr.io/distroless/base-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+common,common-common-distroless,infrastructure/docker/common/Dockerfile.common.distroless,multi-stage-distroless,gcr.io/distroless/base-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+common,common-beta,infrastructure/docker/common/Dockerfile.beta,unknown,unknown,unknown,unknown,Not analyzed
+databases,database-monitoring,infrastructure/docker/databases/Dockerfile.database-monitoring,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+databases,database-backup,infrastructure/docker/databases/Dockerfile.database-backup,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+databases,mongodb,infrastructure/docker/databases/Dockerfile.mongodb,multi-stage-distroless,gcr.io/distroless/base-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+gui,desktop-environment-distroless,infrastructure/docker/gui/Dockerfile.desktop-environment.distroless,multi-stage-distroless,gcr.io/distroless/base-debian12:latest,Yes,Yes,Multi-stage with distroless runtime
+gui,desktop-environment,infrastructure/docker/gui/Dockerfile.desktop-environment,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+gui,gui-hooks,infrastructure/docker/gui/Dockerfile.gui-hooks,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+gui,gui-builder,infrastructure/docker/gui/Dockerfile.gui-builder,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+node,task-proofs,infrastructure/docker/node/Dockerfile.task-proofs.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+node,leader-selection,infrastructure/docker/node/Dockerfile.leader-selection.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+node,dht-node,infrastructure/docker/node/Dockerfile.dht-node,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+payment-systems,usdt-trc20,infrastructure/docker/payment-systems/Dockerfile.usdt-trc20.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+payment-systems,payout-router-v0,infrastructure/docker/payment-systems/Dockerfile.payout-router-v0.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+payment-systems,tron-client,infrastructure/docker/payment-systems/Dockerfile.tron-client,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,xrdp-integration,infrastructure/docker/rdp/Dockerfile.xrdp-integration,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,rdp-server-manager,infrastructure/docker/rdp/Dockerfile.rdp-server-manager,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,rdp-server,infrastructure/docker/rdp/Dockerfile.rdp-server,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,session-host-manager,infrastructure/docker/rdp/Dockerfile.session-host-manager,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,clipboard-handler,infrastructure/docker/rdp/Dockerfile.clipboard-handler.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,rdp-host,infrastructure/docker/rdp/Dockerfile.rdp-host.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,keystroke-monitor,infrastructure/docker/rdp/Dockerfile.keystroke-monitor.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,resource-monitor,infrastructure/docker/rdp/Dockerfile.resource-monitor.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,window-focus-monitor,infrastructure/docker/rdp/Dockerfile.window-focus-monitor.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,file-transfer-handler,infrastructure/docker/rdp/Dockerfile.file-transfer-handler.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,wayland-integration,infrastructure/docker/rdp/Dockerfile.wayland-integration.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,server-manager,infrastructure/docker/rdp/Dockerfile.server-manager,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+rdp,server-manager-simple,infrastructure/docker/rdp/Dockerfile.server-manager.simple,standard,python:3.11-slim,No,No,Standard single-stage build
+sessions,session-recorder,infrastructure/docker/sessions/Dockerfile.session-recorder,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+sessions,session-orchestrator,infrastructure/docker/sessions/Dockerfile.session-orchestrator,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+sessions,clipboard-handler,infrastructure/docker/sessions/Dockerfile.clipboard-handler.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+sessions,orchestrator,infrastructure/docker/sessions/Dockerfile.orchestrator,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+sessions,merkle-builder,infrastructure/docker/sessions/Dockerfile.merkle_builder,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+sessions,chunker,infrastructure/docker/sessions/Dockerfile.chunker,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+sessions,encryptor,infrastructure/docker/sessions/Dockerfile.encryptor,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,openapi-gateway,infrastructure/docker/tools/Dockerfile.openapi-gateway,multi-stage-distroless,gcr.io/distroless/base-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,openapi-server,infrastructure/docker/tools/Dockerfile.openapi-server,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,tor-proxy,infrastructure/docker/tools/Dockerfile.tor-proxy,multi-stage-distroless,gcr.io/distroless/base-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,server-tools,infrastructure/docker/tools/Dockerfile.server-tools,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,tunnel-tools,infrastructure/docker/tools/Dockerfile.tunnel-tools,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,api-gateway,infrastructure/docker/tools/Dockerfile.api-gateway,multi-stage-distroless,gcr.io/distroless/base-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,api-server,infrastructure/docker/tools/Dockerfile.api-server,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+tools,debug-utilities,infrastructure/docker/tools/Dockerfile.debug-utilities,unknown,unknown,unknown,unknown,Not analyzed
+tools,network-diagnostics,infrastructure/docker/tools/Dockerfile.network-diagnostics,unknown,unknown,unknown,unknown,Not analyzed
+users,authentication,infrastructure/docker/users/Dockerfile.authentication,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+users,authentication-service,infrastructure/docker/users/Dockerfile.authentication-service.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian11:latest,Yes,Yes,Multi-stage with distroless runtime
+users,user-manager,infrastructure/docker/users/Dockerfile.user-manager,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+vm,vm-resource-monitor,infrastructure/docker/vm/Dockerfile.vm-resource-monitor,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+vm,vm-orchestrator,infrastructure/docker/vm/Dockerfile.vm-orchestrator,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+vm,vm-manager,infrastructure/docker/vm/Dockerfile.vm-manager,standard,pickme/lucid:devcontainer-dind,No,No,Standard build using devcontainer base
+wallet,key-rotation,infrastructure/docker/wallet/Dockerfile.key-rotation.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+wallet,role-manager,infrastructure/docker/wallet/Dockerfile.role-manager.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime
+wallet,software-vault,infrastructure/docker/wallet/Dockerfile.software-vault.distroless,multi-stage-distroless,gcr.io/distroless/python3-debian12:nonroot,Yes,Yes,Multi-stage with distroless runtime

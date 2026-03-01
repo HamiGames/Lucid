@@ -1,0 +1,180 @@
+# Lucid TRON Client - TRON Network Client Configuration
+# Optional YAML configuration for TRON client service
+# File: payment-systems/tron/config/tron-client-config.yaml
+# Purpose: Define TRON network connectivity, transaction management, and account operations
+
+# Global TRON Client Configuration
+global:
+  service_name: "lucid-tron-client"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  host: "0.0.0.0"
+  port: 8091
+
+# TRON Network Configuration
+# All values can be overridden via environment variables (TRON_NETWORK, TRON_HTTP_ENDPOINT, etc.)
+network:
+  network_type: "${TRON_NETWORK:-mainnet}"  # Options: mainnet, testnet, shasta
+  http_endpoint: "${TRON_HTTP_ENDPOINT:-${TRON_RPC_URL_MAINNET:-https://api.trongrid.io}}"
+  api_key: "${TRONGRID_API_KEY:-${TRON_API_KEY:-}}"  # Set via environment variable
+  chain_id: "${TRON_CHAIN_ID_MAINNET:-0x2b6653dc}"
+  network_name: "${TRON_NETWORK_NAME_MAINNET:-TRON Mainnet}"
+  
+  # Network-specific endpoints - overridden by environment variables
+  endpoints:
+    mainnet: "${TRON_RPC_URL_MAINNET:-${TRON_HTTP_ENDPOINT:-https://api.trongrid.io}}"
+    testnet: "${TRON_RPC_URL_TESTNET:-${TRON_RPC_URL_SHASTA:-${TRON_HTTP_ENDPOINT:-https://api.shasta.trongrid.io}}}"
+    shasta: "${TRON_RPC_URL_SHASTA:-${TRON_HTTP_ENDPOINT:-https://api.shasta.trongrid.io}}"
+  
+  # Connection Configuration
+  connection:
+    timeout_seconds: 30
+    retry_attempts: 3
+    retry_delay_seconds: 1
+    max_connections: 100
+    connection_pool_size: 20
+
+# Transaction Configuration
+transaction:
+  # Transaction Types
+  types:
+    - "trx_transfer"
+    - "usdt_transfer"
+    - "contract_call"
+    - "freeze_balance"
+    - "unfreeze_balance"
+    - "vote_witness"
+    - "delegate_resource"
+    - "undelegate_resource"
+  
+  # Transaction Limits
+  limits:
+    min_amount_sun: 1  # 1 SUN = 0.000001 TRX
+    max_amount_sun: 1000000000000  # 1,000,000 TRX
+    max_transactions_per_block: 2000
+    max_transaction_size_bytes: 1024 * 1024  # 1MB
+  
+  # Transaction Fees
+  fees:
+    default_fee_limit_sun: 10000000  # 0.01 TRX
+    energy_price_sun: 420  # SUN per energy unit
+    bandwidth_price_sun: 1000  # SUN per bandwidth unit
+  
+  # Transaction Processing
+  processing:
+    confirmation_blocks: 20
+    timeout_seconds: 300
+    max_retries: 3
+    retry_delay_seconds: 5
+
+# Account Management
+account:
+  # Account Operations
+  operations:
+    get_balance: true
+    get_account_info: true
+    get_transaction_history: true
+    get_resource_info: true
+  
+  # Account Limits
+  limits:
+    max_accounts_per_request: 100
+    max_transaction_history: 1000
+    cache_ttl_seconds: 60
+
+# Resource Management
+resources:
+  # Resource Types
+  types:
+    - "energy"
+    - "bandwidth"
+    - "bandwidth_energy"
+  
+  # Resource Operations
+  operations:
+    freeze_balance: true
+    unfreeze_balance: true
+    delegate_resource: true
+    undelegate_resource: true
+    get_resource_info: true
+  
+  # Resource Limits
+  limits:
+    min_freeze_amount_trx: 1.0
+    max_freeze_amount_trx: 1000000.0
+    freeze_duration_days: 3
+
+# Database Configuration
+database:
+  mongodb:
+    url: "${MONGODB_URL:-${MONGODB_URI:-mongodb://lucid-mongodb:27017/lucid_payments}}"
+    database: "${MONGODB_DATABASE:-lucid_payments}"
+    collections:
+      transactions: "transactions"
+      accounts: "accounts"
+      network_info: "network_info"
+  
+  redis:
+    url: "${REDIS_URL:-redis://lucid-redis:6379/0}"
+    cache_ttl_seconds: 300
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    port: 9090
+  
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+  
+  network_status:
+    enabled: true
+    check_interval_seconds: 60
+    sync_check_interval_seconds: 300
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    timeout_seconds: 60
+    recovery_timeout_seconds: 300
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  transaction_validation:
+    validate_addresses: true
+    validate_amounts: true
+    validate_signatures: true
+    require_confirmation: false
+  
+  audit:
+    enabled: true
+    log_transactions: true
+    log_account_access: true
+    audit_log_retention_days: 90
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+  burst_size: 200
+  window_seconds: 60
+

@@ -1,0 +1,102 @@
+{
+  "health_checks": {
+    "default": {
+      "type": "http",
+      "path": "${HEALTH_CHECK_DEFAULT_PATH:-/health}",
+      "interval": "${HEALTH_CHECK_DEFAULT_INTERVAL:-30s}",
+      "timeout": "${HEALTH_CHECK_DEFAULT_TIMEOUT:-10s}",
+      "unhealthy_threshold": "${HEALTH_CHECK_UNHEALTHY_THRESHOLD:-3}",
+      "healthy_threshold": "${HEALTH_CHECK_HEALTHY_THRESHOLD:-2}",
+      "expected_statuses": [200, 204]
+    },
+    "tcp": {
+      "type": "tcp",
+      "interval": "${HEALTH_CHECK_TCP_INTERVAL:-30s}",
+      "timeout": "${HEALTH_CHECK_TCP_TIMEOUT:-10s}",
+      "unhealthy_threshold": "${HEALTH_CHECK_TCP_UNHEALTHY_THRESHOLD:-3}",
+      "healthy_threshold": "${HEALTH_CHECK_TCP_HEALTHY_THRESHOLD:-2}"
+    },
+    "grpc": {
+      "type": "grpc",
+      "interval": "${HEALTH_CHECK_GRPC_INTERVAL:-30s}",
+      "timeout": "${HEALTH_CHECK_GRPC_TIMEOUT:-10s}",
+      "unhealthy_threshold": "${HEALTH_CHECK_GRPC_UNHEALTHY_THRESHOLD:-3}",
+      "healthy_threshold": "${HEALTH_CHECK_GRPC_HEALTHY_THRESHOLD:-2}",
+      "grpc_service_name": "${HEALTH_CHECK_GRPC_SERVICE_NAME:-}"
+    }
+  },
+  "service_health_checks": {
+    "api-gateway": {
+      "type": "http",
+      "path": "${API_GATEWAY_HEALTH_PATH:-/health}",
+      "port": "${API_GATEWAY_PORT:-8080}",
+      "interval": "${API_GATEWAY_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${API_GATEWAY_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "auth-service": {
+      "type": "http",
+      "path": "${AUTH_HEALTH_PATH:-/health}",
+      "port": "${AUTH_PORT:-8084}",
+      "interval": "${AUTH_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${AUTH_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "session-anchoring": {
+      "type": "http",
+      "path": "${SESSION_ANCHORING_HEALTH_PATH:-/health}",
+      "port": "${SESSION_ANCHORING_PORT:-8085}",
+      "interval": "${SESSION_ANCHORING_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "block-manager": {
+      "type": "http",
+      "path": "${BLOCK_MANAGER_HEALTH_PATH:-/health}",
+      "port": "${BLOCK_MANAGER_PORT:-8086}",
+      "interval": "${BLOCK_MANAGER_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${BLOCK_MANAGER_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "data-chain": {
+      "type": "http",
+      "path": "${DATA_CHAIN_HEALTH_PATH:-/health}",
+      "port": "${DATA_CHAIN_PORT:-8087}",
+      "interval": "${DATA_CHAIN_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${DATA_CHAIN_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "blockchain-engine": {
+      "type": "http",
+      "path": "${BLOCKCHAIN_ENGINE_HEALTH_PATH:-/health}",
+      "port": "${BLOCKCHAIN_ENGINE_PORT:-8082}",
+      "interval": "${BLOCKCHAIN_ENGINE_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${BLOCKCHAIN_ENGINE_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "lucid-mongodb": {
+      "type": "tcp",
+      "port": "${MONGODB_PORT:-27017}",
+      "interval": "${MONGODB_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${MONGODB_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "lucid-redis": {
+      "type": "tcp",
+      "port": "${REDIS_PORT:-6379}",
+      "interval": "${REDIS_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${REDIS_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "tor-proxy": {
+      "type": "tcp",
+      "port": "${TOR_SOCKS_PORT:-9050}",
+      "interval": "${TOR_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${TOR_HEALTH_CHECK_TIMEOUT:-10s}"
+    },
+    "service-mesh": {
+      "type": "http",
+      "path": "${SERVICE_MESH_HEALTH_PATH:-/health}",
+      "port": "${HTTP_PORT:-8088}",
+      "interval": "${SERVICE_MESH_HEALTH_CHECK_INTERVAL:-30s}",
+      "timeout": "${SERVICE_MESH_HEALTH_CHECK_TIMEOUT:-10s}"
+    }
+  },
+  "alerting": {
+    "enabled": "${ALERTING_ENABLED:-true}",
+    "consecutive_failures_alert": "${ALERTING_CONSECUTIVE_FAILURES:-3}",
+    "recovery_alert": "${ALERTING_RECOVERY:-true}"
+  }
+}

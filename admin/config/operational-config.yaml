@@ -1,0 +1,297 @@
+# Lucid Admin Interface - Internal Operations Configuration
+# Runtime operational settings for admin-interface container
+# File: admin/config/operational-config.yaml
+# Purpose: Define internal process management, resource limits, and operational behaviors
+
+# Internal Operations Configuration
+internal_operations:
+  # Background task management
+  background_tasks:
+    audit_log_processor:
+      enabled: true
+      workers: 2
+      batch_size: 100
+      interval_seconds: 5
+      max_queue_size: 10000
+      retry_attempts: 3
+      retry_delay_seconds: 1
+    
+    metrics_collector:
+      enabled: true
+      interval_seconds: 60
+      retention_hours: 24
+      aggregation_window_seconds: 300
+    
+    cache_cleaner:
+      enabled: true
+      interval_seconds: 300
+      ttl_seconds: 3600
+      cleanup_threshold_percent: 80
+    
+    session_cleanup:
+      enabled: true
+      interval_seconds: 600
+      expired_session_retention_hours: 24
+      max_sessions_per_cleanup: 1000
+  
+  # Worker pool configuration
+  worker_pools:
+    api_workers:
+      min_workers: 1
+      max_workers: 10
+      queue_size: 1000
+      worker_timeout_seconds: 30
+    
+    websocket_workers:
+      min_workers: 2
+      max_workers: 20
+      connection_timeout_seconds: 300
+      ping_interval_seconds: 30
+      max_connections_per_worker: 100
+    
+    async_task_workers:
+      min_workers: 1
+      max_workers: 5
+      queue_size: 500
+      task_timeout_seconds: 60
+  
+  # Connection management
+  connection_pools:
+    mongodb:
+      max_connections: 100
+      min_connections: 10
+      connection_timeout_seconds: 30
+      idle_timeout_seconds: 300
+      max_idle_time_seconds: 600
+      retry_attempts: 3
+      retry_delay_seconds: 1
+    
+    redis:
+      max_connections: 50
+      min_connections: 5
+      connection_timeout_seconds: 10
+      idle_timeout_seconds: 60
+      max_idle_time_seconds: 300
+      retry_attempts: 3
+      retry_delay_seconds: 0.5
+    
+    elasticsearch:
+      max_connections: 20
+      min_connections: 2
+      connection_timeout_seconds: 10
+      idle_timeout_seconds: 60
+      retry_attempts: 2
+      retry_delay_seconds: 1
+  
+  # Resource limits
+  resource_limits:
+    max_memory_mb: 2048
+    max_cpu_percent: 80
+    max_concurrent_requests: 1000
+    max_file_descriptors: 4096
+    max_request_size_mb: 100
+    max_response_size_mb: 50
+  
+  # Graceful shutdown
+  shutdown:
+    timeout_seconds: 30
+    drain_connections: true
+    finish_requests: true
+    cleanup_resources: true
+    wait_for_tasks: true
+    task_timeout_seconds: 10
+  
+  # Health check configuration
+  health_check:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 10
+    startup_timeout_seconds: 60
+    liveness_probe:
+      enabled: true
+      failure_threshold: 3
+      success_threshold: 1
+    readiness_probe:
+      enabled: true
+      failure_threshold: 3
+      success_threshold: 1
+  
+  # Cache management
+  cache_management:
+    rbac_permission_cache:
+      enabled: true
+      ttl_seconds: 300
+      max_size: 10000
+      eviction_policy: "lru"
+    
+    session_cache:
+      enabled: true
+      ttl_seconds: 28800  # 8 hours
+      max_size: 5000
+      eviction_policy: "lru"
+    
+    user_cache:
+      enabled: true
+      ttl_seconds: 600
+      max_size: 1000
+      eviction_policy: "lru"
+    
+    system_config_cache:
+      enabled: true
+      ttl_seconds: 3600
+      max_size: 100
+      eviction_policy: "lru"
+  
+  # Retry logic
+  retry_configuration:
+    default_retries: 3
+    default_delay_seconds: 1
+    exponential_backoff: true
+    max_delay_seconds: 30
+    jitter: true
+    
+    service_calls:
+      api_gateway:
+        retries: 3
+        timeout_seconds: 10
+        delay_seconds: 1
+      
+      blockchain_engine:
+        retries: 3
+        timeout_seconds: 15
+        delay_seconds: 2
+      
+      session_management:
+        retries: 3
+        timeout_seconds: 10
+        delay_seconds: 1
+      
+      node_management:
+        retries: 3
+        timeout_seconds: 10
+        delay_seconds: 1
+      
+      auth_service:
+        retries: 3
+        timeout_seconds: 10
+        delay_seconds: 1
+  
+  # Rate limiting (internal)
+  internal_rate_limiting:
+    enabled: true
+    default_limit_per_minute: 1000
+    burst_size: 100
+    
+    per_endpoint:
+      "/admin/users":
+        limit_per_minute: 200
+        burst_size: 20
+      
+      "/admin/sessions":
+        limit_per_minute: 200
+        burst_size: 20
+      
+      "/admin/emergency":
+        limit_per_minute: 10
+        burst_size: 3
+      
+      "/admin/audit":
+        limit_per_minute: 500
+        burst_size: 50
+  
+  # Logging configuration
+  logging:
+    level: "INFO"
+    format: "json"
+    structured: true
+    include_stack_trace: false
+    include_request_id: true
+    include_user_id: true
+    
+    rotation:
+      enabled: true
+      max_size_mb: 100
+      backup_count: 5
+      retention_days: 30
+    
+    audit_logs:
+      enabled: true
+      retention_days: 90
+      compression: true
+      encryption: false
+  
+  # Performance tuning
+  performance:
+    request_timeout_seconds: 30
+    response_timeout_seconds: 30
+    keep_alive_timeout_seconds: 5
+    max_keep_alive_requests: 100
+    
+    compression:
+      enabled: true
+      level: 6
+      min_size_bytes: 1024
+    
+    connection_pooling:
+      enabled: true
+      pool_size: 100
+      max_overflow: 50
+  
+  # Monitoring and metrics
+  monitoring:
+    metrics_collection:
+      enabled: true
+      interval_seconds: 60
+      export_format: "prometheus"
+    
+    system_metrics:
+      enabled: true
+      collection_interval_seconds: 60
+      include_cpu: true
+      include_memory: true
+      include_disk: true
+      include_network: true
+    
+    custom_metrics:
+      enabled: true
+      track_api_latency: true
+      track_error_rates: true
+      track_cache_hit_rates: true
+      track_connection_pool_usage: true
+  
+  # Security operations
+  security_operations:
+    session_validation:
+      enabled: true
+      validate_on_every_request: false
+      validation_interval_seconds: 300
+    
+    permission_check_cache:
+      enabled: true
+      ttl_seconds: 300
+      max_size: 10000
+    
+    audit_event_batching:
+      enabled: true
+      batch_size: 100
+      flush_interval_seconds: 5
+      max_batch_age_seconds: 30
+  
+  # Error handling
+  error_handling:
+    max_error_details_length: 500
+    include_error_context: true
+    log_all_errors: true
+    
+    error_recovery:
+      enabled: true
+      max_retries: 3
+      retry_delay_seconds: 1
+      exponential_backoff: true
+    
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_calls: 3
+

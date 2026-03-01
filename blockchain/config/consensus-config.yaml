@@ -1,0 +1,211 @@
+# Lucid Blockchain Engine - Consensus Configuration
+# Optional YAML configuration for PoOT consensus algorithm
+# File: blockchain/config/consensus-config.yaml
+# Purpose: Define consensus parameters, block creation rules, and validation policies
+
+# PoOT (Proof of Operational Time) Consensus Configuration
+# ALIGNED WITH: blockchain/core/blockchain_engine.py, blockchain/core/poot_consensus.py
+consensus:
+  algorithm: "PoOT"  # Proof of Operational Time
+  enabled: true
+  
+  # Immutable Consensus Parameters (Spec-1b)
+  # These values are fixed per Spec-1b and should not be changed
+  immutable_parameters:
+    slot_duration_sec: 120  # Fixed, immutable per Spec-1b line 170 (ALIGNED: blockchain/core/blockchain_engine.py:43)
+    slot_timeout_ms: 5000   # 5s leader timeout (ALIGNED: blockchain/core/blockchain_engine.py:44)
+    cooldown_slots: 16      # 16 slot cooldown (ALIGNED: blockchain/core/blockchain_engine.py:45)
+    leader_window_days: 7    # 7-day PoOT window (ALIGNED: blockchain/core/blockchain_engine.py:46)
+    d_min: 0.2              # Minimum density threshold (ALIGNED: blockchain/core/blockchain_engine.py:47)
+    base_mb_per_session: 5  # 5MB base unit (ALIGNED: blockchain/core/blockchain_engine.py:48)
+  
+  # Block Creation Parameters
+  block_creation:
+    block_time_seconds: 120  # ALIGNED: Matches SLOT_DURATION_SEC (blockchain/core/blockchain_engine.py:43)
+    max_transactions_per_block: 1000
+    min_transactions_per_block: 1
+    block_size_limit_bytes: 1048576  # 1MB
+    gas_limit_per_block: 8000000
+    
+  # Leader Selection
+  # ALIGNED WITH: blockchain/core/leader_selection.py, blockchain/core/poot_consensus.py
+  leader_selection:
+    method: "work_credits_ranking"  # ALIGNED: PoOT uses work credits ranking (not weighted_random)
+    selection_interval_seconds: 120  # ALIGNED: Matches SLOT_DURATION_SEC
+    # PoOT leader selection is based on work credits ranking with cooldown
+    # See blockchain/core/leader_selection.py for implementation
+    weight_factors:
+      operational_time: 0.4
+      stake_amount: 0.3
+      reputation_score: 0.2
+      network_contribution: 0.1
+    
+  # Validation Rules
+  validation:
+    require_signatures: true
+    min_signatures: 1
+    signature_verification: true
+    transaction_ordering: "timestamp"  # Options: timestamp, fee, priority
+    duplicate_detection: true
+    
+  # Finality Rules
+  finality:
+    confirmation_blocks: 6
+    finality_timeout_seconds: 60
+    require_majority_consensus: true
+    majority_threshold: 0.51
+
+# Block Validation Policies
+block_validation:
+  # Block Header Validation
+  header:
+    require_valid_previous_hash: true
+    require_valid_timestamp: true
+    timestamp_tolerance_seconds: 30
+    require_valid_merkle_root: true
+    require_valid_state_root: true
+    
+  # Transaction Validation
+  transactions:
+    require_valid_signatures: true
+    require_sufficient_balance: true
+    require_valid_nonce: true
+    max_transaction_size_bytes: 102400  # 100KB
+    max_gas_per_transaction: 21000
+    
+  # State Validation
+  state:
+    require_valid_state_transitions: true
+    validate_account_balances: true
+    validate_contract_storage: true
+    validate_merkle_proofs: true
+
+# Network Configuration
+# ALIGNED WITH: blockchain/core/poot_consensus.py
+network:
+  # Peer Discovery
+  peer_discovery:
+    enabled: true
+    discovery_interval_seconds: 60
+    max_peers: 50
+    min_peers: 5
+  # Epoch Configuration
+  epoch:
+    duration_hours: 24  # ALIGNED: blockchain/core/poot_consensus.py:38 (EPOCH_DURATION_HOURS = 24)
+    # Daily epochs for work credits calculation
+    
+  # Block Propagation
+  block_propagation:
+    broadcast_on_creation: true
+    propagation_timeout_seconds: 30
+    max_propagation_retries: 3
+    use_gossip_protocol: true
+    
+  # Transaction Pool (Mempool)
+  mempool:
+    max_size: 10000
+    eviction_policy: "fifo"  # Options: fifo, lru, fee_based
+    transaction_timeout_seconds: 300
+    priority_queue_enabled: true
+
+# Staking Configuration
+staking:
+  enabled: true
+  minimum_stake_amount: 1000  # Minimum TRX or tokens required
+  staking_period_days: 30
+  unstaking_cooldown_days: 7
+  reward_distribution:
+    method: "proportional"  # Options: proportional, fixed, performance_based
+    distribution_interval_blocks: 100
+    reward_per_block: 10
+
+# Work Credits System
+# ALIGNED WITH: blockchain/core/work_credits.py, blockchain/core/models.py
+work_credits:
+  enabled: true
+  credit_earn_rate: 1.0  # Credits per second of operational time
+  credit_decay_rate: 0.01  # Credits decay per day
+  min_credits_for_validation: 100
+  max_credits: 10000
+  # Immutable parameters (Spec-1b)
+  leader_window_days: 7    # ALIGNED: blockchain/core/work_credits.py:35
+  base_mb_per_session: 5  # ALIGNED: blockchain/core/work_credits.py:36
+  d_min: 0.2              # ALIGNED: blockchain/core/work_credits.py:37
+  # Formula: W_t = max(S_t, ceil(B_t / BASE_MB_PER_SESSION))
+  # Where BASE_MB_PER_SESSION = 5MB (ALIGNED: blockchain/core/models.py:468)
+
+# Security Configuration
+security:
+  # Sybil Attack Prevention
+  sybil_prevention:
+    enabled: true
+    require_identity_verification: false
+    max_nodes_per_ip: 5
+    reputation_threshold: 0.5
+    
+  # DDoS Protection
+  ddos_protection:
+    enabled: true
+    max_requests_per_second: 100
+    rate_limit_window_seconds: 60
+    block_malicious_ips: true
+    
+  # Cryptographic Security
+  cryptography:
+    signature_algorithm: "ECDSA"  # Options: ECDSA, EdDSA
+    hash_algorithm: "SHA256"
+    key_size_bits: 256
+    require_secure_random: true
+
+# Performance Optimization
+performance:
+  # Parallel Processing
+  parallel_processing:
+    enabled: true
+    max_worker_threads: 4
+    transaction_batch_size: 100
+    
+  # Caching
+  caching:
+    enabled: true
+    cache_block_data: true
+    cache_state_data: true
+    cache_ttl_seconds: 300
+    max_cache_size_mb: 500
+    
+  # Database Optimization
+  database:
+    connection_pool_size: 20
+    query_timeout_seconds: 30
+    enable_indexes: true
+    batch_write_size: 1000
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "block_creation_rate"
+    - "transaction_throughput"
+    - "consensus_latency"
+    - "network_peers"
+    - "stake_distribution"
+    - "work_credits_distribution"
+  
+  alerts:
+    block_creation_delay_threshold_seconds: 20
+    transaction_backlog_threshold: 5000
+    network_peer_threshold: 3
+    consensus_failure_threshold: 3
+
+# Error Handling
+error_handling:
+  retry_policies:
+    block_creation_retries: 3
+    transaction_broadcast_retries: 3
+    peer_connection_retries: 5
+    
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    state_sync_on_recovery: true
+

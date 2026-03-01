@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Docker Container Event Schema",
+  "description": "JSON Schema for Docker container lifecycle events from the Docker daemon",
+  "type": "object",
+  "properties": {
+    "Type": {
+      "type": "string",
+      "enum": ["container", "service", "network", "volume", "image"],
+      "description": "Type of object the event is on"
+    },
+    "Action": {
+      "type": "string",
+      "enum": [
+        "start", "stop", "restart", "pause", "unpause", "create", "destroy", "remove",
+        "die", "kill", "commit", "exec_create", "exec_start", "export", "top",
+        "update", "rename", "attach", "detach", "connect", "disconnect"
+      ],
+      "description": "Action that occurred"
+    },
+    "Actor": {
+      "type": "object",
+      "description": "Actor on which the event occurred",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$|^[a-z0-9_-]+$",
+          "description": "Object ID (container ID, volume name, etc.)"
+        },
+        "Attributes": {
+          "type": "object",
+          "description": "Event attributes specific to the object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Container or object name"
+            },
+            "image": {
+              "type": "string",
+              "description": "Docker image name:tag"
+            },
+            "status": {
+              "type": "string",
+              "enum": ["created", "running", "paused", "restarting", "exited", "dead"],
+              "description": "Current container status"
+            },
+            "exitCode": {
+              "type": "integer",
+              "description": "Exit code if process stopped"
+            },
+            "signal": {
+              "type": "string",
+              "description": "Signal sent (if killed)"
+            },
+            "labels": {
+              "type": "object",
+              "description": "Object labels"
+            },
+            "execID": {
+              "type": "string",
+              "description": "Execution ID for exec events"
+            }
+          }
+        }
+      },
+      "required": ["ID", "Attributes"]
+    },
+    "time": {
+      "type": "integer",
+      "description": "Unix timestamp in seconds",
+      "minimum": 0
+    },
+    "timeNano": {
+      "type": "integer",
+      "description": "Unix timestamp in nanoseconds",
+      "minimum": 0
+    }
+  },
+  "required": ["Type", "Action", "Actor", "time"],
+  "examples": [
+    {
+      "Type": "container",
+      "Action": "start",
+      "Actor": {
+        "ID": "abc123def456789abc123def456789abc123def456789abc123def456789abc1",
+        "Attributes": {
+          "name": "lucid-mongodb",
+          "image": "mongo:7.0",
+          "status": "running"
+        }
+      },
+      "time": 1708814400,
+      "timeNano": 1708814400000000000
+    },
+    {
+      "Type": "container",
+      "Action": "die",
+      "Actor": {
+        "ID": "abc123def456789abc123def456789abc123def456789abc123def456789abc1",
+        "Attributes": {
+          "name": "lucid-api-gateway",
+          "image": "pickme/lucid-api-gateway:latest",
+          "exitCode": 1
+        }
+      },
+      "time": 1708814500,
+      "timeNano": 1708814500000000000
+    }
+  ],
+  "additionalProperties": true
+}

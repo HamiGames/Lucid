@@ -1,0 +1,164 @@
+# Lucid Tunnel Tools - Tunnel Configuration
+# Optional YAML configuration for tunnel and onion service management
+# File: 02-network-security/tunnels/config/tunnel-config.yaml
+# Purpose: Define tunnel policies, onion service configuration, and rotation rules
+
+# Global Tunnel Configuration
+global:
+  enabled: true
+  tor_control_host: "tor-proxy"
+  tor_control_port: 9051
+  tor_proxy_host: "tor-proxy"
+  tor_proxy_port: 9050
+  cookie_file_path: "/var/lib/tor/control_auth_cookie"
+
+# Onion Service Configuration
+onion_services:
+  # Ephemeral Onion Services
+  ephemeral:
+    enabled: true
+    auto_create: true
+    auto_rotate: false
+    rotation_interval_hours: 0  # 0 = disabled
+    service_count: 1
+    ports:
+      - port: 80
+        target: "lucid_api:8081"
+        protocol: "http"
+
+  # Persistent Onion Services
+  persistent:
+    enabled: false
+    service_key_path: "/var/lib/tor/onion_keys"
+    service_count: 1
+    ports:
+      - port: 80
+        target: "lucid_api:8081"
+        protocol: "http"
+
+# Tunnel Configuration
+tunnels:
+  # Tunnel Creation
+  creation:
+    enabled: true
+    auto_create_on_startup: true
+    verify_after_creation: true
+    creation_timeout_seconds: 30
+    max_creation_retries: 3
+
+  # Tunnel Management
+  management:
+    enabled: true
+    list_interval_seconds: 60
+    status_check_interval_seconds: 30
+    auto_refresh: true
+    refresh_interval_seconds: 300
+
+  # Tunnel Rotation
+  rotation:
+    enabled: false
+    rotation_interval_hours: 24
+    rotation_trigger_events: []  # Options: time_based, manual, error_based
+    preserve_connections: false
+    rotation_timeout_seconds: 60
+
+# Port Mapping Configuration
+port_mappings:
+  - name: "lucid_api"
+    onion_port: 80
+    target_service: "lucid_api"
+    target_port: 8081
+    protocol: "http"
+    enabled: true
+
+# Security Configuration
+security:
+  # Authentication
+  authentication:
+    require_cookie_auth: true
+    cookie_file_path: "/var/lib/tor/control_auth_cookie"
+    validate_cookie_permissions: true
+
+  # Access Control
+  access_control:
+    allowed_operations:
+      - "create"
+      - "list"
+      - "status"
+      - "refresh"
+      - "teardown"
+    require_authentication: true
+
+  # Privacy
+  privacy:
+    log_onion_addresses: false
+    mask_sensitive_data: true
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+
+# Error Handling
+error_handling:
+  # Retry Policies
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+    backoff_multiplier: 2
+
+  # Failure Recovery
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 60
+    recreate_on_failure: true
+    verify_after_recovery: true
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "tunnel_count"
+    - "onion_service_count"
+    - "tunnel_creation_success_rate"
+    - "tunnel_health_status"
+    - "rotation_count"
+    - "error_count"
+
+  alerts:
+    tunnel_creation_failure_threshold: 3
+    tunnel_health_check_failure_threshold: 3
+    tor_connection_failure_threshold: 3
+
+# Performance Optimization
+performance:
+  # Connection Pooling
+  connection_pool:
+    enabled: true
+    pool_size: 10
+    max_overflow: 5
+    pool_timeout_seconds: 30
+
+  # Caching
+  caching:
+    enabled: true
+    cache_tunnel_status: true
+    cache_onion_addresses: true
+    cache_ttl_seconds: 300
+
+# Environment Configuration
+environment:
+  # Environment File Output
+  env_file:
+    enabled: true
+    output_path: "/app/scripts/.onion.env"
+    format: "shell"  # Options: shell, json, yaml
+    include_onion_addresses: true
+    include_port_mappings: true
+
+  # Variable Names
+  variable_names:
+    onion_address: "ONION_ADDRESS"
+    onion_port: "ONION_PORT"
+    tunnel_status: "TUNNEL_STATUS"
+

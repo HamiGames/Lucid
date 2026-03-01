@@ -1,0 +1,984 @@
+# Prometheus alerting rules for Lucid RDP system
+# Comprehensive alert rules for all services
+# Aligned with essentials.md service names and ports
+
+groups:
+  - name: lucid-system-resources
+    rules:
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          cluster: lucid-rdp
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+          cluster: lucid-rdp
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "CPU usage is above 95% for more than 2 minutes on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          cluster: lucid-rdp
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: CriticalMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: system
+          cluster: lucid-rdp
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is above 95% for more than 2 minutes on {{ $labels.instance }}"
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+          cluster: lucid-rdp
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is above 90% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: SystemLoadHigh
+        expr: node_load1 > 4
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          cluster: lucid-rdp
+        annotations:
+          summary: "High system load detected"
+          description: "System load is above 4 for more than 5 minutes on {{ $labels.instance }}"
+
+  - name: lucid-docker-containers
+    rules:
+      # Docker container alerts
+      - alert: ContainerDown
+        expr: up{job=~"lucid-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: docker
+          cluster: lucid-rdp
+        annotations:
+          summary: "Lucid container is down"
+          description: "Container {{ $labels.instance }} ({{ $labels.container_name }}) has been down for more than 1 minute"
+
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{container_name=~"lucid-.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+          cluster: lucid-rdp
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.container_name }} CPU usage is above 80% for more than 5 minutes"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{container_name=~"lucid-.*"} / container_spec_memory_limit_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+          cluster: lucid-rdp
+        annotations:
+          summary: "Container high memory usage"
+          description: "Container {{ $labels.container_name }} memory usage is above 85% for more than 5 minutes"
+
+      - alert: ContainerRestarting
+        expr: rate(container_start_time_seconds{container_name=~"lucid-.*"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+          cluster: lucid-rdp
+        annotations:
+          summary: "Container restarting frequently"
+          description: "Container {{ $labels.container_name }} is restarting more than 0.1 times per second"
+
+      - alert: ContainerHealthCheckFailure
+        expr: container_health_status{status="unhealthy",container_name=~"lucid-.*"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          service: docker
+          cluster: lucid-rdp
+        annotations:
+          summary: "Container health check failed"
+          description: "Container {{ $labels.container_name }} health check has been failing for more than 2 minutes"
+
+  - name: lucid-api-gateway
+    rules:
+      # API Gateway alerts (per essentials.md: IP 172.20.0.10, Port 8080)
+      - alert: APIGatewayDown
+        expr: up{job="lucid-api-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api-gateway
+          cluster: lucid-rdp
+          container_name: lucid-api-gateway
+          hostname: 172.20.0.10
+        annotations:
+          summary: "API Gateway is down"
+          description: "API Gateway (lucid-api-gateway) at 172.20.0.10:8080 has been down for more than 1 minute"
+
+      - alert: HighAPIErrorRate
+        expr: rate(http_requests_total{job="lucid-api-gateway",status=~"5.."}[5m]) / rate(http_requests_total{job="lucid-api-gateway"}[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: api-gateway
+          cluster: lucid-rdp
+        annotations:
+          summary: "High API error rate"
+          description: "API Gateway error rate is above 5% for more than 5 minutes"
+
+      - alert: APIRateLimitExceeded
+        expr: rate(http_requests_total{job="lucid-api-gateway",status="429"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: api-gateway
+          cluster: lucid-rdp
+        annotations:
+          summary: "API rate limit exceeded"
+          description: "API Gateway rate limit exceeded rate is above 1 per second for more than 2 minutes"
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="lucid-api-gateway"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: api-gateway
+          cluster: lucid-rdp
+        annotations:
+          summary: "High API latency"
+          description: "API Gateway 95th percentile latency is above 2 seconds for more than 5 minutes"
+
+  - name: lucid-blockchain
+    rules:
+      # Blockchain service alerts (per essentials.md)
+      - alert: BlockchainEngineDown
+        expr: up{job="lucid-blockchain-engine"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: blockchain
+          cluster: lucid-rdp
+          container_name: lucid-blockchain-engine
+          hostname: 172.20.0.15
+        annotations:
+          summary: "Blockchain Engine is down"
+          description: "Blockchain Engine (lucid-blockchain-engine) at 172.20.0.15:8084 has been down for more than 1 minute"
+
+      - alert: SessionAnchoringDown
+        expr: up{job="lucid-session-anchoring"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: blockchain
+          cluster: lucid-rdp
+          container_name: lucid-session-anchoring
+          hostname: 172.20.0.16
+        annotations:
+          summary: "Session Anchoring is down"
+          description: "Session Anchoring (lucid-session-anchoring) at 172.20.0.16:8085 has been down for more than 1 minute"
+
+      - alert: BlockManagerDown
+        expr: up{job="lucid-block-manager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: blockchain
+          cluster: lucid-rdp
+          container_name: lucid-block-manager
+          hostname: 172.20.0.17
+        annotations:
+          summary: "Block Manager is down"
+          description: "Block Manager (lucid-block-manager) at 172.20.0.17:8086 has been down for more than 1 minute"
+
+      - alert: DataChainDown
+        expr: up{job="lucid-data-chain"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: blockchain
+          cluster: lucid-rdp
+          container_name: lucid-data-chain
+          hostname: 172.20.0.18
+        annotations:
+          summary: "Data Chain is down"
+          description: "Data Chain (lucid-data-chain) at 172.20.0.18:8087 has been down for more than 1 minute"
+
+      - alert: BlockchainSyncLag
+        expr: blockchain_sync_lag_blocks > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+          cluster: lucid-rdp
+        annotations:
+          summary: "Blockchain sync lag detected"
+          description: "Blockchain is {{ $value }} blocks behind for more than 5 minutes"
+
+      - alert: BlockchainHighLatency
+        expr: histogram_quantile(0.95, rate(blockchain_rpc_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+          cluster: lucid-rdp
+        annotations:
+          summary: "High blockchain RPC latency"
+          description: "Blockchain RPC 95th percentile latency is above 5 seconds for more than 5 minutes"
+
+      - alert: BlockchainTransactionFailures
+        expr: rate(blockchain_transaction_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+          cluster: lucid-rdp
+        annotations:
+          summary: "High blockchain transaction failure rate"
+          description: "Blockchain transaction failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: ConsensusFailures
+        expr: rate(consensus_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+          cluster: lucid-rdp
+        annotations:
+          summary: "High consensus failure rate"
+          description: "Consensus failure rate is above 0.05 per second for more than 5 minutes"
+
+  - name: lucid-session-management
+    rules:
+      # Session Management alerts (per essentials.md: IP 172.20.0.20)
+      - alert: SessionPipelineDown
+        expr: up{job="lucid-session-pipeline"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+          container_name: lucid-session-pipeline
+          hostname: 172.20.0.20
+        annotations:
+          summary: "Session Pipeline is down"
+          description: "Session Pipeline (lucid-session-pipeline) at 172.20.0.20:8087 has been down for more than 1 minute"
+
+      - alert: SessionRecorderDown
+        expr: up{job="lucid-session-recorder"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+          container_name: lucid-session-recorder
+          hostname: 172.20.0.20
+        annotations:
+          summary: "Session Recorder is down"
+          description: "Session Recorder (lucid-session-recorder) at 172.20.0.20:8090 has been down for more than 1 minute"
+
+      - alert: ChunkProcessorDown
+        expr: up{job="lucid-chunk-processor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+          container_name: lucid-chunk-processor
+          hostname: 172.20.0.20
+        annotations:
+          summary: "Chunk Processor is down"
+          description: "Chunk Processor (lucid-chunk-processor) at 172.20.0.20:8091 has been down for more than 1 minute"
+
+      - alert: SessionStorageDown
+        expr: up{job="lucid-session-storage"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+          container_name: lucid-session-storage
+          hostname: 172.20.0.20
+        annotations:
+          summary: "Session Storage is down"
+          description: "Session Storage (lucid-session-storage) at 172.20.0.20:8082 has been down for more than 1 minute"
+
+      - alert: SessionAPIDown
+        expr: up{job="lucid-session-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+          container_name: lucid-session-api
+          hostname: 172.20.0.20
+        annotations:
+          summary: "Session API is down"
+          description: "Session API (lucid-session-api) at 172.20.0.20:8087 has been down for more than 1 minute"
+
+      - alert: HighSessionLatency
+        expr: histogram_quantile(0.95, rate(session_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: sessions
+          cluster: lucid-rdp
+        annotations:
+          summary: "High session request latency"
+          description: "Session request 95th percentile latency is above 2 seconds for more than 5 minutes"
+
+      - alert: SessionRecordingFailures
+        expr: rate(session_recording_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: sessions
+          cluster: lucid-rdp
+        annotations:
+          summary: "High session recording failure rate"
+          description: "Session recording failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: SessionStorageFull
+        expr: session_storage_usage_bytes / session_storage_capacity_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+        annotations:
+          summary: "Session storage nearly full"
+          description: "Session storage usage is above 90% for more than 5 minutes"
+
+      - alert: SessionChunkProcessingFailures
+        expr: rate(session_chunk_processing_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: sessions
+          cluster: lucid-rdp
+        annotations:
+          summary: "High session chunk processing failure rate"
+          description: "Session chunk processing failure rate is above 0.05 per second for more than 5 minutes"
+
+  - name: lucid-rdp-services
+    rules:
+      # RDP Services alerts (per essentials.md)
+      - alert: RDPServerManagerDown
+        expr: up{job="lucid-rdp-server-manager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rdp
+          cluster: lucid-rdp
+          container_name: lucid-rdp-server-manager
+          hostname: 172.20.0.21
+        annotations:
+          summary: "RDP Server Manager is down"
+          description: "RDP Server Manager (lucid-rdp-server-manager) at 172.20.0.21:8081 has been down for more than 1 minute"
+
+      - alert: RDPXRDPDown
+        expr: up{job="lucid-rdp-xrdp"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rdp
+          cluster: lucid-rdp
+          container_name: lucid-rdp-xrdp
+          hostname: 172.20.0.22
+        annotations:
+          summary: "RDP XRDP is down"
+          description: "RDP XRDP (lucid-rdp-xrdp) at 172.20.0.22:3389 has been down for more than 1 minute"
+
+      - alert: RDPControllerDown
+        expr: up{job="lucid-rdp-controller"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rdp
+          cluster: lucid-rdp
+          container_name: lucid-rdp-controller
+          hostname: 172.20.0.23
+        annotations:
+          summary: "RDP Controller is down"
+          description: "RDP Controller (lucid-rdp-controller) at 172.20.0.23:8092 has been down for more than 1 minute"
+
+      - alert: RDPMonitorDown
+        expr: up{job="lucid-rdp-monitor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rdp
+          cluster: lucid-rdp
+          container_name: lucid-rdp-monitor
+          hostname: 172.20.0.24
+        annotations:
+          summary: "RDP Monitor is down"
+          description: "RDP Monitor (lucid-rdp-monitor) at 172.20.0.24:8093 has been down for more than 1 minute"
+
+      - alert: RDPConnectionFailures
+        expr: rate(rdp_connection_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: rdp
+          cluster: lucid-rdp
+        annotations:
+          summary: "High RDP connection failure rate"
+          description: "RDP connection failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: RDPHighLatency
+        expr: histogram_quantile(0.95, rate(rdp_session_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: rdp
+          cluster: lucid-rdp
+        annotations:
+          summary: "High RDP session latency"
+          description: "RDP session 95th percentile latency is above 5 seconds for more than 5 minutes"
+
+  - name: lucid-node-management
+    rules:
+      # Node Management alerts (per essentials.md: IP 172.20.0.25, Port 8095)
+      - alert: NodeManagementDown
+        expr: up{job="lucid-node-management"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: node-management
+          cluster: lucid-rdp
+          container_name: lucid-node-management
+          hostname: 172.20.0.25
+        annotations:
+          summary: "Node Management is down"
+          description: "Node Management (lucid-node-management) at 172.20.0.25:8095 has been down for more than 1 minute"
+
+      - alert: HighNodeFailureRate
+        expr: rate(node_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: node-management
+          cluster: lucid-rdp
+        annotations:
+          summary: "High node failure rate"
+          description: "Node failure rate is above 0.05 per second for more than 5 minutes"
+
+      - alert: LowNodeCapacity
+        expr: node_capacity_available / node_capacity_total * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          service: node-management
+          cluster: lucid-rdp
+        annotations:
+          summary: "Low node capacity"
+          description: "Available node capacity is below 10% for more than 5 minutes"
+
+      - alert: NodeSyncFailures
+        expr: rate(node_sync_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: node-management
+          cluster: lucid-rdp
+        annotations:
+          summary: "High node sync failure rate"
+          description: "Node sync failure rate is above 0.1 per second for more than 5 minutes"
+
+  - name: lucid-admin-interface
+    rules:
+      # Admin Interface alerts (per essentials.md: IP 172.20.0.26, Port 8083)
+      - alert: AdminInterfaceDown
+        expr: up{job="lucid-admin-interface"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: admin-interface
+          cluster: lucid-rdp
+          container_name: lucid-admin-interface
+          hostname: 172.20.0.26
+        annotations:
+          summary: "Admin Interface is down"
+          description: "Admin Interface (lucid-admin-interface) at 172.20.0.26:8083 has been down for more than 1 minute"
+
+      - alert: AdminInterfaceHighLatency
+        expr: histogram_quantile(0.95, rate(admin_request_duration_seconds_bucket[5m])) > 3
+        for: 5m
+        labels:
+          severity: warning
+          service: admin-interface
+          cluster: lucid-rdp
+        annotations:
+          summary: "High admin interface latency"
+          description: "Admin interface 95th percentile latency is above 3 seconds for more than 5 minutes"
+
+      - alert: AdminInterfaceErrorRate
+        expr: rate(admin_requests_total{status=~"5.."}[5m]) / rate(admin_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: admin-interface
+          cluster: lucid-rdp
+        annotations:
+          summary: "High admin interface error rate"
+          description: "Admin interface error rate is above 5% for more than 5 minutes"
+
+  - name: lucid-tron-payment
+    rules:
+      # TRON Payment alerts (per essentials.md: IPs 172.20.0.27-172.20.0.32)
+      - alert: TronClientDown
+        expr: up{job="lucid-tron-client"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+          container_name: lucid-tron-client
+          hostname: 172.20.0.27
+        annotations:
+          summary: "TRON Client is down"
+          description: "TRON Client (lucid-tron-client) at 172.20.0.27:8091 has been down for more than 1 minute"
+
+      - alert: PayoutRouterDown
+        expr: up{job="lucid-payout-router"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+          container_name: lucid-payout-router
+          hostname: 172.20.0.28
+        annotations:
+          summary: "Payout Router is down"
+          description: "Payout Router (lucid-payout-router) at 172.20.0.28:8092 has been down for more than 1 minute"
+
+      - alert: WalletManagerDown
+        expr: up{job="lucid-wallet-manager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+          container_name: lucid-wallet-manager
+          hostname: 172.20.0.29
+        annotations:
+          summary: "Wallet Manager is down"
+          description: "Wallet Manager (lucid-wallet-manager) at 172.20.0.29:8093 has been down for more than 1 minute"
+
+      - alert: USDTManagerDown
+        expr: up{job="lucid-usdt-manager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+          container_name: lucid-usdt-manager
+          hostname: 172.20.0.30
+        annotations:
+          summary: "USDT Manager is down"
+          description: "USDT Manager (lucid-usdt-manager) at 172.20.0.30:8094 has been down for more than 1 minute"
+
+      - alert: TRXStakingDown
+        expr: up{job="lucid-trx-staking"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+          container_name: lucid-trx-staking
+          hostname: 172.20.0.31
+        annotations:
+          summary: "TRX Staking is down"
+          description: "TRX Staking (lucid-trx-staking) at 172.20.0.31:8096 has been down for more than 1 minute"
+
+      - alert: PaymentGatewayDown
+        expr: up{job="lucid-payment-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+          container_name: lucid-payment-gateway
+          hostname: 172.20.0.32
+        annotations:
+          summary: "Payment Gateway is down"
+          description: "Payment Gateway (lucid-payment-gateway) at 172.20.0.32:8097 has been down for more than 1 minute"
+
+      - alert: PaymentNetworkConnection
+        expr: payment_network_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: tron-payment
+          cluster: lucid-rdp
+        annotations:
+          summary: "Payment network connection lost"
+          description: "TRON payment service is not connected to the network for more than 2 minutes"
+
+      - alert: PaymentHighFees
+        expr: payment_transaction_fees > 1000000000  # 1000 TRX
+        for: 5m
+        labels:
+          severity: warning
+          service: tron-payment
+          cluster: lucid-rdp
+        annotations:
+          summary: "High payment transaction fees"
+          description: "TRON payment transaction fees are above 1000 TRX for more than 5 minutes"
+
+      - alert: PaymentTransactionFailures
+        expr: rate(payment_transaction_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: tron-payment
+          cluster: lucid-rdp
+        annotations:
+          summary: "High payment transaction failure rate"
+          description: "TRON payment transaction failure rate is above 0.05 per second for more than 5 minutes"
+
+  - name: lucid-database
+    rules:
+      # Database alerts (per essentials.md)
+      - alert: MongoDBDown
+        expr: up{job="lucid-mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+          cluster: lucid-rdp
+          container_name: lucid-mongodb
+          hostname: 172.20.0.11
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB (lucid-mongodb) at 172.20.0.11:27017 has been down for more than 1 minute"
+
+      - alert: RedisDown
+        expr: up{job="lucid-redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+          cluster: lucid-rdp
+          container_name: lucid-redis
+          hostname: 172.20.0.12
+        annotations:
+          summary: "Redis is down"
+          description: "Redis (lucid-redis) at 172.20.0.12:6379 has been down for more than 1 minute"
+
+      - alert: ElasticsearchDown
+        expr: up{job="lucid-elasticsearch"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+          cluster: lucid-rdp
+          container_name: lucid-elasticsearch
+          hostname: 172.20.0.13
+        annotations:
+          summary: "Elasticsearch is down"
+          description: "Elasticsearch (lucid-elasticsearch) at 172.20.0.13:9200 has been down for more than 1 minute"
+
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections_current > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          cluster: lucid-rdp
+        annotations:
+          summary: "High MongoDB connection count"
+          description: "MongoDB connection count is above 80 for more than 5 minutes"
+
+      - alert: MongoDBSlowQueries
+        expr: rate(mongodb_operation_duration_seconds_bucket{le="1"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          cluster: lucid-rdp
+        annotations:
+          summary: "High MongoDB slow query rate"
+          description: "MongoDB slow query rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          cluster: lucid-rdp
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is above 85% for more than 5 minutes"
+
+      - alert: ElasticsearchHighCPU
+        expr: elasticsearch_process_cpu_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          cluster: lucid-rdp
+        annotations:
+          summary: "High Elasticsearch CPU usage"
+          description: "Elasticsearch CPU usage is above 80% for more than 5 minutes"
+
+  - name: lucid-authentication
+    rules:
+      # Authentication alerts (per essentials.md: IP 172.20.0.14, Port 8089)
+      - alert: AuthServiceDown
+        expr: up{job="lucid-auth-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: authentication
+          cluster: lucid-rdp
+          container_name: lucid-auth-service
+          hostname: 172.20.0.14
+        annotations:
+          summary: "Auth Service is down"
+          description: "Auth Service (lucid-auth-service) at 172.20.0.14:8089 has been down for more than 1 minute"
+
+      - alert: FailedLoginAttempts
+        expr: rate(auth_failed_login_attempts_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: authentication
+          cluster: lucid-rdp
+        annotations:
+          summary: "High failed login attempt rate"
+          description: "Failed login attempt rate is above 10 per second for more than 2 minutes"
+
+      - alert: UnauthorizedAccess
+        expr: rate(auth_unauthorized_access_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: authentication
+          cluster: lucid-rdp
+        annotations:
+          summary: "High unauthorized access rate"
+          description: "Unauthorized access rate is above 5 per second for more than 1 minute"
+
+      - alert: JWTTokenExpiry
+        expr: jwt_token_expiry_timestamp_seconds - time() < 3600
+        for: 0m
+        labels:
+          severity: warning
+          service: authentication
+          cluster: lucid-rdp
+        annotations:
+          summary: "JWT token expiring soon"
+          description: "JWT token for {{ $labels.instance }} expires in {{ $value }} seconds"
+
+  - name: lucid-service-mesh
+    rules:
+      # Service Mesh alerts (per essentials.md: IP 172.20.0.19, Port 8500)
+      - alert: ServiceMeshControllerDown
+        expr: up{job="lucid-service-mesh-controller"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: service-mesh
+          cluster: lucid-rdp
+          container_name: lucid-service-mesh-controller
+          hostname: 172.20.0.19
+        annotations:
+          summary: "Service Mesh Controller is down"
+          description: "Service Mesh Controller (lucid-service-mesh-controller) at 172.20.0.19:8500 has been down for more than 1 minute"
+
+      - alert: ServiceMeshHighLatency
+        expr: histogram_quantile(0.95, rate(service_mesh_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: service-mesh
+          cluster: lucid-rdp
+        annotations:
+          summary: "High service mesh latency"
+          description: "Service mesh 95th percentile latency is above 2 seconds for more than 5 minutes"
+
+      - alert: ServiceMeshCircuitBreakerOpen
+        expr: service_mesh_circuit_breaker_open == 1
+        for: 2m
+        labels:
+          severity: warning
+          service: service-mesh
+          cluster: lucid-rdp
+        annotations:
+          summary: "Service mesh circuit breaker open"
+          description: "Service mesh circuit breaker is open for {{ $labels.service }} for more than 2 minutes"
+
+  - name: lucid-network-security
+    rules:
+      # Network and security alerts
+      - alert: TorConnectionDown
+        expr: up{job="tor-connectivity"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: network
+          cluster: lucid-rdp
+        annotations:
+          summary: "Tor connection is down"
+          description: "Tor service has been down for more than 2 minutes"
+
+      - alert: TorHealthCheckFailure
+        expr: tor_health_check_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: network
+          cluster: lucid-rdp
+        annotations:
+          summary: "Tor health check failed"
+          description: "Tor health check endpoint is not responding for more than 2 minutes"
+
+      - alert: TorCircuitFailures
+        expr: rate(tor_circuit_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+          cluster: lucid-rdp
+        annotations:
+          summary: "High Tor circuit failure rate"
+          description: "Tor circuit failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: NetworkConnectivity
+        expr: up{job="blackbox"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: network
+          cluster: lucid-rdp
+        annotations:
+          summary: "Network connectivity issue"
+          description: "External connectivity check failed for {{ $labels.instance }} for more than 1 minute"
+
+      - alert: HighNetworkLatency
+        expr: probe_duration_seconds > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+          cluster: lucid-rdp
+        annotations:
+          summary: "High network latency"
+          description: "Network latency is above 5 seconds for {{ $labels.instance }} for more than 5 minutes"
+
+      - alert: CertificateExpiry
+        expr: (ssl_certificate_expiry_timestamp_seconds - time()) / 86400 < 30
+        for: 0m
+        labels:
+          severity: warning
+          service: security
+          cluster: lucid-rdp
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+
+  - name: lucid-performance-monitoring
+    rules:
+      # Performance monitoring alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 3
+        for: 5m
+        labels:
+          severity: warning
+          service: performance
+          cluster: lucid-rdp
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is above 3 seconds for more than 5 minutes"
+
+      - alert: LowThroughput
+        expr: rate(http_requests_total[5m]) < 10
+        for: 10m
+        labels:
+          severity: warning
+          service: performance
+          cluster: lucid-rdp
+        annotations:
+          summary: "Low throughput detected"
+          description: "Request rate is below 10 requests per second for more than 10 minutes"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 10
+        for: 5m
+        labels:
+          severity: critical
+          service: performance
+          cluster: lucid-rdp
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 10% for more than 5 minutes"
+
+  - name: lucid-business-metrics
+    rules:
+      # Business metrics alerts
+      - alert: LowSessionActivity
+        expr: rate(session_created_total[1h]) < 1
+        for: 30m
+        labels:
+          severity: warning
+          service: business
+          cluster: lucid-rdp
+        annotations:
+          summary: "Low session activity"
+          description: "Session creation rate is below 1 per hour for more than 30 minutes"
+
+      - alert: HighSessionFailureRate
+        expr: rate(session_creation_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: sessions
+          cluster: lucid-rdp
+        annotations:
+          summary: "High session creation failure rate"
+          description: "Session creation failure rate is above 0.1 per second for more than 5 minutes"
+
+      - alert: SessionStorageFull 
+        expr: session_storage_size_bytes / session_storage_max_size_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: critical
+          service: sessions
+          cluster: lucid-rdp
+        annotations:
+          summary: "Session storage nearly full"
+          description: "Session storage usage is above 85% for more than 5 minutes"
+          

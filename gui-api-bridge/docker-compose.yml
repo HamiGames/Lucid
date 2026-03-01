@@ -1,0 +1,113 @@
+# gui-api-bridge/docker-compose.yml
+# Lucid GUI API Bridge - Docker Compose Configuration
+# Aligned with 03-api-gateway docker-compose pattern
+# All environment variables from .env files - no hardcoded values
+
+version: "3.8"
+
+services:
+  lucid-gui-api-bridge:
+    image: pickme/lucid-gui-api-bridge:latest-arm64
+    container_name: lucid-gui-api-bridge
+    restart: unless-stopped
+    
+    # Load environment from files (no hardcoded values)
+    env_file:
+      - ${ENV_FILE:-.env}
+    
+    environment:
+      # Service Configuration (from .env)
+      - SERVICE_NAME=gui-api-bridge
+      - SERVICE_VERSION=${SERVICE_VERSION:-1.0.0}
+      - DEBUG=${DEBUG:-false}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - PORT=${PORT:-8102}
+      
+      # JWT Configuration (from .env or defaults)
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+      
+      # Database Configuration (from .env)
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD}@lucid-redis:6379/0}
+      
+      # Backend Service URLs (from .env)
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://lucid-api-gateway:8080}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://lucid-blockchain-engine:8084}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://lucid-auth-service:8089}
+      - SESSION_API_URL=${SESSION_API_URL:-http://lucid-session-api:8087}
+      - NODE_MANAGEMENT_URL=${NODE_MANAGEMENT_URL:-http://lucid-node-management:8095}
+      - ADMIN_INTERFACE_URL=${ADMIN_INTERFACE_URL:-http://lucid-admin-interface:8083}
+      - TRON_PAYMENT_URL=${TRON_PAYMENT_URL:-http://lucid-tron-client:8091}
+      
+      # Rate Limiting Configuration (from .env)
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=${RATE_LIMIT_REQUESTS_PER_MINUTE:-1000}
+      - RATE_LIMIT_BURST_SIZE=${RATE_LIMIT_BURST_SIZE:-200}
+      
+      # SSL Configuration (from .env)
+      - SSL_ENABLED=${SSL_ENABLED:-false}
+      
+      # CORS Configuration (from .env)
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      
+      # Logging Configuration (from .env)
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      
+      # Monitoring (from .env)
+      - METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-30s}
+    
+    ports:
+      - "${GUI_API_BRIDGE_PORT:-8102}:8102"
+    
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.20
+    
+    # Volumes for configuration and logs (no hardcoded paths)
+    volumes:
+      - gui-api-bridge-certs:/certs:ro
+      - gui-api-bridge-logs:/app/logs
+      - ./config/rate-limit-config.yaml:/app/config/rate-limit-config.yaml:ro
+      - ./config/routing-config.yaml:/app/config/routing-config.yaml:ro
+    
+    # Health check
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8102)); s.close(); exit(0 if result == 0 else 1)"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Dependencies on other services (empty - assumes they're already running)
+    depends_on: []
+    
+    # Logging configuration (structured JSON logs to stdout)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service=gui-api-bridge"
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+
+volumes:
+  gui-api-bridge-certs:
+    name: lucid-gui-api-bridge-certs
+  gui-api-bridge-logs:
+    name: lucid-gui-api-bridge-logs

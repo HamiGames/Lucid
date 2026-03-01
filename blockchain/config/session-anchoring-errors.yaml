@@ -1,0 +1,168 @@
+# Session Anchoring Service Error Handling Configuration
+# Purpose: Define error handling policies and recovery strategies
+
+error_handling:
+  # Retry Policies
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+    backoff_multiplier: 2
+    max_backoff_seconds: 60
+  
+  # MongoDB Connection Errors
+  mongodb:
+    connection_timeout_seconds: 10
+    operation_timeout_seconds: 30
+    retry_on_connection_error: true
+    retry_on_timeout: true
+    max_connection_retries: 5
+  
+  # On-System Chain RPC Errors
+  blockchain_rpc:
+    request_timeout_seconds: 30
+    retry_on_timeout: true
+    retry_on_5xx: true
+    max_retries: 3
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5
+      recovery_timeout_seconds: 60
+      half_open_max_calls: 3
+  
+  # Anchoring Transaction Errors
+  anchoring_transaction:
+    retry_on_failure: true
+    retry_on_timeout: true
+    max_anchoring_retries: 3
+    verify_after_submission: true
+    log_failed_transactions: true
+    queue_failed_anchors: true
+    retry_failed_anchors: true
+    max_retry_attempts: 5
+  
+  # Verification Errors
+  verification:
+    retry_on_verification_failure: true
+    max_verification_retries: 3
+    verify_after_anchor: true
+    continue_on_verification_failure: false
+    log_verification_errors: true
+  
+  # Merkle Tree Construction Errors
+  merkle_tree:
+    retry_on_construction_failure: true
+    max_construction_retries: 3
+    validate_tree_before_anchor: true
+    log_construction_errors: true
+  
+  # Storage Errors
+  storage:
+    retry_on_write_failure: true
+    retry_on_read_failure: true
+    max_storage_retries: 3
+    verify_after_write: true
+    verify_after_read: false
+  
+  # Recovery Actions
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 300
+    verify_integrity_on_recovery: true
+    rebuild_indexes_on_recovery: true
+    notify_on_critical_error: false
+  
+  # Error Reporting
+  reporting:
+    log_all_errors: true
+    log_error_stack_traces: true
+    error_summary_interval_seconds: 300
+    max_errors_per_summary: 100
+  
+  # Graceful Degradation
+  degradation:
+    enabled: true
+    read_only_mode_on_critical_error: false
+    disable_anchoring_on_chain_error: false
+    cache_only_mode_on_storage_error: false
+
+# Error Codes and Messages
+error_codes:
+  # Anchoring Errors (ANCH_xxx)
+  ANCH_001: "Anchoring record not found"
+  ANCH_002: "Anchoring transaction failed"
+  ANCH_003: "Anchoring storage failed"
+  ANCH_004: "Anchoring verification failed"
+  ANCH_005: "Invalid session ID"
+  ANCH_006: "Merkle root mismatch"
+  ANCH_007: "Anchoring transaction timeout"
+  ANCH_008: "Blockchain RPC error"
+  ANCH_009: "Gas limit exceeded"
+  ANCH_010: "Contract call failed"
+  
+  # Storage Errors (ST_xxx)
+  ST_001: "Storage backend unavailable"
+  ST_002: "Storage write failed"
+  ST_003: "Storage read failed"
+  ST_004: "Storage quota exceeded"
+  ST_005: "Storage permission denied"
+  
+  # Verification Errors (VER_xxx)
+  VER_001: "Transaction verification failed"
+  VER_002: "Merkle root verification failed"
+  VER_003: "Block confirmation timeout"
+  VER_004: "Verification data unavailable"
+  VER_005: "Transaction not found on chain"
+  
+  # Merkle Tree Errors (MERK_xxx)
+  MERK_001: "Merkle tree construction failed"
+  MERK_002: "Invalid chunk hash"
+  MERK_003: "Merkle tree depth exceeded"
+  MERK_004: "Invalid merkle proof"
+  MERK_005: "Merkle root calculation failed"
+  
+  # Validation Errors (VAL_xxx)
+  VAL_001: "Session manifest invalid"
+  VAL_002: "Owner address invalid"
+  VAL_003: "Chunk count mismatch"
+  VAL_004: "Timestamp validation failed"
+  VAL_005: "Metadata validation failed"
+
+# Error Severity Levels
+severity:
+  critical:
+    - ANCH_002
+    - ANCH_008
+    - ST_001
+    - ST_002
+    - VER_001
+    - MERK_001
+  
+  error:
+    - ANCH_001
+    - ANCH_003
+    - ANCH_004
+    - ANCH_007
+    - ST_003
+    - VER_002
+    - VER_003
+    - MERK_002
+    - VAL_001
+    - VAL_002
+  
+  warning:
+    - ANCH_005
+    - ANCH_006
+    - ANCH_009
+    - ST_004
+    - VER_004
+    - VER_005
+    - MERK_003
+    - MERK_004
+    - MERK_005
+    - VAL_003
+    - VAL_004
+    - VAL_005
+

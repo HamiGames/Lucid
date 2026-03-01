@@ -1,0 +1,418 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LUCID TRON Staking Service API Schemas",
+  "description": "JSON schemas for staking service API request/response validation",
+  
+  "definitions": {
+    "tronAddress": {
+      "type": "string",
+      "pattern": "^T[1-9A-HJ-NP-Z]{33}$",
+      "description": "TRON address (starts with T, 34 characters total)"
+    },
+    
+    "txid": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Transaction ID (64 hex characters)"
+    },
+    
+    "trxAmount": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10000000,
+      "description": "Amount in TRX"
+    },
+    
+    "duration": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 365,
+      "description": "Duration in days"
+    },
+    
+    "stakingId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$",
+      "description": "Staking ID (32 hex characters)"
+    },
+    
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    
+    "resourceType": {
+      "type": "string",
+      "enum": ["bandwidth", "energy"],
+      "description": "TRON resource type"
+    },
+    
+    "stakingStatus": {
+      "type": "string",
+      "enum": ["active", "inactive", "pending", "expired", "cancelled"],
+      "description": "Staking status"
+    }
+  },
+  
+  "schemas": {
+    "StakingRequest": {
+      "type": "object",
+      "required": ["address", "amount", "duration", "resource"],
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/tronAddress",
+          "description": "Address to stake from"
+        },
+        "amount": {
+          "$ref": "#/definitions/trxAmount",
+          "description": "Amount to stake in TRX"
+        },
+        "duration": {
+          "$ref": "#/definitions/duration",
+          "description": "Staking duration in days"
+        },
+        "resource": {
+          "$ref": "#/definitions/resourceType",
+          "description": "Resource type to stake"
+        },
+        "private_key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Private key for signing (optional if default configured)"
+        }
+      }
+    },
+    
+    "StakingResponse": {
+      "type": "object",
+      "required": ["staking_id", "address", "amount", "status", "created_at"],
+      "properties": {
+        "staking_id": {
+          "$ref": "#/definitions/stakingId"
+        },
+        "address": {
+          "$ref": "#/definitions/tronAddress"
+        },
+        "amount": {
+          "$ref": "#/definitions/trxAmount"
+        },
+        "duration": {
+          "$ref": "#/definitions/duration"
+        },
+        "resource": {
+          "$ref": "#/definitions/resourceType"
+        },
+        "status": {
+          "$ref": "#/definitions/stakingStatus"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "expires_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "txid": {
+          "$ref": "#/definitions/txid"
+        }
+      }
+    },
+    
+    "UnstakingRequest": {
+      "type": "object",
+      "required": ["staking_id"],
+      "properties": {
+        "staking_id": {
+          "$ref": "#/definitions/stakingId"
+        },
+        "private_key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Private key for signing (optional if default configured)"
+        }
+      }
+    },
+    
+    "UnstakingResponse": {
+      "type": "object",
+      "required": ["staking_id", "address", "amount", "status", "txid"],
+      "properties": {
+        "staking_id": {
+          "$ref": "#/definitions/stakingId"
+        },
+        "address": {
+          "$ref": "#/definitions/tronAddress"
+        },
+        "amount": {
+          "$ref": "#/definitions/trxAmount"
+        },
+        "status": {
+          "$ref": "#/definitions/stakingStatus"
+        },
+        "txid": {
+          "$ref": "#/definitions/txid"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "VoteRequest": {
+      "type": "object",
+      "required": ["address", "witness_address", "vote_count"],
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/tronAddress",
+          "description": "Address to vote from"
+        },
+        "witness_address": {
+          "$ref": "#/definitions/tronAddress",
+          "description": "Witness address to vote for"
+        },
+        "vote_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "Number of votes"
+        },
+        "private_key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Private key for signing (optional if default configured)"
+        }
+      }
+    },
+    
+    "VoteResponse": {
+      "type": "object",
+      "required": ["vote_id", "address", "witness_address", "vote_count", "status", "txid"],
+      "properties": {
+        "vote_id": {
+          "$ref": "#/definitions/stakingId"
+        },
+        "address": {
+          "$ref": "#/definitions/tronAddress"
+        },
+        "witness_address": {
+          "$ref": "#/definitions/tronAddress"
+        },
+        "vote_count": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "completed", "failed"]
+        },
+        "txid": {
+          "$ref": "#/definitions/txid"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "DelegationRequest": {
+      "type": "object",
+      "required": ["address", "receiver_address", "amount", "resource"],
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/tronAddress",
+          "description": "Address to delegate from"
+        },
+        "receiver_address": {
+          "$ref": "#/definitions/tronAddress",
+          "description": "Address to delegate to"
+        },
+        "amount": {
+          "$ref": "#/definitions/trxAmount",
+          "description": "Amount to delegate in TRX"
+        },
+        "resource": {
+          "$ref": "#/definitions/resourceType",
+          "description": "Resource type to delegate"
+        },
+        "private_key": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Private key for signing (optional if default configured)"
+        }
+      }
+    },
+    
+    "DelegationResponse": {
+      "type": "object",
+      "required": ["delegation_id", "address", "receiver_address", "amount", "resource", "status", "txid"],
+      "properties": {
+        "delegation_id": {
+          "$ref": "#/definitions/stakingId"
+        },
+        "address": {
+          "$ref": "#/definitions/tronAddress"
+        },
+        "receiver_address": {
+          "$ref": "#/definitions/tronAddress"
+        },
+        "amount": {
+          "$ref": "#/definitions/trxAmount"
+        },
+        "resource": {
+          "$ref": "#/definitions/resourceType"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "completed", "failed"]
+        },
+        "txid": {
+          "$ref": "#/definitions/txid"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "StakingListResponse": {
+      "type": "object",
+      "required": ["stakings", "total_count", "total_amount", "timestamp"],
+      "properties": {
+        "stakings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/StakingResponse"
+          }
+        },
+        "total_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "StakingStatsResponse": {
+      "type": "object",
+      "required": ["total_staked", "total_delegated", "total_votes", "active_stakings", "active_delegations", "total_rewards", "timestamp"],
+      "properties": {
+        "total_staked": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total TRX staked"
+        },
+        "total_delegated": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total TRX delegated"
+        },
+        "total_votes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_stakings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_delegations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_rewards": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated total rewards"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "HealthCheckResponse": {
+      "type": "object",
+      "required": ["status", "timestamp"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy", "error", "alive", "ready", "not_ready"]
+        },
+        "service": {
+          "type": "string"
+        },
+        "service_initialized": {
+          "type": "boolean"
+        },
+        "staking": {
+          "type": "object",
+          "properties": {
+            "total_staking_records": {
+              "type": "integer"
+            },
+            "active_staking_records": {
+              "type": "integer"
+            },
+            "total_staked_trx": {
+              "type": "number"
+            },
+            "total_resource_records": {
+              "type": "integer"
+            }
+          }
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "ErrorResponse": {
+      "type": "object",
+      "required": ["error", "status"],
+      "properties": {
+        "error": {
+          "type": "string",
+          "description": "Error message"
+        },
+        "status": {
+          "type": "integer",
+          "description": "HTTP status code"
+        },
+        "error_code": {
+          "type": "string",
+          "pattern": "^S[0-9]{3}$",
+          "description": "Staking service error code"
+        },
+        "details": {
+          "type": "object",
+          "description": "Additional error details"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    
+    "PaginationParams": {
+      "type": "object",
+      "properties": {
+        "skip": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100
+        }
+      }
+    }
+  }
+}

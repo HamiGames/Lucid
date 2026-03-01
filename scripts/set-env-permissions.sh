@@ -1,0 +1,437 @@
+#!/bin/bash
+
+# =============================================================================
+# LUCID Environment File Permission Setting Script
+# =============================================================================
+# 
+# This script sets appropriate permissions for all .env files in the Lucid project
+# based on security requirements and file sensitivity.
+#
+# Permission Categories:
+# - Regular Environment Files (664): Standard env files for development, staging, production, test
+# - Secure Secret Files (600): Files containing secrets, passwords, or sensitive data
+#
+# Target Platform: Raspberry Pi (linux/arm64)
+# Base Path: /mnt/myssd/Lucid/Lucid/
+#
+# Error Handling:
+# - Missing files are handled gracefully (expected behavior)
+# - Script continues execution even if some files are not found
+# - Uses '|| true' to prevent script exit on missing files
+#
+# =============================================================================
+
+set -euo pipefail
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Script configuration
+SCRIPT_NAME="set-env-permissions.sh"
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SECRETS_DIR="/mnt/myssd/Lucid/Lucid/configs/secrets"
+
+# Permission settings
+REGULAR_PERMISSIONS="664"  # rw-rw-r--
+SECURE_PERMISSIONS="600"   # rw-------
+
+# Logging function
+log() {
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to set permissions for a file
+set_file_permissions() {
+    local file_path="$1"
+    local permissions="$2"
+    local file_type="$3"
+    
+    if [[ -f "$file_path" ]]; then
+        if chmod "$permissions" "$file_path" 2>/dev/null; then
+            log_success "Set $permissions permissions for $file_type: $file_path"
+            return 0
+        else
+            log_error "Failed to set permissions for: $file_path"
+            return 1
+        fi
+    else
+        log_warning "File not found: $file_path (this is expected for some files)"
+        return 0  # Return 0 for missing files since this is expected behavior
+    fi
+}
+
+# Function to set permissions for directory and all files within
+set_directory_permissions() {
+    local dir_path="$1"
+    local permissions="$2"
+    local file_type="$3"
+    
+    if [[ -d "$dir_path" ]]; then
+        # Set directory permissions
+        if chmod "$permissions" "$dir_path" 2>/dev/null; then
+            log_success "Set $permissions permissions for $file_type directory: $dir_path"
+        else
+            log_error "Failed to set directory permissions for: $dir_path"
+            return 1
+        fi
+        
+        # Set permissions for all files in directory
+        find "$dir_path" -type f -name "*.env*" -exec chmod "$permissions" {} \; 2>/dev/null || true
+        find "$dir_path" -type f -name "*.yml" -exec chmod "$permissions" {} \; 2>/dev/null || true
+        find "$dir_path" -type f -name "*.yaml" -exec chmod "$permissions" {} \; 2>/dev/null || true
+    else
+        log_warning "Directory not found: $dir_path (this is expected for some directories)"
+        return 0  # Return 0 for missing directories since this is expected behavior
+    fi
+}
+
+# Main execution function
+main() {
+    log "Starting LUCID Environment File Permission Setting"
+    log "Project Root: $PROJECT_ROOT"
+    log "Environment Directory: $ENV_DIR"
+    log "Secrets Directory: $SECRETS_DIR"
+    echo
+    
+    # Check if running on correct platform
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        log_error "Project root directory not found: $PROJECT_ROOT"
+        log_error "Please ensure you're running this script on the Raspberry Pi"
+        exit 1
+    fi
+    
+    # Change to project root directory
+    cd "$PROJECT_ROOT" || {
+        log_error "Failed to change to project root directory"
+        exit 1
+    }
+    
+    log "Setting permissions for Regular Environment Files (664)..."
+    echo "=========================================="
+    
+    # Regular Environment Files (664 permissions)
+    regular_files=(
+        # env.* files (without dot prefix)
+        "$ENV_DIR/env.development"
+        "$ENV_DIR/env.staging" 
+        "$ENV_DIR/env.production"
+        "$ENV_DIR/env.test"
+        "$ENV_DIR/env.coordination.yml"
+        "$ENV_DIR/env.foundation"
+        "$ENV_DIR/env.gui"
+        "$ENV_DIR/layer2.env"
+        "$ENV_DIR/layer2-simple.env"
+        # .env.* files (with dot prefix)
+        "$ENV_DIR/.env.application"
+        "$ENV_DIR/.env.master"
+        "$ENV_DIR/.env.core"
+        "$ENV_DIR/.env.distroless"
+        "$ENV_DIR/.env.foundation"
+        "$ENV_DIR/.env.gui"
+        "$ENV_DIR/.env.pi-build"
+        "$ENV_DIR/.env.support"
+        "$ENV_DIR/.env.api"
+        "$ENV_DIR/.env.user"
+        # API Gateway specific files
+        "$PROJECT_ROOT/03-api-gateway/api/.env.api"
+        "$PROJECT_ROOT/03-api-gateway/env.template"
+        # Auth service files
+        "$PROJECT_ROOT/auth/.env.authentication"
+        "$PROJECT_ROOT/auth/env.example"
+        # Blockchain API files
+        "$PROJECT_ROOT/blockchain/api/env.example"
+        # Build config files
+        "$PROJECT_ROOT/build/config/session-images.env"
+        # Compose files
+        "$PROJECT_ROOT/compose/.env.example"
+        # Docker config files
+        "$PROJECT_ROOT/configs/docker/distroless/distroless.env"
+        "$PROJECT_ROOT/configs/docker/distroless/production.env"
+        "$PROJECT_ROOT/configs/docker/docker.env"
+        "$PROJECT_ROOT/configs/docker/multi-stage/multi-stage.env"
+        # Electron GUI files
+        "$PROJECT_ROOT/electron-gui/.env.development"
+        "$PROJECT_ROOT/electron-gui/.env.production"
+        "$PROJECT_ROOT/electron-gui/configs/env.development.json"
+        "$PROJECT_ROOT/electron-gui/configs/env.production.json"
+        # Infrastructure files
+        "$PROJECT_ROOT/infrastructure/containers/base/env.template"
+        # Node files
+        "$PROJECT_ROOT/node/env.example"
+        # Payment systems files
+        "$PROJECT_ROOT/payment-systems/tron/env.example"
+        # Session management files
+        "$PROJECT_ROOT/sessions/core/.env.chunker"
+        "$PROJECT_ROOT/sessions/core/.env.merkle_builder"
+        "$PROJECT_ROOT/sessions/core/.env.orchestrator"
+        "$PROJECT_ROOT/sessions/encryption/.env.encryptor"
+    )
+    
+    for file in "${regular_files[@]}"; do
+        set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Regular Environment" || true
+    done
+    
+    # Set permissions for environment subdirectories
+   
+    echo
+    log "Setting permissions for Secure Secret Files (600)..."
+    echo "=========================================="
+    
+    # Secure Secret Files (600 permissions)
+    secure_files=(
+        "$ENV_DIR/.env.secure"
+        "$ENV_DIR/.env.secrets"
+        "$ENV_DIR/.env.tron-secrets"
+        "$SECRETS_DIR/.env.secrets"
+        "$SECRETS_DIR/.env.secure"
+        "$SECRETS_DIR/.env.tron-secrets"
+        # API Gateway secrets
+        "$PROJECT_ROOT/03-api-gateway/api/.env.api.secrets"
+        # Session secrets
+        "$PROJECT_ROOT/sessions/core/.env.sessions.secrets"
+    )
+    
+    for file in "${secure_files[@]}"; do
+        set_file_permissions "$file" "$SECURE_PERMISSIONS" "Secure Secret" || true
+    done
+    
+    # Find and set permissions for any files with "secrets" in the name
+    log "Searching for files with 'secrets' in the name..."
+    find "$PROJECT_ROOT" -type f -name "*secrets*" -path "*/configs/*" 2>/dev/null | while read -r file; do
+        if [[ -f "$file" ]]; then
+            set_file_permissions "$file" "$SECURE_PERMISSIONS" "Secret File"
+        fi
+    done
+    
+    # Set permissions for secrets directory
+    if [[ -d "$SECRETS_DIR" ]]; then
+        set_directory_permissions "$SECRETS_DIR" "$SECURE_PERMISSIONS" "Secrets Directory"
+    fi
+    
+    echo
+    log "Setting permissions for Service-Specific Environment Files..."
+    echo "=========================================="
+    
+    # Service-specific environment files (664 permissions)
+    service_files=(
+        "$ENV_DIR/.env.api-gateway"
+        "$ENV_DIR/.env.api-server"
+        "$ENV_DIR/.env.authentication"
+        "$ENV_DIR/.env.authentication-service-distroless"
+        "$PROJECT_ROOT/sessions/core/.env.orchestrator"
+        "$ENV_DIR/.env.chunker"
+        "$ENV_DIR/.env.merkle-builder"
+        "$ENV_DIR/.env.tor-proxy"
+        "$ENV_DIR/.env.tunnel-tools"
+        "$ENV_DIR/.env.server-tools"
+        "$ENV_DIR/.env.openapi-gateway"
+        "$ENV_DIR/.env.openapi-server"
+        "$ENV_DIR/.env.blockchain-api"
+        "$ENV_DIR/.env.blockchain-governance"
+        "$ENV_DIR/.env.tron-client"
+        "$ENV_DIR/.env.tron-payout-router"
+        "$ENV_DIR/.env.tron-wallet-manager"
+        "$ENV_DIR/.env.tron-usdt-manager"
+        "$ENV_DIR/.env.tron-staking"
+        "$ENV_DIR/.env.tron-payment-gateway"
+        # Admin interface files
+        "$PROJECT_ROOT/admin/env.example"
+        # Blockchain infrastructure files
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-api"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-governance"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-ledger"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-sessions-data"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.blockchain-vm"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.contract-compiler"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.contract-deployment"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.deployment-orchestrator"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.on-system-chain-client"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/.env.tron-node-client"
+        # Blockchain environment files (without dot prefix)
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-api.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-governance.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-ledger.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-sessions-data.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/blockchain-vm.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-compiler.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/contract-deployment.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/deployment-orchestrator.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/on-system-chain-client.env"
+        "$PROJECT_ROOT/infrastructure/docker/blockchain/env/tron-node-client.env"
+    )
+    
+    for file in "${service_files[@]}"; do
+        set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Service Environment" || true
+    done
+    
+    # Set permissions for infrastructure blockchain environment files
+    blockchain_env_dir="$PROJECT_ROOT/infrastructure/docker/blockchain/env"
+    if [[ -d "$blockchain_env_dir" ]]; then
+        blockchain_env_files=(
+            "$blockchain_env_dir/.env.blockchain-api"
+            "$blockchain_env_dir/.env.blockchain-governance"
+            "$blockchain_env_dir/.env.blockchain-ledger"
+            "$blockchain_env_dir/.env.blockchain-sessions-data"
+            "$blockchain_env_dir/.env.blockchain-vm"
+            "$blockchain_env_dir/.env.contract-compiler"
+            "$blockchain_env_dir/.env.contract-deployment"
+            "$blockchain_env_dir/.env.deployment-orchestrator"
+            "$blockchain_env_dir/.env.on-system-chain-client"
+            "$blockchain_env_dir/.env.tron-node-client"
+        )
+        for file in "${blockchain_env_files[@]}"; do
+            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Blockchain Environment" || true
+        done
+        log_success "Set permissions for blockchain environment files"
+    fi
+    
+    # Set permissions for infrastructure database environment files
+    database_env_dir="$PROJECT_ROOT/infrastructure/docker/databases/env"
+    if [[ -d "$database_env_dir" ]]; then
+        database_env_files=(
+            "$database_env_dir/.env.database-backup"
+            "$database_env_dir/.env.database-migration"
+            "$database_env_dir/.env.database-monitoring"
+            "$database_env_dir/.env.database-restore"
+            "$database_env_dir/.env.mongodb"
+            "$database_env_dir/.env.mongodb-init"
+            # Database environment files (without dot prefix)
+            "$database_env_dir/database-backup.env"
+            "$database_env_dir/database-migration.env"
+            "$database_env_dir/database-monitoring.env"
+            "$database_env_dir/database-restore.env"
+            "$database_env_dir/mongodb-init.env"
+            "$database_env_dir/mongodb.env"
+        )
+        for file in "${database_env_files[@]}"; do
+            set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Database Environment" || true
+        done
+        log_success "Set permissions for database environment files"
+    fi
+    
+    # Set permissions for API Gateway specific files
+    api_gateway_env_dir="$PROJECT_ROOT/03-api-gateway/api"
+    if [[ -d "$api_gateway_env_dir" ]]; then
+        find "$api_gateway_env_dir" -name "*.env*" -type f -exec chmod "$REGULAR_PERMISSIONS" {} \; 2>/dev/null || true
+        log_success "Set permissions for API Gateway environment files"
+    fi
+    
+    # Set permissions for session management files
+    sessions_env_dir="$PROJECT_ROOT/sessions/core"
+    if [[ -d "$sessions_env_dir" ]]; then
+        find "$sessions_env_dir" -name "*.env*" -type f -exec chmod "$REGULAR_PERMISSIONS" {} \; 2>/dev/null || true
+        log_success "Set permissions for session management environment files"
+    fi
+    
+    # Scan and set permissions for all remaining .env files in infrastructure directories
+    log "Scanning infrastructure directories for additional .env files..."
+    infrastructure_dirs=(
+        "$PROJECT_ROOT/infrastructure/docker"
+        "$PROJECT_ROOT/infrastructure/containers"
+        "$PROJECT_ROOT/sessions"
+        "$PROJECT_ROOT/RDP"
+        "$PROJECT_ROOT/blockchain"
+        "$PROJECT_ROOT/node"
+        "$PROJECT_ROOT/admin"
+        "$PROJECT_ROOT/payment-systems"
+        "$PROJECT_ROOT/03-api-gateway"
+        "$PROJECT_ROOT/auth"
+        "$PROJECT_ROOT/build"
+        "$PROJECT_ROOT/compose"
+        "$PROJECT_ROOT/configs"
+        "$PROJECT_ROOT/electron-gui"
+        "$PROJECT_ROOT/gui"
+        "$PROJECT_ROOT/infrastructure"
+        "$PROJECT_ROOT/ops"
+        "$PROJECT_ROOT/scripts"
+        "$PROJECT_ROOT/src"
+        "$PROJECT_ROOT/storage"
+        "$PROJECT_ROOT/tests"
+        "$PROJECT_ROOT/tools"
+        "$PROJECT_ROOT/user"
+        "$PROJECT_ROOT/user_content"
+        "$PROJECT_ROOT/vm"
+        "$PROJECT_ROOT/wallet"
+    )
+    
+    for infra_dir in "${infrastructure_dirs[@]}"; do
+        if [[ -d "$infra_dir" ]]; then
+            find "$infra_dir" -type f -name "*.env*" -not -path "*/.git/*" 2>/dev/null | while read -r file; do
+                # Skip if already in secure files list
+                is_secure=false
+                for secure_file in "${secure_files[@]}"; do
+                    if [[ "$file" == "$secure_file" ]]; then
+                        is_secure=true
+                        break
+                    fi
+                done
+                
+                if [[ "$is_secure" == "false" ]]; then
+                    set_file_permissions "$file" "$REGULAR_PERMISSIONS" "Infrastructure Environment"
+                fi
+            done
+        fi
+    done
+    
+    echo
+    log "Verifying permissions..."
+    echo "=========================================="
+    
+    # Verify regular environment files
+    log "Regular Environment Files (should be 664):"
+    for file in "${regular_files[@]}"; do
+        if [[ -f "$file" ]]; then
+            perms=$(stat -c "%a" "$file" 2>/dev/null || echo "N/A")
+            if [[ "$perms" == "664" ]]; then
+                log_success "$file: $perms ✓"
+            else
+                log_warning "$file: $perms (expected 664)"
+            fi
+        fi
+    done
+    
+    # Verify secure files
+    log "Secure Secret Files (should be 600):"
+    for file in "${secure_files[@]}"; do
+        if [[ -f "$file" ]]; then
+            perms=$(stat -c "%a" "$file" 2>/dev/null || echo "N/A")
+            if [[ "$perms" == "600" ]]; then
+                log_success "$file: $perms ✓"
+            else
+                log_warning "$file: $perms (expected 600)"
+            fi
+        fi
+    done
+    
+    echo
+    log_success "Environment file permission setting completed!"
+    log "Summary:"
+    log "- Regular environment files: 664 (rw-rw-r--)"
+    log "- Secure secret files: 600 (rw-------)"
+    log "- All files processed according to security requirements"
+    
+    echo
+    log "Script completed successfully!"
+}
+
+# Script entry point
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

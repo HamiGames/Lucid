@@ -1,0 +1,154 @@
+# Multi-Stage Runtime Configuration for Lucid Project
+# Runtime configuration for multi-stage containers in production
+
+version: '3.8'
+
+services:
+  # Multi-stage runtime environment
+  multi-stage-runtime:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BUILD_STAGE=runtime
+      - RUNTIME_MODE=production
+    networks:
+      - lucid-distroless-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+      - /var/tmp:noexec,nosuid,size=100m
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Multi-stage development runtime
+  dev-runtime:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - BUILD_STAGE=development
+      - RUNTIME_MODE=development
+    networks:
+      - lucid-distroless-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
+      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/cache:/app/cache:rw
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE  # For debugging
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["python", "-c", "import sys; print('dev runtime healthy'); sys.exit(0)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Multi-stage monitoring runtime
+  monitoring-runtime:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    environment:
+      - PYTHONPATH=/app
+      - MONITORING_MODE=true
+      - LOG_LEVEL=INFO
+      - BUILD_STAGE=runtime
+      - RUNTIME_MODE=monitoring
+    networks:
+      - lucid-distroless-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    user: "1000:1000"
+    working_dir: /app
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/myssd/Lucid/Lucid/monitoring-logs:/logs:ro
+    healthcheck:
+      test: ["python", "-c", "import sys; print('monitoring runtime healthy'); sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+networks:
+  lucid-distroless-production:
+    driver: bridge
+    name: lucid-distroless-production
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1
+
+volumes:
+  lucid-production-data:
+    name: lucid-multi-stage-production-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/myssd/Lucid/Lucid/data
+  monitoring-logs:
+    name: lucid-multi-stage-monitoring-logs

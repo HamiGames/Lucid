@@ -1,0 +1,100 @@
+# Elasticsearch Configuration for Lucid System
+# Aligned with essentials.md - Elasticsearch Service
+# Container: lucid-elasticsearch
+# Image: pickme/lucid-elasticsearch:latest-arm64
+# Network: lucid-pi-network (172.20.0.13)
+# Ports: 9200 (HTTP), 9300 (Transport)
+# Project Root: /mnt/myssd/Lucid/Lucid/
+
+# ======================== Elasticsearch Configuration =========================
+
+# ---------------------------------- Cluster -----------------------------------
+# Cluster name (aligned with essentials.md specifications)
+cluster.name: lucid-cluster
+
+# Node name (aligned with essentials.md: lucid-node)
+node.name: lucid-node
+
+# ----------------------------------- Paths ------------------------------------
+# Path to directory where to store the data
+# Volume mount: /mnt/myssd/Lucid/Lucid/data/elasticsearch -> /usr/share/elasticsearch/data
+path.data: /usr/share/elasticsearch/data
+
+# Path to log files
+# Volume mount: /mnt/myssd/Lucid/Lucid/logs/elasticsearch -> /usr/share/elasticsearch/logs
+path.logs: /usr/share/elasticsearch/logs
+
+# ----------------------------------- Memory -----------------------------------
+# Lock the memory on startup to prevent swapping (disabled for Pi)
+# Memory settings controlled via ES_JAVA_OPTS environment variable in docker-compose
+# ES_JAVA_OPTS is NOT a config setting - it must be set as an environment variable
+# Example: ES_JAVA_OPTS=-Xms256m -Xmx256m (set in docker-compose.foundation.yml)
+bootstrap.memory_lock: false
+
+# ---------------------------------- Network -----------------------------------
+# Bind to all interfaces for Docker network (aligned with essentials.md)
+network.host: 0.0.0.0
+
+# HTTP port (aligned with essentials.md: 9200)
+http.port: 9200
+
+# Transport port for node-to-node communication (aligned with essentials.md: 9300)
+transport.port: 9300
+
+# --------------------------------- Discovery ----------------------------------
+# Single-node discovery for Raspberry Pi deployment
+# Aligned with docker-compose.foundation.yml configuration
+discovery.type: single-node
+
+# For future cluster mode (when multiple nodes are deployed):
+# discovery.seed_hosts: ["lucid-elasticsearch:9300"]
+# cluster.initial_master_nodes: ["lucid-node"]
+
+# ---------------------------------- Gateway -----------------------------------
+# Block initial recovery after a full cluster restart until N nodes are started
+gateway.recover_after_nodes: 1
+
+# ---------------------------------- Security ----------------------------------
+# Disable X-Pack security for development (aligned with docker-compose.foundation.yml)
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
+
+# Disable other X-Pack features for resource efficiency on Pi
+xpack.monitoring.enabled: false
+xpack.watcher.enabled: false
+xpack.ml.enabled: false
+
+# For production with security enabled (future enhancement):
+# xpack.security.enabled: true
+# xpack.security.enrollment.enabled: true
+# xpack.security.http.ssl.enabled: true
+# xpack.security.transport.ssl.enabled: true
+
+# ---------------------------------- Indexing ----------------------------------
+# Index buffer size (optimized for Pi with limited memory)
+indices.memory.index_buffer_size: 20%
+
+# Query cache size
+indices.queries.cache.size: 10%
+
+# ---------------------------------- Thread Pools ------------------------------
+# Write thread pool queue size
+thread_pool.write.queue_size: 1000
+
+# Search thread pool queue size
+thread_pool.search.queue_size: 1000
+
+# Bulk thread pool queue size
+thread_pool.bulk.queue_size: 1000
+
+# ---------------------------------- End of Configuration ----------------------
+
+# Note: This configuration is optimized for:
+# - Container: lucid-elasticsearch
+# - Platform: linux/arm64 (Raspberry Pi)
+# - Network: lucid-pi-network (172.20.0.13)
+# - Memory: Controlled via ES_JAVA_OPTS environment variable (set in docker-compose)
+# - Environment: ELASTICSEARCH_URI=http://lucid-elasticsearch:9200
+# - Health Check: http://localhost:9200/_cluster/health

@@ -1,0 +1,273 @@
+# LUCID TRON USDT Manager Configuration
+# USDT token management, staking, swapping, and bridge operations
+
+service:
+  name: lucid-tron-usdt-manager
+  version: 1.0.0
+  description: TRON USDT token manager and operations service
+  type: token-manager
+
+token:
+  # USDT Contract Configuration
+  symbol: USDT
+  name: Tether USD
+  decimals: 6
+  contract_address: TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+  
+  total_supply: 40000000000
+  circulating_supply: 39500000000
+  
+  # Supported Networks
+  networks:
+    - tron
+    - ethereum
+    - polygon
+    - binance
+    - solana
+
+operations:
+  # Transfer Configuration
+  transfers:
+    enabled: true
+    fee_percent: 0.1
+    min_amount: 1
+    max_amount: 1000000000
+    confirmation_time_seconds: 30
+  
+  # Staking Configuration
+  staking:
+    enabled: true
+    min_amount: 100
+    max_amount: 1000000000
+    min_duration_days: 1
+    max_duration_days: 365
+    
+    # APY Tiers
+    apy:
+      base: 8.5
+      tiers:
+        tier1:
+          min_amount: 100
+          max_amount: 999
+          bonus: 0
+        tier2:
+          min_amount: 1000
+          max_amount: 9999
+          bonus: 0.5
+        tier3:
+          min_amount: 10000
+          max_amount: 99999
+          bonus: 1.0
+        tier4:
+          min_amount: 100000
+          bonus: 1.5
+    
+    # Auto-renewal
+    auto_renew_enabled: true
+    auto_renew_retention_percent: 100
+  
+  # Token Swaps
+  swaps:
+    enabled: true
+    fee_percent: 0.3
+    slippage_default_percent: 0.5
+    max_slippage_percent: 5.0
+    
+    # Supported Swap Pairs
+    pairs:
+      - from: USDT
+        to: TRX
+        exchange_rate: 0.08
+      - from: TRX
+        to: USDT
+        exchange_rate: 12.5
+      - from: USDT
+        to: USDC
+        exchange_rate: 1.0
+  
+  # Bridge Operations
+  bridge:
+    enabled: true
+    fee_percent: 0.5
+    
+    # Chain-Specific Configuration
+    chains:
+      ethereum:
+        enabled: true
+        confirmation_time_minutes: 15
+        min_amount: 100
+      polygon:
+        enabled: true
+        confirmation_time_minutes: 10
+        min_amount: 50
+      binance:
+        enabled: true
+        confirmation_time_minutes: 5
+        min_amount: 100
+      solana:
+        enabled: true
+        confirmation_time_minutes: 5
+        min_amount: 100
+
+transaction_limits:
+  # Per-transaction Limits
+  single_transaction_max: 1000000000
+  daily_transaction_limit: 100000000000
+  monthly_transaction_limit: 1000000000000
+  
+  # Rate Limiting
+  transactions_per_minute: 1000
+  concurrent_transactions: 100
+
+compliance:
+  # Compliance Configuration
+  kyc_required: false
+  aml_check_enabled: true
+  suspicious_activity_threshold: 1000000
+  
+  # Address Validation
+  validate_addresses: true
+  blacklist_check: true
+
+monitoring:
+  # Monitoring Configuration
+  metrics_enabled: true
+  metrics_interval_seconds: 60
+  
+  # Metrics to Collect
+  metrics:
+    - total_transfers
+    - total_transfer_volume
+    - total_stakes
+    - total_staked_amount
+    - total_rewards_distributed
+    - total_swaps
+    - total_swap_volume
+    - average_confirmation_time
+    - network_status
+  
+  # Alerts
+  alerts:
+    - name: high_volume_transfer
+      threshold: 10000000
+      action: notify
+    - name: suspicious_activity
+      threshold: 1000000
+      action: review
+    - name: network_failure
+      action: alert
+
+health_check:
+  # Health Check Configuration
+  enabled: true
+  interval_seconds: 30
+  timeout_seconds: 10
+  
+  # Health Checks
+  checks:
+    - contract_availability
+    - network_connectivity
+    - database_connectivity
+    - cache_availability
+
+api:
+  # API Configuration
+  base_url: /api/v1/usdt
+  
+  # API Endpoints
+  endpoints:
+    - path: /transfer
+      method: POST
+      description: Transfer USDT
+    
+    - path: /balance
+      method: POST
+      description: Check balance
+    
+    - path: /stake
+      method: POST
+      description: Stake USDT
+    
+    - path: /swap
+      method: POST
+      description: Swap tokens
+    
+    - path: /history
+      method: GET
+      description: Get transaction history
+    
+    - path: /holdings
+      method: GET
+      description: Get holdings summary
+    
+    - path: /bridge
+      method: POST
+      description: Bridge USDT
+    
+    - path: /contract-info
+      method: GET
+      description: Get contract info
+
+security:
+  # Security Configuration
+  rate_limiting_enabled: true
+  api_key_required: false
+  ip_whitelist_enabled: false
+  
+  # Transaction Validation
+  validate_amounts: true
+  validate_addresses: true
+  prevent_zero_transfers: true
+  prevent_self_transfers: true
+
+database:
+  # Database Configuration
+  enabled: false
+  type: mongodb
+  
+  collections:
+    - name: transfers
+      ttl_hours: 90
+    - name: stakes
+      ttl_hours: 730  # 30 days after expiration
+    - name: swaps
+      ttl_hours: 90
+    - name: bridges
+      ttl_hours: 90
+
+logging:
+  # Logging Configuration
+  level: INFO
+  format: json
+  
+  # Log Events
+  log_transfers: true
+  log_stakes: true
+  log_swaps: true
+  log_bridges: true
+  log_errors: true
+  
+  # Audit Logging
+  audit_enabled: true
+  audit_log_path: /app/logs/usdt-manager-audit.log
+
+caching:
+  # Cache Configuration
+  enabled: true
+  backend: memory
+  ttl_seconds: 300
+  
+  # Cached Items
+  cache:
+    - exchange_rates
+    - balances
+    - contract_info
+    - network_status
+
+deployment:
+  # Deployment Configuration
+  environment: production
+  platform: arm64
+  service_port: 8094
+  service_host: 0.0.0.0
+  workers: 4

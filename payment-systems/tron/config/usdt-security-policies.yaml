@@ -1,0 +1,361 @@
+# Lucid TRON USDT Manager - Security Policies Configuration
+# File: payment-systems/tron/config/usdt-security-policies.yaml
+# Purpose: Define security, compliance, and operational policies for USDT manager
+
+# Global Security Policies
+security_policies:
+  # RBAC - Role-Based Access Control
+  rbac:
+    enabled: true
+    roles:
+      admin:
+        description: "Full administrative access"
+        permissions:
+          - "register_token"
+          - "list_tokens"
+          - "get_token_info"
+          - "get_token_balance"
+          - "transfer_token"
+          - "approve_token"
+          - "manage_policies"
+          - "view_audit_logs"
+          - "override_limits"
+      
+      operator:
+        description: "Operational access for routine transactions"
+        permissions:
+          - "list_tokens"
+          - "get_token_info"
+          - "get_token_balance"
+          - "transfer_token"
+          - "approve_token"
+          - "view_audit_logs"
+      
+      viewer:
+        description: "Read-only access"
+        permissions:
+          - "list_tokens"
+          - "get_token_info"
+          - "get_token_balance"
+          - "view_audit_logs"
+
+  # JWT Token Security
+  jwt:
+    enabled: true
+    algorithm: "HS256"
+    expiration_seconds: 3600
+    refresh_expiration_seconds: 86400
+    issuer: "lucid-tron-usdt-manager"
+    audience: "lucid-platform"
+    validate_signature: true
+    validate_expiration: true
+    validate_issuer: true
+
+  # Encryption Standards
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_derivation: "PBKDF2"
+    key_rotation_days: 90
+    sensitive_fields:
+      - "private_key"
+      - "mnemonic"
+      - "seed_phrase"
+    enforce_tls: true
+    tls_version: "1.3"
+
+  # API Security Headers
+  security_headers:
+    enabled: true
+    headers:
+      X-Content-Type-Options: "nosniff"
+      X-Frame-Options: "DENY"
+      X-XSS-Protection: "1; mode=block"
+      Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+      Content-Security-Policy: "default-src 'self'"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+
+# Approval Workflows
+approval_workflows:
+  default:
+    name: "Default Approval"
+    description: "Default approval workflow for routine transfers"
+    threshold: 1000.0
+    required_approvers: 1
+    timeout_minutes: 30
+    auto_approve: false
+  
+  high_value:
+    name: "High-Value Transfer Approval"
+    description: "Multi-approval workflow for high-value transfers"
+    threshold: 10000.0
+    required_approvers: 2
+    timeout_minutes: 60
+    auto_approve: false
+    notifications:
+      - "email"
+      - "slack"
+      - "sms"
+  
+  batch_transfer:
+    name: "Batch Transfer Approval"
+    description: "Approval workflow for batch operations"
+    threshold: 5000.0
+    required_approvers: 2
+    timeout_minutes: 120
+    auto_approve: false
+  
+  emergency:
+    name: "Emergency Approval"
+    description: "Fast-track approval for emergency situations"
+    threshold: 50000.0
+    required_approvers: 1
+    timeout_minutes: 5
+    auto_approve: false
+    escalation_enabled: true
+
+# AML/KYC Policies
+compliance:
+  aml_kyc:
+    enabled: true
+    verification_level: 3
+    verification_steps:
+      - "identity_verification"
+      - "address_verification"
+      - "source_of_funds_verification"
+    
+    triggers:
+      - name: "high_transaction_value"
+        threshold: 100000.0
+        action: "require_verification"
+      
+      - name: "frequent_transactions"
+        count: 10
+        period_minutes: 60
+        action: "require_review"
+      
+      - name: "suspicious_pattern"
+        patterns:
+          - "rapid_transfers"
+          - "round_amounts"
+          - "layering_detection"
+        action: "block_transaction"
+      
+      - name: "high_risk_address"
+        lists:
+          - "ofac_sdn"
+          - "fatf_grey"
+        action: "block_transaction"
+  
+  # Transaction Monitoring
+  transaction_monitoring:
+    enabled: true
+    alert_levels:
+      - level: "low"
+        threshold: 10000.0
+        action: "log"
+      
+      - level: "medium"
+        threshold: 50000.0
+        action: "log_and_review"
+      
+      - level: "high"
+        threshold: 100000.0
+        action: "review_and_approve"
+      
+      - level: "critical"
+        threshold: 500000.0
+        action: "escalate"
+    
+    monitoring_rules:
+      - "daily_limit_check"
+      - "monthly_limit_check"
+      - "pattern_analysis"
+      - "velocity_check"
+
+# Transaction Limits
+transaction_limits:
+  # Single Transaction Limits
+  single_transaction:
+    min_amount: 0.01
+    max_amount: 100000.0
+    precision_decimals: 6
+  
+  # Daily Limits per Address
+  daily_per_address:
+    max_amount: 500000.0
+    max_count: 100
+  
+  # Monthly Limits per Address
+  monthly_per_address:
+    max_amount: 5000000.0
+    max_count: 1000
+  
+  # Network-wide Limits
+  network_wide:
+    max_concurrent_transfers: 50
+    max_daily_volume: 10000000.0
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  rules:
+    - endpoint: "/api/v1/tron/usdt/transfer"
+      requests_per_minute: 10
+      requests_per_hour: 100
+      requests_per_day: 1000
+    
+    - endpoint: "/api/v1/tron/usdt/balance/{address}"
+      requests_per_minute: 60
+      requests_per_hour: 1000
+      requests_per_day: 10000
+    
+    - endpoint: "/api/v1/tron/usdt/transactions/{address}"
+      requests_per_minute: 30
+      requests_per_hour: 500
+      requests_per_day: 5000
+    
+    - endpoint: "default"
+      requests_per_minute: 100
+      requests_per_hour: 1000
+      requests_per_day: 10000
+
+# IP Whitelisting
+ip_security:
+  enabled: false
+  whitelist_mode: false
+  allowed_ips:
+    - "172.20.0.0/24"
+    - "192.168.0.0/16"
+  blocked_ips: []
+
+# Audit Logging
+audit:
+  enabled: true
+  log_level: "detailed"
+  retention_days: 365
+  events_to_log:
+    - "token_registration"
+    - "balance_query"
+    - "transfer_initiated"
+    - "transfer_completed"
+    - "approval_granted"
+    - "policy_violation"
+    - "security_alert"
+    - "authentication_attempt"
+    - "authorization_check"
+    - "error_occurrence"
+  
+  sensitive_data_masking: true
+  mask_patterns:
+    - "private_key"
+    - "mnemonic"
+    - "seed_phrase"
+
+# Incident Response
+incident_response:
+  enabled: true
+  procedures:
+    high_value_transfer_failure:
+      severity: "high"
+      actions:
+        - "log_incident"
+        - "alert_operators"
+        - "retry_with_backoff"
+        - "escalate_if_persistent"
+    
+    suspicious_activity:
+      severity: "critical"
+      actions:
+        - "block_transaction"
+        - "alert_security_team"
+        - "initiate_investigation"
+        - "freeze_account_if_needed"
+    
+    security_breach:
+      severity: "critical"
+      actions:
+        - "immediate_shutdown"
+        - "alert_all_operators"
+        - "preserve_evidence"
+        - "initiate_forensics"
+
+# Maintenance & Operations
+operations:
+  # Backup & Recovery
+  backup:
+    enabled: true
+    frequency: "daily"
+    retention_days: 30
+    backup_location: "/backup/usdt-manager"
+    encryption: true
+  
+  # Health Monitoring
+  health_monitoring:
+    enabled: true
+    check_interval_seconds: 30
+    alert_on_failure: true
+    auto_recovery_enabled: true
+  
+  # Performance Optimization
+  performance:
+    cache_enabled: true
+    cache_ttl_seconds: 300
+    connection_pooling: true
+    pool_size: 10
+    query_optimization: true
+
+# Notification Policies
+notifications:
+  enabled: true
+  channels:
+    - name: "email"
+      enabled: true
+      recipients:
+        - "ops@lucid.local"
+        - "security@lucid.local"
+    
+    - name: "slack"
+      enabled: true
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#usdt-manager-alerts"
+    
+    - name: "sms"
+      enabled: false
+      recipients: []
+  
+  alert_thresholds:
+    - event: "high_value_transfer"
+      threshold: 50000.0
+      notify: true
+    
+    - event: "failed_transfer"
+      threshold: 1
+      notify: true
+    
+    - event: "rate_limit_exceeded"
+      threshold: 5
+      notify: true
+    
+    - event: "database_error"
+      threshold: 1
+      notify: true
+
+# Compliance Requirements
+compliance_requirements:
+  regulatory_frameworks:
+    - "FATF-AML"
+    - "KYC"
+    - "OFAC"
+  
+  documentation_required:
+    - "audit_logs"
+    - "kyc_records"
+    - "transaction_records"
+    - "policy_violations"
+  
+  reporting:
+    enabled: true
+    frequency: "daily"
+    recipients:
+      - "compliance@lucid.local"

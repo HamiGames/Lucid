@@ -1,0 +1,203 @@
+# Lucid Block Manager - Block Storage Policies Configuration
+# Optional YAML configuration for block storage and retrieval
+# File: blockchain/config/block-storage-policies.yaml
+# Purpose: Define block storage policies, retention rules, and retrieval strategies
+
+# Global Storage Configuration
+global:
+  storage_backend: "mongodb"  # Options: mongodb, filesystem, s3, ipfs
+  compression_enabled: true
+  encryption_enabled: false
+  replication_enabled: true
+  backup_enabled: true
+
+# Block Storage Policies
+storage_policies:
+  # Full Block Storage
+  full_blocks:
+    enabled: true
+    store_complete_blocks: true
+    store_transactions: true
+    store_receipts: true
+    store_state_snapshots: false
+    compression_algorithm: "gzip"  # Options: gzip, lz4, zstd, none
+
+  # Block Header Storage
+  block_headers:
+    enabled: true
+    store_separately: true
+    index_fields:
+      - "block_number"
+      - "block_hash"
+      - "parent_hash"
+      - "timestamp"
+      - "miner_address"
+
+  # Transaction Storage
+  transactions:
+    enabled: true
+    store_in_blocks: true
+    store_separately: true
+    index_fields:
+      - "transaction_hash"
+      - "from_address"
+      - "to_address"
+      - "block_number"
+      - "timestamp"
+
+  # State Storage
+  state:
+    enabled: true
+    store_account_states: true
+    store_contract_states: true
+    snapshot_interval_blocks: 1000
+    snapshot_retention_count: 10
+
+# Retention Policies
+retention:
+  # Block Retention
+  blocks:
+    retention_strategy: "time_based"  # Options: time_based, count_based, size_based
+    retention_days: 365
+    retention_blocks: -1  # Unlimited if time_based
+    archive_after_days: 90
+    delete_after_days: -1  # Never delete
+
+  # Transaction Retention
+  transactions:
+    retention_days: 365
+    archive_after_days: 90
+    delete_after_days: -1
+
+  # State Retention
+  state:
+    retention_days: 180
+    archive_after_days: 30
+    delete_after_days: -1
+
+  # Archive Storage
+  archive:
+    enabled: true
+    archive_backend: "s3"  # Options: s3, filesystem, ipfs
+    archive_compression: true
+    archive_encryption: true
+
+# Indexing Configuration
+indexing:
+  enabled: true
+  indexes:
+    # Block Indexes
+    - collection: "blocks"
+      fields: ["block_number"]
+      unique: true
+    - collection: "blocks"
+      fields: ["block_hash"]
+      unique: true
+    - collection: "blocks"
+      fields: ["parent_hash"]
+    - collection: "blocks"
+      fields: ["timestamp"]
+    
+    # Transaction Indexes
+    - collection: "transactions"
+      fields: ["transaction_hash"]
+      unique: true
+    - collection: "transactions"
+      fields: ["from_address", "block_number"]
+    - collection: "transactions"
+      fields: ["to_address", "block_number"]
+    - collection: "transactions"
+      fields: ["block_number"]
+
+# Retrieval Strategies
+retrieval:
+  # Caching Strategy
+  caching:
+    enabled: true
+    cache_recent_blocks: true
+    cache_block_count: 100
+    cache_ttl_seconds: 3600
+    cache_backend: "redis"
+
+  # Query Optimization
+  query_optimization:
+    enabled: true
+    use_indexes: true
+    batch_queries: true
+    max_query_time_seconds: 30
+
+  # Pagination
+  pagination:
+    default_page_size: 100
+    max_page_size: 1000
+    cursor_based: true
+
+# Synchronization Configuration
+synchronization:
+  enabled: true
+  sync_interval_seconds: 60
+  sync_strategy: "full"  # Options: full, incremental, on_demand
+  verify_on_sync: true
+  max_sync_retries: 3
+
+# Backup Configuration
+backup:
+  enabled: true
+  backup_interval_hours: 24
+  backup_retention_days: 30
+  backup_compression: true
+  backup_encryption: true
+  backup_location: "/backups/blocks"
+  incremental_backup: true
+
+# Performance Optimization
+performance:
+  # Batch Operations
+  batching:
+    enabled: true
+    batch_size: 1000
+    batch_timeout_seconds: 5
+
+  # Connection Pooling
+  connection_pool:
+    enabled: true
+    pool_size: 20
+    max_overflow: 10
+    pool_timeout_seconds: 30
+
+  # Read/Write Optimization
+  optimization:
+    read_preference: "primary"  # Options: primary, secondary, nearest
+    write_concern: "majority"
+    read_concern: "majority"
+
+# Monitoring and Metrics
+monitoring:
+  enabled: true
+  metrics:
+    - "storage_size_bytes"
+    - "block_count"
+    - "transaction_count"
+    - "retrieval_latency"
+    - "storage_operations_per_second"
+    - "cache_hit_rate"
+    - "backup_success_rate"
+
+  alerts:
+    storage_size_threshold_gb: 1000
+    retrieval_latency_threshold_ms: 1000
+    backup_failure_threshold: 3
+
+# Error Handling
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    verify_integrity_on_recovery: true
+

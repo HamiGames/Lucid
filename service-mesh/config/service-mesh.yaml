@@ -1,0 +1,125 @@
+# Lucid Service Mesh Controller - Main Configuration
+# File: service-mesh/config/service-mesh.yaml
+# Purpose: Primary configuration for service mesh controller
+# All values reference environment variables from .env.* files
+
+service_mesh:
+  name: ${SERVICE_MESH_NAME:-lucid-service-mesh}
+  version: ${SERVICE_MESH_VERSION:-1.0.0}
+  namespace: ${LUCID_NAMESPACE:-lucid}
+  
+  # Controller settings
+  controller:
+    host: ${SERVICE_MESH_HOST:-0.0.0.0}
+    http_port: ${HTTP_PORT:-8088}
+    consul_port: ${SERVICE_MESH_PORT:-8500}
+    log_level: ${LOG_LEVEL:-INFO}
+    debug: ${DEBUG:-false}
+    
+  # Service discovery configuration
+  discovery:
+    backend: ${DISCOVERY_BACKEND:-consul}
+    consul:
+      host: ${CONSUL_HOST:-localhost}
+      port: ${CONSUL_PORT:-8500}
+      datacenter: ${CONSUL_DATACENTER:-lucid-dc}
+      bootstrap_expect: ${CONSUL_BOOTSTRAP_EXPECT:-1}
+      ui_enabled: ${CONSUL_UI_ENABLED:-true}
+      connect_enabled: ${CONSUL_CONNECT_ENABLED:-true}
+    service_ttl: ${SERVICE_TTL:-60}
+    health_check_interval: ${HEALTH_CHECK_INTERVAL:-30}
+    deregister_critical_after: ${DEREGISTER_CRITICAL_AFTER:-90s}
+    
+  # Sidecar proxy configuration
+  sidecar:
+    envoy:
+      admin_port: ${ENVOY_ADMIN_PORT:-9901}
+      proxy_port: ${ENVOY_PROXY_PORT:-15001}
+      config_path: ${ENVOY_CONFIG_PATH:-/app/envoy-configs}
+      log_level: ${ENVOY_LOG_LEVEL:-info}
+      
+  # mTLS security configuration
+  security:
+    mtls:
+      enabled: ${MTLS_ENABLED:-true}
+      cert_validity_days: ${CERT_VALIDITY_DAYS:-90}
+      ca_validity_days: ${CA_VALIDITY_DAYS:-365}
+      key_size: ${CERT_KEY_SIZE:-2048}
+      auto_rotate: ${CERT_AUTO_ROTATE:-true}
+      rotation_threshold_days: ${CERT_ROTATION_THRESHOLD:-30}
+    certificates:
+      path: ${CERTIFICATES_PATH:-/app/certificates}
+      country: ${CERT_COUNTRY:-US}
+      state: ${CERT_STATE:-California}
+      locality: ${CERT_LOCALITY:-San Francisco}
+      organization: ${CERT_ORGANIZATION:-Lucid}
+      
+  # Networking configuration
+  networking:
+    default_timeout: ${DEFAULT_TIMEOUT:-30}
+    retry_attempts: ${RETRY_ATTEMPTS:-3}
+    retry_delay: ${RETRY_DELAY:-1}
+    circuit_breaker:
+      enabled: ${CIRCUIT_BREAKER_ENABLED:-true}
+      failure_threshold: ${CIRCUIT_BREAKER_FAILURE_THRESHOLD:-5}
+      recovery_timeout: ${CIRCUIT_BREAKER_RECOVERY_TIMEOUT:-30}
+      half_open_requests: ${CIRCUIT_BREAKER_HALF_OPEN_REQUESTS:-3}
+    load_balancing:
+      policy: ${LOAD_BALANCING_POLICY:-ROUND_ROBIN}
+      health_check_interval: ${LB_HEALTH_CHECK_INTERVAL:-10}
+      
+  # Logging configuration
+  logging:
+    level: ${LOG_LEVEL:-INFO}
+    format: ${LOG_FORMAT:-json}
+    output: ${LOG_OUTPUT:-stdout}
+    file_path: ${LOG_FILE_PATH:-/app/logs/service-mesh.log}
+    max_size_mb: ${LOG_MAX_SIZE_MB:-100}
+    max_backups: ${LOG_MAX_BACKUPS:-5}
+    
+  # Metrics configuration
+  metrics:
+    enabled: ${METRICS_ENABLED:-true}
+    port: ${METRICS_PORT:-9090}
+    path: ${METRICS_PATH:-/metrics}
+    labels:
+      service: ${SERVICE_NAME:-service-mesh-controller}
+      cluster: ${LUCID_CLUSTER:-core}
+      platform: ${LUCID_PLATFORM:-arm64}
+
+# Cluster definitions for service grouping
+clusters:
+  foundation:
+    description: ${FOUNDATION_CLUSTER_DESC:-Foundation infrastructure services}
+    health_check_interval: ${FOUNDATION_HEALTH_CHECK_INTERVAL:-30}
+    
+  core:
+    description: ${CORE_CLUSTER_DESC:-Core application services}
+    health_check_interval: ${CORE_HEALTH_CHECK_INTERVAL:-30}
+    
+  application:
+    description: ${APPLICATION_CLUSTER_DESC:-Application layer services}
+    health_check_interval: ${APPLICATION_HEALTH_CHECK_INTERVAL:-30}
+    
+  support:
+    description: ${SUPPORT_CLUSTER_DESC:-Support and monitoring services}
+    health_check_interval: ${SUPPORT_HEALTH_CHECK_INTERVAL:-60}
+
+# Default policies
+default_policies:
+  retry:
+    max_attempts: ${RETRY_MAX_ATTEMPTS:-3}
+    backoff_multiplier: ${RETRY_BACKOFF_MULTIPLIER:-2}
+    initial_delay_ms: ${RETRY_INITIAL_DELAY_MS:-100}
+    max_delay_ms: ${RETRY_MAX_DELAY_MS:-10000}
+    
+  timeout:
+    connect_timeout_ms: ${CONNECT_TIMEOUT_MS:-5000}
+    request_timeout_ms: ${REQUEST_TIMEOUT_MS:-30000}
+    idle_timeout_ms: ${IDLE_TIMEOUT_MS:-300000}
+    
+  circuit_breaker:
+    consecutive_failures: ${CB_CONSECUTIVE_FAILURES:-5}
+    interval_seconds: ${CB_INTERVAL_SECONDS:-10}
+    base_ejection_time_seconds: ${CB_BASE_EJECTION_TIME:-30}
+    max_ejection_percent: ${CB_MAX_EJECTION_PERCENT:-50}

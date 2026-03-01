@@ -1,0 +1,46 @@
+# Authentication System Requirements for Lucid RDP
+# Install with: pip install -r requirements.txt
+
+# Core Authentication & JWT
+PyJWT>=2.8.0
+cryptography>=41.0.0
+base58>=2.1.1
+
+# FastAPI & HTTP (starlette is auto-installed with fastapi)
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+python-multipart>=0.0.6
+requests>=2.31.0
+httpx>=0.25.0
+
+# Database
+motor>=3.3.0
+pymongo>=4.5.0
+redis[asyncio]>=5.0.0  # FIXED: Added asyncio support for async redis operations
+async-timeout>=4.0.0
+
+# TRON Integration
+tronpy>=0.4.0
+pycryptodome>=3.19.0
+web3>=6.0.0  # ADDED: For TRON signature verification
+eth-account>=0.10.0  # ADDED: For message encoding
+
+# Utilities
+python-dateutil>=2.8.2
+pydantic>=2.4.0
+pydantic-settings>=2.0.0
+typing-extensions>=4.8.0
+
+# Logging & Monitoring
+structlog>=23.2.0
+prometheus-client>=0.19.0
+
+# Hardware Wallet SDKs (optional - install as needed)
+# ledgerblue>=0.1.48        # For Ledger hardware wallets
+# trezor>=0.13.8            # For Trezor hardware wallets 
+# keepkey>=6.5.0            # For KeepKey hardware wallets
+
+# Development & Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0

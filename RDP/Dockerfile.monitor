@@ -1,0 +1,210 @@
+# syntax=docker/dockerfile:1.5
+
+# LUCID RDP MONITOR - Distroless Container
+# Aligned with dockerfile-design.md, Dockerfile-copy-pattern.md, block-manager-design.md
+# RDP Resource Monitor (lucid-rdp-monitor) - Port 8093
+# Image: pickme/lucid-rdp-monitor:latest-arm64
+# Build Context: . (project root)
+# Deployment: Pi console at /mnt/myssd/Lucid/Lucid/
+
+# =============================================================================
+# BUILD ARGUMENTS
+# =============================================================================
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /build
+
+# Ensures /var/run and /var/lib exist with real content (COPY won't be silent)
+RUN echo "LUCID_RDP_MONITOR_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_RDP_MONITOR_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel
+
+COPY RDP/requirements.monitor.txt ./requirements.txt
+
+RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    mkdir -p /root/.local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+
+# Marker files (per Dockerfile-copy-pattern.md)
+RUN echo "LUCID_RDP_MONITOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "LUCID_RDP_MONITOR_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+    chown -R 65532:65532 /root/.local
+
+# Builder-stage verification (per Dockerfile-copy-pattern.md)
+# Verify packages are installed and verify directory structure
+RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, async_timeout, httpx, psutil, prometheus_client, aiofiles; print('✅ critical packages installed')" && \
+    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+    test -d /root/.local/lib/python3.11/site-packages && \
+    echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
+    ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
+    echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
+    test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
+    echo "✅ uvicorn directory verified in builder" && \
+    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    echo "✅ Marker file verified in builder (non-empty)"
+
+# Application source COPY
+COPY RDP/resource-monitor/ ./resource_monitor/
+COPY RDP/recorder/ ./recorder/
+COPY RDP/common/ ./common/
+COPY RDP/__init__.py ./__init__.py
+
+# Copy monitor-config.yaml from RDP/config/ and rename to config.yaml
+# This replaces the config.yaml in resource-monitor/ with the one from RDP/config/
+COPY RDP/config/monitor-config.yaml ./resource_monitor/config.yaml
+
+############################
+# Stage 2 – Runtime
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid RDP Monitor" \
+      org.opencontainers.image.description="Distroless RDP resource monitoring service for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="rdp-monitor" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="application" \
+      com.lucid.security="distroless"
+
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    RDP_MONITOR_PORT=8093 \
+    RDP_MONITOR_HOST=0.0.0.0
+
+WORKDIR /app
+
+# System directories & certificates
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+
+# Distroless base already has correct linker/runtime; only copy CA certs
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# Python packages (per COPY pattern guide)
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+
+# Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
+# This will fail the build if packages are missing (catches COPY failures immediately)
+# Verifies both package existence AND functionality by actually importing them
+RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+site_packages = '/usr/local/lib/python3.11/site-packages'; \
+sys.path.insert(0, site_packages); \
+assert os.path.exists(site_packages), site_packages + ' does not exist'; \
+# Verify critical packages exist \
+assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \
+assert os.path.exists(os.path.join(site_packages, 'fastapi')), 'fastapi not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'pydantic not found'; \
+assert os.path.exists(os.path.join(site_packages, 'pydantic_settings')), 'pydantic_settings not found'; \
+assert os.path.exists(os.path.join(site_packages, 'motor')), 'motor not found'; \
+assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; \
+assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'async_timeout not found'; \
+assert os.path.exists(os.path.join(site_packages, 'httpx')), 'httpx not found'; \
+assert os.path.exists(os.path.join(site_packages, 'psutil')), 'psutil not found'; \
+assert os.path.exists(os.path.join(site_packages, 'prometheus_client')), 'prometheus_client not found'; \
+assert os.path.exists(os.path.join(site_packages, 'aiofiles')), 'aiofiles not found'; \
+# Verify marker file \
+marker_path = os.path.join(site_packages, '.lucid-marker'); \
+assert os.path.exists(marker_path), 'marker file not found'; \
+assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path; \
+# Actually import packages to verify functionality \
+import uvicorn; assert uvicorn, 'uvicorn import failed'; \
+import fastapi; assert fastapi, 'fastapi import failed'; \
+import pydantic; assert pydantic, 'pydantic import failed'; \
+import pydantic_settings; assert pydantic_settings, 'pydantic_settings import failed'; \
+import motor; assert motor, 'motor import failed'; \
+import async_timeout; assert async_timeout, 'async_timeout import failed'; \
+import redis; assert redis, 'redis import failed'; \
+import httpx; assert httpx, 'httpx import failed'; \
+import psutil; assert psutil, 'psutil import failed'; \
+import prometheus_client; assert prometheus_client, 'prometheus_client import failed'; \
+import aiofiles; assert aiofiles, 'aiofiles import failed'; \
+print('✅ All packages verified in runtime stage (existence and functionality)')"]
+
+# Application layout COPY
+COPY --chown=65532:65532 --from=builder /build/resource_monitor /app/resource_monitor
+COPY --chown=65532:65532 --from=builder /build/recorder /app/recorder
+COPY --chown=65532:65532 --from=builder /build/common /app/common
+COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
+
+# Verify application source files were copied (per dockerfile-design.md)
+RUN ["/usr/bin/python3.11", "-c", "import os; \
+assert os.path.exists('/app/resource_monitor'), 'resource_monitor directory not found'; \
+assert os.path.exists('/app/resource_monitor/__init__.py'), 'resource_monitor/__init__.py not found'; \
+assert os.path.exists('/app/resource_monitor/entrypoint.py'), 'entrypoint.py not found'; \
+assert os.path.exists('/app/resource_monitor/main.py'), 'main.py not found'; \
+assert os.path.exists('/app/resource_monitor/config.yaml'), 'config.yaml not found'; \
+assert os.path.exists('/app/resource_monitor/openapi.yaml'), 'openapi.yaml not found'; \
+assert os.path.exists('/app/resource_monitor/metrics-schema.json'), 'metrics-schema.json not found'; \
+assert os.path.exists('/app/resource_monitor/health-schema.json'), 'health-schema.json not found'; \
+assert os.path.exists('/app/recorder'), 'recorder directory not found'; \
+assert os.path.exists('/app/common'), 'common directory not found'; \
+assert os.path.exists('/app/__init__.py'), '__init__.py not found'; \
+print('✅ All application source files verified')"]
+
+EXPOSE 8093
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8093)); s.close(); exit(0 if result == 0 else 1)"]
+
+USER 65532:65532
+
+# Clear base ENTRYPOINT so CMD works as expected
+ENTRYPOINT []
+
+CMD ["/usr/bin/python3.11", "/app/resource_monitor/entrypoint.py"]

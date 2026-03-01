@@ -1,0 +1,194 @@
+# Lucid Admin Interface - Phase 4 Docker Compose Configuration
+# Step 33: Phase 4 Container Builds
+#
+# This docker-compose.yml file provides Phase 4 deployment setup
+# for the Lucid admin interface with all required dependencies.
+# Deploy to main network (lucid-dev) as support service cluster.
+
+version: '3.8'
+
+services:
+  # Admin Interface Service - Phase 4 Support Cluster
+  lucid-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pickme/lucid-admin-interface:latest-arm64
+    platform: linux/arm64
+    container_name: lucid-admin-interface
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.support
+    ports:
+      - "8083:8083"
+    environment:
+      - LUCID_ADMIN_HOST=0.0.0.0
+      - LUCID_ADMIN_PORT=8083
+      - LUCID_ADMIN_DEBUG=false
+      - LUCID_ADMIN_LOG_LEVEL=INFO
+      - LUCID_ADMIN_MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+      - LUCID_ADMIN_REDIS_URL=redis://lucid-redis:6379/0
+      - LUCID_ADMIN_BLOCKCHAIN_URL=http://lucid-blockchain-core:8084
+      - LUCID_ADMIN_SESSION_URL=http://lucid-session-management:8082
+      - LUCID_ADMIN_NODE_URL=http://lucid-node-management:8095
+      - LUCID_ADMIN_AUTH_URL=http://lucid-auth-service:8089
+      - LUCID_ADMIN_TOR_URL=http://lucid-tor-proxy:9050
+      - LUCID_ADMIN_JWT_SECRET=${LUCID_ADMIN_JWT_SECRET:-lucid-admin-secret-key}
+      - LUCID_ADMIN_ENCRYPTION_KEY=${LUCID_ADMIN_ENCRYPTION_KEY:-lucid-admin-encryption-key}
+      - LUCID_ADMIN_AUDIT_RETENTION_DAYS=90
+      - LUCID_ADMIN_SESSION_TIMEOUT=3600
+      - LUCID_ADMIN_RATE_LIMIT=1000
+      - LUCID_ADMIN_CORS_ORIGINS=https://admin.lucid.local,http://localhost:3000
+    volumes:
+      - admin-logs:/app/logs
+      - admin-data:/app/data
+      - admin-config:/app/config
+    networks:
+      - lucid-dev
+    depends_on:
+      - lucid-mongodb
+      - lucid-redis
+      - lucid-blockchain-core
+      - lucid-session-management
+      - lucid-node-management
+      - lucid-auth-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8083/admin/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "lucid.service=admin-interface"
+      - "lucid.cluster=admin"
+      - "lucid.port=8083"
+      - "lucid.health-check=/admin/health"
+      - "lucid.phase=phase4"
+      - "lucid.plane=ops"
+
+  # MongoDB Database
+  lucid-mongodb:
+    image: mongo:7.0
+    container_name: lucid-mongodb
+    env_file:
+      - ../configs/environment/.env.foundation
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=lucid
+      - MONGO_INITDB_DATABASE=lucid
+    volumes:
+      - mongodb-data:/data/db
+      - ./configs/database/mongodb/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache
+  lucid-redis:
+    image: redis:7.0-alpine
+    container_name: lucid-redis
+    env_file:
+      - ../configs/environment/.env.foundation
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Blockchain Core Service (Mock for development)
+  lucid-blockchain-core:
+    image: nginx:alpine
+    container_name: lucid-blockchain-core
+    ports:
+      - "8084:80"
+    volumes:
+      - ./configs/nginx/blockchain-mock.conf:/etc/nginx/nginx.conf
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+  # Session Management Service (Mock for development)
+  lucid-session-management:
+    image: nginx:alpine
+    container_name: lucid-session-management
+    ports:
+      - "8082:80"
+    volumes:
+      - ./configs/nginx/session-mock.conf:/etc/nginx/nginx.conf
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+  # Node Management Service (Mock for development)
+  lucid-node-management:
+    image: nginx:alpine
+    container_name: lucid-node-management
+    ports:
+      - "8095:80"
+    volumes:
+      - ./configs/nginx/node-mock.conf:/etc/nginx/nginx.conf
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+  # Authentication Service (Mock for development)
+  lucid-auth-service:
+    image: nginx:alpine
+    container_name: lucid-auth-service
+    ports:
+      - "8089:80"
+    volumes:
+      - ./configs/nginx/auth-mock.conf:/etc/nginx/nginx.conf
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+  # Tor Proxy (Mock for development)
+  lucid-tor-proxy:
+    image: nginx:alpine
+    container_name: lucid-tor-proxy
+    ports:
+      - "9050:80"
+    volumes:
+      - ./configs/nginx/tor-mock.conf:/etc/nginx/nginx.conf
+    networks:
+      - lucid-dev
+    restart: unless-stopped
+
+# Networks
+networks:
+  lucid-dev:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes
+volumes:
+  admin-logs:
+    driver: local
+  admin-data:
+    driver: local
+  admin-config:
+    driver: local
+  mongodb-data:
+    driver: local
+  redis-data:
+    driver: local

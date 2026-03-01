@@ -1,0 +1,37 @@
+# Lucid Service Mesh Controller Dependencies
+# File: infrastructure/service-mesh/requirements.txt
+# Purpose: Python dependencies for service mesh controller
+
+# Core dependencies
+asyncio-mqtt==0.16.1
+aiohttp==3.9.1
+python-consul==1.1.0
+aiodns==3.1.1
+
+# HTTP Server dependencies
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+
+# gRPC dependencies
+grpcio==1.59.3
+grpcio-tools==1.59.3
+grpcio-health-checking==1.59.3
+
+# Security dependencies
+cryptography==42.0.8
+pyjwt==2.8.0
+
+# Configuration and utilities
+PyYAML==6.0.1
+pydantic==2.5.0
+python-consul2==0.1.4
+
+# Monitoring and observability
+prometheus-client==0.19.0
+
+# Logging
+structlog==23.2.0
+
+# Development dependencies (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1

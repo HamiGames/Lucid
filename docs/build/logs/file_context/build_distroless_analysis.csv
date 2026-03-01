@@ -1,0 +1,95 @@
+Build Component,Service Name,Dockerfile Path,Build Type,Context Path,Status,Issues
+Base Images,base,infrastructure/docker/distroless/base/Dockerfile,distroless,infrastructure/docker/distroless/base,ACTIVE,
+Base Images,python-base,infrastructure/docker/distroless/base/Dockerfile.python-base.distroless,distroless,infrastructure/docker/distroless/base,ACTIVE,
+Base Images,alpine-base,infrastructure/docker/distroless/base/Dockerfile.alpine-base.distroless,distroless,infrastructure/docker/distroless/base,ACTIVE,
+Core Services,gui,infrastructure/docker/multi-stage/Dockerfile.gui,multi-stage,.,MISSING,Script expects but file not found
+Core Services,blockchain,infrastructure/docker/multi-stage/Dockerfile.blockchain,multi-stage,.,ACTIVE,
+Core Services,rdp,infrastructure/docker/multi-stage/Dockerfile.rdp,multi-stage,.,MISSING,Script expects but file not found
+Core Services,node,infrastructure/docker/multi-stage/Dockerfile.node,multi-stage,.,MISSING,Script expects but file not found
+Core Services,storage,infrastructure/docker/multi-stage/Dockerfile.storage,multi-stage,.,MISSING,Script expects but file not found
+Core Services,database,infrastructure/docker/multi-stage/Dockerfile.database,multi-stage,.,MISSING,Script expects but file not found
+Core Services,vm,infrastructure/docker/multi-stage/Dockerfile.vm,multi-stage,.,MISSING,Script expects but file not found
+Distroless Services,gui,infrastructure/docker/distroless/gui/Dockerfile.gui.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Distroless Services,blockchain,infrastructure/docker/distroless/blockchain/Dockerfile.blockchain.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Distroless Services,rdp,infrastructure/docker/distroless/rdp/Dockerfile.rdp.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Distroless Services,node,infrastructure/docker/distroless/node/Dockerfile.node.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Build Directory,gui,build/distroless/gui/Dockerfile.gui.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Build Directory,blockchain,build/distroless/blockchain/Dockerfile.blockchain.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Build Directory,rdp,build/distroless/rdp/Dockerfile.rdp.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Build Directory,node,build/distroless/node/Dockerfile.node.distroless,distroless,.,NOT_BUILT,Script doesn't reference this path
+Build Directory,blockchain-multi,build/multi-stage/Dockerfile.blockchain,multi-stage,.,NOT_BUILT,Script doesn't reference this path
+Additional Services,admin-ui,infrastructure/docker/admin/Dockerfile.admin-ui,standard,infrastructure/docker/admin,NOT_BUILT,Script doesn't reference
+Additional Services,authentication,infrastructure/docker/auth/Dockerfile.authentication,standard,infrastructure/docker/auth,NOT_BUILT,Script doesn't reference
+Additional Services,blockchain-api,infrastructure/docker/blockchain/Dockerfile.blockchain-api,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,blockchain-governance,infrastructure/docker/blockchain/Dockerfile.blockchain-governance,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,blockchain-ledger,infrastructure/docker/blockchain/Dockerfile.blockchain-ledger,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,blockchain-vm,infrastructure/docker/blockchain/Dockerfile.blockchain-vm,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,blockchain-sessions-data,infrastructure/docker/blockchain/Dockerfile.blockchain-sessions-data,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,chain-client,infrastructure/docker/blockchain/Dockerfile.chain-client,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,contract-compiler,infrastructure/docker/blockchain/Dockerfile.contract-compiler,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,contract-deployment,infrastructure/docker/blockchain/Dockerfile.contract-deployment,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,contract-deployment-simple,infrastructure/docker/blockchain/Dockerfile.contract-deployment.simple,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,deployment-orchestrator,infrastructure/docker/blockchain/Dockerfile.deployment-orchestrator,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,lucid-anchors-client,infrastructure/docker/blockchain/Dockerfile.lucid-anchors-client.distroless,distroless,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,on-system-chain-client,infrastructure/docker/blockchain/Dockerfile.on-system-chain-client,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,on-system-chain-client-distroless,infrastructure/docker/blockchain/Dockerfile.on-system-chain-client.distroless,distroless,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,tron-node-client,infrastructure/docker/blockchain/Dockerfile.tron-node-client,standard,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,blockchain-distroless,infrastructure/docker/blockchain/Dockerfile.distroless,distroless,infrastructure/docker/blockchain,NOT_BUILT,Script doesn't reference
+Additional Services,common,infrastructure/docker/common/Dockerfile,standard,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,common-beta,infrastructure/docker/common/Dockerfile.beta,standard,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,common-common,infrastructure/docker/common/Dockerfile.common,standard,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,common-distroless,infrastructure/docker/common/Dockerfile.distroless,distroless,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,common-common-distroless,infrastructure/docker/common/Dockerfile.common.distroless,distroless,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,lucid-governor,infrastructure/docker/common/Dockerfile.lucid-governor.distroless,distroless,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,timelock,infrastructure/docker/common/Dockerfile.timelock.distroless,distroless,infrastructure/docker/common,NOT_BUILT,Script doesn't reference
+Additional Services,database-backup,infrastructure/docker/databases/Dockerfile.database-backup,standard,infrastructure/docker/databases,NOT_BUILT,Script doesn't reference
+Additional Services,database-monitoring,infrastructure/docker/databases/Dockerfile.database-monitoring,standard,infrastructure/docker/databases,NOT_BUILT,Script doesn't reference
+Additional Services,mongodb,infrastructure/docker/databases/Dockerfile.mongodb,standard,infrastructure/docker/databases,NOT_BUILT,Script doesn't reference
+Additional Services,desktop-environment,infrastructure/docker/gui/Dockerfile.desktop-environment,standard,infrastructure/docker/gui,NOT_BUILT,Script doesn't reference
+Additional Services,desktop-environment-distroless,infrastructure/docker/gui/Dockerfile.desktop-environment.distroless,distroless,infrastructure/docker/gui,NOT_BUILT,Script doesn't reference
+Additional Services,gui-builder,infrastructure/docker/gui/Dockerfile.gui-builder,standard,infrastructure/docker/gui,NOT_BUILT,Script doesn't reference
+Additional Services,gui-hooks,infrastructure/docker/gui/Dockerfile.gui-hooks,standard,infrastructure/docker/gui,NOT_BUILT,Script doesn't reference
+Additional Services,dht-node,infrastructure/docker/node/Dockerfile.dht-node,standard,infrastructure/docker/node,NOT_BUILT,Script doesn't reference
+Additional Services,leader-selection,infrastructure/docker/node/Dockerfile.leader-selection.distroless,distroless,infrastructure/docker/node,NOT_BUILT,Script doesn't reference
+Additional Services,task-proofs,infrastructure/docker/node/Dockerfile.task-proofs.distroless,distroless,infrastructure/docker/node,NOT_BUILT,Script doesn't reference
+Additional Services,payout-router-v0,infrastructure/docker/payment-systems/Dockerfile.payout-router-v0.distroless,distroless,infrastructure/docker/payment-systems,NOT_BUILT,Script doesn't reference
+Additional Services,tron-client,infrastructure/docker/payment-systems/Dockerfile.tron-client,standard,infrastructure/docker/payment-systems,NOT_BUILT,Script doesn't reference
+Additional Services,usdt-trc20,infrastructure/docker/payment-systems/Dockerfile.usdt-trc20.distroless,distroless,infrastructure/docker/payment-systems,NOT_BUILT,Script doesn't reference
+Additional Services,clipboard-handler,infrastructure/docker/rdp/Dockerfile.clipboard-handler.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,file-transfer-handler,infrastructure/docker/rdp/Dockerfile.file-transfer-handler.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,keystroke-monitor,infrastructure/docker/rdp/Dockerfile.keystroke-monitor.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,rdp-host,infrastructure/docker/rdp/Dockerfile.rdp-host.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,resource-monitor,infrastructure/docker/rdp/Dockerfile.resource-monitor.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,rdp-server,infrastructure/docker/rdp/Dockerfile.rdp-server,standard,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,rdp-server-manager,infrastructure/docker/rdp/Dockerfile.rdp-server-manager,standard,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,server-manager,infrastructure/docker/rdp/Dockerfile.server-manager,standard,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,server-manager-simple,infrastructure/docker/rdp/Dockerfile.server-manager.simple,standard,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,session-host-manager,infrastructure/docker/rdp/Dockerfile.session-host-manager,standard,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,wayland-integration,infrastructure/docker/rdp/Dockerfile.wayland-integration.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,window-focus-monitor,infrastructure/docker/rdp/Dockerfile.window-focus-monitor.distroless,distroless,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,xrdp-integration,infrastructure/docker/rdp/Dockerfile.xrdp-integration,standard,infrastructure/docker/rdp,NOT_BUILT,Script doesn't reference
+Additional Services,chunker,infrastructure/docker/sessions/Dockerfile.chunker,standard,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,session-clipboard-handler,infrastructure/docker/sessions/Dockerfile.clipboard-handler.distroless,distroless,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,encryptor,infrastructure/docker/sessions/Dockerfile.encryptor,standard,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,merkle-builder,infrastructure/docker/sessions/Dockerfile.merkle_builder,standard,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,orchestrator,infrastructure/docker/sessions/Dockerfile.orchestrator,standard,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,session-orchestrator,infrastructure/docker/sessions/Dockerfile.session-orchestrator,standard,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,session-recorder,infrastructure/docker/sessions/Dockerfile.session-recorder,standard,infrastructure/docker/sessions,NOT_BUILT,Script doesn't reference
+Additional Services,api-gateway,infrastructure/docker/tools/Dockerfile.api-gateway,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,api-server,infrastructure/docker/tools/Dockerfile.api-server,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,debug-utilities,infrastructure/docker/tools/Dockerfile.debug-utilities,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,network-diagnostics,infrastructure/docker/tools/Dockerfile.network-diagnostics,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,openapi-gateway,infrastructure/docker/tools/Dockerfile.openapi-gateway,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,openapi-server,infrastructure/docker/tools/Dockerfile.openapi-server,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,server-tools,infrastructure/docker/tools/Dockerfile.server-tools,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,tor-proxy,infrastructure/docker/tools/Dockerfile.tor-proxy,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,tunnel-tools,infrastructure/docker/tools/Dockerfile.tunnel-tools,standard,infrastructure/docker/tools,NOT_BUILT,Script doesn't reference
+Additional Services,user-authentication,infrastructure/docker/users/Dockerfile.authentication,standard,infrastructure/docker/users,NOT_BUILT,Script doesn't reference
+Additional Services,authentication-service,infrastructure/docker/users/Dockerfile.authentication-service.distroless,distroless,infrastructure/docker/users,NOT_BUILT,Script doesn't reference
+Additional Services,user-manager,infrastructure/docker/users/Dockerfile.user-manager,standard,infrastructure/docker/users,NOT_BUILT,Script doesn't reference
+Additional Services,vm-manager,infrastructure/docker/vm/Dockerfile.vm-manager,standard,infrastructure/docker/vm,NOT_BUILT,Script doesn't reference
+Additional Services,vm-orchestrator,infrastructure/docker/vm/Dockerfile.vm-orchestrator,standard,infrastructure/docker/vm,NOT_BUILT,Script doesn't reference
+Additional Services,vm-resource-monitor,infrastructure/docker/vm/Dockerfile.vm-resource-monitor,standard,infrastructure/docker/vm,NOT_BUILT,Script doesn't reference
+Additional Services,key-rotation,infrastructure/docker/wallet/Dockerfile.key-rotation.distroless,distroless,infrastructure/docker/wallet,NOT_BUILT,Script doesn't reference
+Additional Services,role-manager,infrastructure/docker/wallet/Dockerfile.role-manager.distroless,distroless,infrastructure/docker/wallet,NOT_BUILT,Script doesn't reference
+Additional Services,software-vault,infrastructure/docker/wallet/Dockerfile.software-vault.distroless,distroless,infrastructure/docker/wallet,NOT_BUILT,Script doesn't reference

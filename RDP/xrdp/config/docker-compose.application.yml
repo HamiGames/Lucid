@@ -1,0 +1,73 @@
+# Docker Compose Configuration for rdp-xrdp Service
+# File: RDP/xrdp/config/docker-compose.application.yml
+# Purpose: Docker Compose service definition for rdp-xrdp container
+# COMPLIANCE: Follows build/docs/mod-design-template.md patterns
+# Usage: Include this snippet in configs/docker/docker-compose.application.yml
+
+rdp-xrdp:
+  image: pickme/lucid-rdp-xrdp:latest-arm64
+  container_name: rdp-xrdp
+  restart: unless-stopped
+  env_file:
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
+    - /mnt/myssd/Lucid/Lucid/configs/environment/.env.rdp-xrdp
+  networks:
+    - lucid-pi-network
+  ports:
+    - "${XRDP_PORT:-3389}:${XRDP_PORT:-3389}"
+  volumes:
+    - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp:/app/data:rw
+    - /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp:/app/logs:rw
+    - rdp-xrdp-cache:/tmp/xrdp
+  environment:
+    - LUCID_ENV=production
+    - LUCID_PLATFORM=arm64
+    - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+    - XRDP_SERVICE_HOST=rdp-xrdp
+    - XRDP_PORT=${XRDP_PORT:-3389}
+    - XRDP_SERVICE_URL=http://rdp-xrdp:${XRDP_PORT:-3389}
+    - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+    - REDIS_URL=${REDIS_URL}
+  user: "65532:65532"
+  security_opt:
+    - no-new-privileges:true
+    - seccomp:unconfined
+  cap_drop:
+    - ALL
+  cap_add:
+    - NET_BIND_SERVICE
+  read_only: true
+  tmpfs:
+    - /tmp:noexec,nosuid,size=100m
+  healthcheck:
+    test:
+      [
+        "CMD",
+        "python3",
+        "-c",
+        "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)",
+      ]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 60s
+  labels:
+    - "lucid.service=rdp-xrdp"
+    - "lucid.type=distroless"
+    - "lucid.platform=arm64"
+    - "lucid.security=hardened"
+    - "lucid.cluster=application"
+  depends_on:
+    lucid-mongodb:
+      condition: service_healthy
+    lucid-redis:
+      condition: service_healthy
+
+volumes:
+  rdp-xrdp-cache:
+    driver: local
+    name: lucid-rdp-xrdp-cache
+    external: false

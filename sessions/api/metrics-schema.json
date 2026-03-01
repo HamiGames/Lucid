@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Session API Metrics Schema",
+  "description": "Defines the structure and details of Prometheus metrics exposed by the Session API service",
+  "type": "object",
+  "properties": {
+    "metrics": {
+      "type": "object",
+      "description": "Collection of all exposed Prometheus metrics",
+      "properties": {
+        "sessions_total": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["counter"] },
+            "description": { "type": "string", "example": "Total number of sessions" },
+            "labels": { "type": "array", "items": { "type": "string" }, "example": ["status"] },
+            "unit": { "type": "string", "example": "sessions" }
+          },
+          "required": ["type", "description", "labels", "unit"]
+        },
+        "sessions_active": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["gauge"] },
+            "description": { "type": "string", "example": "Number of active sessions" },
+            "labels": { "type": "array", "items": { "type": "string" }, "example": [] },
+            "unit": { "type": "string", "example": "sessions" }
+          },
+          "required": ["type", "description", "labels", "unit"]
+        },
+        "chunks_processed_total": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["counter"] },
+            "description": { "type": "string", "example": "Total number of chunks processed" },
+            "labels": { "type": "array", "items": { "type": "string" }, "example": ["status"] },
+            "unit": { "type": "string", "example": "chunks" }
+          },
+          "required": ["type", "description", "labels", "unit"]
+        },
+        "storage_size_bytes": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["gauge"] },
+            "description": { "type": "string", "example": "Total storage size in bytes" },
+            "labels": { "type": "array", "items": { "type": "string" }, "example": [] },
+            "unit": { "type": "string", "example": "bytes" }
+          },
+          "required": ["type", "description", "labels", "unit"]
+        },
+        "processing_duration_seconds": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["histogram"] },
+            "description": { "type": "string", "example": "Processing duration in seconds" },
+            "labels": { "type": "array", "items": { "type": "string" }, "example": [] },
+            "unit": { "type": "string", "example": "seconds" },
+            "buckets": {
+              "type": "array",
+              "items": { "type": "number" },
+              "example": [0.01, 0.05, 0.1]
+            }
+          },
+          "required": ["type", "description", "labels", "unit"]
+        }
+      }
+    },
+    "info": {
+      "type": "object",
+      "properties": {
+        "service_name": { "type": "string", "example": "lucid-session-api" },
+        "version": { "type": "string", "example": "1.0.0" },
+        "prometheus_endpoint": { "type": "string", "example": "/metrics" }
+      },
+      "required": ["service_name", "version", "prometheus_endpoint"]
+    }
+  },
+  "required": ["metrics", "info"]
+}
+

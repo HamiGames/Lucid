@@ -1,0 +1,49 @@
+# Lucid Session Recorder Dependencies
+# Core framework
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Async support
+asyncio-mqtt>=0.16.1
+aiofiles>=23.2.1
+
+# Database
+motor>=3.3.2
+pymongo>=4.6.0
+
+# Cryptography and hashing
+blake3>=0.3.3  # Required by core/merkle_builder.py for BLAKE3 hashing
+
+# Compression libraries
+# Core compression (always available)
+# gzip is built into Python standard library
+
+# Optional compression libraries
+lz4>=4.3.2
+zstandard>=0.21.0
+zstd>=1.5.5  # Required by core/chunker.py for direct zstd.compress/decompress API
+
+# Video processing
+opencv-python-headless>=4.8.1.78
+Pillow>=10.1.0
+numpy>=1.24.0
+
+# System monitoring
+psutil>=5.9.0
+netifaces>=0.11.0
+
+# Logging
+structlog>=23.2.0
+
+# Utilities
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+httpx>=0.25.2
+PyYAML>=6.0.1
+
+# Development and testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0

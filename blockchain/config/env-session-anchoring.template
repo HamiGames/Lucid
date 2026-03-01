@@ -1,0 +1,399 @@
+# =============================================================================
+# Lucid Session Anchoring Service - Environment Variables Template
+# =============================================================================
+# File: blockchain/config/env-session-anchoring.template
+# Purpose: Template for all configurable environment variables for session-anchoring container
+# Usage: Copy to configs/environment/.env.session-anchoring and customize values
+# =============================================================================
+
+# =============================================================================
+# SESSION ANCHORING SERVICE SETTINGS
+# =============================================================================
+SERVICE_NAME=session-anchoring
+SERVICE_VERSION=1.0.0
+SESSION_ANCHORING_HOST=127.0.0.1
+SESSION_ANCHORING_PORT=8085
+SESSION_ANCHORING_URL=http://session-anchoring:8085
+LUCID_NAMESPACE=lucid
+LUCID_CLUSTER=core
+LUCID_PLATFORM=arm64
+LUCID_ENV=production
+
+# =============================================================================
+# ON-SYSTEM CHAIN CONFIGURATION (Required)
+# =============================================================================
+# On-System Chain RPC endpoint - REQUIRED
+# Alternative: ON_SYSTEM_CHAIN_RPC_URL
+ON_SYSTEM_CHAIN_RPC=http://on-chain-distroless:8545
+ON_SYSTEM_CHAIN_RPC_URL=${ON_SYSTEM_CHAIN_RPC}
+
+# On-System Chain Contract Addresses
+LUCID_ANCHORS_ADDRESS=
+LUCID_CHUNK_STORE_ADDRESS=
+
+# Chain ID (default: 1337 for On-System Chain)
+ON_SYSTEM_CHAIN_ID=1337
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MongoDB Connection - REQUIRED
+# Alternative: MONGO_URL
+MONGODB_URL=mongodb://lucid:{MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+MONGO_URL=${MONGODB_URL}
+MONGO_DB=lucid
+DATABASE_NAME=lucid
+
+# MongoDB Connection Settings
+MONGODB_SERVER_SELECTION_TIMEOUT_MS=5000
+MONGODB_CONNECT_TIMEOUT_MS=10000
+MONGODB_SOCKET_TIMEOUT_MS=20000
+MONGODB_MAX_POOL_SIZE=50
+MONGODB_MIN_POOL_SIZE=5
+MONGODB_MAX_IDLE_TIME_MS=30000
+MONGODB_RETRY_WRITES=true
+MONGODB_RETRY_READS=true
+
+# MongoDB Collection Configuration
+SESSION_ANCHORINGS_COLLECTION=session_anchorings
+MONGODB_DATABASE_NAME=lucid
+
+# =============================================================================
+# REDIS CONFIGURATION - REQUIRED
+# =============================================================================
+REDIS_URL=redis://lucid-redis:6379/0
+REDIS_HOST=lucid-redis
+REDIS_PORT=6379
+REDIS_DB=0
+
+# =============================================================================
+# SECURITY CONFIGURATION - REQUIRED
+# =============================================================================
+# Secret key for JWT tokens and encryption - REQUIRED
+# Alternative: BLOCKCHAIN_SECRET_KEY (if SECRET_KEY is not set)
+SECRET_KEY=${JWT_SECRET_KEY:-${BLOCKCHAIN_SECRET_KEY:-your-secret-key-change-in-production}}
+BLOCKCHAIN_SECRET_KEY=${SECRET_KEY}
+
+# =============================================================================
+# DEPENDENCY SERVICE CONFIGURATION
+# =============================================================================
+# Blockchain Engine Service
+BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+BLOCKCHAIN_ENGINE_HOST=blockchain-engine
+BLOCKCHAIN_ENGINE_PORT=8084
+
+# Data Chain Service
+DATA_CHAIN_URL=http://data-chain:8087
+DATA_CHAIN_HOST=data-chain
+DATA_CHAIN_PORT=8087
+
+# =============================================================================
+# ANCHORING CONFIGURATION
+# =============================================================================
+# Anchoring Behavior
+ANCHORING_ENABLED=true
+AUTO_ANCHOR_ON_SESSION_COMPLETE=true
+BATCH_SIZE=100
+BATCH_TIMEOUT_SECONDS=300
+
+# Verification Settings
+VERIFICATION_ENABLED=true
+VERIFY_AFTER_ANCHOR=true
+VERIFICATION_TIMEOUT_SECONDS=60
+RETRY_VERIFICATION_ON_FAILURE=true
+MAX_VERIFICATION_RETRIES=3
+REQUIRE_CONFIRMATION_BLOCKS=6
+
+# Gas Configuration (in wei)
+GAS_LIMIT_PER_ANCHOR=90000
+MAX_GAS_PRICE=1000000000
+GAS_PRICE_GWEI=1
+
+# Transaction Settings
+TRANSACTION_TIMEOUT_SECONDS=30
+TRANSACTION_RETRY_ATTEMPTS=3
+TRANSACTION_RETRY_DELAY_SECONDS=5
+
+# =============================================================================
+# MERKLE TREE CONFIGURATION
+# =============================================================================
+MERKLE_TREE_ENABLED=true
+MERKLE_TREE_DEPTH=20
+MERKLE_LEAF_HASH_ALGORITHM=blake3
+MERKLE_ROOT_HASH_ALGORITHM=blake3
+ANCHOR_ROOT_ONLY=true
+INCLUDE_PROOF_PATHS=true
+
+# Merkle Tree Construction
+MERKLE_CONSTRUCTION_TIMEOUT_SECONDS=60
+MERKLE_VALIDATION_ENABLED=true
+
+# Hash Algorithm Configuration
+DATA_CHAIN_MERKLE_ALGORITHM=BLAKE3
+ANCHORING_HASH_ALGORITHM=BLAKE3
+
+# =============================================================================
+# API CONFIGURATION
+# =============================================================================
+API_TITLE=Lucid Session Anchoring API
+API_VERSION=1.0.0
+API_DESCRIPTION=API for session manifest anchoring to On-System Data Chain
+API_BASE_PATH=/api/v1
+API_DEBUG=false
+
+# API Endpoints
+API_ENDPOINT_ANCHOR=/anchor
+API_ENDPOINT_STATUS=/status/{session_id}
+API_ENDPOINT_VERIFY=/verify/{session_id}
+API_ENDPOINT_HEALTH=/health
+API_ENDPOINT_METRICS=/metrics
+
+# CORS Settings
+CORS_ORIGINS=*
+CORS_CREDENTIALS=true
+CORS_METHODS=*
+CORS_HEADERS=*
+
+# =============================================================================
+# RATE LIMITING CONFIGURATION
+# =============================================================================
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_STORAGE=redis
+RATE_LIMIT_WINDOW_SECONDS=60
+RATE_LIMIT_TYPE=sliding_window
+
+# Service-Specific Rate Limits
+RATE_LIMIT_SESSION_ANCHORING=500
+RATE_LIMIT_DEFAULT=100
+RATE_LIMIT_BLOCKCHAIN_QUERIES=500
+RATE_LIMIT_TRANSACTION_SUBMISSION=100
+RATE_LIMIT_CONSENSUS_OPERATIONS=200
+RATE_LIMIT_MERKLE_OPERATIONS=300
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOG_LEVEL=INFO
+LOG_FORMAT=standard
+LOG_OUTPUT=stdout
+LOG_FILE_PATH=/app/logs/session-anchoring.log
+LOG_MAX_SIZE_MB=10
+LOG_MAX_BACKUPS=5
+DEBUG=false
+
+# Log Rotation
+LOG_ROTATE_ENABLED=true
+LOG_ROTATE_MAX_BYTES=10485760
+LOG_ROTATE_BACKUP_COUNT=5
+
+# =============================================================================
+# MONITORING & METRICS CONFIGURATION
+# =============================================================================
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+EXPOSE_HEALTH=true
+EXPOSE_METRICS=false
+
+# Tracking
+TRACK_ANCHORING_LATENCY=true
+TRACK_VERIFICATION_SUCCESS_RATE=true
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+HEALTH_CHECK_PATH=/health
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
+HEALTH_CHECK_RETRIES=3
+HEALTH_CHECK_START_PERIOD=60
+
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+STORAGE_DATA_PATH=/app/data
+STORAGE_LOGS_PATH=/app/logs
+STORAGE_OWNER=65532:65532
+STORAGE_ENSURE_PERMISSIONS=true
+
+# MongoDB Storage Collections
+STORAGE_COLLECTION_NAME=session_anchorings
+STORAGE_DATABASE_NAME=lucid
+
+# =============================================================================
+# RETRY POLICIES
+# =============================================================================
+RETRY_ENABLED=true
+RETRY_MAX_ATTEMPTS=3
+RETRY_DELAY_SECONDS=5
+RETRY_EXPONENTIAL_BACKOFF=true
+RETRY_BACKOFF_MULTIPLIER=2
+RETRY_MAX_BACKOFF_SECONDS=60
+
+# Anchoring-Specific Retries
+ANCHORING_RETRY_MAX_ATTEMPTS=3
+ANCHORING_RETRY_DELAY_SECONDS=5
+VERIFICATION_RETRY_MAX_ATTEMPTS=3
+VERIFICATION_RETRY_DELAY_SECONDS=5
+
+# =============================================================================
+# TIMEOUT POLICIES
+# =============================================================================
+TIMEOUT_DEFAULT_CONNECT=5s
+TIMEOUT_DEFAULT_REQUEST=30s
+TIMEOUT_DEFAULT_IDLE=300s
+
+# Database Timeouts
+TIMEOUT_DATABASE_CONNECT=10s
+TIMEOUT_DATABASE_REQUEST=60s
+TIMEOUT_DATABASE_IDLE=600s
+
+# Blockchain RPC Timeouts
+TIMEOUT_BLOCKCHAIN_CONNECT=10s
+TIMEOUT_BLOCKCHAIN_REQUEST=30s
+TIMEOUT_BLOCKCHAIN_IDLE=60s
+
+# =============================================================================
+# CIRCUIT BREAKER CONFIGURATION
+# =============================================================================
+CIRCUIT_BREAKER_ENABLED=true
+CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+CIRCUIT_BREAKER_RECOVERY_TIMEOUT=60
+CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS=3
+
+# Blockchain RPC Circuit Breaker
+CIRCUIT_BREAKER_BLOCKCHAIN_ENABLED=true
+CIRCUIT_BREAKER_BLOCKCHAIN_FAILURE_THRESHOLD=5
+CIRCUIT_BREAKER_BLOCKCHAIN_RECOVERY_TIMEOUT=60
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+# Container Security
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+READ_ONLY_ROOT=true
+
+# Authentication & Authorization
+REQUIRE_AUTHENTICATION=true
+REQUIRE_AUTHORIZATION=true
+ALLOWED_ROLES=USER,NODE_OPERATOR,ADMIN,SUPER_ADMIN
+
+# API Keys (set in .env.secrets)
+API_KEY_BLOCKCHAIN=
+API_KEY_BLOCKCHAIN_USER=blockchain_user
+API_KEY_API=
+API_KEY_API_USER=api_user
+API_KEY_READONLY=
+API_KEY_READONLY_USER=readonly_user
+
+# User Configuration (for testing/dev)
+USER_BLOCKCHAIN_ID=user_001
+USER_BLOCKCHAIN_USERNAME=blockchain_user
+USER_BLOCKCHAIN_PERMISSIONS=read,write,admin
+USER_API_ID=user_002
+USER_API_USERNAME=api_user
+USER_API_PERMISSIONS=read,write
+USER_READONLY_ID=user_003
+USER_READONLY_USERNAME=readonly_user
+USER_READONLY_PERMISSIONS=read
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# Network Settings
+LUCID_PI_NETWORK=lucid-pi-network
+LUCID_PI_SUBNET=172.20.0.0/16
+LUCID_PI_GATEWAY=172.20.0.1
+NETWORK_DRIVER=bridge
+
+# Service IPs (lucid-pi-network)
+SESSION_ANCHORING_IP=172.20.0.17
+BLOCKCHAIN_ENGINE_IP=172.20.0.16
+DATA_CHAIN_IP=172.20.0.20
+MONGODB_IP=172.20.0.11
+REDIS_IP=172.20.0.12
+
+# Service Hosts (container names)
+SESSION_ANCHORING_HOST_CONTAINER=session-anchoring
+BLOCKCHAIN_ENGINE_HOST_CONTAINER=blockchain-engine
+DATA_CHAIN_HOST_CONTAINER=data-chain
+MONGODB_HOST_CONTAINER=lucid-mongodb
+REDIS_HOST_CONTAINER=lucid-redis
+
+# Service Ports
+SESSION_ANCHORING_PORT=8085
+BLOCKCHAIN_ENGINE_PORT=8084
+DATA_CHAIN_PORT=8087
+MONGODB_PORT=27017
+REDIS_PORT=6379
+
+# =============================================================================
+# SERVICE HEALTH PATHS
+# =============================================================================
+SESSION_ANCHORING_HEALTH_PATH=/health
+BLOCKCHAIN_ENGINE_HEALTH_PATH=/health
+DATA_CHAIN_HEALTH_PATH=/health
+MONGODB_HEALTH_PATH=
+REDIS_HEALTH_PATH=
+
+# =============================================================================
+# SERVICE HEALTH CHECK INTERVALS
+# =============================================================================
+SESSION_ANCHORING_HEALTH_CHECK_INTERVAL=30
+SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_INTERVAL=30
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_TIMEOUT=10
+DATA_CHAIN_HEALTH_CHECK_INTERVAL=30
+DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10
+
+# =============================================================================
+# CACHING CONFIGURATION
+# =============================================================================
+CACHE_ENABLED=true
+CACHE_VERIFICATION_RESULTS=true
+CACHE_TTL_SECONDS=3600
+CACHE_MERKLE_ROOTS=true
+CACHE_MAX_SIZE_MB=500
+
+# =============================================================================
+# ERROR HANDLING CONFIGURATION
+# =============================================================================
+ERROR_LOG_ALL=true
+ERROR_LOG_STACK_TRACES=true
+ERROR_SUMMARY_INTERVAL_SECONDS=300
+ERROR_MAX_PER_SUMMARY=100
+
+# Failure Handling
+FAILURE_LOG_ENABLED=true
+FAILURE_NOTIFY_ON_ERROR=false
+FAILURE_FALLBACK_STORAGE=off_chain
+FAILURE_QUEUE_FAILED_ANCHORS=true
+FAILURE_RETRY_FAILED_ANCHORS=true
+FAILURE_MAX_RETRY_ATTEMPTS=5
+
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# =============================================================================
+# Async Processing
+ASYNC_PROCESSING_ENABLED=true
+ASYNC_MAX_CONCURRENT_ANCHORS=10
+ASYNC_QUEUE_SIZE=1000
+ASYNC_WORKER_THREADS=4
+
+# =============================================================================
+# GRACEFUL DEGRADATION
+# =============================================================================
+DEGRADATION_ENABLED=true
+DEGRADATION_READ_ONLY_MODE_ON_ERROR=false
+DEGRADATION_DISABLE_ANCHORING_ON_CHAIN_ERROR=false
+DEGRADATION_CACHE_ONLY_MODE_ON_STORAGE_ERROR=false
+
+# =============================================================================
+# DEPLOYMENT INFORMATION
+# =============================================================================
+# Build Information (set by Docker build args)
+BUILD_DATE=
+VCS_REF=
+VERSION=1.0.0
+

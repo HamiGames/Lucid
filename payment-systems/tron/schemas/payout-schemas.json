@@ -1,0 +1,514 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TRON Payout Router API Schemas",
+  "description": "JSON schemas for payout router API request/response validation",
+  "definitions": {
+    "TRONAddress": {
+      "type": "string",
+      "pattern": "^T[A-Za-z1-9]{33}$",
+      "minLength": 34,
+      "maxLength": 34,
+      "description": "TRON address format"
+    },
+    "PayoutID": {
+      "type": "string",
+      "pattern": "^payout_[a-f0-9]{32}$",
+      "description": "Unique payout identifier"
+    },
+    "BatchID": {
+      "type": "string",
+      "pattern": "^batch_[a-f0-9]{32}$",
+      "description": "Unique batch identifier"
+    },
+    "TransactionHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "TRON transaction hash (64 hex characters)"
+    },
+    "USDTAmount": {
+      "type": "number",
+      "minimum": 0.01,
+      "maximum": 1000000.0,
+      "multipleOf": 0.01,
+      "description": "Amount in USDT (2 decimal places)"
+    },
+    "PayoutStatus": {
+      "type": "string",
+      "enum": ["pending", "processing", "completed", "failed", "cancelled"],
+      "description": "Payout status"
+    },
+    "PayoutType": {
+      "type": "string",
+      "enum": ["immediate", "scheduled", "batch", "emergency"],
+      "description": "Payout type"
+    },
+    "PayoutReason": {
+      "type": "string",
+      "enum": [
+        "session_relay",
+        "storage_proof",
+        "validation_signature",
+        "uptime_reward",
+        "governance_participation",
+        "custom"
+      ],
+      "description": "Reason for payout"
+    },
+    "PayoutRoute": {
+      "type": "string",
+      "enum": ["v0_route", "kyc_route", "direct_route"],
+      "description": "Payout route type"
+    },
+    "Currency": {
+      "type": "string",
+      "enum": ["USDT", "TRX"],
+      "description": "Cryptocurrency currency"
+    },
+    "ISO8601DateTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 datetime format"
+    },
+    "ErrorCode": {
+      "type": "string",
+      "pattern": "^[A-Z][0-9]{3}$",
+      "description": "Error code (e.g., P100, E503)"
+    }
+  },
+  "schemas": {
+    "PayoutCreateRequest": {
+      "type": "object",
+      "properties": {
+        "recipient_address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "amount": {
+          "$ref": "#/definitions/USDTAmount"
+        },
+        "currency": {
+          "$ref": "#/definitions/Currency"
+        },
+        "payout_type": {
+          "$ref": "#/definitions/PayoutType"
+        },
+        "reason": {
+          "$ref": "#/definitions/PayoutReason"
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Optional session identifier"
+        },
+        "node_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Optional node identifier"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional payout description"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional metadata"
+        },
+        "expires_at": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Priority level (1-10)"
+        }
+      },
+      "required": [
+        "recipient_address",
+        "amount",
+        "payout_type",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "PayoutUpdateRequest": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/PayoutStatus"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "txid": {
+          "$ref": "#/definitions/TransactionHash"
+        },
+        "error_message": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "additionalProperties": false
+    },
+    "PayoutResponse": {
+      "type": "object",
+      "properties": {
+        "payout_id": {
+          "$ref": "#/definitions/PayoutID"
+        },
+        "recipient_address": {
+          "$ref": "#/definitions/TRONAddress"
+        },
+        "amount": {
+          "$ref": "#/definitions/USDTAmount"
+        },
+        "currency": {
+          "$ref": "#/definitions/Currency"
+        },
+        "payout_type": {
+          "$ref": "#/definitions/PayoutType"
+        },
+        "reason": {
+          "$ref": "#/definitions/PayoutReason"
+        },
+        "status": {
+          "$ref": "#/definitions/PayoutStatus"
+        },
+        "txid": {
+          "$ref": "#/definitions/TransactionHash"
+        },
+        "created_at": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "completed_at": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "description": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "fee": {
+          "type": "number",
+          "minimum": 0
+        },
+        "error_message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payout_id",
+        "recipient_address",
+        "amount",
+        "currency",
+        "payout_type",
+        "reason",
+        "status",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "PayoutListResponse": {
+      "type": "object",
+      "properties": {
+        "payouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/PayoutResponse"
+          }
+        },
+        "total_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "skip": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "timestamp": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        }
+      },
+      "required": [
+        "payouts",
+        "total_count",
+        "total_amount",
+        "skip",
+        "limit",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "PayoutBatchCreateRequest": {
+      "type": "object",
+      "properties": {
+        "payouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/PayoutCreateRequest"
+          },
+          "minItems": 1,
+          "maxItems": 100,
+          "description": "List of payouts in batch (1-100)"
+        },
+        "batch_name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Optional batch name"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Batch priority (1-10)"
+        }
+      },
+      "required": ["payouts"],
+      "additionalProperties": false
+    },
+    "PayoutBatchResponse": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "$ref": "#/definitions/BatchID"
+        },
+        "payout_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PayoutID"
+          }
+        },
+        "batch_name": {
+          "type": "string"
+        },
+        "total_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "status": {
+          "$ref": "#/definitions/PayoutStatus"
+        },
+        "created_at": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "batch_id",
+        "payout_ids",
+        "total_count",
+        "total_amount",
+        "status",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "PayoutRouteRequest": {
+      "type": "object",
+      "properties": {
+        "payout_id": {
+          "$ref": "#/definitions/PayoutID"
+        },
+        "route": {
+          "$ref": "#/definitions/PayoutRoute"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5
+        }
+      },
+      "required": ["payout_id", "route"],
+      "additionalProperties": false
+    },
+    "PayoutRouteResponse": {
+      "type": "object",
+      "properties": {
+        "payout_id": {
+          "$ref": "#/definitions/PayoutID"
+        },
+        "route": {
+          "$ref": "#/definitions/PayoutRoute"
+        },
+        "status": {
+          "$ref": "#/definitions/PayoutStatus"
+        },
+        "estimated_time": {
+          "type": "string",
+          "description": "Estimated processing time"
+        },
+        "fee_estimate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated fee"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        }
+      },
+      "required": [
+        "payout_id",
+        "route",
+        "status",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "PayoutStatsResponse": {
+      "type": "object",
+      "properties": {
+        "total_payouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "pending_payouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "processing_payouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completed_payouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed_payouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "average_amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "daily_limit_usdt": {
+          "type": "number",
+          "minimum": 0
+        },
+        "daily_remaining": {
+          "type": "number",
+          "minimum": 0
+        },
+        "batch_queue_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timestamp": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        }
+      },
+      "required": [
+        "total_payouts",
+        "total_amount",
+        "pending_payouts",
+        "completed_payouts",
+        "failed_payouts",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "HealthCheckResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy"]
+        },
+        "service": {
+          "type": "string",
+          "default": "tron-payout-router"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "service_initialized": {
+          "type": "boolean"
+        },
+        "payouts": {
+          "type": "object",
+          "properties": {
+            "pending": {
+              "type": "integer"
+            },
+            "processing": {
+              "type": "integer"
+            },
+            "completed": {
+              "type": "integer"
+            },
+            "failed": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "required": ["status", "timestamp"],
+      "additionalProperties": false
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "$ref": "#/definitions/ErrorCode"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "timestamp": {
+          "$ref": "#/definitions/ISO8601DateTime"
+        },
+        "retry_after_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["error_code", "message", "timestamp"],
+      "additionalProperties": false
+    }
+  }
+}

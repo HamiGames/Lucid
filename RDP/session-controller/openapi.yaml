@@ -1,0 +1,635 @@
+openapi: 3.0.3
+info:
+  title: Lucid RDP Session Controller API
+  description: |
+    RDP session management and monitoring service for Lucid project.
+    
+    Features:
+    - RDP session creation and lifecycle management
+    - Connection management and monitoring
+    - Session state tracking and updates
+    - Session metrics collection
+    - Health monitoring for sessions and connections
+  version: 1.0.0
+  contact:
+    name: Lucid Development Team
+    email: dev@lucid-blockchain.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://rdp-controller:8092
+    description: Docker container service (internal)
+  - url: http://localhost:8092
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Health check and service info endpoints
+  - name: Sessions
+    description: RDP session management endpoints
+  - name: Connections
+    description: Connection management endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      description: Returns service health status and basic information
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is not available or not fully initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/sessions:
+    post:
+      tags:
+        - Sessions
+      summary: Create a new RDP session
+      description: Create a new RDP session for a user on a specific server
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '200':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RdpSession'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failed to create session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Sessions
+      summary: List sessions
+      description: List all active sessions, optionally filtered by user_id
+      operationId: listSessions
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          description: Filter sessions by user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RdpSession'
+
+  /api/v1/sessions/{session_id}:
+    get:
+      tags:
+        - Sessions
+      summary: Get session by ID
+      description: Retrieve session information by session ID
+      operationId: getSession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RdpSession'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/sessions/{session_id}/status:
+    put:
+      tags:
+        - Sessions
+      summary: Update session status
+      description: Update the status of a session
+      operationId: updateSessionStatus
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: true
+          description: New status value
+          schema:
+            type: string
+            enum: [creating, active, idle, suspended, terminated, error]
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: updated
+        '400':
+          description: Invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/sessions/{session_id}:
+    delete:
+      tags:
+        - Sessions
+      summary: Terminate a session
+      description: Terminate and cleanup a session
+      operationId: terminateSession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session terminated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: terminated
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/sessions/{session_id}/metrics:
+    get:
+      tags:
+        - Sessions
+      summary: Get session metrics
+      description: Retrieve metrics for a specific session
+      operationId: getSessionMetrics
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionMetrics'
+        '404':
+          description: Session metrics not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/sessions/{session_id}/health:
+    get:
+      tags:
+        - Sessions
+      summary: Get session health status
+      description: Retrieve health status for a specific session
+      operationId: getSessionHealth
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the session
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionHealthResponse'
+
+  /api/v1/connections:
+    get:
+      tags:
+        - Connections
+      summary: List connections
+      description: List all active connections, optionally filtered by server_id
+      operationId: listConnections
+      parameters:
+        - name: server_id
+          in: query
+          required: false
+          description: Filter connections by server ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RdpConnection'
+
+  /api/v1/connections/{connection_id}/health:
+    get:
+      tags:
+        - Connections
+      summary: Get connection health
+      description: Retrieve health status for a specific connection
+      operationId: getConnectionHealth
+      parameters:
+        - name: connection_id
+          in: path
+          required: true
+          description: UUID of the connection
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connection health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionHealthResponse'
+
+  /api/v1/connections/{connection_id}/metrics:
+    get:
+      tags:
+        - Connections
+      summary: Get connection metrics
+      description: Retrieve metrics for a specific connection
+      operationId: getConnectionMetrics
+      parameters:
+        - name: connection_id
+          in: path
+          required: true
+          description: UUID of the connection
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connection metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+          description: Health status
+        service:
+          type: string
+          example: rdp-session-controller
+          description: Service name
+        version:
+          type: string
+          example: "1.0.0"
+          description: Service version
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the health check
+
+    CreateSessionRequest:
+      type: object
+      required:
+        - user_id
+        - server_id
+        - session_config
+      properties:
+        user_id:
+          type: string
+          description: User identifier
+        server_id:
+          type: string
+          format: uuid
+          description: RDP server identifier
+        session_config:
+          type: object
+          additionalProperties: true
+          description: Session configuration dictionary
+
+    RdpSession:
+      type: object
+      required:
+        - session_id
+        - user_id
+        - server_id
+        - status
+        - created_at
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+        user_id:
+          type: string
+          description: User identifier who owns the session
+        server_id:
+          type: string
+          format: uuid
+          description: RDP server identifier
+        connection_id:
+          type: ["string", "null"]
+          format: uuid
+          description: Connection identifier (null if not connected)
+        status:
+          type: string
+          enum: [creating, active, idle, suspended, terminated, error]
+          description: Session status
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when session was created
+        updated_at:
+          type: ["string", "null"]
+          format: date-time
+          description: ISO 8601 timestamp when session was last updated
+        terminated_at:
+          type: ["string", "null"]
+          format: date-time
+          description: ISO 8601 timestamp when session was terminated
+        last_activity:
+          type: ["string", "null"]
+          format: date-time
+          description: ISO 8601 timestamp of last activity
+        config:
+          type: object
+          additionalProperties: true
+          description: Session configuration dictionary
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Session metadata dictionary
+
+    SessionMetrics:
+      type: object
+      required:
+        - session_id
+        - start_time
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+        start_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when metrics collection started
+        last_updated:
+          type: ["string", "null"]
+          format: date-time
+          description: ISO 8601 timestamp when metrics were last updated
+        cpu_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: CPU usage percentage
+          default: 0.0
+        memory_usage:
+          type: integer
+          minimum: 0
+          description: Memory usage in bytes
+          default: 0
+        memory_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Memory usage percentage
+          default: 0.0
+        disk_usage:
+          type: integer
+          minimum: 0
+          description: Disk usage in bytes
+          default: 0
+        disk_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Disk usage percentage
+          default: 0.0
+        network_bytes_sent:
+          type: integer
+          minimum: 0
+          description: Total network bytes sent
+          default: 0
+        network_bytes_recv:
+          type: integer
+          minimum: 0
+          description: Total network bytes received
+          default: 0
+        network_packets_sent:
+          type: integer
+          minimum: 0
+          description: Total network packets sent
+          default: 0
+        network_packets_recv:
+          type: integer
+          minimum: 0
+          description: Total network packets received
+          default: 0
+        active_connections:
+          type: integer
+          minimum: 0
+          description: Number of active connections
+          default: 0
+        process_count:
+          type: integer
+          minimum: 0
+          description: Number of processes
+          default: 0
+
+    RdpConnection:
+      type: object
+      required:
+        - connection_id
+        - server_id
+        - status
+        - created_at
+        - last_activity
+      properties:
+        connection_id:
+          type: string
+          format: uuid
+          description: Unique connection identifier
+        server_id:
+          type: string
+          format: uuid
+          description: RDP server identifier
+        status:
+          type: string
+          description: Connection status (connecting, active, closing, closed)
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when connection was created
+        last_activity:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of last activity
+        metrics:
+          type: object
+          additionalProperties: true
+          description: Connection metrics dictionary
+
+    SessionHealthResponse:
+      type: object
+      required:
+        - session_id
+        - status
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Session identifier
+        status:
+          type: string
+          description: Session status
+        connection_health:
+          type: object
+          additionalProperties: true
+          description: Connection health information
+        metrics:
+          type: ["object", "null"]
+          description: Session metrics (null if not available)
+        last_activity:
+          type: ["string", "null"]
+          format: date-time
+          description: ISO 8601 timestamp of last activity
+
+    ConnectionHealthResponse:
+      type: object
+      required:
+        - connection_id
+        - status
+      properties:
+        connection_id:
+          type: string
+          format: uuid
+          description: Connection identifier
+        status:
+          type: string
+          description: Connection status
+        process_status:
+          type: string
+          description: Process status (running, stopped, no_process)
+        last_activity:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of last activity
+        uptime:
+          type: number
+          format: float
+          description: Connection uptime in seconds
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - service
+            - version
+          properties:
+            code:
+              type: string
+              example: LUCID_ERR_2200
+              description: Error code
+            message:
+              type: string
+              example: Internal server error
+              description: Error message
+            service:
+              type: string
+              example: rdp-session-controller
+              description: Service identifier
+            version:
+              type: string
+              example: v1
+              description: API version
+

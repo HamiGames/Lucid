@@ -1,0 +1,505 @@
+#!/bin/bash
+# Path: /mnt/myssd/Lucid/Lucid/infrastructure/docker/blockchain/build-env.sh
+# Build Environment Script for Lucid Blockchain Services
+# Generates .env files for all blockchain-related containers
+# Pi Console Native - Optimized for Raspberry Pi 5 deployment
+
+set -euo pipefail
+
+# =============================================================================
+# PI CONSOLE NATIVE CONFIGURATION
+# =============================================================================
+
+# Fixed Pi Console Paths - No dynamic detection for Pi console reliability
+PROJECT_ROOT="/mnt/myssd/Lucid/Lucid"
+ENV_DIR="/mnt/myssd/Lucid/Lucid/configs/environment"
+SCRIPTS_DIR="/mnt/myssd/Lucid/Lucid/scripts"
+CONFIG_DIR="/mnt/myssd/Lucid/Lucid/configs"
+SCRIPT_DIR="/mnt/myssd/Lucid/Lucid/infrastructure/docker/blockchain"
+
+# Validate Pi mount points exist
+validate_pi_mounts() {
+    local required_mounts=(
+        "/mnt/myssd"
+        "/mnt/myssd/Lucid"
+        "/mnt/myssd/Lucid/Lucid"
+    )
+    
+    for mount in "${required_mounts[@]}"; do
+        if [[ ! -d "$mount" ]]; then
+            echo "ERROR: Required Pi mount point not found: $mount"
+            echo "Please ensure the SSD is properly mounted at /mnt/myssd"
+            exit 1
+        fi
+    done
+}
+
+# Check required packages for Pi console
+check_pi_packages() {
+    local required_packages=(
+        "openssl"
+        "git"
+        "bash"
+        "coreutils"
+    )
+    
+    local missing_packages=()
+    
+    for package in "${required_packages[@]}"; do
+        if ! command -v "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required packages: ${missing_packages[*]}"
+        echo "Please install missing packages:"
+        echo "sudo apt update && sudo apt install -y ${missing_packages[*]}"
+        exit 1
+    fi
+}
+
+# Validate paths exist
+validate_paths() {
+    if [[ ! -d "$PROJECT_ROOT" ]]; then
+        echo "ERROR: Project root not found: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo "ERROR: Scripts directory not found: $SCRIPTS_DIR"
+        exit 1
+    fi
+}
+
+# Script Configuration
+BUILD_TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# =============================================================================
+# VALIDATION AND INITIALIZATION
+# =============================================================================
+
+# Run all validations
+validate_pi_mounts
+check_pi_packages
+validate_paths
+
+# Create environment directory
+mkdir -p "$ENV_DIR"
+
+log_info "Building environment files for Lucid Blockchain Services"
+log_info "Project Root: $PROJECT_ROOT"
+log_info "Environment Directory: $ENV_DIR"
+log_info "Build timestamp: $BUILD_TIMESTAMP"
+log_info "Git SHA: $GIT_SHA"
+
+# Common environment variables for all blockchain services
+COMMON_ENV_VARS=(
+    "PYTHONDONTWRITEBYTECODE=1"
+    "PYTHONUNBUFFERED=1"
+    "PYTHONPATH=/app"
+    "BUILD_TIMESTAMP=$BUILD_TIMESTAMP"
+    "GIT_SHA=$GIT_SHA"
+    "LUCID_ENV=dev"
+    "LUCID_NETWORK=testnet"
+    "LUCID_PLANE=ops"
+    "LUCID_CLUSTER_ID=dev-core"
+    "LOG_LEVEL=DEBUG"
+    "PROJECT_ROOT=$PROJECT_ROOT"
+    "ENV_DIR=$ENV_DIR"
+    "SCRIPTS_DIR=$SCRIPTS_DIR"
+    "CONFIG_DIR=$CONFIG_DIR"
+)
+
+# Blockchain API Environment
+log_info "Creating .env.blockchain-api..."
+cat > "$ENV_DIR/.env.blockchain-api" << EOF
+# Lucid Blockchain API Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# API Configuration
+API_HOST=0.0.0.0
+API_PORT=8084
+UVICORN_WORKERS=1
+
+# Database Configuration
+MONGO_URI=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+MONGO_DATABASE=lucid
+MONGO_COLLECTION_PREFIX=blockchain
+
+# Blockchain Network Configuration
+TRON_NETWORK=shasta
+TRON_RPC_URL=https://api.shasta.trongrid.io
+TRON_HTTP_ENDPOINT=https://api.shasta.trongrid.io
+TRONGRID_API_KEY=""
+BLOCK_ONION=""
+BLOCK_RPC_URL=""
+ETH_RPC_URL=http://localhost:8545
+ETH_CHAIN_ID=1337
+
+# Security Configuration
+KEY_ENC_SECRET=""
+JWT_SECRET_KEY=""
+ENCRYPTION_KEY=""
+AGE_PRIVATE_KEY=""
+
+# Data Directories
+BLOCKCHAIN_DATA_DIR=/data/blockchain
+WALLET_DATA_DIR=/data/wallets
+LOG_DIR=/data/logs
+
+# Performance Settings
+MAX_CONCURRENT_REQUESTS=100
+REQUEST_TIMEOUT=30
+RETRY_ATTEMPTS=3
+
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
+EOF
+
+# Blockchain Governance Environment
+log_info "Creating .env.blockchain-governance..."
+cat > "$ENV_DIR/.env.blockchain-governance" << EOF
+# Lucid Blockchain Governance Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Governance Configuration
+GOVERNANCE_PATH=/opt/lucid/governance
+VOTING_PATH=/opt/lucid/voting
+PARAMETERS_PATH=/opt/lucid/parameters
+
+# Voting Configuration
+VOTING_PERIOD_SECONDS=172800
+PROPOSAL_THRESHOLD=1000
+QUORUM_THRESHOLD=4000
+VOTING_DELAY_SECONDS=86400
+EXECUTION_DELAY_SECONDS=172800
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+LUCID_NETWORK_ID=lucid-dev
+
+# Blockchain Configuration
+LUCID_BLOCK_TIME=5
+LUCID_MAX_BLOCK_TXS=100
+
+# Security Configuration
+GOVERNANCE_KEY=""
+ADMIN_KEY=""
+
+# Data Directories
+DATA_DIR=/data/governance
+CONSENSUS_DIR=/data/consensus
+
+# Performance Settings
+MAX_PROPOSALS=1000
+MAX_VOTES_PER_PROPOSAL=10000
+EOF
+
+# Blockchain Sessions Data Environment
+log_info "Creating .env.blockchain-sessions-data..."
+cat > "$ENV_DIR/.env.blockchain-sessions-data" << EOF
+# Lucid Blockchain Sessions Data Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# Blockchain Configuration
+CHAIN_RPC_URL=http://localhost:8545
+CHAIN_ID=1337
+LUCID_ANCHORS_ADDRESS=""
+LUCID_CHUNK_STORE_ADDRESS=""
+
+# Security Configuration
+PRIVATE_KEY=""
+ENCRYPTION_KEY=""
+
+# Data Directories
+CHAIN_DATA_DIR=/data/chain
+SESSIONS_DATA_DIR=/data/sessions
+ANCHORS_DIR=/data/anchors
+
+# Performance Settings
+BATCH_SIZE=100
+GAS_LIMIT=1000000
+CONFIRMATION_BLOCKS=3
+EOF
+
+# Blockchain VM Environment
+log_info "Creating .env.blockchain-vm..."
+cat > "$ENV_DIR/.env.blockchain-vm" << EOF
+# Lucid Blockchain VM Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# VM Configuration
+VM_STORAGE_PATH=/data/vm
+VM_MAX_INSTANCES=10
+VM_MEMORY_LIMIT=1024
+VM_CPU_LIMIT=1
+
+# Blockchain Configuration
+CHAIN_RPC_URL=http://localhost:8545
+CHAIN_ID=1337
+
+# Security Configuration
+VM_ENCRYPTION_KEY=""
+VM_ACCESS_KEY=""
+
+# Data Directories
+VM_INSTANCES_DIR=/data/vm-instances
+VM_LOGS_DIR=/data/logs
+
+# Performance Settings
+VM_STARTUP_TIMEOUT=60
+VM_SHUTDOWN_TIMEOUT=30
+EOF
+
+# Blockchain Ledger Environment
+log_info "Creating .env.blockchain-ledger..."
+cat > "$ENV_DIR/.env.blockchain-ledger" << EOF
+# Lucid Blockchain Ledger Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# Ledger Configuration
+LEDGER_STORAGE_PATH=/data/ledger
+LUCID_NETWORK_ID=lucid-dev
+
+# Blockchain Configuration
+CHAIN_RPC_URL=http://localhost:8545
+CHAIN_ID=1337
+
+# Security Configuration
+LEDGER_ENCRYPTION_KEY=""
+SIGNING_KEY=""
+
+# Data Directories
+BLOCKS_DIR=/data/blocks
+TRANSACTIONS_DIR=/data/transactions
+
+# Performance Settings
+BLOCK_SIZE_LIMIT=8388608
+MAX_TRANSACTIONS_PER_BLOCK=1000
+EOF
+
+# TRON Node Client Environment
+log_info "Creating .env.tron-node-client..."
+cat > "$ENV_DIR/.env.tron-node-client" << EOF
+# Lucid TRON Node Client Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# TRON Configuration
+TRON_NETWORK=shasta
+TRON_RPC_URL=https://api.shasta.trongrid.io
+TRON_PRIVATE_KEY=""
+
+# Contract Addresses
+PAYOUT_ROUTER_V0_ADDRESS=""
+PAYOUT_ROUTER_KYC_ADDRESS=""
+USDT_TRC20_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# Security Configuration
+COMPLIANCE_SIGNER_KEY=""
+ENCRYPTION_KEY=""
+
+# Data Directories
+TRON_DATA_DIR=/data/tron
+PAYOUTS_DIR=/data/payouts
+
+# Performance Settings
+GAS_PRICE=420
+GAS_LIMIT=1000000
+CONFIRMATION_BLOCKS=20
+EOF
+
+# Contract Deployment Environment
+log_info "Creating .env.contract-deployment..."
+cat > "$ENV_DIR/.env.contract-deployment" << EOF
+# Lucid Contract Deployment Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Deployment Configuration
+CONTRACT_ARTIFACTS_PATH=/data/contracts
+DEPLOYMENT_LOG_PATH=/data/logs
+COMPILER_STORAGE_PATH=/data/compiler
+
+# TRON Configuration
+TRON_NETWORK=shasta
+TRON_RPC_URL=https://api.shasta.trongrid.io
+
+# Security Configuration
+DEPLOYMENT_KEY=""
+CONTRACT_OWNER_KEY=""
+
+# Data Directories
+CONTRACTS_DIR=/data/contracts
+COMPILER_DIR=/data/compiler
+
+# Performance Settings
+DEPLOYMENT_TIMEOUT=300
+VERIFICATION_TIMEOUT=60
+EOF
+
+# Contract Compiler Environment
+log_info "Creating .env.contract-compiler..."
+cat > "$ENV_DIR/.env.contract-compiler" << EOF
+# Lucid Contract Compiler Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# Compiler Configuration
+COMPILER_STORAGE_PATH=/data/compiler
+SOLC_VERSION=0.8.19
+
+# Security Configuration
+COMPILER_KEY=""
+VERIFICATION_KEY=""
+
+# Data Directories
+CONTRACTS_DIR=/data/contracts
+COMPILER_DIR=/data/compiler
+
+# Performance Settings
+COMPILATION_TIMEOUT=120
+OPTIMIZATION_LEVEL=200
+EOF
+
+# On-System Chain Client Environment
+log_info "Creating .env.on-system-chain-client..."
+cat > "$ENV_DIR/.env.on-system-chain-client" << EOF
+# Lucid On-System Chain Client Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# Blockchain Configuration
+CHAIN_RPC_URL=http://localhost:8545
+CHAIN_ID=1337
+LUCID_ANCHORS_ADDRESS=""
+LUCID_CHUNK_STORE_ADDRESS=""
+
+# Security Configuration
+PRIVATE_KEY=""
+ENCRYPTION_KEY=""
+
+# Data Directories
+CHAIN_DATA_DIR=/data/chain
+ANCHORS_DIR=/data/anchors
+
+# Performance Settings
+BATCH_SIZE=100
+GAS_LIMIT=1000000
+CONFIRMATION_BLOCKS=3
+EOF
+
+# Deployment Orchestrator Environment
+log_info "Creating .env.deployment-orchestrator..."
+cat > "$ENV_DIR/.env.deployment-orchestrator" << EOF
+# Lucid Deployment Orchestrator Environment
+# Generated: $(date)
+# Project Root: $PROJECT_ROOT
+
+# Common Python settings
+$(printf '%s\n' "${COMMON_ENV_VARS[@]}")
+
+# Database Configuration
+MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin
+
+# Orchestrator Configuration
+ORCHESTRATOR_STORAGE_PATH=/data/orchestrator
+
+# Security Configuration
+ORCHESTRATOR_KEY=""
+DEPLOYMENT_KEY=""
+
+# Data Directories
+DEPLOYMENTS_DIR=/data/deployments
+ORCHESTRATOR_DIR=/data/orchestrator
+
+# Performance Settings
+MAX_CONCURRENT_DEPLOYMENTS=5
+DEPLOYMENT_TIMEOUT=600
+EOF
+
+log_success "Environment files created successfully in $ENV_DIR"
+log_success "🛡️  Pi console native validation completed"
+log_success "🔧 Fallback mechanisms enabled for minimal Pi installations"
+log_info "Created environment files for:"
+log_info "  - .env.blockchain-api"
+log_info "  - .env.blockchain-governance"
+log_info "  - .env.blockchain-sessions-data"
+log_info "  - .env.blockchain-vm"
+log_info "  - .env.blockchain-ledger"
+log_info "  - .env.tron-node-client"
+log_info "  - .env.contract-deployment"
+log_info "  - .env.contract-compiler"
+log_info "  - .env.on-system-chain-client"
+log_info "  - .env.deployment-orchestrator"
+
+echo
+log_info "To use these environment files in Docker builds:"
+log_info "  docker build --env-file $ENV_DIR/.env.blockchain-api -t pickme/lucid:blockchain-api ."
+log_info "📁 All environment files saved to: $ENV_DIR"
