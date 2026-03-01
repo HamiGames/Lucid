@@ -316,17 +316,51 @@ ctl() {
     return 1
   fi
 
-  # Convert cookie to hex format for authentication
-  local cookie_hex
-  cookie_hex=$(/var/bin/xxd -p "$COOKIE_FILE" 2>/dev/null | /bin/busybox tr -d '\n')
+  # Convert cookie file to hex using ONLY tools available in distroless
+  # Distroless has /bin/busybox with od, xxd, and tr built-in
+  local cookie_hex=""
+
+  # Primary method: busybox od (available in ALL distroless containers)
+  # od -A n -t x1 outputs hex bytes separated by spaces: "1f 2a 3b 4c"
+  # tr -d ' \n' removes spaces and newlines: "1f2a3b4c"
+  cookie_hex=$(/bin/busybox od -A n -t x1 "$COOKIE_FILE" 2>/dev/null | \
+    /bin/busybox tr -d ' \n' 2>/dev/null)
 
   if [ -z "$cookie_hex" ]; then
-    log "ERROR: Failed to read or convert cookie file to hex"
+    # Fallback method: busybox xxd
+    if /bin/busybox xxd -p "$COOKIE_FILE" >/dev/null 2>&1; then
+      cookie_hex=$(/bin/busybox xxd -p "$COOKIE_FILE" 2>/dev/null | \
+        /bin/busybox tr -d '\n' 2>/dev/null)
+    fi
+  fi
+
+  if [ -z "$cookie_hex" ]; then
+    # Last resort: use printf and read file byte by byte
+    # This is slow but works with just bash builtins
+    local byte_val
+    while IFS= read -r -n 1 -d '' byte_val; do
+      /bin/busybox printf '%02x' "'$byte_val"
+    done < "$COOKIE_FILE"
+    cookie_hex=$(/bin/busybox printf '%s\n' "$cookie_hex")
+  fi
+
+  # Validate we got hex output
+  if [ -z "$cookie_hex" ]; then
+    log "ERROR: Failed to convert cookie file to hex using all methods"
+    log "Cookie file: $COOKIE_FILE (size: $(wc -c < "$COOKIE_FILE") bytes)"
+    return 1
+  fi
+
+  # Validate hex format (should be continuous hex chars)
+  if ! echo "$cookie_hex" | /bin/busybox grep -qE '^[0-9a-fA-F]+$'; then
+    log "ERROR: Invalid hex format from cookie conversion"
     return 1
   fi
 
   # Send authenticated command to Tor control port
-  # Use timeout to prevent hanging
+  # AUTHENTICATE: send hex-encoded cookie
+  # Command: user's command
+  # QUIT: close connection cleanly
   {
     printf 'AUTHENTICATE %s\r\n' "$cookie_hex"
     printf '%s\r\n' "$cmd"
