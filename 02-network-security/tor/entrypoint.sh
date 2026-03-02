@@ -1,1021 +1,1191 @@
-#!/bin/bash
-# Lucid Tor Proxy — entrypoint for distroless runtime
-# Aligned with @constants: TOR_PROXY_* env vars, CREATE_ONION=0 default, /run/lucid/onion state
-# COMPLETELY REFACTORED: Fixed preload_tor_data, improved bootstrap logging, better error handling
+#!/usr/bin/env bash
+# =============================================================================
+# tor_entrypoint.sh — Lucid Tor Proxy Container Entrypoint v3.0.0
+# =============================================================================
+# Distroless-compatible entrypoint for the Tor daemon.
 #
-# Key Improvements:
-# - preload_tor_data() now correctly copies seed data before bootstrap
-# - Checks source ($TOR_SEED_DIR) instead of destination
-# - Critical bootstrap files verified: state, cached-consensus, cached-microdescs, cached-certs
-# - Permissions applied recursively to all directories after preload
-# - Removed 150+ lines of redundant/broken file checks
-# - Better bootstrap progress logging
-# - Improved error messages and troubleshooting guidance
+# Execution order:
+#   1.  Preload consensus/cert/onion data  → fast bootstrap, onion consistency
+#   2.  Generate torrc from env            → configuration
+#   3.  Append bridge config               → ISP bypass
+#   4.  Start Tor daemon                   → background process
+#   5.  Wait for + locate auth cookie      → Tor must be UP first
+#   6.  Distribute cookie to targets       → inter-service auth
+#   7.  Wait for full bootstrap            → 100% via control port
+#   8.  Verify onion service               → if configured
+#   9.  Background health monitor          → keep container alive
+#  10.  Wait on Tor PID                    → container lifecycle
+#
+# Distroless notes:
+#   - Control port communication uses bash /dev/tcp — no netcat/socat
+#   - hex_encode_file() has a pure bash fallback when od/xxd are absent
+#   - File sizes checked with wc -c, not stat
+#   - Subdirectory walk uses bash globs — find(1) is not required
+#   - Cookie search scans multiple candidate paths — no find(1) needed
+# =============================================================================
+set -euo pipefail
+IFS=$'\n\t'
 
-set -eu
+# =============================================================================
+# Constants
+# =============================================================================
+readonly SCRIPT_VERSION="3.0.0"
+readonly COOKIE_SIZE=32        # Tor auth cookie is always exactly 32 bytes
+readonly COOKIE_HEX_LENGTH=64  # 32 binary bytes → 64 hex nibbles
 
-log() { printf '[tor-entrypoint] %s\n' "$*"; }
+# =============================================================================
+# Logging
+# =============================================================================
+_log() {
+    local level="$1"; shift
+    local ts
+    ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || printf 'now')"
+    printf '[%s] [%s] [tor-entrypoint] %s\n' "$ts" "$level" "$*" >&2
+}
+log()       { _log "INFO " "$@"; }
+log_warn()  { _log "WARN " "$@"; }
+log_error() { _log "ERROR" "$@"; }
+log_debug() { [[ "${TOR_DEBUG:-0}" == "1" ]] && _log "DEBUG" "$@" || true; }
 
-# ============================================================================
-# Environment Variables & Defaults
-# ============================================================================
+# =============================================================================
+# Environment variables  (set via docker-compose .env.* files)
+# =============================================================================
 
-CONTROL_HOST=${CONTROL_HOST:-lucid-tor-proxy}
-# Align with @constants and compose: prefer TOR_PROXY_* then fallback
-TOR_SOCKS_PORT=${TOR_PROXY_SOCKS_PORT:-${TOR_SOCKS_PORT:-9050}}
-CONTROL_PORT=${TOR_PROXY_CONTROL_PORT:-${TOR_CONTROL_PORT:-9051}}
-COOKIE_FILE=${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}
-UPSTREAM_SERVICE=${UPSTREAM_SERVICE:-}
-UPSTREAM_PORT=${UPSTREAM_PORT:-8081}
-COOKIE_ALT_PATH=/mnt/myssd/Lucid/Lucid/data/tor/control_auth_cookie
-# Foundation default: don't create onions unless explicitly enabled
-CREATE_ONION=${CREATE_ONION:-0}
-TOR_SEED_DIR=${TOR_SEED_DIR:-/seed/tor-data}
-TOR_DATA_DIR=${TOR_DATA_DIR:-/var/lib/tor}
-# Bridge configuration (ISP port blocking workaround)
-TOR_USE_BRIDGES=${TOR_USE_BRIDGES:-0}
-TOR_BRIDGES=${TOR_BRIDGES:-}
+# ── Paths ─────────────────────────────────────────────────────────────────────
+TOR_DATA_DIR="${TOR_DATA_DIR:-/var/lib/tor}"
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/etc/tor}"
+TOR_LOG_DIR="${TOR_LOG_DIR:-/var/log/tor}"
+TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
+TORRC="${TOR_CONFIG_DIR}/torrc"
 
-# ============================================================================
-# FUNCTION: preload_tor_data
-# Purpose: Copy seed Tor data from /seed/tor-data to /var/lib/tor if needed
-# This includes consensus documents, cached descriptors, and onion service keys
-# to speed up bootstrap and improve reliability
-# ============================================================================
+# ── Ports ──────────────────────────────────────────────────────────────────────
+TOR_SOCKS_PORT="${TOR_SOCKS_PORT:-9050}"
+TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
+TOR_CONTROL_SOCKET="${TOR_CONTROL_SOCKET:-}"   # optional unix socket path
+TOR_DNS_PORT="${TOR_DNS_PORT:-0}"              # 0 = disabled
+TOR_TRANS_PORT="${TOR_TRANS_PORT:-0}"          # 0 = disabled
+
+# ── Cookie / auth ──────────────────────────────────────────────────────────────
+TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
+TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
+# Colon-separated list of additional paths the cookie must be copied to.
+# Example: TOR_COOKIE_TARGETS=/shared/control_auth_cookie:/mnt/tor/cookie
+TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
+
+# ── Seed data ──────────────────────────────────────────────────────────────────
+TOR_SEED_DIR="${TOR_SEED_DIR:-/seed/tor-data}"
+TOR_USE_SEED="${TOR_USE_SEED:-1}"
+
+# ── Bridges / pluggable transports ─────────────────────────────────────────────
+TOR_USE_BRIDGES="${TOR_USE_BRIDGES:-0}"
+# Newline-separated bridge lines. "Bridge " prefix optional — added when absent.
+TOR_BRIDGES="${TOR_BRIDGES:-}"
+TOR_PLUGGABLE_TRANSPORT="${TOR_PLUGGABLE_TRANSPORT:-}"
+
+# ── Onion service ──────────────────────────────────────────────────────────────
+TOR_ONION_SERVICE_ENABLED="${TOR_ONION_SERVICE_ENABLED:-0}"
+TOR_ONION_SERVICE_DIR="${TOR_ONION_SERVICE_DIR:-${TOR_DATA_DIR}/onion_service}"
+TOR_ONION_SERVICE_PORT="${TOR_ONION_SERVICE_PORT:-80}"
+TOR_ONION_SERVICE_TARGET="${TOR_ONION_SERVICE_TARGET:-127.0.0.1:80}"
+
+# ── Timing ─────────────────────────────────────────────────────────────────────
+TOR_BOOTSTRAP_TIMEOUT="${TOR_BOOTSTRAP_TIMEOUT:-300}"
+TOR_BOOTSTRAP_POLL_INTERVAL="${TOR_BOOTSTRAP_POLL_INTERVAL:-5}"
+TOR_COOKIE_WAIT_TIMEOUT="${TOR_COOKIE_WAIT_TIMEOUT:-60}"
+TOR_HEALTH_CHECK_INTERVAL="${TOR_HEALTH_CHECK_INTERVAL:-30}"
+
+# ── Runtime user ───────────────────────────────────────────────────────────────
+TOR_USER="${TOR_USER:-debian-tor}"
+
+# ── Internal state ─────────────────────────────────────────────────────────────
+TOR_PID=""
+
+# =============================================================================
+# Utility helpers
+# =============================================================================
+
+# Ensure a directory exists; optionally chown it.
+ensure_dir() {
+    local dir="$1"
+    local owner="${2:-}"
+    [[ -d "$dir" ]] || mkdir -p "$dir"
+    if [[ -n "$owner" ]]; then
+        chown "$owner" "$dir" 2>/dev/null \
+            || log_warn "chown ${owner} ${dir} failed — continuing"
+    fi
+}
+
+# Return file size in bytes via wc -c (stat absent on many minimal images).
+file_size_bytes() {
+    local f="$1"
+    if [[ ! -f "$f" ]]; then
+        printf '0'
+    else
+        wc -c < "$f" | tr -d '[:space:]'
+    fi
+}
+
+# Hex-encode a binary file.
+# Tries: od (coreutils) → xxd → pure bash fallback.
+# Output: lowercase hex string on stdout, no trailing newline.
+hex_encode_file() {
+    local file="$1"
+
+    if command -v od &>/dev/null; then
+        od -An -tx1 "$file" | tr -d ' \n'
+    elif command -v xxd &>/dev/null; then
+        xxd -p "$file" | tr -d '\n'
+    else
+        # Pure bash — byte-by-byte; slow but works in fully distroless images
+        local hex="" char
+        while IFS= read -r -d '' -n 1 char; do
+            printf -v hex '%s%02x' "$hex" "'$char"
+        done < "$file"
+        printf '%s' "$hex"
+    fi
+}
+
+# =============================================================================
+# Cookie validation
+# =============================================================================
+# Validates that a cookie file is a genuine Tor auth cookie:
+#   1. File exists and is a regular file
+#   2. Binary size is exactly COOKIE_SIZE (32) bytes  — checked via wc -c
+#   3. Hex encoding is exactly COOKIE_HEX_LENGTH (64) chars — proves the
+#      content is pure binary and has not been double-encoded or truncated
+#
+# Usage:  validate_cookie_file "/path/to/control_auth_cookie"
+# Exits the container on any failure — a bad cookie means zero connectivity.
+validate_cookie_file() {
+    local cookie_path="$1"
+
+    # ── 1. Existence ────────────────────────────────────────────────────────
+    if [[ ! -f "${cookie_path}" ]]; then
+        log_error "Cookie validation FAILED: file does not exist: ${cookie_path}"
+        exit 1
+    fi
+
+    # ── 2. Binary size check (wc -c — distroless-safe, no stat needed) ─────
+    local byte_count
+    byte_count="$(wc -c < "${cookie_path}" | tr -d '[:space:]')"
+
+    if [[ -z "${byte_count}" ]]; then
+        log_error "Cookie validation FAILED: could not determine file size: ${cookie_path}"
+        exit 1
+    fi
+
+    if (( byte_count != COOKIE_SIZE )); then
+        log_error "Cookie validation FAILED: size=${byte_count} bytes (expected exactly ${COOKIE_SIZE}): ${cookie_path}"
+        log_error "  A wrong size means Tor has not finished writing the cookie, or the"
+        log_error "  file was corrupted / double-encoded. Aborting — no valid cookie, no connections."
+        exit 1
+    fi
+
+    log_debug "Cookie size OK: ${byte_count} bytes — ${cookie_path}"
+
+    # ── 3. Hex-length check ─────────────────────────────────────────────────
+    # hex_encode_file() tries od → xxd → pure-bash fallback (distroless-safe).
+    local hex_str
+    hex_str="$(hex_encode_file "${cookie_path}")"
+    local hex_len="${#hex_str}"
+
+    if (( hex_len != COOKIE_HEX_LENGTH )); then
+        log_error "Cookie validation FAILED: hex-encoded length=${hex_len} chars (expected exactly ${COOKIE_HEX_LENGTH}): ${cookie_path}"
+        log_error "  Expected 32 binary bytes → 64 hex nibbles."
+        log_error "  Got ${hex_len} chars — the cookie has been corrupted or double-encoded."
+        log_error "  Raw hex dump (first 80 chars): ${hex_str:0:80}"
+        exit 1
+    fi
+
+    log_debug "Cookie hex-length OK: ${hex_len} chars — ${cookie_path}"
+    log "Cookie validated: ${cookie_path} — ${byte_count} bytes / ${hex_len}-char hex — GOOD"
+}
+
+# =============================================================================
+# Step 1 — Preload seed / consensus / cert / onion data
+# =============================================================================
+# This function is the bootstrap accelerator.  Without it every cold start
+# must fetch the full consensus + authority certs from the network BEFORE it
+# can validate a single relay descriptor — which is exactly why the container
+# fails to reach consensus on a clean start.
+#
+# What it loads and why:
+#
+#   cached-certs               — Authority signing + identity certificates.
+#                                Tor CANNOT validate any consensus document
+#                                without these.  This is the single most
+#                                important file for bootstrap speed.
+#
+#   cached-consensus           — The full signed network consensus.  Preloading
+#                                this means Tor already knows the state of the
+#                                network and skips the initial consensus fetch.
+#
+#   cached-microdesc-consensus — Microdescriptor variant of the consensus.
+#                                Required for building circuits when
+#                                UseMicrodescriptors 1 (the Tor default).
+#
+#   cached-microdescs          — Microdescriptors for individual relays.
+#                                Tor builds circuits from these.
+#
+#   cached-microdescs.new      — Freshly downloaded microdescs not yet merged.
+#
+#   cached-descriptors         — Full relay descriptors (older clients / exits).
+#
+#   cached-extrainfo           — Extra-info documents.
+#
+#   state                      — Guard state, transport state, bandwidth stats.
+#                                Preserving guard selection prevents Tor from
+#                                rotating guards on every restart.
+#
+# Subdirectory walk:
+#   Every subdirectory of TOR_SEED_DIR that contains a "hostname" file is an
+#   onion service directory.  The hostname file holds the .onion address for
+#   that service.  Copying these ensures the .onion addresses are stable
+#   across container restarts — without them Tor generates fresh keypairs and
+#   the old .onion address becomes unreachable.
+#
+# Sentinel file:
+#   ${TOR_DATA_DIR}/.seed_loaded — written after a successful bulk copy.
+#   On subsequent starts the bulk copy is skipped (files are already in place)
+#   but _verify_consensus_files() still runs to confirm the critical files
+#   are present and non-empty.
+# =============================================================================
 preload_tor_data() {
-  log "Checking for Tor seed data..."
-
-  # 1️⃣ Verify seed directory exists
-  if [ ! -d "$TOR_SEED_DIR" ]; then
-    log "INFO: No seed directory found at $TOR_SEED_DIR — will bootstrap from scratch"
-    return 0
-    try [ -f "$COOKIE_ALT_PATH" ] && [ -s "$COOKIE_ALT_PATH" ]; then
-      log "INFO: Found cookie file at $COOKIE_ALT_PATH — copying to $TOR_DATA_DIR"
-      cp "$COOKIE_ALT_PATH" "$TOR_DATA_DIR/control_auth_cookie"
-      return 0
-    fi
-    log "INFO: No cookie file found at $COOKIE_ALT_PATH — will bootstrap from scratch"
-    return 0
-  fi
-
-  # 2️⃣ Prevent corruption: don't copy if Tor already has a lock file
-  # This indicates Tor is running or was interrupted mid-operation
-  if [ -f "$TOR_DATA_DIR/lock" ]; then
-    log "WARNING: Tor lock file present at $TOR_DATA_DIR/lock — skipping preload to avoid corruption"
-    return 1
-  fi
-
-  # 3️⃣ Define critical files needed for bootstrap
-  # These files are REQUIRED for Tor to bootstrap efficiently
-  # Without them, Tor must download from directory authorities (slower, unreliable)
-  local required_files=(
-    "state"                        # Tor state file with identity keys
-    "cached-consensus"             # Current directory consensus
-    "cached-microdescs"            # Descriptor summaries
-    "cached-certs"                 # Directory authority certificates
-    "control_auth_cookie"          # Control port authentication
-  )
-
-  log "Verifying critical seed files in $TOR_SEED_DIR..."
-  local missing_count=0
-  local found_count=0
-
-  # Check each critical file in the SOURCE directory
-  for file in "${required_files[@]}"; do
-    if [ -f "$TOR_SEED_DIR/$file" ] && [ -s "$TOR_SEED_DIR/$file" ]; then
-      log "  ✓ Found: $file"
-      found_count=$((found_count + 1))
-    else
-      log "  ✗ Missing: $file"
-      missing_count=$((missing_count + 1))
-    fi
-  done
-
-  # If too many critical files are missing, skip preload
-  # Tor can still bootstrap from scratch, but will be slower
-  if [ $missing_count -ge 3 ]; then
-    log "WARNING: Only $found_count/$((${#required_files[@]})) critical files found in seed — skipping preload"
-    log "INFO: Tor will bootstrap from directory authorities (may take 2-5 minutes)"
-    return 0
-  fi
-
-  # 4️⃣ Check if destination already has valid state
-  # If so, don't overwrite existing working configuration
-  if [ -f "$TOR_DATA_DIR/state" ] && [ -s "$TOR_DATA_DIR/state" ]; then
-    log "INFO: Existing Tor state detected at $TOR_DATA_DIR/state — not overwriting"
-    return 0
-  fi
-
-  # 5️⃣ Ensure destination directory exists
-  if ! mkdir -p "$TOR_DATA_DIR" 2>/dev/null; then
-    log "ERROR: Failed to create $TOR_DATA_DIR"
-    return 1
-  fi
-
-  # 6️⃣ Copy seed data to destination
-  log "Copying seed data from $TOR_SEED_DIR to $TOR_DATA_DIR..."
-  
-  if ! /bin/busybox cp -a "$TOR_SEED_DIR/." "$TOR_DATA_DIR/" 2>/dev/null; then
-    log "ERROR: Failed to copy Tor seed data — bootstrap will proceed from scratch"
-    return 1
-  fi
-
-  log "SUCCESS: Tor seed data preload complete"
-
-  # 7️⃣ Fix permissions and ownership
-  # Critical: Tor must have proper permissions to read its data directory
-  log "Correcting file permissions and ownership..."
-
-  # Fix main data directory
-  if [ -d "$TOR_DATA_DIR" ]; then
-    # Set directory permissions (rwx------)
-    if ! chmod 700 "$TOR_DATA_DIR" 2>/dev/null; then
-      log "WARNING: Failed to set permissions on $TOR_DATA_DIR"
-    else
-      log "  ✓ Set $TOR_DATA_DIR to 700"
+    if [[ "${TOR_USE_SEED}" != "1" ]]; then
+        log "Seed preload disabled (TOR_USE_SEED=${TOR_USE_SEED})"
+        return
     fi
 
-    # Try to fix ownership to debian-tor user if available
-    # Note: In some environments (distroless), chown may not be available
-    if command -v chown >/dev/null 2>&1; then
-      if chown -R debian-tor:debian-tor "$TOR_DATA_DIR" 2>/dev/null; then
-        log "  ✓ Set ownership to debian-tor:debian-tor"
-      else
-        log "WARNING: Failed to set ownership (running as $(id -u), may not be root)"
-      fi
+    if [[ ! -d "${TOR_SEED_DIR}" ]]; then
+        log_warn "Seed directory not found: ${TOR_SEED_DIR} — will bootstrap from scratch (slow)"
+        return
     fi
 
-    # Fix all subdirectories (especially important for onion service keys)
-    log "Fixing subdirectory permissions..."
-    find "$TOR_DATA_DIR" -type d -exec chmod 700 {} \; 2>/dev/null || true
-    
-    if command -v chown >/dev/null 2>&1; then
-      find "$TOR_DATA_DIR" -type d -exec chown debian-tor:debian-tor {} \; 2>/dev/null || true
+    ensure_dir "${TOR_DATA_DIR}" "${TOR_USER}"
+    chmod 700 "${TOR_DATA_DIR}"
+
+    # ── Sentinel: skip bulk copy on subsequent container starts ──────────────
+    local sentinel="${TOR_DATA_DIR}/.seed_loaded"
+    if [[ -f "${sentinel}" ]]; then
+        log "Seed previously loaded — verifying critical consensus files"
+        _verify_consensus_files
+        return
     fi
 
-    # Fix all regular files (should be 600 for sensitive files like keys)
-    log "Fixing file permissions..."
-    find "$TOR_DATA_DIR" -type f -exec chmod 600 {} \; 2>/dev/null || true
-    
-    # Except control_auth_cookie which needs to be readable
-    if [ -f "$TOR_DATA_DIR/control_auth_cookie" ]; then
-      chmod 644 "$TOR_DATA_DIR/control_auth_cookie" 2>/dev/null || true
-    fi
+    # ── Named consensus / cert files Tor reads at startup ────────────────────
+    # Listed in order of importance: missing cached-certs alone prevents
+    # the daemon from validating the consensus at all.
+    local -a consensus_files=(
+        cached-certs
+        cached-consensus
+        cached-microdesc-consensus
+        cached-microdescs
+        cached-microdescs.new
+        cached-descriptors
+        cached-extrainfo
+        state
+    )
 
-    log "SUCCESS: Permissions and ownership corrected"
-  fi
-
-  return 0
-}
-
-# ============================================================================
-# FUNCTION: configure_bridges
-# Purpose: Add Tor bridge configuration for ISP port blocking workaround
-# Bridges allow Tor to connect when standard Tor ports are blocked
-# ============================================================================
-configure_bridges() {
-  [ "$TOR_USE_BRIDGES" = "1" ] || return 0
-  
-  if [ -z "$TOR_BRIDGES" ]; then
-    log "ERROR: TOR_USE_BRIDGES=1 but TOR_BRIDGES not configured"
-    log "Set TOR_BRIDGES environment variable with bridge addresses"
-    return 1
-  fi
-  
-  local torrc_path="/etc/tor/torrc"
-  log "Configuring Tor bridges for ISP port blocking workaround..."
-  
-  if [ ! -f "$torrc_path" ]; then
-    log "ERROR: torrc file not found at $torrc_path"
-    return 1
-  fi
-
-  # Add bridge configuration to torrc if not already present
-  if ! grep -q "^UseBridges" "$torrc_path"; then
-    log "Adding bridge configuration to torrc..."
-    {
-      echo ""
-      echo "# Bridge configuration (added by entrypoint for port blocking workaround)"
-      echo "UseBridges 1"
-      echo "ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy"
-      echo "ReachableAddresses *:80,*:443"
-      echo ""
-      echo "# Bridge addresses from TOR_BRIDGES environment variable"
-      echo "$TOR_BRIDGES"
-    } >> "$torrc_path"
-    log "Bridge configuration added to torrc"
-  else
-    log "Bridge configuration already present in torrc"
-  fi
-
-  return 0
-}
-
-# ============================================================================
-# FUNCTION: ensure_runtime
-# Purpose: Create necessary runtime directories and set base permissions
-# ============================================================================
-ensure_runtime() {
-  log "Setting up runtime directories..."
-  
-  mkdir -p /run /var/lib/tor /var/log/tor 2>/dev/null || {
-    log "WARNING: Failed to create some runtime directories"
-  }
-
-  # ========================================================================
-  # CRITICAL: Prepare clean cookie file environment BEFORE Tor starts
-  # ========================================================================
-  local cookie_file="/var/lib/tor/control_auth_cookie"
-  
-  log "Preparing cookie file environment..."
-  
-  # Step 1: Delete ANY existing cookie file - FORCED
-  if [ -f "$cookie_file" ]; then
-    log "Removing existing cookie file to ensure clean write..."
-    rm -f "$cookie_file"
-    
-    # Verify deletion - if still exists, force remove
-    if [ -f "$cookie_file" ]; then
-      log "Force removing cookie file..."
-      /bin/busybox rm -f "$cookie_file"
-    fi
-    
-    # Final check
-    if [ ! -f "$cookie_file" ]; then
-      log "✓ Old cookie file deleted"
-    else
-      log "ERROR: Cookie file still exists after deletion attempts!"
-    fi
-  fi
-  
-  # Step 2: Delete lock files if they exist
-  if [ -f "${cookie_file}.lock" ]; then
-    rm -f "${cookie_file}.lock"
-  fi
-  
-  # Step 3: Fix directory permissions so Tor can write
-  chmod 700 /var/lib/tor 2>/dev/null || true
-  
-  # Step 4: Set ownership to Tor user if possible
-  if command -v chown >/dev/null 2>&1; then
-    for tor_user in debian-tor _tor tor; do
-      if command -v id >/dev/null 2>&1 && id "$tor_user" >/dev/null 2>&1; then
-        chown "$tor_user:$tor_user" /var/lib/tor 2>/dev/null || true
-        break
-      fi
+    local found_count=0
+    local -a missing_files=()
+    for f in "${consensus_files[@]}"; do
+        if [[ -f "${TOR_SEED_DIR}/${f}" ]]; then
+            (( found_count++ ))
+        else
+            missing_files+=("${f}")
+        fi
     done
-  fi
-  
-  log "✓ Runtime directories and cookie environment ready"
+
+    if (( found_count == 0 )); then
+        log_warn "Seed dir exists but contains no recognisable Tor cache files — skipping"
+        return
+    fi
+
+    log "Preloading Tor consensus/cert data: ${TOR_SEED_DIR} → ${TOR_DATA_DIR}"
+    log "  Found ${found_count} file(s); not in seed: ${missing_files[*]:-none}"
+
+    # ── Copy each named file with size verification ───────────────────────────
+    local loaded_count=0
+    local -a failed_files=()
+
+    for f in "${consensus_files[@]}"; do
+        local src="${TOR_SEED_DIR}/${f}"
+        local dst="${TOR_DATA_DIR}/${f}"
+
+        if [[ -f "${src}" ]]; then
+            local src_sz
+            src_sz="$(file_size_bytes "${src}")"
+
+            if (( src_sz == 0 )); then
+                log_warn "  SKIP  ${f} — seed file is empty"
+                continue
+            fi
+
+            # cp -p: preserve permissions + timestamps
+            if cp -p "${src}" "${dst}"; then
+                local dst_sz
+                dst_sz="$(file_size_bytes "${dst}")"
+
+                if (( dst_sz == src_sz )); then
+                    log_debug "  OK    ${f} (${dst_sz} bytes)"
+                    (( loaded_count++ ))
+                else
+                    log_warn "  FAIL  ${f} — size mismatch: src=${src_sz} dst=${dst_sz}"
+                    failed_files+=("${f}")
+                fi
+            else
+                log_warn "  FAIL  ${f} — cp returned non-zero"
+                failed_files+=("${f}")
+            fi
+        fi
+    done
+
+    # ── Subdirectory walk: onion service dirs and any extra Tor data ──────────
+    # Each subdirectory that contains a "hostname" file is an onion service.
+    # The hostname file contains the stable .onion address for that service.
+    # Copying these prevents Tor from regenerating keypairs (and therefore
+    # changing the .onion address) on every restart.
+    #
+    # Uses bash globs only — find(1) is not available in distroless images.
+    local onion_count=0
+
+    for subdir in "${TOR_SEED_DIR}"/*/; do
+        # Strip trailing slash; skip if not a real directory
+        subdir="${subdir%/}"
+        [[ -d "${subdir}" ]] || continue
+
+        local hostname_file="${subdir}/hostname"
+        if [[ -f "${hostname_file}" ]]; then
+            local onion_addr
+            onion_addr="$(tr -d '[:space:]' < "${hostname_file}" 2>/dev/null || true)"
+
+            if [[ -n "${onion_addr}" ]]; then
+                # Compute relative path and create matching dir under TOR_DATA_DIR
+                local rel_path="${subdir#"${TOR_SEED_DIR}"/}"
+                local dst_subdir="${TOR_DATA_DIR}/${rel_path}"
+
+                ensure_dir "${dst_subdir}"
+
+                # cp -a: archive mode — preserves permissions, timestamps,
+                # symlinks, and recursively copies all files (keys included)
+                if cp -a "${subdir}/." "${dst_subdir}/"; then
+                    chown -R "${TOR_USER}:${TOR_USER}" "${dst_subdir}" 2>/dev/null || true
+                    chmod 700 "${dst_subdir}"
+                    log "  Onion service loaded: ${onion_addr}  →  ${dst_subdir}"
+                    (( onion_count++ ))
+                else
+                    log_warn "  Failed to copy onion service dir: ${subdir}"
+                fi
+            else
+                log_warn "  Found hostname file but it is empty: ${hostname_file}"
+            fi
+        fi
+    done
+
+    # ── Final ownership pass on the whole data directory ─────────────────────
+    chown -R "${TOR_USER}:${TOR_USER}" "${TOR_DATA_DIR}" 2>/dev/null \
+        || log_warn "chown -R on ${TOR_DATA_DIR} failed — Tor may be unable to write state"
+    chmod 700 "${TOR_DATA_DIR}"
+
+    # ── Write sentinel so we skip the bulk copy on next start ────────────────
+    touch "${sentinel}"
+
+    log "Seed preload complete: ${loaded_count} consensus/cert file(s), ${onion_count} onion service(s)"
+    if (( ${#failed_files[@]} > 0 )); then
+        log_warn "Files that failed to load: ${failed_files[*]}"
+    fi
+
+    # ── Verify the most critical files are present and non-empty ─────────────
+    _verify_consensus_files
 }
 
-# ============================================================================
-# FUNCTION: start_tor
-# Purpose: Start the Tor daemon as a background process
-# ============================================================================
+# Internal helper — confirms that the three files Tor absolutely must have to
+# validate and use a consensus are present in TOR_DATA_DIR and non-empty.
+# Logs warnings (not fatal) so the daemon can still attempt a network bootstrap.
+_verify_consensus_files() {
+    # cached-certs is the most critical: without it Tor cannot verify the
+    # signatures on ANY consensus document and must re-fetch certs from DAs.
+    local -a critical=(
+        cached-certs
+        cached-consensus
+        cached-microdesc-consensus
+    )
+
+    local all_ok=1
+
+    for f in "${critical[@]}"; do
+        local path="${TOR_DATA_DIR}/${f}"
+        if [[ ! -f "${path}" ]]; then
+            log_warn "  MISSING: ${path} — bootstrap will fetch this from network"
+            all_ok=0
+        else
+            local sz
+            sz="$(file_size_bytes "${path}")"
+            if (( sz == 0 )); then
+                log_warn "  EMPTY:   ${path} — bootstrap will fetch this from network"
+                all_ok=0
+            else
+                log_debug "  OK: ${f} (${sz} bytes)"
+            fi
+        fi
+    done
+
+    if (( all_ok == 1 )); then
+        log "All critical consensus/cert files present — bootstrap should be fast"
+    else
+        log_warn "Some critical files are missing — bootstrap will fetch from network (slower)"
+    fi
+}
+
+# =============================================================================
+# Step 2 — Generate torrc
+# =============================================================================
+# Writes the torrc from environment variables on every container start.
+# All settings match the documented Lucid Tor Proxy configuration.
+# Dynamic sections (DNS, bridges, onion service) are appended conditionally.
+# =============================================================================
+write_torrc() {
+    log "Writing torrc → ${TORRC}"
+    ensure_dir "${TOR_CONFIG_DIR}"
+    ensure_dir "${TOR_DATA_DIR}" "${TOR_USER}"
+    ensure_dir "${TOR_LOG_DIR}"
+
+    # Write atomically: build in a temp file then mv into place so a crash
+    # mid-write never leaves a half-written torrc.
+    local tmp_torrc="${TORRC}.tmp.$$"
+
+    # ── Core configuration ────────────────────────────────────────────────────
+    cat > "${tmp_torrc}" << EOF
+# ── Generated by tor_entrypoint.sh v${SCRIPT_VERSION} ────────────────────────
+# Regenerated on every container start.
+# Edit your .env.* file and docker-compose.*.yml, not this file directly.
+
+Log notice stdout
+DataDirectory ${TOR_DATA_DIR}
+
+SocksPort 0.0.0.0:${TOR_SOCKS_PORT}
+SocksListenAddress 127.0.0.1:${TOR_SOCKS_PORT}
+
+ControlPort 0.0.0.0:${TOR_CONTROL_PORT}
+EOF
+
+    # ── Optional: unix control socket (additive to TCP port) ─────────────────
+    if [[ -n "${TOR_CONTROL_SOCKET}" ]]; then
+        printf 'ControlSocket %s\n' "${TOR_CONTROL_SOCKET}" >> "${tmp_torrc}"
+    fi
+
+    # ── Cookie authentication ─────────────────────────────────────────────────
+    if [[ "${TOR_COOKIE_AUTH}" == "1" ]]; then
+        cat >> "${tmp_torrc}" << EOF
+
+CookieAuthentication 1
+CookieAuthFile ${TOR_COOKIE_FILE}
+CookieAuthFileGroupReadable 1
+EOF
+    fi
+
+    # ── Dynamic DNS configuration ─────────────────────────────────────────────
+    # Enabled when TOR_DNS_PORT is set to a non-zero port number.
+    # AutomapHostsOnResolve + AutomapHostsSuffixes enable .onion DNS resolution
+    # through the Tor DNS port (needed for services that resolve .onion via DNS).
+    if [[ "${TOR_DNS_PORT}" != "0" ]]; then
+        cat >> "${tmp_torrc}" << EOF
+
+# ── Dynamic DNS configuration ───────────────────────────────────────────────
+DNSPort 0.0.0.0:${TOR_DNS_PORT}
+AutomapHostsOnResolve 1
+AutomapHostsSuffixes .onion,.exit
+EOF
+    fi
+
+    # ── Transparent proxy port ────────────────────────────────────────────────
+    if [[ "${TOR_TRANS_PORT}" != "0" ]]; then
+        printf '\nTransPort %s\n' "${TOR_TRANS_PORT}" >> "${tmp_torrc}"
+    fi
+
+    # ── Hidden / onion service ────────────────────────────────────────────────
+    # When TOR_ONION_SERVICE_ENABLED=1 the live directives are written.
+    # Otherwise they are commented out to prevent parse errors from an
+    # HiddenServiceDir that has no keys yet (foundation phase).
+    if [[ "${TOR_ONION_SERVICE_ENABLED}" == "1" ]]; then
+        ensure_dir "${TOR_ONION_SERVICE_DIR}" "${TOR_USER}"
+        chmod 700 "${TOR_ONION_SERVICE_DIR}"
+
+        cat >> "${tmp_torrc}" << EOF
+
+# ── Onion / Hidden Service ───────────────────────────────────────────────────
+HiddenServiceDir ${TOR_ONION_SERVICE_DIR}
+HiddenServiceVersion 3
+HiddenServicePort ${TOR_ONION_SERVICE_PORT} ${TOR_ONION_SERVICE_TARGET}
+EOF
+    else
+        cat >> "${tmp_torrc}" << 'EOF'
+
+# Hidden service is disabled during foundation phase to avoid parse errors and
+# to rely on ephemeral onions created by the controller.
+# Uncomment and adjust only when the upstream is ready and reachable.
+#HiddenServiceDir /var/lib/tor/hidden_service
+#HiddenServiceVersion 3
+#HiddenServicePort 80 127.0.0.1:8081
+EOF
+    fi
+
+    # ── Daemon / disk settings ────────────────────────────────────────────────
+    cat >> "${tmp_torrc}" << 'EOF'
+
+RunAsDaemon 0
+AvoidDiskWrites 0
+
+# Disable IPv6 if not needed (reduces connection complexity)
+# Uncomment if you need IPv6 support
+#SocksListenAddress [::1]:9050
+EOF
+
+    mv "${tmp_torrc}" "${TORRC}"
+    chmod 644 "${TORRC}"
+
+    # Dump the generated torrc to the log at debug level so it is inspectable
+    # via `docker logs` without needing to exec into the container.
+    if [[ "${TOR_DEBUG:-0}" == "1" ]]; then
+        log_debug "Generated torrc:"
+        while IFS= read -r line; do
+            log_debug "  ${line}"
+        done < "${TORRC}"
+    fi
+
+    log "torrc written (SocksPort=0.0.0.0:${TOR_SOCKS_PORT}, ControlPort=0.0.0.0:${TOR_CONTROL_PORT})"
+}
+
+# =============================================================================
+# Step 3 — Bridge configuration  (appended to torrc)
+# =============================================================================
+configure_bridges() {
+    if [[ "${TOR_USE_BRIDGES}" != "1" ]]; then
+        return
+    fi
+
+    if [[ -z "${TOR_BRIDGES}" ]]; then
+        log_warn "TOR_USE_BRIDGES=1 but TOR_BRIDGES is empty — skipping bridge config"
+        return
+    fi
+
+    log "Configuring bridges"
+
+    {
+        printf '\n# ── Bridge configuration ────────────────────────────────────────────\n'
+        printf 'UseBridges 1\n'
+        if [[ -n "${TOR_PLUGGABLE_TRANSPORT}" ]]; then
+            printf 'ClientTransportPlugin %s\n' "${TOR_PLUGGABLE_TRANSPORT}"
+        fi
+    } >> "${TORRC}"
+
+    local bridge_count=0
+    while IFS= read -r line; do
+        # Skip blank lines and comments
+        [[ -z "$line" || "$line" == \#* ]] && continue
+
+        # Trim leading/trailing whitespace (pure bash — no sed/awk)
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        [[ -z "$line" ]] && continue
+
+        # Ensure the mandatory "Bridge" keyword prefix is present
+        if [[ "${line,,}" != bridge\ * ]]; then
+            line="Bridge ${line}"
+        fi
+
+        printf '%s\n' "$line" >> "${TORRC}"
+        (( bridge_count++ ))
+    done <<< "${TOR_BRIDGES}"
+
+    log "Added ${bridge_count} bridge line(s) to torrc"
+}
+
+# =============================================================================
+# Step 4 — Start Tor daemon
+# =============================================================================
 start_tor() {
-  log "Starting Tor daemon..."
-  
-  if ! command -v tor >/dev/null 2>&1; then
-    log "ERROR: tor binary not found in PATH"
-    return 1
-  fi
+    log "Starting Tor daemon"
 
-  # Start Tor in background and capture PID
-  tor -f /etc/tor/torrc &
-  local tor_pid=$!
+    # Pre-flight: validate torrc syntax before forking
+    if ! tor --verify-config -f "${TORRC}" >/dev/null 2>&1; then
+        log_error "torrc failed validation — Tor will not start:"
+        tor --verify-config -f "${TORRC}" >&2 || true
+        exit 1
+    fi
+    log_debug "torrc syntax OK"
 
-  # Save PID for monitoring
-  /bin/busybox sh -c "echo $tor_pid > '${TOR_DATA_DIR}/tor.pid'" 2>/dev/null || true
-
-  log "Tor started with PID: $tor_pid"
-  
-  # Give Tor a moment to initialize
-  sleep 1
-  
-  # Verify process is still running
-  if ! /bin/busybox kill -0 $tor_pid 2>/dev/null; then
-    log "ERROR: Tor process exited immediately after start (check logs)"
-    return 1
-  fi
-
-  log "Tor process verified running"
-  return 0
-}
-
-# ============================================================================
-# FUNCTION: wait_for_file
-# Purpose: Wait for a file to be created (with timeout)
-# Used to wait for control cookie and other key files
-# ============================================================================
-wait_for_file() {
-  local filepath="$1"
-  local timeout="${2:-120}"
-  
-  log "Waiting for file: $filepath (timeout: ${timeout}s)"
-  
-  local elapsed=0
-  while [ $elapsed -lt "$timeout" ]; do
-    # Check if file EXISTS AND has content
-    if [ -f "$filepath" ] && [ -s "$filepath" ]; then
-      # Get size using busybox wc
-      local size
-      size=$(/bin/busybox wc -c < "$filepath" 2>/dev/null)
-      
-      # Verify size was captured
-      if [ -z "$size" ]; then
-        size="unknown"
-      fi
-      
-      # For cookie file, validate size is reasonable (32 bytes expected)
-      if [[ "$filepath" == *"control_auth_cookie"* ]]; then
-        if [ "$size" -ne 32 ] 2>/dev/null; then
-          log "WARNING: Cookie file size is $size bytes, expected 32 - might be corrupted"
+    # Ensure parent directory of the cookie file exists before Tor starts.
+    # In a distroless container Tor cannot create missing directories.
+    local cookie_dir
+    cookie_dir="$(dirname "${TOR_COOKIE_FILE}")"
+    if [[ ! -d "${cookie_dir}" ]]; then
+        log "Creating cookie parent directory: ${cookie_dir}"
+        if mkdir -p "${cookie_dir}"; then
+            chown "${TOR_USER}:${TOR_USER}" "${cookie_dir}" 2>/dev/null || true
+            chmod 750 "${cookie_dir}" 2>/dev/null || true
         else
-          log "✓ Cookie file ready: $filepath ($size bytes)"
+            log_warn "Could not create ${cookie_dir} — Tor may fail to write cookie"
         fi
-      else
-        log "✓ File ready: $filepath ($size bytes)"
-      fi
-      
-      return 0
-    fi
-    
-    sleep 1
-    elapsed=$((elapsed + 1))
-    
-    # Log progress every 30 seconds
-    if [ $((elapsed % 30)) -eq 0 ] && [ $elapsed -gt 0 ]; then
-      log "Still waiting for $filepath... ($elapsed/${timeout}s elapsed)"
-    fi
-  done
-
-  log "ERROR: Timeout waiting for file: $filepath"
-  return 1
-}
-
-# ============================================================================
-# FUNCTION: ctl
-# Purpose: Send a command to Tor control port (localhost:9051)
-# Uses cookie authentication for security
-# ============================================================================
-ctl() {
-  local cmd="$1"
-  
-  # Verify cookie file exists and is readable
-  if [ ! -f "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file not found: $COOKIE_FILE"
-    return 1
-  fi
-
-  if [ ! -r "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file not readable: $COOKIE_FILE"
-    return 1
-  fi
-
-  if [ ! -s "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file is empty: $COOKIE_FILE"
-    return 1
-  fi
-
-  # Extract cookie hex with proper spacing cleanup
-  # od outputs hex bytes with spacing, we need to clean it up properly
-  local cookie_hex
-  cookie_hex=$(/bin/busybox od -A n -t x1 "$COOKIE_FILE" 2>/dev/null | \
-    /bin/busybox sed 's/[[:space:]]\+/ /g' | \
-    /bin/busybox sed 's/^ //; s/ $//' | \
-    /bin/busybox tr -d ' \n')
-
-  if [ -z "$cookie_hex" ]; then
-    log "ERROR: Failed to extract valid hex from cookie file"
-    return 1
-  fi
-
-  # Validate hex format (should be 60-80 hex characters for 32-byte cookie)
-  if ! echo "$cookie_hex" | /bin/busybox grep -qE '^[0-9a-fA-F]{60,80}$'; then
-    log "ERROR: Invalid cookie hex format (got ${#cookie_hex} chars)"
-    return 1
-  fi
-
-  # Send command to Tor control port with proper authentication
-  # Format: AUTHENTICATE <hex_cookie>\r\n<command>\r\nQUIT\r\n
-  {
-    printf 'AUTHENTICATE %s\r\n' "$cookie_hex"
-    printf '%s\r\n' "$cmd"
-    printf 'QUIT\r\n'
-  } | timeout 5 /usr/bin/nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null
-
-  return $?
-}
-
-# ============================================================================
-# FUNCTION: resolve_upstream_ip
-# Purpose: Resolve upstream service hostname to IP address
-# Used when creating ephemeral onion services
-# ============================================================================
-resolve_upstream_ip() {
-  local svc="$1"
-  local ip=""
-
-  # Return empty if no service specified
-  [ -z "$svc" ] && { echo ""; return 0; }
-
-  # Try getent first (preferred, more reliable)
-  if command -v getent >/dev/null 2>&1; then
-    ip=$(getent hosts "$svc" 2>/dev/null | awk '{print $1}' | head -1 || true)
-    [ -n "$ip" ] && { echo "$ip"; return 0; }
-  fi
-
-  # Fallback to nslookup
-  if command -v nslookup >/dev/null 2>&1; then
-    ip=$(nslookup -timeout=2 "$svc" 2>/dev/null | awk '/^Address: /{print $2; exit}' || true)
-    [ -n "$ip" ] && { echo "$ip"; return 0; }
-  fi
-
-  # No resolution succeeded
-  echo ""
-  return 1
-}
-
-# ============================================================================
-# FUNCTION: wait_for_bootstrap
-# Purpose: Wait for Tor to complete bootstrap (reach 100%)
-# Monitors bootstrap phase via control port
-# ============================================================================
-wait_for_bootstrap() {
-  log "Waiting for Tor to bootstrap..."
-  log "This may take 30 seconds to 5 minutes depending on network conditions"
-  
-  local i=0
-  local max_attempts=300  # 10 minutes maximum
-  local last_progress=""
-  local cookie_failed=0
-
-  # Validate cookie before starting
-  if [ ! -s "$COOKIE_FILE" ]; then
-    log "ERROR: Cookie file is missing or empty before bootstrap"
-    return 1
-  fi
-
-  # Try to extract cookie hex for validation
-  local test_hex
-  test_hex=$(/bin/busybox od -A n -t x1 "$COOKIE_FILE" 2>/dev/null | \
-    /bin/busybox sed 's/[[:space:]]\+/ /g' | \
-    /bin/busybox sed 's/^ //; s/ $//' | \
-    /bin/busybox tr -d ' \n')
-
-  if [ -z "$test_hex" ] || ! echo "$test_hex" | /bin/busybox grep -qE '^[0-9a-fA-F]{60,80}$'; then
-    log "ERROR: Cookie file contains invalid hex data"
-    log "Cookie file size: $(wc -c < "$COOKIE_FILE") bytes"
-    log "Cookie hex length: ${#test_hex} chars"
-    return 1
-  fi
-
-  log "DEBUG: Cookie validation passed (${#test_hex} hex chars)"
-
-  while [ $i -lt "$max_attempts" ]; do
-    # Query bootstrap status from Tor
-    local response
-    response=$(ctl "GETINFO status/bootstrap-phase" 2>/dev/null || true)
-
-    # Check if response is empty (indicates ctl command failed)
-    if [ -z "$response" ]; then
-      cookie_failed=$((cookie_failed + 1))
-      
-      # Log every 30 seconds if control connection keeps failing
-      if [ $((i % 15)) -eq 0 ]; then
-        log "WARNING: Control port not responding (attempt $((cookie_failed)))... retrying"
-      fi
-      
-      # If cookie problems persist, something is very wrong
-      if [ $cookie_failed -gt 20 ]; then
-        log "FATAL: Cannot reach Tor control port after many attempts"
-        log "Cookie file exists: $([ -f "$COOKIE_FILE" ] && echo 'yes' || echo 'no')"
-        log "Cookie file size: $(wc -c < "$COOKIE_FILE") bytes"
-        return 1
-      fi
-      
-      sleep 2
-      i=$((i + 1))
-      continue
     fi
 
-    # Reset cookie failure counter on successful response
-    cookie_failed=0
+    # Ensure the log file is writable before Tor opens it
+    touch "${TOR_LOG_FILE}" 2>/dev/null || true
 
-    # Normalize response: remove CR/LF, convert newlines to spaces, collapse whitespace
-    local cleaned
-    cleaned=$(printf '%s' "$response" | \
-      /bin/busybox tr -d '\r' | \
-      /bin/busybox tr '\n' ' ' | \
-      /bin/busybox sed 's/  */ /g')
+    # Fork Tor and record its PID
+    tor -f "${TORRC}" &
+    TOR_PID=$!
+    log "Tor started — PID ${TOR_PID}"
 
-    # Verify we got a valid response (should contain "PROGRESS")
-    if ! echo "$cleaned" | /bin/busybox grep -q 'PROGRESS'; then
-      if [ $((i % 15)) -eq 0 ]; then
-        log "WARNING: Invalid response from control port"
-      fi
-      sleep 2
-      i=$((i + 1))
-      continue
-    fi
-
-    # Extract progress percentage (safely handle extraction)
-    local progress
-    progress=$(/bin/busybox printf '%s' "$cleaned" | \
-      /bin/busybox grep -o 'PROGRESS=[0-9]*' | \
-      /bin/busybox head -1)
-    
-    # Fallback if extraction failed
-    if [ -z "$progress" ]; then
-      progress="PROGRESS=unknown"
-    fi
-
-    # Check if bootstrap is complete (PROGRESS=100)
-    if /bin/busybox printf '%s' "$cleaned" | /bin/busybox grep -q 'PROGRESS=100'; then
-      log "✓ Bootstrap complete (100%)"
-      
-      # Also log the summary for debugging
-      local tag
-      tag=$(/bin/busybox printf '%s' "$cleaned" | \
-        /bin/busybox grep -o 'TAG=[^ ]*' | \
-        /bin/busybox head -1)
-      
-      if [ -n "$tag" ]; then
-        log "  Final status: $progress, $tag"
-      else
-        log "  Final status: $progress"
-      fi
-      
-      return 0
-    fi
-
-    # Log progress every 15 attempts (30 seconds) to avoid log spam
-    if [ $((i % 15)) -eq 0 ] && [ $i -gt 0 ]; then
-      # Extract tag (phase description)
-      local tag
-      tag=$(/bin/busybox printf '%s' "$cleaned" | \
-        /bin/busybox grep -o 'TAG=[^ ]*' | \
-        /bin/busybox head -1)
-      
-      local display_tag=""
-      if [ -n "$tag" ]; then
-        display_tag=", $tag"
-      fi
-      
-      # Only log if progress changed
-      if [ "$progress" != "$last_progress" ]; then
-        log "Bootstrap in progress: $progress$display_tag (attempt $i/$max_attempts)"
-        last_progress="$progress"
-      fi
-    fi
-
+    # Brief pause then confirm Tor didn't immediately crash
     sleep 2
-    i=$((i + 1))
-  done
+    if ! kill -0 "${TOR_PID}" 2>/dev/null; then
+        log_error "Tor exited immediately after start — last 30 lines of log:"
+        tail -n 30 "${TOR_LOG_FILE}" >&2 2>/dev/null || true
+        exit 1
+    fi
 
-  log "ERROR: Tor bootstrap did not reach 100% within timeout ($max_attempts attempts = 10 minutes)"
-  log "Last known status: $progress"
-  log "This usually means:"
-  log "  1. ISP is blocking Tor ports (configure bridges)"
-  log "  2. Network connectivity issues"
-  log "  3. Tor consensus is unavailable"
-  return 1
+    log_debug "Tor process confirmed alive"
 }
 
-# ============================================================================
-# FUNCTION: copy_cookie_to_shared
-# Purpose: Copy Tor control cookie to shared volume for other services
-# Allows tunnel-tools and other components to communicate with Tor control port
-# ============================================================================
+# =============================================================================
+# Step 5 — Wait for auth cookie
+# =============================================================================
+# The auth cookie is written by Tor AFTER it has bound its listeners.
+# This function MUST be called after start_tor().
+#
+# Behaviour:
+#   1. On the first poll, pre-creates TOR_COOKIE_FILE (touch + perms) so Tor
+#      has a writable target in distroless environments where it cannot mkdir.
+#   2. Every poll cycle scans all known candidate paths for a valid 32-byte
+#      cookie — handles mismatches between TOR_COOKIE_FILE and where Tor
+#      actually decided to write the file.
+#   3. When the cookie is found at a non-canonical path it is copied to
+#      TOR_COOKIE_FILE so every downstream step works from one known location.
+#   4. Calls validate_cookie_file() (size + hex-length) before returning.
+#   5. On timeout, dumps the size of every candidate path and the Tor log
+#      so the failure is immediately diagnosable from `docker logs`.
+# =============================================================================
+wait_for_cookie() {
+    if [[ "${TOR_COOKIE_AUTH}" != "1" ]]; then
+        log_debug "Cookie auth disabled — skipping wait_for_cookie"
+        return
+    fi
+
+    # All paths Tor might have used for the cookie, in priority order.
+    local -a candidates=(
+        "${TOR_COOKIE_FILE}"
+        "${TOR_DATA_DIR}/control_auth_cookie"
+        "${TOR_DATA_DIR}/tor_control_auth_cookie"
+        "/var/lib/tor/control_auth_cookie"
+        "/run/tor/control_auth_cookie"
+        "/tmp/tor_control_auth_cookie"
+    )
+
+    # Deduplicate while preserving order (pure bash — no sort/uniq)
+    local -a unique_candidates=()
+    local seen=""
+    for c in "${candidates[@]}"; do
+        if [[ "${seen}" != *"|${c}|"* ]]; then
+            unique_candidates+=("$c")
+            seen+="|${c}|"
+        fi
+    done
+
+    log "Waiting for Tor auth cookie (timeout: ${TOR_COOKIE_WAIT_TIMEOUT}s)"
+    log_debug "Canonical cookie path : ${TOR_COOKIE_FILE}"
+    log_debug "All candidate paths   : ${unique_candidates[*]}"
+
+    local elapsed=0
+    local interval=2
+    local first_poll=1
+
+    while (( elapsed < TOR_COOKIE_WAIT_TIMEOUT )); do
+
+        # Always check first: bail immediately if Tor has died
+        if ! kill -0 "${TOR_PID}" 2>/dev/null; then
+            log_error "Tor process (PID ${TOR_PID}) died while waiting for auth cookie"
+            log_error "Last 30 lines of ${TOR_LOG_FILE}:"
+            tail -n 30 "${TOR_LOG_FILE}" >&2 2>/dev/null || true
+            exit 1
+        fi
+
+        # On the first poll pre-create the cookie file so Tor can overwrite it.
+        # In a distroless container Tor may fail to create a new file if the
+        # parent directory has restrictive permissions.
+        if (( first_poll == 1 )); then
+            first_poll=0
+            if [[ ! -f "${TOR_COOKIE_FILE}" ]]; then
+                log_debug "Pre-creating cookie placeholder: ${TOR_COOKIE_FILE}"
+                if touch "${TOR_COOKIE_FILE}" 2>/dev/null; then
+                    chown "${TOR_USER}:${TOR_USER}" "${TOR_COOKIE_FILE}" 2>/dev/null || true
+                    chmod 640 "${TOR_COOKIE_FILE}" 2>/dev/null || true
+                else
+                    log_warn "Could not pre-create cookie file — Tor must create it itself"
+                fi
+            fi
+        fi
+
+        # Scan every candidate path for a valid 32-byte cookie
+        for candidate in "${unique_candidates[@]}"; do
+            if [[ ! -f "${candidate}" ]]; then
+                continue
+            fi
+
+            local sz
+            sz="$(file_size_bytes "${candidate}")"
+
+            if (( sz != COOKIE_SIZE )); then
+                log_debug "Candidate ${candidate}: size=${sz} bytes (need ${COOKIE_SIZE}) — still writing"
+                continue
+            fi
+
+            # Valid-size cookie found.  If it is not at the canonical path,
+            # copy it there now so every subsequent step has one known location.
+            if [[ "${candidate}" != "${TOR_COOKIE_FILE}" ]]; then
+                log_warn "Cookie found at ${candidate} (expected ${TOR_COOKIE_FILE}) — copying to canonical path"
+                local cookie_parent
+                cookie_parent="$(dirname "${TOR_COOKIE_FILE}")"
+                mkdir -p "${cookie_parent}" 2>/dev/null || true
+
+                if cp "${candidate}" "${TOR_COOKIE_FILE}"; then
+                    chmod 640 "${TOR_COOKIE_FILE}"
+                    log "Cookie copied to canonical path: ${TOR_COOKIE_FILE}"
+                else
+                    log_error "Failed to copy cookie from ${candidate} to ${TOR_COOKIE_FILE}"
+                    exit 1
+                fi
+            fi
+
+            # Full binary-size + hex-length validation before returning.
+            # validate_cookie_file() exits the container if either check fails.
+            validate_cookie_file "${TOR_COOKIE_FILE}"
+            log "Auth cookie ready — ${TOR_COOKIE_FILE} (${sz} bytes)"
+            return
+        done
+
+        sleep "${interval}"
+        (( elapsed += interval ))
+    done
+
+    # Timeout — print diagnostic for every candidate so the user can see
+    # exactly what Tor did (or did not) write and where.
+    log_error "Timed out after ${TOR_COOKIE_WAIT_TIMEOUT}s waiting for auth cookie"
+    log_error "Diagnostic scan of all candidate paths:"
+    for candidate in "${unique_candidates[@]}"; do
+        if [[ -f "${candidate}" ]]; then
+            local sz
+            sz="$(file_size_bytes "${candidate}")"
+            log_error "  EXISTS  ${candidate}  (${sz} bytes — need exactly ${COOKIE_SIZE})"
+        else
+            log_error "  MISSING ${candidate}"
+        fi
+    done
+    log_error "Last 30 lines of Tor log:"
+    tail -n 30 "${TOR_LOG_FILE}" >&2 2>/dev/null || true
+    exit 1
+}
+
+# =============================================================================
+# Step 6 — Distribute cookie to shared volume targets
+# =============================================================================
+# Gets the validated 32-byte binary auth cookie and distributes it to every
+# path listed in TOR_COOKIE_TARGETS.
+#
+# Three-stage operation:
+#   Stage 1 — Locate:     If TOR_COOKIE_FILE is missing or wrong size, search
+#                         all known candidate paths and copy the found cookie to
+#                         the canonical path before proceeding.
+#   Stage 2 — Validate:   Full byte-count + hex-length check on the source.
+#                         A corrupt source exits immediately — pushing garbage
+#                         to shared volumes silently breaks every consumer.
+#   Stage 3 — Distribute: Binary cp to each target; validate each written copy.
+# =============================================================================
 copy_cookie_to_shared() {
-  local cookie_src="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
-  local cookie_src_host="mnt/myssd/Lucid/Lucid/data/tor/control_auth_cookie"
-  local cookie_dest="${COOKIE_FILE_SHARED:-/run/lucid/onion/control_auth_cookie}"
-  
-  log "Preparing to copy control cookie to shared volume..."
-
-  # Get destination directory
-  local dest_dir="${cookie_dest%/*}"
-
-  # Create destination directory
-  mkdir -p "$dest_dir" 2>/dev/null || true
-
-  # CRITICAL: Wait for source cookie file to be CREATED AND WRITTEN
-  log "Waiting for source cookie file to be created and written..."
-  local waited=0
-  local max_wait=120
-  
-  while [ $waited -lt $max_wait ]; do
-    # Check if file exists AND has content
-    if [ -f "$cookie_src" ] && [ -s "$cookie_src" ]; then
-      # Get actual size
-      local size
-      size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
-      # Verify size
-      if [ "$size" -gt 0 ]; then
-        log "✓ Cookie file ready: $cookie_src ($size bytes)"
-        break
-      fi
-    fi
-    
-    sleep 1
-    waited=$((waited + 1))
-  done
-
-  # Check if we got a valid source file
-  if [ ! -f "$cookie_src" ] || [ ! -s "$cookie_src" ]; then
-    log "ERROR: Source cookie file did not appear after ${max_wait}s"
-    return 1
-  fi
-
-  # Get source file size - CRITICAL: Store in variable
-  local src_size
-  src_size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
-  
-  if [ -z "$src_size" ] || [ "$src_size" -eq 0 ]; then
-    log "ERROR: Cookie file size is 0 or cannot be determined"
-    return 1
-  fi
-
-  log "Copying cookie file ($src_size bytes) to shared volume..."
-  log "  Source: $cookie_src"
-  log "  Destination: $cookie_dest"
-
-  # Remove destination first if it exists
-  rm -f "$cookie_dest" 2>/dev/null || true
-
-  # === METHOD 1: Use dd (most reliable for binary files) ===
-  log "Attempting copy with /bin/busybox dd..."
-  if /bin/busybox dd if="$cookie_src" of="$cookie_dest" bs=32 count=1 2>/dev/null; then
-    local dst_size
-    dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
-    
-    if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
-      chmod 644 "$cookie_dest" 2>/dev/null || true
-      log "✓ Cookie copied successfully with dd: $cookie_dest ($dst_size bytes)"
-      
-      # Copy to additional locations
-      copy_to_additional_locations "$cookie_src"
-      return 0
-    fi
-  fi
-
-  # === METHOD 2: Use cat with output redirection (EOF write method) ===
-  log "Attempting copy with cat EOF method..."
-  (
-    /bin/busybox cat "$cookie_src"
-  ) > "$cookie_dest" 2>/dev/null
-  
-  local dst_size
-  dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
-  
-  if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
-    chmod 644 "$cookie_dest" 2>/dev/null || true
-    log "✓ Cookie copied successfully with cat EOF: $cookie_dest ($dst_size bytes)"
-    
-    # Copy to additional locations
-    copy_to_additional_locations "$cookie_src"
-    return 0
-  fi
-
-  # === METHOD 3: Use busybox cp ===
-  log "Attempting copy with /bin/busybox cp..."
-  if /bin/busybox cp "$cookie_src" "$cookie_dest" 2>/dev/null; then
-    local dst_size
-    dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
-    
-    if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
-      chmod 644 "$cookie_dest" 2>/dev/null || true
-      log "✓ Cookie copied successfully with cp: $cookie_dest ($dst_size bytes)"
-      
-      # Copy to additional locations
-      copy_to_additional_locations "$cookie_src"
-      return 0
-    fi
-  fi
-
-  # === METHOD 4: Use hexdump and printf (manual byte write) ===
-  log "Attempting copy with hexdump method..."
-  if command -v /bin/busybox >/dev/null 2>&1; then
-    # Try to read and write using busybox
-    rm -f "$cookie_dest"
-    if /bin/busybox dd if="$cookie_src" of="$cookie_dest" 2>/dev/null; then
-      local dst_size
-      dst_size=$(/bin/busybox wc -c < "$cookie_dest" 2>/dev/null)
-      
-      if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
-        chmod 644 "$cookie_dest" 2>/dev/null || true
-        log "✓ Cookie copied successfully with final dd attempt: $cookie_dest ($dst_size bytes)"
-        
-        # Copy to additional locations
-        copy_to_additional_locations "$cookie_src"
-        return 0
-      fi
-    fi
-  fi
-
-  # All methods failed
-  log "ERROR: Failed to copy cookie using all methods"
-  log "Source: $cookie_src (size: $src_size bytes)"
-  log "Destination: $cookie_dest"
-  
-  # Log what methods are available
-  log "Available tools:"
-  /bin/busybox dd --version >/dev/null 2>&1 && log "  ✓ dd available" || log "  ✗ dd not available"
-  /bin/busybox cp --version >/dev/null 2>&1 && log "  ✓ cp available" || log "  ✗ cp not available"
-  /bin/busybox cat --version >/dev/null 2>&1 && log "  ✓ cat available" || log "  ✗ cat not available"
-  
-  return 1
-}
-
-# ============================================================================
-# FUNCTION: copy_to_additional_locations
-# Purpose: Copy cookie to other required locations
-# ============================================================================
-copy_to_additional_locations() {
-  local cookie_src="$1"
-  
-  if [ ! -f "$cookie_src" ]; then
-    return 0
-  fi
-  
-  local src_size
-  src_size=$(/bin/busybox wc -c < "$cookie_src" 2>/dev/null)
-  
-  # List of additional locations
-  local additional_locations=(
-    "/run/lucid/onion/control_auth_cookie"
-    "/tmp/control_auth_cookie"
-  )
-  
-  for dest in "${additional_locations[@]}"; do
-    # Skip if destination is same as source
-    [ "$dest" = "$cookie_src" ] && continue
-    
-    local dest_dir="${dest%/*}"
-    
-    # Create directory
-    mkdir -p "$dest_dir" 2>/dev/null || continue
-    
-    # Remove old destination
-    rm -f "$dest" 2>/dev/null || true
-    
-    # Copy file
-    if /bin/busybox dd if="$cookie_src" of="$dest" bs=32 count=1 2>/dev/null; then
-      local dst_size
-      dst_size=$(/bin/busybox wc -c < "$dest" 2>/dev/null)
-      
-      if [ "$dst_size" -eq "$src_size" ] && [ "$dst_size" -gt 0 ]; then
-        chmod 644 "$dest" 2>/dev/null || true
-        log "✓ Cookie also copied to: $dest ($dst_size bytes)"
-      fi
-    fi
-  done
-}
-
-# ============================================================================
-# FUNCTION: create_ephemeral_onion
-# Purpose: Create an ephemeral Tor hidden service
-# Maps localhost port to upstream service via onion address
-# ============================================================================
-create_ephemeral_onion() {
-  [ "$CREATE_ONION" = "1" ] || {
-    log "INFO: CREATE_ONION disabled (CREATE_ONION=$CREATE_ONION)"
-    return 0
-  }
-
-  if [ -z "$UPSTREAM_SERVICE" ]; then
-    log "INFO: No UPSTREAM_SERVICE configured — skipping onion creation"
-    return 0
-  fi
-
-  log "Creating ephemeral onion service for: $UPSTREAM_SERVICE"
-
-  # Resolve upstream service hostname to IP
-  log "Resolving upstream service: $UPSTREAM_SERVICE"
-  local ip=""
-  local tries=30
-
-  while [ $tries -gt 0 ]; do
-    ip=$(resolve_upstream_ip "$UPSTREAM_SERVICE")
-    if [ -n "$ip" ]; then
-      log "✓ Resolved $UPSTREAM_SERVICE to $ip"
-      break
-    fi
-    log "  Waiting for DNS resolution... ($tries attempts remaining)"
-    sleep 2
-    tries=$((tries - 1))
-  done
-
-  if [ -z "$ip" ]; then
-    log "ERROR: Unable to resolve $UPSTREAM_SERVICE"
-    return 1
-  fi
-
-  # Test connectivity to upstream (best-effort, don't fail)
-  if command -v nc >/dev/null 2>&1; then
-    log "Testing connectivity to $ip:$UPSTREAM_PORT..."
-    if nc -z -w 2 "$ip" "$UPSTREAM_PORT" >/dev/null 2>&1; then
-      log "✓ Upstream service is reachable"
+    if [[ "${TOR_COOKIE_AUTH}" != "1" ]]; then
+        log_debug "Cookie auth disabled — skipping cookie distribution"
     else
-      log "WARNING: Could not reach upstream service at $ip:$UPSTREAM_PORT"
-    fi
-  fi
-
-  # Build ADD_ONION command
-  # NEW:ED25519-V3 creates a new ED25519 v3 onion address
-  # Port=80,$ip:$UPSTREAM_PORT maps port 80 to upstream service
-  local add_onion="ADD_ONION NEW:ED25519-V3 Port=80,${ip}:${UPSTREAM_PORT}"
-  log "Creating ephemeral onion: 80 → ${ip}:${UPSTREAM_PORT}"
-
-  # Send command to Tor control port
-  local response
-  response=$(ctl "$add_onion" 2>/dev/null || true)
-
-  # Check if onion was created successfully
-  if echo "$response" | /bin/busybox grep -q '250-ServiceID='; then
-    # Extract onion address from response
-    local onion
-    onion=$(echo "$response" | awk -F= '/250-ServiceID=/{print $2}').onion
-    
-    log "✓ ONION SERVICE CREATED: ${onion}"
-    log "  Access via: http://${onion}/"
-    log "  Backend: ${ip}:${UPSTREAM_PORT}"
-
-    # Persist onion address to shared state
-    echo "ONION=${onion}" > /run/lucid/onion/current.onion 2>/dev/null || {
-      log "WARNING: Could not write onion state file"
-    }
-
-    return 0
-  fi
-
-  # Creation failed
-  log "ERROR: Failed to create ephemeral onion service"
-  log "Tor response:"
-  printf '%s\n' "$response" | head -10
-  
-  return 1
-}
-
-# ============================================================================
-# FUNCTION: main
-# Purpose: Main entrypoint - orchestrates startup and monitoring
-# ============================================================================
-main() {
-  # Print startup banner
-  log "╔════════════════════════════════════════════════════════════════╗"
-  log "║          Lucid Tor Proxy - Starting                            ║"
-  log "╚════════════════════════════════════════════════════════════════╝"
-
-  # Log configuration
-  log "Configuration:"
-  log "  Platform: ${LUCID_PLATFORM:-arm64}"
-  log "  Environment: ${LUCID_ENV:-production}"
-  log "  SOCKS Port: ${TOR_SOCKS_PORT}"
-  log "  Control Port: ${CONTROL_PORT}"
-  log "  Control Host: ${CONTROL_HOST}"
-  log "  Data Directory: ${TOR_DATA_DIR}"
-  log "  Seed Directory: ${TOR_SEED_DIR}"
-  log "  Upstream Service: ${UPSTREAM_SERVICE:-<not configured>}"
-  log "  Create Onion: ${CREATE_ONION}"
-  log "  Use Bridges: ${TOR_USE_BRIDGES}"
-
-  # Step 1: Ensure runtime directories exist
-  ensure_runtime || {
-    log "ERROR: Failed to set up runtime directories"
-    exit 1
-  }
-
-  # Step 2: Preload seed data if available
-  log ""
-  log "STEP 1: Preloading Tor seed data..."
-  preload_tor_data || {
-    log "WARNING: Seed data preload failed (will bootstrap from scratch)"
-  }
-
-  # Step 3: Configure bridges if needed
-  log ""
-  log "STEP 2: Configuring bridge support..."
-  if ! configure_bridges; then
-    log "WARNING: Bridge configuration failed (continuing without bridges)"
-  fi
-
-  # Step 4: Start Tor daemon
-  log ""
-  log "STEP 3: Starting Tor daemon..."
-  if ! start_tor; then
-    log "FATAL: Failed to start Tor"
-    exit 1
-  fi
-
-  # Step 5: Wait for control cookie to be created
-  log ""
-  log "STEP 4: Waiting for Tor initialization..."
-  if ! wait_for_file "$COOKIE_FILE" 120; then
-    log "FATAL: Tor control cookie not created within timeout"
-    log "Possible causes:"
-    log "  - Tor crashed or failed to start"
-    log "  - /var/lib/tor directory permission issues"
-    log "  - /etc/tor/torrc configuration error"
-    log "Check Tor logs for details"
-    exit 1
-  fi
-
-  # Step 6: Copy cookie to shared volume
-  log ""
-  log "STEP 5: Sharing control cookie with other services..."
-  if ! copy_cookie_to_shared; then
-    log "WARNING: Cookie sharing failed (tunnel-tools may not have access)"
-  fi
-
-  # Step 7: Wait for bootstrap to complete
-  log ""
-  log "STEP 6: Waiting for Tor bootstrap..."
-  if ! wait_for_bootstrap; then
-    log "FATAL: Tor bootstrap failed"
-    log ""
-    log "Bootstrap Failure - Troubleshooting Guide:"
-    log "============================================"
-    log ""
-    log "1. Check Tor daemon logs:"
-    log "   docker logs <container> | grep -i 'tor\\|bootstrap\\|conn'"
-    log ""
-    log "2. If stuck at 'connecting to directory authorities':"
-    log "   - ISP is likely blocking Tor ports 443, 9001, etc."
-    log "   - Configure bridges: TOR_USE_BRIDGES=1 TOR_BRIDGES='...'"
-    log "   - See: https://bridges.torproject.org/"
-    log ""
-    log "3. If 'consensus' phase fails:"
-    log "   - Ensure seed data is present: /seed/tor-data/cached-consensus"
-    log "   - Check network connectivity to Tor directory authorities"
-    log "   - Try restarting container: docker restart <container>"
-    log ""
-    log "4. Verify Tor is running:"
-    log "   docker exec <container> ps aux | grep tor"
-    log ""
-    log "5. Test network access:"
-    log "   docker exec <container> nc -zv 128.30.39.46 443"
-    log ""
-    log "6. Check control port:"
-    log "   docker exec <container> nc -zv 127.0.0.1 9051"
-    log ""
-    exit 1
-  fi
-
-  # Step 8: Create ephemeral onion if configured
-  log ""
-  log "STEP 7: Setting up onion services..."
-  if ! create_ephemeral_onion; then
-    log "WARNING: Ephemeral onion creation failed or was skipped"
-  fi
-
-  # Step 9: Run monitoring loop
-  log ""
-  log "╔════════════════════════════════════════════════════════════════╗"
-  log "║  ✓ Tor Proxy Ready                                              ║"
-  log "╚════════════════════════════════════════════════════════════════╝"
-  log ""
-  log "Tor is fully operational. Now monitoring for stability..."
-  log "SOCKS proxy: socks5://localhost:${TOR_SOCKS_PORT}"
-  log "Control port: telnet://localhost:${CONTROL_PORT}"
-  log ""
-
-  # Monitor Tor process and restart if it dies
-  while true; do
-    if [ -f "${TOR_DATA_DIR}/tor.pid" ]; then
-      local tor_pid
-      tor_pid=$(/bin/busybox cat "${TOR_DATA_DIR}/tor.pid" 2>/dev/null || echo "")
-
-      if [ -n "$tor_pid" ] && /bin/busybox kill -0 "$tor_pid" 2>/dev/null; then
-        # Tor is running - sleep and check again
-        /bin/busybox sleep 30
-      else
-        # Tor process died, restart it
-        log "⚠ WARNING: Tor process died (PID: ${tor_pid:-unknown}), restarting..."
-        
-        start_tor || {
-          log "ERROR: Failed to restart Tor"
-          sleep 10
-          continue
-        }
-
-        # Wait for cookie and bootstrap again
-        if wait_for_file "$COOKIE_FILE" 60; then
-          if ! wait_for_bootstrap; then
-            log "WARNING: Bootstrap incomplete after restart"
-          fi
+        if [[ -z "${TOR_COOKIE_TARGETS}" ]]; then
+            log_debug "TOR_COOKIE_TARGETS not set — no cookie distribution needed"
         else
-          log "WARNING: Cookie not ready after restart"
+            log "Distributing auth cookie to shared target(s)"
+
+            # ── Stage 1: Locate the cookie ────────────────────────────────────
+            # Check whether the canonical cookie file is valid.  If not, search
+            # all known candidate paths.  This handles the case where Tor wrote
+            # the cookie in a non-default location (e.g. distroless permission
+            # mismatch causing Tor to fall back to /tmp).
+            local cookie_sz
+            cookie_sz="$(file_size_bytes "${TOR_COOKIE_FILE}")"
+
+            if (( cookie_sz != COOKIE_SIZE )); then
+                log_warn "Cookie not valid at ${TOR_COOKIE_FILE} (size=${cookie_sz}) — searching candidate paths"
+
+                local -a search_paths=(
+                    "${TOR_DATA_DIR}/control_auth_cookie"
+                    "${TOR_DATA_DIR}/tor_control_auth_cookie"
+                    "/var/lib/tor/control_auth_cookie"
+                    "/run/tor/control_auth_cookie"
+                    "/tmp/tor_control_auth_cookie"
+                )
+
+                local found_at=""
+                for candidate in "${search_paths[@]}"; do
+                    if [[ -f "${candidate}" ]]; then
+                        local cand_sz
+                        cand_sz="$(file_size_bytes "${candidate}")"
+                        if (( cand_sz == COOKIE_SIZE )); then
+                            found_at="${candidate}"
+                            break
+                        fi
+                    fi
+                done
+
+                if [[ -z "${found_at}" ]]; then
+                    log_error "copy_cookie_to_shared: no valid ${COOKIE_SIZE}-byte cookie found on any candidate path"
+                    log_error "Searched: ${TOR_COOKIE_FILE} ${search_paths[*]}"
+                    log_error "Distribution aborted — downstream services will have no auth cookie"
+                    exit 1
+                else
+                    log "Found valid cookie at ${found_at} — installing to canonical path ${TOR_COOKIE_FILE}"
+                    local cookie_parent
+                    cookie_parent="$(dirname "${TOR_COOKIE_FILE}")"
+
+                    if ! mkdir -p "${cookie_parent}" 2>/dev/null; then
+                        log_error "Cannot create cookie parent directory: ${cookie_parent}"
+                        exit 1
+                    fi
+
+                    if cp "${found_at}" "${TOR_COOKIE_FILE}"; then
+                        chmod 640 "${TOR_COOKIE_FILE}"
+                        chown "${TOR_USER}:${TOR_USER}" "${TOR_COOKIE_FILE}" 2>/dev/null || true
+                        log "Cookie installed at canonical path: ${TOR_COOKIE_FILE}"
+                    else
+                        log_error "cp failed: ${found_at} → ${TOR_COOKIE_FILE}"
+                        exit 1
+                    fi
+                fi
+            fi
+
+            # ── Stage 2: Validate the source cookie ───────────────────────────
+            # validate_cookie_file() runs both the byte-count check (wc -c)
+            # and the hex-length check (hex_encode_file).  It exits the
+            # container on any failure — distributing a corrupt cookie to all
+            # shared volumes would silently break every downstream consumer.
+            validate_cookie_file "${TOR_COOKIE_FILE}"
+
+            # ── Stage 3: Distribute to all targets ────────────────────────────
+            local ok=0
+            local fail=0
+
+            # TOR_COOKIE_TARGETS is a colon-separated list of destination paths.
+            local saved_ifs="$IFS"
+            IFS=':'
+            local -a targets_arr
+            read -r -a targets_arr <<< "${TOR_COOKIE_TARGETS}"
+            IFS="${saved_ifs}"
+
+            for target in "${targets_arr[@]}"; do
+                if [[ -z "${target}" ]]; then
+                    continue
+                fi
+
+                local target_dir
+                target_dir="$(dirname "${target}")"
+
+                if ! mkdir -p "${target_dir}" 2>/dev/null; then
+                    log_error "Cannot create parent directory for cookie target: ${target_dir}"
+                    (( fail++ ))
+                else
+                    # Binary copy — preserves the exact 32 bytes Tor wrote.
+                    # Never re-encode: the cookie is a binary file that must
+                    # reach consumers byte-for-byte identical to the source.
+                    if cp "${TOR_COOKIE_FILE}" "${target}"; then
+                        chmod 640 "${target}"
+                        chown "${TOR_USER}:${TOR_USER}" "${target}" 2>/dev/null || true
+
+                        # Validate the written copy — a filesystem full condition
+                        # or FUSE glitch can produce a silently truncated file
+                        # that passes a simple existence check.
+                        local target_sz
+                        target_sz="$(file_size_bytes "${target}")"
+                        local target_hex
+                        target_hex="$(hex_encode_file "${target}")"
+                        local target_hex_len="${#target_hex}"
+
+                        if (( target_sz != COOKIE_SIZE || target_hex_len != COOKIE_HEX_LENGTH )); then
+                            log_error "Cookie target validation FAILED: ${target}"
+                            log_error "  size=${target_sz} bytes (need ${COOKIE_SIZE}), hex-length=${target_hex_len} (need ${COOKIE_HEX_LENGTH})"
+                            (( fail++ ))
+                        else
+                            log "Cookie distributed and validated → ${target} (${target_sz}B / ${target_hex_len}-char hex)"
+                            (( ok++ ))
+                        fi
+                    else
+                        log_error "cp failed: ${TOR_COOKIE_FILE} → ${target}"
+                        (( fail++ ))
+                    fi
+                fi
+            done
+
+            if (( ok > 0 )); then
+                log "Cookie successfully distributed to ${ok} target(s)"
+            fi
+
+            if (( fail > 0 )); then
+                log_error "${fail} cookie distribution(s) failed — affected downstream services will lack auth"
+                exit 1
+            fi
         fi
-      fi
-    else
-      # No PID file, sleep and retry
-      /bin/busybox sleep 30
     fi
-  done
 }
 
-# Execute main function
+# =============================================================================
+# Control port helper — pure bash /dev/tcp, no netcat/socat (distroless-safe)
+# =============================================================================
+# Opens a TCP connection to the control port, authenticates with the cookie,
+# sends one command, reads the response, closes the socket.
+# Prints the response on stdout; exits the container on any error.
+_tor_ctl() {
+    local cmd="$1"
+    local cookie_hex=""
+
+    if [[ "${TOR_COOKIE_AUTH}" == "1" ]]; then
+        cookie_hex="$(hex_encode_file "${TOR_COOKIE_FILE}")"
+        # validate_cookie_file() has already confirmed 32 bytes / 64 hex chars
+        # before we reach here, but we guard again defensively — if something
+        # replaced the cookie file between validation and this call we must not
+        # send garbage to the control port.
+        if (( ${#cookie_hex} != COOKIE_HEX_LENGTH )); then
+            log_error "Control port auth ABORTED: cookie hex length=${#cookie_hex} (expected ${COOKIE_HEX_LENGTH}) — cookie replaced or corrupted since validation"
+            exit 1
+        fi
+    fi
+
+    {
+        exec 3<>"/dev/tcp/127.0.0.1/${TOR_CONTROL_PORT}" || exit 1
+
+        if [[ "${TOR_COOKIE_AUTH}" == "1" ]]; then
+            printf 'AUTHENTICATE %s\r\n' "${cookie_hex}" >&3
+        else
+            printf 'AUTHENTICATE ""\r\n' >&3
+        fi
+
+        local auth_resp=""
+        IFS= read -r -t 5 auth_resp <&3
+        auth_resp="${auth_resp%$'\r'}"
+        if [[ "${auth_resp}" != 250* ]]; then
+            log_error "Control port auth failed: ${auth_resp}"
+            exec 3>&-
+            exit 1
+        fi
+
+        printf '%s\r\n' "${cmd}" >&3
+
+        local line response=""
+        while IFS= read -r -t 5 line <&3; do
+            line="${line%$'\r'}"
+            response+="${line}"$'\n'
+            # Terminal response line: exactly 3 digits followed by a space
+            [[ "$line" =~ ^[0-9]{3}[[:space:]] ]] && break
+        done
+
+        printf 'QUIT\r\n' >&3
+        exec 3>&-
+
+        printf '%s' "${response}"
+    }
+}
+
+# =============================================================================
+# Step 7 — Bootstrap monitoring
+# =============================================================================
+wait_for_bootstrap() {
+    log "Waiting for Tor to reach 100%% bootstrap (timeout: ${TOR_BOOTSTRAP_TIMEOUT}s)"
+
+    local elapsed=0
+    local last_pct=-1
+
+    while (( elapsed < TOR_BOOTSTRAP_TIMEOUT )); do
+
+        if ! kill -0 "${TOR_PID}" 2>/dev/null; then
+            log_error "Tor process died during bootstrap"
+            tail -n 50 "${TOR_LOG_FILE}" >&2 2>/dev/null || true
+            exit 1
+        fi
+
+        # ── Primary path: control port ─────────────────────────────────────
+        local resp=""
+        if resp="$(_tor_ctl "GETINFO status/bootstrap-phase" 2>/dev/null)"; then
+            local pct=""
+            [[ "$resp" =~ PROGRESS=([0-9]+) ]] && pct="${BASH_REMATCH[1]}"
+
+            if [[ -n "$pct" ]] && (( pct != last_pct )); then
+                local summary=""
+                [[ "$resp" =~ SUMMARY=\"([^\"]+)\" ]] && summary="${BASH_REMATCH[1]}"
+                log "Bootstrap: ${pct}%${summary:+ — ${summary}}"
+                last_pct=$pct
+            fi
+
+            if [[ -n "$pct" ]] && (( pct >= 100 )); then
+                log "Bootstrap complete!"
+                return
+            fi
+
+        # ── Fallback: grep the log file ────────────────────────────────────
+        elif [[ -f "${TOR_LOG_FILE}" ]] && command -v grep &>/dev/null; then
+            local last_boot_line=""
+            last_boot_line="$(grep -oE 'Bootstrapped [0-9]+%[^:]*:.*' \
+                                  "${TOR_LOG_FILE}" 2>/dev/null \
+                              | tail -1)" || true
+
+            if [[ -n "$last_boot_line" ]]; then
+                log_debug "Log: ${last_boot_line}"
+                if [[ "$last_boot_line" =~ Bootstrapped\ 100% ]]; then
+                    log "Bootstrap complete (detected from log)!"
+                    return
+                fi
+            fi
+        fi
+
+        sleep "${TOR_BOOTSTRAP_POLL_INTERVAL}"
+        (( elapsed += TOR_BOOTSTRAP_POLL_INTERVAL ))
+    done
+
+    log_error "Bootstrap timed out after ${TOR_BOOTSTRAP_TIMEOUT}s (last progress: ${last_pct}%)"
+    if [[ -f "${TOR_LOG_FILE}" ]]; then
+        log_error "Last 40 lines of Tor log:"
+        tail -n 40 "${TOR_LOG_FILE}" >&2 2>/dev/null || true
+    fi
+    exit 1
+}
+
+# =============================================================================
+# Step 8 — Onion service verification
+# =============================================================================
+verify_onion_service() {
+    if [[ "${TOR_ONION_SERVICE_ENABLED}" != "1" ]]; then
+        return
+    fi
+
+    local hostname_file="${TOR_ONION_SERVICE_DIR}/hostname"
+    log "Waiting for onion service hostname file…"
+
+    local elapsed=0
+    local timeout=60
+
+    while (( elapsed < timeout )); do
+        if [[ -f "${hostname_file}" && -s "${hostname_file}" ]]; then
+            local onion_addr
+            onion_addr="$(tr -d '[:space:]' < "${hostname_file}" 2>/dev/null)"
+            log "Onion service active: ${onion_addr}"
+            return
+        fi
+        sleep 2
+        (( elapsed += 2 ))
+    done
+
+    log_warn "Onion hostname not generated within ${timeout}s — service may still be starting"
+}
+
+# =============================================================================
+# Step 9 — Background health monitor
+# =============================================================================
+_health_monitor() {
+    log_debug "Health monitor started (interval: ${TOR_HEALTH_CHECK_INTERVAL}s)"
+    while true; do
+        sleep "${TOR_HEALTH_CHECK_INTERVAL}"
+        if ! kill -0 "${TOR_PID}" 2>/dev/null; then
+            log_error "Tor process (PID ${TOR_PID}) has died — exiting container"
+            exit 1
+        fi
+        log_debug "Health check OK — Tor PID ${TOR_PID} alive"
+    done
+}
+
+# =============================================================================
+# Signal / cleanup handler
+# =============================================================================
+_cleanup() {
+    local rc=$?
+    log "Shutdown signal received (exit code: ${rc})"
+
+    if [[ -n "${TOR_PID}" ]] && kill -0 "${TOR_PID}" 2>/dev/null; then
+        log "Sending SIGTERM to Tor (PID ${TOR_PID})"
+        kill -TERM "${TOR_PID}" 2>/dev/null || true
+
+        local i=0
+        while (( i < 10 )) && kill -0 "${TOR_PID}" 2>/dev/null; do
+            sleep 1
+            (( i++ ))
+        done
+
+        if kill -0 "${TOR_PID}" 2>/dev/null; then
+            log_warn "Graceful shutdown timed out — sending SIGKILL"
+            kill -KILL "${TOR_PID}" 2>/dev/null || true
+        fi
+    fi
+
+    log "Entrypoint exit"
+    exit "${rc}"
+}
+
+trap _cleanup SIGTERM SIGINT SIGQUIT EXIT
+
+# =============================================================================
+# Main
+# =============================================================================
+main() {
+    log "tor_entrypoint.sh v${SCRIPT_VERSION} — starting up"
+    log_debug "TOR_DATA_DIR=${TOR_DATA_DIR}"
+    log_debug "TOR_COOKIE_FILE=${TOR_COOKIE_FILE}"
+    log_debug "TOR_SOCKS_PORT=${TOR_SOCKS_PORT}"
+    log_debug "TOR_CONTROL_PORT=${TOR_CONTROL_PORT}"
+    log_debug "TOR_DNS_PORT=${TOR_DNS_PORT}"
+    log_debug "TOR_USE_BRIDGES=${TOR_USE_BRIDGES}"
+    log_debug "TOR_USE_SEED=${TOR_USE_SEED}"
+    log_debug "TOR_ONION_SERVICE_ENABLED=${TOR_ONION_SERVICE_ENABLED}"
+
+    # 1. Load cached consensus, certs, and onion service keys from seed volume.
+    #    Without cached-certs Tor must fetch authority certificates from the
+    #    network before it can validate the consensus — the root cause of cold-
+    #    start bootstrap failures.
+    preload_tor_data
+
+    # 2. Build torrc from environment variables
+    write_torrc
+
+    # 3. Append bridge config to torrc (when TOR_USE_BRIDGES=1)
+    configure_bridges
+
+    # 4. Fork Tor daemon — MUST happen before any cookie operations
+    start_tor
+
+    # 5. Wait until Tor has written the auth cookie; search all known paths;
+    #    pre-create the file on first poll so Tor can always overwrite it;
+    #    full byte-count + hex-length validation before returning.
+    wait_for_cookie
+
+    # 6. Locate, validate, and binary-copy the cookie to every path in
+    #    TOR_COOKIE_TARGETS so downstream services can authenticate.
+    copy_cookie_to_shared
+
+    # 7. Poll the control port until bootstrap reaches 100%
+    wait_for_bootstrap
+
+    # 8. If onion service configured, confirm hostname file appeared
+    verify_onion_service
+
+    # 9. Start background health monitor
+    _health_monitor &
+
+    log "Tor fully operational — container handing off to Tor process (PID ${TOR_PID})"
+
+    # Keep the container alive; propagate Tor's exit code
+    wait "${TOR_PID}"
+    local tor_exit=$?
+    log_warn "Tor process exited with code ${tor_exit}"
+    exit "${tor_exit}"
+}
+
 main "$@"

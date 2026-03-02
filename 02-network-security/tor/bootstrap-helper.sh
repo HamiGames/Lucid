@@ -37,7 +37,7 @@ TOR_FILES=(
 IMAGE="pickme/lucid-tor-proxy:latest-arm64"
 
 log "=== Tor Bootstrap Helper (Standalone) ==="
-
+cp 
 # Ensure host directories exist
 log "Preparing host directories..."
 sudo mkdir -p "$HOST_TOR_DATA" "$HOST_TOR_LOGS" "$HOST_TOR_RUN/lucid/onion" "$HOST_TOR_CONFIG" || true
