@@ -4,13 +4,13 @@ FROM gcr.io/distroless/python3-debian12:arm64
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY requirements.txt .
+COPY gui/requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r gui/requirements.txt
 
 # Copy application code
-COPY . .
+COPY gui/ /app/gui/
 
 # Set non-root user for security
 USER nonroot
