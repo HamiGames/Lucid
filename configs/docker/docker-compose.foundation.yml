@@ -15,7 +15,7 @@ services:
       - "${TOR_PROXY_CONTROL_PORT:-9051}:${TOR_PROXY_CONTROL_PORT:-9051}"
       - "${TOR_PROXY_HTTP_PORT:-8888}:${TOR_PROXY_HTTP_PORT:-8888}"
     entrypoint: ["/usr/bin/tini", "--"]
-    command: ["/usr/local/bin/entrypoint.sh"]
+    command: []
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:rw
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
