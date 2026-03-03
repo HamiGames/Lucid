@@ -1,19 +1,30 @@
 # LUCID TOR PROXY - SPEC-4 Stage 0 Beta Sidecar
 # Distroless Tor proxy for Lucid (ARM64), aligned with project spin-up
 # Build Context: project root (same as tunnel-tools)
+# syntax=docker/dockerfile:1.5
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=2.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
 # =============================================================================
 # STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
 # =============================================================================
-FROM debian:12-slim AS tor-builder
+FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install Tor and runtime tools — apt cache mounted to avoid re-downloading
+# on rebuilds while keeping the final layer clean.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && apt-get install -y --no-install-recommends \
       tor \
       tor-geoipdb \
       obfs4proxy \
@@ -33,23 +44,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid
 
-# Create runtime directories with correct ownership.
+WORKDIR /build
+
+# Create all runtime directories in one layer with precise ownership and modes.
 # /run itself is NOT touched — the distroless base owns it as root:root 755.
 # Only /run/lucid/* subdirs are created here and copied into the runtime stage.
-# This prevents overriding the base image's /run and avoids permission failures.
-RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor           \
- && install -d -o debian-tor -g debian-tor -m 755 /run/lucid             \
- && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion       \
- && install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tor         \
- && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor         \
- && install -d -o root       -g root       -m 755 /usr/local/bin         \
- && install -d -o root       -g root       -m 755 /etc/tor
+# /app/tor is the container application root (WORKDIR in runtime stage).
+RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor            \
+ && install -d -o debian-tor -g debian-tor -m 755 /run/lucid              \
+ && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion        \
+ && install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tor          \
+ && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor          \
+ && install -d -o root       -g root       -m 755 /usr/local/bin          \
+ && install -d -o root       -g root       -m 755 /etc/tor                \
+ && install -d -o root       -g root       -m 755 /etc/tor/tunnels        \
+ && install -d -o root       -g root       -m 755 /tmp/lucid/tor/tunnels  \
+ && install -d -o debian-tor -g debian-tor -m 755 /app/tor
 
-# Pre-create control_auth_cookie with correct ownership (mode 600, debian-tor).
-# Tor regenerates the contents at startup — we only bake in the path and perms.
-# Requires torrc: CookieAuthentication 1
-#                 CookieAuthFile /var/lib/tor/control_auth_cookie
-RUN install -o debian-tor -g debian-tor -m 600 /dev/null /var/lib/tor/control_auth_cookie
+# Marker files — ensures multi-stage COPY won't silently succeed on empty dirs.
+# Content names the owning service so provenance is visible in layer diffs.
+RUN echo "LUCID_TOR_PROXY_VAR_LIB_TOR"  > /var/lib/tor/.keep   \
+ && echo "LUCID_TOR_PROXY_RUN_LUCID"    > /run/lucid/.keep      \
+ && echo "LUCID_TOR_PROXY_ETC_TOR"      > /etc/tor/.keep        \
+ && echo "LUCID_TOR_PROXY_APP_TOR"      > /app/tor/.keep        \
+ && chown debian-tor:debian-tor           /var/lib/tor/.keep     \
+                                          /run/lucid/.keep       \
+                                          /app/tor/.keep
 
 # =============================================================================
 # STAGE 2: Dependency Verification
@@ -58,7 +78,7 @@ RUN install -o debian-tor -g debian-tor -m 600 /dev/null /var/lib/tor/control_au
 # A sentinel file /verified is written on success and COPIED into Stage 3,
 # forcing BuildKit to complete this stage before runtime can build.
 # =============================================================================
-FROM debian:12-slim AS verify
+FROM --platform=$BUILDPLATFORM debian:12-slim AS verify
 
 COPY --from=tor-builder /usr/bin/tor             /verify/usr/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy      /verify/usr/bin/obfs4proxy
@@ -90,23 +110,75 @@ RUN set -eux; \
     echo "All binary dependencies resolved." \
     && echo "verified" > /verified
 
+# ── Copy staged directories into verify stage for structural/file checks ──────
+COPY --from=tor-builder /var/lib/tor    /verify/var/lib/tor
+COPY --from=tor-builder /run/lucid      /verify/run/lucid
+COPY --from=tor-builder /etc/tor        /verify/etc/tor
+COPY --from=tor-builder /app/tor        /verify/app/tor
+# ── File and directory verification ───────────────────────────────────────────
+# Checks run before the distroless runtime stage builds. Any failure is a hard
+# build error. Validates: directory existence, marker file presence+content,
+# binary executability.
+RUN set -eux; \
+    \
+    echo "--- directory structure ---"; \
+    for dir in \
+        /verify/var/lib/tor \
+        /verify/run/lucid \
+        /verify/run/lucid/onion \
+        /verify/run/lucid/tor \
+        /verify/etc/tor \
+        /verify/app/tor; \
+    do \
+        test -d "$dir" || { echo "MISSING DIR: $dir"; exit 1; }; \
+        echo "  OK  $dir"; \
+    done; \
+    \
+    echo "--- marker files ---"; \
+    for marker in \
+        /verify/var/lib/tor/.keep \
+        /verify/run/lucid/.keep \
+        /verify/etc/tor/.keep \
+        /verify/app/tor/.keep; \
+    do \
+        test -f "$marker"        || { echo "MISSING MARKER: $marker";       exit 1; }; \
+        test -s "$marker"        || { echo "EMPTY MARKER:   $marker";       exit 1; }; \
+        grep -q "LUCID_TOR_PROXY" "$marker" \
+                                 || { echo "INVALID MARKER CONTENT: $marker"; exit 1; }; \
+        echo "  OK  $marker ($(cat $marker))"; \
+    done; \
+    \
+    echo "--- binary executability ---"; \
+    for bin in \
+        /verify/usr/bin/tor \
+        /verify/usr/bin/obfs4proxy \
+        /verify/usr/sbin/gosu \
+        /verify/usr/bin/tini \
+        /verify/usr/bin/curl \
+        /verify/usr/bin/jq; \
+    do \
+        test -f "$bin" || { echo "MISSING BINARY: $bin"; exit 1; }; \
+        test -x "$bin" || { echo "NOT EXECUTABLE: $bin"; exit 1; }; \
+        echo "  OK  $bin"; \
+    done; \
+    \
+    echo "All file and directory checks passed."
+
 # =============================================================================
 # STAGE 3: Distroless Runtime
 # =============================================================================
-FROM gcr.io/distroless/base-debian12:latest AS runtime
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest AS runtime
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=2.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Distroless Tor proxy for Lucid project" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Tor Proxy" \
       org.opencontainers.image.description="Distroless Tor proxy for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.plane="ops" \
       com.lucid.service="tor-proxy" \
       com.lucid.platform="arm64" \
@@ -152,7 +224,7 @@ COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 COPY --from=tor-builder /lib/aarch64-linux-gnu      /lib/aarch64-linux-gnu
 COPY --from=tor-builder /usr/lib                    /usr/lib
 
-# ── Tor data, GeoIP, config skeleton, CA certs ───────────────────────────────
+# ── Tor data dir, GeoIP, config skeleton, CA certs ───────────────────────────
 COPY --from=tor-builder /usr/share/tor                     /usr/share/tor
 COPY --from=tor-builder /etc/tor                           /etc/tor
 COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -160,14 +232,19 @@ COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-cer
 # ── /run/lucid subdirs (debian-tor owned) ────────────────────────────────────
 # /run itself is intentionally NOT copied — the distroless base provides it as
 # root:root 755 which is correct for a container runtime. Only our subdirs are
-# staged here with debian-tor ownership so Tor can write sockets and pid files.
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid /run/lucid
 
-# ── Tor data dir (includes pre-created control_auth_cookie) ──────────────────
-COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor /var/lib/tor
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid      /run/lucid
+
+# ── Tor data dir (runtime-writable, marker file confirms dir is non-empty) ────
+# control_auth_cookie is NOT baked in — Tor generates it fresh at startup.
+# The entrypoint's cookie preinit system creates it before Tor is invoked.
+COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor    /var/lib/tor
 
 # ── /tmp/lucid/tor writable scratch dir ──────────────────────────────────────
-COPY --from=tor-builder --chown=debian-tor:debian-tor /tmp/lucid /tmp/lucid
+COPY --from=tor-builder --chown=debian-tor:debian-tor /tmp/lucid      /tmp/lucid
+
+# ── Application root (WORKDIR — marker file confirms dir was staged) ──────────
+COPY --from=tor-builder --chown=debian-tor:debian-tor /app/tor        /app/tor
 
 # ── User/group database (required for USER debian-tor and gosu) ──────────────
 COPY --from=tor-builder /etc/passwd /etc/passwd
@@ -180,13 +257,16 @@ COPY --chmod=755 02-network-security/tor/tor-health.sh                     /usr/
 COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                 /usr/local/bin/tor-show-onion
 COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
+# ── Tunnel configs (build context: 02-network/security/tunnels) ───────────────
+COPY --chmod=644 02-network/security/tunnels                               /run/lucid/tor/tunnels
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/bin/bash", "/usr/local/bin/tor-health"]
 
 EXPOSE 9050 9051 8888
 
 USER debian-tor
-WORKDIR /var/lib/tor
+WORKDIR /app/tor
 
 # No ENTRYPOINT/CMD set intentionally — startup is controlled by compose or:
 #   docker run --entrypoint /usr/local/bin/entrypoint.sh <image>
