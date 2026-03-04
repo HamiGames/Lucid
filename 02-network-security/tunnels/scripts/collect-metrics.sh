@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # Load configuration from environment
-METRICS_JSON_PATH="${METRICS_JSON_PATH:-/var/lib/tunnel/metrics.json}"
+METRICS_JSON_PATH="${METRICS_JSON_PATH:-/opt/lib/tunnel/metrics.json}"
 STATUS_JSON_PATH="${STATUS_JSON_PATH:-/run/lucid/onion/tunnel_status.json}"
 WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
 METRICS_ENABLED="${METRICS_ENABLED:-true}"

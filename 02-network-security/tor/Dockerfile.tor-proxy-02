@@ -1,0 +1,432 @@
+# LUCID TOR PROXY - SPEC-4 Stage 0 Beta Sidecar
+# Distroless Tor proxy for Lucid (ARM64), aligned with project spin-up
+# Build from project root: docker build -f 02-network-security/tor/Dockerfile.tor .
+# syntax=docker/dockerfile:1.5
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=2.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+
+# STAGE 1
+FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && apt-get install -y --no-install-recommends \
+      tor \
+      tor-geoipdb \
+      obfs4proxy \
+      tini \
+      bash \
+      busybox \
+      coreutils \
+      netcat-openbsd \
+      xxd \
+      gosu \
+      ca-certificates \
+      dnsutils \
+      curl \
+      jq \
+      adduser \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && adduser --disabled-password --shell /bin/bash --gecos "" lucid
+
+WORKDIR /build
+
+# Create the container's internal runtime directory structure.
+
+RUN \
+    # ── Container runtime data root ──────────────────────────────────────── \
+    install -d -o debian-tor -g debian-tor -m 755 /run/lucid                 \
+ && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion           \
+ && install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tor             \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/bin         \
+ && printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/bin/.keep \
+ && printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/.keep \
+ && printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n' > /run/lucid/onion/.keep \
+ && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /run/lucid/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_admin                        \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_admin/authorized_clients     \
+ && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_admin/.keep \
+ && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_admin/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_vm                           \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_vm/authorized_clients        \
+ && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_vm/.keep \
+ && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_vm/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_node                         \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_node/authorized_clients      \
+ && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_node/.keep \
+ && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_node/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_blockchain                   \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_blockchain/authorized_clients \
+ && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_blockchain/.keep \
+ && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_blockchain/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_governance                   \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_governance/authorized_clients \
+ && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_governance/.keep \
+ && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_governance/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_payment                      \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_payment/authorized_clients   \
+ && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_payment/.keep \
+ && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_payment/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_session                      \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_session/authorized_clients   \
+ && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_session/.keep \
+ && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_session/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_rdp                          \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_rdp/authorized_clients       \
+ && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_rdp/.keep \
+ && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_rdp/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_wallet                       \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_wallet/authorized_clients    \
+ && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_wallet/.keep \
+ && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_wallet/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting                       \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting/authorized_clients    \
+ && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting/.keep \
+ && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting_system                \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting_system/authorized_clients \
+ && printf 'service=lucid_voting_system\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system/.keep \
+ && printf 'service=lucid_voting_system\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting_system_admin          \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting_system_admin/authorized_clients \
+ && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin/.keep \
+ && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting_system_admin_admin    \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients \
+ && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin_admin/.keep \
+ && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_server                       \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_server/authorized_clients    \
+ && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_server/.keep \
+ && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_server/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/myservice                          \
+ && install -d -o root -g root -m 700 /run/lucid/tor/myservice/authorized_clients       \
+ && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/myservice/.keep \
+ && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/myservice/authorized_clients/.keep \
+    \
+ && install -d -o root -g root -m 755 /run/lucid/tor/lucid_portal                       \
+ && install -d -o root -g root -m 700 /run/lucid/tor/lucid_portal/authorized_clients    \
+ && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_portal/.keep \
+ && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_portal/authorized_clients/.keep \
+    \
+    # ── Ephemeral scratch and config dirs ─────────────────────────────────── \
+ && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor                        \
+ && install -d -o root       -g root       -m 755 /tmp/lucid/tor/lucid_admin            \
+ && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/lucid_admin/.keep \
+    \
+    # ── Application root ──────────────────────────────────────────────────── \
+ && install -d -o debian-tor -g debian-tor -m 755 /app/tor                              \
+    \
+    # ── Top-level marker files ────────────────────────────────────────────── \
+ && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /run/lucid/.keep               \
+ && printf 'dir=app/tor\nplatform=lucid-tor-proxy\n'   > /app/tor/.keep                 \
+ && chown debian-tor:debian-tor /run/lucid/.keep /app/tor/.keep \
+    \
+    # ── /opt directory scaffold ────────────────────────────────────────────── \
+ && install -d -o root -g root -m 755 /opt                                               \
+ && install -d -o root -g root -m 755 /opt/bin                                           \
+ && install -d -o root -g root -m 755 /opt/sbin                                          \
+ && install -d -o root -g root -m 755 /opt/lib                                           \
+ && install -d -o root -g root -m 755 /opt/share                                         \
+ && install -d -o root -g root -m 755 /opt/share/tor                                     \
+ && printf 'dir=opt\nplatform=lucid-tor-proxy\n'           > /opt/.keep                  \
+ && printf 'dir=opt/bin\nplatform=lucid-tor-proxy\n'       > /opt/bin/.keep              \
+ && printf 'dir=opt/sbin\nplatform=lucid-tor-proxy\n'      > /opt/sbin/.keep             \
+ && printf 'dir=opt/lib\nplatform=lucid-tor-proxy\n'       > /opt/lib/.keep              \
+ && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /opt/share/tor/.keep
+
+# =============================================================================
+# STAGE 2: Dependency Verification
+# =============================================================================
+FROM --platform=$TARGETPLATFORM debian:12-slim AS verify
+
+COPY --from=tor-builder /usr/bin/tor              /verify/usr/bin/tor
+COPY --from=tor-builder /usr/bin/obfs4proxy       /verify/usr/bin/obfs4proxy
+COPY --from=tor-builder /usr/sbin/gosu            /verify/usr/sbin/gosu
+COPY --from=tor-builder /usr/bin/tini             /verify/usr/bin/tini
+COPY --from=tor-builder /usr/bin/curl             /verify/usr/bin/curl
+COPY --from=tor-builder /usr/bin/jq               /verify/usr/bin/jq
+COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/lib/aarch64-linux-gnu
+COPY --from=tor-builder /usr/lib                  /verify/usr/lib
+COPY --from=tor-builder /run/lucid                /verify/run/lucid
+COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
+COPY --from=tor-builder /app/tor                  /verify/app/tor
+COPY --from=tor-builder /opt                      /verify/opt
+
+RUN set -eux; \
+    \
+    echo "=== binary dependency checks ==="; \
+    for bin in \
+        /verify/usr/bin/tor \
+        /verify/usr/bin/obfs4proxy \
+        /verify/usr/sbin/gosu \
+        /verify/usr/bin/tini \
+        /verify/usr/bin/curl \
+        /verify/usr/bin/jq; \
+    do \
+        echo "--> $bin"; \
+        missing=$(LD_LIBRARY_PATH=/verify/lib/aarch64-linux-gnu:/verify/usr/lib \
+            ldd "$bin" 2>&1 | grep "not found" || true); \
+        if [ -n "$missing" ]; then \
+            echo "MISSING DEPENDENCIES in $bin:"; echo "$missing"; exit 1; \
+        fi; \
+        echo "  OK"; \
+    done; \
+    \
+    echo "=== directory structure ==="; \
+    for dir in \
+        /verify/run/lucid \
+        /verify/run/lucid/onion \
+        /verify/run/lucid/tor \
+        /verify/run/lucid/tor/bin \
+        /verify/run/lucid/tor/lucid_admin \
+        /verify/run/lucid/tor/lucid_vm \
+        /verify/run/lucid/tor/lucid_node \
+        /verify/run/lucid/tor/lucid_blockchain \
+        /verify/run/lucid/tor/lucid_governance \
+        /verify/run/lucid/tor/lucid_payment \
+        /verify/run/lucid/tor/lucid_session \
+        /verify/run/lucid/tor/lucid_rdp \
+        /verify/run/lucid/tor/lucid_wallet \
+        /verify/run/lucid/tor/lucid_voting \
+        /verify/run/lucid/tor/lucid_voting_system \
+        /verify/run/lucid/tor/lucid_voting_system_admin \
+        /verify/run/lucid/tor/lucid_voting_system_admin_admin \
+        /verify/run/lucid/tor/lucid_server \
+        /verify/run/lucid/tor/myservice \
+        /verify/run/lucid/tor/lucid_portal \
+        /verify/tmp/lucid/tor \
+        /verify/tmp/lucid/tor/lucid_admin \
+        /verify/app/tor \
+        /verify/opt \
+        /verify/opt/bin \
+        /verify/opt/sbin \
+        /verify/opt/lib \
+        /verify/opt/share/tor; \
+    do \
+        test -d "$dir" || { echo "MISSING DIR: $dir"; exit 1; }; \
+        echo "  OK  $dir"; \
+    done; \
+    \
+    echo "=== authorized_clients subdirs ==="; \
+    for acdir in \
+        /verify/run/lucid/tor/lucid_admin/authorized_clients \
+        /verify/run/lucid/tor/lucid_vm/authorized_clients \
+        /verify/run/lucid/tor/lucid_node/authorized_clients \
+        /verify/run/lucid/tor/lucid_blockchain/authorized_clients \
+        /verify/run/lucid/tor/lucid_governance/authorized_clients \
+        /verify/run/lucid/tor/lucid_payment/authorized_clients \
+        /verify/run/lucid/tor/lucid_session/authorized_clients \
+        /verify/run/lucid/tor/lucid_rdp/authorized_clients \
+        /verify/run/lucid/tor/lucid_wallet/authorized_clients \
+        /verify/run/lucid/tor/lucid_voting/authorized_clients \
+        /verify/run/lucid/tor/lucid_voting_system/authorized_clients \
+        /verify/run/lucid/tor/lucid_voting_system_admin/authorized_clients \
+        /verify/run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients \
+        /verify/run/lucid/tor/lucid_server/authorized_clients \
+        /verify/run/lucid/tor/myservice/authorized_clients \
+        /verify/run/lucid/tor/lucid_portal/authorized_clients; \
+    do \
+        test -d "$acdir" || { echo "MISSING authorized_clients: $acdir"; exit 1; }; \
+        echo "  OK  $acdir"; \
+    done; \
+    \
+    echo "=== marker file content ==="; \
+    for marker in \
+        /verify/run/lucid/.keep \
+        /verify/app/tor/.keep \
+        /verify/run/lucid/tor/.keep \
+        /verify/run/lucid/tor/bin/.keep \
+        /verify/run/lucid/onion/.keep \
+        /verify/run/lucid/tor/lucid_admin/.keep \
+        /verify/run/lucid/tor/lucid_admin/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_vm/.keep \
+        /verify/run/lucid/tor/lucid_vm/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_node/.keep \
+        /verify/run/lucid/tor/lucid_node/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_blockchain/.keep \
+        /verify/run/lucid/tor/lucid_blockchain/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_governance/.keep \
+        /verify/run/lucid/tor/lucid_governance/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_payment/.keep \
+        /verify/run/lucid/tor/lucid_payment/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_session/.keep \
+        /verify/run/lucid/tor/lucid_session/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_rdp/.keep \
+        /verify/run/lucid/tor/lucid_rdp/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_wallet/.keep \
+        /verify/run/lucid/tor/lucid_wallet/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_voting/.keep \
+        /verify/run/lucid/tor/lucid_voting/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_voting_system/.keep \
+        /verify/run/lucid/tor/lucid_voting_system/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_voting_system_admin/.keep \
+        /verify/run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_voting_system_admin_admin/.keep \
+        /verify/run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_server/.keep \
+        /verify/run/lucid/tor/lucid_server/authorized_clients/.keep \
+        /verify/run/lucid/tor/myservice/.keep \
+        /verify/run/lucid/tor/myservice/authorized_clients/.keep \
+        /verify/run/lucid/tor/lucid_portal/.keep \
+        /verify/run/lucid/tor/lucid_portal/authorized_clients/.keep \
+        /verify/tmp/lucid/tor/lucid_admin/.keep \
+        /verify/opt/.keep \
+        /verify/opt/bin/.keep \
+        /verify/opt/sbin/.keep \
+        /verify/opt/lib/.keep \
+        /verify/opt/share/tor/.keep; \
+    do \
+        test -f "$marker" || { echo "MISSING MARKER: $marker"; exit 1; }; \
+        test -s "$marker" || { echo "EMPTY MARKER:   $marker"; exit 1; }; \
+        grep -q "lucid-tor-proxy" "$marker" \
+            || { echo "INVALID MARKER CONTENT: $marker"; exit 1; }; \
+        echo "  OK  $marker"; \
+    done; \
+    \
+    echo "=== binary executability ==="; \
+    for bin in \
+        /verify/usr/bin/tor \
+        /verify/usr/bin/obfs4proxy \
+        /verify/usr/sbin/gosu \
+        /verify/usr/bin/tini \
+        /verify/usr/bin/curl \
+        /verify/usr/bin/jq; \
+    do \
+        test -x "$bin" || { echo "NOT EXECUTABLE: $bin"; exit 1; }; \
+        echo "  OK  $bin"; \
+    done; \
+    \
+    echo "All verification checks passed."; \
+    echo "verified" > /verified
+
+# =============================================================================
+# STAGE 3: Distroless Runtime
+# =============================================================================
+
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest AS runtime
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=2.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Tor Proxy" \
+      org.opencontainers.image.description="Distroless Tor proxy for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.plane="ops" \
+      com.lucid.service="tor-proxy" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.tor.inherent="true" \
+      com.lucid.tor.system="built-in" \
+      com.lucid.expose="9050,9051,8888" \
+      com.lucid.cluster="foundation"
+
+ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
+    LD_LIBRARY_PATH=/opt/lib \
+    TOR_SOCKS_PORT=9050 \
+    TOR_CONTROL_PORT=9051 \
+    TOR_DATA_DIR=/run/lucid/tor
+
+# ── Verification gate ──────────────────────────────────────────────────────
+
+COPY --from=verify /verified /verified
+
+# ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
+COPY --from=tor-builder /opt /opt
+
+# ── Core binaries (/opt/bin, /opt/sbin) — build-time installed tools ──────
+COPY --from=tor-builder /usr/bin/tor        /opt/bin/tor
+COPY --from=tor-builder /usr/bin/obfs4proxy /opt/bin/obfs4proxy
+COPY --from=tor-builder /usr/bin/tini       /opt/bin/tini
+COPY --from=tor-builder /usr/sbin/gosu      /opt/sbin/gosu
+COPY --from=tor-builder /bin/bash           /bin/bash
+COPY --from=tor-builder /bin/busybox        /bin/busybox
+COPY --from=tor-builder /bin/cat            /bin/cat
+COPY --from=tor-builder /bin/chmod          /bin/chmod
+COPY --from=tor-builder /bin/chown          /bin/chown
+COPY --from=tor-builder /bin/mkdir          /bin/mkdir
+COPY --from=tor-builder /bin/rm             /bin/rm
+COPY --from=tor-builder /bin/sleep          /bin/sleep
+COPY --from=tor-builder /bin/tail           /bin/tail
+COPY --from=tor-builder /usr/bin/curl       /opt/bin/curl
+COPY --from=tor-builder /usr/bin/jq         /opt/bin/jq
+COPY --from=tor-builder /bin/nc             /opt/bin/nc
+COPY --from=tor-builder /usr/bin/timeout    /opt/bin/timeout
+COPY --from=tor-builder /usr/bin/xxd        /opt/bin/xxd
+
+# ── ARM64 dynamic linker + shared libraries (/opt/lib) ────────────────────
+COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+COPY --from=tor-builder /lib/aarch64-linux-gnu      /lib/aarch64-linux-gnu
+COPY --from=tor-builder /usr/lib                    /opt/lib
+
+# ── Tor GeoIP static data (/opt/share/tor) — build-time installed ─────────
+COPY --from=tor-builder /usr/share/tor /opt/share/tor
+
+# ── Runtime config (/run/lucid) — operational at container start ──────────
+COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
+COPY --from=tor-builder /etc/passwd /run/lucid/passwd
+COPY --from=tor-builder /etc/group /run/lucid/group
+COPY --from=tor-builder /etc/host.conf /run/lucid/host.conf
+COPY --from=tor-builder /etc/hostname /run/lucid/hostname
+
+# ── Internal container directory structure ─────────────────────────────────
+# FIXED: Only copy /run/lucid directory structure (no /opt/lucid/)
+# FIXED: Remove hardcoded host paths that don't exist in builder
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid /run/lucid
+
+# ── Copy torrc from build context (not from builder) ──────────────────────
+COPY --chmod=644 02-network-security/tor/torrc /run/lucid/tor/torrc
+
+# ── Lucid operational scripts (/run/lucid/tor/bin) — operate the container ─
+COPY --chmod=755 02-network-security/tor/entrypoint.sh /run/lucid/tor/bin/entrypoint.sh
+COPY --chmod=755 02-network-security/tor/tor-health.sh /run/lucid/tor/bin/tor-health.sh
+COPY --chmod=755 02-network-security/tor/tor-show-onion.sh /run/lucid/tor/bin/tor-show-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /run/lucid/tor/bin/create-ephemeral-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/create_dynamic_onion.sh /run/lucid/tor/bin/create-dynamic-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/check_tor_bootstrap.sh /run/lucid/tor/bin/check-tor-bootstrap.sh
+COPY --chmod=755 02-network-security/tor/scripts/start_tor.sh /run/lucid/tor/bin/start-tor.sh
+
+# ── Tunnel configurations ──────────────────────────────────────────────────
+COPY --chmod=644 02-network-security/tunnels /run/lucid/tor/tunnels
+
+# ── Copy ephemeral onion directory structure ───────────────────────────────
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/onion /run/lucid/onion
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
+  CMD ["/run/lucid/tor/bin/tor-health.sh"]
+
+EXPOSE 9050 9051 8888
+
+USER 107
+WORKDIR /app/tor

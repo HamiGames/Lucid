@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-DIR="${ONION_DIR:-/run/lucid/onion}"
+DIR="${ONION_DIR:-/run/lucid/tor}"
 FILE="$DIR/tor_bootstrap.env"
 
 if [ -d "$DIR" ]; then

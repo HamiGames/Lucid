@@ -413,9 +413,9 @@ services:
     ports:
       - "7000:7000"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:ro
+      - /mnt/myssd/Lucid/Lucid/data/tor:/opt/lib/tor:ro
       - onion-state:/run/lucid/onion:rw
-      - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
+      - /mnt/myssd/Lucid/Lucid/data/tunnel:/opt/lib/tunnel:rw
       - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
     environment:
       - LUCID_ENV=production

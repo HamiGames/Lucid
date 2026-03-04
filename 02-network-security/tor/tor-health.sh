@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-COOKIE="/var/lib/tor/control_auth_cookie"
+COOKIE="/run/lucid/tor/control_auth_cookie"
 CTRL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 CTRL_PORT="${TOR_CONTROL_PORT:-9051}"
-# Aligned with @constants: onion-state volume path
-OUTDIR="/run/lucid/onion"
+# Aligned with Dockerfile.tor-proxy: primary Tor data directory
+OUTDIR="/run/lucid/tor"
 
 [ -s "$COOKIE" ] || { echo "[hc] cookie missing or empty at $COOKIE"; exit 1; }
 

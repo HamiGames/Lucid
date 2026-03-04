@@ -59,7 +59,26 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor            \
  && install -d -o root       -g root       -m 755 /etc/tor                \
  && install -d -o root       -g root       -m 755 /etc/tor/tunnels        \
  && install -d -o root       -g root       -m 755 /tmp/lucid/tor/tunnels  \
- && install -d -o debian-tor -g debian-tor -m 755 /app/tor
+ && install -d -o debian-tor -g debian-tor -m 755 /app/tor \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_admin \
+ && install -d -o root       -g root       -m 755 /tmp/lucid/tor/lucid_admin \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_vm \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_node \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_blockchain \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_governance \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_payment \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_session \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_rdp \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_wallet \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting_system \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting_system_admin \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_voting_system_admin_admin \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_server \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/myservice \
+ && install -d -o root       -g root       -m 755 /run/lucid/tor/lucid_portal
+
+
 
 # Marker files — ensures multi-stage COPY won't silently succeed on empty dirs.
 # Content names the owning service so provenance is visible in layer diffs.
@@ -79,6 +98,23 @@ RUN echo "LUCID_TOR_PROXY_VAR_LIB_TOR"  > /var/lib/tor/.keep   \
 # forcing BuildKit to complete this stage before runtime can build.
 # =============================================================================
 FROM --platform=$TARGETPLATFORM debian:12-slim AS verify
+
+COPY --from=tor-builder /run/lucid/tor/lucid_admin /verify/run/lucid/tor/lucid_admin
+COPY --from=tor-builder /run/lucid/tor/lucid_vm /verify/run/lucid/tor/lucid_vm
+COPY --from=tor-builder /run/lucid/tor/lucid_node /verify/run/lucid/tor/lucid_node
+COPY --from=tor-builder /run/lucid/tor/lucid_blockchain /verify/run/lucid/tor/lucid_blockchain
+COPY --from=tor-builder /run/lucid/tor/lucid_governance /verify/run/lucid/tor/lucid_governance
+COPY --from=tor-builder /run/lucid/tor/lucid_payment /verify/run/lucid/tor/lucid_payment
+COPY --from=tor-builder /run/lucid/tor/lucid_session /verify/run/lucid/tor/lucid_session
+COPY --from=tor-builder /run/lucid/tor/lucid_rdp /verify/run/lucid/tor/lucid_rdp
+COPY --from=tor-builder /run/lucid/tor/lucid_wallet /verify/run/lucid/tor/lucid_wallet
+COPY --from=tor-builder /run/lucid/tor/lucid_voting /verify/run/lucid/tor/lucid_voting
+COPY --from=tor-builder /run/lucid/tor/lucid_voting_system /verify/run/lucid/tor/lucid_voting_system
+COPY --from=tor-builder /run/lucid/tor/lucid_voting_system_admin /verify/run/lucid/tor/lucid_voting_system_admin
+COPY --from=tor-builder /run/lucid/tor/lucid_voting_system_admin_admin /verify/run/lucid/tor/lucid_voting_system_admin_admin
+COPY --from=tor-builder /run/lucid/tor/lucid_server /verify/run/lucid/tor/lucid_server
+COPY --from=tor-builder /run/lucid/tor/myservice /verify/run/lucid/tor/myservice
+COPY --from=tor-builder /run/lucid/tor/lucid_portal /verify/run/lucid/tor/lucid_portal
 
 COPY --from=tor-builder /usr/bin/tor             /verify/usr/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy      /verify/usr/bin/obfs4proxy
@@ -115,6 +151,7 @@ COPY --from=tor-builder /var/lib/tor    /verify/var/lib/tor
 COPY --from=tor-builder /run/lucid      /verify/run/lucid
 COPY --from=tor-builder /etc/tor        /verify/etc/tor
 COPY --from=tor-builder /app/tor        /verify/app/tor
+COPY --from=tor-builder /var/lib/tor/lucid_admin /verify/run/lucid/tor/lucid_admin
 # ── File and directory verification ───────────────────────────────────────────
 # Checks run before the distroless runtime stage builds. Any failure is a hard
 # build error. Validates: directory existence, marker file presence+content,
@@ -218,6 +255,21 @@ COPY --from=tor-builder /usr/bin/jq         /usr/bin/jq
 COPY --from=tor-builder /bin/nc             /usr/bin/nc
 COPY --from=tor-builder /usr/bin/timeout    /usr/bin/timeout
 COPY --from=tor-builder /usr/bin/xxd        /usr/bin/xxd
+COPY --from=tor-builder /var/lib/tor/lucid_admin /run/lucid/tor/lucid_admin
+COPY --from=tor-builder /var/lib/tor/lucid_vm /run/lucid/tor/lucid_vm
+COPY --from=tor-builder /var/lib/tor/lucid_node /run/lucid/tor/lucid_node
+COPY --from=tor-builder /var/lib/tor/lucid_blockchain /run/lucid/tor/lucid_blockchain
+COPY --from=tor-builder /var/lib/tor/lucid_governance /run/lucid/tor/lucid_governance
+COPY --from=tor-builder /var/lib/tor/lucid_payment /run/lucid/tor/lucid_payment
+COPY --from=tor-builder /var/lib/tor/lucid_session /run/lucid/tor/lucid_session
+COPY --from=tor-builder /var/lib/tor/lucid_rdp /run/lucid/tor/lucid_rdp
+COPY --from=tor-builder /var/lib/tor/lucid_wallet /run/lucid/tor/lucid_wallet
+COPY --from=tor-builder /var/lib/tor/lucid_voting /run/lucid/tor/lucid_voting
+COPY --from=tor-builder /var/lib/tor/lucid_voting_system /run/lucid/tor/lucid_voting_system
+COPY --from=tor-builder /var/lib/tor/lucid_voting_system_admin /run/lucid/tor/lucid_voting_system_admin
+COPY --from=tor-builder /var/lib/tor/lucid_voting_system_admin_admin /run/lucid/tor/lucid_voting_system_admin_admin
+COPY --from=tor-builder /var/lib/tor/lucid_server /run/lucid/tor/lucid_server
+COPY --from=tor-builder /var/lib/tor/myservice /run/lucid/tor/myservice
 
 # ── ARM64 dynamic linker + full lib tree (covers all transitive deps) ─────────
 COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1

@@ -29,7 +29,7 @@ fi
 log "Creating onion tunnel in $CONTAINER for ports: $PORTS"
 
 # Load Tor control configuration
-COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 
 # Ensure cookie file exists
