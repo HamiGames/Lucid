@@ -78,7 +78,7 @@ RUN echo "LUCID_TOR_PROXY_VAR_LIB_TOR"  > /var/lib/tor/.keep   \
 # A sentinel file /verified is written on success and COPIED into Stage 3,
 # forcing BuildKit to complete this stage before runtime can build.
 # =============================================================================
-FROM --platform=$BUILDPLATFORM debian:12-slim AS verify
+FROM --platform=$TARGETPLATFORM debian:12-slim AS verify
 
 COPY --from=tor-builder /usr/bin/tor             /verify/usr/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy      /verify/usr/bin/obfs4proxy
@@ -232,7 +232,7 @@ COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-cer
 # ── /run/lucid subdirs (debian-tor owned) ────────────────────────────────────
 # /run itself is intentionally NOT copied — the distroless base provides it as
 # root:root 755 which is correct for a container runtime. Only our subdirs are
-
+# staged here with debian-tor ownership so Tor can write sockets and pid files.
 COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid      /run/lucid
 
 # ── Tor data dir (runtime-writable, marker file confirms dir is non-empty) ────
@@ -258,7 +258,7 @@ COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                 /usr/
 COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
 # ── Tunnel configs (build context: 02-network/security/tunnels) ───────────────
-COPY --chmod=644 02-network-security/tunnels                           /run/lucid/tor/tunnels
+COPY --chmod=644 02-network-security/tunnels                               /run/lucid/tor/tunnels
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/bin/bash", "/usr/local/bin/tor-health"]
