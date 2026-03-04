@@ -416,7 +416,8 @@ COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /run/
 COPY --chmod=755 02-network-security/tor/scripts/create_dynamic_onion.sh /run/lucid/tor/bin/create-dynamic-onion.sh
 COPY --chmod=755 02-network-security/tor/scripts/check_tor_bootstrap.sh /run/lucid/tor/bin/check-tor-bootstrap.sh
 COPY --chmod=755 02-network-security/tor/scripts/start_tor.sh /run/lucid/tor/bin/start-tor.sh
-
+COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /run/lucid/tor/bin/bootstrap-helper.sh
+COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /opt/lucid/tor/bin/bootstrap-helper.sh
 # ── Tunnel configurations ──────────────────────────────────────────────────
 COPY --chmod=644 02-network-security/tunnels /run/lucid/tor/tunnels
 

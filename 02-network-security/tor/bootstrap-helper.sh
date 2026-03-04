@@ -7,19 +7,19 @@ set -euo pipefail
 log() { printf '[bootstrap-helper] %s\n' "$*"; }
 
 # Host paths (not container paths)
-HOST_TOR_DATA="/mnt/myssd/Lucid/Lucid/data/tor"
-HOST_TOR_LOGS="/mnt/myssd/Lucid/Lucid/logs/tor"
-HOST_TOR_RUN="/mnt/myssd/Lucid/Lucid/data/tor-run"
-HOST_TOR_CONFIG="/mnt/myssd/Lucid/Lucid/config/tor"
-HOST_ONION_DIR="${HOST_TOR_RUN}/lucid/onion"
+HOST_TOR_DATA=${HOST_TOR_DATA:-"/run/lucid/tor/data"}
+HOST_TOR_LOGS=${HOST_TOR_LOGS:-"/run/lucid/tor/logs"}
+HOST_TOR_RUN=${HOST_TOR_RUN:-"/run"}
+HOST_TOR_CONFIG=${HOST_TOR_CONFIG:-"/opt/lucid/tor/torrc "}
+HOST_ONION_DIR=${HOST_ONION_DIR:-"/run/lucid/onion"}
 
 # Container paths (inside docker)
-CONTAINER_TOR_DATA="/var/lib/tor"
-CONTAINER_TOR_LOGS="/var/log/tor"
+CONTAINER_TOR_DATA="/opt/lucid/tor/data"
+CONTAINER_TOR_LOGS="/opt/lucid/tor/logs"
 CONTAINER_TOR_RUN="/run"
-CONTAINER_TOR_CONFIG="/etc/tor"
-CONTAINER_ONION_DIR="${CONTAINER_TOR_RUN}/lucid/onion"
-CONTAINER_COOKIE_FILE="${CONTAINER_TOR_DATA}/control_auth_cookie"
+CONTAINER_TOR_CONFIG="/opt/lucid/tor/configs"
+CONTAINER_ONION_DIR=${CONTAINER_ONION_DIR:-"$HOST_ONION_DIR"}
+CONTAINER_COOKIE_FILE=${CONTAINER_COOKIE_FILE:-"/run/lucid/tor/control_auth_cookie"}
 
 # Required Tor files (Tor creates these automatically)
 TOR_FILES=(
