@@ -258,7 +258,7 @@ COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                 /usr/
 COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /usr/local/bin/create-ephemeral-onion
 
 # ── Tunnel configs (build context: 02-network/security/tunnels) ───────────────
-COPY --chmod=644 02-network/security/tunnels                               /run/lucid/tor/tunnels
+COPY --chmod=644 02-network-security/tunnels                           /run/lucid/tor/tunnels
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/bin/bash", "/usr/local/bin/tor-health"]
