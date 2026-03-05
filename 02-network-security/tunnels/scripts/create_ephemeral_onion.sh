@@ -7,7 +7,7 @@ set -Eeuo pipefail
 # ---- defaults (override via flags or env) ----
 CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
-COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
 # Fallback if --ports not provided. Uses upstream service/port if envs set.
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"

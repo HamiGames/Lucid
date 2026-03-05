@@ -384,14 +384,26 @@ COPY --from=tor-builder /usr/bin/jq         /opt/bin/jq
 COPY --from=tor-builder /bin/nc             /opt/bin/nc
 COPY --from=tor-builder /usr/bin/timeout    /opt/bin/timeout
 COPY --from=tor-builder /usr/bin/xxd        /opt/bin/xxd
+COPY --from=tor-builder /var/lib/tor/  /run/lucid/tor
+
 
 # ── ARM64 dynamic linker + shared libraries (/opt/lib) ────────────────────
 COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 COPY --from=tor-builder /lib/aarch64-linux-gnu      /lib/aarch64-linux-gnu
 COPY --from=tor-builder /usr/lib                    /opt/lib
-
 # ── Tor GeoIP static data (/opt/share/tor) — build-time installed ─────────
 COPY --from=tor-builder /usr/share/tor /opt/share/tor
+COPY --from=tor-builder /var/lib/tor/cached-certs /opt/lucid/tor/cached-certs
+COPY --from=tor-builder /var/lib/tor/cached-consensus /opt/lucid/tor/cached-consensus
+COPY --from=tor-builder /var/lib/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
+COPY --from=tor-builder /var/lib/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
+COPY --from=tor-builder /var/lib/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
+COPY --from=tor-builder /var/lib/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
+COPY --from=tor-builder /run/lucid/onion /opt/lucid/tor/onion
+COPY --from=tor-builder /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
+COPY --from=tor-builder /run/lucid/tor/tor.lock /opt/lucid/tor/data/tor.lock
+COPY --from=tor-builder /run/lucid/tor/state /opt/lucid/tor/data/state
+
 
 # ── Runtime config (/run/lucid) — operational at container start ──────────
 COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt

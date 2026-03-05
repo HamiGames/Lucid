@@ -17,26 +17,34 @@ fi
 TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
-
-CONTAINER="${1:-${TOR_CONTAINER_NAME}}"
+CONTAINER="${1:-${TOR_CONTAINER_NAME-tor-proxy}}"
 PORTS="${2:-80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}}"
+COOKIE_HOST_DIR="${COOKIE_HOST_DIR:-/run/lucid/tor}"
+COOKIE_HOST_FILE="${COOKIE_HOST_FILE:-"${COOKIE_HOST_DIR}/control_auth_cookie"}"
 
 # Ensure container exists and is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then
   die "Container $CONTAINER not running"
-fi
-
-log "Creating onion tunnel in $CONTAINER for ports: $PORTS"
+else
+  log "Creating onion tunnel in $CONTAINER for ports: $PORTS"
+fi 
 
 # Load Tor control configuration
-COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
+COOKIE_FILE="${COOKIE_FILE:-"${COOKIE_HOST_DIR}/control_auth_cookie"}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 
 # Ensure cookie file exists
 if ! docker exec "$CONTAINER" test -f "$COOKIE_FILE"; then
   die "Tor control cookie not found at $COOKIE_FILE"
+  else 
+    log "Tor control cookie found at $COOKIE_FILE"
 fi
 
+if [[ -f "$COOKIE_HOST_FILE" ]]; then
+  log "Tor control cookie found at $COOKIE_HOST_FILE"
+else
+  die "Tor control cookie not found at $COOKIE_HOST_FILE"
+fi
 # Hex-encode cookie (remove newlines)
 COOKIE=$(docker exec "$CONTAINER" xxd -p -c 256 "$COOKIE_FILE" | tr -d '\n')
 

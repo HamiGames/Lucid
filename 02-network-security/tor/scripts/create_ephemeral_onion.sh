@@ -8,9 +8,11 @@ set -Eeuo pipefail
 # Configuration
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
-TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/var/lib/tor/control_auth_cookie}"
+TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/run/lucid/tor/control_auth_cookie}"
 OUTDIR="${ONION_DIR:-/run/lucid/onion}"
 ONION_COUNT="${ONION_COUNT:-5}"
+UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
+UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
 
 # Service mapping configuration for 5 onions
 # Format: "service_name:onion_port:target_host:target_port:env_var"

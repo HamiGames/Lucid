@@ -15,7 +15,7 @@ fi
 
 # Load defaults from environment variables
 TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
-COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 
 CONTAINER="${1:-${TOR_CONTAINER_NAME}}"

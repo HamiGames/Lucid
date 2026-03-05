@@ -8,15 +8,18 @@ set -Eeuo pipefail
 # Configuration
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
-TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/var/lib/tor/control_auth_cookie}"
+TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/run/lucid/tor/control_auth_cookie}"
+UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
+UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
 OUTDIR="${ONION_DIR:-/run/lucid/onion}"
 DYNAMIC_DIR="$OUTDIR/dynamic"
 
 # Default values
 DEFAULT_ONION_PORT=80
 DEFAULT_TARGET_HOST="127.0.0.1"
-DEFAULT_TARGET_PORT=8080
-
+DEFAULT_TARGET_PORT="${UPSTREAM_PORT:-8080}"
+DEFAULT_ONION_PORT="${ONION_PORT:-80}"
+DEFAULT_TARGET_HOST="${UPSTREAM_SERVICE:-api-gateway}"
 # Logging functions
 log() { printf '[dynamic-onion] %s\n' "$*"; }
 error() { printf '[dynamic-onion][ERROR] %s\n' "$*" >&2; }

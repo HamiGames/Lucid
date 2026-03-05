@@ -12,12 +12,16 @@ CONTAINER="${1:-lucid_tor}"
 # Ensure container exists and is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then
   die "Container $CONTAINER not running"
+else
+  log "Container $CONTAINER is running"
 fi
-
 # Check if tor is already running
 if docker exec "$CONTAINER" pgrep -x tor >/dev/null 2>&1; then
   log "Tor is already running inside $CONTAINER"
   exit 0
+else
+  log "Tor is not running inside $CONTAINER"
+  exit 1
 fi
 
 # Otherwise, start tor manually

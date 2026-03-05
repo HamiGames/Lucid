@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Load configuration from environment
-COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
 CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 STATUS_JSON_PATH="${STATUS_JSON_PATH:-/run/lucid/onion/tunnel_status.json}"
