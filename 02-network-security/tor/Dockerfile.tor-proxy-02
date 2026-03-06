@@ -234,7 +234,21 @@ RUN \
  && touch /opt/lib/.keep || true \
  && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /opt/share/tor/.keep \
  && touch /opt/share/tor/.keep || true \
+ \
+ && install -d -o root -g root -m 755 /opt/lucid/tor/data \
+ && printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n' > /opt/lucid/tor/data/.keep \
+ && touch /opt/lucid/tor/data/.keep || true \
+ \
+ && install -d -o root -g root -m 755 /opt/lucid/tor/config \
+ && printf 'dir=opt/lucid/tor/config\nplatform=lucid-tor-proxy\n' > /opt/lucid/tor/config/.keep \
+ && touch /opt/lucid/tor/config/.keep || true \
+ \
 # /tmp dir installation
+ && install -d -o root -g root -m 755 /tmp/lucid \
+ && printf 'dir=tmp/lucid/tor/data\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/data/.keep \
+ && touch /tmp/lucid/tor/data/.keep || true \
+ \
+  
  && install -d -o root -g root -m 755 /tmp \
  && printf 'dir=tmp\nplatform=lucid-tor-proxy\n' > /tmp/.keep \
  && touch /tmp/.keep || true \
@@ -283,7 +297,6 @@ COPY --from=tor-builder /run/lucid                /verify/run/lucid
 COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
 COPY --from=tor-builder /app/tor                  /verify/app/tor
 COPY --from=tor-builder /opt                      /verify/opt
-COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
 COPY --from=tor-builder /opt/share                /verify/opt/share
 COPY --from=tor-builder /opt/share/tor            /verify/opt/share/tor
 
