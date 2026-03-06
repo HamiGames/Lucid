@@ -609,10 +609,6 @@ ADD /etc/resolv.conf /run/lucid/resolv.conf
 ADD data/tunnel /run/lucid/tunnel
 ADD data/tunnel /opt/lucid/tunnel
 
-
-# ── Internal container directory structure ─────────────────────────────────
-COPY --from=tor-builder --chown=root:root /build /run
-COPY --from=tor-builder --chown=root:root /build /opt
 # ── Copy torrc from build context (not from builder) ──────────────────────
 COPY --chmod=644 02-network-security/tor/torrc /run/lucid/tor/torrc
 
