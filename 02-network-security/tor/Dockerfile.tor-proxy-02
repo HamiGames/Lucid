@@ -296,9 +296,7 @@ COPY --from=tor-builder /usr/lib                  /verify/opt/lib
 COPY --from=tor-builder /run/lucid                /verify/run/lucid
 COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
 COPY --from=tor-builder /app/tor                  /verify/app/tor
-COPY --from=tor-builder /opt                      /verify/opt
-COPY --from=tor-builder /opt/share                /verify/opt/share
-COPY --from=tor-builder /opt/share/tor            /verify/opt/share/tor
+
 
 
 RUN set -eux; \
