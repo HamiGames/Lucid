@@ -300,22 +300,15 @@ RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
 RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
 
 
-COPY --from=tor-builder /usr/bin/tor              /verify/usr/bin/tor
-COPY --from=tor-builder /usr/bin/obfs4proxy       /verify/usr/bin/obfs4proxy
-COPY --from=tor-builder /usr/sbin/gosu            /verify/usr/sbin/gosu
-COPY --from=tor-builder /usr/bin/tini             /verify/usr/bin/tini
-COPY --from=tor-builder /usr/bin/curl             /verify/usr/bin/curl
-COPY --from=tor-builder /usr/bin/jq               /verify/usr/bin/jq
-COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/lib/aarch64-linux-gnu
-COPY --from=tor-builder /usr/lib                  /verify/usr/lib
-COPY /etc/ssl/certs/ca-certificates.crt /verify/etc/ssl/certs/ca-certificates.crt
-COPY  /etc/passwd                 /verify/run/lucid/passwd
-COPY  /etc/group                  /verify/run/lucid/group
-COPY /etc/host.conf              /verify/run/lucid/host.conf
-COPY  /etc/hostname               /verify/run/lucid/hostname
-COPY  /etc/resolv.conf            /verify/run/lucid/resolv.conf
-COPY  /etc/tor                    /verify/run/lucid/tor/config
-COPY  /var/lib/tor                /verify/run/lucid/tor
+ADD /etc/tor/torrc /run/lucid/tor/torrc
+COPY /run/lucid/tor/torrc /opt/lucid/tor/torrc
+ADD /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
+ADD /etc/tor/torsocks.conf /run/lucid/tor/torsocks.conf
+ADD /etc/passwd /run/lucid/passwd
+COPY /run/lucid/passwd /opt/lucid/passwd
+ADD /etc/group /run/lucid/group
+COPY /run/lucid/group /opt/lucid/group
+
 
 
 
