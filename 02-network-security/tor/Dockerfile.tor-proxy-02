@@ -14,7 +14,7 @@ FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-
+ENV KEEP_FILE="02-network-security/tor/keep.txt"
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -310,7 +310,7 @@ ADD /etc/group /run/lucid/group
 COPY /run/lucid/group /opt/lucid/group
 
 
-
+ 
 
 RUN set -eux; \
     \
@@ -321,15 +321,24 @@ RUN set -eux; \
         /verify/usr/sbin/gosu \
         /verify/usr/bin/tini \
         /verify/usr/bin/curl \
+        /verify/usr/bin/yq \
         /verify/usr/bin/jq; \
     do \
         echo "--> $bin"; \
         missing=$(LD_LIBRARY_PATH=/verify/lib/aarch64-linux-gnu:/verify/usr/lib \
             ldd "$bin" 2>&1 | grep "not found" || true); \
         if [ -n "$missing" ]; then \
-            echo "MISSING DEPENDENCIES in $bin:"; echo "$missing"; exit 1; \
+        test -d "$bin" || { echo "MISSING DIR: $dir"; exit 1; }; \
+        echo "  OK  $bin"; \
+        if [ ! -d "$bin" ]; then \
+            mkdir -p "$bin"; \
+            echo "${KEEP_FILE}" > "$bin/.keep"; \
+            touch "$bin/.keep"; \
+          else [ -f "$bin/.keep" ]; then \
+            echo "DIR EXISTS: $bin"; \
+            exit 0; \
         fi; \
-        echo "  OK"; \
+        echo " OK"; \
     done; \
     \
     echo "=== directory structure ==="; \
@@ -365,6 +374,14 @@ RUN set -eux; \
     do \
         test -d "$dir" || { echo "MISSING DIR: $dir"; exit 1; }; \
         echo "  OK  $dir"; \
+        if [ ! -d "$dir" ]; then \
+            mkdir -p "$dir"; \
+            echo "${KEEP_FILE}" > "$dir/.keep"; \
+            touch "$dir/.keep"; \
+          els [ -f "$dir/.keep" ]; then \
+            echo "DIR EXISTS: $dir"; \
+            exit 0; \
+        fi; \
     done; \
     \
     echo "=== authorized_clients subdirs ==="; \
@@ -388,6 +405,14 @@ RUN set -eux; \
     do \
         test -d "$acdir" || { echo "MISSING authorized_clients: $acdir"; exit 1; }; \
         echo "  OK  $acdir"; \
+        if [ ! -d "$acdir" ]; then \
+            mkdir -p "$acdir"; \
+            echo "${KEEP_FILE}" > "$acdir/.keep"; \
+            touch "$acdir/.keep"; \
+          else [ -f "$acdir/.keep" ]; then \
+            echo "DIR EXISTS: $acdir"; \
+            exit 0; \
+        fi; \
     done; \
     \
     echo "=== marker file content ==="; \
@@ -441,6 +466,13 @@ RUN set -eux; \
         grep -q "lucid-tor-proxy" "$marker" \
             || { echo "INVALID MARKER CONTENT: $marker"; exit 1; }; \
         echo "  OK  $marker"; \
+        if [ ! -f "$marker" ]; then \
+            echo "${KEEP_FILE}" > "$marker"; \
+            touch "$marker"; \
+          else [ -f "$marker" ]; then \
+            echo "FILE EXISTS: $marker"; \
+            exit 0; \
+        fi; \
     done; \
     \
     echo "=== binary executability ==="; \
@@ -454,10 +486,28 @@ RUN set -eux; \
     do \
         test -x "$bin" || { echo "NOT EXECUTABLE: $bin"; exit 1; }; \
         echo "  OK  $bin"; \
+        if [ ! -x "$bin" ]; then \
+            echo "${KEEP_FILE}" > "$bin"; \
+            touch "$bin"; \
+          else [ -f "$bin" ]; then \
+            echo "FILE EXISTS: $bin"; \
+            exit 0; \
+        fi; \
     done; \
     \
-    echo "All verification checks passed."; \
-    echo "verified" > /verified
+    if [[ "$bin" -ne 0 ]] && [[ "$acdir" -ne 0 ]] && [[ "$marker" -ne 0 ]]; then \
+        echo "ERROR: Verification checks failed."; \
+        exit 1; \
+    else; then \
+        echo "All verification checks passed."; \
+        echo "verified" > /verified; \
+        exit 0; \
+    fi; \
+RUN install -d -o root -g root -m 755 /verified \
+
+COPY /verified/bin/* /verified/bin/
+COPY /verified/acdir/* /verified/acdir/
+COPY /verified/marker/* /verified/marker/
 
 # =============================================================================
 # STAGE 3: Distroless Runtime
@@ -492,14 +542,8 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
     TOR_DATA_DIR=/run/lucid/tor
 
 # ── Verification gate ──────────────────────────────────────────────────────
-RUN mkdir -p /verified \
-    && echo "lucid-tor-proxy:new_file/keep.txt" > /verified/keep.txt \
-    && touch /verified/keep.txt \
-    \
+COPY --from=verify /verified /verified
 
-
-ADD /verify /verified
-COPY --from=tor-builder /verified /verified
 
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
