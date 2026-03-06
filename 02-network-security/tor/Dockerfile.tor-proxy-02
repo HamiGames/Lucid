@@ -549,19 +549,19 @@ ADD data/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid
 ADD data/tor/keys /opt/lucid/tor/keys
 
 # ── Runtime config (/run/lucid) — operational at container start ──────────
-COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
-COPY --from=tor-builder /etc/passwd /run/lucid/passwd
-COPY --from=tor-builder /etc/group /run/lucid/group
-COPY --from=tor-builder /etc/host.conf /run/lucid/host.conf
-COPY --from=tor-builder /etc/hostname /run/lucid/hostname
-COPY --chown -R debian-tor:debian-tor /etc/hostname /run/lucid/tor/hostname
-COPY --chown -R debian-tor:debian-tor /etc/passwd /run/lucid/passwd
-COPY --chown -R debian-tor:debian-tor /etc/group /run/lucid/group
-COPY --chown -R debian-tor:debian-tor /etc/host.conf /run/lucid/host.conf
-COPY --chown -R debian-tor:debian-tor /etc/hostname /run/lucid/hostname
-COPY --chown -R debian-tor:debian-tor /etc/resolv.conf /run/lucid/resolv.conf
-COPY --chown -R api-gateway:api-gateway data/tunnel /run/lucid/tunnel
-COPY --chown -R api-gateway:api-gateway data/tunnel /opt/lucid/tunnel
+ADD /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
+ADD /etc/passwd /run/lucid/passwd
+ADD /etc/group /run/lucid/group
+ADD /etc/host.conf /run/lucid/host.conf
+ADD /etc/hostname /run/lucid/hostname
+ADD /etc/hostname /run/lucid/tor/hostname
+ADD /etc/passwd /run/lucid/passwd
+ADD /etc/group /run/lucid/group
+ADD /etc/host.conf /run/lucid/host.conf
+ADD /etc/hostname /run/lucid/hostname
+ADD /etc/resolv.conf /run/lucid/resolv.conf
+ADD data/tunnel /run/lucid/tunnel
+ADD data/tunnel /opt/lucid/tunnel
 
 
 # ── Internal container directory structure ─────────────────────────────────
