@@ -169,23 +169,54 @@ RUN \
  && touch /run/lucid/tor/lucid_portal/.keep || true \
  && touch /run/lucid/tor/lucid_portal/authorized_clients/.keep || true \
     \
-    # ── Ephemeral scratch and config dirs ─────────────────────────────────── \
- && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor                        \
- && install -d -o root       -g root       -m 755 /tmp/lucid/tor/lucid_admin            \
- && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/lucid_admin/.keep \
- && touch /tmp/lucid/tor/lucid_admin/.keep || true \
-    \
+# /app dir insatllation
+&& install -d -o root -g root -m 755 /app/tor \
+&& printf 'dir=app/tor\nplatform=lucid-tor-proxy\n' > /app/tor/.keep \
+&& touch /app/tor/.keep || true \
+\
+# /opt dir installation
+&& install -d -o root -g root -m 755 /opt \
+&& printf 'dir=opt\nplatform=lucid-tor-proxy\n' > /opt/.keep \
+&& touch /opt/.keep || true \
+\
+&& install -d -o root -g root -m 755 /opt/bin \
+&& printf 'dir=opt/bin\nplatform=lucid-tor-proxy\n' > /opt/bin/.keep \
+&& touch /opt/bin/.keep || true \
+\
+&& install -d -o root -g root -m 755 /opt/sbin \
+&& printf 'dir=opt/sbin\nplatform=lucid-tor-proxy\n' > /opt/sbin/.keep \
+&& touch /opt/sbin/.keep || true \
+\
+&& install -d -o root -g root -m 755 /opt/lib \
+&& printf 'dir=opt/lib\nplatform=lucid-tor-proxy\n' > /opt/lib/.keep \
+&& touch /opt/lib/.keep || true \
+\
+&& install -d -o root -g root -m 755 /opt/lib/tor \
+&& printf 'dir=opt/lib/tor\nplatform=lucid-tor-proxy\n' > /opt/lib/tor/.keep \
+&& touch /opt/lib/tor/.keep || true \
+\
+&& install -d -o root -g root -m 755 /opt/share \
+&& printf 'dir=opt/share\nplatform=lucid-tor-proxy\n' > /opt/share/.keep \
+&& touch /opt/share/.keep || true \
+\
+&& install -d -o root -g root -m 755 /opt/share/tor \
+&& printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /opt/share/tor/.keep \
+&& touch /opt/share/tor/.keep || true \
+\
+
+
     # ── Application root ──────────────────────────────────────────────────── \
  && install -d -o debian-tor -g debian-tor -m 755 /app/tor                              \
+ && printf 'dir=app/tor\nplatform=lucid-tor-proxy\n' > /app/tor/.keep \
  && touch /app/tor/.keep || true \
- \
+\
     # ── Top-level marker files ────────────────────────────────────────────── \
  && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /run/lucid/.keep               \
  && printf 'dir=app/tor\nplatform=lucid-tor-proxy\n'   > /app/tor/.keep                 \
  && chown debian-tor:debian-tor /run/lucid/.keep /app/tor/.keep \
-&& touch /run/lucid/.keep || true \
-&& touch /app/tor/.keep || true \
- \
+ && touch /run/lucid/.keep || true \
+ && touch /app/tor/.keep || true \
+   \
     # ── /opt directory scaffold ────────────────────────────────────────────── \
  && install -d -o root -g root -m 755 /opt                                               \
  && install -d -o root -g root -m 755 /opt/bin                                           \
@@ -203,24 +234,59 @@ RUN \
  && touch /opt/lib/.keep || true \
  && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /opt/share/tor/.keep \
  && touch /opt/share/tor/.keep || true \
-
+# /tmp dir installation
+ && install -d -o root -g root -m 755 /tmp \
+ && printf 'dir=tmp\nplatform=lucid-tor-proxy\n' > /tmp/.keep \
+ && touch /tmp/.keep || true \
+  \
+ && install -d -o root -g root -m 755 /tmp/lucid \
+ && printf 'dir=tmp/lucid\nplatform=lucid-tor-proxy\n' > /tmp/lucid/.keep \
+ && touch /tmp/lucid/.keep || true \
+  \
+ && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor                        \
+ && install -d -o root      -g 65532      -m 755 /tmp/lucid/tor/lucid_admin            \
+ && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/lucid_admin/.keep \
+ && touch /tmp/lucid/tor/lucid_admin/.keep || true \
+ && touch /tmp/lucid/tor/.keep || true \
+    \
+ && install -d -o root -g root -m 755 /tmp/lucid/onion \
+ && printf 'dir=tmp/lucid/onion\nplatform=lucid-tor-proxy\n' > /tmp/lucid/onion/.keep \
+ && touch /tmp/lucid/onion/.keep || true \
+    \
+ && install -d -o root -g root -m 755 /tmp/tor \
+ && printf 'dir=tmp/tor\nplatform=lucid-tor-proxy\n' > /tmp/tor/.keep \
+ && touch /tmp/tor/.keep || true \
+  \ 
+ && install -d -o root -g root -m 755 /tmp/onion \
+ && printf 'dir=tmp/onion\nplatform=lucid-tor-proxy\n' > /tmp/onion/.keep \
+ && touch /tmp/onion/.keep || true \
+    \
+# operational scripts directory
+ && install -d -o root -g root -m 755 /run/lucid/tor/scripts \
+ && printf 'dir=run/lucid/tor/scripts\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/scripts/.keep \
+ && touch /run/lucid/tor/scripts/.keep || true \
+    \
 # =============================================================================
 # STAGE 2: Dependency Verification
 # =============================================================================
 FROM --platform=$TARGETPLATFORM debian:12-slim AS verify
 
-COPY --from=tor-builder /usr/bin/tor              /verify/usr/bin/tor
-COPY --from=tor-builder /usr/bin/obfs4proxy       /verify/usr/bin/obfs4proxy
-COPY --from=tor-builder /usr/sbin/gosu            /verify/usr/sbin/gosu
-COPY --from=tor-builder /usr/bin/tini             /verify/usr/bin/tini
-COPY --from=tor-builder /usr/bin/curl             /verify/usr/bin/curl
-COPY --from=tor-builder /usr/bin/jq               /verify/usr/bin/jq
-COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/lib/aarch64-linux-gnu
-COPY --from=tor-builder /usr/lib                  /verify/usr/lib
+COPY --from=tor-builder /usr/bin/tor              /verify/opt/bin/tor
+COPY --from=tor-builder /usr/bin/obfs4proxy       /verify/opt/bin/obfs4proxy
+COPY --from=tor-builder /usr/sbin/gosu            /verify/opt/sbin/gosu
+COPY --from=tor-builder /usr/bin/tini             /verify/opt/bin/tini
+COPY --from=tor-builder /usr/bin/curl             /verify/opt/bin/curl
+COPY --from=tor-builder /usr/bin/jq               /verify/opt/bin/jq
+COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/opt/lib/aarch64-linux-gnu
+COPY --from=tor-builder /usr/lib                  /verify/opt/lib
 COPY --from=tor-builder /run/lucid                /verify/run/lucid
 COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
 COPY --from=tor-builder /app/tor                  /verify/app/tor
 COPY --from=tor-builder /opt                      /verify/opt
+COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
+COPY --from=tor-builder /opt/share                /verify/opt/share
+COPY --from=tor-builder /opt/share/tor            /verify/opt/share/tor
+
 
 RUN set -eux; \
     \
@@ -407,7 +473,20 @@ COPY --from=verify /verified /verified
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 COPY --from=tor-builder /opt /opt
-
+ADD data/onion /opt/lucid/onion
+ADD /usr/local/bin /opt/bin
+ADD /usr/local/share /opt/share
+ADD /etc/tor /opt/lucid/tor/config
+ADD /var/lib/tor /opt/lucid/tor/data
+ADD data/tor /opt/lucid/tor/config
+ADD /usr/bin/tor /opt/bin/tor
+ADD /usr/bin/obfs4proxy /opt/bin/obfs4proxy
+ADD /usr/sbin/gosu /opt/sbin/gosu
+ADD /usr/bin/tini /opt/bin/tini
+ADD /usr/bin/curl /opt/bin/curl
+ADD /usr/bin/jq /opt/bin/jq
+ADD /lib/aarch64-linux-gnu /opt/lib/aarch64-linux-gnu
+ADD /usr/lib /opt/lib
 # ── Core binaries (/opt/bin, /opt/sbin) — build-time installed tools ──────
 COPY --from=tor-builder /usr/bin/tor        /opt/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy /opt/bin/obfs4proxy
@@ -436,6 +515,7 @@ COPY --from=tor-builder /lib/aarch64-linux-gnu      /lib/aarch64-linux-gnu
 COPY --from=tor-builder /usr/lib                    /opt/lib
 # ── Tor GeoIP static data (/opt/share/tor) — build-time installed ─────────
 COPY --from=tor-builder /usr/share/tor /opt/share/tor
+
 COPY --from=tor-builder /var/lib/tor/cached-certs /opt/lucid/tor/cached-certs
 COPY --from=tor-builder /var/lib/tor/cached-consensus /opt/lucid/tor/cached-consensus
 COPY --from=tor-builder /var/lib/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
@@ -446,7 +526,31 @@ COPY --from=tor-builder data/onion /opt/lucid/tor/onion
 COPY --from=tor-builder /var/lib/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
 COPY --from=tor-builder /var/lib/tor/tor.lock /opt/lucid/tor/data/tor.lock
 COPY --from=tor-builder /var/lib/tor/state /opt/lucid/tor/data/state
-
+COPY --chown -R debian-tor:debian-tor data/tor/state /opt/lucid/tor/data/state
+COPY --chown -R debian-tor:debian-tor data/tor/cached-certs /opt/lucid/tor/cached-certs
+COPY --chown -R debian-tor:debian-tor data/tor/cached-consensus /opt/lucid/tor/cached-consensus
+COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
+COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
+COPY --chown -R debian-tor:debian-tor data/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
+COPY --chown -R debian-tor:debian-tor data/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
+COPY --chown -R debian-tor:debian-tor data/onion /opt/lucid/tor/onion
+COPY --chown -R debian-tor:debian-tor /var/lib/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
+COPY --chown -R debian-tor:debian-tor /var/lib/tor/tor.lock /opt/lucid/tor/data/tor.lock
+COPY --chown -R debian-tor:debian-tor /var/lib/tor/state /opt/lucid/tor/data/state
+COPY --chown -R debian-tor:debian-tor data/tor/torrc /run/lucid/tor/torrc
+COPY --chown -R debian-tor:debian-tor data/tor/cached-certs /run/lucid/tor/cached-certs
+COPY --chown -R debian-tor:debian-tor data/tor/cached-consensus /run/lucid/tor/cached-consensus
+COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors /run/lucid/tor/cached-descriptors
+COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new
+COPY --chown -R debian-tor:debian-tor data/tor/cached-microdesc-consensus /run/lucid/tor/cached-microdesc-consensus
+COPY --chown -R debian-tor:debian-tor data/tor/cached-microdescs /run/lucid/tor/cached-microdescs
+COPY --chown -R debian-tor:debian-tor data/onion /run/lucid/onion
+COPY --chown -R debian-tor:debian-tor /var/lib/tor/control_auth_cookie /run/lucid/tor/control_auth_cookie
+COPY --chown -R debian-tor:debian-tor /var/lib/tor/tor.lock /run/lucid/tor/tor.lock && chmod 755 /run/lucid/tor/tor.lock
+COPY --chown -R debian-tor:debian-tor /var/lib/tor/state /run/lucid/tor/state && chmod 755 /run/lucid/tor/state
+COPY --chown -R debian-tor:debian-tor data/tor/tor.pid /run/lucid/tor/tor.pid && chmod 755 /run/lucid/tor/tor.pid
+COPY --chown -R debian-tor:debian-tor data/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid
+Copy --chown -R debian-tor:debian-tor data/tor/keys /opt/lucid/tor/keys && chmod 755 /opt/lucid/tor/keys
 
 # ── Runtime config (/run/lucid) — operational at container start ──────────
 COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
@@ -454,6 +558,15 @@ COPY --from=tor-builder /etc/passwd /run/lucid/passwd
 COPY --from=tor-builder /etc/group /run/lucid/group
 COPY --from=tor-builder /etc/host.conf /run/lucid/host.conf
 COPY --from=tor-builder /etc/hostname /run/lucid/hostname
+COPY --chown -R debian-tor:debian-tor /etc/hostname /run/lucid/tor/hostname
+COPY --chown -R debian-tor:debian-tor /etc/passwd /run/lucid/passwd
+COPY --chown -R debian-tor:debian-tor /etc/group /run/lucid/group
+COPY --chown -R debian-tor:debian-tor /etc/host.conf /run/lucid/host.conf
+COPY --chown -R debian-tor:debian-tor /etc/hostname /run/lucid/hostname
+COPY --chown -R debian-tor:debian-tor /etc/resolv.conf /run/lucid/resolv.conf
+COPY --chown -R api-gateway:api-gateway data/tunnel /run/lucid/tunnel
+COPY --chown -R api-gateway:api-gateway data/tunnel /opt/lucid/tunnel
+
 
 # ── Internal container directory structure ─────────────────────────────────
 # FIXED: Only copy /run/lucid directory structure (no /opt/lucid/)
