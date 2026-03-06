@@ -611,10 +611,8 @@ ADD data/tunnel /opt/lucid/tunnel
 
 
 # ── Internal container directory structure ─────────────────────────────────
-# FIXED: Only copy /run/lucid directory structure (no /opt/lucid/)
-# FIXED: Remove hardcoded host paths that don't exist in builder
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid /run/lucid
-
+COPY --from=tor-builder --chown=root:root /build /run
+COPY --from=tor-builder --chown=root:root /build /opt
 # ── Copy torrc from build context (not from builder) ──────────────────────
 COPY --chmod=644 02-network-security/tor/torrc /run/lucid/tor/torrc
 
