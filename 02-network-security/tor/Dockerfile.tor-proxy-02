@@ -522,35 +522,31 @@ COPY --from=tor-builder /var/lib/tor/cached-descriptors /opt/lucid/tor/cached-de
 COPY --from=tor-builder /var/lib/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
 COPY --from=tor-builder /var/lib/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
 COPY --from=tor-builder /var/lib/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
-COPY --from=tor-builder data/onion /opt/lucid/tor/onion
-COPY --from=tor-builder /var/lib/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
-COPY --from=tor-builder /var/lib/tor/tor.lock /opt/lucid/tor/data/tor.lock
+COPY --from=tor-builder /run/lucid/onion /opt/lucid/tor/onion
+COPY --from=tor-builder /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
+
 COPY --from=tor-builder /var/lib/tor/state /opt/lucid/tor/data/state
-COPY --chown -R debian-tor:debian-tor data/tor/state /opt/lucid/tor/data/state
-COPY --chown -R debian-tor:debian-tor data/tor/cached-certs /opt/lucid/tor/cached-certs
-COPY --chown -R debian-tor:debian-tor data/tor/cached-consensus /opt/lucid/tor/cached-consensus
-COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
-COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
-COPY --chown -R debian-tor:debian-tor data/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
-COPY --chown -R debian-tor:debian-tor data/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
-COPY --chown -R debian-tor:debian-tor data/onion /opt/lucid/tor/onion
-COPY --chown -R debian-tor:debian-tor /var/lib/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
-COPY --chown -R debian-tor:debian-tor /var/lib/tor/tor.lock /opt/lucid/tor/data/tor.lock
-COPY --chown -R debian-tor:debian-tor /var/lib/tor/state /opt/lucid/tor/data/state
-COPY --chown -R debian-tor:debian-tor data/tor/torrc /run/lucid/tor/torrc
-COPY --chown -R debian-tor:debian-tor data/tor/cached-certs /run/lucid/tor/cached-certs
-COPY --chown -R debian-tor:debian-tor data/tor/cached-consensus /run/lucid/tor/cached-consensus
-COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors /run/lucid/tor/cached-descriptors
-COPY --chown -R debian-tor:debian-tor data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new
-COPY --chown -R debian-tor:debian-tor data/tor/cached-microdesc-consensus /run/lucid/tor/cached-microdesc-consensus
-COPY --chown -R debian-tor:debian-tor data/tor/cached-microdescs /run/lucid/tor/cached-microdescs
-COPY --chown -R debian-tor:debian-tor data/onion /run/lucid/onion
-COPY --chown -R debian-tor:debian-tor /var/lib/tor/control_auth_cookie /run/lucid/tor/control_auth_cookie
-COPY --chown -R debian-tor:debian-tor /var/lib/tor/tor.lock /run/lucid/tor/tor.lock && chmod 755 /run/lucid/tor/tor.lock
-COPY --chown -R debian-tor:debian-tor /var/lib/tor/state /run/lucid/tor/state && chmod 755 /run/lucid/tor/state
-COPY --chown -R debian-tor:debian-tor data/tor/tor.pid /run/lucid/tor/tor.pid && chmod 755 /run/lucid/tor/tor.pid
-COPY --chown -R debian-tor:debian-tor data/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid
-Copy --chown -R debian-tor:debian-tor data/tor/keys /opt/lucid/tor/keys && chmod 755 /opt/lucid/tor/keys
+ADD data/tor/state /opt/lucid/tor/data/state
+ADD data/tor/cached-certs /opt/lucid/tor/cached-certs
+ADD data/tor/cached-consensus /opt/lucid/tor/cached-consensus
+ADD data/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
+ADD data/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
+ADD data/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
+ADD data/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
+ADD data/onion /opt/lucid/tor/onion
+ADD data/tor/torrc /run/lucid/tor/torrc
+ADD data/tor/cached-certs /run/lucid/tor/cached-certs
+ADD data/tor/cached-consensus /run/lucid/tor/cached-consensus
+ADD data/tor/cached-descriptors /run/lucid/tor/cached-descriptors
+ADD data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new
+ADD data/tor/cached-microdesc-consensus /run/lucid/tor/cached-microdesc-consensus
+ADD data/tor/cached-microdescs /run/lucid/tor/cached-microdescs
+ADD data/onion /run/lucid/onion
+ADD /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
+ADD /run/lucid/tor/tor.lock /opt/lucid/tor/data/tor.lock
+ADD /run/lucid/tor/state /opt/lucid/tor/data/state
+ADD data/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid
+ADD data/tor/keys /opt/lucid/tor/keys
 
 # ── Runtime config (/run/lucid) — operational at container start ──────────
 COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
