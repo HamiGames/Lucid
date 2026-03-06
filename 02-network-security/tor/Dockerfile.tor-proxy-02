@@ -280,27 +280,25 @@ RUN \
  && printf 'dir=run/lucid/tor/scripts\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/scripts/.keep \
  && touch /run/lucid/tor/scripts/.keep || true \
     \
+&& install -d -o root -g root -m 755 /verify \
+&& printf 'dir=verify\nplatform=lucid-tor-proxy\n' > /verify/.keep \
+&& touch /verify/.keep || true \
+\ 
+&& install -d -o root -g root -m 755 /verify/bin \
+&& printf 'dir=verify/bin\nplatform=lucid-tor-proxy\n' > /verify/bin/.keep \
+&& touch /verify/bin/.keep || true \
+\
+&& install -d -o root -g root -m 755 /verify/acdir \
+&& printf 'dir=verify/acdir\nplatform=lucid-tor-proxy\n' > /verify/acdir/.keep \
+&& touch /verify/acdir/.keep || true \
+\
+&& install -d -o root -g root -m 755 /verify/marker \
+&& printf 'dir=verify/marker\nplatform=lucid-tor-proxy\n' > /verify/marker/.keep \
+&& touch /verify/marker/.keep || true \
+\
 # =============================================================================
 # STAGE 2: Dependency Verification
 # =============================================================================
-
-RUN mkdir -p /verify
-RUN chown -R root:root /verify
-
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/tmp/lucid/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/tmp/lucid/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/tmp/lucid/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
-RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
-
-
 ADD /etc/tor/torrc /run/lucid/tor/torrc
 COPY /run/lucid/tor/torrc /opt/lucid/tor/torrc
 ADD /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
@@ -310,8 +308,6 @@ COPY /run/lucid/passwd /opt/lucid/passwd
 ADD /etc/group /run/lucid/group
 COPY /run/lucid/group /opt/lucid/group
 
-
- 
 
 RUN set -eux; \
     \
@@ -506,7 +502,6 @@ RUN set -eux; \
     fi; \
 RUN install -d -o root -g root -m 755 /verified \
 COPY --from=tor-builder /verify/* /verified/
-
 
 # =============================================================================
 # STAGE 3: Distroless Runtime
