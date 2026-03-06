@@ -619,23 +619,21 @@ COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid /run/lucid
 COPY --chmod=644 02-network-security/tor/torrc /run/lucid/tor/torrc
 
 # ── Lucid operational scripts (/run/lucid/tor/bin) — operate the container ─
-COPY --chmod=755 02-network-security/tor/entrypoint.sh /run/lucid/tor/bin/entrypoint.sh
-COPY --chmod=755 02-network-security/tor/tor-health.sh /run/lucid/tor/bin/tor-health.sh
-COPY --chmod=755 02-network-security/tor/tor-show-onion.sh /run/lucid/tor/bin/tor-show-onion.sh
-COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /run/lucid/tor/bin/create-ephemeral-onion.sh
-COPY --chmod=755 02-network-security/tor/scripts/create_dynamic_onion.sh /run/lucid/tor/bin/create-dynamic-onion.sh
-COPY --chmod=755 02-network-security/tor/scripts/check_tor_bootstrap.sh /run/lucid/tor/bin/check-tor-bootstrap.sh
-COPY --chmod=755 02-network-security/tor/scripts/start_tor.sh /run/lucid/tor/bin/start-tor.sh
-COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /run/lucid/tor/bin/bootstrap-helper.sh
-COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /opt/lucid/tor/bin/bootstrap-helper.sh
+COPY --chmod=755 02-network-security/tor/entrypoint.sh /run/lucid/tor/scripts/entrypoint.sh
+COPY --chmod=755 02-network-security/tor/tor-health.sh /run/lucid/tor/scripts/tor-health.sh
+COPY --chmod=755 02-network-security/tor/tor-show-onion.sh /run/lucid/tor/scripts/tor-show-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh /run/lucid/tor/scripts/create-ephemeral-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/create_dynamic_onion.sh /run/lucid/tor/scripts/create-dynamic-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/check_tor_bootstrap.sh /run/lucid/tor/scripts/check-tor-bootstrap.sh
+COPY --chmod=755 02-network-security/tor/scripts/start_tor.sh /run/lucid/tor/scripts/start-tor.sh
+COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /run/lucid/tor/scripts/bootstrap-helper.sh
+COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /opt/lucid/tor/scripts/bootstrap-helper.sh
 # ── Tunnel configurations ──────────────────────────────────────────────────
 COPY --chmod=644 02-network-security/tunnels /run/lucid/tor/tunnels
 
-# ── Copy ephemeral onion directory structure ───────────────────────────────
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/onion /run/lucid/onion
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
-  CMD ["/run/lucid/tor/bin/tor-health.sh"]
+  CMD ["/run/lucid/tor/scripts/tor-health.sh"]
 
 EXPOSE 9050 9051 8888
 
