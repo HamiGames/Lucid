@@ -51,8 +51,8 @@ log_debug() {
 # /var/lib/tor, /var/log/tor, /run/tor, /etc/tor are Debian host paths
 # and do NOT exist in this container.
 # ─────────────────────────────────────────────────────────────────────────────
-TOR_DATA_DIR="${TOR_DATA_DIR:-/opt/lib/tor}"
-TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/run/lucid/tor}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor/data}"
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/opt/lucid/tor/}"
 TOR_LOG_DIR="${TOR_LOG_DIR:-/run/lucid/tor/log}"
 TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
 TORRC="${TOR_CONFIG_DIR}/torrc"
@@ -67,7 +67,7 @@ TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
 TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
 TOR_COOKIE_TMP="/tmp/lucid/tor/control_auth_cookie"
-
+BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/run/lucid/tor/bin/bootstrap-helper.sh}"
 # Seed data: preloaded consensus/certs to skip cold bootstrap.
 # Lives in /opt/lucid/tor/seed — a container-internal static asset path.
 TOR_SEED_DIR="${TOR_SEED_DIR:-/opt/lucid/tor/seed}"
@@ -714,16 +714,18 @@ start_tor() {
 
     # Ensure cookie dir exists before Tor starts.
     local cookie_dir
+    local bootstrap_helper=0
     cookie_dir="$(dirname "${TOR_COOKIE_FILE}")"
     if [[ ! -d "${cookie_dir}" ]]; then
         if mkdir -p "${cookie_dir}"; then
             chown "${TOR_USER}:${TOR_GROUP}" "${cookie_dir}" 2>/dev/null || true
             chmod 750 "${cookie_dir}" 2>/dev/null || true
+            exit 0
         else
             log_warn "Cannot create cookie dir: ${cookie_dir} — Tor may fail to write cookie"
+            exit 1
         fi
     fi
-
     # Ensure log file exists with correct ownership before Tor writes it.
     ensure_dir "${TOR_LOG_DIR}"
     touch "${TOR_LOG_FILE}" 2>/dev/null || true

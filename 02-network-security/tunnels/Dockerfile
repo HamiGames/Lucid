@@ -55,10 +55,11 @@ RUN mkdir -p /app/scripts /var/lib/tunnel /var/log/tunnel /run \
     && echo "LUCID_TUNNEL_TOOLS_LIB_DIRECTORY_$(date +%s)" > /var/lib/tunnel/.lucid-keep \
     && echo "LUCID_TUNNEL_TOOLS_LOG_DIRECTORY_$(date +%s)" > /var/log/tunnel/.lucid-keep \
     && echo "LUCID_TUNNEL_TOOLS_RUN_DIRECTORY_$(date +%s)" > /run/.lucid-keep \
-    && chown -R 65532:65532 /app /var/lib/tunnel /var/log/tunnel /run
+    && chown -R 65532:65532 /app /var/lib/tunnel /var/log/tunnel /run /opt
 
 # Copy tunnel application files
 # Build context: project root, so we prefix with 02-network-security/tunnels/
+COPY 02-network-security/tunnels/__init__.py /app/__init__.py
 COPY 02-network-security/tunnels/entrypoint.py /app/entrypoint.py
 COPY 02-network-security/tunnels/tunnel_metrics.py /app/tunnel_metrics.py
 COPY 02-network-security/tunnels/tunnel_status.py /app/tunnel_status.py
@@ -66,6 +67,7 @@ COPY 02-network-security/tunnels/scripts/ /app/scripts/
 COPY 02-network-security/tunnels/config/ /app/config/
 
 RUN chmod +x /app/entrypoint.py || true \
+    && chmod +x /app/__init__.py || true \
     && chmod +x /app/scripts/*.sh || true \
     && chmod +x /app/tunnel_metrics.py || true \
     && chmod +x /app/tunnel_status.py || true \
@@ -77,6 +79,7 @@ RUN python3 --version && \
     which python3 && \
     test -f /app/entrypoint.py && \
     python3 -m py_compile /app/entrypoint.py && \
+    python3 -m py_compile /app/__init__.py && \
     python3 -m py_compile /app/tunnel_metrics.py && \
     python3 -m py_compile /app/tunnel_status.py && \
     echo "✅ Builder stage verification passed - All Python files compile successfully"

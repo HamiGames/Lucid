@@ -42,8 +42,8 @@ log_debug() {
 # =============================================================================
 # Environment  (override via .env.* / docker-compose.*.yml)
 # =============================================================================
-TOR_DATA_DIR="${TOR_DATA_DIR:-/var/lib/tor}"
-TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/etc/tor}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor}"
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/opt/lucid/tor/}"
 TOR_LOG_DIR="${TOR_LOG_DIR:-/var/log/tor}"
 TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
 TORRC="${TOR_CONFIG_DIR}/torrc"
@@ -53,7 +53,7 @@ TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_CONTROL_SOCKET="${TOR_CONTROL_SOCKET:-}"
 TOR_DNS_PORT="${TOR_DNS_PORT:-0}"
 TOR_TRANS_PORT="${TOR_TRANS_PORT:-0}"
-
+BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/run/lucid/tor/bin/bootstrap-helper.sh}"
 TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
 TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"

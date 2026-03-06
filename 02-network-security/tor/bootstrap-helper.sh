@@ -7,20 +7,48 @@ set -euo pipefail
 log() { printf '[bootstrap-helper] %s\n' "$*"; }
 
 # Host paths (not container paths)
-HOST_TOR_DATA=${HOST_TOR_DATA:-"/run/lucid/tor/data"}
-HOST_TOR_LOGS=${HOST_TOR_LOGS:-"/run/lucid/tor/logs"}
-HOST_TOR_RUN=${HOST_TOR_RUN:-"/run"}
-HOST_TOR_CONFIG=${HOST_TOR_CONFIG:-"/opt/lucid/tor/torrc "}
-HOST_ONION_DIR=${HOST_ONION_DIR:-"/run/lucid/onion"}
+HOST_TOR_DATA=${HOST_TOR_DATA}
+HOST_TOR_LOGS=${HOST_TOR_LOGS}
+HOST_ONION_DIR=${HOST_ONION_DIR}
+HOST_TOR_CONFIG=${HOST_TOR_CONFIG}
+HOST_TOR_DIR=${HOST_TOR_DIR}
+HOST_TOR_ETC_DIR=${HOST_TOR_ETC_DIR}
+HOST_TOR_LUCID_ADMIN_DIR=${HOST_TOR_LUCID_ADMIN_DIR}
+HOST_TOR_LUCID_BLOCKCHAIN_DIR=${HOST_TOR_LUCID_BLOCKCHAIN_DIR}
+HOST_TOR_LUCID_VM_DIR=${HOST_TOR_LUCID_VM_DIR}
+HOST_TOR_LUCID_DEV_DIR=${HOST_TOR_LUCID_DEV_DIR}
+HOST_TOR_LUCID_SERVER_DIR=${HOST_TOR_LUCID_SERVER_DIR}
+HOST_TOR_LUCID_PORTAL_DIR=${HOST_TOR_LUCID_PORTAL_DIR}
+HOST_TOR_MYSERVICE_DIR=${HOST_TOR_MYSERVICE_DIR}
+TOR_CONTAINER_SERVICE_NAME=${TOR_CONTAINER_SERVICE_NAME}
+TOR_CONTAINER_SERVICE_PORT=${TOR_CONTAINER_SERVICE_PORT}
+TOR_CONTAINER_URL=${TOR_CONTAINER_URL}
+UPSTREAM_SERVICE_URL=${UPSTREAM_SERVICE_URL}
+UPSTREAM_PORT=${UPSTREAM_PORT}
+UPSTREAM_SERVICE_NAME=${UPSTREAM_SERVICE_NAME}
+UPSTREAM_SERVICE_HEALTH_URL=${UPSTREAM_SERVICE_HEALTH_URL}
 
 # Container paths (inside docker)
-CONTAINER_TOR_DATA="/opt/lucid/tor/data"
-CONTAINER_TOR_LOGS="/opt/lucid/tor/logs"
-CONTAINER_TOR_RUN="/run"
-CONTAINER_TOR_CONFIG="/opt/lucid/tor/configs"
-CONTAINER_ONION_DIR=${CONTAINER_ONION_DIR:-"$HOST_ONION_DIR"}
-CONTAINER_COOKIE_FILE=${CONTAINER_COOKIE_FILE:-"/run/lucid/tor/control_auth_cookie"}
-
+HOST_TOR_RUN=${HOST_TOR_RUN}
+HOST_TOR_CONFIG=${HOST_TOR_CONFIG}
+HOST_ONION_DIR=${HOST_ONION_DIR}
+CONTAINER_TOR_DATA=${CONTAINER_TOR_DATA}
+CONTAINER_TOR_LOGS=${CONTAINER_TOR_LOGS}
+CONTAINER_TOR_RUN=${CONTAINER_TOR_RUN}
+TOR_CONTAINER_RUN_CONFIG=${TOR_CONTAINER_RUN_CONFIG}
+TOR_CONTAINER_DATA_DIR=${TOR_CONTAINER_DATA_DIR}
+CONTAINER_ONION_DIR=${CONTAINER_ONION_DIR}
+CONTAINER_COOKIE_RUN_DIR=${CONTAINER_COOKIE_RUN_DIR}
+TOR_CONTAINER_RUN_DIR=${TOR_CONTAINER_RUN_DIR}
+TOR_CONTAINER_DATA_DIR=${TOR_CONTAINER_DATA_DIR}
+TOR_CONTAINER_TOR_DATA=${TOR_CONTAINER_TOR_DATA}
+TOR_CONTAINER_DATA_STATE=${TOR_CONTAINER_DATA_STATE}
+TOR_CONTAINER_DATA_LOCK=${TOR_CONTAINER_DATA_LOCK}
+TOR_CONTAINER_LOGS_DIR=${TOR_CONTAINER_LOGS_DIR}
+TOR_CONTAINER_RUN_STATE=${TOR_CONTAINER_RUN_STATE}
+TOR_CONTAINER_RUN_LOCK=${TOR_CONTAINER_RUN_LOCK}
+TOR_CONTAINER_RUN_CONFIG=${TOR_CONTAINER_RUN_CONFIG}
+BACKUP_CONTAINER_COOKIE_DIR=${BACKUP_CONTAINER_COOKIE_DIR}
 # Required Tor files (Tor creates these automatically)
 TOR_FILES=(
   "control_auth_cookie"
@@ -40,7 +68,7 @@ log "=== Tor Bootstrap Helper (Standalone) ==="
 cp 
 # Ensure host directories exist
 log "Preparing host directories..."
-sudo mkdir -p "$HOST_TOR_DATA" "$HOST_TOR_LOGS" "$HOST_TOR_RUN/lucid/onion" "$HOST_TOR_CONFIG" || true
+sudo mkdir -p "$HOST_TOR_DATA" "$HOST_TOR_LOGS" "$HOST_TOR_RUN_DIR/onion" "$HOST_TOR_CONFIG" || true
 
 # Discover debian-tor uid:gid from image
 log "Discovering debian-tor uid:gid..."
@@ -106,7 +134,7 @@ CONTAINER_ID=$(docker run -d --rm \
   --env-file /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy \
   --env-file /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation \
   --env-file /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets \
-  --network lucid-pi-network --ip 172.20.0.9 \
+  --network lucid-pi-network \
   --cap-drop=ALL --security-opt no-new-privileges:true \
   --tmpfs /tmp:noexec,nosuid,size=64m \
   -v "${HOST_TOR_DATA}:${CONTAINER_TOR_DATA}:rw" \
@@ -146,12 +174,14 @@ FAILED_FILES=()
 
 for file in "${TOR_FILES[@]}"; do
   CONTAINER_FILE="${CONTAINER_TOR_DATA}/${file}"
-  HOST_FILE="${HOST_TOR_DATA}/${file}"
+  HOST_FILE="${TOR_CONTAINER_DATA_DIR}/${file}"
+  CONTAINER_COOKIE_RUN_FILE="${CONTAINER_COOKIE_RUN_DIR}/${file}"
+
   
   # Check if file exists in container (use busybox test)
   if docker exec tor-bootstrap-temp /bin/busybox test -e "$CONTAINER_FILE" 2>/dev/null; then
     # Check if file exists on host
-    if [ -e "$HOST_FILE" ]; then
+    if [ -e "$HOST_FILE" ] && [ -e "$CONTAINER_COOKIE_RUN_FILE" ]; then
       log "  ✓ $file (exists on host)"
       # Ensure correct ownership
       sudo chown "${TOR_UID}:${TOR_GID}" "$HOST_FILE" 2>/dev/null || true
@@ -161,11 +191,14 @@ for file in "${TOR_FILES[@]}"; do
       log "  → Seeding $file from container to host..."
       if docker cp "tor-bootstrap-temp:${CONTAINER_FILE}" "$HOST_FILE" 2>/dev/null; then
         sudo chown "${TOR_UID}:${TOR_GID}" "$HOST_FILE" 2>/dev/null || true
+        sudo chown "${TOR_UID}:${TOR_GID}" "$CONTAINER_COOKIE_RUN_FILE" 2>/dev/null || true
         # Set appropriate permissions
         if [ -f "$HOST_FILE" ]; then
           sudo chmod 600 "$HOST_FILE" 2>/dev/null || true
+          sudo chmod 600 "$CONTAINER_COOKIE_RUN_FILE" 2>/dev/null || true
         elif [ -d "$HOST_FILE" ]; then
           sudo chmod 700 "$HOST_FILE" 2>/dev/null || true
+          sudo chmod 700 "$CONTAINER_COOKIE_RUN_FILE" 2>/dev/null || true
         fi
         log "    ✓ Seeded $file"
         SEEDED_COUNT=$((SEEDED_COUNT + 1))
