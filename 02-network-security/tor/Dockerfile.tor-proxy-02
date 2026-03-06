@@ -54,56 +54,80 @@ RUN \
  && printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/.keep \
  && printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n' > /run/lucid/onion/.keep \
  && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /run/lucid/.keep \
-    \
+ && touch /run/lucid/.keep || true \
+ && touch /run/lucid/onion/.keep || true \
+ && touch /run/lucid/tor/bin/.keep || true \
+ && touch /run/lucid/tor/.keep || true \
+ \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_admin                        \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_admin/authorized_clients     \
  && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_admin/.keep \
  && printf 'service=lucid_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_admin/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_admin/.keep || true \
+ && touch /run/lucid/tor/lucid_admin/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_vm                           \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_vm/authorized_clients        \
  && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_vm/.keep \
  && printf 'service=lucid_vm\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_vm/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_vm/.keep || true \
+ && touch /run/lucid/tor/lucid_vm/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_node                         \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_node/authorized_clients      \
  && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_node/.keep \
  && printf 'service=lucid_node\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_node/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_node/.keep || true \
+ && touch /run/lucid/tor/lucid_node/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_blockchain                   \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_blockchain/authorized_clients \
  && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_blockchain/.keep \
  && printf 'service=lucid_blockchain\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_blockchain/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_blockchain/.keep || true \
+ && touch /run/lucid/tor/lucid_blockchain/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_governance                   \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_governance/authorized_clients \
  && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_governance/.keep \
  && printf 'service=lucid_governance\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_governance/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_governance/.keep || true \
+ && touch /run/lucid/tor/lucid_governance/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_payment                      \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_payment/authorized_clients   \
  && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_payment/.keep \
  && printf 'service=lucid_payment\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_payment/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_payment/.keep || true \
+ && touch /run/lucid/tor/lucid_payment/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_session                      \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_session/authorized_clients   \
  && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_session/.keep \
  && printf 'service=lucid_session\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_session/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_session/.keep || true \
+ && touch /run/lucid/tor/lucid_session/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_rdp                          \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_rdp/authorized_clients       \
  && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_rdp/.keep \
  && printf 'service=lucid_rdp\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_rdp/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_rdp/.keep || true \
+ && touch /run/lucid/tor/lucid_rdp/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_wallet                       \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_wallet/authorized_clients    \
  && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_wallet/.keep \
  && printf 'service=lucid_wallet\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_wallet/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_wallet/.keep || true \
+ && touch /run/lucid/tor/lucid_wallet/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting                       \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting/authorized_clients    \
  && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting/.keep \
  && printf 'service=lucid_voting\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_voting/.keep || true \
+ && touch /run/lucid/tor/lucid_voting/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting_system                \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting_system/authorized_clients \
@@ -114,40 +138,54 @@ RUN \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting_system_admin/authorized_clients \
  && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin/.keep \
  && printf 'service=lucid_voting_system_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_voting_system_admin/.keep || true \
+ && touch /run/lucid/tor/lucid_voting_system_admin/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_voting_system_admin_admin    \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients \
  && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin_admin/.keep \
  && printf 'service=lucid_voting_system_admin_admin\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_voting_system_admin_admin/.keep || true \
+ && touch /run/lucid/tor/lucid_voting_system_admin_admin/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_server                       \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_server/authorized_clients    \
  && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_server/.keep \
  && printf 'service=lucid_server\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_server/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_server/.keep || true \
+ && touch /run/lucid/tor/lucid_server/authorized_clients/.keep || true \
     \
  && install -d -o root -g root -m 755 /run/lucid/tor/myservice                          \
  && install -d -o root -g root -m 700 /run/lucid/tor/myservice/authorized_clients       \
  && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/myservice/.keep \
  && printf 'service=myservice\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/myservice/authorized_clients/.keep \
-    \
+ && touch /run/lucid/tor/myservice/.keep || true \
+ && touch /run/lucid/tor/myservice/authorized_clients/.keep || true \
+   \
  && install -d -o root -g root -m 755 /run/lucid/tor/lucid_portal                       \
  && install -d -o root -g root -m 700 /run/lucid/tor/lucid_portal/authorized_clients    \
  && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_portal/.keep \
  && printf 'service=lucid_portal\ntype=hidden-service\nplatform=lucid-tor-proxy\n' > /run/lucid/tor/lucid_portal/authorized_clients/.keep \
+ && touch /run/lucid/tor/lucid_portal/.keep || true \
+ && touch /run/lucid/tor/lucid_portal/authorized_clients/.keep || true \
     \
     # ── Ephemeral scratch and config dirs ─────────────────────────────────── \
  && install -d -o debian-tor -g debian-tor -m 700 /tmp/lucid/tor                        \
  && install -d -o root       -g root       -m 755 /tmp/lucid/tor/lucid_admin            \
  && printf 'service=lucid_admin\ntype=tmp-scratch\nplatform=lucid-tor-proxy\n' > /tmp/lucid/tor/lucid_admin/.keep \
+ && touch /tmp/lucid/tor/lucid_admin/.keep || true \
     \
     # ── Application root ──────────────────────────────────────────────────── \
  && install -d -o debian-tor -g debian-tor -m 755 /app/tor                              \
-    \
+ && touch /app/tor/.keep || true \
+ \
     # ── Top-level marker files ────────────────────────────────────────────── \
  && printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n' > /run/lucid/.keep               \
  && printf 'dir=app/tor\nplatform=lucid-tor-proxy\n'   > /app/tor/.keep                 \
  && chown debian-tor:debian-tor /run/lucid/.keep /app/tor/.keep \
-    \
+&& touch /run/lucid/.keep || true \
+&& touch /app/tor/.keep || true \
+ \
     # ── /opt directory scaffold ────────────────────────────────────────────── \
  && install -d -o root -g root -m 755 /opt                                               \
  && install -d -o root -g root -m 755 /opt/bin                                           \
@@ -156,10 +194,15 @@ RUN \
  && install -d -o root -g root -m 755 /opt/share                                         \
  && install -d -o root -g root -m 755 /opt/share/tor                                     \
  && printf 'dir=opt\nplatform=lucid-tor-proxy\n'           > /opt/.keep                  \
+ && touch /opt/.keep || true \
  && printf 'dir=opt/bin\nplatform=lucid-tor-proxy\n'       > /opt/bin/.keep              \
+ && touch /opt/bin/.keep || true \
  && printf 'dir=opt/sbin\nplatform=lucid-tor-proxy\n'      > /opt/sbin/.keep             \
+ && touch /opt/sbin/.keep || true \
  && printf 'dir=opt/lib\nplatform=lucid-tor-proxy\n'       > /opt/lib/.keep              \
- && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /opt/share/tor/.keep
+ && touch /opt/lib/.keep || true \
+ && printf 'dir=opt/share/tor\nplatform=lucid-tor-proxy\n' > /opt/share/tor/.keep \
+ && touch /opt/share/tor/.keep || true \
 
 # =============================================================================
 # STAGE 2: Dependency Verification
