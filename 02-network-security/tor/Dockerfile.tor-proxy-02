@@ -541,10 +541,6 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
     TOR_CONTROL_PORT=9051 \
     TOR_DATA_DIR=/run/lucid/tor
 
-# ── Verification gate ──────────────────────────────────────────────────────
-COPY --from=verify /verified /verified
-
-
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 COPY --from=tor-builder /opt /opt
