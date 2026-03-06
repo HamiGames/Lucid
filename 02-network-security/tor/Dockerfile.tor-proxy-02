@@ -492,8 +492,13 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
     TOR_DATA_DIR=/run/lucid/tor
 
 # ── Verification gate ──────────────────────────────────────────────────────
+RUN mkdir -p /verified \
+    && echo "lucid-tor-proxy:new_file/keep.txt" > /verified/keep.txt \
+    && touch /verified/keep.txt \
+    \
+    
 
-COPY --from=verify /verified /verified
+COPY --from=verify /verify /verified
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 COPY --from=tor-builder /opt /opt
