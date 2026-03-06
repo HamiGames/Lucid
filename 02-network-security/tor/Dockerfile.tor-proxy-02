@@ -283,9 +283,10 @@ RUN \
 # =============================================================================
 # STAGE 2: Dependency Verification
 # =============================================================================
-FROM --platform=$TARGETPLATFORM debian:12-slim AS verify
 
 RUN mkdir -p /verify
+RUN chown -R root:root /verify
+
 RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/keep.txt
 RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/keep.txt
 RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
@@ -504,10 +505,8 @@ RUN set -eux; \
         exit 0; \
     fi; \
 RUN install -d -o root -g root -m 755 /verified \
+COPY --from=tor-builder /verify/* /verified/
 
-COPY /verified/bin/* /verified/bin/
-COPY /verified/acdir/* /verified/acdir/
-COPY /verified/marker/* /verified/marker/
 
 # =============================================================================
 # STAGE 3: Distroless Runtime
