@@ -308,14 +308,15 @@ COPY --from=tor-builder /usr/bin/curl             /verify/usr/bin/curl
 COPY --from=tor-builder /usr/bin/jq               /verify/usr/bin/jq
 COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/lib/aarch64-linux-gnu
 COPY --from=tor-builder /usr/lib                  /verify/usr/lib
-COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /verify/etc/ssl/certs/ca-certificates.crt
-COPY --from=tor-builder /etc/passwd                 /verify/run/lucid/passwd
-COPY --from=tor-builder /etc/group                  /verify/run/lucid/group
-COPY --from=tor-builder /etc/host.conf              /verify/run/lucid/host.conf
-COPY --from=tor-builder /etc/hostname               /verify/run/lucid/hostname
-COPY --from=tor-builder /etc/resolv.conf            /verify/run/lucid/resolv.conf
-COPY --from=tor-builder /etc/tor                    /verify/run/lucid/tor/config
-COPY --from=tor-builder /var/lib/tor                /verify/run/lucid/tor/data
+COPY /etc/ssl/certs/ca-certificates.crt /verify/etc/ssl/certs/ca-certificates.crt
+COPY  /etc/passwd                 /verify/run/lucid/passwd
+COPY  /etc/group                  /verify/run/lucid/group
+COPY /etc/host.conf              /verify/run/lucid/host.conf
+COPY  /etc/hostname               /verify/run/lucid/hostname
+COPY  /etc/resolv.conf            /verify/run/lucid/resolv.conf
+COPY  /etc/tor                    /verify/run/lucid/tor/config
+COPY  /var/lib/tor                /verify/run/lucid/tor
+
 
 
 RUN set -eux; \
