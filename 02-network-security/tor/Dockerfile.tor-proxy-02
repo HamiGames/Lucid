@@ -299,14 +299,7 @@ RUN \
 # =============================================================================
 # STAGE 2: Dependency Verification
 # =============================================================================
-ADD /etc/tor/torrc /run/lucid/tor/torrc
-COPY /run/lucid/tor/torrc /opt/lucid/tor/torrc
-ADD /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
-ADD /etc/tor/torsocks.conf /run/lucid/tor/torsocks.conf
-ADD /etc/passwd /run/lucid/passwd
-COPY /run/lucid/passwd /opt/lucid/passwd
-ADD /etc/group /run/lucid/group
-COPY /run/lucid/group /opt/lucid/group
+
 
 
 RUN set -eux; \
@@ -513,21 +506,12 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=2.0.0
 
-LABEL maintainer="Lucid Development Team" \
-      org.opencontainers.image.title="Lucid Tor Proxy" \
-      org.opencontainers.image.description="Distroless Tor proxy for Lucid project" \
+LABEL maintainer="Lucid-Development-Team" \
+      org.opencontainers.image.title="Lucid-Tor-Proxy" \
+      org.opencontainers.image.description="Distroless Tor proxy for Lucid-project" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.plane="ops" \
-      com.lucid.service="tor-proxy" \
-      com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
-      com.lucid.security="distroless" \
-      com.lucid.tor.inherent="true" \
-      com.lucid.tor.system="built-in" \
-      com.lucid.expose="9050,9051,8888" \
-      com.lucid.cluster="foundation"
+      org.opencontainers.image.created="${BUILD_DATE}"
 
 ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
     LD_LIBRARY_PATH=/opt/lib \
@@ -538,20 +522,10 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 COPY --from=tor-builder /opt /opt
-ADD data/onion /opt/lucid/onion
-ADD /usr/local/bin /opt/bin
-ADD /usr/local/share /opt/share
-ADD /etc/tor /opt/lucid/tor/config
-ADD /var/lib/tor /opt/lucid/tor/data
-ADD data/tor /opt/lucid/tor/config
-ADD /usr/bin/tor /opt/bin/tor
-ADD /usr/bin/obfs4proxy /opt/bin/obfs4proxy
-ADD /usr/sbin/gosu /opt/sbin/gosu
-ADD /usr/bin/tini /opt/bin/tini
-ADD /usr/bin/curl /opt/bin/curl
-ADD /usr/bin/jq /opt/bin/jq
-ADD /lib/aarch64-linux-gnu /opt/lib/aarch64-linux-gnu
-ADD /usr/lib /opt/lib
+RUN sudo chown -R root:root data/* && sudo chmod -R 755 data/*
+RUN echo "$(sudo ls -la ./data)" && exit 0
+
+COPY --from=tor-builder /data/onion /opt/lucid/onion
 # ── Core binaries (/opt/bin, /opt/sbin) — build-time installed tools ──────
 COPY --from=tor-builder /usr/bin/tor        /opt/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy /opt/bin/obfs4proxy
