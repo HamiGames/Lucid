@@ -285,18 +285,37 @@ RUN \
 # =============================================================================
 FROM --platform=$TARGETPLATFORM debian:12-slim AS verify
 
-COPY --from=tor-builder /usr/bin/tor              /verify/opt/bin/tor
-COPY --from=tor-builder /usr/bin/obfs4proxy       /verify/opt/bin/obfs4proxy
-COPY --from=tor-builder /usr/sbin/gosu            /verify/opt/sbin/gosu
-COPY --from=tor-builder /usr/bin/tini             /verify/opt/bin/tini
-COPY --from=tor-builder /usr/bin/curl             /verify/opt/bin/curl
-COPY --from=tor-builder /usr/bin/jq               /verify/opt/bin/jq
-COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/opt/lib/aarch64-linux-gnu
-COPY --from=tor-builder /usr/lib                  /verify/opt/lib
-COPY --from=tor-builder /run/lucid                /verify/run/lucid
-COPY --from=tor-builder /tmp/lucid                /verify/tmp/lucid
-COPY --from=tor-builder /app/tor                  /verify/app/tor
+RUN mkdir -p /verify
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/tmp/lucid/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/tmp/lucid/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/tmp/lucid/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/opt/lucid/tor/keep.txt
+RUN echo "lucid-tor-proxy:new_file/keep.txt" > /verify/run/lucid/keep.txt
 
+
+COPY --from=tor-builder /usr/bin/tor              /verify/usr/bin/tor
+COPY --from=tor-builder /usr/bin/obfs4proxy       /verify/usr/bin/obfs4proxy
+COPY --from=tor-builder /usr/sbin/gosu            /verify/usr/sbin/gosu
+COPY --from=tor-builder /usr/bin/tini             /verify/usr/bin/tini
+COPY --from=tor-builder /usr/bin/curl             /verify/usr/bin/curl
+COPY --from=tor-builder /usr/bin/jq               /verify/usr/bin/jq
+COPY --from=tor-builder /lib/aarch64-linux-gnu    /verify/lib/aarch64-linux-gnu
+COPY --from=tor-builder /usr/lib                  /verify/usr/lib
+COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt /verify/etc/ssl/certs/ca-certificates.crt
+COPY --from=tor-builder /etc/passwd                 /verify/run/lucid/passwd
+COPY --from=tor-builder /etc/group                  /verify/run/lucid/group
+COPY --from=tor-builder /etc/host.conf              /verify/run/lucid/host.conf
+COPY --from=tor-builder /etc/hostname               /verify/run/lucid/hostname
+COPY --from=tor-builder /etc/resolv.conf            /verify/run/lucid/resolv.conf
+COPY --from=tor-builder /etc/tor                    /verify/run/lucid/tor/config
+COPY --from=tor-builder /var/lib/tor                /verify/run/lucid/tor/data
 
 
 RUN set -eux; \
