@@ -493,8 +493,15 @@ RUN set -eux; \
         echo "verified" > /verified; \
         exit 0; \
     fi; \
+
+
 RUN install -d -o root -g root -m 755 /verified \
-COPY --from=tor-builder /verify/* /verified/
+&& mkdir -p /verified/bin /verified/acdir /verified/marker \
+&& echo "$KEEP_FILE" > /verified/.keep \
+&& cp /verified/.keep /verified/bin/.keep || true \
+&& cp /verified/.keep /verified/acdir/.keep || true \
+&& cp /verified/.keep /verified/marker/.keep || true \
+\
 
 # =============================================================================
 # STAGE 3: Distroless Runtime
