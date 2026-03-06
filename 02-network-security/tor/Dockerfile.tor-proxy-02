@@ -496,9 +496,11 @@ RUN mkdir -p /verified \
     && echo "lucid-tor-proxy:new_file/keep.txt" > /verified/keep.txt \
     && touch /verified/keep.txt \
     \
-    
 
-COPY --from=verify /verify /verified
+
+ADD /verify /verified
+COPY --from=tor-builder /verified /verified
+
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 COPY --from=tor-builder /opt /opt
