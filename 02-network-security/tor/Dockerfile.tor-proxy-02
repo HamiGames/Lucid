@@ -656,7 +656,6 @@ COPY /etc/group /run/lucid/group
 COPY /etc/host.conf /run/lucid/host.conf
 COPY /etc/hostname /run/lucid/hostname
 COPY /etc/hostname /run/lucid/tor/hostname
-COPY /etc/resolv.conf /run/lucid/resolv.conf
 COPY data/tunnel/* /run/lucid/tunnel/data/
 
 # ── Copy torrc from build context (not from builder) ──────────────────────
