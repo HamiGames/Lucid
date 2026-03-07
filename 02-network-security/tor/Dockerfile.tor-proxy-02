@@ -649,17 +649,6 @@ RUN sudo cp data/tor/* /run/lucid/tor/ \
 && sudo cp /var/lib/tor/* /opt/lib/tor/ \
 
 # ── ARM64 dynamic linker + shared libraries (/opt/lib) ────────────────────
-
-COPY data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new(2)
-COPY data/tor/cached-microdesc-consensus /run/lucid/tor/cached-microdesc-consensus(2)
-COPY data/tor/cached-microdescs /run/lucid/tor/cached-microdescs(2)
-COPY data/onion /run/lucid/onion(2)
-COPY /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
-COPY /run/lucid/tor/tor.lock /opt/lucid/tor/data/tor.lock(2)
-COPY /run/lucid/tor/state /opt/lucid/tor/data/state(2)
-COPY data/tor/tor.pid /opt/lucid/tor/tor.pid(2) && chmod 755 /opt/lucid/tor/tor.pid(2)
-COPY data/tor/keys /opt/lucid/tor/keys(2)
-
 # ── Runtime config (/run/lucid) — operational at container start ──────────
 COPY /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt(2)
 COPY /etc/passwd /run/lucid/passwd
