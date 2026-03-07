@@ -91,7 +91,7 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx, aiofil
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Copy application code
-COPY 03-api-gateway/app/ ./app/
+COPY 03-api-gateway/api/ ./api/
 
 ############################
 # Stage 2 – Runtime (Distroless)
