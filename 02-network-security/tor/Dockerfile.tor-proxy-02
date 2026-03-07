@@ -530,122 +530,157 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/usr/bin:/opt:/run/lucid:/run/luc
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 RUN mkdir -p /opt && install -d -o root -g root -m 755 /opt \
 && echo "dir=opt\nplatform=lucid-tor-proxy\n" > /opt/.keep \ 
+&& touch /opt/.keep || true \
 
 RUN mkdir -p  /run/lucid/tor && install -d -o root -g root -m 755 /run/lucid/tor \
 && echo "dir=run/lucid/tor\nplatform=lucid-tor-proxy\n" > /run/lucid/tor/.keep \
+&& touch /run/lucid/tor/.keep || true \
 && sudo cp /var/lib/tor/* /run/lucid/tor/ \
 
 RUN mkdir -p /opt/bin /opt/bin/tor && install -d -o root -g root -m 755 /opt/bin/tor \
 && echo "dir=opt/bin/tor\nplatform=lucid-tor-proxy\n" > /opt/bin/tor/.keep \
+&& touch /opt/bin/tor/.keep || true \
 && sudo cp /usr/bin/tor/* /opt/bin/tor/ \
 
 RUN mkdir -p /opt/bin/obfs4proxy && install -d -o root -g root -m 755 /opt/bin/obfs4proxy \
 && echo "dir=opt/bin/obfs4proxy\nplatform=lucid-tor-proxy\n" > /opt/bin/obfs4proxy/.keep \
-&& cp /usr/bin/obfs4proxy/* /opt/bin/obfs4proxy/ \
+&& touch /opt/bin/obfs4proxy/.keep || true \
+&& sudo cp /usr/bin/obfs4proxy/* /opt/bin/obfs4proxy/ \
 
 RUN mkdir -p /opt/bin/tini && install -d -o root -g root -m 755 /opt/bin/tini \
 && echo "dir=opt/bin/tini\nplatform=lucid-tor-proxy\n" > /opt/bin/tini/.keep \
-&& cp /usr/bin/tini/* /opt/bin/tini/ \
+&& touch /opt/bin/tini/.keep || true \
+&& sudo cp /usr/bin/tini/* /opt/bin/tini/ \
 
 RUN mkdir -p /opt/sbin/gosu && install -d -o root -g root -m 755 /opt/sbin/gosu \
 && echo "dir=opt/sbin/gosu\nplatform=lucid-tor-proxy\n" > /opt/sbin/gosu/.keep \
-&& cp /usr/sbin/gosu/* /opt/sbin/gosu/ \
+&& touch /opt/sbin/gosu/.keep || true \
+&& sudo cp /usr/sbin/gosu/* /opt/sbin/gosu/ \
 
 RUN mkdir -p /opt/bin/bash && install -d -o root -g root -m 755 /opt/bin/bash \
 && echo "dir=opt/bin/bash\nplatform=lucid-tor-proxy\n" > /opt/bin/bash/.keep \
+&& touch /opt/bin/bash/.keep || true \
 && sudo cp /bin/bash/* /opt/bin/bash/ \
 
 RUN mkdir -p /opt/bin/busybox && install -d -o root -g root -m 755 /opt/bin/busybox \
 && echo "dir=opt/bin/busybox\nplatform=lucid-tor-proxy\n" > /opt/bin/busybox/.keep \
+&& touch /opt/bin/busybox/.keep || true \
 && sudo cp /bin/busybox/* /opt/bin/busybox/ \
 
 RUN mkdir -p /opt/bin/cat && install -d -o root -g root -m 755 /opt/bin/cat \
 && echo "dir=opt/bin/cat\nplatform=lucid-tor-proxy\n" > /opt/bin/cat/.keep \
+&& touch /opt/bin/cat/.keep || true \
 && sudo cp /bin/cat/* /opt/bin/cat/ \
 
 RUN mkdir -p /opt/bin/chmod && install -d -o root -g root -m 755 /opt/bin/chmod \
 && echo "dir=opt/bin/chmod\nplatform=lucid-tor-proxy\n" > /opt/bin/chmod/.keep \
+&& touch /opt/bin/chmod/.keep || true \
 && sudo cp /bin/chmod/* /opt/bin/chmod/ \
 
 RUN mkdir -p /opt/bin/chown && install -d -o root -g root -m 755 /opt/bin/chown \
 && echo "dir=opt/bin/chown\nplatform=lucid-tor-proxy\n" > /opt/bin/chown/.keep \
+&& touch /opt/bin/chown/.keep || true \
 && sudo cp /bin/chown/* /opt/bin/chown/ \
 
 RUN mkdir -p /opt/bin/mkdir && install -d -o root -g root -m 755 /opt/bin/mkdir \
 && echo "dir=opt/bin/mkdir\nplatform=lucid-tor-proxy\n" > /opt/bin/mkdir/.keep \
+&& touch /opt/bin/mkdir/.keep || true \
 && sudo cp /bin/mkdir/* /opt/bin/mkdir/ \
 
 RUN mkdir -p /opt/bin/rm && install -d -o root -g root -m 755 /opt/bin/rm \
 && echo "dir=opt/bin/rm\nplatform=lucid-tor-proxy\n" > /opt/bin/rm/.keep \
+&& touch /opt/bin/rm/.keep || true \
 && sudo cp /usr/bin/rm/* /opt/bin/rm/ \
 
 RUN mkdir -p /opt/bin/sleep && install -d -o root -g root -m 755 /opt/bin/sleep \
 && echo "dir=opt/bin/sleep\nplatform=lucid-tor-proxy\n" > /opt/bin/sleep/.keep \
+&& touch /opt/bin/sleep/.keep || true \
 && sudo cp /usr/bin/sleep/* /opt/bin/sleep/ \
 
 RUN mkdir -p /opt/bin/tail && install -d -o root -g root -m 755 /opt/bin/tail \
 && echo "dir=opt/bin/tail\nplatform=lucid-tor-proxy\n" > /opt/bin/tail/.keep \
+&& touch /opt/bin/tail/.keep || true \
 && sudo cp /usr/bin/tail/* /opt/bin/tail/ \
 
 RUN mkdir -p /opt/bin/curl && install -d -o root -g root -m 755 /opt/bin/curl \
 && echo "dir=opt/bin/curl\nplatform=lucid-tor-proxy\n" > /opt/bin/curl/.keep \
+&& touch /opt/bin/curl/.keep || true \
 && sudo cp /usr/bin/curl/* /opt/bin/curl/ \
 
 RUN mkdir -p /opt/bin/jq && install -d -o root -g root -m 755 /opt/bin/jq \
 && echo "dir=opt/bin/jq\nplatform=lucid-tor-proxy\n" > /opt/bin/jq/.keep \
+&& touch /opt/bin/jq/.keep || true \
 && sudo cp /usr/bin/jq/* /opt/bin/jq/ \
 
 RUN mkdir -p /opt/bin/nc && install -d -o root -g root -m 755 /opt/bin/nc \
 && echo "dir=opt/bin/nc\nplatform=lucid-tor-proxy\n" > /opt/bin/nc/.keep \
+&& touch /opt/bin/nc/.keep || true \
 && sudo cp /usr/bin/nc/* /opt/bin/nc/ \
 
 RUN mkdir -p /opt/bin/nc.openbsd && install -d -o root -g root -m 755 /opt/bin/nc.openbsd \
 && echo "dir=opt/bin/nc.openbsd\nplatform=lucid-tor-proxy\n" > /opt/bin/nc.openbsd/.keep \
+&& touch /opt/bin/nc.openbsd/.keep || true \
 && sudo cp /usr/bin/nc.openbsd/* /opt/bin/nc.openbsd/ \
 
 RUN mkdir -p /opt/bin/timeout && install -d -o root -g root -m 755 /opt/bin/timeout \
 && echo "dir=opt/bin/timeout\nplatform=lucid-tor-proxy\n" > /opt/bin/timeout/.keep \
+&& touch /opt/bin/timeout/.keep || true \
 && sudo cp /usr/bin/timeout/* /opt/bin/timeout/ \
 
 RUN mkdir -p /opt/bin/xxd && install -d -o root -g root -m 755 /opt/bin/xxd \
 && echo "dir=opt/bin/xxd\nplatform=lucid-tor-proxy\n" > /opt/bin/xxd/.keep \
+&& touch /opt/bin/xxd/.keep || true \
 && sudo cp /usr/bin/xxd/* /opt/bin/xxd/ \
 
 RUN mkdir -p /opt/sbin/ipp-usb && install -d -o root -g root -m 755 /opt/sbin/ipp-usb \
 && echo "dir=opt/sbin/ipp-usb\nplatform=lucid-tor-proxy\n" > /opt/sbin/ipp-usb/.keep \
+&& touch /opt/sbin/ipp-usb/.keep || true \
 && sudo cp /usr/sbin/ipp-usb/* /opt/sbin/ipp-usb/ \
 
 RUN mkdir -p /opt/sbin/iptunnel && install -d -o root -g root -m 755 /opt/sbin/iptunnel \
 && echo "dir=opt/sbin/iptunnel\nplatform=lucid-tor-proxy\n" > /opt/sbin/iptunnel/.keep \
+&& touch /opt/sbin/iptunnel/.keep || true \
 && sudo cp /usr/sbin/iptunnel/* /opt/sbin/iptunnel/ \
 
 RUN mkdir -p /opt/sbin/openvpn && install -d -o root -g root -m 755 /opt/sbin/openvpn \
 && echo "dir=opt/sbin/openvpn\nplatform=lucid-tor-proxy\n" > /opt/sbin/openvpn/.keep \
+&& touch /opt/sbin/openvpn/.keep || true \
 && sudo cp /usr/sbin/openvpn/* /opt/sbin/openvpn/ \
 
 RUN sudo cp /var/lib/tor/* /run/lucid/tor/ \
+&& echo "dir=run/lucid/tor\nplatform=lucid-tor-proxy\n" > /run/lucid/tor/.keep \
+&& touch /run/lucid/tor/.keep || true \
 && sudo cp /etc/tor/* /run/lucid/tor/ \
+
 RUN mkdir -p /opt/lucid/tor && install -d -o root -g root -m 755 /opt/lucid/tor \
 && echo "dir=opt/lucid/tor\nplatform=lucid-tor-proxy\n" > /opt/lucid/tor/.keep \
+&& touch /opt/lucid/tor/.keep || true \
 && sudo cp /etc/ssl/* /run/lucid/ssl/\
+
 RUN mkdir -p /run/lucid/onion && install -d -o root -g root -m 755 /run/lucid/onion \
 && echo "dir=run/lucid/onion\nplatform=lucid-tor-proxy\n" > /run/lucid/onion/.keep \
+&& touch /run/lucid/onion/.keep || true \
 && sudo cp data/onion/* /run/lucid/onion/ \
 
 RUN mkdir -p /run/lucid/ssl && install -d -o root -g root -m 755 /run/lucid/ssl \
 && echo "dir=run/lucid/ssl\nplatform=lucid-tor-proxy\n" > /run/lucid/ssl/.keep \
+&& touch /run/lucid/ssl/.keep || true \
 && sudo cp /etc/ssl/* /run/lucid/ssl/ \
 
 RUN mkdir -p /run/lucid/tor && install -d -o root -g root -m 755 /run/lucid/tor \
 && echo "dir=run/lucid/tor\nplatform=lucid-tor-proxy\n" > /run/lucid/tor/.keep \
+&& touch /run/lucid/tor/.keep || true \
 && sudo cp /var/lib/tor/* /run/lucid/tor/ \
 
 RUN sudo cp data/tor/* /run/lucid/tor/ \
 RUN mkdir -p /opt/lib/tor && install -d -o root -g root -m 755 /opt/lib/tor \
 && echo "dir=opt/lib/tor\nplatform=lucid-tor-proxy\n" > /opt/lib/tor/.keep \
+&& touch /opt/lib/tor/.keep || true \
 && sudo cp /lib/tor/* /opt/lib/tor/ \
 
-RUN sudo cp data/tor/* /run/lucid/tor/ \
+RUN sudo cp data/tor/* /opt/lib/tor/ \
+&& echo "dir=opt/lib/tor\nplatform=lucid-tor-proxy\n" > /opt/lib/tor/.keep \
+&& touch /opt/lib/tor/.keep || true \
 && sudo cp /var/lib/tor/* /opt/lib/tor/ \
 
 
@@ -747,13 +782,20 @@ TOR_HEALTH_CHECK_TIMEOUT=10
 EOF 
 
 # ── Lucid operational scripts (/run/lucid/tor/bin) — operate the container ─
-COPY --chmod=755 02-network-security/tor/scripts/* /run/lucid/tor/scripts/
-COPY --chmod=755 02-network-security/tor/entrypoint.sh /run/lucid/tor/entrypoint.sh
-COPY --chmod=755 02-network-security/tor/tor-health.sh /run/lucid/tor/tor-health.sh
-COPY --chmod=755 02-network-security/tor/tor-show-onion.sh /run/lucid/tor/tor-show-onion.sh
-COPY --chmod=755 02-network-security/tor/tor_entrypoint.sh /run/lucid/tor/tor_entrypoint.sh
-COPY --chmod=755 02-network-security/tor/t_entrypoint.sh /run/lucid/tor/t_entrypoint.sh
-COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh /run/lucid/tor/bootstrap-helper.sh
+RUN mkdir -p /run/lucid/tor/scripts \
+&& echo "dir=run/lucid/tor/scripts\nplatform=lucid-tor-proxy\n" > /run/lucid/tor/scripts/.keep \
+&& touch /run/lucid/tor/scripts/.keep || true \
+&& sudo cp 02-network-security/tor/scripts/* /run/lucid/tor/scripts/ \
+
+RUN mkdir -p /run/lucid/tor \
+&& echo "dir=run/lucid/tor\nplatform=lucid-tor-proxy\n" > /run/lucid/tor/.keep \
+&& touch /run/lucid/tor/.keep || true \
+&& sudo cp 02-network-security/tor/entrypoint.sh /run/lucid/tor/entrypoint.sh \
+&& sudo cp 02-network-security/tor/tor-health.sh /run/lucid/tor/tor-health.sh \
+&& sudo cp 02-network-security/tor/tor-show-onion.sh /run/lucid/tor/tor-show-onion.sh \
+&& sudo cp 02-network-security/tor/tor_entrypoint.sh /run/lucid/tor/tor_entrypoint.sh \
+&& sudo cp 02-network-security/tor/t_entrypoint.sh /run/lucid/tor/t_entrypoint.sh \
+&& sudo cp 02-network-security/tor/bootstrap-helper.sh /run/lucid/tor/bootstrap-helper.sh \
 
 
 
