@@ -530,29 +530,138 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
 COPY --from=tor-builder /opt /opt
 RUN sudo chown -R root:root data/* && sudo chmod -R 755 data/*
-RUN echo "$(sudo ls -la ./data)" && exit 0
+RUN echo "$(sudo ls -la ./data)" && exit 0 
 
-COPY --from=tor-builder /data/onion /opt/lucid/onion
+RUN mkdir -p  /run/lucid/tor \
+&& cp /var/lib/tor/* /run/lucid/tor/ \
+&& mkdir -p /opt/bin /opt/bin/tor \
+&& echo "$KEEP_FILE" > /opt/bin/tor/.keep \
+&& cp /usr/bin/tor/* /opt/bin/tor/ \
+/
+&& mkdir -p /opt/bin/obfs4proxy && install -d -o root -g root -m 755 /opt/bin/obfs4proxy \
+&& echo "$KEEP_FILE" > /opt/bin/obfs4proxy/.keep \
+&& cp /usr/bin/obfs4proxy/* /opt/bin/obfs4proxy/ \
+\
+&& mkdir -p /opt/bin/tini && install -d -o root -g root -m 755 /opt/bin/tini \
+&& echo "$KEEP_FILE" > /opt/bin/tini/.keep \
+&& cp /usr/bin/tini/* /opt/bin/tini/ \
+\
+&& mkdir -p /opt/sbin/gosu && install -d -o root -g root -m 755 /opt/sbin/gosu \
+&& echo "$KEEP_FILE" > /opt/sbin/gosu/.keep \
+&& cp /usr/sbin/gosu/* /opt/sbin/gosu/ \
+\
+&& mkdir -p /opt/bin/bash && install -d -o root -g root -m 755 /opt/bin/bash \
+&& echo "$KEEP_FILE" > /opt/bin/bash/.keep \
+&& cp /bin/bash/* /opt/bin/bash/ \
+\
+&& mkdir -p /opt/bin/busybox && install -d -o root -g root -m 755 /opt/bin/busybox \
+&& echo "$KEEP_FILE" > /opt/bin/busybox/.keep \
+&& cp /bin/busybox/* /opt/bin/busybox/ \
+\
+&& mkdir -p /opt/bin/cat && install -d -o root -g root -m 755 /opt/bin/cat \
+&& cp /bin/cat/* /opt/bin/cat/ \
+\
+&& mkdir -p /opt/bin/chmod && install -d -o root -g root -m 755 /opt/bin/chmod \
+&& echo "$KEEP_FILE" > /opt/bin/chmod/.keep \
+&& cp /bin/chmod/* /opt/bin/chmod/ \
+\
+&& mkdir -p /opt/bin/chown && install -d -o root -g root -m 755 /opt/bin/chown \
+&& echo "$KEEP_FILE" > /opt/bin/chown/.keep \
+&& cp /bin/chown/* /opt/bin/chown/ \
+\
+&& mkdir -p /opt/bin/mkdir && install -d -o root -g root -m 755 /opt/bin/mkdir \
+&& echo "$KEEP_FILE" > /opt/bin/mkdir/.keep \
+&& cp /bin/mkdir/* /opt/bin/mkdir/ \
+\
+&& mkdir -p /opt/bin/rm && install -d -o root -g root -m 755 /opt/bin/rm \
+&& echo "$KEEP_FILE" > /opt/bin/rm/.keep \
+&& cp /usr/bin/rm/* /opt/bin/rm/ \
+\
+&& mkdir -p /opt/bin/sleep && install -d -o root -g root -m 755 /opt/bin/sleep \
+&& echo "$KEEP_FILE" > /opt/bin/sleep/.keep \
+&& cp /usr/bin/sleep/* /opt/bin/sleep/ \
+\
+&& mkdir -p /opt/bin/tail && install -d -o root -g root -m 755 /opt/bin/tail \
+&& echo "$KEEP_FILE" > /opt/bin/tail/.keep \
+&& cp /usr/bin/tail/* /opt/bin/tail/ \
+\
+&& mkdir -p /opt/bin/curl && install -d -o root -g root -m 755 /opt/bin/curl \
+&& echo "$KEEP_FILE" > /opt/bin/curl/.keep \
+&& cp /usr/bin/curl/* /opt/bin/curl/ \
+\
+&& mkdir -p /opt/bin/jq && install -d -o root -g root -m 755 /opt/bin/jq \
+&& echo "$KEEP_FILE" > /opt/bin/jq/.keep \
+&& cp /usr/bin/jq/* /opt/bin/jq/ \
+\
+&& mkdir -p /opt/bin/nc && install -d -o root -g root -m 755 /opt/bin/nc \
+&& echo "$KEEP_FILE" > /opt/bin/nc/.keep \
+&& cp /usr/bin/nc/* /opt/bin/nc/ \
+\
+&& mkdir -p /opt/bin/nc.openbsd && install -d -o root -g root -m 755 /opt/bin/nc.openbsd \
+&& echo "$KEEP_FILE" > /opt/bin/nc.openbsd/.keep \
+&& cp /usr/bin/nc.openbsd/* /opt/bin/nc.openbsd/ \
+\
+&& mkdir -p /opt/bin/timeout && install -d -o root -g root -m 755 /opt/bin/timeout \
+&& echo "$KEEP_FILE" > /opt/bin/timeout/.keep \
+&& cp /usr/bin/timeout/* /opt/bin/timeout/ \
+\
+&& mkdir -p /opt/bin/xxd && install -d -o root -g root -m 755 /opt/bin/xxd \
+&& echo "$KEEP_FILE" > /opt/bin/xxd/.keep \
+&& cp /usr/bin/xxd/* /opt/bin/xxd/ \
+\
+&& mkdir -p /opt/sbin/ipp-usb && install -d -o root -g root -m 755 /opt/sbin/ipp-usb \
+&& echo "$KEEP_FILE" > /opt/sbin/ipp-usb/.keep \
+&& cp /usr/sbin/ipp-usb/* /opt/sbin/ipp-usb/ \
+\
+&& mkdir -p /opt/sbin/iptunnel && install -d -o root -g root -m 755 /opt/sbin/iptunnel \
+&& echo "$KEEP_FILE" > /opt/sbin/iptunnel/.keep \
+&& cp /usr/sbin/iptunnel/* /opt/sbin/iptunnel/ \
+\
+&& mkdir -p /opt/sbin/openvpn && install -d -o root -g root -m 755 /opt/sbin/openvpn \
+&& echo "$KEEP_FILE" > /opt/sbin/openvpn/.keep \
+&& cp /usr/sbin/openvpn/* /opt/sbin/openvpn/ \
+\
+&& cp /var/lib/tor/* /run/lucid/tor/ \
+\
+&& cp /etc/tor/* /run/lucid/tor/ \
+\
+&& mkdir -p /opt/lucid/tor && install -d -o root -g root -m 755 /opt/lucid/tor \
+&& echo "$KEEP_FILE" > /opt/lucid/tor/.keep \
+&& cp /etc/ssl/* /run/lucid/ssl/
+\
+&& mkdir -p /run/lucid/onion && install -d -o root -g root -m 755 /run/lucid/onion \
+&& echo "$KEEP_FILE" > /run/lucid/onion/.keep \
+&& cp data/onion/* /run/lucid/onion/ \
+\
+&& mkdir -p /run/lucid/ssl && install -d -o root -g root -m 755 /run/lucid/ssl \
+&& echo "$KEEP_FILE" > /run/lucid/ssl/.keep \
+&& cp /etc/ssl/* /run/lucid/ssl/ \
+\
+&& mkdir -p /run/lucid/tor && install -d -o root -g root -m 755 /run/lucid/tor \
+&& echo "$KEEP_FILE" > /run/lucid/tor/.keep \
+&& cp /var/lib/tor/* /run/lucid/tor/ \
+\
+
 # ── Core binaries (/opt/bin, /opt/sbin) — build-time installed tools ──────
 COPY --from=tor-builder /usr/bin/tor        /opt/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy /opt/bin/obfs4proxy
 COPY --from=tor-builder /usr/bin/tini       /opt/bin/tini
 COPY --from=tor-builder /usr/sbin/gosu      /opt/sbin/gosu
-COPY --from=tor-builder /bin/bash           /bin/bash
-COPY --from=tor-builder /bin/busybox        /bin/busybox
-COPY --from=tor-builder /bin/cat            /bin/cat
-COPY --from=tor-builder /bin/chmod          /bin/chmod
-COPY --from=tor-builder /bin/chown          /bin/chown
-COPY --from=tor-builder /bin/mkdir          /bin/mkdir
-COPY --from=tor-builder /bin/rm             /bin/rm
-COPY --from=tor-builder /bin/sleep          /bin/sleep
-COPY --from=tor-builder /bin/tail           /bin/tail
+COPY --from=tor-builder /usr/bin/bash           /opt/bin/bash
+COPY --from=tor-builder /usr/bin/busybox        /opt/bin/busybox
+COPY --from=tor-builder /usr/bin/cat            /opt/bin/cat
+COPY --from=tor-builder /usr/bin/chmod          /opt/bin/chmod
+COPY --from=tor-builder /usr/bin/chown          /opt/bin/chown
+COPY --from=tor-builder /usr/bin/mkdir          /opt/bin/mkdir
+COPY --from=tor-builder /usr/bin/rm             /opt/bin/rm
+COPY --from=tor-builder /usr/bin/sleep          /opt/bin/sleep
+COPY --from=tor-builder /usr/bin/tail           /opt/bin/tail
 COPY --from=tor-builder /usr/bin/curl       /opt/bin/curl
 COPY --from=tor-builder /usr/bin/jq         /opt/bin/jq
-COPY --from=tor-builder /bin/nc             /opt/bin/nc
+COPY --from=tor-builder /usr/bin/nc/*             /opt/bin/nc/
+COPY --from=tor-builder /usr/bin/nc.openbsd/*             /opt/bin/nc.openbsd/
 COPY --from=tor-builder /usr/bin/timeout    /opt/bin/timeout
 COPY --from=tor-builder /usr/bin/xxd        /opt/bin/xxd
-COPY --from=tor-builder /var/lib/tor/  /run/lucid/tor
 
 RUN mkdir -p /opt/lucid/tor && install -d -o root -g root -m 755 /opt/lucid/tor \
 && echo "$KEEP_FILE" > /opt/lucid/tor/.keep \
