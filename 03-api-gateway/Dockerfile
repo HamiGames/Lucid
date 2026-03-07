@@ -41,6 +41,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         pkg-config \
         curl \
         ca-certificates \
+        tini \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -108,12 +109,15 @@ RUN echo "=== Verifying marker files ===" && \
 COPY 03-api-gateway/api/ ./api/
 COPY 03-api-gateway/gateway/ ./gateway/
 COPY 03-api-gateway/config/ ./config/
+# sessions/ is a project-root dependency imported by session_service.py via sys.path
+COPY sessions/ ./sessions/
 
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_CONFIG_$(date +%s)" > ./config/.lucid-marker && \
-    find ./api ./gateway ./config -name ".lucid-marker" -exec cat {} \;
+    echo "LUCID_API_GATEWAY_APP_SESSIONS_$(date +%s)" > ./sessions/.lucid-marker && \
+    find ./api ./gateway ./config ./sessions -name ".lucid-marker" -exec cat {} \;
 
 # Verify new modules are included in builder stage - file existence & imports
 RUN echo "=== Verifying new GUI and TRON support modules ===" && \
@@ -129,7 +133,7 @@ RUN echo "=== Verifying new GUI and TRON support modules ===" && \
     test -f ./api/app/services/tron_support_service.py && echo "✅ tron_support_service.py found" && \
     test -f ./api/app/services/__init__.py && echo "✅ services/__init__.py found" && \
     echo "All new modules verified in builder stage" && \
-    python3 -c "import sys; sys.path.insert(0, './api'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; print('✅ All module imports successful in builder')"
+    python3 -c "import sys; sys.path.insert(0, './api'); sys.path.insert(0, './sessions'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; from pipeline import pipeline_manager; from core import session_generator; print('✅ All module imports successful in builder')"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -172,14 +176,16 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
 COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/bin/tini          /opt/bin/tini
 
 # Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
+COPY --chown=65532:65532 --from=builder /build/sessions /app/sessions
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
-RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
+RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config', '/app/sessions']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
 EXPOSE 8080
 
@@ -188,7 +194,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 USER 65532:65532
 
-# Clear base ENTRYPOINT so CMD works as expected
-ENTRYPOINT []
+# tini as PID 1: proper signal handling & zombie reaping (aligned with tunnel-tools)
+ENTRYPOINT ["/opt/bin/tini", "--"]
 
 CMD ["python3", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

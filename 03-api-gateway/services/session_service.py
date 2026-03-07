@@ -1,285 +1,423 @@
-"""
-Lucid API Gateway - Session Service
-Handles session management operations.
+# Session Service Layer
+# Business logic integration between API routes and session pipeline
 
-File: 03-api-gateway/services/session_service.py
-Lines: ~280
-Purpose: Session management service
-Dependencies: aiohttp, models
-"""
-
-import aiohttp
 import logging
-from typing import Dict, Any, Optional, List
+import asyncio
+from typing import Optional, List, Dict, Any
 from datetime import datetime
-from enum import Enum
 
-from ..models.session import Session, SessionCreate, SessionStatus
-from ..config import settings
-from ..database.connection import get_database
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo.errors import DuplicateKeyError
+
+from api.app.schemas.sessions import (  
+    SessionCreate, SessionResponse, SessionDetail, SessionList, 
+    SessionState, SessionStateUpdate
+)
+from api.app.db.models.session import RDPSession  
+from app.config import Settings, get_settings
+
+# Import session pipeline components
+import sys
+import os
+# FIX: was '../../../../sessions' which resolves to /sessions (filesystem root) in the container.
+# __file__ = /app/api/app/services/session_service.py → 3 levels up = /app → /app/sessions
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../../sessions'))
+
+from sessions.pipeline.session_pipeline_manager import SessionPipelineManager, SessionState as PipelineSessionState 
+from sessions.core.session_generator import SessionIdGenerator  
 
 logger = logging.getLogger(__name__)
 
 
-class SessionServiceError(Exception):
-    """Base exception for session service errors."""
-    pass
-
-
-class SessionNotFoundError(SessionServiceError):
-    """Session not found."""
-    pass
-
-
 class SessionService:
     """
-    Session management service.
+    Business logic layer for session management.
     
-    Handles:
-    - Session creation and lifecycle
-    - Session queries
-    - Session status updates
+    Integrates with:
+    - SessionPipelineManager for lifecycle management
+    - SessionIdGenerator for unique ID creation
+    - MongoDB for persistence
     """
     
     def __init__(self):
-        self.db = None
-        self.session_management_url = settings.SESSION_SERVICE_URL
-        self.http_session: Optional[aiohttp.ClientSession] = None
+        self.settings = get_settings()
+        self.mongo_client: Optional[AsyncIOMotorClient] = None
+        self.db: Optional[AsyncIOMotorDatabase] = None
+        self.pipeline_manager: Optional[SessionPipelineManager] = None
         
-    async def initialize(self):
-        """Initialize database and HTTP connections."""
-        if not self.db:
-            self.db = await get_database()
-            
-        if not self.http_session:
-            timeout = aiohttp.ClientTimeout(total=30)
-            connector = aiohttp.TCPConnector(limit=100)
-            self.http_session = aiohttp.ClientSession(
-                timeout=timeout,
-                connector=connector
-            )
-            
-    async def close(self):
-        """Close HTTP session."""
-        if self.http_session:
-            await self.http_session.close()
-            self.http_session = None
-            
+    async def _get_mongo_client(self) -> AsyncIOMotorClient:
+        """Get MongoDB client connection"""
+        if not self.mongo_client:
+            # FIX: was self.settings.MONGO_URL which does not exist on Settings.
+            # config.py defines MONGODB_URL / MONGODB_URI and exposes the
+            # mongodb_connection_string @property that handles both correctly.
+            self.mongo_client = AsyncIOMotorClient(self.settings.mongodb_connection_string)
+            self.db = self.mongo_client.get_default_database()
+        return self.mongo_client
+    
+    async def _get_pipeline_manager(self) -> SessionPipelineManager:
+        """Get session pipeline manager instance"""
+        if not self.pipeline_manager:
+            self.pipeline_manager = SessionPipelineManager()
+        return self.pipeline_manager
+    
+    def _map_pipeline_state(self, pipeline_state: str) -> SessionState:
+        """Map pipeline session state to API session state"""
+        mapping = {
+            PipelineSessionState.INITIALIZING.value: SessionState.INITIALIZING,
+            PipelineSessionState.RECORDING.value: SessionState.RECORDING,
+            PipelineSessionState.FINALIZING.value: SessionState.FINALIZING,
+            PipelineSessionState.ANCHORING.value: SessionState.ANCHORING,
+            PipelineSessionState.COMPLETED.value: SessionState.COMPLETED,
+            PipelineSessionState.FAILED.value: SessionState.FAILED,
+        }
+        return mapping.get(pipeline_state, SessionState.FAILED)
+    
     async def create_session(
         self, 
         user_id: str, 
-        session_create: SessionCreate
-    ) -> Session:
+        owner_address: str, 
+        node_id: str, 
+        policy_hash: Optional[str] = None
+    ) -> SessionResponse:
         """
-        Create new session.
+        Create a new session with unique ID generation and pipeline initialization.
         
         Args:
             user_id: User identifier
-            session_create: Session creation data
+            owner_address: TRON wallet address
+            node_id: Node identifier for hosting
+            policy_hash: Optional trust policy hash
             
         Returns:
-            Created Session object
+            SessionResponse with session details
         """
-        await self.initialize()
-        
         try:
+            # Generate unique session ID
+            session_id = SessionIdGenerator.generate()
+            
+            # Get MongoDB connection
+            await self._get_mongo_client()
+            pipeline_manager = await self._get_pipeline_manager()
+            
+            # Initialize session in pipeline
+            session_metadata = await pipeline_manager.initialize_session(
+                session_id=session_id,
+                owner_address=owner_address,
+                node_id=node_id
+            )
+            
             # Create session document
-            session_data = session_create.dict()
-            session_data["user_id"] = user_id
-            session_data["status"] = SessionStatus.INITIALIZING.value
-            session_data["created_at"] = datetime.utcnow()
-            session_data["updated_at"] = datetime.utcnow()
-            
-            # Insert into database
-            result = await self.db.sessions.insert_one(session_data)
-            session_data["_id"] = str(result.inserted_id)
-            
-            # Notify Session Management cluster
-            await self._notify_session_management(
-                "create",
-                session_data
+            session_doc = RDPSession(
+                id=session_id,
+                user_id=user_id,
+                owner_address=owner_address,
+                node_id=node_id,
+                host="localhost",  # Default host, will be updated by RDP service
+                port=3389,  # Default RDP port
+                state=SessionState.INITIALIZING,
+                policy_hash=policy_hash,
+                started_at=datetime.utcnow()
             )
             
-            logger.info(f"Created session {session_data['session_id']} for user {user_id}")
-            return Session(**session_data)
+            # Insert into MongoDB
+            result = await self.db.sessions.insert_one(session_doc.dict(by_alias=True))
             
-        except Exception as e:
-            logger.error(f"Error creating session: {e}")
-            raise SessionServiceError(f"Failed to create session: {e}")
+            logger.info(f"Session created: {session_id} for user {user_id}")
             
-    async def get_session(self, session_id: str) -> Optional[Session]:
-        """
-        Get session by ID.
-        
-        Args:
-            session_id: Session identifier
-            
-        Returns:
-            Session object or None if not found
-        """
-        await self.initialize()
-        
-        try:
-            session_data = await self.db.sessions.find_one(
-                {"session_id": session_id}
+            return SessionResponse(
+                session_id=session_id,
+                user_id=user_id,
+                owner_address=owner_address,
+                node_id=node_id,
+                state=SessionState.INITIALIZING,
+                created_at=session_doc.started_at,
+                policy_hash=policy_hash
             )
-            if session_data:
-                return Session(**session_data)
-            return None
             
+        except DuplicateKeyError:
+            logger.error(f"Session ID collision: {session_id}")
+            raise ValueError("Session ID collision detected")
         except Exception as e:
-            logger.error(f"Error getting session {session_id}: {e}")
-            raise SessionServiceError(f"Failed to get session: {e}")
-            
-    async def update_session_status(
+            logger.error(f"Failed to create session: {e}")
+            raise
+    
+    async def list_sessions(
         self, 
-        session_id: str, 
-        status: SessionStatus
-    ) -> Optional[Session]:
+        user_id: str, 
+        page: int = 1, 
+        page_size: int = 20,
+        state: Optional[SessionState] = None
+    ) -> SessionList:
         """
-        Update session status.
-        
-        Args:
-            session_id: Session identifier
-            status: New session status
-            
-        Returns:
-            Updated Session object or None if not found
-        """
-        await self.initialize()
-        
-        try:
-            result = await self.db.sessions.update_one(
-                {"session_id": session_id},
-                {
-                    "$set": {
-                        "status": status.value,
-                        "updated_at": datetime.utcnow()
-                    }
-                }
-            )
-            
-            if result.modified_count > 0:
-                logger.info(f"Updated session {session_id} status to {status.value}")
-                return await self.get_session(session_id)
-            else:
-                logger.warning(f"Session {session_id} not found for status update")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error updating session status: {e}")
-            raise SessionServiceError(f"Failed to update session status: {e}")
-            
-    async def list_user_sessions(
-        self, 
-        user_id: str,
-        skip: int = 0,
-        limit: int = 100
-    ) -> List[Session]:
-        """
-        List sessions for a user.
+        List sessions for a user with pagination and optional state filtering.
         
         Args:
             user_id: User identifier
-            skip: Number of sessions to skip
-            limit: Maximum number of sessions to return
+            page: Page number (1-based)
+            page_size: Items per page
+            state: Optional state filter
             
         Returns:
-            List of Session objects
+            SessionList with paginated results
         """
-        await self.initialize()
-        
         try:
-            cursor = self.db.sessions.find(
-                {"user_id": user_id}
-            ).sort("created_at", -1).skip(skip).limit(limit)
+            await self._get_mongo_client()
             
+            # Build query
+            query = {"user_id": user_id}
+            if state:
+                query["state"] = state.value
+            
+            # Calculate skip
+            skip = (page - 1) * page_size
+            
+            # Get total count
+            total = await self.db.sessions.count_documents(query)
+            
+            # Get paginated results
+            cursor = self.db.sessions.find(query).sort("started_at", -1).skip(skip).limit(page_size)
             sessions = []
-            async for session_data in cursor:
-                sessions.append(Session(**session_data))
-                
-            return sessions
+            
+            async for doc in cursor:
+                session = SessionResponse(
+                    session_id=doc["_id"],
+                    user_id=doc["user_id"],
+                    owner_address=doc["owner_address"],
+                    node_id=doc["node_id"],
+                    state=SessionState(doc["state"]),
+                    created_at=doc["started_at"],
+                    started_at=doc.get("recording_started_at"),
+                    ended_at=doc.get("ended_at"),
+                    policy_hash=doc.get("policy_hash")
+                )
+                sessions.append(session)
+            
+            return SessionList(
+                items=sessions,
+                total=total,
+                page=page,
+                page_size=page_size,
+                has_next=skip + page_size < total
+            )
             
         except Exception as e:
-            logger.error(f"Error listing sessions for user {user_id}: {e}")
-            raise SessionServiceError(f"Failed to list sessions: {e}")
-            
-    async def delete_session(self, session_id: str) -> bool:
+            logger.error(f"Failed to list sessions: {e}")
+            raise
+    
+    async def get_session_detail(self, session_id: str) -> Optional[SessionDetail]:
         """
-        Delete session.
+        Get detailed session information including blockchain metadata.
         
         Args:
             session_id: Session identifier
             
         Returns:
-            True if deleted successfully
+            SessionDetail or None if not found
         """
-        await self.initialize()
-        
         try:
-            # Update status to terminated
-            result = await self.db.sessions.update_one(
-                {"session_id": session_id},
+            await self._get_mongo_client()
+            
+            doc = await self.db.sessions.find_one({"_id": session_id})
+            if not doc:
+                return None
+            
+            return SessionDetail(
+                session_id=doc["_id"],
+                user_id=doc["user_id"],
+                owner_address=doc["owner_address"],
+                node_id=doc["node_id"],
+                state=SessionState(doc["state"]),
+                created_at=doc["started_at"],
+                started_at=doc.get("recording_started_at"),
+                ended_at=doc.get("ended_at"),
+                policy_hash=doc.get("policy_hash"),
+                manifest_hash=doc.get("manifest_hash"),
+                merkle_root=doc.get("merkle_root"),
+                anchor_txid=doc.get("anchor_txid"),
+                total_chunks=doc.get("total_chunks"),
+                total_size=doc.get("total_size")
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to get session detail: {e}")
+            raise
+    
+    async def start_session_recording(self, session_id: str) -> SessionResponse:
+        """
+        Start session recording.
+        
+        Args:
+            session_id: Session identifier
+            
+        Returns:
+            SessionResponse with updated state
+        """
+        try:
+            await self._get_mongo_client()
+            
+            # Check current session state
+            doc = await self.db.sessions.find_one({"_id": session_id})
+            if not doc:
+                raise ValueError(f"Session {session_id} not found")
+            
+            current_state = SessionState(doc["state"])
+            if current_state != SessionState.INITIALIZING:
+                raise ValueError(f"Cannot start session in state: {current_state}")
+            
+            # Update session state
+            now = datetime.utcnow()
+            await self.db.sessions.update_one(
+                {"_id": session_id},
                 {
                     "$set": {
-                        "status": SessionStatus.TERMINATED.value,
-                        "terminated_at": datetime.utcnow()
+                        "state": SessionState.RECORDING.value,
+                        "recording_started_at": now
                     }
                 }
             )
             
-            if result.modified_count > 0:
-                # Notify Session Management cluster
-                await self._notify_session_management(
-                    "terminate",
-                    {"session_id": session_id}
-                )
-                
-                logger.info(f"Terminated session {session_id}")
-                return True
-            else:
-                logger.warning(f"Session {session_id} not found for termination")
-                return False
-                
-        except Exception as e:
-            logger.error(f"Error terminating session {session_id}: {e}")
-            raise SessionServiceError(f"Failed to terminate session: {e}")
+            # Get updated session
+            updated_doc = await self.db.sessions.find_one({"_id": session_id})
             
-    async def _notify_session_management(
-        self, 
-        action: str, 
-        data: Dict[str, Any]
-    ) -> bool:
+            return SessionResponse(
+                session_id=updated_doc["_id"],
+                user_id=updated_doc["user_id"],
+                owner_address=updated_doc["owner_address"],
+                node_id=updated_doc["node_id"],
+                state=SessionState(updated_doc["state"]),
+                created_at=updated_doc["started_at"],
+                started_at=updated_doc.get("recording_started_at"),
+                ended_at=updated_doc.get("ended_at"),
+                policy_hash=updated_doc.get("policy_hash")
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to start session recording: {e}")
+            raise
+    
+    async def finalize_session(self, session_id: str) -> SessionDetail:
         """
-        Notify Session Management cluster of session events.
+        Finalize session and trigger blockchain anchoring.
         
         Args:
-            action: Action type (create, terminate, etc.)
-            data: Session data
+            session_id: Session identifier
             
         Returns:
-            True if notification successful
+            SessionDetail with anchor metadata
         """
-        await self.initialize()
-        
         try:
-            async with self.http_session.post(
-                f"{self.session_management_url}/sessions/{action}",
-                json=data
-            ) as response:
-                if response.status == 200:
-                    return True
-                else:
-                    logger.warning(
-                        f"Session management notification failed: {response.status}"
-                    )
-                    return False
-                    
-        except aiohttp.ClientError as e:
-            logger.error(f"Session management notification error: {e}")
-            return False
-
-
-# Global session service instance
-session_service = SessionService()
-
+            await self._get_mongo_client()
+            pipeline_manager = await self._get_pipeline_manager()
+            
+            # Check current session state
+            doc = await self.db.sessions.find_one({"_id": session_id})
+            if not doc:
+                raise ValueError(f"Session {session_id} not found")
+            
+            current_state = SessionState(doc["state"])
+            if current_state != SessionState.RECORDING:
+                raise ValueError(f"Cannot finalize session in state: {current_state}")
+            
+            # Trigger pipeline finalization (this will handle anchoring)
+            success = await pipeline_manager.finalize_session(session_id)
+            
+            if not success:
+                raise ValueError("Session finalization failed")
+            
+            # Get updated session with anchor metadata
+            updated_doc = await self.db.sessions.find_one({"_id": session_id})
+            
+            return SessionDetail(
+                session_id=updated_doc["_id"],
+                user_id=updated_doc["user_id"],
+                owner_address=updated_doc["owner_address"],
+                node_id=updated_doc["node_id"],
+                state=SessionState(updated_doc["state"]),
+                created_at=updated_doc["started_at"],
+                started_at=updated_doc.get("recording_started_at"),
+                ended_at=updated_doc.get("ended_at"),
+                policy_hash=updated_doc.get("policy_hash"),
+                manifest_hash=updated_doc.get("manifest_hash"),
+                merkle_root=updated_doc.get("merkle_root"),
+                anchor_txid=updated_doc.get("anchor_txid"),
+                total_chunks=updated_doc.get("total_chunks"),
+                total_size=updated_doc.get("total_size")
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to finalize session: {e}")
+            raise
+    
+    async def cancel_session(self, session_id: str) -> bool:
+        """
+        Cancel session before recording starts.
+        
+        Args:
+            session_id: Session identifier
+            
+        Returns:
+            True if cancelled successfully
+        """
+        try:
+            await self._get_mongo_client()
+            
+            # Check current session state
+            doc = await self.db.sessions.find_one({"_id": session_id})
+            if not doc:
+                return False
+            
+            current_state = SessionState(doc["state"])
+            if current_state != SessionState.INITIALIZING:
+                return False  # Cannot cancel in this state
+            
+            # Update session state to failed
+            await self.db.sessions.update_one(
+                {"_id": session_id},
+                {
+                    "$set": {
+                        "state": SessionState.FAILED.value,
+                        "ended_at": datetime.utcnow()
+                    }
+                }
+            )
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to cancel session: {e}")
+            raise
+    
+    async def get_session_state(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get real-time session state information.
+        
+        Args:
+            session_id: Session identifier
+            
+        Returns:
+            State information dict or None if not found
+        """
+        try:
+            await self._get_mongo_client()
+            
+            doc = await self.db.sessions.find_one({"_id": session_id})
+            if not doc:
+                return None
+            
+            return {
+                "session_id": session_id,
+                "state": doc["state"],
+                "created_at": doc["started_at"].isoformat(),
+                "recording_started_at": doc.get("recording_started_at").isoformat() if doc.get("recording_started_at") else None,
+                "ended_at": doc.get("ended_at").isoformat() if doc.get("ended_at") else None,
+                "manifest_hash": doc.get("manifest_hash"),
+                "merkle_root": doc.get("merkle_root"),
+                "anchor_txid": doc.get("anchor_txid"),
+                "total_chunks": doc.get("total_chunks"),
+                "total_size": doc.get("total_size")
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get session state: {e}")
+            raise
