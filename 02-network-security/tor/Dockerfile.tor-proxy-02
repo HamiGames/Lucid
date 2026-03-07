@@ -568,44 +568,39 @@ COPY --from=tor-builder /var/lib/tor/cached-descriptors /opt/lucid/tor/cached-de
 COPY --from=tor-builder /var/lib/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
 COPY --from=tor-builder /var/lib/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
 COPY --from=tor-builder /var/lib/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
-COPY --from=tor-builder /run/lucid/onion /opt/lucid/tor/onion
 
-ADD data/tor/state /opt/lucid/tor/data/state
-ADD data/tor/cached-certs /opt/lucid/tor/cached-certs
-ADD data/tor/cached-consensus /opt/lucid/tor/cached-consensus
-ADD data/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
-ADD data/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
-ADD data/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
-ADD data/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
-ADD data/onion /opt/lucid/tor/onion
-ADD data/tor/torrc /run/lucid/tor/torrc
-ADD data/tor/cached-certs /run/lucid/tor/cached-certs
-ADD data/tor/cached-consensus /run/lucid/tor/cached-consensus
-ADD data/tor/cached-descriptors /run/lucid/tor/cached-descriptors
-ADD data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new
-ADD data/tor/cached-microdesc-consensus /run/lucid/tor/cached-microdesc-consensus
-ADD data/tor/cached-microdescs /run/lucid/tor/cached-microdescs
-ADD data/onion /run/lucid/onion
-ADD /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
-ADD /run/lucid/tor/tor.lock /opt/lucid/tor/data/tor.lock
-ADD /run/lucid/tor/state /opt/lucid/tor/data/state
-ADD data/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid
-ADD data/tor/keys /opt/lucid/tor/keys
+COPY data/tor/state /opt/lucid/tor/data/state
+COPY data/tor/cached-certs /opt/lucid/tor/cached-certs
+COPY data/tor/cached-consensus /opt/lucid/tor/cached-consensus
+COPY data/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
+COPY data/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
+COPY data/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
+COPY data/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
+COPY data/onion /opt/lucid/tor/onion
+COPY data/tor/torrc /run/lucid/tor/torrc
+COPY data/tor/cached-certs /run/lucid/tor/cached-certs
+COPY data/tor/cached-consensus /run/lucid/tor/cached-consensus
+COPY data/tor/cached-descriptors /run/lucid/tor/cached-descriptors
+COPY data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new
+COPY data/tor/cached-microdesc-consensus /run/lucid/tor/cached-microdesc-consensus
+COPY data/tor/cached-microdescs /run/lucid/tor/cached-microdescs
+COPY data/onion /run/lucid/onion
+COPY /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
+COPY /run/lucid/tor/tor.lock /opt/lucid/tor/data/tor.lock
+COPY /run/lucid/tor/state /opt/lucid/tor/data/state
+COPY data/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid
+COPY data/tor/keys /opt/lucid/tor/keys
 
 # ── Runtime config (/run/lucid) — operational at container start ──────────
-ADD /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
-ADD /etc/passwd /run/lucid/passwd
-ADD /etc/group /run/lucid/group
-ADD /etc/host.conf /run/lucid/host.conf
-ADD /etc/hostname /run/lucid/hostname
-ADD /etc/hostname /run/lucid/tor/hostname
-ADD /etc/passwd /run/lucid/passwd
-ADD /etc/group /run/lucid/group
-ADD /etc/host.conf /run/lucid/host.conf
-ADD /etc/hostname /run/lucid/hostname
-ADD /etc/resolv.conf /run/lucid/resolv.conf
-ADD data/tunnel /run/lucid/tunnel
-ADD data/tunnel /opt/lucid/tunnel
+COPY /etc/ssl/certs/ca-certificates.crt /run/lucid/ssl/certs/ca-certificates.crt
+COPY /etc/passwd /run/lucid/passwd
+COPY /etc/group /run/lucid/group
+COPY /etc/host.conf /run/lucid/host.conf
+COPY /etc/hostname /run/lucid/hostname
+COPY /etc/hostname /run/lucid/tor/hostname
+COPY /etc/resolv.conf /run/lucid/resolv.conf
+COPY data/tunnel /run/lucid/tunnel
+COPY data/tunnel /opt/lucid/tunnel
 
 # ── Copy torrc from build context (not from builder) ──────────────────────
 COPY --chmod=644 02-network-security/tor/torrc /run/lucid/tor/torrc
