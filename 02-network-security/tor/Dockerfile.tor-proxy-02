@@ -797,7 +797,7 @@ RUN mkdir -p /run/lucid/tor \
 && sudo cp 02-network-security/tor/t_entrypoint.sh /run/lucid/tor/t_entrypoint.sh \
 && sudo cp 02-network-security/tor/bootstrap-helper.sh /run/lucid/tor/bootstrap-helper.sh \
 
-
+WORKDIR /app
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/run/lucid/tor/tor-health.sh"]
@@ -805,5 +805,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
 EXPOSE 9050 9051 8888
 
 USER 107
-WORKDIR /app/tor
-ENTRYPOINT ["/opt/bin/tini", "--"]
+
+
