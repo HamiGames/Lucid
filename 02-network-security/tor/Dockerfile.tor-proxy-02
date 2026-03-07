@@ -571,7 +571,6 @@ COPY --from=tor-builder /var/lib/tor/cached-microdescs /opt/lucid/tor/cached-mic
 COPY --from=tor-builder /run/lucid/onion /opt/lucid/tor/onion
 COPY --from=tor-builder /run/lucid/tor/control_auth_cookie /opt/lucid/tor/control_auth_cookie
 
-COPY --from=tor-builder /var/lib/tor/state /opt/lucid/tor/data/state
 ADD data/tor/state /opt/lucid/tor/data/state
 ADD data/tor/cached-certs /opt/lucid/tor/cached-certs
 ADD data/tor/cached-consensus /opt/lucid/tor/cached-consensus
