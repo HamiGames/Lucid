@@ -13,17 +13,17 @@ services:
     ports:
       - "${TOR_PROXY_SOCKS_PORT:-9050}:${TOR_PROXY_SOCKS_PORT:-9050}"
       - "${TOR_PROXY_CONTROL_PORT:-9051}:${TOR_PROXY_CONTROL_PORT:-9051}"
-      - "${TOR_PROXY_HTTP_PORT:-8888}:${TOR_PROXY_HTTP_PORT:-8888}"
-    entrypoint: ["/opt/bin/tini", "--"]
-    command: ["/opt/lucid/tor/bin/entrypoint.sh"]
+      - "${TOR_PROXY_HTTP_PORT:-8118}:${TOR_PROXY_HTTP_PORT:-8118}"
+    entrypoint: ["/opt/lucid/tor/bin/tini", "--"]
+    command: ["/usr/local/bin/tor_entrypoint.sh"]
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:rw
-      - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
-      - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
-      - tor-config:/etc/tor
+      - /mnt/myssd/Lucid/Lucid/data/tor:/run/lucid/tor:rw
+      - /mnt/myssd/Lucid/Lucid/logs/tor:/run/lucid/tor/log:rw
+      - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin:ro
+      - tor-config:/opt/lucid/tor
       - onion-state:/run/lucid/onion
     healthcheck:
-      test: ["CMD", "/bin/bash", "/opt/local/bin/tor-health"]
+      test: ["CMD", "/usr/local/bin/tor-health"]
       interval: 30s
       timeout: 10s
       retries: 10

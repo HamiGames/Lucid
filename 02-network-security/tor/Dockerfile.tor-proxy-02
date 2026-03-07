@@ -204,18 +204,18 @@ COPY --from=tor-builder --chown=root:root /opt/lucid /opt/lucid
 
 # Lucid scripts and tor configuration (torrc baked into image)
 # Build context: project root, so we prefix with 02-network-security/tor/
-COPY --chmod=644 02-network-security/tor/torrc                                  /etc/tor/torrc
-COPY --chmod=755 02-network-security/tor/entrypoint.sh                          /usr/local/bin/entrypoint.sh
-COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh                    /usr/local/bin/bootstrap-helper.sh
-COPY --chmod=755 02-network-security/tor/tor_entrypoint.sh                      /usr/local/bin/tor_entrypoint.sh
-COPY --chmod=755 02-network-security/tor/t_entrypoint.sh                        /usr/local/bin/t_entrypoint.sh
-COPY --chmod=755 02-network-security/tor/tor-health.sh                          /usr/local/bin/tor-health.sh
-COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                      /usr/local/bin/tor-show-onion
-COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh      /usr/local/bin/create-ephemeral-onion.sh
+COPY --chmod=644 02-network-security/tor/torrc                                  /run/lucid/tor/torrc
+COPY --chmod=755 02-network-security/tor/entrypoint.sh                          /run/lucid/tor/bin/entrypoint.sh
+COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh                    /run/lucid/tor/bin/bootstrap-helper.sh
+COPY --chmod=755 02-network-security/tor/tor_entrypoint.sh                      /run/lucid/tor/bin/tor_entrypoint.sh
+COPY --chmod=755 02-network-security/tor/t_entrypoint.sh                        /run/lucid/tor/bin/t_entrypoint.sh
+COPY --chmod=755 02-network-security/tor/tor-health.sh                          /run/lucid/tor/bin/tor-health.sh
+COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                      /run/lucid/tor/bin/tor-show-onion.sh
+COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh      /run/lucid/tor/bin/create-ephemeral-onion.sh
 
 # Healthcheck uses /bin/bash copied above
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
-  CMD ["/bin/bash", "/usr/local/bin/tor-health"]
+  CMD ["/bin/bash", "/run/lucid/tor/bin/tor-health.sh"]
 
 # Expose ports (SOCKS, Control, optional HTTP)
 EXPOSE 9050 9051 8888
