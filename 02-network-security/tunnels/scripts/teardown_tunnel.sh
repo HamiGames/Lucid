@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02-network-security/tunnels/scripts/teardown_tunnel.sh
 # Remove ephemeral onion tunnel
-# NOTE: This script is designed to run from the host (uses docker exec)
+# NOTE: This script runs inside lucid-tunnel-tools (host-side of the interop).
+#       tor-proxy is distroless — no shell, no xxd, no nc inside that container.
+#       Cookie is read from the shared volume mount; nc connects over Docker network.
 
 set -euo pipefail
 
@@ -31,15 +33,21 @@ if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then
   die "Container $CONTAINER not running"
 fi
 
-# Read cookie hex for authentication
-if ! docker exec "$CONTAINER" test -f "$COOKIE_FILE"; then
-  die "Tor control cookie not found at $COOKIE_FILE"
+# Ensure cookie file is accessible on the shared volume mount.
+# (docker exec is not used — tor-proxy is distroless and has no shell.)
+if [[ ! -f "$COOKIE_FILE" ]]; then
+  die "Tor control cookie not found at $COOKIE_FILE (is the volume mounted?)"
 fi
 
-COOKIE_HEX=$(docker exec "$CONTAINER" xxd -p -c 256 "$COOKIE_FILE" | tr -d '\n')
+# Hex-encode cookie via xxd running locally in lucid-tunnel-tools
+COOKIE_HEX=$(xxd -p -c 256 "$COOKIE_FILE" | tr -d '\n')
 
 CMD="DEL_ONION $SERVICE_ID"
-REPLY=$(docker exec "$CONTAINER" sh -c "printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' '$COOKIE_HEX' '$CMD' | nc 127.0.0.1 $CONTROL_PORT")
+
+# Send authenticated command over Docker network directly to tor-proxy control port.
+# nc runs here in lucid-tunnel-tools — NOT via docker exec into the distroless container.
+REPLY=$(printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$COOKIE_HEX" "$CMD" \
+        | nc -w 5 "$CONTAINER" "$CONTROL_PORT")
 
 echo "$REPLY" | grep -q "250 OK" || die "Failed to remove onion tunnel"
 

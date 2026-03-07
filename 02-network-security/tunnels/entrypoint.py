@@ -2,7 +2,7 @@
 """
 Lucid Tunnel Tools entrypoint — manages ephemeral onions through pickme/lucid-tor-proxy.
 Assumes:
-  * `/data/tor/control_auth_cookie` is mounted from the tor-proxy container
+  * `/run/lucid/tor/control_auth_cookie` is mounted from the tor-proxy container
   * The tunnel container can reach the tor ControlPort (default tor-proxy:9051)
   * Environment variables mirror the compose stack
 """
@@ -28,8 +28,9 @@ except ImportError:
 CONTROL_HOST = os.getenv("CONTROL_HOST", "tor-proxy")
 CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
 # Cookie file locations (check shared volume first, then fallback to direct mount)
+# Both locations map to paths under /run/lucid/tor — tor-proxy's TOR_DATA_DIR
 COOKIE_FILE_SHARED = Path(os.getenv("COOKIE_FILE_SHARED", "/run/lucid/onion/control_auth_cookie"))
-COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/data/tor/control_auth_cookie"))
+COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/run/lucid/tor/control_auth_cookie"))
 ONION_PORTS = os.getenv("ONION_PORTS", "80 api-gateway:8080")
 WRITE_ENV = Path(os.getenv("WRITE_ENV", "/run/lucid/onion/.onion.env"))
 ROTATE_INTERVAL = int(os.getenv("ROTATE_INTERVAL", "0"))  # minutes; 0 = create once
@@ -60,7 +61,7 @@ def find_cookie_file() -> Optional[Path]:
         except (PermissionError, OSError) as e:
             log(f"WARNING: Cannot read shared cookie file {COOKIE_FILE_SHARED}: {e}")
     
-    # Fallback to direct mount location
+    # Fallback to direct mount location (/run/lucid/tor/control_auth_cookie via volume)
     # Use os.path.exists() which returns False on permission errors instead of raising
     if os.path.exists(str(COOKIE_FILE_DIRECT)):
         try:
@@ -112,6 +113,8 @@ def read_cookie_hex(path: Path) -> str:
 def send_control_commands(commands: List[str]) -> List[str]:
     """
     Send commands to Tor ControlPort and return response lines.
+    Connects directly over Docker network — tor-proxy is distroless,
+    so nc must run here in lucid-tunnel-tools, not via docker exec.
     """
     try:
         with socket.create_connection((CONTROL_HOST, CONTROL_PORT), timeout=10) as sock:

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Path: 02-network-security/tunnels/scripts/create_tunnel.sh
 # Create an ephemeral onion tunnel mapping container ports
-# NOTE: This script is designed to run from the host (uses docker exec)
+# NOTE: This script runs inside lucid-tunnel-tools (host-side of the interop).
+#       tor-proxy is distroless — no shell, no xxd, no nc inside that container.
+#       Cookie is read from the shared volume mount; nc connects over Docker network.
 
 set -euo pipefail
 
@@ -21,38 +23,32 @@ CONTAINER="${1:-${TOR_CONTAINER_NAME-tor-proxy}}"
 PORTS="${2:-80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}}"
 COOKIE_HOST_DIR="${COOKIE_HOST_DIR:-/run/lucid/tor}"
 COOKIE_HOST_FILE="${COOKIE_HOST_FILE:-"${COOKIE_HOST_DIR}/control_auth_cookie"}"
+CONTROL_PORT="${CONTROL_PORT:-9051}"
 
 # Ensure container exists and is running
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then
   die "Container $CONTAINER not running"
 else
   log "Creating onion tunnel in $CONTAINER for ports: $PORTS"
-fi 
-
-# Load Tor control configuration
-COOKIE_FILE="${COOKIE_FILE:-"${COOKIE_HOST_DIR}/control_auth_cookie"}"
-CONTROL_PORT="${CONTROL_PORT:-9051}"
-
-# Ensure cookie file exists
-if ! docker exec "$CONTAINER" test -f "$COOKIE_FILE"; then
-  die "Tor control cookie not found at $COOKIE_FILE"
-  else 
-    log "Tor control cookie found at $COOKIE_FILE"
 fi
 
-if [[ -f "$COOKIE_HOST_FILE" ]]; then
-  log "Tor control cookie found at $COOKIE_HOST_FILE"
-else
-  die "Tor control cookie not found at $COOKIE_HOST_FILE"
+# Ensure cookie file is accessible on the shared volume mount.
+# (docker exec is not used — tor-proxy is distroless and has no shell.)
+if [[ ! -f "$COOKIE_HOST_FILE" ]]; then
+  die "Tor control cookie not found at $COOKIE_HOST_FILE (is the volume mounted?)"
 fi
-# Hex-encode cookie (remove newlines)
-COOKIE=$(docker exec "$CONTAINER" xxd -p -c 256 "$COOKIE_FILE" | tr -d '\n')
+log "Tor control cookie found at $COOKIE_HOST_FILE"
+
+# Hex-encode cookie via xxd running locally in lucid-tunnel-tools
+COOKIE=$(xxd -p -c 256 "$COOKIE_HOST_FILE" | tr -d '\n')
 
 # Build ADD_ONION command
 CMD="ADD_ONION NEW:ED25519-V3 Port=$PORTS"
 
-# Send authenticated command (use CONTROL_PORT from environment)
-REPLY=$(docker exec "$CONTAINER" sh -c "printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' '$COOKIE' '$CMD' | nc 127.0.0.1 $CONTROL_PORT")
+# Send authenticated command over Docker network directly to tor-proxy control port.
+# nc runs here in lucid-tunnel-tools — NOT via docker exec into the distroless container.
+REPLY=$(printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$COOKIE" "$CMD" \
+        | nc -w 5 "$CONTAINER" "$CONTROL_PORT")
 
 SERVICE_ID=$(echo "$REPLY" | grep "250-ServiceID" | awk '{print $2}' || true)
 

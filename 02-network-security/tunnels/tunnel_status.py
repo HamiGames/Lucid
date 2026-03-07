@@ -15,14 +15,15 @@ from datetime import datetime
 
 # Load configuration from environment
 STATUS_JSON_PATH = Path(os.getenv("STATUS_JSON_PATH", "/run/lucid/onion/tunnel_status.json"))
-STATUS_ENV_PATH = Path(os.getenv("STATUS_ENV_PATH", "/run/lucid/onion/tunnel_status.env"))
-CONTROL_HOST = os.getenv("CONTROL_HOST", "tor-proxy")
-CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
-COOKIE_FILE = Path(os.getenv("COOKIE_FILE", "/var/lib/tor/control_auth_cookie"))
-WRITE_ENV = Path(os.getenv("WRITE_ENV", "/run/lucid/onion/.onion.env"))
-TOR_PROXY = os.getenv("TOR_PROXY", "tor-proxy:9050")
-TOR_PROXY_HOST = os.getenv("TOR_PROXY_HOST", TOR_PROXY.split(":")[0] if ":" in TOR_PROXY else TOR_PROXY)
-TOR_PROXY_PORT = int(os.getenv("TOR_PROXY_PORT", TOR_PROXY.split(":")[1] if ":" in TOR_PROXY else "9050"))
+STATUS_ENV_PATH  = Path(os.getenv("STATUS_ENV_PATH",  "/run/lucid/onion/tunnel_status.env"))
+CONTROL_HOST     = os.getenv("CONTROL_HOST", "tor-proxy")
+CONTROL_PORT     = int(os.getenv("CONTROL_PORT", "9051"))
+# Cookie file lives in tor-proxy's TOR_DATA_DIR — accessed via volume mount
+COOKIE_FILE      = Path(os.getenv("COOKIE_FILE", "/run/lucid/tor/control_auth_cookie"))
+WRITE_ENV        = Path(os.getenv("WRITE_ENV",   "/run/lucid/onion/.onion.env"))
+TOR_PROXY        = os.getenv("TOR_PROXY", "tor-proxy:9050")
+TOR_PROXY_HOST   = os.getenv("TOR_PROXY_HOST", TOR_PROXY.split(":")[0] if ":" in TOR_PROXY else TOR_PROXY)
+TOR_PROXY_PORT   = int(os.getenv("TOR_PROXY_PORT", TOR_PROXY.split(":")[1] if ":" in TOR_PROXY else "9050"))
 
 
 class TunnelStatus:
@@ -182,4 +183,3 @@ def get_status() -> TunnelStatus:
     if _status_instance is None:
         _status_instance = TunnelStatus()
     return _status_instance
-

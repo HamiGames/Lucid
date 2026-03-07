@@ -6,14 +6,15 @@
 # Build Context: 02-network-security/tunnels (relative paths used in COPY commands)
 #
 # Directory Structure (aligned with Dockerfile.tor-proxy):
-#   /run/lucid/tunnel         — Tunnel data root (primary runtime data dir)
+#   /run/lucid/tunnel         — Tunnel data root (primary runtime data dir for tunnel-tools)
+#   /run/lucid/tunnels        — Cross-container shared tree (scripts/config accessible to tor-proxy)
 #   /tmp/lucid/tunnel         — Ephemeral scratch/logs
 #   /app/tunnel               — Container application root (WORKDIR)
 #   /etc/tunnel               — Tunnel config dir
 #   /opt/lucid/tunnel/bin     — Lucid-specific tunnel binaries
 #   /opt/bin, /opt/sbin       — System binaries
 #   /opt/lib                  — Shared libraries
-#   /run/lucid/tor            — Tor proxy data (read-only access for auth cookie)
+#   /run/lucid/tor            — Tor proxy data (read-only access for auth cookie, volume mount)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -60,15 +61,17 @@ WORKDIR /app/tunnel
 
 # =============================================================================
 # Create the container's internal runtime directory structure.
-# ALL tunnel runtime data lives under /run/lucid/tunnel — the container's data dir.
-# Ephemeral data (logs, scratch) lives under /tmp/lucid/tunnel
+# /run/lucid/tunnel  — tunnel-tools primary runtime data dir
+# /run/lucid/tunnels — cross-container shared tree (mirrors tor-proxy scaffold)
+# /tmp/lucid/tunnel  — ephemeral scratch/logs
 # This aligns with Dockerfile.tor-proxy structure for consistency across Lucid services.
 # =============================================================================
-RUN mkdir -p /app/tunnel/scripts /run/lucid/tunnel /tmp/lucid/tunnel \
-    && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)" > /app/tunnel/scripts/.lucid-keep \
-    && echo "LUCID_TUNNEL_TOOLS_DATA_DIRECTORY_$(date +%s)" > /run/lucid/tunnel/.lucid-keep \
+RUN mkdir -p /app/tunnel/scripts /run/lucid/tunnel /run/lucid/tunnels /tmp/lucid/tunnel \
+    && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)"  > /app/tunnel/scripts/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_DATA_DIRECTORY_$(date +%s)"     > /run/lucid/tunnel/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_SHARED_DIRECTORY_$(date +%s)"   > /run/lucid/tunnels/.lucid-keep \
     && echo "LUCID_TUNNEL_TOOLS_EPHEMERAL_DIRECTORY_$(date +%s)" > /tmp/lucid/tunnel/.lucid-keep \
-    && chown -R 65532:65532 /app/tunnel /run/lucid/tunnel /tmp/lucid/tunnel
+    && chown -R 65532:65532 /app/tunnel /run/lucid/tunnel /run/lucid/tunnels /tmp/lucid/tunnel
 
 # Copy tunnel application files
 # Build context: project root, so we prefix with 02-network-security/tunnels/
@@ -129,7 +132,7 @@ ENV PATH=/opt/lucid/tunnel/bin:/opt/bin:/opt/sbin:/bin \
     LD_LIBRARY_PATH=/opt/lib \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app/tunnel:/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app/tunnel:/usr/lib/python3.11 \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
@@ -139,13 +142,17 @@ COPY --from=tunnel-builder /usr/bin/tini /opt/bin/tini
 
 # =============================================================================
 # Copy runtime directory structure from builder
-# /run/lucid/tunnel  — Primary tunnel data directory (debian-tor:debian-tor equivalent)
+# /run/lucid/tunnel  — Primary tunnel data directory (tunnel-tools own data)
+# /run/lucid/tunnels — Cross-container shared tree (mirrors tor-proxy scaffold)
 # /tmp/lucid/tunnel  — Ephemeral scratch/logs
 # /app/tunnel        — Application root (WORKDIR)
+# NOTE: /run/lucid/tor is NOT scaffolded here — it arrives via docker-compose
+#       volume mount from the tor-proxy container at runtime.
 # =============================================================================
-COPY --from=tunnel-builder --chown=65532:65532 /app/tunnel /app/tunnel
-COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnel /run/lucid/tunnel
-COPY --from=tunnel-builder --chown=65532:65532 /tmp/lucid/tunnel /tmp/lucid/tunnel
+COPY --from=tunnel-builder --chown=65532:65532 /app/tunnel         /app/tunnel
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnel   /run/lucid/tunnel
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnels  /run/lucid/tunnels
+COPY --from=tunnel-builder --chown=65532:65532 /tmp/lucid/tunnel   /tmp/lucid/tunnel
 
 # Copy essential shell and utilities to /opt/bin and /opt/sbin
 COPY --from=tunnel-builder /bin/bash            /bin/bash
@@ -159,9 +166,9 @@ COPY --from=tunnel-builder /usr/bin/xxd         /opt/bin/xxd
 COPY --from=tunnel-builder /usr/bin/timeout     /opt/bin/timeout
 
 # Copy required libraries to /opt/lib (aligned with Dockerfile.tor-proxy)
-COPY --from=tunnel-builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-COPY --from=tunnel-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-COPY --from=tunnel-builder /usr/lib /opt/lib
+COPY --from=tunnel-builder /lib/aarch64-linux-gnu        /lib/aarch64-linux-gnu
+COPY --from=tunnel-builder /lib/ld-linux-aarch64.so.1    /lib/ld-linux-aarch64.so.1
+COPY --from=tunnel-builder /usr/lib                      /opt/lib
 
 # =============================================================================
 # Runtime verification: Verify entrypoint and modules
@@ -184,7 +191,7 @@ ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
     COOKIE_FILE=/run/lucid/tor/control_auth_cookie \
     ONION_PORTS="80 api-gateway:8080" \
-    WRITE_ENV=/run/lucid/tor/tunnel_state.env \
+    WRITE_ENV=/run/lucid/onion/.onion.env \
     ROTATE_INTERVAL=0 \
     TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
@@ -219,13 +226,15 @@ CMD ["/usr/bin/python3.11", "/app/tunnel/entrypoint.py"]
 
 # NOTES:
 #   Directory Structure (Lucid Standard - aligned with Dockerfile.tor-proxy):
-#     /run/lucid/tunnel         — Runtime data directory (primary)
+#     /run/lucid/tunnel         — Runtime data directory (primary, tunnel-tools own data)
+#     /run/lucid/tunnels        — Cross-container shared tree (volume-shared with tor-proxy)
 #     /tmp/lucid/tunnel         — Ephemeral logs and scratch space
 #     /app/tunnel               — Application code and configuration
 #     /opt/lucid/tunnel/bin     — Service-specific binaries (if needed)
 #     /opt/bin, /opt/sbin       — System binaries and utilities
 #     /opt/lib                  — Shared system libraries
-#     /run/lucid/tor            — Tor proxy data (read-only access)
+#     /run/lucid/tor            — Tor proxy data (read-only volume mount from tor-proxy)
+#                                 NOT scaffolded here — provided by docker-compose volume
 #
 #   Configuration files are expected at (via docker-compose env_file):
 #     - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tunnel-tools
@@ -239,3 +248,5 @@ CMD ["/usr/bin/python3.11", "/app/tunnel/entrypoint.py"]
 #     ✓ Uses /opt/bin, /opt/lib for binaries/libraries
 #     ✓ Uses /opt/lucid/service/bin for service-specific tools
 #     ✓ Distroless-compatible (no /var/lib, /var/log expectations)
+#     ✓ WRITE_ENV aligned with shell scripts: /run/lucid/onion/.onion.env
+#     ✓ COOKIE_FILE aligned with tor-proxy TOR_DATA_DIR: /run/lucid/tor/control_auth_cookie

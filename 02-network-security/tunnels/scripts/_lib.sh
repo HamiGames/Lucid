@@ -36,13 +36,22 @@ save_env_var() {
 }
 
 hex_from_cookie_in_container() {
-  local container="${1:-${TOR_CONTAINER_NAME}}"
-  docker exec "$container" sh -lc 'hexdump -v -e "/1 \"%02x\"" /var/lib/tor/control.authcookie' 2>/dev/null || true
+  # NOTE: tor-proxy is distroless (gcr.io/distroless/base-debian12) — no shell,
+  # no xxd, no nc inside the container. Cookie is read directly from the
+  # volume-mounted path accessible to lucid-tunnel-tools.
+  # The 'container' arg is retained for API compatibility but is not used.
+  local cookie_file="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
+  xxd -p "${cookie_file}" 2>/dev/null | tr -d '\n' || true
 }
 
 tor_ctl() {
+  # Sends raw Tor control protocol commands directly over the Docker network.
+  # tor-proxy is distroless — nc must run here in lucid-tunnel-tools, not via
+  # docker exec into the container.
   local container="${1:-${TOR_CONTAINER_NAME}}" cmds="${2:-}"
-  docker exec -i "$container" sh -lc 'nc 127.0.0.1 9051' <<<"$cmds"
+  local control_host="${CONTROL_HOST:-${container}}"
+  local control_port="${CONTROL_PORT:-9051}"
+  nc -w 5 "${control_host}" "${control_port}" <<<"${cmds}"
 }
 
 wait_bootstrap() {

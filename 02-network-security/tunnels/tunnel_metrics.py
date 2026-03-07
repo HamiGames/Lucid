@@ -13,7 +13,8 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
 # Load configuration from environment
-METRICS_JSON_PATH = Path(os.getenv("METRICS_JSON_PATH", "/data/tunnel/metrics.json"))
+# Metrics live in tunnel-tools' own data dir: /run/lucid/tunnel/
+METRICS_JSON_PATH = Path(os.getenv("METRICS_JSON_PATH", "/run/lucid/tunnel/metrics.json"))
 METRICS_ENABLED = os.getenv("METRICS_ENABLED", "true").lower() == "true"
 METRICS_UPDATE_INTERVAL = int(os.getenv("METRICS_UPDATE_INTERVAL", "60"))
 METRICS_RETENTION_DAYS = int(os.getenv("METRICS_RETENTION_DAYS", "7"))
@@ -190,4 +191,3 @@ def get_metrics() -> TunnelMetrics:
     if _metrics_instance is None:
         _metrics_instance = TunnelMetrics()
     return _metrics_instance
-
