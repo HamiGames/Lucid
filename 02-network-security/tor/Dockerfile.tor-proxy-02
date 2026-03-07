@@ -554,28 +554,26 @@ COPY --from=tor-builder /usr/bin/timeout    /opt/bin/timeout
 COPY --from=tor-builder /usr/bin/xxd        /opt/bin/xxd
 COPY --from=tor-builder /var/lib/tor/  /run/lucid/tor
 
-
+RUN mkdir -p /opt/lucid/tor && install -d -o root -g root -m 755 /opt/lucid/tor \
+&& echo "$KEEP_FILE" > /opt/lucid/tor/.keep \
+\
+&& cp /var/lib/tor/cached-certs /opt/lucid/tor/cached-certs \
+&& cp /var/lib/tor/cached-consensus /opt/lucid/tor/cached-consensus \
+&& cp /var/lib/tor/cached-descriptors /opt/lucid/tor/cached-descriptors \
+&& cp /var/lib/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new \
+&& cp /var/lib/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus \
+&& cp /var/lib/tor/cached-microdescs /opt/lucid/tor/cached-microdescs \
+&& cp /var/lib/tor/state /opt/lucid/tor/data/state \
+&& cp /var/lib/tor/tor.pid /opt/lucid/tor/tor.pid && chmod 755 /opt/lucid/tor/tor.pid \
+&& cp /var/lib/tor/keys /opt/lucid/tor/keys \
+\
+&& mkdir -p /opt/lib && install -d -o root -g root -m 755 /opt/lib \
+&& cp /lib/ld-linux-aarch64.so.1 /opt/lib/ld-linux-aarch64.so.1 \
+&& cp /lib/aarch64-linux-gnu /opt/lib/aarch64-linux-gnu \
+&& cp /usr/lib /opt/lib \
+\
 # ── ARM64 dynamic linker + shared libraries (/opt/lib) ────────────────────
-COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-COPY --from=tor-builder /lib/aarch64-linux-gnu      /lib/aarch64-linux-gnu
-COPY --from=tor-builder /usr/lib                    /opt/lib
-# ── Tor GeoIP static data (/opt/share/tor) — build-time installed ─────────
-COPY --from=tor-builder /usr/share/tor /opt/share/tor
 
-COPY --from=tor-builder /var/lib/tor/cached-certs /opt/lucid/tor/cached-certs
-COPY --from=tor-builder /var/lib/tor/cached-consensus /opt/lucid/tor/cached-consensus
-COPY --from=tor-builder /var/lib/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
-COPY --from=tor-builder /var/lib/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
-COPY --from=tor-builder /var/lib/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
-COPY --from=tor-builder /var/lib/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
-
-COPY data/tor/state /opt/lucid/tor/data/state
-COPY data/tor/cached-certs /opt/lucid/tor/cached-certs
-COPY data/tor/cached-consensus /opt/lucid/tor/cached-consensus
-COPY data/tor/cached-descriptors /opt/lucid/tor/cached-descriptors
-COPY data/tor/cached-descriptors.new /opt/lucid/tor/cached-descriptors.new
-COPY data/tor/cached-microdesc-consensus /opt/lucid/tor/cached-microdesc-consensus
-COPY data/tor/cached-microdescs /opt/lucid/tor/cached-microdescs
 COPY data/onion /opt/lucid/tor/onion
 COPY data/tor/torrc /run/lucid/tor/torrc
 COPY data/tor/cached-certs /run/lucid/tor/cached-certs
