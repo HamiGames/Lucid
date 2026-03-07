@@ -520,7 +520,7 @@ LABEL maintainer="Lucid-Development-Team" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}"
 
-ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
+ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/usr/bin:/opt:/run/lucid:/run/lucid/tor:/var/lib/tor \
     LD_LIBRARY_PATH=/opt/lib \
     TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
@@ -528,16 +528,16 @@ ENV PATH=/run/lucid/tor/bin:/opt/bin:/opt/sbin:/bin \
 
 
 # ── /opt scaffold (dirs + .keep markers) — created in Stage 1 ─────────────
-COPY --from=tor-builder /opt /opt
-RUN sudo chown -R root:root data/* && sudo chmod -R 755 data/*
-RUN echo "$(sudo ls -la ./data)" && exit 0 
+RUN mkdir -p /opt && install -d -o root -g root -m 755 /opt \
+&& echo "dir=opt\nplatform=lucid-tor-proxy\n" > /opt/.keep \ 
 
-RUN mkdir -p  /run/lucid/tor \
+RUN mkdir -p  /run/lucid/tor && install -d -o root -g root -m 755 /run/lucid/tor \
 && echo "dir=run/lucid/tor\nplatform=lucid-tor-proxy\n" > /run/lucid/tor/.keep \
 && sudo cp /var/lib/tor/* /run/lucid/tor/ \
-RUN mkdir -p /opt/bin /opt/bin/tor \
+
+RUN mkdir -p /opt/bin /opt/bin/tor && install -d -o root -g root -m 755 /opt/bin/tor \
 && echo "dir=opt/bin/tor\nplatform=lucid-tor-proxy\n" > /opt/bin/tor/.keep \
-&& cp /usr/bin/tor/* /opt/bin/tor/ \
+&& sudo cp /usr/bin/tor/* /opt/bin/tor/ \
 
 RUN mkdir -p /opt/bin/obfs4proxy && install -d -o root -g root -m 755 /opt/bin/obfs4proxy \
 && echo "dir=opt/bin/obfs4proxy\nplatform=lucid-tor-proxy\n" > /opt/bin/obfs4proxy/.keep \
@@ -641,12 +641,13 @@ RUN mkdir -p /run/lucid/tor && install -d -o root -g root -m 755 /run/lucid/tor 
 && sudo cp /var/lib/tor/* /run/lucid/tor/ \
 
 RUN sudo cp data/tor/* /run/lucid/tor/ \
-RUN mkdir -p /opt/lucid/tor && install -d -o root -g root -m 755 /opt/lucid/tor \
-&& echo "dir=opt/lucid/tor\nplatform=lucid-tor-proxy\n" > /opt/lucid/tor/.keep \
-&& sudo cp /var/lib/tor/* /run/lucid/tor/ \
-\
+RUN mkdir -p /opt/lib/tor && install -d -o root -g root -m 755 /opt/lib/tor \
+&& echo "dir=opt/lib/tor\nplatform=lucid-tor-proxy\n" > /opt/lib/tor/.keep \
+&& sudo cp /lib/tor/* /opt/lib/tor/ \
+
 RUN sudo cp data/tor/* /run/lucid/tor/ \
-\
+&& sudo cp /var/lib/tor/* /opt/lib/tor/ \
+
 # ── ARM64 dynamic linker + shared libraries (/opt/lib) ────────────────────
 
 COPY data/tor/cached-descriptors.new /run/lucid/tor/cached-descriptors.new(2)
