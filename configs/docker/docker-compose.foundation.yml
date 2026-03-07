@@ -15,15 +15,15 @@ services:
       - "${TOR_PROXY_CONTROL_PORT:-9051}:${TOR_PROXY_CONTROL_PORT:-9051}"
       - "${TOR_PROXY_HTTP_PORT:-8118}:${TOR_PROXY_HTTP_PORT:-8118}"
     entrypoint: ["/opt/lucid/tor/bin/tini", "--"]
-    command: ["/usr/local/bin/tor_entrypoint.sh"]
+    command: ["/run/lucid/tor/bin/tor_entrypoint.sh"]
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/tor:/run/lucid/tor:rw
       - /mnt/myssd/Lucid/Lucid/logs/tor:/run/lucid/tor/log:rw
-      - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/usr/local/bin:ro
+      - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/run/lucid/tor/bin:ro
       - tor-config:/opt/lucid/tor
       - onion-state:/run/lucid/onion
     healthcheck:
-      test: ["CMD", "/usr/local/bin/tor-health"]
+      test: ["CMD", "/run/lucid/tor/bin/tor-health.sh"]
       interval: 30s
       timeout: 10s
       retries: 10

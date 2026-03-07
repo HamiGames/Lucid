@@ -80,6 +80,10 @@ RUN \
  && install -d -o root -g root -m 755 /opt/lucid/tor/lib \
  && install -d -o root -g root -m 755 /opt/lucid/tor/config \
  && install -d -o debian-tor -g debian-tor -m 755 /opt/lucid/tor/data \
+     # ── /run/lucid/tunnels (cross-container tunnel config tree) ──────────────
+ && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels \
+ && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels/scripts \
+ && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels/config \
     # ── support dirs ─────────────────────────────────────────────────────────
  && install -d -o root -g root -m 755 /usr/local/bin \
  && install -d -o root -g root -m 755 /etc/tor \
@@ -113,8 +117,11 @@ RUN \
  && printf 'dir=opt/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/bin/.keep \
  && printf 'dir=opt/lucid/tor/lib\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/lib/.keep \
  && printf 'dir=opt/lucid/tor/config\nplatform=lucid-tor-proxy\n'         > /opt/lucid/tor/config/.keep \
- && printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep
-
+ && printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep \
+ && printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep \
+ && printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > /run/lucid/tunnels/.keep \
+ && printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep \
+ && printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
 # =============================================================================
@@ -143,7 +150,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="9050,9051,8888" \
       com.lucid.cluster="foundation"
 
-ENV PATH=/run/lucid/tor/bin:/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/run/lucid/tor/bin:/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/bin:/opt/lucid \
     LD_LIBRARY_PATH=/opt/lucid/tor/lib \
     TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
@@ -212,7 +219,9 @@ COPY --chmod=755 02-network-security/tor/t_entrypoint.sh                        
 COPY --chmod=755 02-network-security/tor/tor-health.sh                          /run/lucid/tor/bin/tor-health.sh
 COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                      /run/lucid/tor/bin/tor-show-onion.sh
 COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh      /run/lucid/tor/bin/create-ephemeral-onion.sh
-
+# Tunnel tools cross-container config (lucid-tunnel-tools interop)
+COPY --chmod=755 02-network-security/tunnels/scripts/                      /run/lucid/tunnels/scripts/
+COPY --chmod=644 02-network-security/tunnels/config/                       /run/lucid/tunnels/config/
 # Healthcheck uses /bin/bash copied above
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
   CMD ["/bin/bash", "/run/lucid/tor/bin/tor-health.sh"]

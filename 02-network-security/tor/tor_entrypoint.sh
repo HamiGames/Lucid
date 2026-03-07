@@ -51,8 +51,8 @@ log_debug() {
 # /var/lib/tor, /var/log/tor, /run/tor, /etc/tor are Debian host paths
 # and do NOT exist in this container.
 # ─────────────────────────────────────────────────────────────────────────────
-TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor/data}"
-TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/opt/lucid/tor/}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor}"
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/run/lucid/tor/}"
 TOR_LOG_DIR="${TOR_LOG_DIR:-/run/lucid/tor/log}"
 TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
 TORRC="${TOR_CONFIG_DIR}/torrc"
@@ -67,7 +67,7 @@ TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
 TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
 TOR_COOKIE_TMP="/tmp/lucid/tor/control_auth_cookie"
-BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/opt/lucid/tor/bin/bootstrap-helper.sh}"
+BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/run/lucid/tor/bin/bootstrap-helper.sh}"
 # Seed data: preloaded consensus/certs to skip cold bootstrap.
 # Lives in /opt/lucid/tor/seed — a container-internal static asset path.
 TOR_SEED_DIR="${TOR_SEED_DIR:-/opt/lucid/tor/seed}"

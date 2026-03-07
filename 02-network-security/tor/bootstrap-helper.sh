@@ -140,8 +140,8 @@ CONTAINER_ID=$(docker run -d --rm \
   -v "${HOST_TOR_LOGS}:${CONTAINER_TOR_LOGS}:rw" \
   -v "${HOST_TOR_RUN}:${CONTAINER_TOR_RUN}:rw" \
   -v "${HOST_TOR_CONFIG}:${CONTAINER_TOR_CONFIG}:ro" \
-  --entrypoint /usr/bin/tini \
-  "$IMAGE" -- /usr/local/bin/entrypoint.sh)
+  --entrypoint /opt/lucid/tor/bin/tini \
+  "$IMAGE" -- /run/lucid/tor/bin/entrypoint.sh)
 
 log "Container started: $CONTAINER_ID"
 

@@ -10,7 +10,7 @@ CREATE_SCRIPT="${SCRIPT_DIR}/create_ephemeral_onion.sh"
 # Load defaults from environment variables
 CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
-COOKIE_FILE="${COOKIE_FILE:-/var/lib/tor/control_auth_cookie}"
+COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
 WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
 
 # Input format matches previous usage:
