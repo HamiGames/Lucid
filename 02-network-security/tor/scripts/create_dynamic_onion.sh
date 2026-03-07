@@ -6,7 +6,7 @@
 set -Eeuo pipefail
 
 # Configuration
-TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
+TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-tor-proxy}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/run/lucid/tor/control_auth_cookie}"
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
@@ -14,9 +14,7 @@ UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
 OUTDIR="${ONION_DIR:-/run/lucid/onion}"
 DYNAMIC_DIR="$OUTDIR/dynamic"
 
-# Default values
-DEFAULT_ONION_PORT=80
-DEFAULT_TARGET_HOST="127.0.0.1"
+# Default values (single assignment — env vars take precedence)
 DEFAULT_TARGET_PORT="${UPSTREAM_PORT:-8080}"
 DEFAULT_ONION_PORT="${ONION_PORT:-80}"
 DEFAULT_TARGET_HOST="${UPSTREAM_SERVICE:-api-gateway}"
@@ -217,7 +215,11 @@ create_onion() {
     
     # Save onion files
     echo "$onion_address" > "$DYNAMIC_DIR/${service_name}.onion"
-    printf '%s' "$service_id" | xxd -p | tr -d '\n' > "$DYNAMIC_DIR/${service_name}.hex"
+    if command -v xxd >/dev/null 2>&1; then
+      printf '%s' "$service_id" | xxd -p | tr -d '\n' > "$DYNAMIC_DIR/${service_name}.hex"
+    else
+      printf '%s' "$service_id" | hexdump -v -e '1/1 "%02x"' | tr -d '\n' > "$DYNAMIC_DIR/${service_name}.hex"
+    fi
     
     # Create metadata
     create_service_metadata "$service_name" "$onion_port" "$target_host" "$target_port" "$onion_address" "$is_wallet"

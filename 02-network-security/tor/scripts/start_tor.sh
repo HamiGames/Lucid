@@ -1,31 +1,20 @@
 #!/usr/bin/env bash
 # Path: 02-network-security/tor/scripts/start_tor.sh
-# Ensure Tor is running inside the lucid_tor container
+# Ensure Tor is running — runs inside the lucid_tor container
 
 set -euo pipefail
 
 log() { printf '[start_tor] %s\n' "$*"; }
 die() { printf '[start_tor] ERROR: %s\n' "$*" >&2; exit 1; }
 
-CONTAINER="${1:-lucid_tor}"
+TORRC="${TORRC:-/opt/lucid/tor/bin/torrc}"
 
-# Ensure container exists and is running
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then
-  die "Container $CONTAINER not running"
-else
-  log "Container $CONTAINER is running"
-fi
-# Check if tor is already running
-if docker exec "$CONTAINER" pgrep -x tor >/dev/null 2>&1; then
-  log "Tor is already running inside $CONTAINER"
+# Check if tor is already running — if not, start it
+if pgrep -x tor >/dev/null 2>&1; then
+  log "Tor is already running"
   exit 0
 else
-  log "Tor is not running inside $CONTAINER"
-  exit 1
+  log "Tor is not running — starting..."
+  tor -f "$TORRC" || die "Failed to start Tor"
+  log "Tor process started"
 fi
-
-# Otherwise, start tor manually
-log "Starting Tor in $CONTAINER..."
-docker exec -d "$CONTAINER" tor -f /etc/tor/torrc || die "Failed to start Tor"
-
-log "Tor process started inside $CONTAINER"

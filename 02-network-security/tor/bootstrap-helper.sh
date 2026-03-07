@@ -65,10 +65,9 @@ TOR_FILES=(
 IMAGE="pickme/lucid-tor-proxy:latest-arm64"
 
 log "=== Tor Bootstrap Helper (Standalone) ==="
-cp 
 # Ensure host directories exist
 log "Preparing host directories..."
-sudo mkdir -p "$HOST_TOR_DATA" "$HOST_TOR_LOGS" "$HOST_TOR_RUN_DIR/onion" "$HOST_TOR_CONFIG" || true
+sudo mkdir -p "$HOST_TOR_DATA" "$HOST_TOR_LOGS" "$HOST_TOR_RUN/onion" "$HOST_TOR_CONFIG" || true
 
 # Discover debian-tor uid:gid from image
 log "Discovering debian-tor uid:gid..."
@@ -237,6 +236,7 @@ fi
 
 # Read cookie hex from inside container (uses container's xxd)
 log "Reading control cookie..."
+CONTAINER_COOKIE_FILE="${CONTAINER_TOR_DATA}/control_auth_cookie"
 HEX=$(docker exec tor-bootstrap-temp /usr/bin/xxd -p "${CONTAINER_COOKIE_FILE}" 2>/dev/null | tr -d '\n' || {
   log "WARNING: Failed to read cookie with xxd, trying alternative..."
   docker exec tor-bootstrap-temp /bin/busybox hexdump -v -e '1/1 "%02x"' "${CONTAINER_COOKIE_FILE}" 2>/dev/null | tr -d '\n'

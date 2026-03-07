@@ -206,6 +206,9 @@ COPY --from=tor-builder --chown=root:root /opt/lucid /opt/lucid
 # Build context: project root, so we prefix with 02-network-security/tor/
 COPY --chmod=644 02-network-security/tor/torrc                                  /etc/tor/torrc
 COPY --chmod=755 02-network-security/tor/entrypoint.sh                          /usr/local/bin/entrypoint.sh
+COPY --chmod=755 02-network-security/tor/bootstrap-helper.sh                    /usr/local/bin/bootstrap-helper.sh
+COPY --chmod=755 02-network-security/tor/tor_entrypoint.sh                      /usr/local/bin/tor_entrypoint.sh
+COPY --chmod=755 02-network-security/tor/t_entrypoint.sh                        /usr/local/bin/t_entrypoint.sh
 COPY --chmod=755 02-network-security/tor/tor-health.sh                          /usr/local/bin/tor-health
 COPY --chmod=755 02-network-security/tor/tor-show-onion.sh                      /usr/local/bin/tor-show-onion
 COPY --chmod=755 02-network-security/tor/scripts/create_ephemeral_onion.sh      /usr/local/bin/create-ephemeral-onion

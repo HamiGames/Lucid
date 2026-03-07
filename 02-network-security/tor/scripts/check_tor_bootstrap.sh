@@ -7,34 +7,35 @@ set -euo pipefail
 log() { printf '[check_tor_bootstrap] %s\n' "$*"; }
 die() { printf '[check_tor_bootstrap] ERROR: %s\n' "$*" >&2; exit 1; }
 
-CONTAINER="${1:-lucid_tor}"
+TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
+TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor}"
+COOKIE="${TOR_DATA_DIR}/control_auth_cookie"
 
-# Ensure container exists and is running
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}\$"; then
-  die "Container $CONTAINER not running"
-else
-  log "Container $CONTAINER is running"
+# Check if tor process is running
+if ! pgrep -x tor >/dev/null 2>&1; then
+  die "Tor is not running"
 fi
-# Check if tor is already running
-if docker exec "$CONTAINER" pgrep -x tor >/dev/null 2>&1; then
-  log "Tor is already running inside $CONTAINER"
-  exit 0
-else
-  log "Tor is not running inside $CONTAINER"
-  exit 1
-fi
-log "Checking Tor bootstrap status in $CONTAINER..."
+log "Tor process is running"
 
-# Get the latest Bootstrapped line from logs
-STATUS=$(docker logs "$CONTAINER" 2>&1 | grep "Bootstrapped" | tail -n 1 || true)
+# Verify cookie file exists
+[ -f "$COOKIE" ] || die "Cookie file not found: $COOKIE"
 
-if echo "$STATUS" | grep -q "100%"; then
+# Read cookie hex for control port authentication
+COOKIE_HEX=$(xxd -p "$COOKIE" | tr -d '\n')
+
+# Query bootstrap phase via control port
+STATUS=$(printf 'AUTHENTICATE %s\r\nGETINFO status/bootstrap-phase\r\nQUIT\r\n' "$COOKIE_HEX" \
+  | nc -q 1 "$TOR_CONTROL_HOST" "$TOR_CONTROL_PORT" 2>/dev/null \
+  | grep -i "bootstrap-phase" | head -n 1 || true)
+
+if echo "$STATUS" | grep -q "PROGRESS=100"; then
   log "SUCCESS: Tor is fully bootstrapped"
   exit 0
 elif [ -n "$STATUS" ]; then
   log "WAITING: $STATUS"
   exit 1
 else
-  log "No bootstrap status found in logs yet"
+  log "No bootstrap status found"
   exit 1
 fi

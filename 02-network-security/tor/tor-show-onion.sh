@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
-DIR="${ONION_DIR:-/run/lucid/tor}"
-FILE="$DIR/tor_bootstrap.env"
+# ONION_DIR: hidden-service dirs (lucid_admin, lucid_api, etc.) — /run/lucid/onion per Dockerfile scaffold
+DIR="${ONION_DIR:-/run/lucid/onion}"
+# Bootstrap env is written by tor-health to TOR_DATA_DIR, not inside onion dir
+FILE="${TOR_DATA_DIR:-/run/lucid/tor}/tor_bootstrap.env"
 
 if [ -d "$DIR" ]; then
   ls -l "$DIR"

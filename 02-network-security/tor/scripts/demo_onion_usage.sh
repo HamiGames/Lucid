@@ -4,7 +4,7 @@
 
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="/usr/local/bin"
 OUTDIR="${ONION_DIR:-/run/lucid/onion}"
 
 log() { printf '[demo] %s\n' "$*"; }
@@ -18,7 +18,7 @@ echo
 
 # Step 1: Create 5 static onions for core services
 log "Step 1: Creating 5 static onion services..."
-if "$SCRIPT_DIR/create_ephemeral_onion.sh"; then
+if "$SCRIPT_DIR/create-ephemeral-onion"; then
     success "Static multi-onion setup complete"
     echo
     
@@ -35,7 +35,7 @@ log "Step 2: Creating dynamic onions for various services..."
 
 # Create a wallet onion with secure defaults
 log "Creating wallet onion (secure random port)..."
-if "$SCRIPT_DIR/create_dynamic_onion.sh" --wallet --target-host wallet --persistent wallet-primary; then
+if "$SCRIPT_DIR/create-dynamic-onion" --wallet --target-host wallet --persistent wallet-primary; then
     success "Wallet onion created"
 else
     error "Failed to create wallet onion"
@@ -43,7 +43,7 @@ fi
 
 # Create a payment API onion
 log "Creating payment API onion..."
-if "$SCRIPT_DIR/create_dynamic_onion.sh" --target-host payment-api --target-port 3000 --onion-port 443 payment-gateway; then
+if "$SCRIPT_DIR/create-dynamic-onion" --target-host payment-api --target-port 3000 --onion-port 443 payment-gateway; then
     success "Payment API onion created"
 else
     error "Failed to create payment API onion"
@@ -51,7 +51,7 @@ fi
 
 # Create a monitoring onion
 log "Creating monitoring dashboard onion..."
-if "$SCRIPT_DIR/create_dynamic_onion.sh" --target-host monitor --target-port 3001 --onion-port 80 monitoring; then
+if "$SCRIPT_DIR/create-dynamic-onion" --target-host monitor --target-port 3001 --onion-port 80 monitoring; then
     success "Monitoring onion created"
 else
     error "Failed to create monitoring onion"
@@ -61,7 +61,7 @@ echo
 
 # Step 3: List all onions
 log "Step 3: Listing all onion services..."
-"$SCRIPT_DIR/create_dynamic_onion.sh" --list
+"$SCRIPT_DIR/create-dynamic-onion" --list
 echo
 
 # Step 4: Show environment files
@@ -73,7 +73,7 @@ echo
 
 # Step 5: Demonstrate rotation
 log "Step 5: Demonstrating onion rotation (security practice)..."
-if "$SCRIPT_DIR/create_dynamic_onion.sh" --rotate monitoring; then
+if "$SCRIPT_DIR/create-dynamic-onion" --rotate monitoring; then
     success "Monitoring onion rotated with new address"
 else
     error "Failed to rotate monitoring onion"

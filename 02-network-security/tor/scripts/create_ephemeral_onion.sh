@@ -85,8 +85,12 @@ create_single_onion() {
     # Write to environment variable format
     echo "${env_var}=${onion_address}" >> "$OUTDIR/multi-onion.env"
     
-    # Also write hex-encoded service ID for programmatic use
-    printf '%s' "$service_id" | xxd -p | tr -d '\n' > "$OUTDIR/${service_name}.hex"
+    # Also write hex-encoded service ID for programmatic use (xxd preferred, hexdump fallback)
+    if command -v xxd >/dev/null 2>&1; then
+      printf '%s' "$service_id" | xxd -p | tr -d '\n' > "$OUTDIR/${service_name}.hex"
+    else
+      printf '%s' "$service_id" | hexdump -v -e '1/1 "%02x"' | tr -d '\n' > "$OUTDIR/${service_name}.hex"
+    fi
     
     log "✓ $service_name: $onion_address"
     return 0
