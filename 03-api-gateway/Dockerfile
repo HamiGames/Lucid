@@ -116,9 +116,15 @@ COPY 03-api-gateway/routers/ ./routers/
 COPY 03-api-gateway/utils/ ./utils/
 COPY 03-api-gateway/tests/ ./tests/
 COPY 03-api-gateway/scripts/ ./scripts/
+COPY node/ ./node/
+COPY gui-api-bridge/ ./gui-api-bridge/
+COPY payment-systems/ ./payment-systems/
+COPY contracts/ ./contracts/
+COPY service-mesh/ ./service-mesh/
+
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
 COPY sessions/ ./sessions/
-COPY RDP/
+COPY RDP/ ./RDP/
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
