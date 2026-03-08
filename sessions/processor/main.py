@@ -28,11 +28,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 import uvicorn
 
-from .config import ChunkProcessorConfig, get_config
-from .chunk_processor import ChunkProcessorService, ProcessingResult
-from .encryption import EncryptionManager
-from .merkle_builder import MerkleTreeManager
-from core.logging import setup_logging, get_logger
+from sessions.processor.config import ChunkProcessorConfig, get_config
+from sessions.processor.chunk_processor import ChunkProcessorService, ProcessingResult
+from sessions.processor.encryption import EncryptionManager
+from sessions.processor.merkle_builder import MerkleTreeManager
+from sessions.core.logging import setup_logging, get_logger
 
 # Initialize logging
 setup_logging()

@@ -21,8 +21,8 @@ try:
     from sessions.pipeline.integration.node_manager_client import NodeManagerClient
     from sessions.pipeline.integration.api_gateway_client import APIGatewayClient
     from sessions.pipeline.integration.auth_service_client import AuthServiceClient
-    from .session_pipeline_client import SessionPipelineClient
-    from .session_storage_client import SessionStorageClient
+    from sessions.recorder.integration.session_pipeline_client import SessionPipelineClient
+    from sessions.recorder.integration.session_storage_client import SessionStorageClient
 except ImportError:
     # Fallback if imports fail
     BlockchainEngineClient = None

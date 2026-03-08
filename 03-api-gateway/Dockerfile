@@ -153,8 +153,12 @@ RUN echo "=== Verifying marker files ===" && \
     && touch ./contracts/.keep \
     && echo "Contracts directory created" \
     \
+    && mkdir -p ./build/wheels \
+    && printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > ./build/wheels/.keep \
+    && touch ./build/wheels/.keep \
+    && echo "Build wheels directory created" \
     && echo "Directory structure created" -exec find . -name ".keep" -exec cat {} \;
-    
+  
 
     # Application source COPY (only directories that exist with content)
 
@@ -246,6 +250,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-cer
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
 COPY --from=builder /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
+COPY --from=builder --chown=65532:65532 /build/build/wheels /app/build/wheels
 COPY --from=builder /usr/local/bin /app/usr/local/bin
 COPY --from=builder /usr/bin/tini          /app/opt/bin/tini
 

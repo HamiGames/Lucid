@@ -15,10 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from datetime import datetime
 
-from .session_api import SessionAPI
-from .routes import router
-from .config import SessionAPIConfig
-from .integration.rdp_controller_client import RDPControllerClient
+from sessions.api.session_api import SessionAPI
+from sessions.api.routes import router
+from sessions.api.config import SessionAPIConfig
+from sessions.api.integration.rdp_controller_client import RDPControllerClient
 
 # Configure logging
 logging.basicConfig(

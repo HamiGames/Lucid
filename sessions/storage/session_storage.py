@@ -20,9 +20,9 @@ import aiofiles.os
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
-import zstd
+import zstandard as zstd
 
-from ..core.session_orchestrator import SessionPipeline, PipelineStage
+from sessions.core.session_orchestrator import SessionPipeline, PipelineStage
 
 logger = logging.getLogger(__name__)
 

@@ -4,13 +4,13 @@ Session Processor Integration Module
 Provides clients for interacting with external services
 """
 
-from .service_base import ServiceClientBase, ServiceError, ServiceTimeoutError
-from .integration_manager import IntegrationManager
+from sessions.processor.integration.service_base import ServiceClientBase, ServiceError, ServiceTimeoutError
+from sessions.processor.integration.integration_manager import IntegrationManager
 
 # Import clients if available
 try:
-    from .session_pipeline_client import SessionPipelineClient
-    from .session_storage_client import SessionStorageClient
+    from sessions.processor.integration.session_pipeline_client import SessionPipelineClient
+    from sessions.processor.integration.session_storage_client import SessionStorageClient
 except ImportError:
     SessionPipelineClient = None
     SessionStorageClient = None

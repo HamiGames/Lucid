@@ -22,10 +22,10 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from ..storage.session_storage import SessionStorage
-from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
-from ..storage.config import StorageConfig as StorageConfigManager
-from ..core.session_orchestrator import SessionPipeline, PipelineStage
+from sessions.storage.session_storage import SessionStorage
+from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
+from sessions.storage.config import StorageConfig as StorageConfigManager
+from sessions.core.session_orchestrator import SessionPipeline, PipelineStage
 
 logger = logging.getLogger(__name__)
 

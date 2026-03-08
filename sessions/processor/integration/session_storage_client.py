@@ -10,7 +10,7 @@ import base64
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from .service_base import ServiceClientBase, ServiceError
+from sessions.processor.integration.service_base import ServiceClientBase, ServiceError
 import httpx
 
 # Use core.logging if available, fallback to standard logging

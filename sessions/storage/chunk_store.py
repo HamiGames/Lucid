@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Tuple, Any, BinaryIO
 import aiofiles
 import aiofiles.os
 from dataclasses import dataclass
-import zstd
+import zstandard as zstd
 import lz4.frame
 
 logger = logging.getLogger(__name__)

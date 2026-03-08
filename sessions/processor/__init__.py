@@ -3,12 +3,12 @@ LUCID Session Processor Components
 Chunk processing, encryption, and Merkle tree building for session data
 """
 
-from .compressor import SessionCompressor, CompressionAlgorithm, CompressionResult
-from .session_manifest import SessionManifestGenerator, SessionManifest, ManifestType
-from .chunk_processor import ChunkProcessor, ChunkProcessorService, ChunkMetadata, ProcessingResult
-from .encryption import ChunkEncryptor, EncryptionManager, EncryptionError, KeyDerivationError, EncryptionValidationError
-from .merkle_builder import MerkleTreeBuilder, MerkleTreeManager, MerkleNode, MerkleProof, MerkleTreeMetadata
-from .config import ChunkProcessorConfig, EncryptionConfig, WorkerConfig, StorageConfig, PerformanceConfig, SecurityConfig, MonitoringConfig
+from sessions.processor.compressor import SessionCompressor, CompressionAlgorithm, CompressionResult
+from sessions.processor.session_manifest import SessionManifestGenerator, SessionManifest, ManifestType
+from sessions.processor.chunk_processor import ChunkProcessor, ChunkProcessorService, ChunkMetadata, ProcessingResult
+from sessions.processor.encryption import ChunkEncryptor, EncryptionManager, EncryptionError, KeyDerivationError, EncryptionValidationError
+from sessions.processor.merkle_builder import MerkleTreeBuilder, MerkleTreeManager, MerkleNode, MerkleProof, MerkleTreeMetadata
+from sessions.processor.config import ChunkProcessorConfig, EncryptionConfig, WorkerConfig, StorageConfig, PerformanceConfig, SecurityConfig, MonitoringConfig
 
 __all__ = [
     # Legacy components

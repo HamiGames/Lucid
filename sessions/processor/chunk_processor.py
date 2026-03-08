@@ -26,9 +26,9 @@ from dataclasses import dataclass
 from pathlib import Path
 import json
 
-from .encryption import ChunkEncryptor
-from .merkle_builder import MerkleTreeBuilder
-from .config import ChunkProcessorConfig
+from sessions.processor.encryption import ChunkEncryptor
+from sessions.processor.merkle_builder import MerkleTreeBuilder
+from sessions.processor.config import ChunkProcessorConfig
 
 logger = logging.getLogger(__name__)
 

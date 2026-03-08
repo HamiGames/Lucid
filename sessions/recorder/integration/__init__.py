@@ -9,8 +9,8 @@ from .integration_manager import IntegrationManager
 
 # Import clients if needed
 try:
-    from .session_pipeline_client import SessionPipelineClient
-    from .session_storage_client import SessionStorageClient
+    from sessions.recorder.integration.session_pipeline_client import SessionPipelineClient
+    from sessions.recorder.integration.session_storage_client import SessionStorageClient
 except ImportError:
     # Clients will be created dynamically
     SessionPipelineClient = None
