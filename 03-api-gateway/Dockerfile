@@ -148,10 +148,14 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     && touch ./contracts/.keep \
     && echo "Contracts directory created" \
     \
-    && mkdir -p ./build/wheels ./configs/services \
+    && mkdir -p ./configs/services ./build/wheels /usr/local/lib/python3.11/site-packages /usr/local/bin \
     && printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > ./build/wheels/.keep \
     && printf "LUCID_API_GATEWAY_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep \
+    && printf "LUCID_API_GATEWAY_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep \
+    && printf "LUCID_API_GATEWAY_BINARIES_$(date +%s)" > /usr/local/bin/.keep \
     && touch ./build/wheels/.keep \
+    && touch /usr/local/lib/python3.11/site-packages/.keep \
+    && touch /usr/local/bin/.keep \
     && touch ./configs/services/.keep \
     && echo "Build wheels directory created" \
     && echo "Configs services directory created" \
