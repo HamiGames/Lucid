@@ -13,12 +13,30 @@ Features:
 - FastAPI-based REST API
 """
 
-from .session_api import SessionAPI
-from .routes import router
+from sessions.api.session_api import SessionAPI, SessionStatus, RDPConfig, RecordingConfig, StorageConfig, SessionMetadata, CreateSessionRequest, UpdateSessionRequest, SessionResponse, SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse, StatisticsResponse
+from sessions.api.routes import router
+from sessions.api.config import SessionAPISettings
+from sessions.api.integration.rdp_controller_client import RDPControllerClient
+from  sessions.encryption.encryptor import SessionEncryptor, EncryptedChunk
+from sessions.processor.chunk_processor import ChunkProcessor , ChunkProcessorService, ChunkMetadata
 
 __all__ = [
     'SessionAPI',
-    'router'
+    'router',
+    'SessionAPISettings',
+    'RDPControllerClient',
+    'SessionEncryptor',
+    'ChunkProcessor',
+    'ChunkProcessorService',
+    'ChunkMetadata',
+    'SessionStatus',
+    'RDPConfig',
+    'RecordingConfig',
+    'StorageConfig',
+    'SessionMetadata',
+    'CreateSessionRequest',
+    'UpdateSessionRequest',
+    'SessionResponse',
 ]
 
 __version__ = "1.0.0"

@@ -20,7 +20,7 @@ from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
 from .state_machine import PipelineStateMachine, PipelineState, StateTransition
 from .config import PipelineConfig
-from core.logging import get_logger
+from sessions.core.logging import get_logger
 
 logger = get_logger(__name__)
 

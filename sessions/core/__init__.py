@@ -3,12 +3,12 @@ LUCID Session Core Components
 Chunking, Merkle tree building, and orchestration
 """
 
-from .chunker import SessionChunker, ChunkMetadata
-from .merkle_builder import MerkleTreeBuilder, MerkleRoot, MerkleProof
+from sessions.core.chunker import SessionChunker, ChunkMetadata
+from sessions.core.merkle_builder import MerkleTreeBuilder, MerkleRoot, MerkleProof
 
 # Conditionally import session_orchestrator (requires encryption module)
 try:
-    from .session_orchestrator import SessionOrchestrator, SessionPipeline, PipelineStage
+    from sessions.core.session_orchestrator import SessionOrchestrator, SessionPipeline, PipelineStage
     __all__ = [
         'SessionChunker', 'ChunkMetadata',
         'MerkleTreeBuilder', 'MerkleRoot', 'MerkleProof', 

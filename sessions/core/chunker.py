@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional, Tuple
-import zstd
+import zstandard as zstd
 
 logger = logging.getLogger(__name__)
 

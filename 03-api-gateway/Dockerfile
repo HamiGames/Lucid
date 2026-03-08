@@ -117,12 +117,15 @@ COPY 03-api-gateway/utils/ ./utils/
 COPY 03-api-gateway/middleware/ ./middleware/
 COPY 03-api-gateway/scripts/ ./scripts/
 
+
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
 COPY sessions/ ./sessions/
 COPY node/ ./node/
 COPY gui-api-bridge/ ./gui-api-bridge/
 COPY payment-systems/ ./payment-systems/
 COPY contracts/ ./contracts/
+COPY core/ ./core/
+COPY configs/services/ ./configs/services/
 COPY service-mesh/ ./service-mesh/
 COPY RDP/ ./RDP/
 
