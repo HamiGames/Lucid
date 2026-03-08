@@ -138,7 +138,8 @@ COPY RDP/ ./RDP/
 COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
 COPY infrastructure/kubernetes/ ./infrastructure/kubernetes/
 COPY src/gui/ ./src/gui/
-COPY gui-electron/ ./gui-electron/
+COPY electron-gui/ ./electron-gui/
+COPY api/ ./api/api/
 COPY gui/ ./gui/
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
@@ -214,12 +215,14 @@ COPY --chown=65532:65532 --from=builder /build/sessions /app/sessions
 COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh /app/infrastructure/service-mesh
 COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes /app/infrastructure/kubernetes
 COPY --chown=65532:65532 --from=builder /build/src/gui /app/src/gui
-COPY --chown=65532:65532 --from=builder /build/gui-electron /app/gui-electron
+COPY --chown=65532:65532 --from=builder /build/electron-gui/ /app/electron-gui
 COPY --chown=65532:65532 --from=builder /build/gui /app/gui
 COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
 COPY --chown=65532:65532 --from=builder /build/payment-systems /app/payment-systems
 COPY --chown=65532:65532 --from=builder /build/contracts /app/contracts
 COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/api/api /app/api/api
+
 COPY --chown=65532:65532 --from=builder /build/configs/services /app/configs/services
 COPY --chown=65532:65532 --from=builder /build/service-mesh /app/service-mesh
 COPY --chown=65532:65532 --from=builder /build/RDP /app/RDP
