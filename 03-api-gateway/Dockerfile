@@ -76,7 +76,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
     echo "installation complete" && \
-    
+    rm -rf /build/wheels
 
 # Builder-stage verification - ensure all packages built correctly
 RUN echo "=== Verifying pip installation success ===" && \
