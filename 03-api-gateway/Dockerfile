@@ -143,15 +143,18 @@ RUN echo "=== Verifying marker files ===" && \
     \
     && printf "LUCID_API_GATEWAY_APP_GUI_$(date +%s)" > ./gui/.keep \
     && touch ./gui/.keep \
-    \
+    && echo "GUI directory created" \
+    
     && printf "LUCID_API_GATEWAY_APP_PAYMENT_SYSTEMS_$(date +%s)" > ./payment-systems/.keep \
     && touch ./payment-systems/.keep \
+    && echo "Payment systems directory created" \
     \
     && printf "LUCID_API_GATEWAY_APP_CONTRACTS_$(date +%s)" > ./contracts/.keep \
     && touch ./contracts/.keep \
+    && echo "Contracts directory created" \
     \
-    && find ./api/ ./gateway/ ./config/ ./api/app/endpoints/ ./payment-systems/ ./contracts/ ./core/ -name ".keep" -exec cat {} \;
-    && find ./sessions ./node/ ./gui-api-bridge/ ./electron-gui/ ./gui/ ./configs/services/ ./service-mesh/ ./RDP/ -name ".keep" -exec cat {} \;
+    && find ./api ./gateway ./config ./api/app/endpoints ./payment-systems ./contracts ./core -name ".keep" -exec cat {} \;
+    && find ./sessions ./node ./gui-api-bridge ./electron-gui ./gui ./configs/services ./service-mesh ./RDP -name ".keep" -exec cat {} \;
 # Application source COPY (only directories that exist with content)
 
 COPY 03-api-gateway/api/ ./api/
