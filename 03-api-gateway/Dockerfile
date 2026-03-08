@@ -67,14 +67,14 @@ COPY 03-api-gateway/requirements.txt ./requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     echo "building wheels from source" &&\
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r /build/requirements.txt && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
     echo "wheel build complete" && \
     ls -lh /build/wheels/ | head -20 && \
     echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
-    pip install --no-cache-dir --no-index --find-links /build/wheels -r /build/requirements.txt && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
     echo "installation complete" && \
     rm -rf /build/wheels
 
@@ -124,27 +124,31 @@ COPY 03-api-gateway/scripts/ ./scripts/
 
 
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
-COPY sessions/ ./sessions/
-COPY node/ ./node/
-COPY gui-api-bridge/ ./gui-api-bridge/
-COPY payment-systems/ ./payment-systems/
-COPY contracts/ ./contracts/
-COPY core/ ./core/
-COPY configs/services/ ./configs/services/
-COPY service-mesh/ ./service-mesh/
-COPY RDP/ ./RDP/
-COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
-COPY infrastructure/kubernetes/ ./infrastructure/kubernetes/
-COPY src/gui/ ./src/gui/
-COPY electron-gui/ ./electron-gui/
-COPY api/ ./api/api/
-COPY gui/ ./gui/
+COPY ../../../sessions/ ./sessions/
+COPY ../../../node/ ./node/
+COPY ../../../gui-api-bridge/ ./gui-api-bridge/
+COPY ../../../gui/ ./gui/
+COPY ../../../contracts/ ./contracts/
+COPY ../../../core/ ./core/
+COPY ../../../configs/services/ ./configs/services/
+COPY ../../../service-mesh/ ./service-mesh/
+COPY ../../../RDP/ ./RDP/
+COPY ../../../infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY ../../../infrastructure/kubernetes/ ./infrastructure/kubernetes/
+COPY ../../../src/gui/ ./src/gui/
+COPY ../../../electron-gui/ ./electron-gui/
+COPY ../../../payment-systems/ ./payment-systems/
+COPY ../../../api/ ./api/api/
+COPY ../../../payment-systems/ ./payment-systems/
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_CONFIG_$(date +%s)" > ./config/.lucid-marker && \
+    echo "LUCID_API_GATEWAY_APP_ENDPOINTS_$(date +%s)" > ./api/app/endpoints/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_SESSIONS_$(date +%s)" > ./sessions/.lucid-marker && \
-    find ./api ./gateway ./config ./sessions -name ".lucid-marker" -exec cat {} \;
+    echo "LUCID_API_GATEWAY_APP_NODE_$(date +%s)" > ./node/.lucid-marker && \
+    echo "LUCID_API_GATEWAY_APP_GUI_API_BRIDGE_$(date +%s)" > ./gui-api-bridge/.lucid-marker && \
+    find ./api ./gateway ./config ./sessions ./api/app/endpoints -name ".lucid-marker" -exec cat {} \;
 
 # Verify new modules are included in builder stage - file existence & imports
 RUN echo "Verifying new modules are included in builder stage" && \
