@@ -110,9 +110,53 @@ RUN echo "=== Verifying marker files ===" && \
     cat /usr/local/bin/.lucid-marker && \
     echo "✅ Both marker files verified with content"
 
+    RUN mkdir -p ./api ./gateway ./config ./api/app/endpoints ./sessions ./node ./gui-api-bridge ./infrastructure/service-mesh ./infrastructure/kubernetes ./src/gui ./electron-gui ./gui ./payment-systems ./contracts ./core ./configs/services ./service-mesh ./RDP \
+    && printf "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.keep \
+    && touch ./api/.keep \
+    && printf "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.keep \
+    && touch ./gateway/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_CONFIG_$(date +%s)" > ./config/.keep \
+    && printf "LUCID_API_GATEWAY_APP_ENDPOINTS_$(date +%s)" > ./api/app/endpoints/.keep \
+    && touch ./api/app/endpoints/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_SESSIONS_$(date +%s)" > ./sessions/.keep \
+    && touch ./sessions/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_NODE_$(date +%s)" > ./node/.keep \
+    && touch ./node/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_GUI_API_BRIDGE_$(date +%s)" > ./gui-api-bridge/.keep \
+    && touch ./gui-api-bridge/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_INFRASTRUCTURE_SERVICE_MESH_$(date +%s)" > ./infrastructure/service-mesh/.keep \
+    && touch ./infrastructure/service-mesh/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_INFRASTRUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep \
+    && touch ./infrastructure/kubernetes/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_SRC_GUI_$(date +%s)" > ./src/gui/.keep \
+    && touch ./src/gui/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_ELECTRON_GUI_$(date +%s)" > ./electron-gui/.keep \
+    && touch ./electron-gui/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_GUI_$(date +%s)" > ./gui/.keep \
+    && touch ./gui/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_PAYMENT_SYSTEMS_$(date +%s)" > ./payment-systems/.keep \
+    && touch ./payment-systems/.keep \
+    \
+    && printf "LUCID_API_GATEWAY_APP_CONTRACTS_$(date +%s)" > ./contracts/.keep \
+    && touch ./contracts/.keep \
+    \
+    && find ./api/ ./gateway/ ./config/ ./api/app/endpoints/ ./payment-systems/ ./contracts/ ./core/ -name ".keep" -exec cat {} \;
+    && find ./sessions ./node/ ./gui-api-bridge/ ./electron-gui/ ./gui/ ./configs/services/ ./service-mesh/ ./RDP/ -name ".keep" -exec cat {} \;
 # Application source COPY (only directories that exist with content)
+
 COPY 03-api-gateway/api/ ./api/
 COPY 03-api-gateway/gateway/ ./gateway/
+COPY 03-api-gateway/certs/ ./certs/
 COPY 03-api-gateway/config/ ./config/
 COPY 03-api-gateway/endpoints/ ./endpoints/
 COPY 03-api-gateway/models/ ./models/
@@ -141,14 +185,6 @@ COPY ../../../payment-systems/ ./payment-systems/
 COPY ../../../api/ ./api/api/
 COPY ../../../payment-systems/ ./payment-systems/
 # Create marker files in app directories (ensures COPY won't fail silently)
-RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_APP_CONFIG_$(date +%s)" > ./config/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_APP_ENDPOINTS_$(date +%s)" > ./api/app/endpoints/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_APP_SESSIONS_$(date +%s)" > ./sessions/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_APP_NODE_$(date +%s)" > ./node/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_APP_GUI_API_BRIDGE_$(date +%s)" > ./gui-api-bridge/.lucid-marker && \
-    find ./api ./gateway ./config ./sessions ./api/app/endpoints -name ".lucid-marker" -exec cat {} \;
 
 # Verify new modules are included in builder stage - file existence & imports
 RUN echo "Verifying new modules are included in builder stage" && \
