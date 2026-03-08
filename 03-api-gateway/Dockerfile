@@ -128,7 +128,11 @@ COPY core/ ./core/
 COPY configs/services/ ./configs/services/
 COPY service-mesh/ ./service-mesh/
 COPY RDP/ ./RDP/
-
+COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY infrastructure/kubernetes/ ./infrastructure/kubernetes/
+COPY src/gui/ ./src/gui/
+COPY gui-electron/ ./gui-electron/
+COPY gui/ ./gui/
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
@@ -200,6 +204,19 @@ COPY --chown=65532:65532 --from=builder /build/api /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config /app/config
 COPY --chown=65532:65532 --from=builder /build/sessions /app/sessions
+COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh /app/infrastructure/service-mesh
+COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes /app/infrastructure/kubernetes
+COPY --chown=65532:65532 --from=builder /build/src/gui /app/src/gui
+COPY --chown=65532:65532 --from=builder /build/gui-electron /app/gui-electron
+COPY --chown=65532:65532 --from=builder /build/gui /app/gui
+COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
+COPY --chown=65532:65532 --from=builder /build/payment-systems /app/payment-systems
+COPY --chown=65532:65532 --from=builder /build/contracts /app/contracts
+COPY --chown=65532:65532 --from=builder /build/core /app/core
+COPY --chown=65532:65532 --from=builder /build/configs/services /app/configs/services
+COPY --chown=65532:65532 --from=builder /build/service-mesh /app/service-mesh
+COPY --chown=65532:65532 --from=builder /build/RDP /app/RDP
+COPY --chown=65532:65532 --from=builder /build/node /app/node
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config', '/app/sessions']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
