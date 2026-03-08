@@ -153,8 +153,8 @@ RUN echo "=== Verifying marker files ===" && \
     && touch ./contracts/.keep \
     && echo "Contracts directory created" \
     \
-    && find "./*/.keep" -exec cat {} \;
-    && find "./*/*/.keep" -exec cat {} \;
+    && echo "Directory structure created" -exec find . -name ".keep" -exec cat {} \;
+    
 
     # Application source COPY (only directories that exist with content)
 
