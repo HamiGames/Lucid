@@ -9,8 +9,8 @@ import logging
 import time
 from datetime import datetime
 from fastapi import APIRouter, Response
-from app.models.common import ServiceInfo, HealthStatus
-from app.config import get_settings
+from api.app.models.common import ServiceInfo, HealthStatus
+from api.app.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
