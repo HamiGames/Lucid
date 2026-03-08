@@ -214,6 +214,7 @@ COPY --from=server-tools-builder /usr/bin/rsync /usr/bin/rsync
 COPY --from=server-tools-builder /usr/bin/unzip /usr/bin/unzip
 COPY --from=server-tools-builder /bin/tar /bin/tar
 COPY --from=server-tools-builder /bin/gzip /bin/gzip
+COPY --from=server-tools-builder /usr/bin/tini /usr/bin/tini
 COPY --from=server-tools-builder /usr/bin/git /usr/bin/git
 COPY --from=server-tools-builder /usr/bin/vim /usr/bin/vim
 COPY --from=server-tools-builder /usr/bin/tree /usr/bin/tree
@@ -256,15 +257,45 @@ ENV LUCID_ENV=dev \
     PATH="/opt/lucid/scripts:/opt/lucid/tools:$PATH"
 FROM gcr.io/distroless/nodejs18-debian11:latest as js-builder
 
-COPY database/services/init_collections.js ./database/services/init_collections.js
-COPY database/schemas/ ./database/schemas/
+COPY ../../../database/services/init_collections.js ./database/services/init_collections.js
+COPY ../../../database/schemas/ ./database/schemas/
+COPY --from=js-builder --chown=65532:65532 /lib/libz.so.1 /lib/libz.so.1
+COPY --from=js-builder --chown=65532:65532 /lib/libssl.so.3 /lib/libssl.so.3
+COPY --from=js-builder --chown=65532:65532 /lib/libcrypto.so.3 /lib/libcrypto.so.3
+COPY --from=js-builder --chown=65532:65532 /lib/libevent-2.1.so.7 /lib/libevent-2.1.so.7
+COPY --from=js-builder --chown=65532:65532 /lib/libzstd.so.1 /lib/libzstd.so.1
+COPY --from=js-builder --chown=65532:65532 /lib/liblzma.so.5 /lib/liblzma.so.5
+
+COPY --from=js-builder --chown=65532:65532 /bin/bash /bin/bash
+COPY --from=js-builder --chown=65532:65532 /bin/busybox /bin/busybox
+COPY --from=js-builder --chown=65532:65532 /bin/mkdir /bin/mkdir
+COPY --from=js-builder --chown=65532:65532 /sbin/busybox /sbin/busybox
+COPY --from=js-builder --chown=65532:65532 /sbin/sh /sbin/sh
+COPY --from=js-builder --chown=65532:65532 /sbin/ls /sbin/ls
+COPY --from=js-builder --chown=65532:65532 /sbin/rm /sbin/rm
+COPY --from=js-builder --chown=65532:65532 /sbin/mv /sbin/mv
+COPY --from=js-builder --chown=65532:65532 /sbin/cp /sbin/cp
+COPY --from=js-builder --chown=65532:65532 /sbin/ln /sbin/ln
+COPY --from=js-builder --chown=65532:65532 /sbin/chmod /sbin/chmod
+COPY --from=js-builder --chown=65532:65532 /usr/bin/tini /usr/bin/tini
+COPY --from=js-builder --chown=65532:65532 /lib64/* /lib64/
+COPY --from=js-builder --chown=65532:65532 /etc/passwd /etc/passwd
+COPY --from=js-builder --chown=65532:65532 /etc/group /etc/group
+COPY --from=js-builder --chown=65532:65532 /etc/ssl/ /etc/ssl/
+COPY --from=js-builder --chown=65532:65532 /bin/sed /bin/sed
+COPY --from=js-builder --chown=65532:65532 /bin/awk /bin/awk
+COPY --from=js-builder --chown=65532:65532 /bin/sed /bin/sed
+COPY --from=js-builder --chown=65532:65532 /usr/lib/ /usr/lib/
+
+
+
 
 COPY --from=js-builder /build/database/services/init_collections.js /opt/lucid/tools/database/services/init_collections.js
 COPY --from=js-builder /build/database/schemas/ /opt/lucid/tools/database/schemas/
-
-
+COPY --from=js-builder --chown=65532:65532 /usr/bin/tini /opt/lucid/run/lucid/bin/tini
+COPY --from=server-tools-builder --chown=65532:65532 /usr/bin/tini /opt/lucid/usr/bin/tini
 
 # Security and runtime configuration
 USER lucid
 WORKDIR /opt/lucid
-ENTRYPOINT ["tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--"]

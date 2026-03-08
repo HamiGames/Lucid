@@ -16,6 +16,7 @@ from pydantic_settings import BaseSettings  # pyright: ignore[reportMissingImpor
 from functools import lru_cache
 
 
+
 class Settings(BaseSettings):
     """Application settings"""
     
