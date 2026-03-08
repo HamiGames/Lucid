@@ -147,18 +147,18 @@ RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     find ./api ./gateway ./config ./sessions -name ".lucid-marker" -exec cat {} \;
 
 # Verify new modules are included in builder stage - file existence & imports
-RUN echo "=== Verifying new GUI and TRON support modules ===" && \
-    test -f ./api/app/routers/gui.py && echo "✅ gui.py found" && \
-    test -f ./api/app/routers/gui_docker.py && echo "✅ gui_docker.py found" && \
-    test -f ./api/app/routers/gui_tor.py && echo "✅ gui_tor.py found" && \
-    test -f ./api/app/routers/gui_hardware.py && echo "✅ gui_hardware.py found" && \
-    test -f ./api/app/routers/tron_support.py && echo "✅ tron_support.py found" && \
-    test -f ./api/app/services/gui_bridge_service.py && echo "✅ gui_bridge_service.py found" && \
-    test -f ./api/app/services/gui_docker_manager_service.py && echo "✅ gui_docker_manager_service.py found" && \
-    test -f ./api/app/services/gui_tor_manager_service.py && echo "✅ gui_tor_manager_service.py found" && \
-    test -f ./api/app/services/gui_hardware_manager_service.py && echo "✅ gui_hardware_manager_service.py found" && \
-    test -f ./api/app/services/tron_support_service.py && echo "✅ tron_support_service.py found" && \
-    test -f ./api/app/services/__init__.py && echo "✅ services/__init__.py found" && \
+RUN echo "Verifying new modules are included in builder stage" && \
+    test -f ./api/app/routers/gui.py && echo "gui.py found" && \
+    test -f ./api/app/routers/gui_docker.py && echo " gui_docker.py found" && \
+    test -f ./api/app/routers/gui_tor.py && echo " gui_tor.py found" && \
+    test -f ./api/app/routers/gui_hardware.py && echo "gui_hardware.py found" && \
+    test -f ./api/app/routers/tron_support.py && echo " tron_support.py found" && \
+    test -f ./api/app/services/gui_bridge_service.py && echo " gui_bridge_service.py found" && \
+    test -f ./api/app/services/gui_docker_manager_service.py && echo " gui_docker_manager_service.py found" && \
+    test -f ./api/app/services/gui_tor_manager_service.py && echo " gui_tor_manager_service.py found" && \
+    test -f ./api/app/services/gui_hardware_manager_service.py && echo " gui_hardware_manager_service.py found" && \
+    test -f ./api/app/services/tron_support_service.py && echo " tron_support_service.py found" && \
+    test -f ./api/app/services/__init__.py && echo " services/__init__.py found" && \
     echo "All new modules verified in builder stage" && \
     python3 -c "import sys; sys.path.insert(0, './api'); sys.path.insert(0, './sessions'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; from pipeline import pipeline_manager; from core import session_generator; print('✅ All module imports successful in builder')"
 
