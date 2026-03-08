@@ -28,7 +28,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     BUILD_ENV=production
 
 # CRITICAL: Explicitly create build directory before WORKDIR (per Dockerfile-copy-pattern.md)
-RUN mkdir -p /build
+FROM gcr.io/distroless/python3-debian12:latest AS builder
 WORKDIR /build
 
 # Create placeholder files in system directories (ensures they're baked into image)
@@ -97,19 +97,17 @@ RUN python -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-
 
 # Copy auth source code to builder stage - CRITICAL: Copy to /build/auth/ to maintain package structure
 # Note: COPY will include all files; we clean up platform-specific and cache files immediately after
-COPY auth/api/ ./auth/api/
-COPY auth/middleware/ ./auth/middleware/
-COPY auth/models/ ./auth/models/
-COPY auth/utils/ ./auth/utils/
-COPY auth/__init__.py ./auth/__init__.py
-COPY auth/main.py ./auth/main.py
-COPY auth/config.py ./auth/config.py
-COPY auth/authentication_service.py ./auth/authentication_service.py
-COPY auth/user_manager.py ./auth/user_manager.py
-COPY auth/hardware_wallet.py ./auth/hardware_wallet.py
-COPY auth/session_manager.py ./auth/session_manager.py
-COPY auth/permissions.py ./auth/permissions.py
-COPY auth/healthcheck.py ./auth/healthcheck.py
+COPY auth/api/ ./auth/
+COPY ../../../admin/ ./admin/
+COPY ../../../core/ ./core/
+COPY ../../../database/ ./database/
+COPY ../../../infrastructure/ ./infrastructure/
+COPY ../../../node/ ./node/
+COPY ../../../RDP/ ./RDP/
+COPY ../../../tools/ ./tools/
+COPY ../../../utils/ ./utils/
+COPY ../../../wallet/ ./wallet/
+COPY ../../../comnmon/ ./common/
 
 # CRITICAL: Remove platform-specific files and Python cache files immediately after COPY
 # This prevents silently passing non-Linux files and cache artifacts into the image
@@ -154,7 +152,7 @@ COPY auth/verify_runtime.py ./verify_runtime.py
 RUN chmod +x ./verify_runtime.py && \
     echo "✅ Verification script copied to builder stage (will be used in runtime stage)"
 
-FROM gcr.io/distroless/python3-debian12:latest
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -204,29 +202,26 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; import importlib.util; site_packages = '/usr/local/lib/python3.11/site-packages'; bin_dir = '/usr/local/bin'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; required = ('fastapi', 'uvicorn', 'motor', 'pymongo', 'cryptography', 'redis', 'jwt', 'bcrypt', 'eth_account', 'web3', 'base58', 'async_timeout', 'starlette', 'pydantic', 'pydantic_settings', 'tronpy', 'requests'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'ERROR: uvicorn not found'; assert os.path.exists(os.path.join(site_packages, 'redis')) or os.path.exists(os.path.join(site_packages, 'redis/__init__.py')), 'ERROR: redis not found'; assert os.path.exists(os.path.join(site_packages, 'async_timeout')) or os.path.exists(os.path.join(site_packages, 'async_timeout.py')), 'ERROR: async_timeout not found'; print('✅ All critical packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
 
 # Copy auth source code from builder - CRITICAL: Copy files to /app/ root level for proper imports
-COPY --from=builder --chown=65532:65532 /build/auth/api ./auth/api
-COPY --from=builder --chown=65532:65532 /build/auth/middleware ./auth/middleware
-COPY --from=builder --chown=65532:65532 /build/auth/models ./auth/models
-COPY --from=builder --chown=65532:65532 /build/auth/utils ./auth/utils
-COPY --from=builder --chown=65532:65532 /build/auth/__init__.py ./auth/__init__.py
-COPY --from=builder --chown=65532:65532 /build/auth/main.py ./auth/main.py
-COPY --from=builder --chown=65532:65532 /build/auth/config.py ./auth/config.py
-COPY --from=builder --chown=65532:65532 /build/auth/authentication_service.py ./auth/authentication_service.py
-COPY --from=builder --chown=65532:65532 /build/auth/user_manager.py ./auth/user_manager.py
-COPY --from=builder --chown=65532:65532 /build/auth/hardware_wallet.py ./auth/hardware_wallet.py
-COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py ./auth/session_manager.py
-COPY --from=builder --chown=65532:65532 /build/auth/permissions.py ./auth/permissions.py
-COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py ./auth/healthcheck.py
-
+# add external dependencies
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
+COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
 # Copy verification script from builder stage
-COPY --from=builder --chown=65532:65532 /build/verify_runtime.py ./verify_runtime.py
+COPY --from=builder --chown=65532:65532 /build/auth/verify_runtime.py /app/auth/verify_runtime.py
 
 # Verify source code was copied and no unwanted files are present
 # CRITICAL: Files are copied to /app/auth/ not /app/ root - verify correct paths
 # CRITICAL: Also verify imports are correct to catch Docker cache issues
 # CRITICAL: Check ALL route files for correct imports (auth.models.* not models.*)
 # Using dedicated verification script for maintainability and easier debugging
-RUN ["/usr/bin/python3.11", "./verify_runtime.py"]
+RUN ["/usr/bin/python3.11", "/app/auth/verify_runtime.py"]
 
 EXPOSE 8089
 

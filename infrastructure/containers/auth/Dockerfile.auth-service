@@ -14,7 +14,7 @@
 # ============================================================================
 # Stage 1: Builder - Install dependencies and compile packages
 # ============================================================================
-FROM python:3.11-slim AS builder
+FROM gcr.io/distroless/python3-debian12:latest AS builder
 
 # Metadata
 LABEL maintainer="Lucid Development Team"
@@ -45,11 +45,21 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
-COPY ../../../auth/requirements.txt /build/requirements.txt
-
+COPY ../../../auth/requirements.txt ./requirements.txt
+COPY ../../../auth/ ./auth/
+COPY ../../../admin/ ./admin/
+COPY ../../../core/ ./core/
+COPY ../../../database/ ./database/
+COPY ../../../infrastructure/ ./infrastructure/
+COPY ../../../node/ ./node/
+COPY ../../../RDP/ ./RDP/
+COPY ../../../tools/ ./tools/
+COPY ../../../utils/ ./utils/
+COPY ../../../wallet/ ./wallet/
+COPY ../../../wallet/ ./wallet/
 # Install Python dependencies to user directory for distroless compatibility
 RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --user --no-cache-dir -r /build/requirements.txt
+    pip install --user --no-cache-dir -r ./requirements.txt
 
 # Verify critical packages are installed
 RUN python -c "import fastapi, uvicorn, jwt, motor, redis; print('All critical packages installed successfully')"
@@ -82,7 +92,14 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Copy application code from repository
-COPY ../../../auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
+COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
 
 # Create necessary directories for runtime using Python (distroless-compatible)
 # Distroless has Python but no shell utilities like mkdir

@@ -19,6 +19,7 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 cryptography==42.0.0
 pyotp==2.9.0
+secrets==0.1.0
 
 # Database Drivers
 motor==3.3.2

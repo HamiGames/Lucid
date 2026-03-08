@@ -87,6 +87,8 @@ class Settings(BaseSettings):
     # Monitoring Configuration
     METRICS_ENABLED: bool = Field(default=True)
     HEALTH_CHECK_INTERVAL: str = Field(default="30")
+    # secrets
+    JWT_SECRET_KEY: str = Field(default=secrets.token_urlsafe(48), env="JWT_SECRET_KEY")
     
     @model_validator(mode="before")
     @classmethod
@@ -162,7 +164,7 @@ class Settings(BaseSettings):
     def validate_jwt_secret(cls, v):
         if not v:
             import warnings
-            warnings.warn("JWT_SECRET_KEY not set - using insecure default for startup")
+            warnings.warn(f"JWT_SECRET_KEY not set - using insecure default for startup")
             import secrets
             return secrets.token_urlsafe(48)
         if len(v) < 32:
