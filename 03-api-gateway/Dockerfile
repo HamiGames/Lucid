@@ -75,16 +75,16 @@ RUN echo "=== INSTALLING WHEELS INTO SYSTEM PYTHON ===" && \
 
 # Builder-stage verification - ensure all packages built correctly
 RUN echo "=== Verifying pip installation success ===" && \
-    python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, aiohttp, structlog, prometheus_client; print('✅ All critical packages installed')" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, aiohttp, structlog, prometheus_client; print('✅ All critical packages installed')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
     echo "=== Full package listing ===" && \
     pip list && \
     echo "=== Verifying C extension packages compiled ===" && \
-    python3 -m pip show cryptography && \
-    python3 -m pip show motor && \
-    python3 -m pip show redis && \
-    python3 -m pip show uvloop && \
+    python3.11 -m pip show cryptography && \
+    python3.11 -m pip show motor && \
+    python3.11 -m pip show redis && \
+    python3.11 -m pip show uvloop && \
     echo "=== Verifying site-packages directory ===" && \
     ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" && \
