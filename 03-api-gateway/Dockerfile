@@ -112,19 +112,20 @@ COPY 03-api-gateway/config/ ./config/
 COPY 03-api-gateway/endpoints/ ./endpoints/
 COPY 03-api-gateway/models/ ./models/
 COPY 03-api-gateway/services/ ./services/
-COPY 03-api-gateway/routers/ ./routers/
+COPY 03-api-gateway/repositories/ ./repositories/
 COPY 03-api-gateway/utils/ ./utils/
-COPY 03-api-gateway/tests/ ./tests/
+COPY 03-api-gateway/middleware/ ./middleware/
 COPY 03-api-gateway/scripts/ ./scripts/
+
+# sessions/ is a project-root dependency imported by session_service.py via sys.path
+COPY sessions/ ./sessions/
 COPY node/ ./node/
 COPY gui-api-bridge/ ./gui-api-bridge/
 COPY payment-systems/ ./payment-systems/
 COPY contracts/ ./contracts/
 COPY service-mesh/ ./service-mesh/
-
-# sessions/ is a project-root dependency imported by session_service.py via sys.path
-COPY sessions/ ./sessions/
 COPY RDP/ ./RDP/
+
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
