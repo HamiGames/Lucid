@@ -76,7 +76,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
     echo "installation complete" && \
-    rm -rf /build/wheels
+    
 
 # Builder-stage verification - ensure all packages built correctly
 RUN echo "=== Verifying pip installation success ===" && \
@@ -93,22 +93,17 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "=== Verifying site-packages directory ===" && \
     ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" && \
-    echo "✅ All packages ready for final image"
+    echo " All packages ready for final image"
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
-RUN echo "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.lucid-marker && \
-    chmod 644 /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    chmod 644 /usr/local/bin/.lucid-marker && \
-    echo "✅ Marker files created to lock in directory structure"
+RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep&& \
+    printf "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.keep && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep && \
+    chmod 644 /usr/local/bin/.keep && \
+    echo " Marker files created to lock in directory structure"
 
 # Verify marker files exist with content (critical for distroless COPY)
-RUN echo "=== Verifying marker files ===" && \
-    test -f /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    cat /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    test -f /usr/local/bin/.lucid-marker && \
-    cat /usr/local/bin/.lucid-marker && \
-    echo "✅ Both marker files verified with content"
+
 
     RUN mkdir -p ./api ./gateway ./config ./api/app/endpoints ./sessions ./node ./gui-api-bridge ./infrastructure/service-mesh ./infrastructure/kubernetes ./src/gui ./electron-gui ./gui ./payment-systems ./contracts ./core ./configs/services ./service-mesh ./RDP \
     && printf "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.keep \
@@ -158,7 +153,14 @@ RUN echo "=== Verifying marker files ===" && \
     && touch ./build/wheels/.keep \
     && echo "Build wheels directory created" \
     && echo "Directory structure created" -exec find . -name ".keep" -exec cat {} \;
-  
+
+RUN echo "=== Verifying Keep files ===" && \
+    printf " Checking for marker files in /usr/local/lib/python3.11/site-packages/.keep and /usr/local/bin/.keep" && \
+    test -f /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "%s\n" "$(cat /usr/local/lib/python3.11/site-packages/.keep)" && \
+    test -f /usr/local/bin/.keep && \
+    printf "%s\n" "$(cat /usr/local/bin/.keep)" && \
+    echo " .keep files verified with content"
 
     # Application source COPY (only directories that exist with content)
 
@@ -249,31 +251,30 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-cer
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
 COPY --from=builder --chown=65532:65532 /build/build/wheels /app/build/wheels
-COPY --from=builder /usr/local/bin /app/usr/local/bin
-COPY --from=builder /usr/bin/tini          /app/opt/bin/tini
+COPY --from=builder --chown=65532:65532 /usr/local/bin   /app/usr/local/bin
+COPY --from=builder --chown=65532:65532 /usr/bin/tini        /app/opt/bin/tini
 
 # Application layout COPY (only directories that exist)
-COPY --chown=65532:65532 --from=builder /build/api /app/api
-COPY --chown=65532:65532 --from=builder /build/gateway /app/gateway
-COPY --chown=65532:65532 --from=builder /build/config /app/config
-COPY --chown=65532:65532 --from=builder /build/sessions /app/sessions
-COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh /app/infrastructure/service-mesh
-COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes /app/infrastructure/kubernetes
-COPY --chown=65532:65532 --from=builder /build/src/gui /app/src/gui
-COPY --chown=65532:65532 --from=builder /build/electron-gui/ /app/electron-gui
-COPY --chown=65532:65532 --from=builder /build/gui /app/gui
-COPY --chown=65532:65532 --from=builder /build/gui-api-bridge /app/gui-api-bridge
-COPY --chown=65532:65532 --from=builder /build/payment-systems /app/payment-systems
-COPY --chown=65532:65532 --from=builder /build/contracts /app/contracts
-COPY --chown=65532:65532 --from=builder /build/core /app/core
-COPY --chown=65532:65532 --from=builder /build/api/api /app/api/api
-
-COPY --chown=65532:65532 --from=builder /build/configs/services /app/configs/services
-COPY --chown=65532:65532 --from=builder /build/service-mesh /app/service-mesh
-COPY --chown=65532:65532 --from=builder /build/RDP /app/RDP
-COPY --chown=65532:65532 --from=builder /build/node /app/node
+COPY --chown=65532:65532 --from=builder /build/api                          /app/api
+COPY --chown=65532:65532 --from=builder /build/gateway                      /app/gateway
+COPY --chown=65532:65532 --from=builder /build/config                       /app/config
+COPY --chown=65532:65532 --from=builder /build/sessions                     /app/sessions
+COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh  /app/infrastructure/service-mesh
+COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes    /app/infrastructure/kubernetes
+COPY --chown=65532:65532 --from=builder /build/src/gui                      /app/src/gui
+COPY --chown=65532:65532 --from=builder /build/electron-gui                 /app/electron-gui
+COPY --chown=65532:65532 --from=builder /build/gui                          /app/gui
+COPY --chown=65532:65532 --from=builder /build/gui-api-bridge               /app/gui-api-bridge
+COPY --chown=65532:65532 --from=builder /build/payment-systems              /app/payment-systems
+COPY --chown=65532:65532 --from=builder /build/contracts                    /app/contracts
+COPY --chown=65532:65532 --from=builder /build/core                         /app/core
+COPY --chown=65532:65532 --from=builder /build/api/api                      /app/api/api
+COPY --chown=65532:65532 --from=builder /build/configs/services             /app/configs/services
+COPY --chown=65532:65532 --from=builder /build/service-mesh                 /app/service-mesh
+COPY --chown=65532:65532 --from=builder /build/RDP                     /app/RDP
+COPY --chown=65532:65532 --from=builder /build/node                    /app/node
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config', '/app/sessions']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
