@@ -109,9 +109,16 @@ RUN echo "=== Verifying marker files ===" && \
 COPY 03-api-gateway/api/ ./api/
 COPY 03-api-gateway/gateway/ ./gateway/
 COPY 03-api-gateway/config/ ./config/
+COPY 03-api-gateway/endpoints/ ./endpoints/
+COPY 03-api-gateway/models/ ./models/
+COPY 03-api-gateway/services/ ./services/
+COPY 03-api-gateway/routers/ ./routers/
+COPY 03-api-gateway/utils/ ./utils/
+COPY 03-api-gateway/tests/ ./tests/
+COPY 03-api-gateway/scripts/ ./scripts/
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
 COPY sessions/ ./sessions/
-
+COPY RDP/
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
     echo "LUCID_API_GATEWAY_APP_GATEWAY_$(date +%s)" > ./gateway/.lucid-marker && \
