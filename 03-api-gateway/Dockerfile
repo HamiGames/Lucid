@@ -53,8 +53,7 @@ RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 # Python dependencies
-RUN --mount=type=cache,target=/root/.cache/pip && \
-    --mount=type=cache,target=/root/.cache/pip/wheels &&\
+RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     echo "upgrading pip and setuptools" && \
     pip install --upgrade pip setuptools wheel &&\
@@ -65,18 +64,17 @@ RUN --mount=type=cache,target=/root/.cache/pip && \
 COPY 03-api-gateway/requirements.txt ./requirements.txt
 
 # Step 1: Build wheels explicitly - shows compilation happening
-RUN --mount=type=cache,target=/root/.cache/pip &&\
-    --mount=type=cache,target=/root/.cache/pip/wheels && \
+RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     echo "building wheels from source" &&\
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r /build/requirements.txt && \
     echo "wheel build complete" && \
     ls -lh /build/wheels/ | head -20 && \
     echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
-    pip install --no-cache-dir --no-index --find-links /build/wheels -r requirements.txt && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r /build/requirements.txt && \
     echo "installation complete" && \
     rm -rf /build/wheels
 
