@@ -19,9 +19,8 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 cryptography==42.0.0
 pyotp==2.9.0
-secrets==1.0.2
-python-secrets==24.10.12
 pyOpenSSL==25.0.0
+
 # Database Drivers
 motor==3.3.2
 pymongo==4.6.1
@@ -47,3 +46,4 @@ typing-extensions==4.9.0
 zstandard==0.21.0
 cryptography==42.0.0
 lz4==4.3.2
+python-secrets==24.10.12

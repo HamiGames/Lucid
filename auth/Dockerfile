@@ -146,6 +146,13 @@ RUN echo "LUCID_AUTH_SOURCE_API_$(date +%s)" > ./auth/api/.lucid-api-marker && \
     echo "LUCID_AUTH_MAIN_$(date +%s)" > ./auth/main.py.lucid-marker && \
     chown -R 65532:65532 ./auth
 
+COPY --from=builder --chown=65532:65532 /var/run ./var/run
+COPY --from=builder --chown=65532:65532 /var/lib ./var/lib
+COPY --from=builder --chown=65532:65532 /usr/bin/python3.11 ./usr/bin/python3.11
+COPY --from=builder --chown=65532:65532 /usr/bin/tini ./usr/bin/tini
+COPY --from=builder --chown=65532:65532 /usr/local/bin/python3.11 ./usr/local/bin/python3.11
+
+
 # Copy verification script for runtime stage (maintainable alternative to long inline Python)
 # Note: This script is only executed in the runtime stage, not in builder
 COPY auth/verify_runtime.py ./verify_runtime.py
@@ -176,8 +183,6 @@ WORKDIR /app
 
 # Copy runtime directories from builder (directory already populated with .keep files)
 # CRITICAL: Verify only .keep files exist before copying
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Copy dynamic linker for ARM64 (required for native extensions like cryptography, grpcio)
 COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
@@ -214,14 +219,19 @@ COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
 COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
 COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
 # Copy verification script from builder stage
+COPY --from=builder --chown=65532:65532 /build/local/bin/ /app/local/bin/
+COPY --from=builder --chown=65532:65532 /build/var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /build/var/run/ /app/var/run/
+COPY --from=builder --chown=65532:65532 /build/usr/bin/tini /app/usr/bin/tini
+COPY --from=builder --chown=65532:65532 /build/usr/local/bin/python3.11/ /app/usr/local/bin/python3.11/
+COPY --from=builder --chown=65532:65532 /build/usr/bin/python3.11 /app/usr/bin/python3.11
 COPY --from=builder --chown=65532:65532 /build/auth/verify_runtime.py /app/auth/verify_runtime.py
-
 # Verify source code was copied and no unwanted files are present
 # CRITICAL: Files are copied to /app/auth/ not /app/ root - verify correct paths
 # CRITICAL: Also verify imports are correct to catch Docker cache issues
 # CRITICAL: Check ALL route files for correct imports (auth.models.* not models.*)
 # Using dedicated verification script for maintainability and easier debugging
-RUN ["/usr/bin/python3.11", "/app/auth/verify_runtime.py"]
+RUN ["/app/usr/bin/python3.11", "/app/auth/verify_runtime.py"]
 
 EXPOSE 8089
 
