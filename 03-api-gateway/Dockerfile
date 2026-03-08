@@ -53,31 +53,31 @@ RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 # Python dependencies
-RUN --mount=type=cache,target=/root/.cache/pip &&\
-    --mount=type=cache,target=/root/.cache/pip/wheels \
+RUN --mount=type=cache,target=/root/.cache/pip && \
+    --mount=type=cache,target=/root/.cache/pip/wheels &&\
     mkdir -p /build/wheels && \
-    echo "=== UPGRADING PIP AND SETUPTOOLS ===" && \
-    pip install --upgrade pip setuptools wheel && \
-    echo "=== UPGRADE COMPLETE ===" && \
-    ls -lh /build/wheels/ && \
-    echo "Total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+    echo "upgrading pip and setuptools" && \
+    pip install --upgrade pip setuptools wheel &&\
+    echo "upgrade complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 COPY 03-api-gateway/requirements.txt ./requirements.txt
 
 # Step 1: Build wheels explicitly - shows compilation happening
-RUN --mount=type=cache,target=/root/.cache/pip && \
-    --mount=type=cache,target=/root/.cache/pip/wheels \
+RUN --mount=type=cache,target=/root/.cache/pip &&\
+    --mount=type=cache,target=/root/.cache/pip/wheels && \
     mkdir -p /build/wheels && \
-    echo "=== BUILDING WHEELS FROM SOURCE ===" && \
+    echo "building wheels from source" &&\
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt && \
-    echo "=== WHEEL BUILD COMPLETE ===" && \
-    ls -lh /build/wheels/ && \
-    echo "Total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+    echo "wheel build complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 # Step 2: Install wheels into system Python
-RUN echo "=== INSTALLING WHEELS INTO SYSTEM PYTHON ===" && \
+RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r requirements.txt && \
-    echo "=== INSTALLATION COMPLETE ===" && \
+    echo "installation complete" && \
     rm -rf /build/wheels
 
 # Builder-stage verification - ensure all packages built correctly
