@@ -197,7 +197,7 @@ COPY ../../../electron-gui/ ./electron-gui/
 COPY ../../../payment-systems/ ./payment-systems/
 COPY ../../../api/ ./api/api/
 COPY ../../../payment-systems/ ./payment-systems/
-COPT ../../../configs/services/ ./configs/services/
+COPY ../../../configs/services/ ./configs/services/
 
 # Create marker files in app directories (ensures COPY won't fail silently)
 
