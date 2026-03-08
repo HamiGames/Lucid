@@ -148,19 +148,19 @@ RUN echo "LUCID_API_GATEWAY_APP_API_$(date +%s)" > ./api/.lucid-marker && \
 
 # Verify new modules are included in builder stage - file existence & imports
 RUN echo "Verifying new modules are included in builder stage" && \
-    test -f ./api/app/routers/gui.py && echo "gui.py found" && \
-    test -f ./api/app/routers/gui_docker.py && echo " gui_docker.py found" && \
-    test -f ./api/app/routers/gui_tor.py && echo " gui_tor.py found" && \
-    test -f ./api/app/routers/gui_hardware.py && echo "gui_hardware.py found" && \
-    test -f ./api/app/routers/tron_support.py && echo " tron_support.py found" && \
-    test -f ./api/app/services/gui_bridge_service.py && echo " gui_bridge_service.py found" && \
-    test -f ./api/app/services/gui_docker_manager_service.py && echo " gui_docker_manager_service.py found" && \
-    test -f ./api/app/services/gui_tor_manager_service.py && echo " gui_tor_manager_service.py found" && \
-    test -f ./api/app/services/gui_hardware_manager_service.py && echo " gui_hardware_manager_service.py found" && \
-    test -f ./api/app/services/tron_support_service.py && echo " tron_support_service.py found" && \
-    test -f ./api/app/services/__init__.py && echo " services/__init__.py found" && \
+    test -f /build/api/app/routers/gui.py && echo "gui.py found" && \
+    test -f /build/api/app/routers/gui_docker.py && echo " gui_docker.py found" && \
+    test -f /build/api/app/routers/gui_tor.py && echo " gui_tor.py found" && \
+    test -f /build/api/app/routers/gui_hardware.py && echo "gui_hardware.py found" && \
+    test -f /build/api/app/routers/tron_support.py && echo " tron_support.py found" && \
+    test -f /build/api/app/services/gui_bridge_service.py && echo " gui_bridge_service.py found" && \
+    test -f /build/api/app/services/gui_docker_manager_service.py && echo " gui_docker_manager_service.py found" && \
+    test -f /build/api/app/services/gui_tor_manager_service.py && echo " gui_tor_manager_service.py found" && \
+    test -f /build/api/app/services/gui_hardware_manager_service.py && echo " gui_hardware_manager_service.py found" && \
+    test -f /build/api/app/services/tron_support_service.py && echo " tron_support_service.py found" && \
+    test -f /build/api/app/services/__init__.py && echo " services/__init__.py found" && \
     echo "All new modules verified in builder stage" && \
-    python3 -c "import sys; sys.path.insert(0, './api'); sys.path.insert(0, './sessions'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; from pipeline import pipeline_manager; from core import session_generator; print('✅ All module imports successful in builder')"
+    python3 -c "import sys; sys.path.insert(0, '/build/api'); sys.path.insert(0, '/build/sessions'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; from pipeline import pipeline_manager; from core import session_generator; print('All module imports successful in builder')"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -195,15 +195,15 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /var/run /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /usr/bin/tini          /opt/bin/tini
+COPY --from=builder /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
+COPY --from=builder /usr/local/bin /app/usr/local/bin
+COPY --from=builder /usr/bin/tini          /app/opt/bin/tini
 
 # Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/api /app/api

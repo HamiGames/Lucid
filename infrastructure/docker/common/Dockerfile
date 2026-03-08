@@ -3,7 +3,8 @@
 # Multi-platform build for ARM64 Pi and AMD64 development
 
 # syntax=docker/dockerfile:1.7
-FROM alpine:3.19 AS server-tools-builder
+
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest AS server-tools-builder
 
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
@@ -56,6 +57,14 @@ RUN apk update && apk upgrade \
     && apk upgrade \
     && rm -rf /var/cache/apk/* /tmp/* /var/tmp/* \
     && adduser -D -s /bin/bash lucid
+
+WORKDIR /build
+COPY tools/ ./tools/
+COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY node/config/ ./node/config/
+COPY RDP/config/ ./RDP/config/
+COPY admin/config/ ./admin/config/
+
 
 # Create utility directories
 RUN mkdir -p /opt/lucid/tools /opt/lucid/scripts /var/log/lucid \
@@ -233,15 +242,29 @@ COPY --from=server-tools-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/cer
 COPY --from=server-tools-builder --chown=lucid:lucid /opt/lucid /opt/lucid
 COPY --from=server-tools-builder --chown=lucid:lucid /var/log/lucid /var/log/lucid
 COPY --from=server-tools-builder --chmod=755 /usr/local/bin/server-tools-start.sh /usr/local/bin/server-tools-start.sh
-
+COPY --from=server-tools-builder --chown=lucid:lucid build/wheels/ /opt/lucid/tools/wheels/
+COPY --from=server-tools-builder --chown=lucid:lucid /build/infrastructure/service-mesh/ /opt/lucid/tools/infrastructure/service-mesh/
+COPY --from=server-tools-builder --chown=65532:65532 /build/tools/ /opt/lucid/tools/
+COPY --from=server-tools-builder --chown=lucid:lucid /build/node/config/ /opt/lucid/tools/node/config/
+COPY --from=server-tools-builder --chown=lucid:lucid /build/RDP/config/ /opt/lucid/tools/RDP/config/
+COPY --from=server-tools-builder --chown=lucid:lucid /build/admin/config/ /opt/lucid/tools/admin/config/
 # Environment variables for configuration
 ENV LUCID_ENV=dev \
     TOOLS_DIR="/opt/lucid/tools" \
     SCRIPTS_DIR="/opt/lucid/scripts" \
     LOG_DIR="/var/log/lucid" \
     PATH="/opt/lucid/scripts:/opt/lucid/tools:$PATH"
+FROM gcr.io/distroless/nodejs18-debian11:latest as js-builder
+
+COPY database/services/init_collections.js ./database/services/init_collections.js
+COPY database/schemas/ ./database/schemas/
+
+COPY --from=js-builder /build/database/services/init_collections.js /opt/lucid/tools/database/services/init_collections.js
+COPY --from=js-builder /build/database/schemas/ /opt/lucid/tools/database/schemas/
+
+
 
 # Security and runtime configuration
 USER lucid
 WORKDIR /opt/lucid
-ENTRYPOINT ["/usr/local/bin/server-tools-start.sh"]
+ENTRYPOINT ["tini", "--"]
