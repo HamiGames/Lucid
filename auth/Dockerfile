@@ -108,6 +108,7 @@ COPY ../../../tools/ ./tools/
 COPY ../../../utils/ ./utils/
 COPY ../../../wallet/ ./wallet/
 COPY ../../../comnmon/ ./common/
+COPY ../../../configs/services/ ./services/
 
 # CRITICAL: Remove platform-specific files and Python cache files immediately after COPY
 # This prevents silently passing non-Linux files and cache artifacts into the image
@@ -208,24 +209,25 @@ RUN ["/usr/bin/python3.11", "-c", "import sys; import os; import importlib.util;
 
 # Copy auth source code from builder - CRITICAL: Copy files to /app/ root level for proper imports
 # add external dependencies
-COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
-COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
-COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
-COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
-COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
-COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/services         /app/configs/services
+COPY --from=builder --chown=65532:65532 /build/admin            /app/admin
+COPY --from=builder --chown=65532:65532 /build/common           /app/common
+COPY --from=builder --chown=65532:65532 /build/core             /app/core
+COPY --from=builder --chown=65532:65532 /build/database         /app/database
+COPY --from=builder --chown=65532:65532 /build/infrastructure   /app/infrastructure
+COPY --from=builder --chown=65532:65532 /build/node             /app/node
+COPY --from=builder --chown=65532:65532 /build/RDP              /app/RDP
+COPY --from=builder --chown=65532:65532 /build/tools            /app/tools
+COPY --from=builder --chown=65532:65532 /build/utils            /app/utils
+COPY --from=builder --chown=65532:65532 /build/wallet           /app/wallet
 # Copy verification script from builder stage
-COPY --from=builder --chown=65532:65532 /build/local/bin/ /app/local/bin/
-COPY --from=builder --chown=65532:65532 /build/var/lib/ /app/var/lib/
-COPY --from=builder --chown=65532:65532 /build/var/run/ /app/var/run/
-COPY --from=builder --chown=65532:65532 /build/usr/bin/tini /app/usr/bin/tini
-COPY --from=builder --chown=65532:65532 /build/usr/local/bin/python3.11/ /app/usr/local/bin/python3.11/
-COPY --from=builder --chown=65532:65532 /build/usr/bin/python3.11 /app/usr/bin/python3.11
-COPY --from=builder --chown=65532:65532 /build/auth/verify_runtime.py /app/auth/verify_runtime.py
+COPY --from=builder --chown=65532:65532 /build/local/bin                /app/local/bin
+COPY --from=builder --chown=65532:65532 /build/var/lib                  /app/var/lib
+COPY --from=builder --chown=65532:65532 /build/var/run                  /app/var/run
+COPY --from=builder --chown=65532:65532 /build/usr/bin/tini             /app/usr/bin/tini
+COPY --from=builder --chown=65532:65532 /build/usr/local/bin/python3.11 /app/usr/local/bin/python3.11
+COPY --from=builder --chown=65532:65532 /build/usr/bin/python3.11       /app/usr/bin/python3.11
+COPY --from=builder --chown=65532:65532 /build/auth/verify_runtime.py   /app/auth/verify_runtime.py
 # Verify source code was copied and no unwanted files are present
 # CRITICAL: Files are copied to /app/auth/ not /app/ root - verify correct paths
 # CRITICAL: Also verify imports are correct to catch Docker cache issues

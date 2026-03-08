@@ -148,10 +148,13 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     && touch ./contracts/.keep \
     && echo "Contracts directory created" \
     \
-    && mkdir -p ./build/wheels \
+    && mkdir -p ./build/wheels ./configs/services \
     && printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > ./build/wheels/.keep \
+    && printf "LUCID_API_GATEWAY_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep \
     && touch ./build/wheels/.keep \
+    && touch ./configs/services/.keep \
     && echo "Build wheels directory created" \
+    && echo "Configs services directory created" \
     && echo "Directory structure created" -exec find . -name ".keep" -exec cat {} \;
 
 RUN echo "=== Verifying Keep files ===" && \
@@ -194,6 +197,8 @@ COPY ../../../electron-gui/ ./electron-gui/
 COPY ../../../payment-systems/ ./payment-systems/
 COPY ../../../api/ ./api/api/
 COPY ../../../payment-systems/ ./payment-systems/
+COPT ../../../configs/services/ ./configs/services/
+
 # Create marker files in app directories (ensures COPY won't fail silently)
 
 # Verify new modules are included in builder stage - file existence & imports
@@ -257,6 +262,7 @@ COPY --from=builder --chown=65532:65532 /usr/local/bin   /app/usr/local/bin
 COPY --from=builder --chown=65532:65532 /usr/bin/tini        /app/opt/bin/tini
 
 # Application layout COPY (only directories that exist)
+COPY --chown=65532:65532 --from=builder /build/configs/services             /app/configs/services
 COPY --chown=65532:65532 --from=builder /build/api                          /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway                      /app/gateway
 COPY --chown=65532:65532 --from=builder /build/config                       /app/config
