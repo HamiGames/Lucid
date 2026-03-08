@@ -153,9 +153,10 @@ RUN echo "=== Verifying marker files ===" && \
     && touch ./contracts/.keep \
     && echo "Contracts directory created" \
     \
-    && find ./api ./gateway ./config ./api/app/endpoints ./payment-systems ./contracts ./core -name ".keep" -exec cat {} \;
-    && find ./sessions ./node ./gui-api-bridge ./electron-gui ./gui ./configs/services ./service-mesh ./RDP -name ".keep" -exec cat {} \;
-# Application source COPY (only directories that exist with content)
+    && find "./*/.keep" -exec cat {} \;
+    && find "./*/*/.keep" -exec cat {} \;
+
+    # Application source COPY (only directories that exist with content)
 
 COPY 03-api-gateway/api/ ./api/
 COPY 03-api-gateway/gateway/ ./gateway/
