@@ -53,13 +53,20 @@ RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 # Python dependencies
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+RUN --mount=type=cache,target=/root/.cache/pip &&\
+    --mount=type=cache,target=/root/.cache/pip/wheels \
+    mkdir -p /build/wheels && \
+    echo "=== UPGRADING PIP AND SETUPTOOLS ===" && \
+    pip install --upgrade pip setuptools wheel && \
+    echo "=== UPGRADE COMPLETE ===" && \
+    ls -lh /build/wheels/ && \
+    echo "Total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 COPY 03-api-gateway/requirements.txt ./requirements.txt
 
 # Step 1: Build wheels explicitly - shows compilation happening
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN --mount=type=cache,target=/root/.cache/pip && \
+    --mount=type=cache,target=/root/.cache/pip/wheels \
     mkdir -p /build/wheels && \
     echo "=== BUILDING WHEELS FROM SOURCE ===" && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt && \

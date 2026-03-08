@@ -13,7 +13,6 @@ pydantic-settings==2.1.0
 uvloop==0.19.0
 httptools==0.6.1
 
-
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
@@ -45,5 +44,4 @@ python-dotenv==1.0.0
 typing-extensions==4.9.0
 zstandard==0.21.0
 cryptography==42.0.0
-blake3==0.3.3
 lz4==4.3.2
