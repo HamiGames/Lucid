@@ -74,8 +74,8 @@ RUN echo "LUCID_API_SERVER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/py
     chown -R 65532:65532 /root/.local
 
 # Verify packages are installed (builder stage)
-RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx, aiofiles; print('✅ critical packages installed')" && \
-    python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
+RUN python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx, aiofiles; print('✅ critical packages installed')" && \
+    python3.11 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages" && \
     ls -la /root/.local/lib/python3.11/site-packages/ | head -20 && \
