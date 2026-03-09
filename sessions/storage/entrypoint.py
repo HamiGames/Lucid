@@ -13,7 +13,7 @@ import os
 import sys
 
 # Ensure site-packages is in Python path (per master-docker-design.md)
-site_packages = '/usr/local/lib/python3.11/site-packages'
+site_packages = '/app/usr/local/lib/python3.11/site-packages'
 if site_packages not in sys.path:
     sys.path.insert(0, site_packages)
 

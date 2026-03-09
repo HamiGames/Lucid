@@ -112,7 +112,9 @@ class AuthMiddleware:
         """
         try:
             # Import here to avoid circular imports
-            from jose import jwt, JWTError
+            
+            from jose import JWT, JWTError
+            jwt = JWT()
             
             payload = jwt.decode(
                 token,

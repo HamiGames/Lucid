@@ -14,7 +14,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from sessions.api.session_api import (
+from ..api.session_api import (
     SessionAPI, CreateSessionRequest, UpdateSessionRequest, SessionResponse,
     SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse,
     StatisticsResponse

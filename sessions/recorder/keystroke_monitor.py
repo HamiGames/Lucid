@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import uuid
+import pynput
 import hashlib
 import base64
 
@@ -32,7 +33,6 @@ except ImportError:
     Listener = None
 
 try:
-    import Xlib
     from Xlib import X, display
     from Xlib.ext import record
     from Xlib.protocol import rq

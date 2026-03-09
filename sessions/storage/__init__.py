@@ -13,18 +13,18 @@ Features:
 - FastAPI-based storage API
 """
 
-from sessions.storage.session_storage import SessionStorage, StorageConfig, StorageMetrics
+from sessions.storage.session_storage import StorageConfig, StorageMetrics, SessionStorageService
 from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
-from sessions.storage.config import StorageSettings, StorageConfig as StorageConfigManager
-
+from sessions.storage.config import StorageSettings
+from sessions.storage.config import StorageConfig as ConfigStorageManager
 __all__ = [
-    'SessionStorage',
+    'SessionStorageService',
     'StorageConfig', 
     'StorageMetrics',
     'ChunkStore',
     'ChunkStoreConfig',
     'StorageSettings',
-    'StorageConfigManager'
+    'ConfigStorageManager'
 ]
 
 __version__ = "1.0.0"

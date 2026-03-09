@@ -191,7 +191,13 @@ COPY 03-api-gateway/api/app/ ./api/app/
 
 
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
-COPY ../../../sessions/ ./sessions/
+COPY ../../../sessions/api/ ./sessions/api/
+COPY ../../../sessions/core/ ./sessions/core/
+COPY ../../../sessions/storage/ ./sessions/storage/
+COPY ../../../sessions/encryption/ ./sessions/encryption/
+COPY ../../../sessions/integration/ ./sessions/integration/
+COPY ../../../sessions/pipeline/ ./sessions/pipeline/
+COPY ../../../sessions/processor/ ./sessions/processor/
 COPY ../../../node/ ./node/
 COPY ../../../gui-api-bridge/ ./gui-api-bridge/
 COPY ../../../gui/ ./gui/
@@ -267,7 +273,6 @@ COPY --chown=65532:65532 --from=builder /build/configs/services/             /ap
 COPY --chown=65532:65532 --from=builder /build/api/                          /app/api/
 COPY --chown=65532:65532 --from=builder /build/gateway/                      /app/gateway/
 COPY --chown=65532:65532 --from=builder /build/config/                       /app/config/
-COPY --chown=65532:65532 --from=builder /build/sessions/                     /app/sessions/
 COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh/  /app/infrastructure/service-mesh/
 COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/    /app/infrastructure/kubernetes/
 COPY --chown=65532:65532 --from=builder /build/src/gui/                      /app/src/gui/
@@ -289,7 +294,14 @@ COPY --chown=65532:65532 --from=builder /build/api/app/utils/          /app/util
 COPY --chown=65532:65532 --from=builder /build/api/app/schemas/        /app/schemas/
 COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py     /app/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/deps.py         /app/deps.py
-
+COPY --chown=65532:65532 --from=builder /build/sessions/api/             /app/sessions/api/
+COPY --chown=65532:65532 --from=builder /build/sessions/core/             /app/sessions/core/
+COPY --chown=65532:65532 --from=builder /build/sessions/storage/             /app/sessions/storage/
+COPY --chown=65532:65532 --from=builder /build/sessions/encryption/             /app/sessions/encryption/
+COPY --chown=65532:65532 --from=builder /build/sessions/integration/             /app/sessions/integration/
+COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/             /app/sessions/pipeline/
+COPY --chown=65532:65532 --from=builder /build/sessions/processor/             /app/sessions/processor/
+COPY --chown=65532:65532 --from=builder /build/sessions/recorder/             /app/sessions/recorder/
 
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)

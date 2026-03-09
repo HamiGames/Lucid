@@ -14,9 +14,10 @@ from pathlib import Path
 from typing import AsyncGenerator, Dict, List, Optional, Tuple
 import json
 
-from sessions.core.chunker import SessionChunker, ChunkMetadata
-from sessions.encryption.encryptor import SessionEncryptor, EncryptedChunk
-from sessions.core.merkle_builder import MerkleTreeBuilder, MerkleRoot
+from ..core.chunker import SessionChunker, ChunkMetadata
+from ..encryption.encryptor import EncryptedChunk, SessionEncryptor
+from ..core.merkle_builder import MerkleTreeBuilder, MerkleRoot
+
 
 logger = logging.getLogger(__name__)
 

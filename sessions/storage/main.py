@@ -13,9 +13,9 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from sessions.storage.session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
-from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
-from sessions.storage.config import StorageConfig as StorageConfigManager
+from ..storage.session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
+from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
+from ..storage.config import StorageConfig as StorageConfigManager
 
 # Configure logging (structured logging per master design)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()

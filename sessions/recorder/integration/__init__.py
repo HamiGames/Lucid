@@ -4,13 +4,13 @@ Session Recorder Integration Module
 Provides clients for interacting with external services
 """
 
-from .service_base import ServiceClientBase, ServiceError, ServiceTimeoutError
-from .integration_manager import IntegrationManager
+from ..integration.service_base import ServiceClientBase, ServiceError, ServiceTimeoutError
+from ..integration.integration_manager import IntegrationManager
 
 # Import clients if needed
 try:
-    from sessions.recorder.integration.session_pipeline_client import SessionPipelineClient
-    from sessions.recorder.integration.session_storage_client import SessionStorageClient
+    from ..integration.session_pipeline_client import SessionPipelineClient
+    from ..integration.session_storage_client import SessionStorageClient, SessionStorageClientError
 except ImportError:
     # Clients will be created dynamically
     SessionPipelineClient = None
@@ -23,5 +23,6 @@ __all__ = [
     'IntegrationManager',
     'SessionPipelineClient',
     'SessionStorageClient',
+    'SessionStorageClientError'
 ]
 

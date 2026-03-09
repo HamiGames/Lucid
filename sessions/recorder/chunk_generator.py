@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import uuid
 import os
 
-from .session_recorder import ChunkMetadata
+from sessions.recorder.session_recorder import ChunkMetadata
 
 logger = logging.getLogger(__name__)
 

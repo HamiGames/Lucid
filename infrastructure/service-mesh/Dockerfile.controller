@@ -166,6 +166,16 @@ print("✅ critical packages installed and importable: all directories exist and
 # Copy service mesh controller source code to builder stage
 # CRITICAL: Use full path from build context root (build context is .)
 COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY infrastructure/service-mesh/entrypoint.py ./entrypoint.py
+COPY infrastructure/service-mesh/controller/ ./controller/
+COPY infrastructure/service-mesh/sidecar/ ./sidecar/
+COPY infrastructure/service-mesh/discovery/ ./discovery/
+COPY infrastructure/service-mesh/communication/ ./communication/
+COPY infrastructure/service-mesh/security/ ./security/
+COPY infrastructure/service-mesh/test_basic.py ./test/test_basic.py
+COPY infrastructure/service-mesh/test_imports.py ./test/test_imports.py
+COPY infrastructure/service-mesh/test_controller.py ./test/test_controller.py
+
 COPY ../../../configs/services/ ./configs/services/
 COPY ../../../service-mesh/ ./service-mesh/
 COPY ../../../api/ ./api/
@@ -281,8 +291,7 @@ COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Verify system libraries were copied (per Dockerfile-copy-pattern: verify after COPY)
-# CRITICAL: This will fail the build if system libraries are missing (prevents silent failures)
-# CRITICAL: Verify file types and sizes to ensure complete copy (not empty or partial)
+
 RUN ["/usr/bin/python3", "-c", "import os, sys; linker = '/lib/ld-linux-aarch64.so.1'; lib_dir = '/lib/aarch64-linux-gnu'; certs = '/etc/ssl/certs/ca-certificates.crt'; assert os.path.exists(linker), f'ERROR: Dynamic linker not copied: {linker}'; assert os.path.isfile(linker), f'ERROR: {linker} is not a file'; assert os.path.getsize(linker) > 0, f'ERROR: {linker} is empty'; assert os.path.isdir(lib_dir), f'ERROR: Arch-specific libs not copied: {lib_dir}'; assert len(os.listdir(lib_dir)) > 0, f'ERROR: {lib_dir} is empty'; assert os.path.exists(certs), f'ERROR: CA certificates not copied: {certs}'; assert os.path.isfile(certs), f'ERROR: {certs} is not a file'; assert os.path.getsize(certs) > 0, f'ERROR: {certs} is empty'; print('✅ System libraries verified in runtime stage: all files exist, have correct types, and are non-empty')"]
 
 # Verify packages were copied (this will fail the build if packages are missing)
@@ -293,7 +302,26 @@ RUN ["/usr/bin/python3", "-c", "import os, sys; linker = '/lib/ld-linux-aarch64.
 RUN ["/usr/bin/python3", "-c", "import os, importlib, importlib.util, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; bin_dir = '/usr/local/bin'; sys.path.insert(0, site_packages); assert os.path.exists(site_packages), f'ERROR: {site_packages} does not exist'; assert os.path.isdir(site_packages), f'ERROR: {site_packages} is not a directory'; assert os.path.exists(bin_dir), f'ERROR: {bin_dir} does not exist'; assert os.path.isdir(bin_dir), f'ERROR: {bin_dir} is not a directory'; required = ('grpc', 'aiohttp', 'consul', 'pydantic', 'cryptography', 'yaml'); failed = [pkg for pkg in required if not importlib.util.find_spec(pkg)]; assert len(failed) == 0, f'ERROR: Packages cannot be imported: {failed}'; [importlib.import_module(pkg) for pkg in required]; assert os.path.exists(os.path.join(site_packages, 'grpc')), 'ERROR: grpc directory not found'; assert os.path.exists(os.path.join(site_packages, 'aiohttp')), 'ERROR: aiohttp directory not found'; assert os.path.exists(os.path.join(site_packages, 'consul')), 'ERROR: consul directory not found'; assert os.path.exists(os.path.join(site_packages, 'pydantic')), 'ERROR: pydantic directory not found'; assert os.path.exists(os.path.join(site_packages, 'cryptography')), 'ERROR: cryptography directory not found'; assert os.path.exists(os.path.join(site_packages, 'yaml')) or os.path.exists(os.path.join(site_packages, 'yaml.py')), 'ERROR: yaml not found'; marker_path = os.path.join(site_packages, '.lucid-marker'); bin_marker_path = os.path.join(bin_dir, '.lucid-marker'); assert os.path.exists(marker_path), f'ERROR: marker file not found: {marker_path}'; assert os.path.exists(bin_marker_path), f'ERROR: bin marker file not found: {bin_marker_path}'; assert os.path.getsize(marker_path) > 0, f'ERROR: marker file is empty: {marker_path}'; assert os.path.getsize(bin_marker_path) > 0, f'ERROR: bin marker file is empty: {bin_marker_path}'; print('✅ Packages verified in runtime stage: directories exist, imports work, and marker files have content')"]
 
 # Copy application code from builder (directory already populated with source + marker files)
-COPY --from=builder --chown=65532:65532 /app /app
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
+COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
+COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
+
+COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
+COPY --from=builder --chown=65532:65532 /build/sidecar/         /app/sidecar/
+COPY --from=builder --chown=65532:65532 /build/discovery/       /app/discovery/
+COPY --from=builder --chown=65532:65532 /build/communication/   /app/communication/
+COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
+COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
+COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
+COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
+COPY --from=builder --chown=65532:65532 /build/core/            /app/core/
+COPY --from=builder --chown=65532:65532 /build/database/        /app/database/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/  /app/infrastructure/
+COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
+COPY --from=builder --chown=65532:65532 /build/RDP/             /app/RDP/
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
 
 # Verify controller module and entrypoint exist (this will fail the build if missing)
 # CRITICAL: Verify all source directories AND marker files AND module can be imported (per Dockerfile-copy-pattern)
@@ -301,6 +329,20 @@ COPY --from=builder --chown=65532:65532 /app /app
 RUN ["/usr/bin/python3", "-c", "import os, importlib.util, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); assert os.path.exists('/app/controller'), 'ERROR: /app/controller missing'; assert os.path.isdir('/app/controller'), 'ERROR: /app/controller is not a directory'; assert os.path.exists('/app/sidecar'), 'ERROR: /app/sidecar missing'; assert os.path.exists('/app/discovery'), 'ERROR: /app/discovery missing'; assert os.path.exists('/app/communication'), 'ERROR: /app/communication missing'; assert os.path.exists('/app/security'), 'ERROR: /app/security missing'; assert os.path.exists('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py missing'; assert os.path.isfile('/app/entrypoint.py'), 'ERROR: /app/entrypoint.py is not a file'; assert os.path.exists('/app/controller/.lucid-source-marker'), 'ERROR: controller marker missing'; assert os.path.exists('/app/sidecar/.lucid-sidecar-marker'), 'ERROR: sidecar marker missing'; assert os.path.exists('/app/discovery/.lucid-discovery-marker'), 'ERROR: discovery marker missing'; assert os.path.exists('/app/communication/.lucid-communication-marker'), 'ERROR: communication marker missing'; assert os.path.exists('/app/security/.lucid-security-marker'), 'ERROR: security marker missing'; spec = importlib.util.find_spec('controller.main', package=None); assert spec is not None, 'ERROR: controller.main module not found'; print('✅ controller package and entrypoint verified in runtime stage: all directories, markers, and module imports verified')"]
 
 # Locale and Timezone Configuration (distroless-compatible: C.UTF-8)
+COPY --from=builder --chown=65532:65532 /build/admin/   /app/admin/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/service-mesh/ /app/infrastructure/service-mesh
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
+COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
+COPY --from=builder --chown=65532:65532 /build/electron-gui/ /app/electron-gui/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/gui-api-bridge/ /app/gui-api-bridge/
+COPY --from=builder --chown=65532:65532 /build/payment-systems/ /app/payment-systems/
+COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
 ENV TZ=UTC \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \

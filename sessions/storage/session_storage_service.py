@@ -6,8 +6,7 @@ Handles session data storage with MongoDB integration and compression
 
 import asyncio
 import logging
-import time
-from typing import Dict, List, Optional, Any, BinaryIO
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 import json
