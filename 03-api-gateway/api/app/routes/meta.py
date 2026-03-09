@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 # Optional: check Mongo dependency if available
 try:
-    from app.db.connection import ping as mongo_ping
+    from ..database.connection import ping as mongo_ping
 except Exception:  # keep route resilient even if DB layer imports fail
     mongo_ping = None  # type: ignore[assignment]
 

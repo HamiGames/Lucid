@@ -18,9 +18,10 @@ import secrets
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
-from .state_machine import PipelineStateMachine, PipelineState, StateTransition
-from .config import PipelineConfig
+from sessions.pipeline.state_machine import PipelineStateMachine, PipelineState, StateTransition
+from sessions.pipeline.config import PipelineConfig
 from sessions.core.logging import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -76,7 +77,7 @@ class PipelineManager:
         
         # Initialize integration manager for external service communication
         try:
-            from .integration.integration_manager import IntegrationManager
+            from sessions.pipeline.integration.integration_manager import IntegrationManager
             self.integrations = IntegrationManager(self.config)
             logger.info("Integration manager initialized")
         except Exception as e:

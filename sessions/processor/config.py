@@ -14,6 +14,10 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
+
+
+
+
 try:
     import yaml
     YAML_AVAILABLE = True
@@ -159,15 +163,14 @@ class ChunkProcessorConfig(BaseSettings):
     jaeger_endpoint: Optional[str] = None
     
     # External Service URLs (from .env.core, .env.application)
-    BLOCKCHAIN_ENGINE_URL: str = ""  # From environment: BLOCKCHAIN_ENGINE_URL (e.g., http://blockchain-engine:8084)
-    NODE_MANAGEMENT_URL: str = ""  # From environment: NODE_MANAGEMENT_URL (e.g., http://node-management:8095)
-    API_GATEWAY_URL: str = ""  # From environment: API_GATEWAY_URL (e.g., http://api-gateway:8080)
-    AUTH_SERVICE_URL: str = ""  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
-    SESSION_PIPELINE_URL: str = ""  # From environment: SESSION_PIPELINE_URL (e.g., http://session-pipeline:8083)
-    SESSION_RECORDER_URL: str = ""  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
-    SESSION_STORAGE_URL: str = ""  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
-    SESSION_API_URL: str = ""  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
-    
+    BLOCKCHAIN_ENGINE_URL: str= os.getenv('BLOCKCHAIN_ENGINE_URL', '')  # From environment: BLOCKCHAIN_ENGINE_URL (e.g., http://blockchain-engine:8084)
+    NODE_MANAGEMENT_URL: str = os.getenv('NODE_MANAGEMENT_URL', '')  # From environment: NODE_MANAGEMENT_URL (e.g., http://node-management:8095)
+    API_GATEWAY_URL: str = os.getenv('API_GATEWAY_URL', '')  # From environment: API_GATEWAY_URL (e.g., http://api-gateway:8080)
+    AUTH_SERVICE_URL: str = os.getenv('AUTH_SERVICE_URL', '')  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
+    SESSION_PIPELINE_URL: str = os.getenv('SESSION_PIPELINE_URL', '')  # From environment: SESSION_PIPELINE_URL (e.g., http://session-pipeline:8083)
+    SESSION_RECORDER_URL: str = os.getenv('SESSION_RECORDER_URL', '')  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
+    SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
+    SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
     # Integration Service Timeout Configuration (from .env.application)
     SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
     SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls

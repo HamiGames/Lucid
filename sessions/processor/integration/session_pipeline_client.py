@@ -15,7 +15,7 @@ import httpx
 
 # Use core.logging if available, fallback to standard logging
 try:
-    from core.logging import get_logger
+    from sessions.core.logging import get_logger
 except ImportError:
     logger = logging.getLogger(__name__)
     def get_logger(name):

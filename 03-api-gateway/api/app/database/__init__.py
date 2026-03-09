@@ -7,6 +7,19 @@ Purpose: Database connection and repository layer
 
 # Database imports will be added as they are implemented
 # from .connection import init_database, get_database, get_redis
+from app.database.connection import (
+    init_database,
+    get_database,
+    get_redis,
+    close_database,
+    close_redis,
+)
 
-__all__ = []
+__all__ = [
+    'init_database',
+    'get_database',
+    'get_redis',
+    'close_database',
+    'close_redis',
+]
 

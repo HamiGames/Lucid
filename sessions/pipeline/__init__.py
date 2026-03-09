@@ -11,7 +11,7 @@ __version__ = "1.0.0"
 # Import order matters - import from most basic to most complex to avoid circular dependencies
 
 # State machine components (no dependencies on other pipeline modules)
-from .state_machine import (
+from sessions.pipeline.state_machine import (
     PipelineState,
     StateTransition,
     StateTransitionRule,
@@ -19,7 +19,7 @@ from .state_machine import (
 )
 
 # Configuration (depends on pydantic, no pipeline dependencies)
-from .config import (
+from sessions.pipeline.config import (
     WorkerConfig,
     StageConfig,
     PipelineSettings,
@@ -27,7 +27,7 @@ from .config import (
 )
 
 # Pipeline manager (depends on state_machine and config)
-from .pipeline_manager import (
+from sessions.pipeline.pipeline_manager import (
     PipelineMetrics,
     PipelineStage,
     SessionPipeline,

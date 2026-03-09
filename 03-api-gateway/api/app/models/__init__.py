@@ -10,6 +10,12 @@ Purpose: Data models and validation schemas
 # from .session import SessionModel, SessionStatus
 # from .auth import TokenPayload, AuthResponse
 # from .common import ErrorResponse, ErrorDetail, PaginationInfo
-
-__all__ = []
+from app.models.common import ServiceInfo, HealthStatus, ErrorResponse, ErrorDetail, PaginationInfo
+__all__ = [
+    'ServiceInfo', 
+    'HealthStatus', 
+    'ErrorResponse', 
+    'ErrorDetail', 
+    'PaginationInfo'
+]
 

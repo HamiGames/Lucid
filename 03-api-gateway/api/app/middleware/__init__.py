@@ -5,15 +5,18 @@ File: 03-api-gateway/api/app/middleware/__init__.py
 Purpose: Custom middleware for request processing
 """
 
-from .auth import AuthMiddleware
-from .rate_limit import RateLimitMiddleware
-from .logging import LoggingMiddleware
-from .cors import CORSConfig
+from app.middleware.auth import AuthMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware, RateLimitMiddlewareManager
+from app.middleware.logging import LoggingMiddleware, LoggingMiddlewareManager
+from app.middleware.cors import CORSConfig, CORSConfigManager
 
 __all__ = [
     "AuthMiddleware",
     "RateLimitMiddleware",
+    "RateLimitMiddlewareManager",
     "LoggingMiddleware",
-    "CORSConfig"
+    "LoggingMiddlewareManager",
+    "CORSConfig",
+    "CORSConfigManager"
 ]
 

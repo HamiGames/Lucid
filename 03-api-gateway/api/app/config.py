@@ -20,7 +20,8 @@ import secrets
 
 class Settings(BaseSettings):
     """Application settings"""
-    
+    ENV_FILE: str = os.getenv("ENV_FILE", ".env.api-gateway")
+    ENV_FILE_01: str = os.getenv("ENV_FILE_01", ".env.secrets")
     # Service Configuration
     SERVICE_NAME: str = Field(default="api-gateway", env="SERVICE_NAME")
     API_VERSION: str = Field(default="v1", env="API_VERSION")
@@ -28,8 +29,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="production", env="ENVIRONMENT")
     
     # Port Configuration
-    HTTP_PORT: int = Field(default=8080, env="HTTP_PORT")
-    HTTPS_PORT: int = Field(default=8081, env="HTTPS_PORT")
+    HTTP_PORT: int = Field(default="", env="HTTP_PORT")
+    HTTPS_PORT: int = Field(default="", env="HTTPS_PORT")
     
     # Security Configuration
     JWT_SECRET_KEY: str = Field(default="", env="JWT_SECRET_KEY")
@@ -53,44 +54,44 @@ class Settings(BaseSettings):
         return self.REDIS_URL or self.REDIS_URI
     # Backend Service URLs
     # lucid_blocks = on-chain blockchain system
-    BLOCKCHAIN_CORE_URL: str = Field(default="", env="BLOCKCHAIN_CORE_URL")
-    SESSION_MANAGEMENT_URL: str = Field(default="", env="SESSION_MANAGEMENT_URL")
-    AUTH_SERVICE_URL: str = Field(default="", env="AUTH_SERVICE_URL")
+    BLOCKCHAIN_CORE_URL: str = Field(default="", env=f"{ENV_FILE}:BLOCKCHAIN_CORE_URL")
+    SESSION_MANAGEMENT_URL: str = Field(default="", env=f"{ENV_FILE}:SESSION_MANAGEMENT_URL")
+    AUTH_SERVICE_URL: str = Field(default="", env=f"{ENV_FILE}:AUTH_SERVICE_URL")
     # TRON = isolated payment service (NOT part of lucid_blocks)
-    TRON_PAYMENT_URL: str = Field(default="", env="TRON_PAYMENT_URL")
+    TRON_PAYMENT_URL: str = Field(default="", env=f"{ENV_FILE}:TRON_PAYMENT_URL")
     # GUI Services
-    GUI_API_BRIDGE_URL: str = Field(default="", env="GUI_API_BRIDGE_URL")
-    GUI_DOCKER_MANAGER_URL: str = Field(default="", env="GUI_DOCKER_MANAGER_URL")
-    GUI_TOR_MANAGER_URL: str = Field(default="", env="GUI_TOR_MANAGER_URL")
-    GUI_HARDWARE_MANAGER_URL: str = Field(default="", env="GUI_HARDWARE_MANAGER_URL")
+    GUI_API_BRIDGE_URL: str = Field(default="", env=f"{ENV_FILE}:GUI_API_BRIDGE_URL")
+    GUI_DOCKER_MANAGER_URL: str = Field(default="", env=f"{ENV_FILE}:GUI_DOCKER_MANAGER_URL")
+    GUI_TOR_MANAGER_URL: str = Field(default="", env=f"{ENV_FILE}:GUI_TOR_MANAGER_URL")
+    GUI_HARDWARE_MANAGER_URL: str = Field(default="", env=f"{ENV_FILE}:GUI_HARDWARE_MANAGER_URL")
     # TRON Support Services
-    TRON_PAYOUT_ROUTER_URL: str = Field(default="", env="TRON_PAYOUT_ROUTER_URL")
-    TRON_WALLET_MANAGER_URL: str = Field(default="", env="TRON_WALLET_MANAGER_URL")
-    TRON_USDT_MANAGER_URL: str = Field(default="", env="TRON_USDT_MANAGER_URL")
+    TRON_PAYOUT_ROUTER_URL: str = Field(default="", env=f"{ENV_FILE}:TRON_PAYOUT_ROUTER_URL")
+    TRON_WALLET_MANAGER_URL: str = Field(default="", env=f"{ENV_FILE}:TRON_WALLET_MANAGER_URL")
+    TRON_USDT_MANAGER_URL: str = Field(default="", env=f"{ENV_FILE}:TRON_USDT_MANAGER_URL")
     
     # Rate Limiting Configuration
-    RATE_LIMIT_ENABLED: bool = Field(default=True, env="RATE_LIMIT_ENABLED")
+    RATE_LIMIT_ENABLED: bool = Field(default=True, env=f"{ENV_FILE}:RATE_LIMIT_ENABLED")
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = Field(default=100, env="RATE_LIMIT_REQUESTS_PER_MINUTE")
-    RATE_LIMIT_BURST_SIZE: int = Field(default=200, env="RATE_LIMIT_BURST_SIZE")
+    RATE_LIMIT_BURST_SIZE: int = Field(default=200, env=f"{ENV_FILE}:RATE_LIMIT_BURST_SIZE")
     
     # SSL Configuration
-    SSL_ENABLED: bool = Field(default=True, env="SSL_ENABLED")
-    SSL_CERT_PATH: Optional[str] = Field(None, env="SSL_CERT_PATH")
-    SSL_KEY_PATH: Optional[str] = Field(None, env="SSL_KEY_PATH")
+    SSL_ENABLED: bool = Field(default=True, env=f"{ENV_FILE}:SSL_ENABLED")
+    SSL_CERT_PATH: Optional[str] = Field(None, env=f"{ENV_FILE}:SSL_CERT_PATH")
+    SSL_KEY_PATH: Optional[str] = Field(None, env=f"{ENV_FILE}:SSL_KEY_PATH")
     
     # CORS Configuration
-    ALLOWED_HOSTS: List[str] = Field(default=["*"], env="ALLOWED_HOSTS")
-    CORS_ORIGINS: List[str] = Field(default=["*"], env="CORS_ORIGINS")
+    ALLOWED_HOSTS: List[str] = Field(default=["*"], env=f"{ENV_FILE}:ALLOWED_HOSTS")
+    CORS_ORIGINS: List[str] = Field(default=["*"], env=f"{ENV_FILE}:CORS_ORIGINS")
     
     # Logging Configuration
-    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
+    LOG_LEVEL: str = Field(default="INFO", env=f"{ENV_FILE}:LOG_LEVEL")
     LOG_FORMAT: str = Field(default="json", env="LOG_FORMAT")
     
     # Monitoring Configuration
     METRICS_ENABLED: bool = Field(default=True)
     HEALTH_CHECK_INTERVAL: str = Field(default="30")
     # secrets
-    JWT_SECRET_KEY: str = Field(default=secrets.token_urlsafe(48), env="JWT_SECRET_KEY")
+    JWT_SECRET_KEY: str = Field(default=secrets.token_urlsafe(32), env=f"{ENV_FILE_01}:JWT_SECRET_KEY")
     
     @model_validator(mode="before")
     @classmethod
@@ -168,7 +169,7 @@ class Settings(BaseSettings):
             import warnings
             warnings.warn(f"JWT_SECRET_KEY not set - using insecure default for startup")
             import secrets
-            return secrets.token_urlsafe(48)
+            return secrets.token_urlsafe(32)
         if len(v) < 32:
             raise ValueError('JWT_SECRET_KEY must be at least 32 characters long')
         return v

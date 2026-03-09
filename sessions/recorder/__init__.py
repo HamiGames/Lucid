@@ -2,10 +2,10 @@
 Session Recorder Module
 """
 
-from .session_recorder import SessionRecorder, RecordingStatus
-from .chunk_generator import ChunkProcessor, ChunkConfig
-from .compression import CompressionManager
-from .config import RecorderSettings, RecorderConfig, load_config
+from sessions.recorder.session_recorder import SessionRecorder, RecordingStatus
+from sessions.recorder.chunk_generator import ChunkProcessor, ChunkConfig
+from sessions.recorder.compression import CompressionManager
+from sessions.recorder.config import RecorderSettings, RecorderConfig, load_config
 
 __all__ = [
     'SessionRecorder',

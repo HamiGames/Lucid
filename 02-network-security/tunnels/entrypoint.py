@@ -17,8 +17,8 @@ from typing import List, Tuple, Optional
 
 # Import tunnel modules (handle import errors gracefully)
 try:
-    from tunnel_metrics import get_metrics
-    from tunnel_status import get_status
+    from tunnels.tunnel_metrics import get_metrics
+    from tunnels.tunnel_status import get_status
     METRICS_AVAILABLE = True
     STATUS_AVAILABLE = True
 except ImportError:

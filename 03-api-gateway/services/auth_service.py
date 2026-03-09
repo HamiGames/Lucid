@@ -15,10 +15,10 @@ from datetime import datetime, timedelta
 import jwt
 
 from ..models.auth import LoginRequest, TokenResponse, TokenPayload
-from ..config import settings
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
-
+settings = get_settings()
 
 class AuthenticationError(Exception):
     """Base exception for authentication errors."""

@@ -5,7 +5,7 @@
 # Fully aligned with plan/constants/ directory requirements
 
 # Stage 1: Builder (use TARGETPLATFORM for cross-platform ARM64 builds with QEMU emulation)
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 # Set shell to bash for Linux compatibility (standard Linux syntax)
 SHELL ["/bin/bash", "-c"]
@@ -47,11 +47,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     test -f /usr/bin/g++ || (echo "ERROR: g++ not installed" && exit 1)
 
 # Set working directory
-WORKDIR /app
+WORKDIR /build
 
 # Create placeholder files in system directories with actual content (ensures they're baked into image)
-RUN echo "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
+RUN printf "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
     test -f /var/run/.keep || (echo "ERROR: Failed to create /var/run/.keep" && exit 1) && \
     test -f /var/lib/.keep || (echo "ERROR: Failed to create /var/lib/.keep" && exit 1) && \
     chown -R 65532:65532 /var/run /var/lib || (echo "ERROR: Failed to chown runtime directories" && exit 1)
@@ -69,9 +69,16 @@ RUN test -f ./requirements.txt || (echo "ERROR: requirements.txt not found" && e
 
 # Ensure directory structure exists before pip install
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SITE_PACKAGES_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.keep && \
     mkdir -p /root/.local/bin && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_BINARIES_$(date +%s)" > /root/.local/bin/.keep && \
     test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: Failed to create site-packages directory" && exit 1) && \
-    test -d /root/.local/bin || (echo "ERROR: Failed to create bin directory" && exit 1)
+    test -d /root/.local/bin || (echo "ERROR: Failed to create bin directory" && exit 1) && \
+    test -f /root/.local/lib/python3.11/site-packages/.keep || (echo "ERROR: Failed to create site-packages .keep file" && exit 1) && \
+    test -f /root/.local/bin/.keep || (echo "ERROR: Failed to create bin .keep file" && exit 1) && \
+    chmod 644 /root/.local/lib/python3.11/site-packages/.keep && \
+    chmod 644 /root/.local/bin/.keep && \
+    echo " .keep files created"
 
 # Install Python dependencies with cache mount and optimizations
 # CRITICAL: Install PyYAML FIRST explicitly to ensure it's present before other packages
@@ -104,12 +111,15 @@ RUN test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: site-pack
     test -d /root/.local/bin || (echo "ERROR: bin directory does not exist" && exit 1) && \
     marker_content_packages="LUCID_SERVICE_MESH_CONTROLLER_PACKAGES_INSTALLED_$(date +%s)" && \
     marker_content_binaries="LUCID_SERVICE_MESH_CONTROLLER_BINARIES_INSTALLED_$(date +%s)" && \
-    echo "$marker_content_packages" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "$marker_content_binaries" > /root/.local/bin/.lucid-marker && \
-    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker || (echo "ERROR: Failed to create packages marker file" && exit 1) && \
-    test -f /root/.local/bin/.lucid-marker || (echo "ERROR: Failed to create binaries marker file" && exit 1) && \
-    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker || (echo "ERROR: Packages marker file is empty" && exit 1) && \
-    test -s /root/.local/bin/.lucid-marker || (echo "ERROR: Binaries marker file is empty" && exit 1) && \
+    printf "$marker_content_packages" > /root/.local/lib/python3.11/site-packages/.keep && \
+    printf "$marker_content_binaries" > /root/.local/bin/.keep && \
+    test -f /root/.local/lib/python3.11/site-packages/.keep || (echo "ERROR: Failed to create packages marker file" && exit 1) && \
+    test -f /root/.local/bin/.keep || (echo "ERROR: Failed to create binaries marker file" && exit 1) && \
+    test -s /root/.local/lib/python3.11/site-packages/.keep || (echo "ERROR: Packages marker file is empty" && exit 1) && \
+    test -s /root/.local/bin/.keep || (echo "ERROR: Binaries marker file is empty" && exit 1) && \
+    chmod 644 /root/.local/lib/python3.11/site-packages/.keep && \
+    chmod 644 /root/.local/bin/.keep && \
+    echo " .keep files created" && \
     chown -R 65532:65532 /root/.local || (echo "ERROR: Failed to chown /root/.local" && exit 1)
 
 # Verify packages are installed and verify directory structure
@@ -122,7 +132,7 @@ RUN test -d /root/.local/lib/python3.11/site-packages || (echo "ERROR: site-pack
     package_count=$(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l) && \
     test "$package_count" -gt 0 || (echo "ERROR: No packages found in site-packages" && exit 1) && \
     echo "Package count: $package_count" && \
-    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - <<'PY'
+    PYTHONPATH=/root/.local/lib/python3.11/site-packages:$PYTHONPATH python3 - << 'PY'
 from importlib import import_module
 import sys
 import os
@@ -151,16 +161,25 @@ if failed_imports:
     print(f"ERROR: Failed to import: {', '.join(failed_imports)}", file=sys.stderr)
     sys.exit(1)
 print("✅ critical packages installed and importable: all directories exist and imports work")
-PY
+'PY'
 
 # Copy service mesh controller source code to builder stage
 # CRITICAL: Use full path from build context root (build context is .)
-COPY infrastructure/service-mesh/controller/ ./controller/
-COPY infrastructure/service-mesh/sidecar/ ./sidecar/
-COPY infrastructure/service-mesh/discovery/ ./discovery/
-COPY infrastructure/service-mesh/communication/ ./communication/
-COPY infrastructure/service-mesh/security/ ./security/
-COPY infrastructure/service-mesh/entrypoint.py ./entrypoint.py
+COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY ../../../configs/services/ ./configs/services/
+COPY ../../../service-mesh/ ./service-mesh/
+COPY ../../../api/ ./api/
+COPY ../../../admin/ ./admin/
+COPY ../../../auth/ ./auth/
+COPY ../../../common/ ./common/
+COPY ../../../core/ ./core/
+COPY ../../../database/ ./database/
+COPY ../../../infrastructure/ ./infrastructure/
+COPY ../../../node/ ./node/
+COPY ../../../RDP/ ./RDP/
+COPY ../../../tools/ ./tools/
+COPY ../../../utils/ ./utils/
+COPY ../../../wallet/ ./wallet/
 
 # Verify source code directories were copied (per Dockerfile-copy-pattern: verify after COPY)
 # CRITICAL: This prevents silent COPY failures for source code
