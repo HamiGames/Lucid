@@ -13,7 +13,7 @@ Features:
 - FastAPI-based REST API
 """
 from sessions.api.config import SessionAPISettings, SessionAPIConfig
-from sessions.api.session_api import SessionAPI, SessionStatus, CreateSessionRequest, UpdateSessionRequest, SessionResponse, SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse, StatisticsResponse
+from sessions.api.session_api import SessionStatus, RDPConfig, RecordingConfig, StorageConfig, SessionMetadata, CreateSessionRequest, UpdateSessionRequest, SessionResponse, SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse, SessionAPI
 from sessions.api.routes import router
 import sessions.api.integration as integration
 import sessions.api.integration.rdp_controller_client as rdp_controller_client
@@ -21,9 +21,11 @@ import sessions.api.entrypoint as entrypoint
 import sessions.api.main as main
 
 __all__ = [
-   'SessionAPI', 'router', 'SessionStatus', 'CreateSessionRequest', 'UpdateSessionRequest', 'SessionResponse', 'SessionListResponse', 
-   'ChunkResponse', 'ChunkListResponse', 'PipelineResponse', 'StatisticsResponse', 'SessionAPISettings',
-   'integration', 'entrypoint', 'rdp_controller_client', 'main'
+   'SessionAPI', 'router', 'SessionStatus', 'CreateSessionRequest', 'UpdateSessionRequest',
+   'SessionResponse', 'SessionListResponse', 
+   'ChunkResponse', 'ChunkListResponse', 'PipelineResponse', 'StatisticsResponse',
+   'SessionAPISettings','integration', 'entrypoint', 'rdp_controller_client',
+   'main', 'SessionAPIConfig', 'RDPConfig', 'RecordingConfig', 'StorageConfig', 'SessionMetadata'
 ]
 
 __version__ = "1.0.0"

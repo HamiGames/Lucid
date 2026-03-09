@@ -15,10 +15,10 @@ import logging
 import time
 from typing import List
 
-from .encryption import EncryptionManager, ChunkEncryptor
-from .merkle_builder import MerkleTreeBuilder, MerkleTreeManager
-from .chunk_processor import ChunkProcessor
-from .config import ChunkProcessorConfig
+from sessions.processor.encryption import EncryptionManager, ChunkEncryptor
+from sessions.processor.merkle_builder import MerkleTreeBuilder, MerkleTreeManager
+from sessions.processor.chunk_processor import ChunkProcessor
+from sessions.processor.config import ChunkProcessorConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

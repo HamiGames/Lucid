@@ -5,7 +5,9 @@ BLAKE3 Merkle tree construction for session integrity
 """
 
 import asyncio
+import os
 import hashlib
+import blake3
 import logging
 import time
 from dataclasses import dataclass
@@ -47,7 +49,7 @@ class MerkleTreeBuilder:
     BLAKE3 Merkle tree construction per SPEC-1b
     """
     
-    HASH_ALGORITHM = "BLAKE3"
+    HASH_ALGORITHM = "blake3"
     
     def __init__(self, output_dir: str = None):
         self.output_dir = Path(output_dir or os.getenv("LUCID_MERKLE_OUTPUT_DIR", "/data/merkle_roots"))
