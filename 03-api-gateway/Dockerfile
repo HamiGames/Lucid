@@ -42,8 +42,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
+        rustc \
+        cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    . /root/.cargo/env && \
+    rustup default stable
+
+ENV PATH=/root/.cargo/bin:$PATH
 
 WORKDIR /build
 
@@ -80,7 +88,7 @@ RUN echo "installing wheels into system python" && \
 
 # Builder-stage verification - ensure all packages built correctly
 RUN echo "=== Verifying pip installation success ===" && \
-    python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, aiohttp, structlog, prometheus_client; print('✅ All critical packages installed')" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, blake3, zstandard, lz4, cryptography, httpx, aiohttp, structlog, prometheus_client; print('✅ All critical packages installed')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
     echo "=== Full package listing ===" && \

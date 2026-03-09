@@ -4,7 +4,7 @@
 # syntax=docker/dockerfile:1.7
 
 # Stage 1: Builder
-FROM python:3.11-slim AS builder
+FROM --platform=$BUILDPLATFORM python:3.11-slim-bookworm AS builder
 
 # Set build arguments
 ARG BUILDPLATFORM
@@ -15,26 +15,66 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libffi-dev \
     libssl-dev \
+    libzstd-dev \
+    liblz4-dev \
+    curl \
+    ca-certificates \
+    jq\ 
+    netcat-openbsd \
+    socat \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /build
 
 # Copy requirements
-COPY sessions/pipeline/requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+COPY sessions/pipeline/requirements.txt ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" &&\
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 # Copy source code
-COPY sessions/pipeline/ ./src/
-
+COPY ../../../sessions/pipeline/ ./pipeline/
+COPY ../../../sessions/core/ ./core/
+COPY ../../../sessions/encryption/ ./encryption/
+COPY ../../../sessions/__init__.py ./__init__.py
+COPY ../../../configs/services/session-management.yml ./configs/services/session-management.yml
+COPY ../../../database/ ./database/
+COPY ../../../blockchain/data/api/routes.py ./blockchain/data/api/routes.py
+COPY ../../../blockchain/data/api/routes.py ./blockchain/data/api/routes.py
 # Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/python3-debian12:nonroot
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:nonroot
 
 # Copy Python dependencies from builder
-COPY --from=builder /root/.local /app/.local
+COPY --from=builder --chown=65532:65532 /root/.local /app/.local
 
 # Copy application code
-COPY --from=builder /build/src /app
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/pipeline/ /app/pipeline/
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
+COPY --from=builder --chown=65532:65532 /build/encryption/ /app/encryption/
+COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
+COPY --from=builder --chown=65532:65532 /build/configs/services/session-management.yml /app/configs/services/session-management.yml
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /var/run/ /var/run/
+COPY --from=builder --chown=65532:65532 /var/lib/ /var/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /lib/ /lib/
+COPY --from=builder --chown=65532:65532 /usr/local/ /usr/local/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/sbin/ /usr/sbin/
+COPY --from=builder --chown=65532:65532 /usr/share/ /usr/share/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /usr/local/bin/
+
 
 # Set environment variables
 ENV PYTHONPATH=/app/.local/lib/python3.11/site-packages:/app
