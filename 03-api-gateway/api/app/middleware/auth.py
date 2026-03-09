@@ -11,7 +11,7 @@ from typing import Optional, List
 from fastapi import Request
 from starlette.responses import JSONResponse
 
-from app.config import get_settings
+from api.app.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

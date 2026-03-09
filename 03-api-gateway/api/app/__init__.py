@@ -8,19 +8,19 @@ Purpose: Main application package initialization
 __version__ = "1.0.0"
 __author__ = "Lucid Development Team"
 
-from app.main import app
-from app.config import settings, get_settings
-from app.deps import get_config
-import app.middleware
-import app.routes
-import app.schemas
-import app.services
-import app.utils
-import app.database
-import app.db
-import app.scripts
-import app.security
-import app.routes
+from api.app.main import app
+from api.app.config import settings, get_settings
+from api.app.deps import get_config
+import api.app.middleware
+import api.app.routes
+import api.app.schemas
+import api.app.services
+import api.app.utils
+import api.app.database
+import api.app.db
+import api.app.scripts
+import api.app.security
+import api.app.routes
 
 __all__ = [
     'app',

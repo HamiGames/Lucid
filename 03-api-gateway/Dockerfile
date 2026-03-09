@@ -184,6 +184,11 @@ COPY 03-api-gateway/middleware/ ./middleware/
 COPY 03-api-gateway/scripts/ ./scripts/
 COPY 03-api-gateway/database/ ./database/
 COPY 03-api-gateway/repositories/ ./repositories/
+COPY 03-api-gateway/api/app/main.py ./api/app/main.py
+COPY 03-api-gateway/api/app/config.py ./api/app/config.py
+COPY 03-api-gateway/api/app/deps.py ./api/app/deps.py
+COPY 03-api-gateway/api/app/ ./api/app/
+
 
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
 COPY ../../../sessions/ ./sessions/
@@ -209,16 +214,6 @@ COPY ../../../configs/services/ ./configs/services/
 # Verify new modules are included in builder stage - file existence & imports
 RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/api/app/routers/gui.py && echo "gui.py found" && \
-    test -f /build/api/app/routers/gui_docker.py && echo " gui_docker.py found" && \
-    test -f /build/api/app/routers/gui_tor.py && echo " gui_tor.py found" && \
-    test -f /build/api/app/routers/gui_hardware.py && echo "gui_hardware.py found" && \
-    test -f /build/api/app/routers/tron_support.py && echo " tron_support.py found" && \
-    test -f /build/api/app/services/gui_bridge_service.py && echo " gui_bridge_service.py found" && \
-    test -f /build/api/app/services/gui_docker_manager_service.py && echo " gui_docker_manager_service.py found" && \
-    test -f /build/api/app/services/gui_tor_manager_service.py && echo " gui_tor_manager_service.py found" && \
-    test -f /build/api/app/services/gui_hardware_manager_service.py && echo " gui_hardware_manager_service.py found" && \
-    test -f /build/api/app/services/tron_support_service.py && echo " tron_support_service.py found" && \
-    test -f /build/api/app/services/__init__.py && echo " services/__init__.py found" && \
     echo "All new modules verified in builder stage" && \
     python3 -c "import sys; sys.path.insert(0, '/build/api'); sys.path.insert(0, '/build/sessions'); from app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; from pipeline import pipeline_manager; from core import session_generator; print('All module imports successful in builder')"
 
@@ -282,18 +277,20 @@ COPY --chown=65532:65532 --from=builder /build/gui-api-bridge/               /ap
 COPY --chown=65532:65532 --from=builder /build/payment-systems/              /app/payment-systems/
 COPY --chown=65532:65532 --from=builder /build/contracts/                    /app/contracts/
 COPY --chown=65532:65532 --from=builder /build/core/                         /app/core/
-COPY --chown=65532:65532 --from=builder /build/api/api/                      /app/api/api/
-COPY --chown=65532:65532 --from=builder /build/configs/services/             /app/configs/services/
+COPY --chown=65532:65532 --from=builder /build/api/api/                      /app/infrastructure/api/
 COPY --chown=65532:65532 --from=builder /build/service-mesh/                /app/service-mesh/
 COPY --chown=65532:65532 --from=builder /build/RDP/                     /app/RDP/
 COPY --chown=65532:65532 --from=builder /build/node/                   /app/node/
 COPY --chown=65532:65532 --from=builder /build/api/app/main.py          /app/main.py
 COPY --chown=65532:65532 --from=builder /build/api/app/config.py        /app/config.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers          /app/routers
-COPY --chown=65532:65532 --from=builder /build/api/app/services         /app/services
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas         /app/schemas
-COPY --chown=65532:65532 --from=builder /build/api/app/deps.py         /app/deps.py
+COPY --chown=65532:65532 --from=builder /build/api/app/middleware/     /app/middleware/
+COPY --chown=65532:65532 --from=builder /build/api/app/scripts/        /app/scripts/
+COPY --chown=65532:65532 --from=builder /build/api/app/utils/          /app/utils/
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/        /app/schemas/
 COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py     /app/__init__.py
+COPY --chown=65532:65532 --from=builder /build/api/app/deps.py         /app/deps.py
+
+
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config', '/app/sessions']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]

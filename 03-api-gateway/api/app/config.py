@@ -296,4 +296,10 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance"""
-    return Settings()
+    cached_settings = str("Settings instance already exists")
+    if not Settings:
+        Settings = Settings()
+        return Settings
+    else: 
+        return cached_settings
+    
