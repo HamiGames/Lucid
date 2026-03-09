@@ -1,5 +1,12 @@
+#!/usr/bin/env python3
 
-from api.app import *
+"""
+Lucid API Gateway - API Package
+File: 03-api-gateway/api/__init__.py
+Purpose: Re-exports API from api/app for backwards compatibility.
+"""
+
+from ..api.app import *
 
 __all__ = [
     "app",

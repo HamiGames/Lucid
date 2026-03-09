@@ -12,16 +12,18 @@ Features:
 - Redis caching for session data
 - FastAPI-based REST API
 """
-from ..api.config import SessionAPISettings, SessionAPIConfig
-from ..api.session_api import SessionAPI, SessionStatus, CreateSessionRequest, UpdateSessionRequest, SessionResponse, SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse, StatisticsResponse
-from ..api.routes import router
-from ..api.integration.rdp_controller_client import RDPControllerClient
-
+from sessions.api.config import SessionAPISettings, SessionAPIConfig
+from sessions.api.session_api import SessionAPI, SessionStatus, CreateSessionRequest, UpdateSessionRequest, SessionResponse, SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse, StatisticsResponse
+from sessions.api.routes import router
+import sessions.api.integration as integration
+import sessions.api.integration.rdp_controller_client as rdp_controller_client
+import sessions.api.entrypoint as entrypoint
+import sessions.api.main as main
 
 __all__ = [
    'SessionAPI', 'router', 'SessionStatus', 'CreateSessionRequest', 'UpdateSessionRequest', 'SessionResponse', 'SessionListResponse', 
    'ChunkResponse', 'ChunkListResponse', 'PipelineResponse', 'StatisticsResponse', 'SessionAPISettings',
-   'RDPControllerClient', 'SessionAPIConfig'
+   'integration', 'entrypoint', 'rdp_controller_client', 'main'
 ]
 
 __version__ = "1.0.0"
