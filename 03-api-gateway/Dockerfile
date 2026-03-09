@@ -267,26 +267,33 @@ COPY --from=builder --chown=65532:65532 /usr/local/bin   /app/usr/local/bin
 COPY --from=builder --chown=65532:65532 /usr/bin/tini        /app/opt/bin/tini
 
 # Application layout COPY (only directories that exist)
-COPY --chown=65532:65532 --from=builder /build/database                     /app/database
-COPY --chown=65532:65532 --from=builder /build/configs/services             /app/configs/services
-COPY --chown=65532:65532 --from=builder /build/api                          /app/api
-COPY --chown=65532:65532 --from=builder /build/gateway                      /app/gateway
-COPY --chown=65532:65532 --from=builder /build/config                       /app/config
-COPY --chown=65532:65532 --from=builder /build/sessions                     /app/sessions
-COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh  /app/infrastructure/service-mesh
-COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes    /app/infrastructure/kubernetes
-COPY --chown=65532:65532 --from=builder /build/src/gui                      /app/src/gui
-COPY --chown=65532:65532 --from=builder /build/electron-gui                 /app/electron-gui
-COPY --chown=65532:65532 --from=builder /build/gui                          /app/gui
-COPY --chown=65532:65532 --from=builder /build/gui-api-bridge               /app/gui-api-bridge
-COPY --chown=65532:65532 --from=builder /build/payment-systems              /app/payment-systems
-COPY --chown=65532:65532 --from=builder /build/contracts                    /app/contracts
-COPY --chown=65532:65532 --from=builder /build/core                         /app/core
-COPY --chown=65532:65532 --from=builder /build/api/api                      /app/api/api
-COPY --chown=65532:65532 --from=builder /build/configs/services             /app/configs/services
-COPY --chown=65532:65532 --from=builder /build/service-mesh                 /app/service-mesh
-COPY --chown=65532:65532 --from=builder /build/RDP                     /app/RDP
-COPY --chown=65532:65532 --from=builder /build/node                    /app/node
+COPY --chown=65532:65532 --from=builder /build/database/                     /app/database/
+COPY --chown=65532:65532 --from=builder /build/configs/services/             /app/configs/services/
+COPY --chown=65532:65532 --from=builder /build/api/                          /app/api/
+COPY --chown=65532:65532 --from=builder /build/gateway/                      /app/gateway/
+COPY --chown=65532:65532 --from=builder /build/config/                       /app/config/
+COPY --chown=65532:65532 --from=builder /build/sessions/                     /app/sessions/
+COPY --chown=65532:65532 --from=builder /build/infrastructure/service-mesh/  /app/infrastructure/service-mesh/
+COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/    /app/infrastructure/kubernetes/
+COPY --chown=65532:65532 --from=builder /build/src/gui/                      /app/src/gui/
+COPY --chown=65532:65532 --from=builder /build/electron-gui/                /app/electron-gui/
+COPY --chown=65532:65532 --from=builder /build/gui/                          /app/gui/
+COPY --chown=65532:65532 --from=builder /build/gui-api-bridge/               /app/gui-api-bridge/
+COPY --chown=65532:65532 --from=builder /build/payment-systems/              /app/payment-systems/
+COPY --chown=65532:65532 --from=builder /build/contracts/                    /app/contracts/
+COPY --chown=65532:65532 --from=builder /build/core/                         /app/core/
+COPY --chown=65532:65532 --from=builder /build/api/api/                      /app/api/api/
+COPY --chown=65532:65532 --from=builder /build/configs/services/             /app/configs/services/
+COPY --chown=65532:65532 --from=builder /build/service-mesh/                /app/service-mesh/
+COPY --chown=65532:65532 --from=builder /build/RDP/                     /app/RDP/
+COPY --chown=65532:65532 --from=builder /build/node/                   /app/node/
+COPY --chown=65532:65532 --from=builder /build/api/app/main.py          /app/main.py
+COPY --chown=65532:65532 --from=builder /build/api/app/config.py        /app/config.py
+COPY --chown=65532:65532 --from=builder /build/api/app/routers          /app/routers
+COPY --chown=65532:65532 --from=builder /build/api/app/services         /app/services
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas         /app/schemas
+COPY --chown=65532:65532 --from=builder /build/api/app/deps.py         /app/deps.py
+COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py     /app/__init__.py
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config', '/app/sessions']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
