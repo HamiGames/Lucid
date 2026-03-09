@@ -47,7 +47,19 @@ RUN echo "installing wheels into system python" && \
     echo "installation complete" && \
     rm -rf /build/wheels
 
-
+COPY /var/run/ /var/run/
+COPY /var/lib/ /var/lib/
+COPY /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY /lib/ /lib/
+COPY /usr/local/ /usr/local/
+COPY /usr/bin/ /usr/bin/
+COPY /usr/sbin/ /usr/sbin/
+COPY /usr/share/ /usr/share/
+COPY /usr/local/bin/ /usr/local/bin/
+COPY /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY /usr/local/bin/ /usr/local/bin/
+COPY /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY /usr/local/bin/ /usr/local/bin/
 # Copy source code
 COPY ../../../sessions/pipeline/ ./pipeline/
 COPY ../../../sessions/processor/ ./processor/
@@ -64,7 +76,29 @@ FROM gcr.io/distroless/python3-debian12:nonroot
 COPY --from=builder /root/.local /app/.local
 
 # Copy application code
-COPY --from=builder /build/src /app
+COPY --from=builder --chown=65532:65532 /build/src /app
+COPY --from=builder --chown=65532:65532 /build/sessions /app/sessions
+COPY --from=builder --chown=65532:65532 /build/sessions/api /app/sessions/api
+COPY --from=builder --chown=65532:65532 /build/sessions/config /app/sessions/config
+COPY --from=builder --chown=65532:65532 /build/sessions/core /app/sessions/core
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline /app/sessions/pipeline
+COPY --from=builder --chown=65532:65532 /build/sessions/processor /app/sessions/processor
+COPY --from=builder --chown=65532:65532 /build/sessions/recorder /app/sessions/recorder
+COPY --from=builder --chown=65532:65532 /build/sessions/storage /app/sessions/storage
+
+COPY --from=builder --chown=65532:65532 /var/run /var/run
+COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /lib /lib
+COPY --from=builder --chown=65532:65532 /usr/local /usr/local
+COPY --from=builder --chown=65532:65532 /usr/bin /usr/bin
+COPY --from=builder --chown=65532:65532 /usr/sbin /usr/sbin
+COPY --from=builder --chown=65532:65532 /usr/share /usr/share
+COPY --from=builder --chown=65532:65532 /usr/local/bin /usr/local/bin
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /usr/local/bin /usr/local/bin
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
 
 # Set environment variables
 ENV PYTHONPATH=/app/.local/lib/python3.11/site-packages:/app
