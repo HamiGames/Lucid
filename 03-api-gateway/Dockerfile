@@ -183,7 +183,6 @@ COPY 03-api-gateway/utils/ ./utils/
 COPY 03-api-gateway/middleware/ ./middleware/
 COPY 03-api-gateway/scripts/ ./scripts/
 COPY 03-api-gateway/database/ ./database/
-COPY 03-api-gateway/app/app.db/ ./app.db/
 COPY 03-api-gateway/repositories/ ./repositories/
 
 # sessions/ is a project-root dependency imported by session_service.py via sys.path
@@ -269,7 +268,6 @@ COPY --from=builder --chown=65532:65532 /usr/bin/tini        /app/opt/bin/tini
 
 # Application layout COPY (only directories that exist)
 COPY --chown=65532:65532 --from=builder /build/database                     /app/database
-COPY --chown=65532:65532 --from=builder /build/app/db                       /app/app/db
 COPY --chown=65532:65532 --from=builder /build/configs/services             /app/configs/services
 COPY --chown=65532:65532 --from=builder /build/api                          /app/api
 COPY --chown=65532:65532 --from=builder /build/gateway                      /app/gateway
