@@ -46,9 +46,7 @@ except ImportError:
 
 # Windows-specific imports
 try:
-    import win32api
-    import win32con
-    import win32gui
+ 
     HAS_WIN32 = True
 except ImportError:
     HAS_WIN32 = False
@@ -501,6 +499,7 @@ class KeystrokeMonitor:
     
     def _get_window_info(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Get current window information"""
+        import sys
         try:
             if sys.platform == "win32" and HAS_WIN32:
                 return self._get_windows_window_info()
@@ -518,6 +517,9 @@ class KeystrokeMonitor:
     def _get_windows_window_info(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Get window info on Windows"""
         try:
+            win32gui = "" 
+            win32api = ""
+            win32con = ""
             hwnd = win32gui.GetForegroundWindow()
             window_title = win32gui.GetWindowText(hwnd)
             
