@@ -44,22 +44,50 @@ RUN apt-get update && \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+
+#Prep new directory structure with .keep files
+RUN mkdir -p ./auth ./admin ./core ./common ./configs ./database ./infrastructure ./node ./RDP ./tools ./utils ./wallet && \
+    printf "LUCID_AUTH_SERVICE_AUTH_DIRECTORY_$(date +%s)" > ./auth/.keep && \
+    printf "LUCID_AUTH_SERVICE_ADMIN_DIRECTORY_$(date +%s)" > ./admin/.keep && \
+    printf "LUCID_AUTH_SERVICE_CORE_DIRECTORY_$(date +%s)" > ./core/.keep && \
+    printf "LUCID_AUTH_SERVICE_COMMON_DIRECTORY_$(date +%s)" > ./common/.keep && \
+    printf "LUCID_AUTH_SERVICE_CONFIGS_DIRECTORY_$(date +%s)" > ./configs/.keep && \
+    printf "LUCID_AUTH_SERVICE_DATABASE_DIRECTORY_$(date +%s)" > ./database/.keep && \
+    printf "LUCID_AUTH_SERVICE_INFRASTRUCTURE_DIRECTORY_$(date +%s)" > ./infrastructure/.keep && \
+    printf "LUCID_AUTH_SERVICE_NODE_DIRECTORY_$(date +%s)" > ./node/.keep && \
+    printf "LUCID_AUTH_SERVICE_RDP_DIRECTORY_$(date +%s)" > ./RDP/.keep && \
+    printf "LUCID_AUTH_SERVICE_TOOLS_DIRECTORY_$(date +%s)" > ./tools/.keep && \
+    printf "LUCID_AUTH_SERVICE_UTILS_DIRECTORY_$(date +%s)" > ./utils/.keep && \
+    printf "LUCID_AUTH_SERVICE_WALLET_DIRECTORY_$(date +%s)" > ./wallet/.keep && \
+    printf "LUCID_AUTH_SERVICE_VM_DIRECTORY_$(date +%s)" > ./vm/.keep && \
+    touch ./auth/.keep ./admin/.keep ./vm/.keep ./core/.keep ./common/.keep ./configs/.keep ./database/.keep ./infrastructure/.keep ./node/.keep ./RDP/.keep ./tools/.keep ./utils/.keep ./wallet/.keep \
+    && echo "New directory structure created with .keep files"
+    && chown -R 65532:65532 ./auth ./admin ./vm ./core ./common ./configs ./database ./infrastructure ./node ./RDP ./tools ./utils ./wallet \
+
 # Copy requirements file
 COPY ../../../auth/requirements.txt ./requirements.txt
 COPY ../../../auth/ ./auth/
 COPY ../../../admin/ ./admin/
 COPY ../../../core/ ./core/
+COPY ../../../common/ ./common/
+COPY ../../../configs/ ./configs/
 COPY ../../../database/ ./database/
 COPY ../../../infrastructure/ ./infrastructure/
 COPY ../../../node/ ./node/
 COPY ../../../RDP/ ./RDP/
 COPY ../../../tools/ ./tools/
 COPY ../../../utils/ ./utils/
-COPY ../../../wallet/ ./wallet/
+COPY ../../../vm/ ./vm/
 COPY ../../../wallet/ ./wallet/
 # Install Python dependencies to user directory for distroless compatibility
-RUN pip install --user --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --user --no-cache-dir -r ./requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" &&\
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+    
 
 # Verify critical packages are installed
 RUN python -c "import fastapi, uvicorn, jwt, motor, redis; print('All critical packages installed successfully')"
@@ -93,6 +121,7 @@ WORKDIR /app
 
 # Copy application code from repository
 COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+
 COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
 COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
 COPY --from=builder --chown=65532:65532 /build/database/ /app/database/

@@ -13,8 +13,7 @@ Features:
 - FastAPI-based storage API
 """
 
-from sessions.storage.session_storage import StorageConfig, StorageMetrics
-from sessions.storage.session_storage import SessionStorageService as SessionStorage
+from sessions.storage.session_storage import StorageConfig, StorageMetrics, SessionStorage
 from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
 from sessions.storage.config import StorageSettings
 from sessions.storage.config import StorageConfig as ConfigStorageManager
