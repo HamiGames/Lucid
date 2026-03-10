@@ -6,7 +6,7 @@ Implements chunk persistence to filesystem and session metadata storage
 
 import asyncio
 import hashlib
-import logging
+import sessions.core.logging as logging
 import os
 import shutil
 import datetime
@@ -20,7 +20,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 import zstandard as zstd
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Optional imports from recorder (lazy loading to avoid module initialization issues)
 # Note: Module-level initialization in recorder tries to create directories which fails in read-only containers

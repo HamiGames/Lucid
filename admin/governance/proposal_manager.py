@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 import os
 import json
 import hashlib
@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 PROPOSAL_STORAGE_PATH = Path(os.getenv("PROPOSAL_STORAGE_PATH", "/data/governance/proposals"))

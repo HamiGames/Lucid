@@ -6,7 +6,7 @@ Handles chunk storage operations and file management
 
 import asyncio
 import hashlib
-import logging
+import sessions.core.logging as logging
 import os
 import shutil
 import json
@@ -20,7 +20,7 @@ from dataclasses import dataclass
 import zstandard as zstd
 import lz4.frame
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Optional import from recorder (lazy loading to avoid module initialization issues)
 # Note: Module-level initialization in recorder tries to create directories which fails in read-only containers

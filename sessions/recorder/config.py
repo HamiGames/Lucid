@@ -8,7 +8,7 @@ Configuration is loaded from YAML file with environment variable overrides.
 """
 
 import os
-import logging
+import sessions.core.logging as logging
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from pydantic import field_validator
@@ -20,7 +20,7 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RecordingVideoConfig(BaseSettings):

@@ -20,7 +20,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.get("/info", response_model=BlockchainInfo)
 async def get_blockchain_info(

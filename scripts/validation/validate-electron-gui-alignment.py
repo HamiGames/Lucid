@@ -2,7 +2,7 @@
 """
 LUCID Electron GUI Alignment Validator
 
-This script validates the electron-gui directory structure and files against
+This script validates the electron_gui directory structure and files against
 the build plan requirements. It performs comprehensive checks for:
 - File structure alignment
 - TypeScript/React component validation
@@ -12,7 +12,7 @@ the build plan requirements. It performs comprehensive checks for:
 - Security compliance
 
 Usage:
-    python scripts/validation/validate-electron-gui-alignment.py [--verbose] [--fix]
+    python scripts/validation/validate-electron_gui-alignment.py [--verbose] [--fix]
 
 Author: LUCID Project Team
 Version: 1.0.0
@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ValidationStatus(Enum):
     PASS = "PASS"
@@ -55,7 +55,7 @@ class ElectronGUIValidator:
     
     def __init__(self, project_root: str = "."):
         self.project_root = Path(project_root).resolve()
-        self.electron_gui_path = self.project_root / "electron-gui"
+        self.electron_gui_path = self.project_root / "electron_gui"
         self.results: List[ValidationResult] = []
         
         # Expected file structure based on build plan
@@ -139,15 +139,15 @@ class ElectronGUIValidator:
         ]
 
     def validate_file_structure(self) -> List[ValidationResult]:
-        """Validate electron-gui file structure"""
+        """Validate electron_gui file structure"""
         results = []
         
         if not self.electron_gui_path.exists():
             results.append(ValidationResult(
-                file_path="electron-gui/",
+                file_path="electron_gui/",
                 status=ValidationStatus.FAIL,
-                message="electron-gui directory not found",
-                suggestion="Create electron-gui directory structure"
+                message="electron_gui directory not found",
+                suggestion="Create electron_gui directory structure"
             ))
             return results
         
@@ -517,7 +517,7 @@ class ElectronGUIValidator:
         logger.info("Starting Electron GUI alignment validation...")
         
         if not self.electron_gui_path.exists():
-            logger.error("electron-gui directory not found!")
+            logger.error("electron_gui directory not found!")
             return False
         
         # Validate file structure
@@ -613,7 +613,7 @@ def main():
     args = parser.parse_args()
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.get_logger().setLevel(logging.DEBUG)
     
     # Run validation
     validator = ElectronGUIValidator(args.project_root)

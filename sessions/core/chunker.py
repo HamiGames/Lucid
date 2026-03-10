@@ -6,7 +6,7 @@ LUCID Session Chunker - SPEC-1B Implementation
 
 import asyncio
 import hashlib
-import logging
+import sessions.core.logging as logging
 import os
 import time
 from dataclasses import dataclass
@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import AsyncGenerator, List, Optional, Tuple
 import zstandard as zstd
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class ChunkMetadata:

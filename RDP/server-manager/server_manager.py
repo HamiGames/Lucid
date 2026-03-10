@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ServerStatus(Enum):
     """RDP server status states"""

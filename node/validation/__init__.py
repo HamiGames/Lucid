@@ -18,7 +18,7 @@ Core Components:
 - StakeValidation: Stake verification
 """
 
-from .node_poot_validations import (
+from node.validation.node_poot_validations import (
     NodePootValidation,
     TokenOwnershipChallenge,
     TokenOwnershipProof,

@@ -24,7 +24,7 @@ from .models import (
     SessionAnchor, ChunkMetadata, generate_session_id
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Block configuration from BUILD_REQUIREMENTS_GUIDE.md
 BLOCK_TIME_SECONDS = 10          # Target block time

@@ -38,7 +38,7 @@ from cryptography.exceptions import InvalidSignature, InvalidKey
 from pydantic import BaseModel, Field, validator, root_validator
 from pydantic.types import SecretStr
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SecurityLevel(Enum):

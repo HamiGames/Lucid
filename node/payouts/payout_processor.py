@@ -12,10 +12,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from ..database_adapter import DatabaseAdapter
-from .tron_client import TronClient
+from node.payouts.database_adapter import DatabaseAdapter
+from node.payouts.tron_client import TronClient
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class PayoutStatus(Enum):

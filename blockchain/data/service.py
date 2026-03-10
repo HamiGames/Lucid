@@ -21,7 +21,7 @@ from .storage import DataStorage
 from .integrity import IntegrityVerifier
 from .deduplication import DeduplicationManager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Environment variable configuration (required, no hardcoded defaults)
 MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI")

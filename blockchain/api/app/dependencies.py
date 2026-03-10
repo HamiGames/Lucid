@@ -16,7 +16,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, Dict, Any
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Security scheme
 security = HTTPBearer()

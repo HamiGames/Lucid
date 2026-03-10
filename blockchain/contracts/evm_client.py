@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Any, Union
 import aiohttp
 import secrets
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TransactionStatus(Enum):
@@ -84,7 +84,7 @@ class EVMClient:
         self.rpc_url = rpc_url
         self.chain_id = chain_id
         self.timeout = timeout
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         
         # HTTP session
         self._session: Optional[aiohttp.ClientSession] = None

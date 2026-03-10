@@ -180,7 +180,7 @@ assert os.path.exists('/app/xrdp/entrypoint.py'), 'entrypoint missing'"
 
 EXPOSE 3389
 
-# Health check (per service-mesh-design.md, master-docker-design.md)
+# Health check (per service_mesh-design.md, master-docker-design.md)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD python3 -c "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 3389)); s.close(); exit(0 if result == 0 else 1)"
 

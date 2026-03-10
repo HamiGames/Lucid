@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 VAULT_ENCRYPTION_ALGORITHM = "ChaCha20Poly1305"

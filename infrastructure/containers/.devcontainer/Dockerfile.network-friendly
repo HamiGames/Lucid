@@ -125,10 +125,10 @@ FROM python-dev AS workspace
 # Create project directory structure per Spec-1d monorepo layout
 RUN mkdir -p \
     # Core service directories
-    /workspaces/Lucid/03-api-gateway/api/app \
+    /workspaces/Lucid/03_api_gateway/api/app \
     /workspaces/Lucid/04-blockchain-core/api/app \
-    /workspaces/Lucid/02-network-security/tor \
-    /workspaces/Lucid/02-network-security/tunnels \
+    /workspaces/Lucid/02_network_security/tor \
+    /workspaces/Lucid/02_network_security/tunnels \
     /workspaces/Lucid/infrastructure/compose/compose \
     # Development directories
     /workspaces/Lucid/tests \

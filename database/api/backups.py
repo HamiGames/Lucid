@@ -20,7 +20,7 @@ import logging
 
 from ..services.backup_service import BackupService
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter(
     prefix="/database/backups",

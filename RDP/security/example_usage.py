@@ -19,7 +19,7 @@ from access_controller import (
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 async def example_basic_usage():

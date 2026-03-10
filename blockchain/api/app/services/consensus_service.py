@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 import time
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ConsensusService:
     """Service for consensus mechanism operations."""

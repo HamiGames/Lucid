@@ -25,7 +25,7 @@ from .models import (
     generate_session_id
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Merkle tree configuration
 MERKLE_TREE_HEIGHT_MAX = 20    # Maximum tree height (supports ~1M leaves)

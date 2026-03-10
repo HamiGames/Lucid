@@ -28,7 +28,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.x509.oid import NameOID, ExtensionOID
 import blake3
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SecurityLevel(Enum):

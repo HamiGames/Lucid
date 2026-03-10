@@ -14,7 +14,7 @@ import uuid
 from ..connection import DatabaseConnection
 from ...models.anchoring import SessionAnchor, AnchorStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class AnchoringRepository:

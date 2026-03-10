@@ -39,14 +39,14 @@ class TestTRONIsolation:
     @pytest.fixture
     def payment_systems_dir(self, project_root):
         """Get payment systems directory"""
-        return project_root / "payment-systems"
+        return project_root / "payment_systems"
     
     @pytest.fixture
     def tron_keywords(self):
         """Get TRON-related keywords to search for"""
         return [
             "tron", "TRON", "TronNode", "TronClient", "tron_client",
-            "tron-node", "tron-client", "usdt", "USDT", "TRX", "trx",
+            "tron_node", "tron-client", "usdt", "USDT", "TRX", "trx",
             "tron_payment", "TronPayment", "tron_payout", "TronPayout",
             "tron_wallet", "TronWallet", "tron_network", "TronNetwork"
         ]
@@ -148,10 +148,10 @@ class TestTRONIsolation:
         required_dirs = [
             "blockchain/core",
             "blockchain/api",
-            "payment-systems/tron",
-            "payment-systems/tron/services",
-            "payment-systems/tron/api",
-            "payment-systems/tron/models"
+            "payment_systems/tron",
+            "payment_systems/tron/services",
+            "payment_systems/tron/api",
+            "payment_systems/tron/models"
         ]
         
         missing_dirs = []
@@ -315,7 +315,7 @@ class TestTRONIsolationIntegration:
         # 4. Checking directory structure
         
         blockchain_dir = project_root / "blockchain"
-        payment_systems_dir = project_root / "payment-systems"
+        payment_systems_dir = project_root / "payment_systems"
         
         # Check blockchain isolation
         if blockchain_dir.exists():

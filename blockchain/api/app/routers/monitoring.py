@@ -20,7 +20,7 @@ router = APIRouter(
     responses={404: {"description": "Monitoring data not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.get("/health", response_model=Dict[str, Any])
 async def get_health_status(

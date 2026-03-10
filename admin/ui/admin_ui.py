@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -17,13 +17,13 @@ import json
 import uuid
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Lifespan
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from admin config
 from admin.config import get_admin_config
@@ -550,13 +550,13 @@ admin_ui = AdminUI()
 app = admin_ui.app
 
 # Startup and shutdown events
-@app.on_event("startup")
+@app.lifespan(Lifespan.startup)
 async def startup_event():
     """Application startup"""
     logger.info("Starting Admin UI...")
     logger.info("Admin UI started")
 
-@app.on_event("shutdown")
+@app.lifespan(Lifespan.shutdown)
 async def shutdown_event():
     """Application shutdown"""
     logger.info("Shutting down Admin UI...")

@@ -13,7 +13,7 @@ from .database_adapter import DatabaseAdapter, get_database_adapter
 import uuid
 import json
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass  

@@ -22,7 +22,7 @@ import queue
 import time
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class SessionState(Enum):
     """Session state enumeration"""

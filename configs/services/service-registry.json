@@ -42,11 +42,11 @@
         "tls_enabled": false
       }
     },
-    "gui-api-bridge": {
+    "gui_api_bridge": {
       "name": "GUI API Bridge",
       "version": "1.0.0",
       "port": 8102,
-      "host": "lucid-gui-api-bridge",
+      "host": "lucid-gui_api_bridge",
       "protocol": "http",
       "api_base": "/api/v1",
       "status_endpoint": "/health",
@@ -119,7 +119,7 @@
     },
     "gui": {
       "priority": 4,
-      "services": ["lucid-gui-api-bridge", "lucid-gui-docker-manager", "lucid-gui-tor-manager", "lucid-gui-hardware-manager"]
+      "services": ["lucid-gui_api_bridge", "lucid-gui-docker-manager", "lucid-gui-tor-manager", "lucid-gui-hardware-manager"]
     },
     "support": {
       "priority": 5,

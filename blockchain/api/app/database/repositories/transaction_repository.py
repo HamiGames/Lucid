@@ -13,7 +13,7 @@ from pymongo.errors import DuplicateKeyError
 from ..connection import DatabaseConnection
 from ...models.transaction import Transaction, TransactionStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TransactionRepository:

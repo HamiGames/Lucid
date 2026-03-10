@@ -13,7 +13,7 @@ import logging
 
 from auth.config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

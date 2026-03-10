@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Pattern to match ${VAR_NAME} or ${VAR_NAME:default}
 ENV_VAR_PATTERN = re.compile(r'\$\{([^}:]+)(?::([^}]+))?\}')

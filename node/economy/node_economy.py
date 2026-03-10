@@ -18,9 +18,9 @@ import hashlib
 # Import from reorganized structure
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent / "payment-systems"))
+sys.path.append(str(Path(__file__).parent.parent.parent / "payment_systems"))
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Optional imports for TRON integration
 try:
@@ -35,7 +35,7 @@ except ImportError:
     PayoutRouter = None
     logger.warning("PayoutRouter not available - blockchain integration disabled")
 
-# Note: payout_governance module not found in payment-systems, may need to be created or imported differently
+# Note: payout_governance module not found in payment_systems, may need to be created or imported differently
 # from payment_systems.governance.payout_governance import PayoutGovernance
 
 # Economic Constants

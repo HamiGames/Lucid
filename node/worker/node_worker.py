@@ -17,7 +17,7 @@ from enum import Enum
 import json
 import hashlib
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Import from reorganized structure
 import sys

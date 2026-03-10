@@ -5,7 +5,7 @@ Handles the complete session processing pipeline with state machine
 """
 
 import asyncio
-import logging
+
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from enum import Enum

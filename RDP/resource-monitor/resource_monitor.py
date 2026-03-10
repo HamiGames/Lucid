@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Any
 from uuid import UUID
 import json
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ResourceMetrics:
     """Resource metrics data structure"""

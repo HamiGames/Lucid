@@ -23,7 +23,7 @@ router = APIRouter(
     responses={404: {"description": "Anchoring not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.post("/session", response_model=SessionAnchoringResponse, status_code=status.HTTP_202_ACCEPTED)
 async def anchor_session_manifest(

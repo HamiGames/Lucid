@@ -20,7 +20,7 @@ from ..core.security import get_security_validator, SecurityPolicy
 from ..core.networking import SecurityConfig
 from ..core.widgets import get_theme_manager, ThemeMode, create_tooltip
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SettingCategory(Enum):
@@ -877,9 +877,9 @@ class SettingsDialog:
         try:
             # Update logging level
             if value:
-                logging.getLogger().setLevel(logging.DEBUG)
+                logging.get_logger().setLevel(logging.DEBUG)
             else:
-                logging.getLogger().setLevel(logging.INFO)
+                logging.get_logger().setLevel(logging.INFO)
             logger.info(f"Debug mode changed to: {value}")
         except Exception as e:
             logger.error(f"Failed to change debug mode: {e}")

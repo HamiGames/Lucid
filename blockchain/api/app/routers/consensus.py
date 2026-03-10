@@ -23,7 +23,7 @@ router = APIRouter(
     responses={404: {"description": "Consensus data not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.get("/status", response_model=ConsensusStatus)
 async def get_consensus_status(

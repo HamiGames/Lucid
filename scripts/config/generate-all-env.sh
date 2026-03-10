@@ -202,7 +202,7 @@ ENCRYPTION_KEY=$ENCRYPTION_KEY
 
 # GUI API Bridge Configuration
 GUI_API_BRIDGE_PORT=8099
-GUI_API_BRIDGE_HOST=gui-api-bridge
+GUI_API_BRIDGE_HOST=gui_api_bridge
 GUI_API_BRIDGE_TIMEOUT=30
 
 # GUI Docker Manager Configuration

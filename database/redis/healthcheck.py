@@ -13,7 +13,7 @@ from redis.exceptions import ConnectionError, TimeoutError, AuthenticationError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('redis-healthcheck')
+logger = logging.get_logger('redis-healthcheck')
 
 def check_redis_health():
     """Check Redis health using redis-py"""

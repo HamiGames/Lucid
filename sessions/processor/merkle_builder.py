@@ -16,14 +16,14 @@ Features:
 """
 
 import hashlib
-import logging
+import sessions.core.logging as logging
 import json
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import asyncio
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

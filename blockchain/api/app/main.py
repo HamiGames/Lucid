@@ -35,7 +35,7 @@ from .cache import init_cache, close_cache
 
 # Configure logging
 setup_logging(settings.LOG_LEVEL, "standard")
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create FastAPI application
 app = FastAPI(

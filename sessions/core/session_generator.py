@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import secrets
 import uuid
-import logging
+import sessions.core.logging as logging
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import blake3
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Session ID Constants per R-MUST-012
 SESSION_ID_ENTROPY_BITS = int(os.getenv("LUCID_SESSION_ID_ENTROPY_BITS", "256"))  # 256-bit entropy

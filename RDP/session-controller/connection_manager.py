@@ -15,7 +15,7 @@ from pathlib import Path
 
 from common.models import RdpConnection, ConnectionStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ConnectionManager:
     """Manages RDP connections and their lifecycle"""

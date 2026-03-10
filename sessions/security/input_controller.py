@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import time
 import hashlib
@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 INPUT_CONTROL_PATH = Path(os.getenv("LUCID_INPUT_CONTROL_PATH", "/data/input_control"))

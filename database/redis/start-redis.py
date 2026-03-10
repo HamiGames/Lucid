@@ -18,7 +18,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('redis-distroless')
+logger = logging.get_logger('redis-distroless')
 
 class RedisDistroless:
     def __init__(self):

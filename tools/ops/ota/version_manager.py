@@ -150,7 +150,7 @@ class VersionManager:
     
     def __init__(self, trust_engine: Optional[TrustNothingEngine] = None):
         self.trust_engine = trust_engine or TrustNothingEngine()
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         
         # Version state
         self.current_version: Optional[VersionInfo] = None

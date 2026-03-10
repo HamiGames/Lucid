@@ -14,7 +14,7 @@ from typing import Dict, Any
 from ..logging_config import request_logger, security_logger, performance_logger
 from ..metrics import api_metrics
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     """Request logging middleware for API requests."""

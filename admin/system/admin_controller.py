@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import os
-import logging
+import admin.utils.logging as logging
 import hashlib
 import struct
 from pathlib import Path
@@ -32,7 +32,7 @@ import bcrypt
 from admin.config import get_admin_config
 
 # Logger must be defined before use in exception handlers
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Import blockchain engine (optional - may not be available)
 import sys

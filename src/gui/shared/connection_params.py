@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ConnectionType(Enum):
     """Connection type enumeration"""

@@ -31,7 +31,7 @@ except ImportError:
     HAS_MOTOR = False
     AsyncIOMotorDatabase = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 ACCESS_CONTROL_DB = os.getenv("ACCESS_CONTROL_DB", "lucid_access")

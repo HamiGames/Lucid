@@ -25,7 +25,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ValidationRunner:
     """Main validation runner class"""
@@ -83,7 +83,7 @@ class ValidationRunner:
         """Run Electron GUI alignment validation"""
         logger.info("Running Electron GUI alignment validation...")
         
-        gui_script = self.scripts_dir / "validate-electron-gui-alignment.py"
+        gui_script = self.scripts_dir / "validate-electron_gui-alignment.py"
         if not gui_script.exists():
             logger.error(f"GUI validation script not found: {gui_script}")
             return False
@@ -206,7 +206,7 @@ def main():
     args = parser.parse_args()
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.get_logger().setLevel(logging.DEBUG)
     
     # Validate arguments
     if args.python_only and args.gui_only:

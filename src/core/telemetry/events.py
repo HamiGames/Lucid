@@ -28,7 +28,7 @@ from contextvars import ContextVar
 from collections import defaultdict, deque
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Context variables for correlation
 correlation_id: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
@@ -277,7 +277,7 @@ class LogEventHandler(EventHandler):
                  logger_name: Optional[str] = None,
                  filter: Optional[EventFilter] = None):
         super().__init__(name, filter)
-        self.logger = logging.getLogger(logger_name or __name__)
+        self.logger = logging.get_logger(logger_name or __name__)
         self.structured_logger = structlog.get_logger()
     
     async def _process_event(self, event: TelemetryEvent):

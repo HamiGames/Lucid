@@ -36,7 +36,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ValidationStatus(Enum):
     PASS = "PASS"
@@ -124,8 +124,8 @@ class PythonBuildValidator:
             'RDP',
             'node',
             'admin',
-            'payment-systems',
-            '03-api-gateway',
+            'payment_systems',
+            '03_api_gateway',
             'database',
             'common',
             'core',
@@ -162,11 +162,11 @@ class PythonBuildValidator:
                         status=ValidationStatus.FAIL,
                         message=f"TRON reference found in blockchain core: {match.group()}",
                         line_number=line_num,
-                        suggestion="Move TRON code to payment-systems/tron/ directory"
+                        suggestion="Move TRON code to payment_systems/tron/ directory"
                     ))
         
         # Check if TRON code is properly isolated
-        if "payment-systems/tron" in str(file_path):
+        if "payment_systems/tron" in str(file_path):
             # This is expected to have TRON code
             pass
         elif any(pattern in content.lower() for pattern in ['tron', 'trx', 'usdt']):
@@ -174,8 +174,8 @@ class PythonBuildValidator:
             results.append(ValidationResult(
                 file_path=str(file_path),
                 status=ValidationStatus.WARNING,
-                message="TRON reference found outside payment-systems/tron/",
-                suggestion="Verify if this should be moved to payment-systems/tron/"
+                message="TRON reference found outside payment_systems/tron/",
+                suggestion="Verify if this should be moved to payment_systems/tron/"
             ))
         
         return results
@@ -469,7 +469,7 @@ def main():
     args = parser.parse_args()
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.get_logger().setLevel(logging.DEBUG)
     
     # Run validation
     validator = PythonBuildValidator(args.project_root)

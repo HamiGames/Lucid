@@ -281,7 +281,7 @@ class GuiLauncher:
                 logging.FileHandler('lucid_gui.log')
             ]
         )
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
     
     def run(self, mode: GuiMode = GuiMode.AUTO) -> None:
         """Run the GUI launcher."""

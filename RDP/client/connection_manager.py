@@ -26,7 +26,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from RDP.client.rdp_client import RDPClient, ClientConfig, ClientConnectionState, ConnectionMetrics
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 MAX_POOL_SIZE = int(os.getenv("MAX_POOL_SIZE", "10"))

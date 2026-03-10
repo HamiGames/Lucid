@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import uuid
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

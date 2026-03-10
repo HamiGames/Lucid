@@ -198,7 +198,7 @@ class ConfigurationManager:
         self._monitoring_config: Optional[MonitoringConfig] = None
         self._service_configs: Dict[str, ServiceConfig] = {}
         self._encryption_key: Optional[bytes] = None
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.get_logger(__name__)
         
         self._load_configuration()
     

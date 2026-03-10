@@ -23,7 +23,7 @@ except ImportError:
     ValidationError = None
     Draft7Validator = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SchemaValidationError(Exception):

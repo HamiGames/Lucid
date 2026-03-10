@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import time
 import hashlib
@@ -24,7 +24,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
 import httpx
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment - Updated for dual-chain architecture
 BLOCKCHAIN_CONFIG_PATH = Path(os.getenv("LUCID_BLOCKCHAIN_CONFIG_PATH", "/data/blockchain"))

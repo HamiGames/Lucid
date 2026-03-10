@@ -5,8 +5,7 @@ Step 23: Admin Backend APIs Implementation
 
 Comprehensive audit logging system for administrative actions and security events.
 """
-
-import logging
+import admin.utils.logging as logging
 import json
 import asyncio
 from datetime import datetime, timezone, timedelta
@@ -17,7 +16,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 import hashlib
 import uuid
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
+
 
 
 class AuditEventType(Enum):

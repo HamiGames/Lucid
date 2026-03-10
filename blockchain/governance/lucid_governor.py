@@ -28,7 +28,7 @@ from ..state import StateManager
 from ..network import NetworkManager
 from ..crypto import CryptoManager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Governance Constants
 GOVERNANCE_PROPOSAL_TIMEOUT_HOURS = int(os.getenv("GOVERNANCE_PROPOSAL_TIMEOUT_HOURS", "168"))  # 1 week

@@ -8,7 +8,7 @@ and discovering other services in the Lucid ecosystem.
 """
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
@@ -18,7 +18,7 @@ import json
 
 from admin.config import get_admin_config
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

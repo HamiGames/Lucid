@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY ../../../payment-systems/tron-node/requirements.tron-client.txt /tmp/
+COPY ../../../payment_systems/tron_node/requirements.tron-client.txt /tmp/
 RUN pip install --no-cache-dir --user -r /tmp/requirements.tron-client.txt
 
 # Copy source code
-COPY payment-systems/tron-node/tron_client.py /app/
+COPY payment_systems/tron_node/tron_client.py /app/
 COPY blockchain/__init__.py /app/blockchain/
-COPY payment-systems/__init__.py /app/payment-systems/
+COPY payment_systems/__init__.py /app/payment_systems/
 
 # Final distroless stage
 FROM gcr.io/distroless/python3-debian12:nonroot
@@ -32,7 +32,7 @@ COPY --from=builder /root/.local /home/nonroot/.local
 COPY --from=builder /app /app
 COPY --from=builder /build/tron_client /app/tron_client
 COPY --from=builder /build/blockchain /app/blockchain
-COPY --from=builder /build/payment-systems /app/payment-systems
+COPY --from=builder /build/payment_systems /app/payment_systems
 
 # Set working directory
 WORKDIR /app

@@ -11,7 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 import asyncio
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class DatabaseManager:
     """Database connection manager for MongoDB."""

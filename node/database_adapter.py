@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 import json
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Database Configuration (from .env.foundation, .env.core, .env.secrets)
 MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGODB_URL", "")

@@ -20,7 +20,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class AnchorStatus(Enum):
@@ -210,7 +210,7 @@ class LucidAnchorsContract(LucidAnchorsInterface):
     def __init__(self, contract_address: str, evm_client: 'EVMClient'):
         self.contract_address = contract_address
         self.evm_client = evm_client
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         
         # Mock storage for development
         self._session_anchors: Dict[str, AnchorTransaction] = {}

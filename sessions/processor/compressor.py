@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import time
 import hashlib
@@ -44,7 +44,7 @@ except ImportError:
         "Please ensure 'brotli>=1.1.0' is installed."
     )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 COMPRESSION_PATH = Path(os.getenv("LUCID_COMPRESSION_PATH", "/app/data/compression"))

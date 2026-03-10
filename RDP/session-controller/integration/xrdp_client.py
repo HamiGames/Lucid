@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, List
 import httpx
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class XRDPClient:

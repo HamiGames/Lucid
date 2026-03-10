@@ -8,7 +8,7 @@ circuit breaker pattern, and timeout handling.
 """
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 import os
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timezone
@@ -25,7 +25,7 @@ from tenacity import (
 
 from admin.config import get_admin_config
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ServiceStatus(Enum):

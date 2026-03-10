@@ -55,7 +55,7 @@ elif sys.platform == "win32":
     except ImportError:
         HAS_WIN32CLIP = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 CLIPBOARD_LOG_PATH = Path(os.getenv("CLIPBOARD_LOG_PATH", "/var/log/lucid/clipboard"))

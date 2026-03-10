@@ -23,7 +23,7 @@ database:
 integration:
   api_gateway_url: "http://api-gateway:8080"
   auth_service_url: "http://lucid-auth-service:8089"
-  gui_api_bridge_url: "http://gui-api-bridge:8102"
+  gui-api-bridge_url: "http://gui-api-bridge:8102"
 
 # Hardware Wallet Configuration
 hardware_wallets:

@@ -5,7 +5,7 @@ Handles session chunk processing with compression and encryption
 """
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import time
 import zlib
 import gzip
@@ -20,7 +20,7 @@ import base64
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class ChunkConfig:

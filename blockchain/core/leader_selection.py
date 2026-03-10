@@ -25,7 +25,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .models import WorkCredit, LeaderSchedule, TaskProofType
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # =============================================================================
 # IMMUTABLE CONSENSUS PARAMETERS (Spec-1b)

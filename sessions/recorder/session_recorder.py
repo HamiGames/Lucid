@@ -22,11 +22,13 @@ import uuid
 import hashlib
 import gzip
 
+from sessions.recorder.chunk_generator import ChunkGenerator
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Lifespan
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.get_logger(__name__)
 
 # Configuration will be loaded from config module
 # These are kept as fallback defaults for backward compatibility
@@ -414,13 +416,13 @@ session_recorder = SessionRecorder()
 app = session_recorder.app
 
 # Startup and shutdown events
-@app.on_event("startup")
+@app.lifespan(Lifespan.startup)
 async def startup_event():
     """Application startup"""
     logger.info("Starting Session Recorder...")
     logger.info("Session Recorder started")
 
-@app.on_event("shutdown")
+@app.lifespan(Lifespan.shutdown)
 async def shutdown_event():
     """Application shutdown"""
     logger.info("Shutting down Session Recorder...")

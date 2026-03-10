@@ -20,7 +20,7 @@ from ..api.session_api import (
     StatisticsResponse
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create router
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])

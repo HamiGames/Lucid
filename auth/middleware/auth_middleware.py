@@ -14,7 +14,7 @@ from auth.session_manager import SessionManager
 from auth.models.session import TokenType
 from auth.utils.exceptions import TokenExpiredError, InvalidTokenError
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class AuthMiddleware(BaseHTTPMiddleware):

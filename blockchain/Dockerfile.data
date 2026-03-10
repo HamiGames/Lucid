@@ -79,16 +79,16 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, blake3, yaml,
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Copy blockchain source to staging area first
-COPY blockchain/ ./blockchain-src/
+COPY blockchain/ ./Blockchain_src/
 
 # Copy required directories for data-chain service only
 # Data-chain needs: data (service), core (merkle_tree_builder, models), config (config, yaml_loader)
-# Note: api, utils, contracts, deployment, chain-client, evm, on_system_chain are NOT needed for data-chain
-RUN cp -r ./blockchain-src/data ./data && \
-    cp -r ./blockchain-src/core ./core && \
-    cp -r ./blockchain-src/config ./config && \
-    cp ./blockchain-src/__init__.py ./__init__.py && \
-    rm -rf ./blockchain-src
+# Note: api, utils, contracts, deployment, chain_client, evm, on_system_chain are NOT needed for data-chain
+RUN cp -r ./Blockchain_src/data ./data && \
+    cp -r ./Blockchain_src/core ./core && \
+    cp -r ./Blockchain_src/config ./config && \
+    cp ./Blockchain_src/__init__.py ./__init__.py && \
+    rm -rf ./Blockchain_src
 
 # Verify __init__.py exists in builder before copying to runtime (fail build if missing)
 # CRITICAL: __init__.py is required for package structure

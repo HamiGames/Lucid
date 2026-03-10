@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 router = APIRouter(prefix="/api/node", tags=["node"])
 
 

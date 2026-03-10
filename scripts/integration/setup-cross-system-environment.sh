@@ -348,7 +348,7 @@ validate_system_integration() {
         "lucid-node-management"
         "lucid-admin-interface"
         "lucid-tron-client"
-        "lucid-gui-api-bridge"
+        "lucid-gui_api_bridge"
         "lucid-gui-docker-manager"
         "lucid-gui-tor-manager"
         "lucid-gui-hardware-wallet"

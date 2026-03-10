@@ -15,7 +15,7 @@ from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, field
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class ConfigType(Enum):
     """Configuration types"""

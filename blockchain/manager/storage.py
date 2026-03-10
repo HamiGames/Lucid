@@ -19,7 +19,7 @@ from typing import List
 from datetime import datetime
 from ..core.models import Transaction
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class BlockStorage:

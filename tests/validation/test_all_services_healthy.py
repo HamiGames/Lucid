@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass
@@ -242,7 +242,7 @@ class ServiceHealthValidator:
             
             # Cluster 10: Cross-Cluster Integration
             ServiceEndpoint(
-                name="service-mesh-controller",
+                name="service_mesh-controller",
                 url="http://localhost:8500",
                 port=8500,
                 health_path="/v1/status/leader",

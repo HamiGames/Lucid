@@ -21,7 +21,7 @@ from .storage import BlockStorage
 from .validation import BlockValidator
 from .synchronization import ChainSynchronizer
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Environment variable configuration (required, no hardcoded defaults)
 MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL")

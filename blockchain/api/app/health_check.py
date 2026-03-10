@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 import time
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class HealthCheckResult:

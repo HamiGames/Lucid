@@ -19,7 +19,7 @@ import hashlib
 import platform
 import sys
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TelemetryLevel(Enum):

@@ -23,7 +23,7 @@ router = APIRouter(
     responses={404: {"description": "Block not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.get("/", response_model=BlockListResponse)
 async def list_blocks(

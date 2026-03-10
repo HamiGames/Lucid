@@ -7,7 +7,7 @@ Generates 10MB chunks from session recordings with compression
 import asyncio
 import hashlib
 import gzip
-import logging
+import sessions.core.logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable, AsyncGenerator
@@ -17,7 +17,7 @@ import os
 
 from sessions.recorder.session_recorder import ChunkMetadata
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class ChunkConfig:

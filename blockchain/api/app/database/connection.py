@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 import os
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class DatabaseConnection:

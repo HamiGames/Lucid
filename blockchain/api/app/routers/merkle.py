@@ -23,7 +23,7 @@ router = APIRouter(
     responses={404: {"description": "Merkle tree not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.post("/build", response_model=MerkleTreeResponse)
 async def build_merkle_tree(

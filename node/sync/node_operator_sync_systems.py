@@ -26,13 +26,13 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
 
 # Database adapter handles compatibility
-from ..database_adapter import DatabaseAdapter, get_database_adapter
+from node.sync.sync.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from ..peer_discovery import PeerDiscovery
-from ..work_credits import WorkCreditsCalculator
+from node.sync.sync.peer_discovery import PeerDiscovery
+from node.sync.sync.work_credits import WorkCreditsCalculator
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Operator Sync Constants
 SYNC_HEARTBEAT_INTERVAL_SEC = int(os.getenv("LUCID_SYNC_HEARTBEAT_INTERVAL_SEC", "30"))  # 30 seconds

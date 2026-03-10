@@ -21,7 +21,7 @@ import httpx
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class AnchorStatus(Enum):
     """Anchor transaction status"""

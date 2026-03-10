@@ -11,7 +11,7 @@ This script validates that the chunk processor can:
 
 import asyncio
 import hashlib
-import logging
+import sessions.core.logging as logging
 import time
 from typing import List
 
@@ -22,7 +22,7 @@ from sessions.processor.config import ChunkProcessorConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 async def test_encryption():

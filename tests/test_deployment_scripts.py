@@ -9,7 +9,7 @@ from pathlib import Path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 def test_powershell_script_exists():
     """Test that PowerShell deployment script exists"""

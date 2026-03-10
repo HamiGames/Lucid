@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TronNetwork(Enum):

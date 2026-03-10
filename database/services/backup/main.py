@@ -33,7 +33,7 @@ except ImportError:
     AsyncIOMotorClient = None
     AsyncIOMotorDatabase = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin")

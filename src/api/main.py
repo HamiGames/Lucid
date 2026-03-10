@@ -38,7 +38,7 @@ def _configure_logging() -> None:
 def _request_logger(app: FastAPI) -> None:
     @app.middleware("http")
     async def _log_requests(request: Request, call_next: Callable):
-        logger = logging.getLogger("src.api.request")
+        logger = logging.get_logger("src.api.request")
         start = request.state.start = datetime.now(tz=timezone.utc)
 
         response = await call_next(request)

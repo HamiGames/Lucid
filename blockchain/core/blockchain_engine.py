@@ -34,7 +34,7 @@ from .models import (
 )
 from ..on_system_chain.chain_client import OnSystemChainClient, AnchorStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # =============================================================================
 # IMMUTABLE CONSENSUS PARAMETERS (Spec-1b)

@@ -35,7 +35,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TorConnectionState(Enum):

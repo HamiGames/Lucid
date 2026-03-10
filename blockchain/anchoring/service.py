@@ -21,7 +21,7 @@ from ..core.models import SessionManifest, SessionAnchor
 from .storage import AnchoringStorage
 from .manifest import ManifestBuilder
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Environment variable configuration (required, no hardcoded defaults)
 ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC") or os.getenv("ON_SYSTEM_CHAIN_RPC_URL")

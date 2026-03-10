@@ -20,7 +20,7 @@ import httpx
 
 from .core.models import SessionManifest, SessionAnchor, ChunkMetadata, PayoutRouter
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # =============================================================================
 # ON-SYSTEM DATA CHAIN CONFIGURATION (R-MUST-016)

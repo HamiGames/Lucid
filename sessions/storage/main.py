@@ -4,7 +4,7 @@ LUCID Session Storage Service - Main Entry Point
 Step 17 Implementation: Session Storage & API
 """
 
-import logging
+import sessions.core.logging as logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -13,9 +13,9 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from ..storage.session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
-from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
-from ..storage.config import StorageConfig as StorageConfigManager
+from sessions.storage.session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
+from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
+from sessions.storage.config import StorageConfig as StorageConfigManager
 
 # Configure logging (structured logging per master design)
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -23,7 +23,7 @@ logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Global storage instances
 session_storage: Optional[SessionStorage] = None

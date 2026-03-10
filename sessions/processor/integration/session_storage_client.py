@@ -4,7 +4,7 @@ Session Storage Integration Client
 Handles interaction with session-storage service for chunk persistence
 """
 
-import logging
+import sessions.core.logging as logging
 import os
 import base64
 from typing import Dict, Any, Optional, List
@@ -17,9 +17,9 @@ import httpx
 try:
     from sessions.core.logging import get_logger
 except ImportError:
-    logger = logging.getLogger(__name__)
+    logger = logging.get_logger(__name__)
     def get_logger(name):
-        return logging.getLogger(name)
+        return logging.get_logger(name)
 
 logger = get_logger(__name__)
 

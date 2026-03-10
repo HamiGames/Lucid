@@ -13,7 +13,7 @@ from requests.exceptions import ConnectionError, Timeout
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('elasticsearch-healthcheck')
+logger = logging.get_logger('elasticsearch-healthcheck')
 
 def check_elasticsearch_health():
     """Check Elasticsearch health using requests"""

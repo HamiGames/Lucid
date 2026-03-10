@@ -42,7 +42,7 @@ class PyInstallerFreezer:
             "name": "LucidUserGUI",
             "display_name": "Lucid RDP User Client",
             "description": "Lucid RDP User GUI for session management and client controls",
-            "entry_point": "gui-user/main.py",
+            "entry_point": "gui_user/main.py",
             "icon": "icons/user-icon.ico",
             "hidden_imports": [
                 "tkinter", "tkinter.ttk", "tkinter.messagebox", "tkinter.filedialog",
@@ -54,7 +54,7 @@ class PyInstallerFreezer:
             "name": "LucidAdminGUI", 
             "display_name": "Lucid RDP Admin Console",
             "description": "Lucid RDP Admin GUI for Pi appliance management",
-            "entry_point": "gui-admin/main.py",
+            "entry_point": "gui_admin/main.py",
             "icon": "icons/admin-icon.ico",
             "hidden_imports": [
                 "tkinter", "tkinter.ttk", "tkinter.messagebox", "tkinter.filedialog",
@@ -66,7 +66,7 @@ class PyInstallerFreezer:
             "name": "LucidNodeGUI",
             "display_name": "Lucid RDP Node Monitor", 
             "description": "Lucid RDP Node GUI for PoOT monitoring and payouts",
-            "entry_point": "gui-node/main.py",
+            "entry_point": "gui_node/main.py",
             "icon": "icons/node-icon.ico",
             "hidden_imports": [
                 "tkinter", "tkinter.ttk", "tkinter.messagebox", "tkinter.filedialog",

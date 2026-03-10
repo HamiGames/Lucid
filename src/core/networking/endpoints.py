@@ -27,7 +27,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class EndpointStatus(Enum):
     """Endpoint status enumeration."""

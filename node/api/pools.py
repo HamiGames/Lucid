@@ -19,13 +19,13 @@ from datetime import datetime, timezone
 import logging
 import uuid
 
-from ..models.pool import (
+from node.models.pool import (
     NodePool, NodePoolCreateRequest, NodePoolUpdateRequest,
     ResourceLimits, ScalingPolicy
 )
-from ..repositories.pool_repository import PoolRepository
+from node.repositories.pool_repository import PoolRepository
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create router
 router = APIRouter()

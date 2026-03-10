@@ -7,17 +7,17 @@ RBAC middleware for the Lucid admin interface.
 Provides permission checking and role-based access control.
 """
 
-import logging
+import admin.utils.logging as logging
 from typing import List, Optional, Callable, Any
 from functools import wraps
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from .manager import get_rbac_manager, RBACManager
-from .roles import get_role, role_exists
-from .permissions import get_permission, permission_exists
+from admin.rbac.manager import get_rbac_manager, RBACManager
+from admin.rbac.roles import get_role, role_exists
+from admin.rbac.permissions import get_permission, permission_exists
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 security = HTTPBearer()
 

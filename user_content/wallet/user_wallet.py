@@ -22,11 +22,11 @@ from cryptography.hazmat.primitives import serialization
 # Import from reorganized structure
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent / "payment-systems"))
+sys.path.append(str(Path(__file__).parent.parent / "payment_systems"))
 from tron_node.tron_client import TronNodeClient
 from blockchain.core.blockchain_engine import PayoutRouter
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # User Wallet Constants
 TRON_NETWORK = os.getenv("LUCID_TRON_NETWORK", "shasta")  # shasta/mainnet

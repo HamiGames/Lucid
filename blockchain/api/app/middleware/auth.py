@@ -13,7 +13,7 @@ from typing import Optional
 from ..security import SecurityManager
 from ..config import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """Authentication middleware for API requests."""

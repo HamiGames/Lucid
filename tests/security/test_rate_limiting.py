@@ -16,11 +16,11 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 import redis.asyncio as redis
 import sys
-sys.path.insert(0, '03-api-gateway')
+sys.path.insert(0, '03_api_gateway')
 from middleware.rate_limit import RateLimitMiddleware
-sys.path.insert(0, '03-api-gateway')
+sys.path.insert(0, '03_api_gateway')
 from services.rate_limit_service import RateLimitService
-sys.path.insert(0, '03-api-gateway')
+sys.path.insert(0, '03_api_gateway')
 from models.common import RateLimitTier
 
 
@@ -250,7 +250,7 @@ class TestRateLimitingSecurity:
     def test_rate_limit_adaptive_throttling(self):
         """Test adaptive rate limiting based on system load."""
         # Test high load scenario
-        with patch('03-api-gateway.services.rate_limit_service.get_system_load', return_value=0.9):
+        with patch('03_api_gateway.services.rate_limit_service.get_system_load', return_value=0.9):
             response = self.rate_limit_middleware.check_rate_limit(
                 client_id=self.public_ip,
                 endpoint="/api/v1/public/info",
@@ -301,7 +301,7 @@ class TestRateLimitingSecurity:
 
     def test_rate_limit_audit_logging(self):
         """Test rate limit audit logging."""
-        with patch('03-api-gateway.middleware.logging.AuditLogger') as mock_logger:
+        with patch('03_api_gateway.middleware.logging.AuditLogger') as mock_logger:
             # Generate rate limit event
             self.rate_limit_middleware.check_rate_limit(
                 client_id=self.public_ip,

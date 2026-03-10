@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import time
 import threading
@@ -51,7 +51,7 @@ try:
 except ImportError:
     HAS_WIN32 = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 KEYSTROKE_LOG_PATH = Path(os.getenv("LUCID_KEYSTROKE_LOG_PATH", "/var/log/lucid/keystrokes"))

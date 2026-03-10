@@ -681,7 +681,7 @@ def main():
         
         # Configure logging level from config
         import logging as std_logging
-        std_logging.getLogger().setLevel(getattr(std_logging, config.log_level))
+        std_logging.get_logger().setLevel(getattr(std_logging, config.log_level))
         
         # Get host and port from config (or environment for container compatibility)
         host = os.getenv("SESSION_PROCESSOR_HOST", config.host)

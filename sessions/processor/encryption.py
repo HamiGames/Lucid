@@ -18,7 +18,7 @@ Features:
 import os
 import secrets
 import hashlib
-import logging
+import sessions.core.logging as logging
 from typing import Optional, Tuple, Dict, Any
 from datetime import datetime
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -27,7 +27,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import base64
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class EncryptionError(Exception):

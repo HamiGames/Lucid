@@ -17,7 +17,7 @@ Features:
 """
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -64,7 +64,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 # Security
 security = HTTPBearer()

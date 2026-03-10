@@ -35,7 +35,7 @@ except ImportError:
     WlOutput = None
     WlSeat = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 WAYLAND_DISPLAY = os.getenv("WAYLAND_DISPLAY", "wayland-0")

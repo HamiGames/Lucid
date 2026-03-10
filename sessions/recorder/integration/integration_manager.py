@@ -4,7 +4,7 @@ Integration Manager for Session Recorder
 Manages initialization and lifecycle of integration clients
 """
 
-import logging
+import sessions.core.logging
 import os
 from typing import Optional, Dict, Any
 
@@ -33,7 +33,7 @@ except ImportError:
     SessionPipelineClient = None
     SessionStorageClient = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class IntegrationManager:

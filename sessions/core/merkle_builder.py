@@ -8,14 +8,14 @@ import asyncio
 import os
 import hashlib
 import blake3
-import logging
+import sessions.core.logging as logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class MerkleNode:

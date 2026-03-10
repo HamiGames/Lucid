@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.exceptions import InvalidSignature
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class WalletType(Enum):
     """Supported hardware wallet types"""

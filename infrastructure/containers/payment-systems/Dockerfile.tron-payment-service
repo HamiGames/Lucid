@@ -21,11 +21,11 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy requirements
-COPY payment-systems/tron/requirements.txt .
+COPY payment_systems/tron/requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy source code
-COPY payment-systems/tron/ ./src/
+COPY payment_systems/tron/ ./src/
 
 # Stage 2: Runtime (Distroless)
 FROM gcr.io/distroless/python3-debian12:nonroot

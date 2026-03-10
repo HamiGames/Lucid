@@ -15,7 +15,7 @@ RUN apt-get update \
 # ----------------------------
 # Python dependencies
 # ----------------------------
-# REQUIREMENTS MUST EXIST at: /workspaces/Lucid/03-api-gateway/api/requirements.txt
+# REQUIREMENTS MUST EXIST at: /workspaces/Lucid/03_api_gateway/api/requirements.txt
 COPY requirements.txt /app/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r /app/requirements.txt

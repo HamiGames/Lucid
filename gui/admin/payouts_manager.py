@@ -7,7 +7,7 @@ Provides TRON blockchain payout operations, wallet management, and transaction m
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
-import logging
+import admin.utils.logging as logging
 from datetime import datetime, timezone
 from typing import Dict, Optional, Any, List
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ from ..core.networking import TorHttpClient, SecurityConfig
 from ..core.security import get_security_validator
 from ..core.config_manager import get_config_manager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 
 class PayoutStatus(Enum):

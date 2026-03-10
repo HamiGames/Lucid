@@ -29,7 +29,7 @@ from cryptography.hazmat.primitives import serialization
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class OnionServiceType(str, Enum):
     """Types of onion services"""

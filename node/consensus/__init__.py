@@ -18,7 +18,7 @@ Core Components:
 - WorkCreditsCalculator: Work credits calculation and management
 """
 
-from .leader_selection import (
+from node.consensus.leader_selection import (
     LeaderSelection,
     LeaderSelectionMethod,
     ConsensusRole,
@@ -33,7 +33,7 @@ from .leader_selection import (
     get_network_status
 )
 
-from .task_proofs import (
+from node.consensus.task_proofs import (
     TaskProofCollector,
     TaskType,
     ProofStatus,
@@ -48,7 +48,7 @@ from .task_proofs import (
     get_proof_statistics
 )
 
-from .uptime_beacon import (
+from node.consensus.uptime_beacon import (
     UptimeBeaconSystem,
     BeaconStatus,
     BeaconType,
@@ -62,7 +62,7 @@ from .uptime_beacon import (
     get_node_ranking
 )
 
-from .work_credits import (
+from node.consensus.work_credits import (
     WorkCreditsCalculator,
     WorkCreditType,
     WorkCreditStatus,

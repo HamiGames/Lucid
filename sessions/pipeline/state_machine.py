@@ -7,9 +7,9 @@ Handles state transitions for session processing pipelines
 from enum import Enum
 from typing import Dict, Set, Optional
 from dataclasses import dataclass
-import logging
+import sessions.core.logging as logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class PipelineState(Enum):
     """Pipeline states"""

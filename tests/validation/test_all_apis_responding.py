@@ -26,7 +26,7 @@ from datetime import datetime
 import logging
 import json
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass
@@ -208,7 +208,7 @@ class APIResponseValidator:
         endpoints.extend([
             APIEndpoint("consul-health", "GET", "http://localhost:8500/v1/status/leader", expected_status=200),
             APIEndpoint("consul-services", "GET", "http://localhost:8500/v1/catalog/services"),
-            APIEndpoint("service-mesh-health", "GET", "http://localhost:8500/v1/status/leader", expected_status=200),
+            APIEndpoint("service_mesh-health", "GET", "http://localhost:8500/v1/status/leader", expected_status=200),
         ])
         
         return endpoints

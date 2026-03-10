@@ -5,7 +5,7 @@ Coordinates session pipeline: chunker → encryptor → merkle → blockchain an
 """
 
 import asyncio
-import logging
+
 import os
 import time
 from dataclasses import dataclass
@@ -17,9 +17,9 @@ import json
 from ..core.chunker import SessionChunker, ChunkMetadata
 from ..encryption.encryptor import EncryptedChunk, SessionEncryptor
 from ..core.merkle_builder import MerkleTreeBuilder, MerkleRoot
+import sessions.core.logging as logging
 
-
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class PipelineStage(Enum):
     """Session pipeline stages"""

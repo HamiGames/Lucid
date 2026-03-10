@@ -30,7 +30,7 @@ class TestTronIsolationSecurity:
         self.tester = TronIsolationTester()
         self.project_root = Path(__file__).parent.parent.parent
         self.blockchain_dir = self.project_root / "blockchain"
-        self.payment_systems_dir = self.project_root / "payment-systems"
+        self.payment_systems_dir = self.project_root / "payment_systems"
 
     def test_no_tron_imports_in_blockchain_core(self):
         """Test that blockchain core has no TRON imports."""

@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class EndpointConfig:

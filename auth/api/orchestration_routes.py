@@ -17,7 +17,7 @@ from auth.services.mongodb_clone import MongoDBCloneManager
 from pydantic import BaseModel, Field
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter()
 

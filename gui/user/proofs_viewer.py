@@ -23,7 +23,7 @@ from ..core.config_manager import get_config_manager
 from ..core.security import get_security_validator, CryptographicUtils
 from ..core.networking import TorHttpClient, SecurityConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ProofType(Enum):

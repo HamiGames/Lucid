@@ -60,7 +60,7 @@ RUN apk update && apk upgrade \
 
 WORKDIR /build
 COPY tools/ ./tools/
-COPY infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY node/config/ ./node/config/
 COPY RDP/config/ ./RDP/config/
 COPY admin/config/ ./admin/config/
@@ -244,7 +244,7 @@ COPY --from=server-tools-builder --chown=lucid:lucid /opt/lucid /opt/lucid
 COPY --from=server-tools-builder --chown=lucid:lucid /var/log/lucid /var/log/lucid
 COPY --from=server-tools-builder --chmod=755 /usr/local/bin/server-tools-start.sh /usr/local/bin/server-tools-start.sh
 COPY --from=server-tools-builder --chown=lucid:lucid build/wheels/ /opt/lucid/tools/wheels/
-COPY --from=server-tools-builder --chown=lucid:lucid /build/infrastructure/service-mesh/ /opt/lucid/tools/infrastructure/service-mesh/
+COPY --from=server-tools-builder --chown=lucid:lucid /build/infrastructure/service_mesh/ /opt/lucid/tools/infrastructure/service_mesh/
 COPY --from=server-tools-builder --chown=65532:65532 /build/tools/ /opt/lucid/tools/
 COPY --from=server-tools-builder --chown=lucid:lucid /build/node/config/ /opt/lucid/tools/node/config/
 COPY --from=server-tools-builder --chown=lucid:lucid /build/RDP/config/ /opt/lucid/tools/RDP/config/

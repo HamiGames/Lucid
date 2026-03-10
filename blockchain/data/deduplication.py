@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from ..config.config import get_blockchain_config
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Environment variable configuration (required, no hardcoded defaults)
 MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGODB_URL") or os.getenv("MONGODB_URI")

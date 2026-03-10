@@ -17,13 +17,13 @@ import uuid
 import json
 
 # Database adapter handles compatibility
-from ..database_adapter import DatabaseAdapter, get_database_adapter
+from node.flags.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from ..peer_discovery import PeerDiscovery
-from ..work_credits import WorkCreditsCalculator
+from node.flags.peer_discovery import PeerDiscovery
+from node.flags.work_credits import WorkCreditsCalculator
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Flag System Constants
 FLAG_RETENTION_DAYS = int(os.getenv("FLAG_RETENTION_DAYS", "30"))  # 30 days

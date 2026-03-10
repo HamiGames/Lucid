@@ -30,7 +30,7 @@ from blockchain.core.leader_selection import (
     LeaderSelector, EntityRanking, SelectionReason, VRFProvider, CooldownManager
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TestPoOTConsensus:

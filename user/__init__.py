@@ -6,4 +6,5 @@ Manages user profiles, authentication, and activity logging.
 
 from user.user_manager import UserManager, UserProfile
 
-__all__ = ["UserManager", "UserProfile"]
+
+__all__ = ["UserManager", "UserProfile", "UsersRepo", "logger"]

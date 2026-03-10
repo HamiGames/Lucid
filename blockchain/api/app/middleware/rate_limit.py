@@ -13,7 +13,7 @@ import logging
 
 from ..rate_limiter import rate_limiter_manager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting middleware for API requests."""

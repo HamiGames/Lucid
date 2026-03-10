@@ -27,7 +27,7 @@ from pymongo.errors import (
 )
 from pymongo import ASCENDING, DESCENDING
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ShardStatus(Enum):

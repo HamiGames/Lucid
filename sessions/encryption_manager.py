@@ -11,7 +11,7 @@ from cryptography.hazmat.backends import default_backend
 import secrets
 import base64
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class EncryptionManager:

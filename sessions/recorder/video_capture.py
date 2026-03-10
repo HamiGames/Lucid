@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import subprocess
 import time
@@ -24,7 +24,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 VIDEO_CAPTURE_PATH = Path(os.getenv("LUCID_VIDEO_CAPTURE_PATH", "/data/video_capture"))

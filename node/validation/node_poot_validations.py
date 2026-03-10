@@ -20,13 +20,13 @@ import secrets
 import hmac
 
 # Database adapter handles compatibility
-from ..database_adapter import DatabaseAdapter, get_database_adapter
+from node.validation.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from ..peer_discovery import PeerDiscovery
-from ..work_credits import WorkCreditsCalculator
+from node.validation.peer_discovery import PeerDiscovery
+from node.validation.work_credits import WorkCreditsCalculator
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # pOot Validation Constants
 POOT_CHALLENGE_VALIDITY_MINUTES = int(os.getenv("LUCID_POOT_CHALLENGE_VALIDITY_MINUTES", "15"))  # 15 minutes

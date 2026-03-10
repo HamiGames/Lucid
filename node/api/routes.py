@@ -19,13 +19,13 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 import uuid
 
-from .nodes import router as nodes_router
-from .pools import router as pools_router
-from .resources import router as resources_router
-from .payouts import router as payouts_router
-from .poot import router as poot_router
+from node.api.nodes import router as nodes_router
+from node.api.pools import router as pools_router
+from node.api.resources import router as resources_router
+from node.api.payouts import router as payouts_router
+from node.api.poot import router as poot_router
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create FastAPI application
 app = FastAPI(

@@ -18,6 +18,9 @@ passlib[bcrypt]>=1.7.4
 # HTTP client
 httpx>=0.25.0
 requests>=2.31.0
+logging>=23.2.0
+logging.config>=23.2.0
+logging.handlers>=23.2.0
 
 # Async support
 asyncio-mqtt>=0.16.0

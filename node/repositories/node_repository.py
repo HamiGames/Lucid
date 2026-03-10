@@ -23,15 +23,15 @@ import uuid
 import hashlib
 import base64
 
-from ..models.node import (
+from node.models.node import (
     Node, NodeCreateRequest, NodeUpdateRequest, NodeStatus, NodeType,
     NodeResources, ResourceMetrics, CPUMetrics, MemoryMetrics, 
     DiskMetrics, NetworkMetrics, GPUMetrics, PoOTScore, PoOTValidation,
     PoOTValidationRequest
 )
-from ..models.payout import Payout, PayoutRequest, BatchPayoutRequest, PayoutStatus
+from node.models.payout import Payout, PayoutRequest, BatchPayoutRequest, PayoutStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class NodeRepository:
     """Repository for node management operations"""

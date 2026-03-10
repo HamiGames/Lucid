@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: infrastructure/docker/payment-systems/build-env.sh
+# Path: infrastructure/docker/payment_systems/build-env.sh
 # Build Environment Script for Lucid Payment Systems
 # Generates .env files for payment processing containers
 

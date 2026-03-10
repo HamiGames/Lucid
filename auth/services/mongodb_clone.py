@@ -16,7 +16,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from .orchestrator import ServiceOrchestrator, ServiceStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class MongoDBCloneManager:

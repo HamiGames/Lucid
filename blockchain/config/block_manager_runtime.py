@@ -17,7 +17,7 @@ from .block_manager_config import (
 )
 from .yaml_loader import load_yaml_config, get_config_dir
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def setup_block_manager_runtime(

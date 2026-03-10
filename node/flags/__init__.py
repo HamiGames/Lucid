@@ -18,7 +18,7 @@ Core Components:
 - FlagEvent: Flag lifecycle events
 """
 
-from .node_flag_systems import (
+from node.flags.node_flag_systems import (
     NodeFlagSystem,
     NodeFlag,
     FlagType,

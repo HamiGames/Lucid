@@ -8,12 +8,12 @@ Handles environment variables, service settings, and security configuration.
 """
 
 import os
-import logging
+import admin.utils.logging as logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 
 @dataclass

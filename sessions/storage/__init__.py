@@ -15,8 +15,21 @@ Features:
 
 from sessions.storage.session_storage import StorageConfig, StorageMetrics, SessionStorage
 from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
-from sessions.storage.config import StorageSettings
-from sessions.storage.config import StorageConfig as ConfigStorageManager
+from sessions.storage.config import (
+    StorageSettings, 
+    StorageConfig,
+    create_default_config_file,
+    load_config,
+    get_config,
+    set_config
+)
+from sessions.storage.session_storage_service import (
+    StorageConfig,
+    StorageDocument,
+    ChunkDocument,
+    SessionStorageService
+)
+
 __all__ = [
     'SessionStorage',
     'StorageConfig', 
@@ -24,7 +37,13 @@ __all__ = [
     'ChunkStore',
     'ChunkStoreConfig',
     'StorageSettings',
-    'ConfigStorageManager'
+    'create_default_config_file',
+    'load_config',
+    'get_config',
+    'set_config',
+    'StorageDocument',
+    'ChunkDocument',
+    'SessionStorageService'
 ]
 
 __version__ = "1.0.0"

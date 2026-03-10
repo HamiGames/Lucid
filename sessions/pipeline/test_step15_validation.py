@@ -14,7 +14,7 @@ from .pipeline_manager import PipelineManager, SessionPipeline
 from .state_machine import PipelineState, StateTransition
 from .config import PipelineConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class Step15ValidationTest:
     """

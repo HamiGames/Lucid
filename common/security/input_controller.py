@@ -29,7 +29,7 @@ from .trust_nothing_engine import (
     TrustNothingEngine
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Input Control Configuration
 INPUT_MAX_SIZE_BYTES = 10 * 1024 * 1024  # 10MB

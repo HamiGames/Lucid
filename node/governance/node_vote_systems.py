@@ -18,13 +18,13 @@ import json
 from decimal import Decimal
 
 # Database adapter handles compatibility
-from ..database_adapter import DatabaseAdapter, get_database_adapter
+from node.governance..database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from ..peer_discovery import PeerDiscovery
-from ..work_credits import WorkCreditsCalculator
+from node.governance..peer_discovery import PeerDiscovery
+from node.governance..work_credits import WorkCreditsCalculator
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Vote System Constants
 VOTE_DURATION_HOURS = int(os.getenv("VOTE_DURATION_HOURS", "168"))  # 1 week

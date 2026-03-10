@@ -21,13 +21,13 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING
 import uuid
 
-from ..models.pool import (
+from node.models.pool import (
     NodePool, NodePoolCreateRequest, NodePoolUpdateRequest,
     PoolNode, PoolScalingEvent, PoolMetrics, ScalingPolicy, AutoScalingConfig
 )
-from ..models.node import Node
+from node.models.node import Node
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class PoolRepository:
     """Repository for pool management operations"""

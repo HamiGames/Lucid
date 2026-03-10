@@ -29,7 +29,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from sessions.session_recorder import SessionRecorder, SessionMetadata
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 DEFAULT_RDP_PORT = int(os.getenv("DEFAULT_RDP_PORT", "3389"))

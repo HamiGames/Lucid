@@ -4,7 +4,7 @@ Integration Manager for Session Processor
 Manages initialization and lifecycle of integration clients
 """
 
-import logging
+import sessions.core.logging as logging
 import os
 from typing import Optional, Dict, Any
 
@@ -12,9 +12,9 @@ from typing import Optional, Dict, Any
 try:
     from sessions.core.logging import get_logger
 except ImportError:
-    logger = logging.getLogger(__name__)
+    logger = logging.get_logger(__name__)
     def get_logger(name):
-        return logging.getLogger(name)
+        return logging.get_logger(name)
 
 # Import clients from pipeline integration (shared across services)
 # Note: PYTHONPATH includes /app, so sessions.pipeline.integration is accessible

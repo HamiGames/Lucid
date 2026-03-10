@@ -40,7 +40,7 @@ try:
 except ImportError:
     HAS_AIOFILES = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 FILE_TRANSFER_LOG_PATH = Path(os.getenv("FILE_TRANSFER_LOG_PATH", "/var/log/lucid/file_transfer"))

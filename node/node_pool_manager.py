@@ -16,7 +16,7 @@ import uuid
 from .database_adapter import DatabaseAdapter
 from .models import NodeInfo, PoolInfo, PoolMetrics
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Pool Configuration
 MAX_NODES_PER_POOL = int(os.getenv("MAX_NODES_PER_POOL", "100"))

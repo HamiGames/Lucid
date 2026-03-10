@@ -7,7 +7,7 @@ Provides comprehensive system health checks, performance monitoring, and diagnos
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
-import logging
+import admin.utils.logging as logging
 import psutil
 import platform
 import socket
@@ -26,7 +26,7 @@ from ..core.networking import TorHttpClient, SecurityConfig
 from ..core.security import get_security_validator
 from ..core.config_manager import get_config_manager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 
 class DiagnosticLevel(Enum):
@@ -450,8 +450,8 @@ class DiagnosticManager:
             
             # Load average (Unix only)
             load_average = []
-            if hasattr(os, 'getloadavg'):
-                load_average = list(os.getloadavg())
+            if hasattr(os, 'get_loggeroadavg'):
+                load_average = list(os.get_loggeroadavg())
             
             # Create metrics
             metrics = SystemMetrics(

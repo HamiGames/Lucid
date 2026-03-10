@@ -16,7 +16,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import hashes, serialization
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class UserRole(Enum):
     """User roles in the Lucid RDP system"""

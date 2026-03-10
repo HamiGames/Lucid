@@ -7,7 +7,7 @@ Provides key rotation, backup, and recovery operations for cryptographic keys.
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import json
-import logging
+import admin.utils.logging as logging
 import hashlib
 import base64
 from datetime import datetime, timezone, timedelta
@@ -23,7 +23,7 @@ from ..core.networking import TorHttpClient, SecurityConfig
 from ..core.security import get_security_validator, CryptographicUtils
 from ..core.config_manager import get_config_manager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 
 class KeyType(Enum):

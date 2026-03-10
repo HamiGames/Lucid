@@ -16,9 +16,9 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 import sys
-sys.path.insert(0, '03-api-gateway')
+sys.path.insert(0, '03_api_gateway')
 from utils.validation import InputValidator
-sys.path.insert(0, '03-api-gateway')
+sys.path.insert(0, '03_api_gateway')
 from models.user import UserCreate, UserUpdate
 from models.session import SessionCreate, SessionUpdate
 from models.auth import LoginRequest
@@ -419,7 +419,7 @@ class TestInputValidationSecurity:
 
     def test_input_validation_audit_logging(self):
         """Test input validation audit logging."""
-        with patch('03-api-gateway.middleware.logging.AuditLogger') as mock_logger:
+        with patch('03_api_gateway.middleware.logging.AuditLogger') as mock_logger:
             # Test malicious input
             with pytest.raises(ValidationError):
                 UserCreate(

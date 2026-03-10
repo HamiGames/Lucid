@@ -4,7 +4,9 @@
 # Audit logging system for the Lucid admin interface.
 # Provides comprehensive audit trail for all administrative actions.
 
-from .logger import (
+import admin.utils.logging as logging
+
+from admin.audit.logger import (
     AuditLogger, 
     get_audit_logger,
     AuditEventType as LoggerEventType,
@@ -12,7 +14,10 @@ from .logger import (
     AuditEventStatus,
     AuditEvent as LoggerAuditEvent
 )
-from .events import AuditEvent, AuditEventType, AuditSeverity
+from admin.audit.events import AuditEvent, AuditEventType, AuditSeverity
+
+logger = logging.get_logger(__name__)
+setup_logging= logging.setup_logging(__name__)
 
 __all__ = [
     "AuditLogger",
@@ -22,6 +27,6 @@ __all__ = [
     "AuditSeverity",
     "AuditEventSeverity",
     "AuditEventStatus",
-    "LoggerEventType",
-    "LoggerAuditEvent"
+    "LoggerEventType", "LoggerAuditEvent",
+    "logger", "setup_logging",
 ]

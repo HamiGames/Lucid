@@ -30,7 +30,7 @@ except ImportError:
     JSON_AVAILABLE = False
     json = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Regex patterns for URL validation (compiled at module level for performance)
 LOCALHOST_PATTERN = re.compile(r'\blocalhost\b', re.IGNORECASE)

@@ -9,9 +9,9 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-import logging
+import sessions.core.logging as logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class WorkerConfig:

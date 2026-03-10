@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any, Optional
 from .service_base import ServiceClientBase, ServiceError, ServiceNotFoundError
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RDPMonitorClient(ServiceClientBase):

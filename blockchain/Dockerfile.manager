@@ -78,20 +78,20 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, blake3, web3,
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)"
 
 # Application source COPY
-COPY blockchain/ ./blockchain-src/
+COPY blockchain/ ./Blockchain_src/
 
-RUN cp -r ./blockchain-src/manager ./manager && \
-    cp -r ./blockchain-src/api ./api && \
-    cp -r ./blockchain-src/core ./core && \
-    cp -r ./blockchain-src/utils ./utils && \
-    cp -r ./blockchain-src/config ./config && \
-    cp -r ./blockchain-src/contracts ./contracts && \
-    cp -r ./blockchain-src/deployment ./deployment && \
-    cp -r ./blockchain-src/chain-client ./chain-client && \
-    cp -r ./blockchain-src/evm ./evm && \
-    cp -r ./blockchain-src/on_system_chain ./on_system_chain && \
-    cp ./blockchain-src/*.py ./ && \
-    rm -rf ./blockchain-src
+RUN cp -r ./Blockchain_src/manager ./manager && \
+    cp -r ./Blockchain_src/api ./api && \
+    cp -r ./Blockchain_src/core ./core && \
+    cp -r ./Blockchain_src/utils ./utils && \
+    cp -r ./Blockchain_src/config ./config && \
+    cp -r ./Blockchain_src/contracts ./contracts && \
+    cp -r ./Blockchain_src/deployment ./deployment && \
+    cp -r ./Blockchain_src/chain_client ./chain_client && \
+    cp -r ./Blockchain_src/evm ./evm && \
+    cp -r ./Blockchain_src/on_system_chain ./on_system_chain && \
+    cp ./Blockchain_src/*.py ./ && \
+    rm -rf ./Blockchain_src
 
 ############################
 # Stage 2 – Runtime
@@ -148,7 +148,7 @@ COPY --chown=65532:65532 --from=builder /build/utils        /app/utils
 COPY --chown=65532:65532 --from=builder /build/config       /app/config
 COPY --chown=65532:65532 --from=builder /build/contracts    /app/contracts
 COPY --chown=65532:65532 --from=builder /build/deployment   /app/deployment
-COPY --chown=65532:65532 --from=builder /build/chain-client /app/chain-client
+COPY --chown=65532:65532 --from=builder /build/chain_client /app/chain_client
 COPY --chown=65532:65532 --from=builder /build/evm          /app/evm
 COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/on_system_chain
 COPY --chown=65532:65532 --from=builder /build/*.py         /app/

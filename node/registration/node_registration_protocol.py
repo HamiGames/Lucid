@@ -41,11 +41,11 @@ except ImportError:
 import blake3
 
 # Database adapter handles compatibility
-from ..database_adapter import DatabaseAdapter, get_database_adapter
+from node.registration.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from ..peer_discovery import PeerDiscovery, PeerInfo
-from ..work_credits import WorkCreditsCalculator
+from node.registration.peer_discovery import PeerDiscovery, PeerInfo
+from node.registration.work_credits import WorkCreditsCalculator
 
 # Try to import TRON components - these might not be available in all environments
 try:
@@ -72,7 +72,7 @@ except ImportError:
         def __init__(self, *args, **kwargs):
             pass
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Registration Protocol Constants
 REGISTRATION_TIMEOUT_SEC = int(os.getenv("LUCID_REGISTRATION_TIMEOUT_SEC", "300"))  # 5 minutes

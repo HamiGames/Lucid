@@ -12,7 +12,7 @@ from datetime import datetime
 import uuid
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter()
 

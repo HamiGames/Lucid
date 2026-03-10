@@ -16,7 +16,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 
 # Initialize logger first
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Optional compression libraries (gracefully handle if not available)
 try:

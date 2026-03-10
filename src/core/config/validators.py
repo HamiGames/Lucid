@@ -30,7 +30,7 @@ from pydantic.types import SecretStr
 import jsonschema
 from jsonschema import validate, ValidationError
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ConfigValidationLevel(Enum):

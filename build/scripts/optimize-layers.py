@@ -20,7 +20,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class DockerImageAnalyzer:
     """Analyzes Docker images and provides optimization recommendations."""
@@ -454,7 +454,7 @@ def main():
     args = parser.parse_args()
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.get_logger().setLevel(logging.DEBUG)
     
     # Determine image name
     if args.image:

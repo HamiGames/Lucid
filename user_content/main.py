@@ -16,7 +16,7 @@ sys.path.insert(0, project_root)
 
 from user_content.client.user_client import LucidUserClient, get_user_client
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 async def main():

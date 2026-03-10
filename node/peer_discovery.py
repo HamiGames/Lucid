@@ -20,7 +20,7 @@ except ImportError:
 # Use database adapter to handle motor/pymongo compatibility
 from .database_adapter import DatabaseAdapter, get_database_adapter
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

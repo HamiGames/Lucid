@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from collections import defaultdict, deque
 import threading
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class SystemMetrics:

@@ -25,7 +25,7 @@ from cryptography.hazmat.backends import default_backend
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 # Use /app/data as base path (matches volume mount: /app/data:rw)

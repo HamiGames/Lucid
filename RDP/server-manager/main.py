@@ -24,7 +24,7 @@ logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Global service instances
 server_manager_instance: Optional[RDPServerManager] = None

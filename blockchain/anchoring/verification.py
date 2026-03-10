@@ -11,7 +11,7 @@ import logging
 from typing import Dict, Any, Optional
 from ..blockchain_anchor import BlockchainAnchor
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class AnchoringVerifier:

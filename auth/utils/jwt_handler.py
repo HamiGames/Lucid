@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def encode_jwt(

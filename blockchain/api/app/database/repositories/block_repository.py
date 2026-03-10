@@ -13,7 +13,7 @@ from pymongo.errors import DuplicateKeyError
 from ..connection import DatabaseConnection
 from ...models.block import Block, BlockSummary
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class BlockRepository:

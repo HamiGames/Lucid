@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 def generate_hash(data: Union[str, bytes, dict]) -> str:
     """Generate SHA256 hash for the given data."""

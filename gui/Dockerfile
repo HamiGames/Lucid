@@ -48,38 +48,38 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 
 # make new dir structure for externals
-RUN mkdir -p ./gui ./gui-api-bridge ./user-content ./RDP ./node ./contracts ./service-mesh ./sessions ./infrastructure/service-mesh ./infrastructure/kubernetes ./src/gui ./electron-gui \
+RUN mkdir -p ./gui ./gui_api_bridge ./user-content ./RDP ./node ./contracts ./service_mesh ./sessions ./infrastructure/service_mesh ./infrastructure/kubernetes ./src/gui ./electron_gui \
 && printf "LUCID_GUI_RUNTIME_DIRECTORY" > ./gui/.keep && \
-&& printf "LUCID_GUI_API_BRIDGE_RUNTIME_DIRECTORY" > ./gui-api-bridge/.keep && \
+&& printf "LUCID_GUI_API_BRIDGE_RUNTIME_DIRECTORY" > ./gui_api_bridge/.keep && \
 && printf "LUCID_GUI_USER_CONTENT_RUNTIME_DIRECTORY" > ./user-content/.keep \
 && printf "LUCID_GUI_RDP_RUNTIME_DIRECTORY" > ./RDP/.keep \
 && printf "LUCID_GUI_NODE_RUNTIME_DIRECTORY" > ./node/.keep \
 && printf "LUCID_GUI_CONTRACTS_RUNTIME_DIRECTORY" > ./contracts/.keep \
-&& printf "LUCID_GUI_SERVICE_MESH_RUNTIME_DIRECTORY" > ./service-mesh/.keep \
+&& printf "LUCID_GUI_SERVICE_MESH_RUNTIME_DIRECTORY" > ./service_mesh/.keep \
 && printf "LUCID_GUI_SESSIONS_RUNTIME_DIRECTORY" > ./sessions/.keep \
-&& printf "LUCID_GUI_INFRASTRUCTURE_SERVICE_MESH_RUNTIME_DIRECTORY" > ./infrastructure/service-mesh/.keep \
+&& printf "LUCID_GUI_INFRASTRUCTURE_SERVICE_MESH_RUNTIME_DIRECTORY" > ./infrastructure/service_mesh/.keep \
 && printf "LUCID_GUI_INFRASTRUCTURE_KUBERNETES_RUNTIME_DIRECTORY" > ./infrastructure/kubernetes/.keep \
 && printf "LUCID_GUI_SRC_GUI_RUNTIME_DIRECTORY" > ./src/gui/.keep \
-&& printf "LUCID_GUI_ELECTRON_GUI_RUNTIME_DIRECTORY" > ./electron-gui/.keep \
-&& touch ./gui/.keep ./gui-api-bridge/.keep ./user-content/.keep ./RDP/.keep ./node/.keep ./contracts/.keep ./service-mesh/.keep ./sessions/.keep ./infrastructure/service-mesh/.keep ./infrastructure/kubernetes/.keep ./src/gui/.keep ./electron-gui/.keep \
+&& printf "LUCID_GUI_ELECTRON_GUI_RUNTIME_DIRECTORY" > ./electron_gui/.keep \
+&& touch ./gui/.keep ./gui_api_bridge/.keep ./user-content/.keep ./RDP/.keep ./node/.keep ./contracts/.keep ./service_mesh/.keep ./sessions/.keep ./infrastructure/service_mesh/.keep ./infrastructure/kubernetes/.keep ./src/gui/.keep ./electron_gui/.keep \
 && echo "Externals directory structure created"
 
 
 # Copy EXTERNALS to builder stage
 
 COPY gui/ ./gui/
-COPY ../gui-api-bridge/routers/ ./gui-api-bridge/routers/
-COPY ../gui-api-bridge/services/ ./gui-api-bridge/services/
-COPY ../gui-api-bridge/middleware/ ./gui-api-bridge/middleware/
+COPY ../gui_api_bridge/routers/ ./gui_api_bridge/routers/
+COPY ../gui_api_bridge/services/ ./gui_api_bridge/services/
+COPY ../gui_api_bridge/middleware/ ./gui_api_bridge/middleware/
 COPY ../user-content/ ./user-content/
 COPY ../RDP/ ./RDP/
 COPY ../node/ ./node/
 COPY ../contracts/ ./contracts/
-COPY ../service-mesh/ ./service-mesh/
+COPY ../service_mesh/ ./service_mesh/
 
 COPY ../sessions/ ./sessions/
-COPY ../service-mesh/ ./service-mesh/
-COPY ../infrastructure/service-mesh/ ./infrastructure/service-mesh/
+COPY ../service_mesh/ ./service_mesh/
+COPY ../infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY ../infrastructure/kubernetes/ ./infrastructure/kubernetes/
 COPY ../src/gui/ ./src/gui/
 
@@ -123,22 +123,22 @@ COPY /var/run/jhat ./var/run/jhat
 COPY /var/run/jtool ./var/run/jtool
 COPY /var/run/jinfo ./var/run/jinfo
 #COPY to runtime builder stage
-COPY ../electron-gui/ ./electron-gui/
+COPY ../electron_gui/ ./electron_gui/
 COPY ../
 # Set non-root user for security
 USER nonroot
 WORKDIR /app
 COPY --from=builder --chown=65532:65532 /build/gui /app/gui
-COPY --from=builder --chown=65532:65532 /build/gui-api-bridge/routers /app/gui-api-bridge/routers
-COPY --from=builder --chown=65532:65532 /build/gui-api-bridge/services /app/gui-api-bridge/services
-COPY --from=builder --chown=65532:65532 /build/gui-api-bridge/middleware /app/gui-api-bridge/middleware
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/routers /app/gui_api_bridge/routers
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/services /app/gui_api_bridge/services
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/middleware /app/gui_api_bridge/middleware
 COPY --from=builder --chown=65532:65532 /build/user-content/ /app/user-content/
 COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
-COPY --from=builder --chown=65532:65532 /build/service-mesh/ /app/service-mesh
+COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/service-mesh/ /app/infrastructure/service-mesh/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
 COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
 COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
 
@@ -183,7 +183,7 @@ COPY --from=runtime --chown=65532:65532 /runtime/var/run/jstack /var/run/jstack
 COPY --from=runtime --chown=65532:65532 /runtime/var/run/jconsole /var/run/jconsole
 COPY --from=runtime --chown=65532:65532 /runtime/var/run/jvisualvm /var/run/jvisualvm
 
-COPY --from=runtime --chown=65532:65532 /runtime/electron-gui/ /app/electron-gui/
+COPY --from=runtime --chown=65532:65532 /runtime/electron_gui/ /app/electron_gui/
 # Expose port
 EXPOSE 8000
 

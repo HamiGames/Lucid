@@ -13,7 +13,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 import threading
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class RateLimit:

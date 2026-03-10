@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from fastapi import HTTPException, status
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Blockchain-specific error codes
 class BlockchainErrorCode:

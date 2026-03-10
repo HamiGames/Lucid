@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import time
 import threading
@@ -23,7 +23,7 @@ import subprocess
 import socket
 import netifaces
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 RESOURCE_LOG_PATH = Path(os.getenv("LUCID_RESOURCE_LOG_PATH", "/var/log/lucid/resources"))

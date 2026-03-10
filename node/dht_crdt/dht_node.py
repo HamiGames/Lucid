@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any
 import aiohttp
 import aiofiles
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class NodeStatus(Enum):
     """DHT node status"""

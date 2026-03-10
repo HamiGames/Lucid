@@ -20,7 +20,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 XRDP_PORT = int(os.getenv("XRDP_PORT", "3389"))

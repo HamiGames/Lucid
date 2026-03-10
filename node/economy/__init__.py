@@ -17,7 +17,7 @@ Core Components:
 - PayoutRecord: Payout transaction records
 """
 
-from .node_economy import (
+from node.economy.node_economy import (
     NodeEconomy,
     RevenueMetrics,
     PayoutRecord,

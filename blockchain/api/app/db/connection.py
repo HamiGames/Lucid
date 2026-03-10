@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.config import get_settings
 
-_logger = logging.getLogger("app.db")
+_logger = logging.get_logger("app.db")
 
 _client: AsyncIOMotorClient | None = None
 _db: AsyncIOMotorDatabase | None = None

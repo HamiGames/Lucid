@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 LEADER_SELECTION_INTERVAL = int(os.getenv("LUCID_LEADER_SELECTION_INTERVAL", "30"))  # seconds

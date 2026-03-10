@@ -24,7 +24,7 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.backends import default_backend
 from cryptography.exceptions import InvalidSignature, InvalidKey
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 KEYSTORE_ENCRYPTION_ALGORITHM = "AES-256-GCM"

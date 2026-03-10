@@ -15,7 +15,7 @@ from .xrdp_client import XRDPClient
 from .rdp_server_manager_client import RDPServerManagerClient
 from .rdp_monitor_client import RDPMonitorClient
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class IntegrationManager:

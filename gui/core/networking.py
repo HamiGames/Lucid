@@ -21,7 +21,7 @@ import socket
 
 from .tor_client import TorClient, get_tor_client, TorConnectionError
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class OnionEnforcementError(Exception):

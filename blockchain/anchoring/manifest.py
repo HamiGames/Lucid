@@ -14,7 +14,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timezone
 from ..core.models import SessionManifest, ChunkMetadata
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ManifestBuilder:

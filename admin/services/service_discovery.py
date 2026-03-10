@@ -8,7 +8,7 @@ in the Lucid container ecosystem.
 """
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone, timedelta
@@ -19,7 +19,7 @@ import aiohttp
 
 from admin.config import get_admin_config
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class DiscoveryMethod(Enum):
@@ -57,7 +57,7 @@ class ServiceDiscovery:
         self.config = get_admin_config()
         self.discovery_method = os.getenv("SERVICE_DISCOVERY_METHOD", "env_vars")
         self.services: Dict[str, ServiceInfo] = {}
-        self.consul_host = os.getenv("CONSUL_HOST", "lucid-service-mesh-controller")
+        self.consul_host = os.getenv("CONSUL_HOST", "lucid-service_mesh-controller")
         self.consul_port = int(os.getenv("CONSUL_PORT", "8500"))
         self.redis_url = os.getenv("REDIS_URL", "")
         self.http_client: Optional[httpx.AsyncClient] = None

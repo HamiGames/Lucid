@@ -5,7 +5,7 @@ Handles session data storage with MongoDB integration and compression
 """
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
@@ -18,7 +18,7 @@ import gzip
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class StorageConfig:

@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class BeaconStatus(str, Enum):
     ACTIVE = "active"

@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('mongodb-distroless')
+logger = logging.get_logger('mongodb-distroless')
 
 class MongoDBDistroless:
     def __init__(self):

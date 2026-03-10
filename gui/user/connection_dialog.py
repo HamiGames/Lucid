@@ -22,7 +22,7 @@ from ..core.security import get_security_validator, CryptographicUtils
 from ..core.networking import TorHttpClient, SecurityConfig
 from .policy_controller import PolicyController, PolicyRule, PolicyEnforcementLevel
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ConnectionType(Enum):

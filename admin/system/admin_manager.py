@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 import asyncio
-import logging
+import admin.utils.logging as logging
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import uuid
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from ..database_adapter import DatabaseAdapter
+from node.poot.database_adapter import DatabaseAdapter
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ValidationStatus(Enum):

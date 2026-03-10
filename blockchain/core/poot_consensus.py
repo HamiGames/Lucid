@@ -27,7 +27,7 @@ from .models import TaskProof, TaskProofType, WorkCreditsTally, LeaderSchedule, 
 from .work_credits import WorkCreditsEngine, LEADER_WINDOW_DAYS, BASE_MB_PER_SESSION, D_MIN
 from .leader_selection import LeaderSelectionEngine, SLOT_DURATION_SEC, SLOT_TIMEOUT_MS, COOLDOWN_SLOTS
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # =============================================================================
 # CONSENSUS PARAMETERS

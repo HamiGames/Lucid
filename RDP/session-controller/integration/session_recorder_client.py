@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 import httpx
 from uuid import UUID
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SessionRecorderClient:

@@ -35,7 +35,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class RepairStatus(Enum):
     SUCCESS = "SUCCESS"
@@ -118,7 +118,7 @@ black>=23.0.0
 isort>=5.12.0
 """,
             "package_json": """{
-  "name": "lucid-electron-gui",
+  "name": "lucid-electron_gui",
   "version": "1.0.0",
   "description": "LUCID Electron GUI Application",
   "main": "dist/main/index.js",
@@ -263,7 +263,7 @@ module.exports = {
         # Create missing Dockerfiles
         python_dirs = [
             'auth', 'blockchain', 'sessions', 'RDP', 'node', 
-            'admin', 'payment-systems', '03-api-gateway', 
+            'admin', 'payment_systems', '03_api_gateway', 
             'database', 'common', 'core', 'apps', 'gui', 
             'user_content', 'vm', 'wallet'
         ]
@@ -294,8 +294,8 @@ module.exports = {
         logger.info("Fixing TRON isolation issues...")
         success = True
         
-        # Create payment-systems/tron directory if it doesn't exist
-        tron_dir = self.project_root / "payment-systems" / "tron"
+        # Create payment_systems/tron directory if it doesn't exist
+        tron_dir = self.project_root / "payment_systems" / "tron"
         if not tron_dir.exists():
             if not self.dry_run:
                 logger.info(f"Would create directory: {tron_dir}")
@@ -315,7 +315,7 @@ import logging
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class TronTransaction:
@@ -428,8 +428,8 @@ asyncio>=3.4.3
         logger.info("Fixing Electron GUI alignment issues...")
         success = True
         
-        # Create electron-gui directory structure
-        electron_gui_path = self.project_root / "electron-gui"
+        # Create electron_gui directory structure
+        electron_gui_path = self.project_root / "electron_gui"
         if not electron_gui_path.exists():
             self.create_directory_structure(electron_gui_path)
         
@@ -907,7 +907,7 @@ def main():
     args = parser.parse_args()
     
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.get_logger().setLevel(logging.DEBUG)
     
     # Validate arguments
     if args.python_only and args.gui_only:

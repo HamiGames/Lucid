@@ -10,7 +10,7 @@ Provides system overview, metrics, and real-time monitoring data.
 """
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any, Union
 from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect, status
@@ -25,7 +25,7 @@ from admin.system.admin_controller import AdminController, AdminAccount
 from admin.rbac.manager import RBACManager
 from admin.audit.logger import AuditLogger
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create router
 router = APIRouter(tags=["Dashboard"])

@@ -19,7 +19,7 @@ from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Runtime variables aligned for Windows 11 and Raspberry Pi 5
 CHUNK_MIN_SIZE = int(os.getenv("LUCID_CHUNK_MIN_SIZE", "8388608"))  # 8MB

@@ -25,7 +25,7 @@ logging.basicConfig(
     ]
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class NodeSystemTester:
     """Test all node systems for runtime errors and integration issues"""

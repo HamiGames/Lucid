@@ -19,7 +19,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Any, Callable, Set
 from collections import defaultdict
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class TransactionEvent(Enum):
@@ -70,7 +70,7 @@ class TransactionMonitor:
         self.evm_client = evm_client
         self.poll_interval = poll_interval
         self.timeout_minutes = timeout_minutes
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         
         # Transaction tracking
         self._transactions: Dict[str, TransactionInfo] = {}

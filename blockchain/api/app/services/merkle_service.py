@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 import hashlib
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class MerkleService:
     """Service for Merkle tree operations."""

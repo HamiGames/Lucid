@@ -20,13 +20,13 @@ from enum import Enum
 import logging
 import uuid
 
-from ..models.payout import (
+from node.models.payout import (
     Payout, PayoutRequest, BatchPayoutRequest, 
     PayoutStatus, PayoutPriority, Currency
 )
-from ..repositories.node_repository import NodeRepository
+from node.repositories.node_repository import NodeRepository
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create router
 router = APIRouter()

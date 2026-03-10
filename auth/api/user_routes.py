@@ -9,7 +9,7 @@ from auth.main import user_manager, mongodb_db
 from datetime import datetime
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter()
 

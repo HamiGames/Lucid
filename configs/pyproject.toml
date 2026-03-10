@@ -69,7 +69,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["blockchain*", "03-api-gateway*"]
+include = ["blockchain*", "03_api_gateway*"]
 exclude = ["tests*", "*.tests", "*.tests.*", "__pycache__", "*.pyc"]
 
 [tool.black]

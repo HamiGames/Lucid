@@ -111,7 +111,7 @@ def setup_logging(log_level: str = "INFO", log_format: str = "json") -> None:
     logging.config.dictConfig(logging_config)
     
     # Set up specific loggers
-    logger = logging.getLogger("blockchain_api")
+    logger = logging.get_logger("blockchain_api")
     logger.info(f"Logging configured with level: {log_level}, format: {log_format}")
 
 class RequestLogger:

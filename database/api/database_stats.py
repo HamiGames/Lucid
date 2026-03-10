@@ -20,7 +20,7 @@ from ..services.mongodb_service import MongoDBService
 from ..services.redis_service import RedisService
 from ..services.elasticsearch_service import ElasticsearchService
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter(
     prefix="/database/stats",

@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any, Tuple
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class GasEstimationMethod(Enum):
@@ -78,7 +78,7 @@ class GasEstimator:
     
     def __init__(self, evm_client):
         self.evm_client = evm_client
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.get_logger(__name__)
         
         # Gas price history for dynamic estimation
         self._gas_price_history: List[GasPriceHistory] = []

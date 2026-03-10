@@ -4,7 +4,7 @@ Blockchain architecture with On-System Data Chain (lucid_blocks)
 
 Based on Spec-1a, Spec-1b, and Spec-1c requirements.
 REBUILT: On-System Chain as primary blockchain for session anchoring.
-Payment services are handled by isolated payment-systems service.
+Payment services are handled by isolated payment_systems service.
 """
 
 # Data models (no dependencies)

@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 from ..core.block_manager import BlockManager, BlockValidationResult
 from ..core.models import Transaction
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class BlockValidator:

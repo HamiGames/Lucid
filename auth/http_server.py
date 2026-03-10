@@ -1,7 +1,7 @@
 """
 HTTP Server for Lucid Authentication Service
 Provides customizable HTTP endpoints for authentication, user management, sessions, and hardware wallets
-Follows the service-mesh-controller pattern for consistency across Lucid project
+Follows the service_mesh-controller pattern for consistency across Lucid project
 
 File: auth/http_server.py
 Purpose: HTTP API server for authentication service with customizable endpoints
@@ -23,10 +23,10 @@ try:
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
-    logger = logging.getLogger(__name__)
+    logger = logging.get_logger(__name__)
     logger.warning("FastAPI not available - HTTP server will not start")
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class HTTPServer:

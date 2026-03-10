@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import asyncio
-import logging
+import sessions.core.logging as logging
 from typing import Dict, List, Optional, BinaryIO, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -13,7 +13,7 @@ import os
 import uuid
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

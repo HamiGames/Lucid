@@ -7,7 +7,7 @@ Main entry point for the pipeline manager service
 import asyncio
 import signal
 import sys
-import logging
+
 from contextlib import asynccontextmanager
 from typing import Optional
 

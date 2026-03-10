@@ -17,7 +17,7 @@ Features:
 
 import asyncio
 import hashlib
-import logging
+import sessions.core.logging as logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -30,7 +30,7 @@ from sessions.processor.encryption import ChunkEncryptor
 from sessions.processor.merkle_builder import MerkleTreeBuilder
 from sessions.processor.config import ChunkProcessorConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

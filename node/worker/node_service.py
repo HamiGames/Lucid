@@ -17,7 +17,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database_adapter import DatabaseAdapter
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class NodeStatus(Enum):

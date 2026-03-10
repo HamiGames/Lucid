@@ -24,7 +24,7 @@ from .models import (
     SessionAnchor, ChunkMetadata, generate_session_id
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Transaction configuration
 MAX_TRANSACTION_SIZE_BYTES = 1024 * 1024  # 1MB max transaction size

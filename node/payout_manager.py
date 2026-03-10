@@ -16,7 +16,7 @@ import uuid
 from .database_adapter import DatabaseAdapter
 from .models import PayoutInfo, NodeInfo
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Payout Configuration
 PAYOUT_THRESHOLD_USDT = float(os.getenv("PAYOUT_THRESHOLD_USDT", "10.0"))

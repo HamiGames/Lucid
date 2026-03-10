@@ -81,7 +81,7 @@ COPY blockchain/utils/            ./utils/
 COPY blockchain/config/           ./config/
 COPY blockchain/contracts/       ./contracts/
 COPY blockchain/deployment/       ./deployment/
-COPY blockchain/chain-client/     ./chain-client/
+COPY blockchain/chain_client/     ./chain_client/
 COPY blockchain/evm/              ./evm/
 COPY blockchain/on_system_chain/  ./on_system_chain/
 COPY blockchain/scripts/          ./scripts/
@@ -141,7 +141,7 @@ COPY --chown=65532:65532 --from=builder /build/utils        /app/utils
 COPY --chown=65532:65532 --from=builder /build/config       /app/config
 COPY --chown=65532:65532 --from=builder /build/contracts    /app/contracts
 COPY --chown=65532:65532 --from=builder /build/deployment   /app/deployment
-COPY --chown=65532:65532 --from=builder /build/chain-client /app/chain-client
+COPY --chown=65532:65532 --from=builder /build/chain_client /app/chain_client
 COPY --chown=65532:65532 --from=builder /build/evm          /app/evm
 COPY --chown=65532:65532 --from=builder /build/on_system_chain /app/on_system_chain
 COPY --chown=65532:65532 --from=builder /build/scripts      /app/scripts

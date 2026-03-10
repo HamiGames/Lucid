@@ -10,7 +10,7 @@ import os
 import logging
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class Settings(BaseSettings):

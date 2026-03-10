@@ -35,7 +35,7 @@ def test_gui_validation():
     """Test GUI validation script"""
     print("Testing GUI validation script...")
     
-    script_path = Path("scripts/validation/validate-electron-gui-alignment.py")
+    script_path = Path("scripts/validation/validate-electron_gui-alignment.py")
     if not script_path.exists():
         print(f"❌ GUI validation script not found: {script_path}")
         return False

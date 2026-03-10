@@ -20,7 +20,7 @@ import logging
 
 from ..services.redis_service import RedisService
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter(
     prefix="/database/cache",

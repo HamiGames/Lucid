@@ -26,7 +26,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 try:
     from auth.config import settings
 except ImportError as e:
-    logger = logging.getLogger(__name__)
+    logger = logging.get_logger(__name__)
     logger.error(f"Failed to import config: {e}")
     sys.exit(1)
 
@@ -53,7 +53,7 @@ logging.basicConfig(
     level=get_safe_log_level(settings.LOG_LEVEL),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Initialize MongoDB client (will be connected in startup)
 mongodb_client: AsyncIOMotorClient = None

@@ -28,7 +28,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from sessions.session_recorder import SessionRecorder, SessionMetadata
 from RDP.server.rdp_server_manager import RDPServerManager, RDPSession, SessionStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 SESSION_TIMEOUT_MINUTES = int(os.getenv("SESSION_TIMEOUT_MINUTES", "60"))

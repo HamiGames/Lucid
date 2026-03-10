@@ -10,7 +10,7 @@ from web3 import Web3
 from typing import Tuple
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def verify_tron_signature(address: str, message: str, signature: str) -> bool:

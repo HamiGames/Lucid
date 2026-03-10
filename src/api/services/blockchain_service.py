@@ -12,7 +12,7 @@ import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # On-System Data Chain Configuration
 ON_SYSTEM_CHAIN_RPC = os.getenv("ON_SYSTEM_CHAIN_RPC", "http://localhost:8545")

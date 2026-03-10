@@ -18,14 +18,17 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import logging
 import uuid
+import logging
 
-from ..models.node import (
+from node.models.node import (
     Node, NodeCreateRequest, NodeUpdateRequest, 
     NodeStatus, NodeType, HardwareInfo, NodeLocation
 )
-from ..repositories.node_repository import NodeRepository
+from node.repositories.node_repository import NodeRepository
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.get_logger(__name__)
 
 # Create router
 router = APIRouter()

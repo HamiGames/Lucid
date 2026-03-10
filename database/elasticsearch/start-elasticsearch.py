@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('elasticsearch-distroless')
+logger = logging.get_logger('elasticsearch-distroless')
 
 class ElasticsearchDistroless:
     def __init__(self):

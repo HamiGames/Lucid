@@ -9,7 +9,7 @@ import logging
 from typing import Any, Optional, Union, List
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def safe_int_env(key: str, default: int, min_val: Optional[int] = None, max_val: Optional[int] = None) -> int:

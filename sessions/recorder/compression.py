@@ -6,13 +6,13 @@ Handles compression of session chunks with gzip level 6
 
 import asyncio
 import gzip
-import logging
+import sessions.core.logging as logging
 from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass
 from enum import Enum
 import time
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class CompressionAlgorithm(Enum):
     """Supported compression algorithms"""

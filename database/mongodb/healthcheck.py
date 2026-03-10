@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('mongodb-healthcheck')
+logger = logging.get_logger('mongodb-healthcheck')
 
 def check_mongodb_health():
     """Check MongoDB health using mongosh with retries and user fallback"""

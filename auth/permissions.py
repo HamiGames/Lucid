@@ -9,7 +9,7 @@ from auth.models.permissions import Role, Permission
 from auth.user_manager import UserManager
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RBACManager:

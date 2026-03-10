@@ -18,7 +18,7 @@ Core Components:
 - ShardHost: Host node information
 """
 
-from .shard_host_creation import (
+from node.shards..shards..shard_host_creation import (
     ShardHostCreationSystem,
     ShardInfo,
     ShardHost,
@@ -30,7 +30,7 @@ from .shard_host_creation import (
     cleanup_shard_host_creation
 )
 
-from .shard_host_management import (
+from node.shards..shards..shard_host_management import (
     ShardHostManagementSystem,
     PerformanceMetrics,
     MaintenanceWindow,

@@ -12,9 +12,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from ..database_adapter import DatabaseAdapter
+from node.pools.database_adapter import DatabaseAdapter
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Maximum nodes per pool (Step 23 specification requirement)
 MAX_NODES_PER_POOL = 100

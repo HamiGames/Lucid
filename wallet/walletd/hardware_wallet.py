@@ -19,7 +19,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.exceptions import InvalidSignature
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 HARDWARE_WALLET_TIMEOUT_SECONDS = 30

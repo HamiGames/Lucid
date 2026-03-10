@@ -7,7 +7,7 @@ including encryption settings, worker configuration, and performance tuning.
 """
 
 import os
-import logging
+import sessions.core.logging as logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from pydantic import field_validator
@@ -24,7 +24,7 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

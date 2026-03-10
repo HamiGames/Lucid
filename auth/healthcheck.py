@@ -13,7 +13,7 @@ from requests.exceptions import ConnectionError, Timeout
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('auth-healthcheck')
+logger = logging.get_logger('auth-healthcheck')
 
 def check_auth_service_health():
     """Check Authentication Service health using requests"""

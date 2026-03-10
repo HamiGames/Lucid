@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 import uuid
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class TransactionService:
     """Service for transaction processing and management operations."""

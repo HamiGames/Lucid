@@ -14,7 +14,7 @@ Containers Tested:
 - Cluster 07: TRON Payment (lucid-tron-client, lucid-payout-router, lucid-wallet-manager, lucid-usdt-manager, lucid-trx-staking, lucid-payment-gateway)
 - Cluster 08: Storage Database (lucid-mongodb, lucid-redis, lucid-elasticsearch)
 - Cluster 09: Authentication (lucid-auth-service)
-- Cluster 10: Cross-Cluster Integration (lucid-consul, lucid-service-mesh-controller)
+- Cluster 10: Cross-Cluster Integration (lucid-consul, lucid-service_mesh-controller)
 """
 
 import asyncio
@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass
@@ -279,8 +279,8 @@ class ContainerValidator:
                 "health_check": True
             },
             {
-                "name": "lucid-service-mesh-controller",
-                "image": "lucid-service-mesh-controller:latest",
+                "name": "lucid-service_mesh-controller",
+                "image": "lucid-service_mesh-controller:latest",
                 "cluster": "10-cross-cluster-integration",
                 "port": 8500,
                 "health_check": True

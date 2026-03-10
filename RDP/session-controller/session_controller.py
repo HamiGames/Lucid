@@ -18,7 +18,7 @@ from common.models import RdpSession, SessionStatus, SessionMetrics
 from security.session_validator import SessionValidator
 from .integration.integration_manager import IntegrationManager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class SessionController:
     """Manages RDP session lifecycle and monitoring"""

@@ -45,7 +45,7 @@ def verify_critical_paths():
         errors.append("❌ setup-build-factory.sh - Script missing")
     
     # 5. Check critical Python modules import correctly
-    critical_modules = ["admin", "sessions", "user_content", "payment-systems"]
+    critical_modules = ["admin", "sessions", "user_content", "payment_systems"]
     for module in critical_modules:
         module_init = project_root / module / "__init__.py"
         if module_init.exists():

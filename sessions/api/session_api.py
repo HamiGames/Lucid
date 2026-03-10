@@ -27,7 +27,7 @@ from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
 from ..storage.config import StorageConfig as StorageConfigManager
 from ..core.session_orchestrator import SessionPipeline, PipelineStage
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Safe environment variable handling
 def safe_int_env(key: str, default: int) -> int:

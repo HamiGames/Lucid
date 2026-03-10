@@ -8,7 +8,7 @@ Handles role assignment, permission checking, and access control.
 """
 
 import asyncio
-import logging
+import admin.utils.logging as logging
 from typing import Dict, List, Optional, Set, Any
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -17,10 +17,10 @@ from enum import Enum
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
-from .roles import Role, RoleType, get_role_hierarchy
-from .permissions import Permission, PermissionType, get_permission_mapping
+from admin.rbac.roles import Role, RoleType, get_role_hierarchy
+from admin.rbac.permissions import Permission, PermissionType, get_permission_mapping
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RBACError(Exception):

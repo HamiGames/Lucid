@@ -59,8 +59,8 @@ def get_logger(name: str) -> logging.Logger:
         Logger instance
     """
     # Ensure logging is set up if not already configured
-    if not logging.getLogger().handlers:
+    if not logging.get_logger().handlers:
         setup_logging()
     
-    return logging.getLogger(name)
+    return logging.get_logger(name)
 

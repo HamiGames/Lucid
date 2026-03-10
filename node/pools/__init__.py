@@ -18,7 +18,7 @@ Core Components:
 - PoolConfiguration: Pool settings and rules
 """
 
-from .node_pool_systems import (
+from node.pools.node_pool_systems import (
     NodePoolSystem,
     NodePool,
     PoolStatus,

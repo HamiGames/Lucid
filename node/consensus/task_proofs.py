@@ -22,7 +22,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 TASK_PROOF_TIMEOUT = int(os.getenv("LUCID_TASK_PROOF_TIMEOUT", "300"))  # 5 minutes

@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 import jwt
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def validate_tron_address(address: str) -> Tuple[bool, Optional[str]]:

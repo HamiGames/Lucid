@@ -12,7 +12,7 @@ import redis.asyncio as redis
 from redis.exceptions import ConnectionError, TimeoutError
 import asyncio
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class CacheManager:
     """Cache manager for Redis operations."""

@@ -21,10 +21,10 @@ import uuid
 import hashlib
 import base64
 
-from ..models.node import PoOTScore, PoOTValidation, PoOTValidationRequest
-from ..repositories.node_repository import NodeRepository
+from node.models.node import PoOTScore, PoOTValidation, PoOTValidationRequest
+from node.repositories.node_repository import NodeRepository
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Create router
 router = APIRouter()

@@ -5,7 +5,7 @@ Builds BLAKE3 Merkle trees for session chunk integrity verification
 """
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import time
 import hashlib
 from typing import Dict, List, Optional, Tuple, Any
@@ -15,7 +15,7 @@ import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @dataclass
 class MerkleNode:

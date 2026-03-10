@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class AnchoringStorage:

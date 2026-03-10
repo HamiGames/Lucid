@@ -21,7 +21,7 @@ from ..core import TorHttpClient, SecurityConfig, get_http_client
 from ..core.config_manager import get_config_manager, ConfigScope
 from ..core.widgets import StatusLabel, ProgressBar, LogViewer, create_tooltip
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class SessionStatus(Enum):

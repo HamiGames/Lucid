@@ -7,7 +7,7 @@ Provides system-wide backup functionality for configurations, keys, sessions, an
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import json
-import logging
+import admin.utils.logging as logging
 import os
 import shutil
 import zipfile
@@ -32,7 +32,7 @@ from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from ..core.config_manager import get_config_manager, ConfigScope
 from ..core.security import get_security_validator, CryptographicUtils
 
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 
 class BackupType(Enum):

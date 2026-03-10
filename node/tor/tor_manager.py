@@ -28,7 +28,7 @@ from stem.process import launch_tor_with_config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class TorServiceStatus(str, Enum):
     STARTING = "starting"

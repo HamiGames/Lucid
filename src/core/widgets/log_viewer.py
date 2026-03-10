@@ -27,7 +27,7 @@ import gzip
 import bz2
 from collections import deque
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class LogLevel(Enum):

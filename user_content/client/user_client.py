@@ -26,7 +26,7 @@ from RDP.protocol.rdp_session import RDPSessionHandler, RDPConnectionState
 from RDP.security.trust_controller import TrustController, SessionControlMode, ThreatLevel
 from user_content.wallet.user_wallet import get_user_wallet
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # User Client Constants
 DEFAULT_API_BASE = os.getenv("LUCID_API_BASE", "http://lucid-api.onion")

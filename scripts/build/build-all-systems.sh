@@ -255,7 +255,7 @@ build_gui_integration_services() {
     log_info "Building GUI Integration Services..."
     
     local gui_services=(
-        "gui-api-bridge"
+        "gui_api_bridge"
         "gui-docker-manager"
         "gui-tor-manager"
         "gui-hardware-wallet"
@@ -434,7 +434,7 @@ generate_build_report() {
     "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-node-management:$BUILD_TAG",
     "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-admin-interface:$BUILD_TAG",
     "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-tron-client:$BUILD_TAG",
-    "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-gui-api-bridge:$BUILD_TAG",
+    "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-gui_api_bridge:$BUILD_TAG",
     "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-gui-docker-manager:$BUILD_TAG",
     "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-gui-tor-manager:$BUILD_TAG",
     "$BUILD_REGISTRY/$BUILD_IMAGE_NAME-gui-hardware-wallet:$BUILD_TAG"

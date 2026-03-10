@@ -19,7 +19,7 @@ import hmac
 from .database_adapter import DatabaseAdapter
 from .models import PoOTProof, NodeInfo
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # PoOT Configuration
 POOT_CHALLENGE_VALIDITY_MINUTES = int(os.getenv("POOT_CHALLENGE_VALIDITY_MINUTES", "15"))

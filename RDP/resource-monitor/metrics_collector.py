@@ -31,7 +31,7 @@ except ImportError:
     CollectorRegistry = lambda: None
     generate_latest = lambda: b""
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class MetricsCollector:
     """Collects and exposes metrics for RDP sessions"""

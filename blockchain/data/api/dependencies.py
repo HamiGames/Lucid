@@ -10,7 +10,7 @@ import logging
 from motor.motor_asyncio import AsyncIOMotorClient
 from ..service import DataChainService
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Global service instance
 _data_chain_service: DataChainService | None = None

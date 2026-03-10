@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from ..service import DataChainService
 from .dependencies import get_data_chain_service
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 router = APIRouter()
 

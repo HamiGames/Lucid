@@ -14,7 +14,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ServiceStatus(str, Enum):

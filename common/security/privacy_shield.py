@@ -26,7 +26,7 @@ from .trust_nothing_engine import (
     TrustNothingEngine
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Privacy Shield Configuration
 DEFAULT_RETENTION_DAYS = 90

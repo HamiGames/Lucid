@@ -4,7 +4,7 @@ REBUILT: On-System Data Chain (primary) + Isolated payment service
 
 Based on Spec-1a, Spec-1b, and Spec-1c requirements.
 - On-System Data Chain: Primary blockchain for session anchoring and consensus
-- Payment services: Isolated in payment-systems/ directory
+- Payment services: Isolated in payment_systems/ directory
 - PoOT Consensus: Runs on On-System Chain
 """
 
@@ -21,7 +21,7 @@ def get_BlockchainEngine():
 def get_PoOTConsensusEngine():
     return get_poot_consensus_engine()
 
-# Payment service integration is handled by isolated payment-systems service
+# Payment service integration is handled by isolated payment_systems service
 
 # Data models
 from .core.models import (
@@ -53,12 +53,12 @@ except ImportError:
     OnSystemChainClient = None
 
 # Chain client components
-# Note: chain-client directory name contains hyphen, so we import from files directly
+# Note: chain_client directory name contains hyphen, so we import from files directly
 try:
     import sys
     from pathlib import Path
-    # Add chain-client directory to path for import
-    chain_client_path = Path(__file__).parent / "chain-client"
+    # Add chain_client directory to path for import
+    chain_client_path = Path(__file__).parent / "chain_client"
     if str(chain_client_path) not in sys.path:
         sys.path.insert(0, str(chain_client_path))
     
@@ -81,7 +81,7 @@ except (ImportError, Exception) as e:
     create_manifest_manager = None
     cleanup_manifest_manager = None
 
-# Payment service integration is handled by isolated payment-systems service
+# Payment service integration is handled by isolated payment_systems service
 
 __all__ = [
     # Core blockchain engine and consensus (On-System Chain primary)
@@ -105,5 +105,5 @@ __all__ = [
     'ManifestManager', 'ManifestStatus', 'ChunkStatus', 'ChunkInfo',
     'get_manifest_manager', 'create_manifest_manager', 'cleanup_manifest_manager',
     
-    # Payment service integration handled by isolated payment-systems service
+    # Payment service integration handled by isolated payment_systems service
 ]

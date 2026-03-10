@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-import logging
+import sessions.core.logging as logging
 
 try:
     import yaml
@@ -18,7 +18,7 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class StorageSettings(BaseSettings):

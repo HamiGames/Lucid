@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 from .yaml_loader import load_yaml_config, get_config_dir
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

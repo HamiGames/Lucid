@@ -30,7 +30,7 @@ from .test_all_apis_responding import APIResponseValidator
 from .test_all_integrations import IntegrationValidator
 from .test_all_containers_running import ContainerValidator
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 @dataclass

@@ -23,7 +23,7 @@ router = APIRouter(
     responses={404: {"description": "Transaction not found"}},
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_202_ACCEPTED)
 async def submit_transaction(

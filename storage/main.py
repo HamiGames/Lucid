@@ -16,7 +16,7 @@ sys.path.insert(0, project_root)
 
 from storage.mongodb_volume import MongoVolumeManager
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 async def main():

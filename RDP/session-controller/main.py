@@ -48,7 +48,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown (per master-docker-design.md)"""
@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
             
             # Reconfigure logging with config log level
             log_level = getattr(logging, controller_config.settings.LOG_LEVEL, logging.INFO)
-            logging.getLogger().setLevel(log_level)
+            logging.get_logger().setLevel(log_level)
             logger.info(f"Logging level set to {controller_config.settings.LOG_LEVEL}")
             
         except Exception as e:

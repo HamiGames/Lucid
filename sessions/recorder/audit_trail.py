@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
+import sessions.core.logging as logging
 import os
 import json
 import time
@@ -29,7 +29,7 @@ except ImportError:
     AsyncIOMotorClient = None
     AsyncIOMotorDatabase = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment
 AUDIT_LOG_PATH = Path(os.getenv("LUCID_AUDIT_LOG_PATH", "/var/log/lucid/audit"))

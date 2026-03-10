@@ -16,7 +16,7 @@ from passlib.context import CryptContext
 from passlib.hash import bcrypt
 import base64
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -6,7 +6,7 @@ Part of Step 28: TRON Isolation Verification
 
 This script performs comprehensive analysis of the codebase to ensure:
 1. No TRON references in blockchain/core/ directory
-2. All TRON code is properly contained in payment-systems/ directory
+2. All TRON code is properly contained in payment_systems/ directory
 3. Network isolation is properly configured
 4. Directory structure follows isolation requirements
 """
@@ -32,7 +32,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 class VerificationStatus(Enum):
     """Verification status enumeration"""
@@ -66,14 +66,14 @@ class TRONIsolationVerifier:
     def __init__(self, project_root: str):
         self.project_root = Path(project_root).resolve()
         self.blockchain_dir = self.project_root / "blockchain"
-        self.payment_systems_dir = self.project_root / "payment-systems"
+        self.payment_systems_dir = self.project_root / "payment_systems"
         self.reports_dir = self.project_root / "reports" / "verification"
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         
         # TRON-related keywords to search for
         self.tron_keywords = [
             "tron", "TRON", "TronNode", "TronClient", "tron_client",
-            "tron-node", "tron-client", "usdt", "USDT", "TRX", "trx",
+            "tron_node", "tron-client", "usdt", "USDT", "TRX", "trx",
             "tron_payment", "TronPayment", "tron_payout", "TronPayout",
             "tron_wallet", "TronWallet", "tron_network", "TronNetwork"
         ]
@@ -321,10 +321,10 @@ class TRONIsolationVerifier:
         required_dirs = [
             "blockchain/core",
             "blockchain/api",
-            "payment-systems/tron",
-            "payment-systems/tron/services",
-            "payment-systems/tron/api",
-            "payment-systems/tron/models"
+            "payment_systems/tron",
+            "payment_systems/tron/services",
+            "payment_systems/tron/api",
+            "payment_systems/tron/models"
         ]
         
         for dir_path in required_dirs:

@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from uuid import UUID
 import httpx
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class RDPControllerClient:

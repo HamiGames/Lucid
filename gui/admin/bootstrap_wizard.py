@@ -7,7 +7,7 @@ Provides step-by-step wizard interface with validation, progress tracking, and a
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json
-import logging
+import admin.utils.logging as logging
 import threading
 import time
 import uuid
@@ -29,7 +29,7 @@ from ..core.config_manager import get_config_manager, ConfigScope, GuiConfig
 from ..core.widgets import get_theme_manager, StatusLabel, ProgressBar, create_tooltip, LogViewer
 from ..core.telemetry import get_telemetry_manager, EventType, track_event
 
-logger = logging.getLogger(__name__)
+logger = logging.get_loggerogger(__name__)
 
 
 class BootstrapStep(Enum):

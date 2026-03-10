@@ -15,7 +15,7 @@ import httpx
 from ..core.block_manager import BlockManager
 from .storage import BlockStorage
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Environment variable configuration (required, no hardcoded defaults)
 BLOCKCHAIN_ENGINE_URL = os.getenv("BLOCKCHAIN_ENGINE_URL")

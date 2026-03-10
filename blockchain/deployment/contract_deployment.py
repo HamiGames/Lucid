@@ -31,7 +31,7 @@ except ImportError:
     AsyncIOMotorClient = None
     AsyncIOMotorDatabase = None
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 # Configuration from environment (required)
 MONGODB_URL = os.getenv("MONGODB_URL") or os.getenv("MONGO_URL")
