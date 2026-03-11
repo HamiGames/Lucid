@@ -57,7 +57,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
     echo "upgrade complete"
 
-COPY ../../../../admin/key-rotation/requirements.txt ./requirements.txt
+COPY ../../../../admin/requirements.txt ./requirements.txt
 
 # Step 1: Build wheels explicitly
 RUN --mount=type=cache,target=/root/.cache/pip \
