@@ -43,8 +43,8 @@ RUN echo "LUCID_ADMIN_UI_BACKEND_RUNTIME_DIRECTORY" > /var/run/.keep && \
 RUN npm install -g npm@latest
 
 # Copy package files
-COPY ../../../../admin/backend/package*.json ./
-COPY ../../../../admin/backend/yarn.lock* ./
+COPY admin/backend/package*.json ./
+COPY admin/backend/yarn.lock* ./
 
 # Step 1: Install production dependencies
 RUN echo "Installing npm dependencies" && \
@@ -61,10 +61,20 @@ RUN mkdir -p ./src ./dist ./config && \
     echo "Application directories created with markers"
 
 # Copy source code
-COPY ../../../../admin/backend/src/ ./src/
-COPY ../../../../admin/backend/dist/ ./dist/
-COPY ../../../../admin/backend/tsconfig.json* ./
-COPY ../../../../admin/backend/.env.example* ./
+COPY ../../../../admin/backend/ ./backend/
+COPY ../../../../common/ ./common/
+COPY ../../../../gui/admin/ ./gui/admin/
+COPY ../../../../gui/user/ ./gui/user/
+COPY ../../../../gui/node/ ./gui/node/
+COPY ../../../../gui/developer/ ./gui/developer/
+COPY ../../../../RDP/server/ ./RDP/server/
+COPY ../../../../RDP/server-manager/ ./RDP/server-manager/
+COPY ../../../../RDP/security/ ./RDP/security/
+COPY ../../../../RDP/resource-monitor/ ./RDP/resource-monitor/
+COPY ../../../../RDP/protocol/ ./RDP/protocol/
+COPY ../../../../RDP/common/ ./RDP/common/
+COPY ../../../../payment_systems/ ./payment_systems/
+COPY ../../../../gui/config/ ./gui/config/
 
 # Build application
 RUN echo "Building admin UI backend" && \
@@ -111,18 +121,31 @@ ENV NODE_ENV=production \
     PATH=/app/node_modules/.bin:/usr/local/bin:/usr/bin:/bin \
     ADMIN_UI_BACKEND_PORT=3001
 
-WORKDIR /app
+WORKDIR /app/admin
 
 # Copy system certificates
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy production dependencies from builder
-COPY --from=builder --chown=65532:65532 /build/node_modules /app/node_modules
+COPY --from=builder --chown=65532:65532 /build/node_modules /app/admin/node_modules
+COPY --from=builder --chown=65532:65532 /build/common /app/admin/common
+COPY --from=builder --chown=65532:65532 /build/gui/admin /app/admin/gui/admin
+COPY --from=builder --chown=65532:65532 /build/gui/user /app/admin/gui/user
+COPY --from=builder --chown=65532:65532 /build/gui/node /app/admin/gui/node
+COPY --from=builder --chown=65532:65532 /build/gui/developer /app/admin/gui/developer
+COPY --from=builder --chown=65532:65532 /build/RDP/server /app/admin/RDP/server
+COPY --from=builder --chown=65532:65532 /build/RDP/server-manager /app/admin/RDP/server-manager
+COPY --from=builder --chown=65532:65532 /build/RDP/security /app/admin/RDP/security
+COPY --from=builder --chown=65532:65532 /build/RDP/resource-monitor /app/admin/RDP/resource-monitor
+COPY --from=builder --chown=65532:65532 /build/RDP/protocol /app/admin/RDP/protocol
+COPY --from=builder --chown=65532:65532 /build/RDP/common /app/admin/RDP/common
+COPY --from=builder --chown=65532:65532 /build/payment_systems /app/admin/payment_systems
+COPY --from=builder --chown=65532:65532 /build/gui/config /app/admin/gui/config
 
 # Copy application code from builder (use dist if available, otherwise src)
-COPY --chown=65532:65532 --from=builder /build/dist /app/dist
-COPY --chown=65532:65532 --from=builder /build/src /app/src
-COPY --chown=65532:65532 --from=builder /build/package*.json /app/
+COPY --chown=65532:65532 --from=builder /build/dist /app/admin/dist
+COPY --chown=65532:65532 --from=builder /build/src /app/admin/src
+COPY --chown=65532:65532 --from=builder /build/package*.json /app/admin/
 
 # Verify packages and application directories
 RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = [fs.existsSync('/app/node_modules'), fs.existsSync('/app/package.json'), (fs.existsSync('/app/dist') || fs.existsSync('/app/src'))]; if (!checks.every(c => c)) throw new Error('Verification failed: ' + checks); console.log('✅ All admin UI backend packages and application directories verified');"]
