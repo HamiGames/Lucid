@@ -57,13 +57,27 @@ RUN mkdir -p ./src ./dist ./config && \
     printf "LUCID_ADMIN_UI_BACKEND_SRC_$(date +%s)" > ./src/.keep && \
     printf "LUCID_ADMIN_UI_BACKEND_DIST_$(date +%s)" > ./dist/.keep && \
     printf "LUCID_ADMIN_UI_BACKEND_CONFIG_$(date +%s)" > ./config/.keep && \
-    touch ./src/.keep ./dist/.keep ./config/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_SESSION_CONTROLLER_$(date +%s)" > ./RDP/session-controller/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_SERVER_$(date +%s)" > ./RDP/server/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_SERVER_MANAGER_$(date +%s)" > ./RDP/server-manager/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_SECURITY_$(date +%s)" > ./RDP/security/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_RESOURCE_MONITOR_$(date +%s)" > ./RDP/resource-monitor/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_PROTOCOL_$(date +%s)" > ./RDP/protocol/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_RDP_COMMON_$(date +%s)" > ./RDP/common/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_PAYMENT_SYSTEMS_$(date +%s)" > ./payment_systems/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_CONFIG_$(date +%s)" > ./gui/config/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_USER_$(date +%s)" > ./gui/user/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_NODE_$(date +%s)" > ./gui/node/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_ADMIN_$(date +%s)" > ./backend/ui/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_$(date +%s)" > ./backend/gui/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_DEVELOPER_$(date +%s)" > ./gui/developer/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_GUI_NODE_OPERATOR_$(date +%s)" > ./gui/node-operator/.keep && \
     echo "Application directories created with markers"
 
 # Copy source code
-COPY ../../../../admin/backend/ ./backend/
+COPY ../../../../admin/ui/ ./backend/ui/
 COPY ../../../../common/ ./common/
-COPY ../../../../gui/admin/ ./gui/admin/
+COPY ../../../../gui/admin/ ./backend/gui/
 COPY ../../../../gui/user/ ./gui/user/
 COPY ../../../../gui/node/ ./gui/node/
 COPY ../../../../gui/developer/ ./gui/developer/
@@ -72,6 +86,7 @@ COPY ../../../../RDP/server-manager/ ./RDP/server-manager/
 COPY ../../../../RDP/security/ ./RDP/security/
 COPY ../../../../RDP/resource-monitor/ ./RDP/resource-monitor/
 COPY ../../../../RDP/protocol/ ./RDP/protocol/
+COPY ../../../../RDP/session-controller/ ./RDP/session-controller/
 COPY ../../../../RDP/common/ ./RDP/common/
 COPY ../../../../payment_systems/ ./payment_systems/
 COPY ../../../../gui/config/ ./gui/config/
@@ -129,18 +144,25 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 # Copy production dependencies from builder
 COPY --from=builder --chown=65532:65532 /build/node_modules /app/admin/node_modules
 COPY --from=builder --chown=65532:65532 /build/common /app/admin/common
-COPY --from=builder --chown=65532:65532 /build/gui/admin /app/admin/gui/admin
+COPY --from=builder --chown=65532:65532 /build/RDP/session-controller /app/admin/RDP/session-controller
+# app/admin/* (backend/ui and backend/gui directories)
+COPY --from=builder --chown=65532:65532 /build/backend/ui /app/admin/backend/ui
+COPY --from=builder --chown=65532:65532 /build/backend/gui /app/admin/backend/gui
+#app.admin/gui/* (user, node, config, developer)
 COPY --from=builder --chown=65532:65532 /build/gui/user /app/admin/gui/user
 COPY --from=builder --chown=65532:65532 /build/gui/node /app/admin/gui/node
+COPY --from=builder --chown=65532:65532 /build/gui/config /app/admin/gui/config
 COPY --from=builder --chown=65532:65532 /build/gui/developer /app/admin/gui/developer
+#app.admin/RDP/* (RDP server, server-manager, security, resource-monitor, protocol, common)
 COPY --from=builder --chown=65532:65532 /build/RDP/server /app/admin/RDP/server
 COPY --from=builder --chown=65532:65532 /build/RDP/server-manager /app/admin/RDP/server-manager
 COPY --from=builder --chown=65532:65532 /build/RDP/security /app/admin/RDP/security
 COPY --from=builder --chown=65532:65532 /build/RDP/resource-monitor /app/admin/RDP/resource-monitor
 COPY --from=builder --chown=65532:65532 /build/RDP/protocol /app/admin/RDP/protocol
+#app.admin/* (common, payment_systems )
 COPY --from=builder --chown=65532:65532 /build/RDP/common /app/admin/RDP/common
-COPY --from=builder --chown=65532:65532 /build/payment_systems /app/admin/payment_systems
-COPY --from=builder --chown=65532:65532 /build/gui/config /app/admin/gui/config
+COPY --from=builder --chown=65532:65532 /build/payment_systems /app/admin/admin/payment_systems
+
 
 # Copy application code from builder (use dist if available, otherwise src)
 COPY --chown=65532:65532 --from=builder /build/dist /app/admin/dist
