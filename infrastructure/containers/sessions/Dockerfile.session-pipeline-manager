@@ -1,58 +1,201 @@
+# syntax=docker/dockerfile:1.5
 # LUCID Session Pipeline Manager Container - SPEC-1B Implementation
 # Distroless container for session pipeline manager service
 
-# syntax=docker/dockerfile:1.7
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Stage 1: Builder
-FROM python:3.11-slim AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-# Set build arguments
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
+ARG PYTHON_VERSION
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Set working directory
+# System packages
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        rustc \
+        cargo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 WORKDIR /build
 
-# Copy requirements
-COPY sessions/pipeline/requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+# System markers
+RUN echo "LUCID_SESSION_PIPELINE_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    echo "LUCID_SESSION_PIPELINE_MANAGER_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib
 
-# Copy source code
-COPY sessions/pipeline/ ./src/
+# Python dependencies - upgrade pip tooling
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "upgrading pip and setuptools" && \
+    pip install --upgrade pip setuptools wheel && \
+    echo "upgrade complete"
 
-# Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/python3-debian12:nonroot
+COPY ../../../../sessions/pipeline/requirements.txt ./requirements.txt
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /app/.local
+# Step 1: Build wheels explicitly
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
-# Copy application code
-COPY --from=builder /build/src /app
+# Step 2: Install wheels into system Python
+RUN echo "installing wheels into system python" && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
+    echo "installation complete" && \
+    rm -rf /build/wheels
 
-# Set environment variables
-ENV PYTHONPATH=/app/.local/lib/python3.11/site-packages:/app
-ENV PATH=/app/.local/bin:$PATH
+# Builder-stage verification
+RUN echo "=== Verifying pip installation success ===" && \
+    python3.11 -c "print('✅ Python packages ready for distroless image')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    pip list && \
+    echo "=== All packages ready for final image"
 
-# Set working directory
+# Create marker files
+RUN printf "LUCID_SESSION_PIPELINE_MANAGER_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.keep && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep && \
+    chmod 644 /usr/local/bin/.keep && \
+    echo "Marker files created"
+
+# Create application directory structure
+RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/encryption ./sessions/api ./sessions/config ./sessions/integration ./sessions/security ./sessions/storage ./sessions/recorder ./sessions/processor \
+    && printf "LUCID_SESSIONS_DIRECTORY_$(date +%s)" > ./sessions/.keep  \
+    && touch ./sessions/.keep \
+    && printf "LUCID_SESSIONS_PIPELINE_DIRECTORY_$(date +%s)" > ./sessions/pipeline/.keep \
+    && touch ./sessions/pipeline/.keep \
+    && printf "LUCID_SESSIONS_CORE_DIRECTORY_$(date +%s)" > ./sessions/core/.keep \
+    && touch ./sessions/core/.keep \
+    && printf "LUCID_SESSIONS_ENCRYPTION_DIRECTORY_$(date +%s)" > ./sessions/encryption/.keep \
+    && touch ./sessions/encryption/.keep \
+    && printf "LUCID_SESSIONS_API_DIRECTORY_$(date +%s)" > ./sessions/api/.keep \
+    && touch ./sessions/api/.keep \
+    && printf "LUCID_SESSIONS_CONFIG_DIRECTORY_$(date +%s)" > ./sessions/config/.keep \
+    && touch ./sessions/config/.keep \
+    && printf "LUCID_SESSIONS_INTEGRATION_DIRECTORY_$(date +%s)" > ./sessions/integration/.keep \
+    && touch ./sessions/integration/.keep \
+    && printf "LUCID_SESSIONS_SECURITY_DIRECTORY_$(date +%s)" > ./sessions/security/.keep \
+    && touch ./sessions/security/.keep \
+    && printf "LUCID_SESSIONS_STORAGE_DIRECTORY_$(date +%s)" > ./sessions/storage/.keep \
+    && touch ./sessions/storage/.keep \
+    && printf "LUCID_SESSIONS_RECORDER_DIRECTORY_$(date +%s)" > ./sessions/recorder/.keep \
+    && touch ./sessions/recorder/.keep \
+    && printf "LUCID_SESSIONS_PROCESSOR_DIRECTORY_$(date +%s)" > ./sessions/processor/.keep \
+    && touch ./sessions/processor/.keep \
+    && echo "Application directories created with markers"
+# Application source COPY (session pipeline manager specific)
+COPY ../../../../sessions/pipeline/ ./pipeline/
+COPY ../../../../sessions/core/ ./core/
+COPY ../../../../sessions/encryption/ ./encryption/
+COPY ../../../../sessions/api/ ./api/
+COPY ../../../../sessions/config/ ./config/
+COPY ../../../../sessions/integration/ ./integration/
+COPY ../../../../sessions/security/ ./security/
+COPY ../../../../sessions/storage/ ./storage/
+COPY ../../../../sessions/recorder/ ./recorder/
+COPY ../../../../sessions/processor/ ./processor/
+COPY ../../../../sessions/__init__.py ./__init__.py
+
+# Verify source files
+RUN echo "Verifying session pipeline manager source files" && \
+    test -d ./pipeline && echo "pipeline directory verified" && \
+    python3 -c "import sys; sys.path.insert(0, '/build'); print('Python path configured')"
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Session Pipeline Manager" \
+      org.opencontainers.image.description="Distroless Session Pipeline Manager for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="session-pipeline-manager" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="processing" \
+      com.lucid.security="distroless"
+
+ENV PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    SESSION_PIPELINE_MANAGER_PORT=7990
+
 WORKDIR /app
 
-# Create non-root user
-USER nonroot
+# System directories & certificates
+COPY --from=builder --chown=65532:65532 /var/run /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import requests; requests.get('http://localhost:7990/health')"]
+# Bake Python packages into distroless image
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
+COPY --from=builder --chown=65532:65532 /usr/local/bin /app/usr/local/bin
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/opt/bin/tini
 
-# Expose port
+# Application layout COPY (session pipeline manager specific)
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
+COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
+COPY --from=builder --chown=65532:65532 /build/sessions/encryption/ /app/sessions/encryption/
+COPY --from=builder --chown=65532:65532 /build/sessions/api/ /app/sessions/api/
+COPY --from=builder --chown=65532:65532 /build/sessions/config/ /app/sessions/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/integration/ /app/sessions/integration/
+COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/security/
+COPY --from=builder --chown=65532:65532 /build/sessions/storage/ /app/sessions/storage/
+COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
+COPY --from=builder --chown=65532:65532 /build/sessions/processor/ /app/sessions/processor/
+COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+
+# Verify packages and application directories
+RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/pipeline')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All session pipeline manager packages and application directories verified')"]
+
 EXPOSE 7990
 
-# Run application
-ENTRYPOINT ["/usr/bin/python3"]
-CMD ["-m", "session_pipeline_manager"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD ["/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:7990/health'); exit(0)"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/opt/bin/tini", "--"]
+
+CMD ["/usr/bin/python3.11", "-m", "session_pipeline_manager"]

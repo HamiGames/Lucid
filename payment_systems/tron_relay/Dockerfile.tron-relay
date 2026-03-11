@@ -2,7 +2,7 @@
 # Distroless TRON relay for distributed caching and verification
 # SECURITY: READ-ONLY operations - NO private key access
 # Configuration: .env.tron-relay, .env.support, .env.foundation via docker-compose
-# Build context: project root (all COPY statements use payment_systems/tron-relay/ prefixes)
+# Build context: project root (all COPY statements use payment_systems/tron_relay/ prefixes)
 # Target image: pickme/lucid-tron-relay:latest-arm64
 
 ARG BUILD_DATE
@@ -58,8 +58,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     /opt/venv/bin/pip install --upgrade pip setuptools wheel
 
 # Copy requirements
-COPY payment_systems/tron-relay/requirements.txt ./requirements.txt
-COPY payment_systems/tron-relay/requirements-prod.txt ./requirements-prod.txt
+COPY payment_systems/tron_relay/requirements.txt ./requirements.txt
+COPY payment_systems/tron_relay/requirements-prod.txt ./requirements-prod.txt
 
 # Install Python dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -80,7 +80,7 @@ RUN /opt/venv/bin/python -c "import fastapi, uvicorn, tronpy, httpx, pydantic, p
     echo "Package count: $(ls -1 /opt/venv/lib/python${PYTHON_VERSION}/site-packages/ | wc -l)"
 
 # Copy application code
-COPY payment_systems/tron-relay/ ./app/
+COPY payment_systems/tron_relay/ ./app/
 
 # Compile Python files
 RUN /opt/venv/bin/python -m compileall -b ./app
