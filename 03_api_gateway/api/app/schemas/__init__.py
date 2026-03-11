@@ -1,4 +1,4 @@
-from app.schemas.errors import (
+from ..schemas.errors import (
     ErrorResponse,
     ValidationError,
     ValidationErrorResponse,
@@ -9,15 +9,15 @@ from app.schemas.errors import (
     RateLimitError,
     InternalServerError
 )
-from app.schemas.users import PaginatedUsers, RegisterRequest, UserPublic, UserUpdate
-from app.schemas.auth import LoginRequest, RefreshRequest, LogoutRequest, TokenPair
-from app.schemas.meta import HealthResponse
-from api.app.schemas.users import (
+from ..schemas.users import PaginatedUsers, RegisterRequest, UserPublic, UserUpdate
+from ..schemas.auth import LoginRequest, RefreshRequest, LogoutRequest, TokenPair
+from ..schemas.meta import HealthResponse
+from ..schemas.users import (
     UserPublic,
     RegisterRequest,
     PaginatedUsers
 )
-from api.app.schemas.sessions import (
+from ..schemas.sessions import (
     SessionCreate,
     SessionResponse,
     SessionDetail,
