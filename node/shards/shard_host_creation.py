@@ -17,11 +17,11 @@ import uuid
 import json
 
 # Database adapter handles compatibility
-from node.shards..shards..database_adapter import DatabaseAdapter, get_database_adapter
+from ..shards..shards..database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.shards..shards..peer_discovery import PeerDiscovery
-from node.shards..shards..work_credits import WorkCreditsCalculator
+from ..shards..shards..peer_discovery import PeerDiscovery
+from ..shards..shards..work_credits import WorkCreditsCalculator
 
 logger = logging.get_logger(__name__)
 

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from node.pools.database_adapter import DatabaseAdapter
+from ..pools.database_adapter import DatabaseAdapter
 
 logger = logging.get_logger(__name__)
 

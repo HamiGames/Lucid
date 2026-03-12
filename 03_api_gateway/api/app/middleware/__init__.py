@@ -9,7 +9,7 @@ from ..middleware.auth import AuthMiddleware
 from ..middleware.rate_limit import RateLimitMiddleware
 from ..middleware.logging import LoggingMiddleware
 from ..middleware.cors import CORSConfig
-from api.app.utils.logging import get_logger
+from ..utils.logging import get_logger
 
 logger = get_logger(__name__)
 

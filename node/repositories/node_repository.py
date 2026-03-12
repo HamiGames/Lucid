@@ -23,13 +23,13 @@ import uuid
 import hashlib
 import base64
 
-from node.models.node import (
+from ..models.node import (
     Node, NodeCreateRequest, NodeUpdateRequest, NodeStatus, NodeType,
     NodeResources, ResourceMetrics, CPUMetrics, MemoryMetrics, 
     DiskMetrics, NetworkMetrics, GPUMetrics, PoOTScore, PoOTValidation,
     PoOTValidationRequest
 )
-from node.models.payout import Payout, PayoutRequest, BatchPayoutRequest, PayoutStatus
+from ..models.payout import Payout, PayoutRequest, BatchPayoutRequest, PayoutStatus
 
 logger = logging.get_logger(__name__)
 

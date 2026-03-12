@@ -41,11 +41,11 @@ except ImportError:
 import blake3
 
 # Database adapter handles compatibility
-from node.registration.database_adapter import DatabaseAdapter, get_database_adapter
+from ..registration.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.registration.peer_discovery import PeerDiscovery, PeerInfo
-from node.registration.work_credits import WorkCreditsCalculator
+from ..registration.peer_discovery import PeerDiscovery, PeerInfo
+from ..registration.work_credits import WorkCreditsCalculator
 
 # Try to import TRON components - these might not be available in all environments
 try:

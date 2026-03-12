@@ -19,11 +19,11 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 import uuid
 
-from node.api.nodes import router as nodes_router
-from node.api.pools import router as pools_router
-from node.api.resources import router as resources_router
-from node.api.payouts import router as payouts_router
-from node.api.poot import router as poot_router
+from ..api.nodes import router as nodes_router
+from ..api.pools import router as pools_router
+from ..api.resources import router as resources_router
+from ..api.payouts import router as payouts_router
+from ..api.poot import router as poot_router
 
 logger = logging.get_logger(__name__)
 

@@ -17,12 +17,12 @@ Base URL: https://node-management.lucid.onion/api/v1
 Port: 8095
 """
 
-from node.api.api.routes import router as api_router
-from node.api.api.nodes import router as nodes_router
-from node.api.api.pools import router as pools_router
-from node.api.api.resources import router as resources_router
-from node.api.api.payouts import router as payouts_router
-from node.api.api.poot import router as poot_router
+from ..api.routes import router as api_router
+from ..api.nodes import router as nodes_router
+from ..api.pools import router as pools_router
+from ..api.resources import router as resources_router
+from ..api.payouts import router as payouts_router
+from ..api.poot import router as poot_router
 
 __all__ = [
     "api_router",

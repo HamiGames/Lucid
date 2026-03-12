@@ -20,8 +20,8 @@ from enum import Enum
 import logging
 import uuid
 
-from node.models.node import NodeResources, ResourceMetrics, CPUMetrics, MemoryMetrics, DiskMetrics, NetworkMetrics
-from node.repositories.node_repository import NodeRepository
+from ..models.node import NodeResources, ResourceMetrics, CPUMetrics, MemoryMetrics, DiskMetrics, NetworkMetrics
+from ..repositories.node_repository import NodeRepository
 
 logger = logging.get_logger(__name__)
 

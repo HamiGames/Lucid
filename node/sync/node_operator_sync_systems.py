@@ -26,11 +26,11 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
 
 # Database adapter handles compatibility
-from node.sync.sync.database_adapter import DatabaseAdapter, get_database_adapter
+from ..sync.sync.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.sync.sync.peer_discovery import PeerDiscovery
-from node.sync.sync.work_credits import WorkCreditsCalculator
+from ..sync.sync.peer_discovery import PeerDiscovery
+from ..sync.sync.work_credits import WorkCreditsCalculator
 
 logger = logging.get_logger(__name__)
 

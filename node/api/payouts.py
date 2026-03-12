@@ -20,11 +20,11 @@ from enum import Enum
 import logging
 import uuid
 
-from node.models.payout import (
+from ..models.payout import (
     Payout, PayoutRequest, BatchPayoutRequest, 
     PayoutStatus, PayoutPriority, Currency
 )
-from node.repositories.node_repository import NodeRepository
+from ..repositories.node_repository import NodeRepository
 
 logger = logging.get_logger(__name__)
 

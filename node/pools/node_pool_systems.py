@@ -17,11 +17,11 @@ import uuid
 import json
 
 # Database adapter handles compatibility
-from node.pools.database_adapter import DatabaseAdapter, get_database_adapter
+from ..pools.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.pools.peer_discovery import PeerDiscovery
-from node.pools.work_credits import WorkCreditsCalculator
+from ..pools.peer_discovery import PeerDiscovery
+from ..pools.work_credits import WorkCreditsCalculator
 
 logger = logging.get_logger(__name__)
 

@@ -18,7 +18,7 @@ Core Components:
 - VoteDelegation: Vote delegation system
 """
 
-from node.governance..node_vote_systems import (
+from ..governance.node_vote_systems import (
     NodeVoteSystem,
     GovernanceProposal,
     ProposalType,

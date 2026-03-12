@@ -18,11 +18,11 @@ import json
 from decimal import Decimal
 
 # Database adapter handles compatibility
-from node.governance..database_adapter import DatabaseAdapter, get_database_adapter
+from ..governance..database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.governance..peer_discovery import PeerDiscovery
-from node.governance..work_credits import WorkCreditsCalculator
+from ..governance..peer_discovery import PeerDiscovery
+from ..governance..work_credits import WorkCreditsCalculator
 
 logger = logging.get_logger(__name__)
 

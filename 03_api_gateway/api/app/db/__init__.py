@@ -1,5 +1,5 @@
 # app/db/__init__.py
-from api.app.db.connection import (
+from ..db.connection import (
     get_db,
     get_client,
     ping,
@@ -7,7 +7,7 @@ from api.app.db.connection import (
     _resolve_db_name,
     close_client,
 )  # re-export for stable imports
-from api.app.db.users_repo import UsersRepo, USERS_COLLECTION
+from ..db.users_repo import UsersRepo, USERS_COLLECTION
 
 
 __all__ = [

@@ -18,7 +18,7 @@ Core Components:
 - ChallengeType: Types of challenges
 """
 
-from node.registration.node_registration_protocol import (
+from ..registration.node_registration_protocol import (
     NodeRegistrationProtocol,
     NodeRegistration,
     RegistrationStatus,

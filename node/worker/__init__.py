@@ -18,7 +18,7 @@ Core Components:
 - SessionState: Session state management
 """
 
-from node.worker.node_worker import (
+from ..worker.node_worker import (
     NodeWorker,
     RDPSession,
     SessionState,

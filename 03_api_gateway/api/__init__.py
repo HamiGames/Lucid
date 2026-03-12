@@ -6,8 +6,13 @@ File: 03_api_gateway/api/__init__.py
 Purpose: Re-exports API from api/app for backwards compatibility.
 """
 
-from ..api.app import *
-from ..api.app.config import Settings
+from app import *
+from app.config import Settings
+from app.utils.logging import get_logger
+from app.middleware import *
+
+logger = get_logger(__name__)
+
 settings = Settings()
 __all__ = [
     "app",
@@ -24,7 +29,7 @@ __all__ = [
     "app.schemas",
     "app.services",
     "app.utils",
-    "app.database",
+    "app.database","logger", "get_logger",
     "app.db",
     "app.scripts",
     "app.security",

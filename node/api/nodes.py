@@ -20,11 +20,11 @@ import logging
 import uuid
 import logging
 
-from node.models.node import (
+from ..models.node import (
     Node, NodeCreateRequest, NodeUpdateRequest, 
     NodeStatus, NodeType, HardwareInfo, NodeLocation
 )
-from node.repositories.node_repository import NodeRepository
+from ..repositories.node_repository import NodeRepository
 
 logging.basicConfig(level=logging.INFO)
 

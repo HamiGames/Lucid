@@ -18,7 +18,7 @@ Core Components:
 - StateCheckpoint: State synchronization points
 """
 
-from node.sync.sync.node_operator_sync_systems import (
+from ..sync.sync.node_operator_sync_systems import (
     NodeOperatorSyncSystem,
     OperatorInfo,
     OperatorRole,

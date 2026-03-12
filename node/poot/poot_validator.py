@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from node.poot.database_adapter import DatabaseAdapter
+from ..poot.database_adapter import DatabaseAdapter
 
 logger = logging.get_logger(__name__)
 

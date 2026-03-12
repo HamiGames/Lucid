@@ -10,7 +10,7 @@ Purpose: Data models and validation schemas
 # from .session import SessionModel, SessionStatus
 # from .auth import TokenPayload, AuthResponse
 # from .common import ErrorResponse, ErrorDetail, PaginationInfo
-from app.models.common import ServiceInfo, HealthStatus, ErrorResponse, ErrorDetail, PaginationInfo
+from ..models.common import ServiceInfo, HealthStatus, ErrorResponse, ErrorDetail, PaginationInfo
 __all__ = [
     'ServiceInfo', 
     'HealthStatus', 

@@ -16,7 +16,7 @@ Core Components:
 - TorManager: Manages Tor proxy services and onion routing
 """
 
-from node.tor.onion_service import (
+from ..tor.onion_service import (
     OnionServiceManager,
     OnionServiceType,
     OnionKeyType,
@@ -31,7 +31,7 @@ from node.tor.onion_service import (
     rotate_onion_service
 )
 
-from node.tor.socks_proxy import (
+from ..tor.socks_proxy import (
     SocksProxyManager,
     SocksVersion,
     SocksAuthMethod,
@@ -48,7 +48,7 @@ from node.tor.socks_proxy import (
     list_tunnels
 )
 
-from node.tor.tor_manager import (
+from ..tor.tor_manager import (
     TorManager,
     TorServiceStatus,
     OnionServiceStatus as TorOnionServiceStatus,

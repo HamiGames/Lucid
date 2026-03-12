@@ -18,7 +18,7 @@ Core Components:
 - StakeValidation: Stake verification
 """
 
-from node.validation.node_poot_validations import (
+from ..validation.node_poot_validations import (
     NodePootValidation,
     TokenOwnershipChallenge,
     TokenOwnershipProof,
@@ -32,6 +32,25 @@ from node.validation.node_poot_validations import (
     create_node_poot_validation,
     cleanup_node_poot_validation
 )
+from ..validation.work_credits import (
+    WorkCreditsCalculator,
+    WorkCreditValidationRequest,
+    WorkCreditValidationResponse,
+    WorkCreditValidationStatus,
+    WorkCreditPreferences,
+    WorkCreditStats,
+    WorkCreditValidationReport,
+    WorkCreditVerification,
+    WorkCreditReport,
+    WorkCreditValidationSettings,
+    WorkCreditHistory,
+    WorkCreditRequest,
+    WorkCreditResponse,
+    WorkCreditSettings, WorkCredit
+)
+from ..validation.peer_discovery import (
+    PeerDiscovery, PeerInfo, DatabaseSearchParameters
+)
 
 __all__ = [
     'NodePootValidation',
@@ -43,7 +62,24 @@ __all__ = [
     'FraudDetectionEvent',
     'FraudRisk',
     'ValidationStats',
+    'WorkCreditsCalculator',
+    'WorkCreditValidationRequest',
+    'WorkCreditValidationResponse',
+    'WorkCreditValidationStatus',
+    'WorkCreditPreferences',
+    'WorkCreditStats',
+    'WorkCreditValidationReport',
+    'WorkCreditVerification',
+    'WorkCreditReport',
+    'WorkCreditValidationSettings',
+    'WorkCreditHistory',
+    'WorkCreditRequest',
+    'WorkCreditResponse',
+    'WorkCreditSettings',
+    'WorkCredit',
+    'PeerDiscovery',
+    'PeerInfo',
+    'DatabaseSearchParameters', 
     'get_node_poot_validation',
-    'create_node_poot_validation',
-    'cleanup_node_poot_validation'
+    'create_node_poot_validation'
 ]

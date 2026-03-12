@@ -20,11 +20,11 @@ import secrets
 import hmac
 
 # Database adapter handles compatibility
-from node.validation.database_adapter import DatabaseAdapter, get_database_adapter
+from ..payouts.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.validation.peer_discovery import PeerDiscovery
-from node.validation.work_credits import WorkCreditsCalculator
+from ..validation.peer_discovery import PeerDiscovery
+from ..validation.work_credits import WorkCreditsCalculator
 
 logger = logging.get_logger(__name__)
 

@@ -15,21 +15,21 @@ This package provides Pydantic models for:
 All models follow the API specification requirements.
 """
 
-from node.modelsmodelsnode import (
+from ..models.node import (
     Node, NodeCreateRequest, NodeUpdateRequest,
     NodeStatus, NodeType, HardwareInfo, NodeLocation,
     NodeConfiguration, ResourceLimits
 )
-from node.modelsmodelspool import (
+from ..models.pool import (
     NodePool, NodePoolCreateRequest, NodePoolUpdateRequest,
     ScalingPolicy, AutoScalingConfig
 )
-from node.modelsmodelspayout import (
+from ..models.payout import (
     Payout, PayoutRequest, BatchPayoutRequest,
     PayoutStatus, PayoutPriority, Currency
 )
 
-# Import legacy models from node.modelsmodelsmodels (models.py file)
+# Import legacy models from ..modelsmodelsmodels (models.py file)
 # These models are still used by various parts of the codebase
 import sys
 import importlib.util

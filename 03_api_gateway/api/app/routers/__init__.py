@@ -18,7 +18,7 @@ from ..routers.manifests import router as manifests_router
 from ..routers.trust import router as trust_router
 from ..routers.chain import router as chain_router
 from ..routers.wallets import router as wallets_router
-from api.app.utils.logging import get_logger
+from ..utils.logging import get_logger
 
 
 logger = get_logger(__name__)

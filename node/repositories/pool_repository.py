@@ -21,11 +21,11 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING
 import uuid
 
-from node.models.pool import (
+from ..models.pool import (
     NodePool, NodePoolCreateRequest, NodePoolUpdateRequest,
     PoolNode, PoolScalingEvent, PoolMetrics, ScalingPolicy, AutoScalingConfig
 )
-from node.models.node import Node
+from ..models.node import Node
 
 logger = logging.get_logger(__name__)
 

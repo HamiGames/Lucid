@@ -8,14 +8,14 @@ Purpose: Utility functions and helper modules
 # Utility imports will be added as they are implemented
 # from .security import hash_password, verify_password
 # from .logging import setup_logging
-from api.app.utils.config import (
+from ..utils.config import (
     in_container, mongo_conn_str, service_name, service_version, mongo_timeouts_ms
     )
-from api.app.utils.logging import (
+from ..utils.logging import (
     setup_logging, get_logger
     )
 
-from api.app.utils.logger import (
+from ..utils.logger import (
     JsonFormatter, get_logger
     )
 # from .validation import validate_email, validate_username

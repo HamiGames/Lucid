@@ -12,8 +12,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from node.payouts.database_adapter import DatabaseAdapter
-from node.payouts.tron_client import TronClient
+from ..payouts.database_adapter import DatabaseAdapter
+from ..payouts.tron_client import TronClient
 
 logger = logging.get_logger(__name__)
 

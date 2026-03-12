@@ -19,11 +19,11 @@ from datetime import datetime, timezone
 import logging
 import uuid
 
-from node.models.pool import (
+from ..models.pool import (
     NodePool, NodePoolCreateRequest, NodePoolUpdateRequest,
     ResourceLimits, ScalingPolicy
 )
-from node.repositories.pool_repository import PoolRepository
+from ..repositories.pool_repository import PoolRepository
 
 logger = logging.get_logger(__name__)
 

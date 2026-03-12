@@ -17,11 +17,11 @@ import uuid
 import json
 
 # Database adapter handles compatibility
-from node.flags.database_adapter import DatabaseAdapter, get_database_adapter
+from ..flags.database_adapter import DatabaseAdapter, get_database_adapter
 
 # Import existing components using relative imports
-from node.flags.peer_discovery import PeerDiscovery
-from node.flags.work_credits import WorkCreditsCalculator
+from ..flags.peer_discovery import PeerDiscovery
+from ..flags.work_credits import WorkCreditsCalculator
 
 logger = logging.get_logger(__name__)
 
