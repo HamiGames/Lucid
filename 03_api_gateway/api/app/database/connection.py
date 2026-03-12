@@ -6,7 +6,7 @@ Purpose: MongoDB and Redis connection initialization and management
 Includes tor-proxy bootstrap wait sequence before attempting connections
 """
 
-import api.app.utils.logging as logging
+import logging
 import asyncio
 import socket
 from typing import Optional

@@ -11,8 +11,7 @@ from ..database.connection import (
     init_database, get_database, get_redis, close_database, close_redis, 
     _wait_for_tor_proxy, _wait_for_mongodb, _wait_for_redis, _create_indexes
     )
-from ..utils.logging import get_logger
-logger = get_logger(__name__)
+
 __all__ = [
     'init_database',
     'get_database',
@@ -22,5 +21,5 @@ __all__ = [
     '_wait_for_tor_proxy',
     '_wait_for_mongodb',
     '_wait_for_redis',
-    'logger', '_create_indexes'
+    '_create_indexes'
 ]
