@@ -6,10 +6,10 @@ File: 03_api_gateway/api/__init__.py
 Purpose: Re-exports API from api/app for backwards compatibility.
 """
 
-from app import *
-from app.config import Settings
-from app.utils.logging import get_logger
-from app.middleware import *
+from .app import *
+from .app.config import Settings
+from .app.utils.logging import get_logger
+from .app.middleware import *
 
 logger = get_logger(__name__)
 

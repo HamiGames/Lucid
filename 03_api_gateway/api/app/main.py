@@ -21,12 +21,12 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 import uvicorn
 
-from app.config import get_settings
-from app.middleware.auth import AuthMiddleware
-from app.middleware.rate_limit import RateLimitMiddleware
-from app.middleware.logging import api.app.utils.logging as loggingMiddleware
-from app.middleware.cors import CORSConfig
-from app.routers import (
+from .config import get_settings
+from .middleware.auth import AuthMiddleware
+from .middleware.rate_limit import RateLimitMiddleware
+from .middleware.logging import LoggingMiddleware
+from .middleware.cors import CORSConfig
+from .routers import (
     meta,
     auth,
     users,
@@ -41,9 +41,9 @@ from app.routers import (
     gui_hardware,
     tron_support
 )
-from app.database.connection import init_database
-from app.utils.logging import setup_logging
-from app.models.common import ErrorResponse, ErrorDetail
+from .database.connection import init_database
+from .utils.logging import setup_logging
+from .models.common import ErrorResponse, ErrorDetail
 import uuid
 from datetime import datetime
 

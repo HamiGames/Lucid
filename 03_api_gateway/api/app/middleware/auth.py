@@ -6,12 +6,12 @@ Purpose: Handles JWT token validation and user authentication for protected endp
 All configuration from environment variables via app.config.
 """
 
-import api.app.utils.logging as logging
+import app.utils.logging as logging
 from typing import Optional, List
 from fastapi import Request
 from starlette.responses import JSONResponse
 
-from api.app.config import get_settings
+from ..config import get_settings
 
 logger = logging.logging.get_loggerger(__name__)
 settings = get_settings()

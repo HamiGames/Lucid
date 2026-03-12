@@ -7,7 +7,7 @@ Purpose: Proxy endpoints to TRON support services (payout router, wallet manager
 Architecture Note: Proxies to isolated TRON payment system services
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
 
 logger = logging.get_logger(__name__)

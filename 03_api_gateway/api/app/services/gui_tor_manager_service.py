@@ -5,12 +5,12 @@ File: 03_api_gateway/api/app/services/gui_tor_manager_service.py
 Purpose: Service for handling GUI Tor Manager integration and proxy operations
 """
 
-import api.app.utils.logging as logging
+import logging
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from app.config import get_settings
+from ..config import get_settings
 
 logger = logging.get_logger(__name__)
 settings = get_settings()

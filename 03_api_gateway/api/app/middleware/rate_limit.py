@@ -6,13 +6,13 @@ Purpose: Implements tiered rate limiting for different endpoint types and user r
 All configuration from environment variables via app.config.
 """
 
-import api.app.utils.logging as logging
+import app.utils.logging as logging
 import time
 from typing import Optional, Dict
 from fastapi import Request
 from starlette.responses import JSONResponse
 
-from app.config import get_settings
+from ..config import get_settings
 
 logger = logging.get_logger(__name__)
 settings = get_settings()

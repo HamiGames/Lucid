@@ -7,7 +7,7 @@ Purpose: Blockchain operations proxy (lucid_blocks)
 Architecture Note: This router proxies to lucid_blocks (on-chain blockchain system)
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
 
 logger = logging.get_logger(__name__)

@@ -5,7 +5,7 @@ File: 03_api_gateway/api/app/routers/trust.py
 Purpose: Trust policy management
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
 
 logger = logging.get_logger(__name__)

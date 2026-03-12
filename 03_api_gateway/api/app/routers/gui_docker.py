@@ -7,8 +7,9 @@ Purpose: Proxy endpoints to gui_docker_manager service for Docker management via
 Architecture Note: This router proxies to gui_docker_manager service
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
+
 
 logger = logging.get_logger(__name__)
 router = APIRouter()

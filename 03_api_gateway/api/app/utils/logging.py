@@ -5,7 +5,7 @@ File: 03_api_gateway/api/app/utils/logging.py
 Purpose: Logging configuration and setup
 """
 
-import api.app.utils.logging as logging
+import logging
 import sys
 from typing import Any
 from pythonjsonlogger import jsonlogger

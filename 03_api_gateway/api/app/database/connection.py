@@ -12,7 +12,7 @@ import socket
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import redis.asyncio as redis  # pyright: ignore[reportMissingImports]
-from app.config import get_settings
+from ..config import get_settings
 
 logger = logging.get_logger(__name__)
 settings = get_settings()

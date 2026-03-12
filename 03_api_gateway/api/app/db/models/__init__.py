@@ -1,5 +1,5 @@
-from app.db.models.user import User
-from app.db.models.session import RDPSession, SessionState
+from ..models.user import User
+from ..models.session import RDPSession, SessionState
 
 __all__ = [
         'User',

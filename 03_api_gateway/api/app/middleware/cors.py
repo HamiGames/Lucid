@@ -6,10 +6,10 @@ Purpose: CORS configuration and utilities.
 All configuration from environment variables via app.config.
 """
 
-import api.app.utils.logging as logging
+import app.utils.logging as logging
 from typing import List
 
-from app.config import get_settings
+from ..config import get_settings
 
 logger = logging.get_logger(__name__)
 settings = get_settings()

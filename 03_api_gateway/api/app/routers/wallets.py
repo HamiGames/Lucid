@@ -7,7 +7,7 @@ Purpose: Wallet and payment operations proxy (TRON isolated service)
 Architecture Note: This router proxies to TRON payment service (isolated, NOT lucid_blocks)
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
 
 logger = logging.get_logger(__name__)

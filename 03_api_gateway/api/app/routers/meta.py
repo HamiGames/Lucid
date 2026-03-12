@@ -5,7 +5,7 @@ File: 03_api_gateway/api/app/routers/meta.py
 Purpose: Service metadata, health checks, and version information
 """
 
-import api.app.utils.logging as logging
+import logging
 import time
 from datetime import datetime
 from fastapi import APIRouter, Response

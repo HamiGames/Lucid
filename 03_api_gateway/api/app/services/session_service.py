@@ -1,7 +1,7 @@
 # Session Service Layer
 # Business logic integration between API routes and session pipeline
 
-import api.app.utils.logging as logging
+import logging
 import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import datetime

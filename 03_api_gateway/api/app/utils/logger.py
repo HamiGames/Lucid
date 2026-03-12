@@ -2,7 +2,7 @@
 # Structured logging via stdlib; JSON-friendly format. :contentReference[oaicite:6]{index=6}
 
 import json
-import api.app.utils.logging as logging
+import logging
 import sys
 from typing import Any, Dict
 

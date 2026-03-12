@@ -6,7 +6,7 @@ Purpose: Request/response logging with correlation IDs.
 All configuration from environment variables via app.config.
 """
 
-import api.app.utils.logging as logging
+import app.utils.logging as logging
 import time
 import uuid
 from typing import Callable

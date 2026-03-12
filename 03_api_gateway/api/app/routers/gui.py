@@ -7,7 +7,7 @@ Purpose: Proxy endpoints to gui_api_bridge service for Electron GUI integration
 Architecture Note: This router proxies to gui_api_bridge service (isolated GUI integration)
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 

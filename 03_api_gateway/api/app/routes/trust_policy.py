@@ -2,7 +2,7 @@
 # Client-controlled session policy enforcement endpoints
 
 from fastapi import APIRouter, HTTPException, Depends, status
-import api.app.utils.logging as logging
+import logging
 from typing import Optional
 
 from app.schemas.sessions import (

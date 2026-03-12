@@ -7,7 +7,7 @@ Purpose: Proxy endpoints to gui_hardware_manager service for hardware wallet man
 Architecture Note: This router proxies to gui_hardware_manager service
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
 
 logger = logging.get_logger(__name__)

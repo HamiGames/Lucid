@@ -3,7 +3,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional
-import api.app.utils.logging as logging
+import logging
 
 from app.schemas.sessions import (
     ManifestResponse, ChunkMetadata, MerkleProof, AnchorReceipt

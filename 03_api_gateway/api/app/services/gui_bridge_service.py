@@ -6,12 +6,12 @@ Purpose: Service for handling GUI API Bridge integration and proxy operations
 Manages communication with gui_api_bridge service for Electron GUI integration
 """
 
-import api.app.utils.logging as logging
+import logging
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from app.config import get_settings
+from ..config import get_settings
 
 logger = logging.get_logger(__name__)
 settings = get_settings()

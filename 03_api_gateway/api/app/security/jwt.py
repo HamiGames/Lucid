@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 import uuid
 import os
 
-import api.app.utils.logging as logging
+import logging
 
 logger = logging.get_logger(__name__)
 

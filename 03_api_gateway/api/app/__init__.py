@@ -8,9 +8,9 @@ Purpose: Main application package initialization
 __version__ = "1.0.0"
 __author__ = "Lucid Development Team"
 
-from ..app.main import app
-from ..app.config import get_settings, Settings
-from ..app.deps import get_config
+from .main import app
+from .config import get_settings, Settings
+from .deps import get_config
 from ..app.middleware.auth import AuthMiddleware
 from ..app.middleware.rate_limit import RateLimitMiddleware
 from ..app.middleware.logging import LoggingMiddleware

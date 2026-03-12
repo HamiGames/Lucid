@@ -7,7 +7,7 @@ Purpose: Proxy endpoints to gui_tor_manager service for Tor management via GUI
 Architecture Note: This router proxies to gui_tor_manager service
 """
 
-import api.app.utils.logging as logging
+import logging
 from fastapi import APIRouter, HTTPException
 
 logger = logging.get_logger(__name__)
