@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
-from ..api.config import get_config, load_config
+from ...sessions.api.config import get_config, load_config
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(load_config().log_level(), "INFO").upper()

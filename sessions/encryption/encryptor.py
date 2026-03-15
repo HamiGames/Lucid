@@ -17,12 +17,12 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 import blake3
 
-from ..api.config import get_config, load_config
+from ...sessions.api.config import get_config, load_config
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
 try:  
-    from ..core.logging import get_logger, setup_logging
+    from ...sessions.core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level())
 except ImportError:

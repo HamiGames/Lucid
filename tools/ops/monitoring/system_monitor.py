@@ -3,6 +3,7 @@ System monitoring for Lucid RDP.
 
 This module provides comprehensive system resource monitoring, metrics collection,
 performance tracking, and integration with the LUCID-STRICT security model.
+
 """
 
 import asyncio
@@ -18,7 +19,7 @@ from typing import Dict, List, Optional, Tuple, Any, Union
 import aiofiles
 import json
 
-from ...common.security.trust_nothing_engine import (
+from ....common.security.trust_nothing_engine import (
     TrustNothingEngine, SecurityContext, SecurityAssessment,
     TrustLevel, RiskLevel, ActionType, PolicyLevel
 )

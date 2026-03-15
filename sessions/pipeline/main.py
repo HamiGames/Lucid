@@ -25,7 +25,7 @@ import os
 log_level = os.getenv(PipelineConfig().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").uper()
 try:
-    from ..core.logging import get_logger, setup_logging
+    from ...sessions.core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level())
 except ImportError:

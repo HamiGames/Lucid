@@ -11,7 +11,7 @@ from typing import Optional
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-from ..api.config import get_config, load_config
+from ...sessions.api.config import get_config, load_config
 import os
 import logging
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()

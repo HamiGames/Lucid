@@ -16,6 +16,7 @@ Path: ..api
 file: sessions/api/__init__.py
 the api calls the sessions api
 """
-from ..core.logging import *
+from ...sessions.api.config import *
+from ...sessions.core.logging import *
 
 __all__ = [ '*'	]

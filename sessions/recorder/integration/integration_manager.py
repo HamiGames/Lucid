@@ -12,7 +12,7 @@ from ..config import RecorderConfig, RecorderSettings
 settings= os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
 log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
 try:  
-    from ...core.logging import get_logger, setup_logging
+    from ....sessions.core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level())
 except ImportError:

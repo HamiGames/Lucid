@@ -26,7 +26,7 @@ import os
 from ...sessions.config import get_config
 settings = os.getenv(get_config().LOG_LEVEL, 'INFO').upper()
 try:  
-    from ..core.logging import get_logger, setup_logging
+    from ...sessions.core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level())
 except ImportError:

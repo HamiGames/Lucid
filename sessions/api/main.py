@@ -10,23 +10,23 @@ import signal
 import sys
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from datetime import datetime
 
 from .session_api import SessionAPI
-from .routes import router
+router = APIRouter()
 
 
-from .integration.rdp_controller_client import RDPControllerClient
+from ..api.integration.rdp_controller_client import RDPControllerClient
 
 from .config import get_config, load_config
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(load_config().LOG_LEVEL(), "INFO").upper()
 try:  
-    from ..core.logging import get_logger, setup_logging
+    from ...sessions.core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level(), "INFO")
 except ImportError:
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
     
     try:
         # Initialize configuration
-        api_config = SessionAPIConfig()
+        api_config = SessionAPI(settings.SessionAPI())
         if not api_config.validate_configuration():
             raise RuntimeError("Session API configuration validation failed")
         

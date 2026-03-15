@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import AsyncGenerator, List, Optional, Tuple
 import zstandard as zstd
 
-from ..api.config import get_config, load_config
+from ...sessions.api.config import get_config, load_config
 
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
