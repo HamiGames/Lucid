@@ -8,13 +8,22 @@ Purpose: User data access
 Dependencies: motor
 """
 
-import 03_api_gateway.api.app.utils.logging as logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from ...app.config import get_settings
+settings = get_settings()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
 
-logger = logging.get_logger(__name__)
-
+logger(__name__)
+settings(__name__)
 
 class UserRepository:
     """
@@ -89,8 +98,8 @@ class UserRepository:
             Created user document
         """
         try:
-            user_data["created_at"] = datetime.utcnow()
-            user_data["updated_at"] = datetime.utcnow()
+            user_data["created_at"] = datetime.timezone()
+            user_data["updated_at"] = datetime.timezone()
             
             result = await self.collection.insert_one(user_data)
             user_data["_id"] = str(result.inserted_id)
@@ -116,7 +125,7 @@ class UserRepository:
             True if updated successfully
         """
         try:
-            update_data["updated_at"] = datetime.utcnow()
+            update_data["updated_at"] = datetime.timezone()
             
             result = await self.collection.update_one(
                 {"user_id": user_id},
@@ -144,7 +153,7 @@ class UserRepository:
                 {
                     "$set": {
                         "deleted": True,
-                        "deleted_at": datetime.utcnow()
+                        "deleted_at": datetime.timezone()
                     }
                 }
             )

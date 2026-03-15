@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+logger = logging.getLogger()
 
 class CircuitState(Enum):
     """Circuit breaker states"""

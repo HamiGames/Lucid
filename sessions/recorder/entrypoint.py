@@ -9,8 +9,8 @@ providing clean startup with environment variable configuration.
 No hardcoded values - all configuration from environment variables.
 """
 
-import os
 import sys
+import os
 
 # Ensure site-packages is in Python path
 site_packages = '/usr/local/lib/python3.11/site-packages'

@@ -5,17 +5,31 @@ BLAKE3 Merkle tree construction for session integrity
 """
 
 import asyncio
-import os
 import hashlib
 import blake3
-import sessions.core.logging as logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
+from ..api.config import get_config, load_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().log_level(), "INFO").upper()
+try:  
+    from .logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
+logger(__name__)
+settings(__name__)
 
-logger = logging.get_logger(__name__)
 
 @dataclass
 class MerkleNode:

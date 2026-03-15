@@ -1,11 +1,5 @@
-from .ensure_indexes import main as ensure_indexes_main, _ensure_index, _has_index
-from .seed_dev import main as seed_dev_main, _ensure_user, _hash_password
-
-__all__ = [
-    "ensure_indexes_main",
-    "_ensure_index", 
-    "_has_index",
-    "seed_dev_main",
-    "_ensure_user",
-    "_hash_password",
-]
+""" source api scripts package for lucid
+path: ...scripts
+file: src/api/scripts/__init__.py
+the scripts calls the api scripts
+"""

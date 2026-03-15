@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import sessions.core.logging as logging
-import os
+
 import time
 import threading
 import psutil
@@ -21,9 +20,28 @@ import uuid
 import hashlib
 import subprocess
 import socket
-import netifaces
+import netifaces  # pyright: ignore[reportMissingModuleSource]
 
-logger = logging.get_logger(__name__)
+from .config import RecorderSettings, RecorderConfig
+
+import os
+settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
+
+logger(__name__)
+settings(__name__)
 
 # Configuration from environment
 RESOURCE_LOG_PATH = Path(os.getenv("LUCID_RESOURCE_LOG_PATH", "/var/log/lucid/resources"))

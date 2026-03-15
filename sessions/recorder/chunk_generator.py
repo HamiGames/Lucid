@@ -7,18 +7,33 @@ Generates 10MB chunks from session recordings with compression
 import asyncio
 import hashlib
 import gzip
-import sessions.core.logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable, AsyncGenerator
 from dataclasses import dataclass
 import uuid
+from .session_recorder import ChunkMetadata
+from .config import RecorderSettings, RecorderConfig
+
 import os
+settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
 
-from sessions.recorder.session_recorder import ChunkMetadata
-
-logger = logging.get_logger(__name__)
-
+logger(__name__)
+settings(__name__)
+# D
 @dataclass
 class ChunkConfig:
     """Chunk generation configuration for Step 15 requirements"""

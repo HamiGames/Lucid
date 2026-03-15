@@ -92,7 +92,7 @@ async def health_check() -> HealthStatus:
     
     health_status = HealthStatus(
         status=overall_status,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
         uptime_seconds=uptime,
         dependencies=dependencies,
         version="1.0.0",
@@ -158,7 +158,7 @@ async def get_metrics() -> MetricsResponse:
     disk = psutil.disk_usage('/')
     
     return MetricsResponse(
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
         uptime_seconds=int(time.time() - SERVICE_START_TIME),
         request_count=0,  # Would track in production
         error_count=0,
@@ -190,5 +190,5 @@ async def get_status() -> Dict[str, str]:
     Returns:
         dict: Simple status indicator
     """
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "ok", "timestamp": datetime.timezone().isoformat()}
 

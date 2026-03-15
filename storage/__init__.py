@@ -2,8 +2,11 @@
 """
 Storage package for Lucid RDP.
 Manages MongoDB volumes, sharding, and data persistence.
+path: .storage
+file: storage/__init__.py
+the storage calls the storage
 """
 
-from storage.mongodb_volume import MongoVolumeManager
+from .mongodb_volume import MongoVolumeManager
 
 __all__ = ["MongoVolumeManager"]

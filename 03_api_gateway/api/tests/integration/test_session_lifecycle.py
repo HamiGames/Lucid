@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
 
-from app.main import create_app
-from app.schemas.sessions import (
+from ...app.main import create_app
+from ...app.schemas.sessions import (
     SessionResponse, SessionDetail, SessionState, 
     ManifestResponse, TrustPolicy, PolicyValidationResponse
 )
@@ -60,7 +60,7 @@ class TestSessionLifecycleIntegration:
             owner_address=owner_address,
             node_id=node_id,
             state=SessionState.INITIALIZING,
-            created_at=datetime.utcnow()
+            created_at=datetime.timezone()
         )
         
         create_response = client.post("/sessions/", json={
@@ -113,7 +113,7 @@ class TestSessionLifecycleIntegration:
             valid=True,
             errors=[],
             warnings=[],
-            accepted_at=datetime.utcnow()
+            accepted_at=datetime.timezone()
         )
         
         policy_response = client.post(f"/sessions/{session_id}/policy", json=trust_policy)
@@ -128,8 +128,8 @@ class TestSessionLifecycleIntegration:
             owner_address=owner_address,
             node_id=node_id,
             state=SessionState.RECORDING,
-            created_at=datetime.utcnow(),
-            started_at=datetime.utcnow()
+            created_at=datetime.timezone(),
+            started_at=datetime.timezone()
         )
         
         start_response = client.put(f"/sessions/{session_id}/start")
@@ -144,9 +144,9 @@ class TestSessionLifecycleIntegration:
             owner_address=owner_address,
             node_id=node_id,
             state=SessionState.COMPLETED,
-            created_at=datetime.utcnow(),
-            started_at=datetime.utcnow(),
-            ended_at=datetime.utcnow(),
+            created_at=datetime.timezone(),
+            started_at=datetime.timezone(),
+            ended_at=datetime.timezone(),
             manifest_hash="test-manifest-hash-123",
             merkle_root="test-merkle-root-456",
             anchor_txid="0x1234567890abcdef",
@@ -168,7 +168,7 @@ class TestSessionLifecycleIntegration:
             merkle_root="test-merkle-root-456",
             chunk_count=15,
             total_size=45678901,
-            created_at=datetime.utcnow(),
+            created_at=datetime.timezone(),
             anchor_txid="0x1234567890abcdef"
         )
         
@@ -186,7 +186,7 @@ class TestSessionLifecycleIntegration:
             "block_number": 12345,
             "gas_used": 21000,
             "status": "confirmed",
-            "confirmed_at": datetime.utcnow().isoformat()
+            "confirmed_at": datetime.timezone().isoformat()
         }
         
         receipt_response = client.get(f"/sessions/{session_id}/anchor-receipt")
@@ -207,7 +207,7 @@ class TestSessionLifecycleIntegration:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.INITIALIZING,
-            created_at=datetime.utcnow()
+            created_at=datetime.timezone()
         )
         
         create_response = client.post("/sessions/", json={
@@ -277,7 +277,7 @@ class TestSessionLifecycleIntegration:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.INITIALIZING,
-            created_at=datetime.utcnow()
+            created_at=datetime.timezone()
         )
         
         create_response = client.post("/sessions/", json={
@@ -300,8 +300,8 @@ class TestSessionLifecycleIntegration:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.RECORDING,
-            created_at=datetime.utcnow(),
-            started_at=datetime.utcnow()
+            created_at=datetime.timezone(),
+            started_at=datetime.timezone()
         )
         
         start_response = client.put(f"/sessions/{session_id}/start")
@@ -325,7 +325,7 @@ class TestSessionLifecycleIntegration:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.INITIALIZING,
-            created_at=datetime.utcnow()
+            created_at=datetime.timezone()
         )
         
         create_response = client.post("/sessions/", json={

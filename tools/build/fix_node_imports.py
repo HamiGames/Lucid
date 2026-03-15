@@ -6,6 +6,9 @@ Script to fix database imports in all node modules to use the database adapter.
 import os
 import re
 from pathlib import Path
+node_dir: os.getenv("NODE_DIR", ".env.node")
+node_path: Path(node_dir)
+
 
 def fix_motor_imports(file_path):
     """Fix motor imports in a specific file"""

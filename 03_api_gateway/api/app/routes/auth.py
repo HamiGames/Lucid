@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from starlette.status import HTTP_501_NOT_IMPLEMENTED
 
-from app.schemas.auth import LoginRequest, RefreshRequest, LogoutRequest, TokenPair
-from app.schemas.errors import ErrorResponse
+from ....api.app.schemas.auth import LoginRequest, RefreshRequest, LogoutRequest, TokenPair
+from ....api.app.schemas.errors import ErrorResponse
+
 
 router = APIRouter()
 

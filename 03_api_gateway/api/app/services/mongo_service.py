@@ -6,8 +6,8 @@ from typing import Any
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 
-from api.app.db.connection import get_client
-from api.app.utils.config import mongo_conn_str, mongo_timeouts_ms
+from ....api.app.database.connection import get_database
+from ....api.app.utils.config import mongo_conn_str, mongo_timeouts_ms
 
 
 def _mongo_url() -> str:
@@ -22,7 +22,7 @@ def get_db(name: str = "lucid") -> Database:
     """
     Get (and lazily create) the named database.
     """
-    return get_client().get_database(name)
+    return get_database().get_database(name)
 
 
 def ping(timeout_ms: int | None = None) -> bool:
@@ -34,7 +34,7 @@ def ping(timeout_ms: int | None = None) -> bool:
         if timeout_ms is not None:
             sst = cto = timeout_ms
         # Running a command triggers server selection
-        get_client().admin.command("ping")
+        get_database().admin.command("ping")
         return True
     except PyMongoError:
         return False

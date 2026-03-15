@@ -10,7 +10,7 @@ import os
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Optional jinja2 import
 try:

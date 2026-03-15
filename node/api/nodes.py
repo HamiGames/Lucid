@@ -26,9 +26,11 @@ from ..models.node import (
 )
 from ..repositories.node_repository import NodeRepository
 
-logging.basicConfig(level=logging.INFO)
+from ...node.config import get_settings
+settings = get_settings()
+logging.basicConfig(level=settings.LOG_LEVEL)
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter()

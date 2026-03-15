@@ -6,16 +6,32 @@ LUCID Session Chunker - SPEC-1B Implementation
 
 import asyncio
 import hashlib
-import sessions.core.logging as logging
-import os
+
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional, Tuple
 import zstandard as zstd
 
-logger = logging.get_logger(__name__)
+from ..api.config import get_config, load_config
 
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().log_level(), "INFO").upper()
+try:  
+    from .logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+    
+logger(__name__)
+settings(__name__)
 @dataclass
 class ChunkMetadata:
     """Metadata for a session chunk"""

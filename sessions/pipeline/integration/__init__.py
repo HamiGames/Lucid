@@ -2,22 +2,11 @@
 """
 Session Pipeline Integration Module
 Provides clients for interacting with external services
+path: ..pipeline.integration
+file: sessions/pipeline/integration/__init__.py
+the integration calls the sessions pipeline integration
 """
 
-from .blockchain_engine_client import BlockchainEngineClient
-from .node_manager_client import NodeManagerClient
-from .api_gateway_client import APIGatewayClient
-from .auth_service_client import AuthServiceClient
-from .service_base import ServiceClientBase, ServiceError, ServiceTimeoutError
-from .integration_manager import IntegrationManager
+from ...core.logging import *
 
-__all__ = [
-    'BlockchainEngineClient',
-    'NodeManagerClient',
-    'APIGatewayClient',
-    'AuthServiceClient',
-    'ServiceClientBase',
-    'ServiceError',
-    'ServiceTimeoutError',
-    'IntegrationManager',
-]
+__all__ = [ '*'	]

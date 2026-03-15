@@ -4,14 +4,23 @@ Lucid Session Management Pipeline Configuration
 Configuration management for session processing pipelines
 """
 
-import os
+
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-import sessions.core.logging as logging
 
-logger = logging.get_logger(__name__)
+
+import logging
+import os
+logger = logging.getLogger(__name__)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+settings = os.getenv("LOG_LEVEL", "INFO").uper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 
 @dataclass
 class WorkerConfig:

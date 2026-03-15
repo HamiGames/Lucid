@@ -11,9 +11,9 @@ except Exception:  # pragma: no cover
 from fastapi import APIRouter, HTTPException, Query
 from pymongo.errors import DuplicateKeyError
 
-from api.app.db.users_repo import UsersRepo
-from api.app.schemas.errors import ErrorResponse
-from api.app.schemas.users import PaginatedUsers, RegisterRequest, UserPublic
+from ....api.app.db.users_repo import UsersRepo
+from ....api.app.schemas.errors import ErrorResponse
+from ....api.app.schemas.users import PaginatedUsers, RegisterRequest, UserPublic
 
 router = APIRouter()
 

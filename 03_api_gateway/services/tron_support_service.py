@@ -5,15 +5,24 @@ File: 03_api_gateway/services/tron_support_service.py
 Purpose: Service for handling TRON support services (payout router, wallet manager, USDT manager)
 """
 
-import 03_api_gateway.api.app.utils.logging as logging
+
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
+import os
+from ..api.app.config import get_settings
+settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
 
-from app.config import get_settings
-
-logger = logging.get_logger(__name__)
-settings = get_settings()
+logger(__name__)
+settings(__name__)
 
 
 class TronSupportServiceError(Exception):

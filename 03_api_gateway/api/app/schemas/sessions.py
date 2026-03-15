@@ -190,7 +190,7 @@ class TrustPolicy(BaseModel):
     clipboard_controls: ClipboardControls = Field(..., description="Clipboard control settings")
     file_transfer_controls: FileTransferControls = Field(..., description="File transfer control settings")
     system_controls: SystemControls = Field(..., description="System access control settings")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Policy creation timestamp")
+    created_at: datetime = Field(default_factory=datetime.timezone, description="Policy creation timestamp")
     policy_hash: str = Field(..., description="SHA256 hash of policy")
     signature: Optional[str] = Field(None, description="Ed25519 signature of policy")
 
@@ -215,4 +215,4 @@ class SessionErrorResponse(BaseModel):
     error_code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")

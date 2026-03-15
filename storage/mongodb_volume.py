@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import pymongo
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class MongoVolumeManager:

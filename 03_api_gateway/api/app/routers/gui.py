@@ -7,11 +7,25 @@ Purpose: Proxy endpoints to gui_api_bridge service for Electron GUI integration
 Architecture Note: This router proxies to gui_api_bridge service (isolated GUI integration)
 """
 
-import logging
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
-
-logger = logging.get_logger(__name__)
+from ....api.app.services.gui_bridge_service import gui_bridge_service
 router = APIRouter()
 
 
@@ -31,7 +45,7 @@ class ElectronDisconnectionRequest(BaseModel):
 async def get_gui_bridge_info():
     """Get GUI API Bridge service information"""
     try:
-        from app.services.gui_bridge_service import gui_bridge_service
+        from ....api.app.services.gui_bridge_service import gui_bridge_service
         await gui_bridge_service.initialize()
         info = await gui_bridge_service.get_bridge_info()
         return info
@@ -44,7 +58,7 @@ async def get_gui_bridge_info():
 async def check_gui_bridge_health():
     """Check GUI API Bridge service health"""
     try:
-        from app.services.gui_bridge_service import gui_bridge_service
+        from ....api.app.services.gui_bridge_service import gui_bridge_service
         is_healthy = await gui_bridge_service.health_check()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -65,7 +79,7 @@ async def check_gui_bridge_health():
 async def get_gui_bridge_status():
     """Get GUI API Bridge status"""
     try:
-        from app.services.gui_bridge_service import gui_bridge_service
+        from ....api.app.services.gui_bridge_service import gui_bridge_service
         await gui_bridge_service.initialize()
         return {
             "connected": gui_bridge_service.is_connected,
@@ -82,7 +96,7 @@ async def get_gui_bridge_status():
 async def electron_gui_connect(request: ElectronConnectionRequest = Body(...)):
     """Handle Electron GUI connection to API Gateway"""
     try:
-        from app.services.gui_bridge_service import gui_bridge_service
+        from ....api.app.services.gui_bridge_service import gui_bridge_service
         await gui_bridge_service.initialize()
         result = await gui_bridge_service.handle_electron_connect(request.dict())
         logger.info(f"Electron GUI connected: session_id={request.session_id}")
@@ -96,7 +110,7 @@ async def electron_gui_connect(request: ElectronConnectionRequest = Body(...)):
 async def electron_gui_disconnect(request: ElectronDisconnectionRequest = Body(...)):
     """Handle Electron GUI disconnection from API Gateway"""
     try:
-        from app.services.gui_bridge_service import gui_bridge_service
+        from ....api.app.services.gui_bridge_service import gui_bridge_service
         await gui_bridge_service.initialize()
         result = await gui_bridge_service.handle_electron_disconnect(request.session_id)
         logger.info(f"Electron GUI disconnected: session_id={request.session_id}")

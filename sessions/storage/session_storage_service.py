@@ -5,7 +5,6 @@ Handles session data storage with MongoDB integration and compression
 """
 
 import asyncio
-import sessions.core.logging as logging
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
@@ -15,10 +14,20 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncI
 import redis.asyncio as redis
 from pymongo.errors import DuplicateKeyError, OperationFailure
 import gzip
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+from .config import get_config, load_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings().LOG_LEVEL())
+logger(__name__)
+settings(__name__)
 
 @dataclass
 class StorageConfig:

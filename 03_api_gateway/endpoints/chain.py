@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from datetime import datetime
 
-from ..models.common import ErrorResponse
+from .midcommon import ErrorResponse
 
 router = APIRouter(prefix="/chain", tags=["Blockchain"])
 
@@ -57,7 +57,7 @@ async def get_blockchain_info() -> dict:
         "block_time_seconds": 10,
         "total_transactions": 5000,
         "total_anchored_sessions": 250,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.timezone().isoformat(),
     }
 
 
@@ -89,7 +89,7 @@ async def get_latest_block() -> dict:
         "height": 1000,
         "previous_hash": "0x" + "1" * 64,
         "merkle_root": "0x" + "2" * 64,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.timezone().isoformat(),
         "transactions": [],
         "transaction_count": 0,
         "validator": "node-123",
@@ -135,7 +135,7 @@ async def get_block(block_id: str) -> dict:
         "height": 1000,
         "previous_hash": "0x" + "1" * 64,
         "merkle_root": "0x" + "2" * 64,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.timezone().isoformat(),
         "transactions": [],
         "transaction_count": 0,
         "validator": "node-123",
@@ -225,7 +225,7 @@ async def get_transaction(tx_id: str) -> dict:
         "block_id": "block-1000",
         "block_height": 1000,
         "type": "session_anchor",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.timezone().isoformat(),
         "data": {},
         "status": "confirmed",
     }
@@ -261,7 +261,7 @@ async def get_consensus_info() -> dict:
         "minimum_validators": 3,
         "consensus_timeout_seconds": 30,
         "current_round": 1000,
-        "last_consensus_time": datetime.utcnow().isoformat(),
+        "last_consensus_time": datetime.timezone().isoformat(),
     }
 
 
@@ -309,8 +309,8 @@ async def anchor_session(
         "merkle_root": merkle_root,
         "chunk_count": chunk_count,
         "status": "pending",
-        "transaction_id": f"tx-{datetime.utcnow().timestamp()}",
-        "submitted_at": datetime.utcnow().isoformat(),
+        "transaction_id": f"tx-{datetime.timezone().timestamp()}",
+        "submitted_at": datetime.timezone().isoformat(),
         "message": "Session anchoring request accepted",
     }
 
@@ -355,7 +355,7 @@ async def get_session_anchoring_status(session_id: str) -> dict:
         "block_id": "block-1000",
         "block_height": 1000,
         "confirmations": 10,
-        "anchored_at": datetime.utcnow().isoformat(),
+        "anchored_at": datetime.timezone().isoformat(),
         "merkle_root": "0x" + "0" * 64,
     }
 
@@ -406,7 +406,7 @@ async def verify_merkle_proof(
         "merkle_root": merkle_root,
         "chunk_hash": chunk_hash,
         "proof_valid": True,
-        "verified_at": datetime.utcnow().isoformat(),
+        "verified_at": datetime.timezone().isoformat(),
     }
 
 
@@ -441,6 +441,6 @@ async def get_blockchain_stats() -> dict:
         "average_transactions_per_block": 5.0,
         "blockchain_size_bytes": 1024 * 1024 * 100,  # 100MB
         "active_validators": 10,
-        "last_updated": datetime.utcnow().isoformat(),
+        "last_updated": datetime.timezone().isoformat(),
     }
 

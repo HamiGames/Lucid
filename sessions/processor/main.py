@@ -8,7 +8,6 @@ including FastAPI application setup, health checks, and API endpoints.
 
 import asyncio
 import base64
-import os
 import signal
 import sys
 from contextlib import asynccontextmanager
@@ -27,17 +26,30 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 import uvicorn
+from .chunk_processor import ChunkProcessorService, ProcessingResult
+from .encryption import EncryptionManager
+from .merkle_builder import MerkleTreeManager
+from .config import get_config, load_config, ChunkProcessorConfig
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:
+    import sessions.core.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-from sessions.processor.config import ChunkProcessorConfig, get_config
-from sessions.processor.chunk_processor import ChunkProcessorService, ProcessingResult
-from sessions.processor.encryption import EncryptionManager
-from sessions.processor.merkle_builder import MerkleTreeManager
-from sessions.core.logging import setup_logging, get_logger
 
-# Initialize logging
-setup_logging()
 
-logger = get_logger(__name__)
+logger(__name__)
+settings(__name__)
+
 
 # Global service instances
 chunk_processor_service: Optional[ChunkProcessorService] = None

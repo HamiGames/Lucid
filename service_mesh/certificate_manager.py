@@ -9,9 +9,7 @@ import logging
 import os
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
-
-logger = logging.get_logger(__name__)
-
+logger = logging.getLogger(__name__)
 # Optional cryptography import
 try:
     from cryptography import x509

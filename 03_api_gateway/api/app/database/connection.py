@@ -5,17 +5,32 @@ File: 03_api_gateway/api/app/database/connection.py
 Purpose: MongoDB and Redis connection initialization and management
 Includes tor-proxy bootstrap wait sequence before attempting connections
 """
+import os
 
-import logging
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+from ....api.app.config import Settings, get_settings
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+try: 
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
+
 import asyncio
 import socket
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import redis.asyncio as redis  # pyright: ignore[reportMissingImports]
-from ..config import get_settings
 
-logger = logging.get_logger(__name__)
-settings = get_settings()
+
 
 # Global database clients
 _mongodb_client: Optional[AsyncIOMotorClient] = None

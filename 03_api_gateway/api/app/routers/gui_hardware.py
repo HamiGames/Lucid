@@ -7,10 +7,27 @@ Purpose: Proxy endpoints to gui_hardware_manager service for hardware wallet man
 Architecture Note: This router proxies to gui_hardware_manager service
 """
 
-import logging
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 from fastapi import APIRouter, HTTPException
 
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 logger = logging.get_logger(__name__)
+set_up = logging.setup_logging(__name__)
+
 router = APIRouter()
 
 
@@ -18,7 +35,7 @@ router = APIRouter()
 async def get_gui_hardware_manager_info():
     """Get GUI Hardware Manager service information"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         await gui_hardware_manager_service.initialize()
         info = await gui_hardware_manager_service.get_manager_info()
         return info
@@ -31,7 +48,7 @@ async def get_gui_hardware_manager_info():
 async def check_gui_hardware_manager_health():
     """Check GUI Hardware Manager service health"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         is_healthy = await gui_hardware_manager_service.health_check()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -52,7 +69,7 @@ async def check_gui_hardware_manager_health():
 async def list_hardware_devices():
     """List connected hardware wallet devices"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         await gui_hardware_manager_service.initialize()
         devices = await gui_hardware_manager_service.list_devices()
         return devices
@@ -65,7 +82,7 @@ async def list_hardware_devices():
 async def get_device_details(device_id: str):
     """Get hardware wallet device details"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         await gui_hardware_manager_service.initialize()
         details = await gui_hardware_manager_service.get_device_details(device_id)
         return details
@@ -78,7 +95,7 @@ async def get_device_details(device_id: str):
 async def verify_device(device_id: str):
     """Verify hardware wallet device connection"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         await gui_hardware_manager_service.initialize()
         result = await gui_hardware_manager_service.verify_device(device_id)
         logger.info(f"Device verified: {device_id}")
@@ -92,7 +109,7 @@ async def verify_device(device_id: str):
 async def list_hardware_wallets():
     """List hardware wallet accounts"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         await gui_hardware_manager_service.initialize()
         wallets = await gui_hardware_manager_service.list_wallets()
         return wallets
@@ -105,7 +122,7 @@ async def list_hardware_wallets():
 async def sign_transaction(wallet_id: str):
     """Sign transaction with hardware wallet"""
     try:
-        from app.services.gui_hardware_manager_service import gui_hardware_manager_service
+        from ..services.gui_hardware_manager_service import gui_hardware_manager_service
         await gui_hardware_manager_service.initialize()
         result = await gui_hardware_manager_service.sign_transaction(wallet_id)
         logger.info(f"Transaction signed by wallet: {wallet_id}")

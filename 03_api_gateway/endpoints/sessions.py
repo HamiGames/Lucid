@@ -63,11 +63,11 @@ async def create_session(request: SessionCreateRequest) -> SessionResponse:
         session_id=session_id,
         user_id="user-123",  # Would come from auth context
         status="initializing",
-        created_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
         rdp_host="localhost",
         rdp_port=13389,
         connection_url=f"rdp://localhost:13389?session={session_id}",
-        expires_at=datetime.utcnow(),
+        expires_at=datetime.timezone(),
         configuration=request.configuration or {},
     )
 
@@ -110,8 +110,8 @@ async def get_session(session_id: str) -> SessionDetail:
         session_id=session_id,
         user_id="user-123",
         status="active",
-        created_at=datetime.utcnow(),
-        started_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
+        started_at=datetime.timezone(),
         ended_at=None,
         rdp_host="localhost",
         rdp_port=13389,
@@ -213,11 +213,11 @@ async def update_session_status(
         session_id=session_id,
         user_id="user-123",
         status=new_status,
-        created_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
         rdp_host="localhost",
         rdp_port=13389,
         connection_url=f"rdp://localhost:13389?session={session_id}",
-        expires_at=datetime.utcnow(),
+        expires_at=datetime.timezone(),
         configuration={},
     )
 
@@ -256,7 +256,7 @@ async def terminate_session(
     return {
         "session_id": session_id,
         "status": "terminated",
-        "terminated_at": datetime.utcnow().isoformat(),
+        "terminated_at": datetime.timezone().isoformat(),
         "reason": request.reason if request else "user_requested",
         "message": "Session terminated successfully",
     }
@@ -324,7 +324,7 @@ async def get_session_manifest(session_id: str) -> dict:
     return {
         "session_id": session_id,
         "manifest_version": "1.0",
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.timezone().isoformat(),
         "chunks": [],
         "merkle_root": None,
         "total_chunks": 0,

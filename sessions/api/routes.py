@@ -4,8 +4,7 @@ LUCID Session API Routes - Step 17 Implementation
 FastAPI route definitions for session management
 """
 
-import os
-import logging
+
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, Path as PathParam, Response
@@ -14,13 +13,30 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from ..api.session_api import (
+from .session_api import (
     SessionAPI, CreateSessionRequest, UpdateSessionRequest, SessionResponse,
     SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse,
     StatisticsResponse
 )
+from .config import get_config, load_config, SessionAPIConfig
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().log_level(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level(), "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+    
 
-logger = logging.get_logger(__name__)
+logger(__name__)
+settings(__name__)
 
 # Create router
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
@@ -48,7 +64,7 @@ def get_session_api() -> SessionAPI:
 @router.post("", response_model=SessionResponse, status_code=201)
 async def create_session(
     request: CreateSessionRequest,
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Create a new session"""
     try:
@@ -62,7 +78,7 @@ async def create_session(
 @router.get("/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get session by ID"""
     try:
@@ -80,7 +96,7 @@ async def list_sessions(
     environment: Optional[str] = Query(None, description="Filter by environment"),
     limit: int = Query(50, ge=1, le=100, description="Number of results per page"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """List sessions with filtering and pagination"""
     try:
@@ -95,7 +111,7 @@ async def list_sessions(
 async def update_session(
     session_id: str = PathParam(..., description="Session ID"),
     request: UpdateSessionRequest = None,
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Update session"""
     try:
@@ -109,7 +125,7 @@ async def update_session(
 @router.delete("/{session_id}")
 async def delete_session(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Delete session and all associated data"""
     try:
@@ -125,7 +141,7 @@ async def delete_session(
 @router.post("/{session_id}/start")
 async def start_recording(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Start recording a session"""
     try:
@@ -139,7 +155,7 @@ async def start_recording(
 @router.post("/{session_id}/stop")
 async def stop_recording(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Stop recording a session"""
     try:
@@ -153,7 +169,7 @@ async def stop_recording(
 @router.post("/{session_id}/pause")
 async def pause_recording(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Pause recording a session"""
     try:
@@ -186,7 +202,7 @@ async def pause_recording(
 @router.post("/{session_id}/resume")
 async def resume_recording(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Resume recording a session"""
     try:
@@ -226,7 +242,7 @@ async def get_session_chunks(
     status: Optional[str] = Query(None, description="Filter by chunk status"),
     start_time: Optional[datetime] = Query(None, description="Filter chunks after timestamp"),
     end_time: Optional[datetime] = Query(None, description="Filter chunks before timestamp"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get chunks for a session"""
     try:
@@ -241,7 +257,7 @@ async def get_session_chunks(
 async def get_chunk(
     session_id: str = PathParam(..., description="Session ID"),
     chunk_id: str = PathParam(..., description="Chunk ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get chunk by ID"""
     try:
@@ -282,7 +298,7 @@ async def get_chunk(
 async def download_chunk(
     session_id: str = PathParam(..., description="Session ID"),
     chunk_id: str = PathParam(..., description="Chunk ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Download chunk data"""
     try:
@@ -319,7 +335,7 @@ async def download_chunk(
 @router.get("/{session_id}/pipeline", response_model=PipelineResponse)
 async def get_pipeline_status(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get pipeline status for a session"""
     try:
@@ -333,7 +349,7 @@ async def get_pipeline_status(
 @router.post("/{session_id}/pipeline/pause")
 async def pause_pipeline(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Pause pipeline processing"""
     try:
@@ -366,7 +382,7 @@ async def pause_pipeline(
 @router.post("/{session_id}/pipeline/resume")
 async def resume_pipeline(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Resume pipeline processing"""
     try:
@@ -401,7 +417,7 @@ async def resume_pipeline(
 @router.get("/{session_id}/statistics", response_model=StatisticsResponse)
 async def get_session_statistics(
     session_id: str = PathParam(..., description="Session ID"),
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get detailed statistics for a session"""
     try:
@@ -414,7 +430,7 @@ async def get_session_statistics(
 
 @router.get("/statistics")
 async def get_system_statistics(
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get system-wide statistics"""
     try:
@@ -429,7 +445,7 @@ async def get_system_statistics(
 
 @router.get("/health")
 async def health_check(
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Health check endpoint"""
     try:
@@ -467,7 +483,7 @@ async def health_check(
 
 @router.get("/metrics")
 async def get_metrics(
-    api: SessionAPI = Depends(get_session_api)
+    api: SessionAPI= Depends(get_session_api)
 ):
     """Get Prometheus-formatted metrics"""
     try:

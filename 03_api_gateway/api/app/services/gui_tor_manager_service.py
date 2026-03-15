@@ -1,19 +1,29 @@
-"""
+f"""
 GUI Tor Manager Service
-
+Path: ..03_api_gateway.api.app.services.gui_tor_manager_service.py
+alt_path: .....services.gui_tor_manager_service.py
 File: 03_api_gateway/api/app/services/gui_tor_manager_service.py
 Purpose: Service for handling GUI Tor Manager integration and proxy operations
 """
-
-import logging
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(log_level)
+    logging.basicConfig(level=log_level)
 
-from ..config import get_settings
+logger(__name__)
+settings(__name__)
 
-logger = logging.get_logger(__name__)
-settings = get_settings()
+
 
 
 class GuiTorManagerServiceError(Exception):
@@ -66,7 +76,7 @@ class GuiTorManagerService:
                 f"{self.base_url}/health",
                 timeout=aiohttp.ClientTimeout(total=5)
             ) as response:
-                self.last_check = datetime.utcnow()
+                self.last_check = datetime.timezone()
                 self.is_connected = response.status == 200
                 return self.is_connected
                 

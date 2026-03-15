@@ -4,7 +4,7 @@ LUCID Session Storage Service - Main Entry Point
 Step 17 Implementation: Session Storage & API
 """
 
-import sessions.core.logging as logging
+
 import os
 from datetime import datetime
 from pathlib import Path
@@ -13,41 +13,47 @@ from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from sessions.storage.session_storage import SessionStorage, StorageConfig as StorageConfigDataclass, StorageMetrics
-from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
-from sessions.storage.config import StorageConfig as StorageConfigManager
+from .session_storage import SessionStorage, StorageMetrics, StorageConfig
+from .chunk_store import ChunkStore, ChunkStoreConfig
+from .session_storage_service import SessionStorageService
+from .config import get_config, load_config
 
-# Configure logging (structured logging per master design)
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.get_logger(__name__)
-
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=getattr(logging, settings().log_level(), logging.INFO))
+    
+logger(__name__)
+settings(__name__)
 # Global storage instances
 session_storage: Optional[SessionStorage] = None
 chunk_store: Optional[ChunkStore] = None
-storage_config_manager: Optional[StorageConfigManager] = None
-
+storage_config_manager: Optional[SessionStorageService] = None
+storage_metrics: Optional[StorageMetrics] = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    global session_storage, chunk_store, storage_config_manager
+    global session_storage, chunk_store, storage_config_manager, storage_metrics
     
     # Startup
     logger.info("Starting Session Storage Service...")
     
     try:
         # Initialize configuration using Pydantic Settings (per master design)
-        storage_config_manager = StorageConfigManager()
+        storage_config_manager = SessionStorageService()
         
         # Get configuration dictionaries for dataclass-based configs
         storage_config_dict = storage_config_manager.get_storage_config_dict()
         chunk_config_dict = storage_config_manager.get_chunk_store_config_dict()
         
         # Create dataclass-based configs (for backward compatibility with existing code)
-        storage_config = StorageConfigDataclass(**storage_config_dict)
+        storage_config = StorageConfig(**storage_config_dict)
         chunk_config = ChunkStoreConfig(**chunk_config_dict)
         
         # Get database URLs from settings (already validated)

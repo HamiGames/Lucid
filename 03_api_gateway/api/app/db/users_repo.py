@@ -8,7 +8,7 @@ from bson import ObjectId
 from pymongo import ASCENDING, ReturnDocument
 from pymongo.collection import Collection
 
-from api.app.db.connection import get_db
+from .connection import get_db
 
 # ---- Project params / constants (Cluster B) ----
 USERS_COLLECTION = "users"

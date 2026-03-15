@@ -3,7 +3,7 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class ErrorResponse(BaseModel):
@@ -11,7 +11,7 @@ class ErrorResponse(BaseModel):
     error_code: str = Field(..., description="Machine-readable error code")
     message: str = Field(..., description="Human-readable error message")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone(timezone.utc), description="Error timestamp")
     
     class Config:
         json_encoders = {
@@ -31,7 +31,7 @@ class ValidationErrorResponse(BaseModel):
     error_code: str = Field(default="validation_error", description="Error code")
     message: str = Field(..., description="Validation error message")
     errors: list[ValidationError] = Field(..., description="List of validation errors")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
 
 
 class NotFoundError(BaseModel):
@@ -40,7 +40,7 @@ class NotFoundError(BaseModel):
     message: str = Field(..., description="Resource not found message")
     resource_type: str = Field(..., description="Type of resource not found")
     resource_id: str = Field(..., description="Identifier of resource not found")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
 
 
 class ConflictError(BaseModel):
@@ -48,7 +48,7 @@ class ConflictError(BaseModel):
     error_code: str = Field(default="conflict", description="Error code")
     message: str = Field(..., description="Conflict error message")
     conflicting_resource: Optional[str] = Field(None, description="Conflicting resource identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
 
 
 class UnauthorizedError(BaseModel):
@@ -56,7 +56,7 @@ class UnauthorizedError(BaseModel):
     error_code: str = Field(default="unauthorized", description="Error code")
     message: str = Field(..., description="Unauthorized access message")
     required_permission: Optional[str] = Field(None, description="Required permission")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
 
 
 class ForbiddenError(BaseModel):
@@ -64,7 +64,7 @@ class ForbiddenError(BaseModel):
     error_code: str = Field(default="forbidden", description="Error code")
     message: str = Field(..., description="Forbidden access message")
     required_role: Optional[str] = Field(None, description="Required role")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
 
 
 class RateLimitError(BaseModel):
@@ -74,7 +74,7 @@ class RateLimitError(BaseModel):
     retry_after: int = Field(..., description="Seconds to wait before retry")
     limit: int = Field(..., description="Request limit per time window")
     window: str = Field(..., description="Time window description")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
 
 
 class InternalServerError(BaseModel):
@@ -82,4 +82,4 @@ class InternalServerError(BaseModel):
     error_code: str = Field(default="internal_server_error", description="Error code")
     message: str = Field(..., description="Internal server error message")
     request_id: Optional[str] = Field(None, description="Request ID for tracking")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")

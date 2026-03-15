@@ -17,7 +17,6 @@ Features:
 
 import asyncio
 import hashlib
-import sessions.core.logging as logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -25,12 +24,28 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from pathlib import Path
 import json
+from .encryption import ChunkEncryptor
+from .merkle_builder import MerkleTreeBuilder
 
-from sessions.processor.encryption import ChunkEncryptor
-from sessions.processor.merkle_builder import MerkleTreeBuilder
-from sessions.processor.config import ChunkProcessorConfig
+from .config import ChunkProcessorConfig, load_config , get_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-logger = logging.get_logger(__name__)
+
+logger(__name__)
+settings(__name__)
 
 
 @dataclass

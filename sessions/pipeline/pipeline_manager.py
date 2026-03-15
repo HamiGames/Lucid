@@ -17,23 +17,26 @@ import base64
 import secrets
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from .session_pipeline_manager import SessionMetrics
+from .state_machine import PipelineStateMachine, PipelineState, StateTransition
+from .config import PipelineSettings, WorkerConfig, PipelineConfig
+import os
+log_level = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(WorkerConfig().CONFIG_FILE(), "INFO").upper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-from sessions.pipeline.state_machine import PipelineStateMachine, PipelineState, StateTransition
-from sessions.pipeline.config import PipelineConfig
-from sessions.core.logging import get_logger
-
-
-logger = get_logger(__name__)
-
-@dataclass
-class PipelineMetrics:
-    """Pipeline performance metrics"""
-    total_chunks_processed: int = 0
-    total_processing_time_ms: float = 0.0
-    average_processing_time_ms: float = 0.0
-    error_count: int = 0
-    last_processed_at: Optional[datetime] = None
-    throughput_chunks_per_second: float = 0.0
+logger(__name__)
+settings(__name__)
 
 @dataclass
 class PipelineStage:
@@ -45,7 +48,7 @@ class PipelineStage:
     buffer_size: int = 1000
     timeout_seconds: int = 30
     retry_count: int = 3
-    metrics: PipelineMetrics = field(default_factory=PipelineMetrics)
+    metrics: SessionMetrics = field(default_factory=SessionMetrics)
     last_error: Optional[str] = None
 
 @dataclass
@@ -77,7 +80,7 @@ class PipelineManager:
         
         # Initialize integration manager for external service communication
         try:
-            from sessions.pipeline.integration.integration_manager import IntegrationManager
+            from ...sessions.pipeline.integration.integration_manager import IntegrationManager
             self.integrations = IntegrationManager(self.config)
             logger.info("Integration manager initialized")
         except Exception as e:

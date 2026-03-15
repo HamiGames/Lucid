@@ -6,8 +6,6 @@ Handles chunk storage operations and file management
 
 import asyncio
 import hashlib
-import sessions.core.logging as logging
-import os
 import shutil
 import json
 import time
@@ -19,8 +17,22 @@ import aiofiles.os
 from dataclasses import dataclass
 import zstandard as zstd
 import lz4.frame
+import os
+from .config import get_config, load_config
 
-logger = logging.get_logger(__name__)
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try: 
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
+    
+logger(__name__)
+settings(__name__)
 
 # Optional import from recorder (lazy loading to avoid module initialization issues)
 # Note: Module-level initialization in recorder tries to create directories which fails in read-only containers

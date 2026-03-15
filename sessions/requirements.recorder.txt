@@ -16,9 +16,6 @@ pymongo>=4.6.0
 # Cryptography and hashing
 blake3>=0.3.3  # Required by core/merkle_builder.py for BLAKE3 hashing
 
-# Compression libraries
-# Core compression (always available)
-# gzip is built into Python standard library
 
 # Optional compression libraries
 lz4>=4.3.2
@@ -33,7 +30,8 @@ numpy>=1.24.0
 # System monitoring
 psutil>=5.9.0
 netifaces>=0.11.0
-
+quartz==0.0.1.dev0
+AppKit>=0.2.6
 # Logging
 structlog>=23.2.0
 

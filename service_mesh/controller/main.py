@@ -27,7 +27,7 @@ logging.basicConfig(
     level=getattr(logging, log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ServiceMeshController:

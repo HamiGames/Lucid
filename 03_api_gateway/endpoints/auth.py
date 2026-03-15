@@ -72,7 +72,7 @@ async def login(request: LoginRequest) -> LoginResponse:
         message="Magic link sent to your email",
         email=request.email,
         expires_in=900,  # 15 minutes
-        request_id=f"req-{datetime.utcnow().timestamp()}",
+        request_id=f"req-{datetime.timezone().timestamp()}",
     )
 
 
@@ -194,7 +194,7 @@ async def logout(
     
     return LogoutResponse(
         message="Logout successful",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
     )
 
 
@@ -276,7 +276,7 @@ async def sign_with_hardware_wallet(
         "signature": "0xmock-signature",
         "message": message,
         "wallet_type": wallet_type,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.timezone().isoformat(),
     }
 
 
@@ -319,8 +319,8 @@ async def validate_token(
         user_id="user-123",
         email="user@example.com",
         roles=["user"],
-        exp=int(datetime.utcnow().timestamp()) + 900,
-        iat=int(datetime.utcnow().timestamp()),
+        exp=int(datetime.timezone().timestamp()) + 900,
+        iat=int(datetime.timezone().timestamp()),
         token_type="access",
     )
 

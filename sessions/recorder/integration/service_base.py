@@ -5,23 +5,30 @@ Provides common functionality for service communication
 """
 
 import asyncio
-import logging
+
 import os
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
 import httpx
 from datetime import datetime
 
-# Use core.logging if available, fallback to standard logging
-try:
-    from sessions.core.logging import get_logger
+from ..config import RecorderConfig, RecorderSettings
+settings= os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ...core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
 except ImportError:
-    logger = logging.get_logger(__name__)
-    def get_logger(name):
-        return logging.get_logger(name)
-
-logger = get_logger(__name__)
-
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
+logger(__name__)
+settings(__name__)
 
 class ServiceError(Exception):
     """Base exception for service communication errors"""

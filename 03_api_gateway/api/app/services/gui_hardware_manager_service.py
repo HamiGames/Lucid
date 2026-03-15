@@ -1,20 +1,24 @@
 """
 GUI Hardware Manager Service
-
+path: ..03_api_gateway.api.app.services.gui_hardware_manager_service.py
+alt_path: .....services.gui_hardware_manager_service.py
 File: 03_api_gateway/api/app/services/gui_hardware_manager_service.py
 Purpose: Service for handling GUI Hardware Manager integration and proxy operations
 """
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(log_level)
+    logging.basicConfig(level=log_level)
 
-import logging
-import aiohttp
-from typing import Dict, Any, Optional
-from datetime import datetime
-
-from ..config import get_settings
-
-logger = logging.get_logger(__name__)
-settings = get_settings()
-
+logger(__name__)
+settings(__name__)
 
 class GuiHardwareManagerServiceError(Exception):
     """GUI Hardware Manager service error"""
@@ -66,7 +70,7 @@ class GuiHardwareManagerService:
                 f"{self.base_url}/health",
                 timeout=aiohttp.ClientTimeout(total=5)
             ) as response:
-                self.last_check = datetime.utcnow()
+                self.last_check = datetime.timezone()
                 self.is_connected = response.status == 200
                 return self.is_connected
                 

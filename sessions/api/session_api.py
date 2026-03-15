@@ -5,8 +5,7 @@ REST API for session management operations
 """
 
 import asyncio
-import logging
-import os
+
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
@@ -22,12 +21,29 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from ..storage.session_storage import SessionStorage
-from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
-from ..storage.config import StorageConfig as StorageConfigManager
-from ..core.session_orchestrator import SessionPipeline, PipelineStage
+from ...sessions.storage.session_storage import SessionStorage
+from ...sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
+from ...sessions.storage.config import StorageConfig as StorageConfigManager
+from ...sessions.pipeline.pipeline_manager import SessionPipeline, PipelineStage
+from .config import get_config, load_config
 
-logger = logging.get_logger(__name__)
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().log_level(), "INFO").upper()
+try:  
+    from ...sessions.core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level(), "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+    
+logger(__name__)
+settings(__name__)
 
 # Safe environment variable handling
 def safe_int_env(key: str, default: int) -> int:
@@ -162,7 +178,7 @@ class SessionAPI:
         rdp_controller_client: Optional[Any] = None
     ):
         """
-        Initialize SessionAPI with MongoDB and Redis URLs from environment
+        Initialize SessionAPIwith MongoDB and Redis URLs from environment
         
         Args:
             mongo_url: MongoDB connection URL
@@ -200,7 +216,7 @@ class SessionAPI:
         chunk_config_dict = storage_config_manager.get_chunk_store_config_dict()
         
         # Import the dataclass StorageConfig from session_storage (not the Pydantic BaseModel)
-        from ..storage.session_storage import StorageConfig as StorageConfigDataclass
+        from ...sessions.storage.session_storage import StorageConfig as StorageConfigDataclass
         
         # Create dataclass-based configs (for backward compatibility with existing code)
         storage_config = StorageConfigDataclass(**storage_config_dict)
@@ -213,7 +229,7 @@ class SessionAPI:
         # Store RDP controller client
         self.rdp_controller_client = rdp_controller_client
         
-        logger.info("SessionAPI initialized")
+        logger.info("SessionAPIinitialized")
     
     async def create_session(self, request: CreateSessionRequest) -> SessionResponse:
         """Create a new session"""
@@ -809,6 +825,6 @@ class SessionAPI:
         try:
             self.mongo_client.close()
             await self.session_storage.close()
-            logger.info("SessionAPI connections closed")
+            logger.info("SessionAPIconnections closed")
         except Exception as e:
             logger.error(f"Failed to close API connections: {e}")

@@ -5,7 +5,6 @@ Provides common functionality for service communication
 """
 
 import asyncio
-import sessions.core.logging as logging
 import os
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
@@ -13,14 +12,25 @@ import httpx
 from datetime import datetime
 
 # Use core.logging if available, fallback to standard logging
-try:
-    from sessions.core.logging import get_logger
+from ..processor.config import get_config
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+settings = get_config()
+try:  
+    from ...core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
 except ImportError:
-    logger = logging.get_logger(__name__)
-    def get_logger(name):
-        return logging.get_logger(name)
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-logger = get_logger(__name__)
+
+settings(__name__)
+logger(__name__)
+
 
 
 class ServiceError(Exception):

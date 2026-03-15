@@ -6,15 +6,27 @@ Purpose: Handles JWT token validation and user authentication for protected endp
 All configuration from environment variables via app.config.
 """
 
-import app.utils.logging as logging
+
 from typing import Optional, List
 from fastapi import Request
 from starlette.responses import JSONResponse
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 
-from ..config import get_settings
-
-logger = logging.logging.get_loggerger(__name__)
-settings = get_settings()
 
 
 class AuthMiddleware:

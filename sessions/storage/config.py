@@ -4,21 +4,33 @@ Lucid Session Storage Configuration
 Configuration management for session storage service
 """
 
-import os
 import json
 from typing import Dict, Any, Optional
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-import sessions.core.logging as logging
+
 
 try:
     import yaml
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
-
-logger = logging.get_logger(__name__)
+import os
+import logging
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+settings = os.getenv("LOG_LEVEL", "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings().log_level())
+    
+logger(__name__)
+settings(__name__)
 
 
 class StorageSettings(BaseSettings):

@@ -9,9 +9,8 @@ providing clean startup with environment variable configuration.
 No hardcoded values - all configuration from environment variables.
 """
 
-import os
 import sys
-
+import os
 # Ensure site-packages and app directory are in Python path (defensive programming)
 site_packages = '/usr/local/lib/python3.11/site-packages'
 app_path = '/app'
@@ -71,7 +70,7 @@ if __name__ == "__main__":
                     print(f"ERROR: Could not list sessions directory: {list_err}", file=sys.stderr)
             sys.exit(1)
         
-        from sessions.api.main import app
+        from ...sessions.api.main import app
         uvicorn.run(app, host=host, port=port)
     except ImportError as e:
         print(f"ERROR: Failed to import sessions.api.main: {e}", file=sys.stderr)

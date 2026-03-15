@@ -10,7 +10,8 @@ import hashlib
 import uuid
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-logger = logging.get_logger(__name__)
+
+logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 
 @dataclass

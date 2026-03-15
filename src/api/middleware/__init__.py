@@ -1,7 +1,6 @@
-from .auth import AuthMiddleware
-from .logging import LoggingMiddleware
-
-__all__ = [
-    "AuthMiddleware",
-    "LoggingMiddleware",
-]
+""" 
+api middleware package for lucid
+path: ...middleware
+file: src/api/middleware/__init__.py
+the middleware calls the api middleware
+"""

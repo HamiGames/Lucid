@@ -15,10 +15,8 @@ Features:
 - Error handling and validation
 """
 
-import os
 import secrets
 import hashlib
-import sessions.core.logging as logging
 from typing import Optional, Tuple, Dict, Any
 from datetime import datetime
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -27,9 +25,26 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import base64
 
-logger = logging.get_logger(__name__)
+from .config import get_config, load_config  
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
+
+logger(__name__)
+settings(__name__)
 class EncryptionError(Exception):
     """Base exception for encryption-related errors."""
     pass

@@ -6,15 +6,24 @@ Purpose: Service for handling GUI API Bridge integration and proxy operations
 Manages communication with gui_api_bridge service for Electron GUI integration
 """
 
-import 03_api_gateway.api.app.utils.logging as logging
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from app.config import get_settings
-
-logger = logging.get_logger(__name__)
+from ..api.app.config import get_settings
 settings = get_settings()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
+
+logger(__name__)
+settings(__name__)
+
 
 
 class GuiBridgeServiceError(Exception):
@@ -80,7 +89,7 @@ class GuiBridgeService:
                 f"{self.base_url}/health",
                 timeout=aiohttp.ClientTimeout(total=5)
             ) as response:
-                self.last_check = datetime.utcnow()
+                self.last_check = datetime.timezone()
                 self.is_connected = response.status == 200
                 logger.info(f"GUI Bridge health check: {response.status}")
                 return self.is_connected

@@ -9,8 +9,8 @@ providing clean startup with environment variable configuration.
 No hardcoded values - all configuration from environment variables.
 """
 
-import os
 import sys
+import os
 
 # Ensure site-packages is in Python path (per master-docker-design.md)
 site_packages = '/app/usr/local/lib/python3.11/site-packages'

@@ -64,11 +64,11 @@ async def create_user(request: UserCreateRequest) -> UserResponse:
     
     # Mock response
     return UserResponse(
-        user_id=f"user-{datetime.utcnow().timestamp()}",
+        user_id=f"user-{datetime.timezone().timestamp()}",
         email=request.email,
         tron_address=request.tron_address,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
+        updated_at=datetime.timezone(),
         status="active",
         roles=["user"],
         profile={
@@ -120,9 +120,9 @@ async def get_user(user_id: str) -> UserProfile:
         display_name="User",
         bio="Lucid blockchain user",
         avatar_url=None,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
-        last_login=datetime.utcnow(),
+        created_at=datetime.timezone(),
+        updated_at=datetime.timezone(),
+        last_login=datetime.timezone(),
         status="active",
         roles=["user"],
         preferences={
@@ -134,7 +134,7 @@ async def get_user(user_id: str) -> UserProfile:
         statistics={
             "sessions_created": 0,
             "total_observation_time": 0,
-            "last_activity": datetime.utcnow().isoformat(),
+            "last_activity": datetime.timezone().isoformat(),
         },
     )
 
@@ -217,8 +217,8 @@ async def update_user(
         user_id=user_id,
         email="user@example.com",
         tron_address="TXyz123...",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
+        updated_at=datetime.timezone(),
         status="active",
         roles=["user"],
         profile={

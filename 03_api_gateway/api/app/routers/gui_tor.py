@@ -7,10 +7,26 @@ Purpose: Proxy endpoints to gui_tor_manager service for Tor management via GUI
 Architecture Note: This router proxies to gui_tor_manager service
 """
 
-import logging
-from fastapi import APIRouter, HTTPException
 
-logger = logging.get_logger(__name__)
+from fastapi import APIRouter, HTTPException
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
+
+
 router = APIRouter()
 
 
@@ -18,7 +34,7 @@ router = APIRouter()
 async def get_gui_tor_manager_info():
     """Get GUI Tor Manager service information"""
     try:
-        from app.services.gui_tor_manager_service import gui_tor_manager_service
+        from ....api.app.services.gui_tor_manager_service import gui_tor_manager_service
         await gui_tor_manager_service.initialize()
         info = await gui_tor_manager_service.get_manager_info()
         return info
@@ -31,7 +47,7 @@ async def get_gui_tor_manager_info():
 async def check_gui_tor_manager_health():
     """Check GUI Tor Manager service health"""
     try:
-        from app.services.gui_tor_manager_service import gui_tor_manager_service
+        from ....api.app.services.gui_tor_manager_service import gui_tor_manager_service
         is_healthy = await gui_tor_manager_service.health_check()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -52,7 +68,7 @@ async def check_gui_tor_manager_health():
 async def get_tor_status():
     """Get Tor proxy status via GUI Tor Manager"""
     try:
-        from app.services.gui_tor_manager_service import gui_tor_manager_service
+        from ....api.app.services.gui_tor_manager_service import gui_tor_manager_service
         await gui_tor_manager_service.initialize()
         status = await gui_tor_manager_service.get_tor_status()
         return status
@@ -65,7 +81,7 @@ async def get_tor_status():
 async def list_tor_circuits():
     """List active Tor circuits via GUI Tor Manager"""
     try:
-        from app.services.gui_tor_manager_service import gui_tor_manager_service
+        from ....api.app.services.gui_tor_manager_service import gui_tor_manager_service
         await gui_tor_manager_service.initialize()
         circuits = await gui_tor_manager_service.list_circuits()
         return circuits
@@ -78,7 +94,7 @@ async def list_tor_circuits():
 async def request_new_circuit():
     """Request new Tor circuit via GUI Tor Manager"""
     try:
-        from app.services.gui_tor_manager_service import gui_tor_manager_service
+        from ....api.app.services.gui_tor_manager_service import gui_tor_manager_service
         await gui_tor_manager_service.initialize()
         result = await gui_tor_manager_service.request_new_circuit()
         logger.info("New Tor circuit requested")
@@ -92,7 +108,7 @@ async def request_new_circuit():
 async def get_onion_address():
     """Get Tor onion address via GUI Tor Manager"""
     try:
-        from app.services.gui_tor_manager_service import gui_tor_manager_service
+        from ....api.app.services.gui_tor_manager_service import gui_tor_manager_service
         await gui_tor_manager_service.initialize()
         address = await gui_tor_manager_service.get_onion_address()
         return address

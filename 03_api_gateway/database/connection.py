@@ -8,15 +8,23 @@ Purpose: MongoDB connection
 Dependencies: motor (async MongoDB)
 """
 
-import 03_api_gateway.api.app.utils.logging as logging
+
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from 03_api_gateway.api..app.utils.logging import get_logger
-from 03_api_gateway.api..app.config import Settings
 
-logger = logging.get_Logger(__name__)
-settings = Settings()
+from ...app.config import get_settings
+settings = get_settings()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
 
+logger(__name__)
+settings(__name__)
 # Global database client and database
 _client: Optional[AsyncIOMotorClient] = None
 _database: Optional[AsyncIOMotorDatabase] = None

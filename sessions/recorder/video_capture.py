@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import sessions.core.logging as logging
-import os
+
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -19,12 +18,28 @@ import json
 import uuid
 import threading
 import queue
-
 import cv2
 import numpy as np
 from PIL import Image
+from .config import RecorderSettings, RecorderConfig
+import os
 
-logger = logging.get_logger(__name__)
+settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
+logger(__name__)
+settings(__name__)
 
 # Configuration from environment
 VIDEO_CAPTURE_PATH = Path(os.getenv("LUCID_VIDEO_CAPTURE_PATH", "/data/video_capture"))

@@ -4,14 +4,25 @@ Auth Service Integration Client
 Handles interaction with lucid-auth-service for authentication and authorization
 """
 
-import logging
 import os
 from typing import Dict, Any, Optional
-
+from ....sessions.api.config import get_config
 from .service_base import ServiceClientBase, ServiceError
-from core.logging import get_logger
-
-logger = get_logger(__name__)
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+settings = get_config()
+try:  
+    from ...core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+    
+logger = logging.get_logger(__name__)
 
 
 class AuthServiceClient(ServiceClientBase):

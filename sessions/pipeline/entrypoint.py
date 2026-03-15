@@ -9,8 +9,8 @@ providing clean startup with environment variable configuration.
 No hardcoded values - all configuration from environment variables.
 """
 
-import os
 import sys
+import os
 
 if __name__ == "__main__":
     # Get configuration from environment variables (from docker-compose)

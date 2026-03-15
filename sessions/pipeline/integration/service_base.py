@@ -14,7 +14,7 @@ from datetime import datetime
 
 from core.logging import get_logger
 
-logger = get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class ServiceError(Exception):

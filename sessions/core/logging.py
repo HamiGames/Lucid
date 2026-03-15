@@ -4,14 +4,28 @@ Logging utilities for Lucid Session services
 Provides standardized logging setup and logger access
 """
 
-import logging
+
 import sys
 from typing import Optional
-
 # Default log format
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+from ..api.config import get_config, load_config
+import os
+import logging
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().log_level(), "INFO").upper()
+
+logger = logging.getLogger(__name__)
+
+logger.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger(__name__)
+settings(__name__)
 
 def setup_logging(
     level: Optional[str] = None,

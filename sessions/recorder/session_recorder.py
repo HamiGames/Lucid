@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import logging
-import os
+
 import signal
 import sys
 import subprocess
@@ -22,14 +21,30 @@ import uuid
 import hashlib
 import gzip
 
-from sessions.recorder.chunk_generator import ChunkGenerator
+from .chunk_generator import ChunkGenerator
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Lifespan
 from pydantic import BaseModel
+from .config import RecorderSettings, RecorderConfig
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+import os
+settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
 
+logger(__name__)
+settings(__name__)
 # Configuration will be loaded from config module
 # These are kept as fallback defaults for backward compatibility
 RECORDING_PATH = Path(os.getenv("LUCID_RECORDING_PATH", "/app/recordings"))

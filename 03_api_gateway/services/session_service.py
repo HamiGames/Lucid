@@ -1,24 +1,35 @@
 # Session Service Layer
 # Business logic integration between API routes and session pipeline
 
-import 03_api_gateway.api.app.utils.logging as logging
+
 import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
-
-from 03_api_gateway.api..app.schemas.sessions import (  
+from ..api.app.schemas.sessions import (  
     SessionCreate, SessionResponse, SessionDetail, SessionList, 
     SessionState, SessionStateUpdate
 )
-from 03_api_gateway.api..app.db.models.session import RDPSession  
-from app.config import Settings, get_settings
-
+from ..api.app.db.models.session import RDPSession  
+from ..api.app.config import get_settings
 # Import session pipeline components
 import sys
 import os
+from ..api.app.config import get_settings
+settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
+
+logger(__name__)
+settings(__name__)
 # FIX: was '../../../../sessions' which resolves to /sessions (filesystem root) in the container.
 # __file__ = /app/api/app/services/session_service.py → 3 levels up = /app → /app/sessions
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../../sessions'))
@@ -117,7 +128,7 @@ class SessionService:
                 port=3389,  # Default RDP port
                 state=SessionState.INITIALIZING,
                 policy_hash=policy_hash,
-                started_at=datetime.utcnow()
+                started_at=datetime.timezone()
             )
             
             # Insert into MongoDB
@@ -266,7 +277,7 @@ class SessionService:
                 raise ValueError(f"Cannot start session in state: {current_state}")
             
             # Update session state
-            now = datetime.utcnow()
+            now = datetime.timezone()
             await self.db.sessions.update_one(
                 {"_id": session_id},
                 {
@@ -377,7 +388,7 @@ class SessionService:
                 {
                     "$set": {
                         "state": SessionState.FAILED.value,
-                        "ended_at": datetime.utcnow()
+                        "ended_at": datetime.timezone()
                     }
                 }
             )

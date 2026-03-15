@@ -67,7 +67,7 @@ async def create_trust_policy(
         "policy_type": policy_type,
         "rules": rules,
         "status": "active",
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.timezone().isoformat(),
         "created_by": "user-123",
     }
 
@@ -113,8 +113,8 @@ async def get_trust_policy(policy_id: str) -> dict:
             "restrictions": [],
         },
         "status": "active",
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.timezone().isoformat(),
+        "updated_at": datetime.timezone().isoformat(),
     }
 
 
@@ -202,7 +202,7 @@ async def update_trust_policy(
         "policy_type": "user",
         "rules": rules or {},
         "status": status or "active",
-        "updated_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.timezone().isoformat(),
     }
 
 
@@ -288,7 +288,7 @@ async def create_trust_relationship(
         "relationship_type": relationship_type,
         "policy_id": policy_id,
         "status": "active",
-        "established_at": datetime.utcnow().isoformat(),
+        "established_at": datetime.timezone().isoformat(),
     }
 
 
@@ -330,7 +330,7 @@ async def get_trust_relationship(relationship_id: str) -> dict:
         "relationship_type": "user_to_node",
         "policy_id": "policy-789",
         "status": "active",
-        "established_at": datetime.utcnow().isoformat(),
+        "established_at": datetime.timezone().isoformat(),
     }
 
 
@@ -368,6 +368,6 @@ async def verify_trust(
         "action": action,
         "permitted": True,
         "policy_applied": "policy-default",
-        "verified_at": datetime.utcnow().isoformat(),
+        "verified_at": datetime.timezone().isoformat(),
     }
 

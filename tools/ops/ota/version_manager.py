@@ -22,7 +22,7 @@ import aiofiles
 import aiohttp
 import semver
 
-from ...common.security.trust_nothing_engine import (
+from ....common.security.trust_nothing_engine import (
     TrustNothingEngine, SecurityContext, SecurityAssessment,
     TrustLevel, RiskLevel, ActionType, PolicyLevel
 )

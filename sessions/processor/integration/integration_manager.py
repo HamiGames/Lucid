@@ -4,25 +4,37 @@ Integration Manager for Session Processor
 Manages initialization and lifecycle of integration clients
 """
 
-import sessions.core.logging as logging
 import os
+
 from typing import Optional, Dict, Any
 
 # Use core.logging if available, fallback to standard logging
-try:
-    from sessions.core.logging import get_logger
+from ...config import get_config
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+settings = get_config()
+try:  
+    from ...core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
 except ImportError:
-    logger = logging.get_logger(__name__)
-    def get_logger(name):
-        return logging.get_logger(name)
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger(__name__)
+settings(__name__)
+
 
 # Import clients from pipeline integration (shared across services)
 # Note: PYTHONPATH includes /app, so sessions.pipeline.integration is accessible
 try:
-    from sessions.pipeline.integration.blockchain_engine_client import BlockchainEngineClient
-    from sessions.pipeline.integration.node_manager_client import NodeManagerClient
-    from sessions.pipeline.integration.api_gateway_client import APIGatewayClient
-    from sessions.pipeline.integration.auth_service_client import AuthServiceClient
+    from ...pipeline.integration.blockchain_engine_client import BlockchainEngineClient
+    from ...pipeline.integration.node_manager_client import NodeManagerClient
+    from ...pipeline.integration.api_gateway_client import APIGatewayClient
+    from ...pipeline.integration.auth_service_client import AuthServiceClient
 except ImportError:
     # Fallback if pipeline integration clients are not available
     BlockchainEngineClient = None
@@ -39,7 +51,7 @@ except ImportError:
     SessionPipelineClient = None
     SessionStorageClient = None
 
-logger = get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class IntegrationManager:

@@ -4,16 +4,27 @@ Meta Endpoints Router
 File: 03_api_gateway/api/app/routers/meta.py
 Purpose: Service metadata, health checks, and version information
 """
-
-import logging
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 import time
 from datetime import datetime
 from fastapi import APIRouter, Response
-from app.models.common import ServiceInfo, HealthStatus
-from app.config import get_settings
+from ....api.app.models.common import ServiceInfo, HealthStatus
 
-logger = logging.get_logger(__name__)
-settings = get_settings()
 router = APIRouter()
 
 # Track service start time for uptime calculation
@@ -26,7 +37,7 @@ async def get_service_info():
     return ServiceInfo(
         service_name=settings.SERVICE_NAME,
         version="1.0.0",
-        build_date=datetime.utcnow(),
+        build_date=datetime.timezone(),
         environment=settings.ENVIRONMENT,
         features=["authentication", "rate_limiting", "ssl_termination", "distroless"]
     )
@@ -54,7 +65,7 @@ async def health_check():
     
     return HealthStatus(
         status="healthy",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
         service=settings.SERVICE_NAME,
         version="1.0.0",
         dependencies=dependencies,
@@ -79,7 +90,7 @@ async def get_metrics():
     """Get service metrics (requires authentication)"""
     # TODO: Implement actual metrics collection
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.timezone().isoformat(),
         "metrics": {
             "requests_per_second": 0,
             "response_time_p50": 0,

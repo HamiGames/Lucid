@@ -16,7 +16,7 @@ except ImportError as e:  # pragma: no cover
 from pymongo.collection import Collection
 from pymongo.errors import PyMongoError
 
-from api.app.db.connection import get_db
+from ....api.app.database.connection import get_database as get_db
 
 # ---- Project params / constants (Cluster B) --------------------------------
 USERS_COLLECTION = "users"

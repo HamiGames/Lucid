@@ -7,8 +7,6 @@
 from __future__ import annotations
 
 import asyncio
-import sessions.core.logging as logging
-import os
 import time
 import hashlib
 from datetime import datetime, timezone
@@ -23,8 +21,24 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
 import httpx
+from ..pipeline.config import PipelineSettings, PipelineConfig
+import os
+log_level = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(PipelineConfig().CONFIG_FILE(), "INFO").upper()
+try: 
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-logger = logging.get_logger(__name__)
+logger(__name__)
+settings(__name__)
 
 # Configuration from environment - Updated for dual-chain architecture
 BLOCKCHAIN_CONFIG_PATH = Path(os.getenv("LUCID_BLOCKCHAIN_CONFIG_PATH", "/data/blockchain"))

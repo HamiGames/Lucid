@@ -5,18 +5,30 @@ Session lifecycle management with 6-state pipeline
 """
 
 import asyncio
-import sessions.core.logging as logging
 import time
 from enum import Enum
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
+from .config import PipelineSettings, WorkerConfig
+import os
+log_level = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(WorkerConfig().CONFIG_FILE(), "INFO").upper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
-
+logger(__name__)
+settings(__name__)
 class SessionState(Enum):
     """6-State Session Pipeline"""
     INITIALIZING = "initializing"

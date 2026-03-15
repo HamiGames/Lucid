@@ -7,11 +7,29 @@ Purpose: Proxy endpoints to gui_docker_manager service for Docker management via
 Architecture Note: This router proxies to gui_docker_manager service
 """
 
-import logging
+
 from fastapi import APIRouter, HTTPException
 
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 
-logger = logging.get_logger(__name__)
+
+
+
 router = APIRouter()
 
 
@@ -19,7 +37,7 @@ router = APIRouter()
 async def get_gui_docker_manager_info():
     """Get GUI Docker Manager service information"""
     try:
-        from app.services.gui_docker_manager_service import gui_docker_manager_service
+        from ..services.gui_docker_manager_service import gui_docker_manager_service
         await gui_docker_manager_service.initialize()
         info = await gui_docker_manager_service.get_manager_info()
         return info
@@ -32,7 +50,7 @@ async def get_gui_docker_manager_info():
 async def check_gui_docker_manager_health():
     """Check GUI Docker Manager service health"""
     try:
-        from app.services.gui_docker_manager_service import gui_docker_manager_service
+        from ..services.gui_docker_manager_service import gui_docker_manager_service
         is_healthy = await gui_docker_manager_service.health_check()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -53,7 +71,7 @@ async def check_gui_docker_manager_health():
 async def list_containers():
     """List Docker containers via GUI Docker Manager"""
     try:
-        from app.services.gui_docker_manager_service import gui_docker_manager_service
+        from ..services.gui_docker_manager_service import gui_docker_manager_service
         await gui_docker_manager_service.initialize()
         containers = await gui_docker_manager_service.list_containers()
         return containers
@@ -66,7 +84,7 @@ async def list_containers():
 async def get_container_details(container_id: str):
     """Get Docker container details via GUI Docker Manager"""
     try:
-        from app.services.gui_docker_manager_service import gui_docker_manager_service
+        from ..services.gui_docker_manager_service import gui_docker_manager_service
         await gui_docker_manager_service.initialize()
         details = await gui_docker_manager_service.get_container_details(container_id)
         return details
@@ -79,7 +97,7 @@ async def get_container_details(container_id: str):
 async def start_container(container_id: str):
     """Start Docker container via GUI Docker Manager"""
     try:
-        from app.services.gui_docker_manager_service import gui_docker_manager_service
+        from ..services.gui_docker_manager_service import gui_docker_manager_service
         await gui_docker_manager_service.initialize()
         result = await gui_docker_manager_service.start_container(container_id)
         logger.info(f"Container started: {container_id}")
@@ -93,7 +111,7 @@ async def start_container(container_id: str):
 async def stop_container(container_id: str):
     """Stop Docker container via GUI Docker Manager"""
     try:
-        from app.services.gui_docker_manager_service import gui_docker_manager_service
+        from ..services.gui_docker_manager_service import gui_docker_manager_service
         await gui_docker_manager_service.initialize()
         result = await gui_docker_manager_service.stop_container(container_id)
         logger.info(f"Container stopped: {container_id}")

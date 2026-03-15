@@ -2,16 +2,29 @@
 # Client-controlled session policy enforcement endpoints
 
 from fastapi import APIRouter, HTTPException, Depends, status
-import logging
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 from typing import Optional
 
-from app.schemas.sessions import (
+from ....api.app.schemas.sessions import (
     TrustPolicy, PolicyValidationRequest, PolicyValidationResponse
 )
-from app.schemas.errors import ErrorResponse
-from app.services.session_service import SessionService
-
-logger = logging.get_logger(__name__)
+from ....api.app.schemas.errors import ErrorResponse
+from ....api.app.services.session_service import SessionService
 
 router = APIRouter()
 

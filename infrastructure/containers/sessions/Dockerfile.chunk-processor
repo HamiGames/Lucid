@@ -97,17 +97,8 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/encryptio
     && touch ./sessions/.keep \
     && printf "LUCID_SESSIONS_PIPELINE_DIRECTORY_$(date +%s)" > ./sessions/pipeline/.keep \
     && touch ./sessions/pipeline/.keep \
-    && printf "LUCID_SESSIONS_CORE_DIRECTORY_$(date +%s)" > ./sessions/core/.keep \
-    && touch ./sessions/core/.keep \
     && printf "LUCID_SESSIONS_ENCRYPTION_DIRECTORY_$(date +%s)" > ./sessions/encryption/.keep \
     && touch ./sessions/encryption/.keep \
-    && printf "LUCID_SESSIONS_API_DIRECTORY_$(date +%s)" > ./sessions/api/.keep \
-    && touch ./sessions/api/.keep \
-    && printf "LUCID_SESSIONS_CONFIG_DIRECTORY_$(date +%s)" > ./sessions/config/.keep \
-    && touch ./sessions/config/.keep \
-    && printf "LUCID_SESSIONS_INTEGRATION_DIRECTORY_$(date +%s)" > ./sessions/integration/.keep \
-    && touch ./sessions/integration/.keep \
-    && printf "LUCID_SESSIONS_SECURITY_DIRECTORY_$(date +%s)" > ./sessions/security/.keep \
     && touch ./sessions/security/.keep \
     && printf "LUCID_SESSIONS_STORAGE_DIRECTORY_$(date +%s)" > ./sessions/storage/.keep \
     && touch ./sessions/storage/.keep \
@@ -115,6 +106,14 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/encryptio
     && touch ./sessions/recorder/.keep \
     && printf "LUCID_SESSIONS_PROCESSOR_DIRECTORY_$(date +%s)" > ./sessions/processor/.keep \
     && touch ./sessions/processor/.keep \
+    && printf "LUCID_CHUNKER_DIRECTORY_$(date +%s)" > ./chunker/.keep \
+    && touch ./chunker/.keep \
+    && printf "LUCID_ENCRYPTOR_DIRECTORY_$(date +%s)" > ./encryptor/.keep \
+    && touch ./encryptor/.keep \
+    && printf "LUCID_CHUNKER_SRC_DIRECTORY_$(date +%s)" > ./chunker/src/.keep \
+    && touch ./chunker/src/.keep \
+    && printf "LUCID_ENCRYPTOR_SRC_DIRECTORY_$(date +%s)" > ./encryptor/src/.keep \
+    && touch ./encryptor/src/.keep \
     && echo "Application directories created with markers"
 
 # Application source COPY (chunk processor specific)
@@ -122,14 +121,11 @@ COPY ../../../../sessions/pipeline/ ./sessions/pipeline/
 COPY ../../../../sessions/processor/ ./sessions/processor/
 COPY ../../../../sessions/recorder/ ./sessions/recorder/
 COPY ../../../../sessions/storage/ ./sessions/storage/
-COPY ../../../../sessions/api/ ./sessions/api/
-COPY ../../../../sessions/config/ ./sessions/config/
-COPY ../../../../sessions/integration/ ./sessions/integration/
-COPY ../../../../sessions/security/ ./sessions/security/
-COPY ../../../../sessions/core/ ./sessions/core/
 COPY ../../../../sessions/encryption/ ./sessions/encryption/
-COPY ../../../../sessions/__init__.py ./sessions/__init__.py
-
+COPY ../../../../apps/chunker/ ./chunker/
+COPY ../../../../apps/chunker/src/ ./chunker/src/
+COPY ../../../../apps/encryptor/ ./encryptor/
+COPY ../../../../apps/encryptor/src/ ./encryptor/src/
 # Verify source files
 RUN echo "Verifying chunk processor source files" && \
     test -d ./pipeline && echo "pipeline directory verified" && \
@@ -182,14 +178,11 @@ COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/ /app/sessions/
 COPY --chown=65532:65532 --from=builder /build/sessions/processor/ /app/sessions/processor/
 COPY --chown=65532:65532 --from=builder /build/sessions/recorder/ /app/sessions/recorder/
 COPY --chown=65532:65532 --from=builder /build/sessions/storage/ /app/sessions/storage/
-COPY --chown=65532:65532 --from=builder /build/sessions/api/ /app/sessions/api/
-COPY --chown=65532:65532 --from=builder /build/sessions/config/ /app/sessions/config/
-COPY --chown=65532:65532 --from=builder /build/sessions/integration/ /app/sessions/integration/
-COPY --chown=65532:65532 --from=builder /build/sessions/security/ /app/sessions/security/
-COPY --chown=65532:65532 --from=builder /build/sessions/core/ /app/sessions/core/
 COPY --chown=65532:65532 --from=builder /build/sessions/encryption/ /app/sessions/encryption/
-COPY --chown=65532:65532 --from=builder /build/sessions/__init__.py /app/sessions/__init__.py
-
+COPY --chown=65532:65532 --from=builder /build/chunker/ /app/chunker/
+COPY --chown=65532:65532 --from=builder /build/chunker/src/ /app/chunker/src/
+COPY --chown=65532:65532 --from=builder /build/encryptor/ /app/encryptor/
+COPY --chown=65532:65532 --from=builder /build/encryptor/src/ /app/encryptor/src/
 # Verify packages and application directories
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/pipeline'), os.path.isdir('/app/processor'), os.path.isdir('/app/storage')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All chunk processor packages and application directories verified')"]
 

@@ -9,7 +9,25 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-import logging
+from .session_api import SessionAPI
+from .config import get_config, load_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().log_level(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level(), "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+    
+logger(__name__)
+settings(__name__)
 
 try:
     import yaml
@@ -93,7 +111,7 @@ class SessionAPISettings(BaseSettings):
 class SessionAPIConfig:
     """Session API configuration manager"""
     
-    def __init__(self, settings: Optional[SessionAPISettings] = None, config_file: Optional[str] = None):
+    def __init__(self, settings: Optional[SessionAPI]  = None, config_file: Optional[str] = None):
         """
         Initialize SessionAPIConfig.
         
@@ -300,7 +318,7 @@ def create_default_config_file(config_path: str = "config.yaml"):
 
 
 # Global configuration instance
-_config: Optional[SessionAPISettings] = None
+_config: Optional[SessionAPI]  = None
 
 
 def get_config() -> SessionAPISettings:

@@ -6,8 +6,6 @@ Implements chunk persistence to filesystem and session metadata storage
 
 import asyncio
 import hashlib
-import sessions.core.logging as logging
-import os
 import shutil
 import datetime
 from datetime import datetime, timedelta
@@ -20,12 +18,28 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 import zstandard as zstd
 
-logger = logging.get_logger(__name__)
+from .config import get_config, load_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().LOG_LEVEL(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
+logger(__name__)
+settings(__name__)
 # Optional imports from recorder (lazy loading to avoid module initialization issues)
 # Note: Module-level initialization in recorder tries to create directories which fails in read-only containers
 try:
-    from ..recorder.session_recorder import ChunkMetadata, RecordingSession
+    from ...sessions.recorder.session_recorder import ChunkMetadata, RecordingSession
 except (ImportError, OSError) as e:
     # Define minimal types if recorder module is not available or initialization fails
     logger.warning(f"Failed to import recorder module (will use graceful degradation): {e}")

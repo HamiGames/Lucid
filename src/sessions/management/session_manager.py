@@ -1,7 +1,6 @@
 # Session Management Module for Lucid Project
 # Comprehensive session management with lifecycle, encryption, and audit capabilities
 
-import os
 import json
 import uuid
 import logging

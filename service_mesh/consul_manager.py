@@ -10,7 +10,7 @@ import json
 import os
 from typing import Dict, List, Any, Optional
 
-logger = logging.get_logger(__name__)
+logger = logging.getlogger(__name__)
 
 # Optional consul import
 try:

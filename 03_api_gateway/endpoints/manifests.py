@@ -73,7 +73,7 @@ async def create_manifest(request: ManifestCreateRequest) -> ManifestResponse:
         manifest_id=manifest_id,
         session_id=request.session_id,
         version="1.0",
-        created_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
         chunk_count=len(request.chunk_hashes),
         merkle_root="0x" + "0" * 64,  # Mock Merkle root
         status="created",
@@ -118,7 +118,7 @@ async def get_manifest(manifest_id: str) -> ManifestDetail:
         manifest_id=manifest_id,
         session_id="sess-123",
         version="1.0",
-        created_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
         chunks=[],
         merkle_root="0x" + "0" * 64,
         merkle_tree_height=0,
@@ -130,7 +130,7 @@ async def get_manifest(manifest_id: str) -> ManifestDetail:
             "block_id": "block-123",
             "block_height": 1000,
             "transaction_id": "tx-456",
-            "anchored_at": datetime.utcnow().isoformat(),
+            "anchored_at": datetime.timezone().isoformat(),
         },
         metadata={},
     )
@@ -173,7 +173,7 @@ async def get_manifest_by_session(session_id: str) -> ManifestResponse:
         manifest_id=f"manifest-{uuid4()}",
         session_id=session_id,
         version="1.0",
-        created_at=datetime.utcnow(),
+        created_at=datetime.timezone(),
         chunk_count=0,
         merkle_root="0x" + "0" * 64,
         status="created",
@@ -218,7 +218,7 @@ async def anchor_manifest(manifest_id: str) -> dict:
         "manifest_id": manifest_id,
         "status": "anchoring",
         "transaction_id": f"tx-{uuid4()}",
-        "submitted_at": datetime.utcnow().isoformat(),
+        "submitted_at": datetime.timezone().isoformat(),
         "message": "Manifest submitted to blockchain for anchoring",
     }
 
@@ -254,7 +254,7 @@ async def verify_manifest(manifest_id: str) -> dict:
         "verified": True,
         "merkle_root_matches": True,
         "blockchain_confirmed": True,
-        "verified_at": datetime.utcnow().isoformat(),
+        "verified_at": datetime.timezone().isoformat(),
     }
 
 
@@ -383,6 +383,6 @@ async def get_manifest_status(manifest_id: str) -> dict:
         "block_id": f"block-{uuid4()}",
         "block_height": 1000,
         "confirmations": 10,
-        "anchored_at": datetime.utcnow().isoformat(),
+        "anchored_at": datetime.timezone().isoformat(),
     }
 

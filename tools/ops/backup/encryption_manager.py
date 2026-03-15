@@ -16,7 +16,6 @@ This module provides comprehensive backup encryption including:
 import asyncio
 import hashlib
 import json
-import logging
 import os
 import secrets
 import subprocess

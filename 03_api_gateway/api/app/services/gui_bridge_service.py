@@ -1,20 +1,32 @@
 """
 GUI API Bridge Service
-
+path: ..03_api_gateway.api.app.services.gui_bridge_service.py
+alt_path: ......services.gui_bridge_service.py
 File: 03_api_gateway/api/app/services/gui_bridge_service.py
 Purpose: Service for handling GUI API Bridge integration and proxy operations
 Manages communication with gui_api_bridge service for Electron GUI integration
 """
-
-import logging
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-from ..config import get_settings
+logger(__name__)
+settings(__name__)
 
-logger = logging.get_logger(__name__)
-settings = get_settings()
 
 
 class GuiBridgeServiceError(Exception):
@@ -80,7 +92,7 @@ class GuiBridgeService:
                 f"{self.base_url}/health",
                 timeout=aiohttp.ClientTimeout(total=5)
             ) as response:
-                self.last_check = datetime.utcnow()
+                self.last_check = datetime.timezone()
                 self.is_connected = response.status == 200
                 logger.info(f"GUI Bridge health check: {response.status}")
                 return self.is_connected

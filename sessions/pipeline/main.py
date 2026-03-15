@@ -19,14 +19,33 @@ from fastapi.responses import JSONResponse
 from .pipeline_manager import PipelineManager
 from .config import PipelineConfig, PipelineSettings
 from .state_machine import PipelineState, StateTransition
-from core.logging import setup_logging, get_logger
 
-# Initialize logging
-setup_logging()
+from .config import PipelineConfig, PipelineSettings
+import os
+log_level = os.getenv(PipelineConfig().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").uper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
+
+logger(__name__)
+settings(__name__)
 # Global pipeline manager instance
+pipeline_state: Optional[PipelineState] = None
+pipeline_transition: Optional[StateTransition] = None
+pipeline_config: Optional[PipelineConfig] = None
+pipeline_settings: Optional[PipelineSettings] = None
 pipeline_manager: Optional[PipelineManager] = None
-logger = get_logger(__name__)
+
 
 def setup_signal_handlers():
     """Setup signal handlers for graceful shutdown"""
@@ -44,7 +63,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     global pipeline_manager
     
-    logger = get_logger(__name__)
+    logger = logging.get_logger(__name__)
     logger.info("Starting Lucid Pipeline Manager Service")
     
     try:
@@ -102,7 +121,7 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Global exception handler"""
-    logger = get_logger(__name__)
+    logger = logging.get_logger(__name__)
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     
     return JSONResponse(
@@ -136,7 +155,7 @@ async def health_check():
             "timestamp": asyncio.get_event_loop().time()
         }
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Health check failed")
 
@@ -169,7 +188,7 @@ async def get_service_status():
             "timestamp": asyncio.get_event_loop().time()
         }
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Status check failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Status check failed")
 
@@ -184,7 +203,7 @@ async def create_pipeline(session_id: str):
     try:
         pipeline_id = await pipeline_manager.create_pipeline(session_id)
         
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.info(f"Created pipeline {pipeline_id} for session {session_id}")
         
         return {
@@ -196,7 +215,7 @@ async def create_pipeline(session_id: str):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to create pipeline for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create pipeline")
 
@@ -212,7 +231,7 @@ async def start_pipeline(session_id: str):
         success = await pipeline_manager.start_pipeline(session_id)
         
         if success:
-            logger = get_logger(__name__)
+            logger = logging.get_logger(__name__)
             logger.info(f"Started pipeline for session {session_id}")
             
             return {
@@ -226,7 +245,7 @@ async def start_pipeline(session_id: str):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to start pipeline for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to start pipeline")
 
@@ -242,7 +261,7 @@ async def stop_pipeline(session_id: str):
         success = await pipeline_manager.stop_pipeline(session_id)
         
         if success:
-            logger = get_logger(__name__)
+            logger = logging.get_logger(__name__)
             logger.info(f"Stopped pipeline for session {session_id}")
             
             return {
@@ -254,7 +273,7 @@ async def stop_pipeline(session_id: str):
             raise HTTPException(status_code=500, detail="Failed to stop pipeline")
             
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to stop pipeline for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to stop pipeline")
 
@@ -275,7 +294,7 @@ async def get_pipeline_status(session_id: str):
         return status
         
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to get pipeline status for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get pipeline status")
 
@@ -291,7 +310,7 @@ async def cleanup_pipeline(session_id: str):
         success = await pipeline_manager.cleanup_pipeline(session_id)
         
         if success:
-            logger = get_logger(__name__)
+            logger = logging.get_logger(__name__)
             logger.info(f"Cleaned up pipeline for session {session_id}")
             
             return {
@@ -303,7 +322,7 @@ async def cleanup_pipeline(session_id: str):
             raise HTTPException(status_code=500, detail="Failed to cleanup pipeline")
             
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to cleanup pipeline for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to cleanup pipeline")
 
@@ -329,7 +348,7 @@ async def process_chunk(session_id: str, chunk_data: bytes, chunk_metadata: dict
             raise HTTPException(status_code=500, detail="Failed to process chunk")
             
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to process chunk for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to process chunk")
 
@@ -344,7 +363,7 @@ async def get_configuration():
     try:
         return pipeline_manager.config.get_pipeline_config_dict()
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to get configuration: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get configuration")
 
@@ -405,15 +424,15 @@ async def get_metrics():
         return metrics
         
     except Exception as e:
-        logger = get_logger(__name__)
+        logger = logging.get_logger(__name__)
         logger.error(f"Failed to get metrics: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get metrics")
 
 def main():
     """Main entry point"""
     # Setup logging
-    setup_logging()
-    logger = get_logger(__name__)
+    set_up = logging.setup_logging()
+    logger = logging.get_logger(__name__)
     
     try:
         # Load configuration

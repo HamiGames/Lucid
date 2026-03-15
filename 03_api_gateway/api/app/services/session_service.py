@@ -1,7 +1,50 @@
 # Session Service Layer
 # Business logic integration between API routes and session pipeline
+"""
 
-import logging
+File: 03_api_gateway/api/app/services/session_service.py
+Purpose: Service for handling session management and lifecycle
+Architecture Notes:
+- Integrates with PipelineManager for lifecycle management
+- SessionIdGenerator for unique ID creation
+- MongoDB for persistence
+- SessionState for session state management
+- SessionResponse for session response
+- SessionDetail for session detail
+- SessionList for session list
+- SessionIdGenerator for unique ID creation
+- PipelineManager for lifecycle management
+- MongoDB for persistence
+- SessionState for session state management
+- SessionResponse for session response
+- SessionDetail for session detail
+- SessionList for session list
+- SessionIdGenerator for unique ID creation
+- PipelineManager for lifecycle management
+- MongoDB for persistence
+- SessionState for session state management
+- SessionResponse for session response
+- SessionDetail for session detail
+"""
+import aiohttp
+from typing import Dict, Any, Optional
+from datetime import datetime
+import os
+from ....api.app.config import get_settings, Settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -9,22 +52,21 @@ from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
-from api.app.schemas.sessions import (
+from ..schemas.sessions import (
     SessionResponse, SessionDetail, SessionList, 
     SessionState
 )
-from api.app.db.models.session import RDPSession
-from api.app.utils.config import get_settings
+from ..db.models.session import RDPSession
+
 
 # Import session pipeline components
 import sys
-import os
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../sessions'))
 
-from sessions.pipeline.pipeline_manager import SessionPipelineManager, SessionState as PipelineSessionState
-from sessions.core.session_generator import SessionIdGenerator
-
-logger = logging.get_logger(__name__)
+from .....sessions.pipeline.pipeline_manager import PipelineManager
+from .....sessions.pipeline.state_machine import SessionState
+from .....sessions.core.session_generator import SessionIdGenerator
 
 
 class SessionService:
@@ -32,7 +74,7 @@ class SessionService:
     Business logic layer for session management.
     
     Integrates with:
-    - SessionPipelineManager for lifecycle management
+    - PipelineManager for lifecycle management
     - SessionIdGenerator for unique ID creation
     - MongoDB for persistence
     """
@@ -41,7 +83,7 @@ class SessionService:
         self.settings = get_settings()
         self.mongo_client: Optional[AsyncIOMotorClient] = None
         self.db: Optional[AsyncIOMotorDatabase] = None
-        self.pipeline_manager: Optional[SessionPipelineManager] = None
+        self.pipeline_manager: Optional[PipelineManager] = None
         
     async def _get_mongo_client(self) -> AsyncIOMotorClient:
         """Get MongoDB client connection"""
@@ -50,21 +92,21 @@ class SessionService:
             self.db = self.mongo_client.get_default_database()
         return self.mongo_client
     
-    async def _get_pipeline_manager(self) -> SessionPipelineManager:
+    async def _get_pipeline_manager(self) -> PipelineManager:
         """Get session pipeline manager instance"""
         if not self.pipeline_manager:
-            self.pipeline_manager = SessionPipelineManager()
+            self.pipeline_manager = PipelineManager()
         return self.pipeline_manager
     
     def _map_pipeline_state(self, pipeline_state: str) -> SessionState:
         """Map pipeline session state to API session state"""
         mapping = {
-            PipelineSessionState.INITIALIZING.value: SessionState.INITIALIZING,
-            PipelineSessionState.RECORDING.value: SessionState.RECORDING,
-            PipelineSessionState.FINALIZING.value: SessionState.FINALIZING,
-            PipelineSessionState.ANCHORING.value: SessionState.ANCHORING,
-            PipelineSessionState.COMPLETED.value: SessionState.COMPLETED,
-            PipelineSessionState.FAILED.value: SessionState.FAILED,
+            SessionState.INITIALIZING.value: SessionState.INITIALIZING,
+            SessionState.RECORDING.value: SessionState.RECORDING,
+            SessionState.FINALIZING.value: SessionState.FINALIZING,
+            SessionState.ANCHORING.value: SessionState.ANCHORING,
+            SessionState.COMPLETED.value: SessionState.COMPLETED,
+            SessionState.FAILED.value: SessionState.FAILED,
         }
         return mapping.get(pipeline_state, SessionState.FAILED)
     
@@ -112,7 +154,7 @@ class SessionService:
                 port=3389,  # Default RDP port
                 state=SessionState.INITIALIZING,
                 policy_hash=policy_hash,
-                started_at=datetime.utcnow()
+                started_at=datetime.timezone()
             )
             
             # Insert into MongoDB
@@ -261,7 +303,7 @@ class SessionService:
                 raise ValueError(f"Cannot start session in state: {current_state}")
             
             # Update session state
-            now = datetime.utcnow()
+            now = datetime.timezone()
             await self.db.sessions.update_one(
                 {"_id": session_id},
                 {
@@ -372,7 +414,7 @@ class SessionService:
                 {
                     "$set": {
                         "state": SessionState.FAILED.value,
-                        "ended_at": datetime.utcnow()
+                        "ended_at": datetime.timezone()
                     }
                 }
             )

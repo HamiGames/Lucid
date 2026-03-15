@@ -23,7 +23,7 @@ import uuid
 from ..models.node import NodeResources, ResourceMetrics, CPUMetrics, MemoryMetrics, DiskMetrics, NetworkMetrics
 from ..repositories.node_repository import NodeRepository
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter()

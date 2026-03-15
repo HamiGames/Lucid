@@ -16,8 +16,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Configure logging for Windows compatibility
-from node.peer_discovery import PeerDiscovery
-from node.work_credits import WorkCreditsCalculator
+from ...node.peer_discovery import PeerDiscovery
+from ...node.work_credits import WorkCreditsCalculator
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,7 +27,7 @@ logging.basicConfig(
     ]
 )
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 class NodeSystemTester:
     """Test all node systems for runtime errors and integration issues"""

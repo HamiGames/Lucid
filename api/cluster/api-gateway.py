@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+logger = logging.getLogger()
 
 class APIGateway:
     """Main API Gateway for Lucid RDP services"""

@@ -16,16 +16,30 @@ Features:
 """
 
 import hashlib
-import sessions.core.logging as logging
 import json
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import asyncio
 
-logger = logging.get_logger(__name__)
+from .config import get_config, load_config  
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-
+logger(__name__)
+settings(__name__)
 @dataclass
 class MerkleNode:
     """Represents a node in the Merkle tree."""

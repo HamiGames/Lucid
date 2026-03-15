@@ -1,14 +1,11 @@
 """
 LUCID Session Integration Components
 Blockchain integration and external service connections
+path: ..integration
+file: sessions/integration/__init__.py
+the integration calls the sessions integration
 """
 
-from sessions.integration.blockchain_client import (
-    BlockchainClient, BlockchainNetwork, TransactionStatus, AnchorType, BlockchainConfig, 
-    SessionAnchor, BlockchainTransaction, get_blockchain_client, 
-    initialize_blockchain_client, shutdown_blockchain_client
-)
-__all__ = [
-    'BlockchainClient', 'BlockchainNetwork', 'TransactionStatus', 'AnchorType', 'BlockchainConfig',
-    'SessionAnchor', 'BlockchainTransaction', 'get_blockchain_client', 'initialize_blockchain_client', 'shutdown_blockchain_client'
-]
+from ..core.logging import *
+
+__all__ = [ '*'	]

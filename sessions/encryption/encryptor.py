@@ -6,8 +6,7 @@ XChaCha20-Poly1305 per-chunk encryption with HKDF-BLAKE2b key derivation
 
 import asyncio
 import hashlib
-import sessions.core.logging as logging
-import os
+
 import secrets
 import time
 from dataclasses import dataclass
@@ -18,7 +17,25 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 import blake3
 
-logger = logging.get_logger(__name__)
+from ..api.config import get_config, load_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().LOG_LEVEL(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger(__name__)
+settings(__name__)
+
 
 @dataclass
 class EncryptedChunk:

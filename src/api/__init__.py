@@ -1,4 +1,4 @@
-"""
+f"""
 Lucid API Module
 
 A comprehensive FastAPI-based API gateway for the Lucid blockchain-integrated
@@ -21,19 +21,8 @@ Key Components:
 - Scripts: Database setup and development utilities
 
 Usage:
-    from src.api.main import app
-    
-    # Run with uvicorn
-    uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+Path: ..api
+file: src/api/__init__.py
+the api calls the api
+
 """
-
-from .main import app, create_app
-from .config import Settings, get_settings
-
-__version__ = "0.1.0"
-__all__ = [
-    "app",
-    "create_app", 
-    "Settings",
-    "get_settings",
-]

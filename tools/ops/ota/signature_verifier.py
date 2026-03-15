@@ -15,7 +15,7 @@ This module provides comprehensive signature verification including:
 import asyncio
 import hashlib
 import json
-import logging
+
 import os
 import subprocess
 import sys

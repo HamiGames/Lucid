@@ -137,8 +137,8 @@ class UserService:
                 
             # Create user document
             user_data = user_create.dict()
-            user_data["created_at"] = datetime.utcnow()
-            user_data["updated_at"] = datetime.utcnow()
+            user_data["created_at"] = datetime.timezone()
+            user_data["updated_at"] = datetime.timezone()
             
             result = await self.db.users.insert_one(user_data)
             user_data["_id"] = str(result.inserted_id)
@@ -175,7 +175,7 @@ class UserService:
                 
             # Prepare update data
             update_data = user_update.dict(exclude_unset=True)
-            update_data["updated_at"] = datetime.utcnow()
+            update_data["updated_at"] = datetime.timezone()
             
             # Update user
             await self.db.users.update_one(
@@ -210,7 +210,7 @@ class UserService:
                 {
                     "$set": {
                         "deleted": True,
-                        "deleted_at": datetime.utcnow()
+                        "deleted_at": datetime.timezone()
                     }
                 }
             )

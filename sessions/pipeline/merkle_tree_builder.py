@@ -5,7 +5,7 @@ Builds BLAKE3 Merkle trees for session chunk integrity verification
 """
 
 import asyncio
-import sessions.core.logging as logging
+import logging
 import time
 import hashlib
 from typing import Dict, List, Optional, Tuple, Any
@@ -14,8 +14,27 @@ from datetime import datetime
 import json
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+from .config import PipelineConfig, PipelineSettings
+import os
+log_level = os.getenv(PipelineConfig().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").uper()
+try:
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+
+logger(__name__)
+settings(__name__)
+
+
 
 @dataclass
 class MerkleNode:
@@ -185,7 +204,7 @@ class MerkleTreeBuilder:
             tree_data["tree_height"] = level
             tree_data["root_hash"] = current_level[0].hash if current_level else ""
             
-            logger.debug(f"Rebuilt Merkle tree for session {string} - height: {level}, root: {tree_data['root_hash'][:16]}...")
+            logger.debug(f"Rebuilt Merkle tree for session {session_id} - height: {level}, root: {tree_data['root_hash'][:16]}...")
             
         except Exception as e:
             logger.error(f"Failed to rebuild tree levels for session {session_id}: {e}")

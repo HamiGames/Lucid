@@ -57,7 +57,7 @@ class ErrorResponse(BaseModel):
     message: str = Field(..., description="Error message")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
     request_id: str = Field(..., description="Request identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+    timestamp: datetime = Field(default_factory=datetime.timezone, description="Error timestamp")
     service: str = Field(default="api-gateway", description="Service name")
     version: str = Field(default="v1", description="API version")
 

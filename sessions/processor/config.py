@@ -6,7 +6,6 @@ This module provides configuration management for the chunk processor service,
 including encryption settings, worker configuration, and performance tuning.
 """
 
-import os
 import sessions.core.logging as logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
@@ -14,8 +13,24 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
-
-
+from ..api.config import get_config
+import os
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+settings = get_config()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+    
+logger(__name__)
+settings(__name__)
 
 
 try:
@@ -24,7 +39,7 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.get_logger(__name__)
+
 
 
 @dataclass

@@ -5,7 +5,7 @@ Step 17 Implementation: Session Storage & API
 """
 
 import asyncio
-import logging
+
 import signal
 import sys
 from contextlib import asynccontextmanager
@@ -15,21 +15,33 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from datetime import datetime
 
-from sessions.api.session_api import SessionAPI
-from sessions.api.routes import router
-from sessions.api.config import SessionAPIConfig
-from sessions.api.integration.rdp_controller_client import RDPControllerClient
+from .session_api import SessionAPI
+from .routes import router
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
+
+from .integration.rdp_controller_client import RDPControllerClient
+
+from .config import get_config, load_config
+import os
+log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(load_config().LOG_LEVEL(), "INFO").upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level(), "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger(__name__)
-
+    
+logger(__name__)
+settings(__name__)
 # Global instances
-session_api: Optional[SessionAPI] = None
-api_config: Optional[SessionAPIConfig] = None
+session_api: Optional[SessionAPI]= None
+api_config: Optional[SessionAPI]= None
 rdp_controller_client: Optional[RDPControllerClient] = None
 
 def setup_signal_handlers():

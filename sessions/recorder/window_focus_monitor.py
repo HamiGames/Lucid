@@ -4,10 +4,8 @@
 # LUCID-STRICT Layer 2 Service Integration
 
 from __future__ import annotations
-
+import sys
 import asyncio
-import sessions.core.logging as logging
-import os
 import time
 import threading
 from datetime import datetime, timezone
@@ -18,7 +16,26 @@ from enum import Enum
 import json
 import uuid
 import hashlib
+from .config import RecorderSettings, RecorderConfig
 
+import os
+settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
+
+logger(__name__)
+settings(__name__)
 # Window monitoring imports
 try:
     import psutil
@@ -51,8 +68,8 @@ except ImportError:
 
 # macOS-specific imports
 try:
-    import Quartz
-    from AppKit import NSWorkspace
+    import Quartz  # pyright: ignore[reportMissingImports]
+    from AppKit import NSWorkspace  # pyright: ignore[reportMissingImports]
     HAS_QUARTZ = True
 except ImportError:
     HAS_QUARTZ = False

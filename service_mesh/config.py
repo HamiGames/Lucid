@@ -5,7 +5,6 @@ Environment-based configuration using pydantic-settings
 File: service_mesh/config.py
 """
 
-import os
 from functools import lru_cache
 from typing import Optional
 from pydantic_settings import BaseSettings

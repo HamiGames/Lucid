@@ -5,7 +5,6 @@ Main entry point for the session recorder service
 """
 
 import asyncio
-import os
 import signal
 import sys
 from contextlib import asynccontextmanager
@@ -20,14 +19,26 @@ from fastapi.responses import JSONResponse
 from .session_recorder import SessionRecorder, RecordingStatus, StartRecordingRequest
 from .chunk_generator import ChunkProcessor, ChunkConfig
 from .compression import CompressionManager
-from .config import RecorderConfig, load_config
-from core.logging import setup_logging, get_logger
+from .config import RecorderSettings, RecorderConfig
 
-# Initialize logging
-setup_logging()
+import os
+settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
+log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
 
-logger = get_logger(__name__)
-
+logger(__name__)
+settings(__name__)
 # Global instances
 session_recorder: Optional[SessionRecorder] = None
 chunk_processor: Optional[ChunkProcessor] = None
@@ -54,7 +65,7 @@ async def lifespan(app: FastAPI):
     try:
         # Load configuration from YAML and environment variables
         try:
-            recorder_config = load_config()
+            recorder_config = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
             logger.info(f"Configuration loaded: {recorder_config.settings.service_name} v{recorder_config.settings.service_version}")
         except Exception as e:
             logger.error(f"Failed to load configuration: {str(e)}")

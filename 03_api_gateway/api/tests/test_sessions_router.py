@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
 
-from app.main import create_app
-from app.schemas.sessions import SessionResponse, SessionState
+from ..app.main import create_app
+from ..app.schemas.sessions import SessionResponse, SessionState
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ class TestSessionCreation:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.INITIALIZING,
-            created_at=datetime.utcnow(),
+            created_at=datetime.timezone(),
             policy_hash=None
         )
         
@@ -96,7 +96,7 @@ class TestSessionList:
                     owner_address="TTest123456789012345678901234567890",
                     node_id="node-001",
                     state=SessionState.INITIALIZING,
-                    created_at=datetime.utcnow()
+                    created_at=datetime.timezone()
                 )
             ],
             total=1,
@@ -144,7 +144,7 @@ class TestSessionDetail:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.INITIALIZING,
-            created_at=datetime.utcnow()
+            created_at=datetime.timezone()
         )
         
         response = client.get("/sessions/test-session-123")
@@ -173,8 +173,8 @@ class TestSessionStateTransitions:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.RECORDING,
-            created_at=datetime.utcnow(),
-            started_at=datetime.utcnow()
+            created_at=datetime.timezone(),
+            started_at=datetime.timezone()
         )
         
         response = client.put("/sessions/test-session-123/start")
@@ -193,8 +193,8 @@ class TestSessionStateTransitions:
             owner_address="TTest123456789012345678901234567890",
             node_id="node-001",
             state=SessionState.ANCHORING,
-            created_at=datetime.utcnow(),
-            started_at=datetime.utcnow(),
+            created_at=datetime.timezone(),
+            started_at=datetime.timezone(),
             manifest_hash="test-manifest-hash",
             merkle_root="test-merkle-root"
         )

@@ -20,7 +20,8 @@ import logging
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.get_logger(__name__)
+logger = logging.getLogger("LOG_LEVEL", "INFO")
+
 
 class ImportPathValidator:
     def __init__(self, project_root: str = None):

@@ -14,7 +14,6 @@ This module provides comprehensive OTA update orchestration including:
 
 import asyncio
 import json
-import logging
 import os
 import shutil
 import subprocess

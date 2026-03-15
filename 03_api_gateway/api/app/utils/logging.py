@@ -5,11 +5,22 @@ File: 03_api_gateway/api/app/utils/logging.py
 Purpose: Logging configuration and setup
 """
 
+import os
 import logging
 import sys
 from typing import Any
 from pythonjsonlogger import jsonlogger
+from .config import service_name, in_container
 
+settings = os.getenv(in_container().LOG_LEVEL(), "INFO").upper()
+log_level = os.getenv(service_name().LOG_LEVEL(), "INFO").upper()
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 
 def setup_logging(log_level: str = "INFO") -> None:
     """
@@ -20,7 +31,7 @@ def setup_logging(log_level: str = "INFO") -> None:
     """
     
     # Configure root logger
-    root_logger = logging.get_logger()
+    root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, log_level.upper()))
     
     # Remove existing handlers
@@ -46,9 +57,9 @@ def setup_logging(log_level: str = "INFO") -> None:
     root_logger.addHandler(console_handler)
     
     # Set specific logger levels
-    logging.get_logger("uvicorn").setLevel(logging.INFO)
-    logging.get_logger("fastapi").setLevel(logging.INFO)
-    logging.get_logger("motor").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn").setLevel(logging.INFO)
+    logging.getLogger("fastapi").setLevel(logging.INFO)
+    logging.getLogger("motor").setLevel(logging.WARNING)
     
     logging.info(f"Logging configured with level: {log_level}")
 
@@ -63,5 +74,5 @@ def get_logger(name: str) -> logging.Logger:
     Returns:
         Logger instance
     """
-    return logging.get_logger(name)
+    return logging.getLogger(name)
 

@@ -6,13 +6,23 @@ Purpose: CORS configuration and utilities.
 All configuration from environment variables via app.config.
 """
 
-import app.utils.logging as logging
+import os
 from typing import List
-
-from ..config import get_settings
-
-logger = logging.get_logger(__name__)
-settings = get_settings()
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger(__name__)
+settings(__name__)
 
 
 class CORSConfig:

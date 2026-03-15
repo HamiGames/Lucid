@@ -9,15 +9,28 @@ Dependencies: aiohttp, Circuit Breaker
 """
 
 import aiohttp
-import 03_api_gateway.api.app.utils.logging as logging
+
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from enum import Enum
 import asyncio
+import os
+from ..api.app.config import get_settings
+settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-from ..config import settings
-
-logger = logging.get_logger(__name__)
+logger(__name__)
+settings(__name__)
 
 
 class CircuitState(Enum):
@@ -71,7 +84,7 @@ class CircuitBreaker:
     def record_failure(self):
         """Record failed request."""
         self.failure_count += 1
-        self.last_failure_time = datetime.utcnow()
+        self.last_failure_time = datetime.timezone()
         
         if self.failure_count >= self.failure_threshold:
             logger.warning(
@@ -87,7 +100,7 @@ class CircuitBreaker:
         if self.state == CircuitState.OPEN:
             # Check if recovery timeout has passed
             if self.last_failure_time:
-                elapsed = (datetime.utcnow() - self.last_failure_time).total_seconds()
+                elapsed = (datetime.timezone() - self.last_failure_time).total_seconds()
                 if elapsed >= self.recovery_timeout:
                     logger.info("Circuit breaker: Half-Open (testing recovery)")
                     self.state = CircuitState.HALF_OPEN

@@ -2,9 +2,8 @@
 """
 User package for Lucid RDP.
 Manages user profiles, authentication, and activity logging.
+path: ..user
+file: user/__init__.py
+the user calls the user
 """
 
-from user.user_manager import UserManager, UserProfile
-
-
-__all__ = ["UserManager", "UserProfile", "UsersRepo", "logger"]

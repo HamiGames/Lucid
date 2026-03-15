@@ -5,8 +5,17 @@ import os
 import httpx
 from fastapi import APIRouter, HTTPException, Depends, Query, Path, status
 from fastapi.responses import JSONResponse
+import pathlib as Path
+import dotenv
+PROJECT_ROOT: str = "/mnt/myssd/Lucid/Lucid/"
+env_path= Path(f"{PROJECT_ROOT}/configs/environment.env")
+if env_path.is_file():
+    dotenv.load_dotenv(dotenv_path=env_path)
+else:
+    raise FileNotFoundError("No .env.api-gateway file found")
 
-BLOCKCHAIN_CORE_URL = os.getenv("BLOCKCHAIN_CORE_URL", "http://blockchain-core-distroless:8084")
+WALLET_CORE_URI= os.getenv("WALLET_CORE_URI")
+BLOCKCHAIN_CORE_URL = os.getenv("BLOCKCHAIN_CORE_URL")
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
 

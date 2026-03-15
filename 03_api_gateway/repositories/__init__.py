@@ -1,13 +1,7 @@
 """
 Lucid API Gateway - Repositories Package
 Data access layer repositories.
+Path: ..repositories
+file: 03_api_gateway/repositories/__init__.py
+the repositories calls the api gateway repositories
 """
-
-from ..repositories.user_repository import UserRepository
-from ..repositories.session_repository import SessionRepository
-
-__all__ = [
-    'UserRepository',
-    'SessionRepository',
-]
-

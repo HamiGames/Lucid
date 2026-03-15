@@ -9,6 +9,9 @@ This module provides comprehensive OTA update capabilities including:
 
 Components:
 - VersionManager: Version tracking and update management
+path: ..tools.ops.ota
+file: tools/ops/ota/__init__.py
+the ota calls the ota
 """
 
 from .version_manager import VersionManager, get_version_manager, create_version_manager

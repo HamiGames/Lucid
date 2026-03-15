@@ -7,8 +7,6 @@ including recording settings, hardware acceleration, FFmpeg configuration, and m
 Configuration is loaded from YAML file with environment variable overrides.
 """
 
-import os
-import sessions.core.logging as logging
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from pydantic import field_validator
@@ -20,8 +18,25 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.get_logger(__name__)
 
+import os
+settings = os.getenv('LOG_LEVEL', 'INFO').upper()
+log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, settings().log_level(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+  
+
+logger(__name__)
+settings(__name__)
 
 class RecordingVideoConfig(BaseSettings):
     """Video recording configuration"""

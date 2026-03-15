@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 import asyncio
-import sessions.core.logging as logging
-import os
+
 import time
 import hashlib
 import re
@@ -18,12 +17,23 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import uuid
-
+import os
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
+from ...sessions.config import get_settings
+settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
+try:  
+    from ..core.logging import get_logger, setup_logging
+    logger = get_logger(__name__)
+    setup_logging(settings().log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
 
-logger = logging.get_logger(__name__)
+logger(__name__)
+settings(__name__)
 
 # Configuration from environment
 INPUT_CONTROL_PATH = Path(os.getenv("LUCID_INPUT_CONTROL_PATH", "/data/input_control"))

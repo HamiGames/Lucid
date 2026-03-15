@@ -4,18 +4,30 @@ TRON Support Services
 File: 03_api_gateway/api/app/services/tron_support_service.py
 Purpose: Service for handling TRON support services (payout router, wallet manager, USDT manager)
 """
-
-import logging
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from ..config import get_settings
+import os
+from ....api.app.config import Settings, get_settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 
-logger = logging.get_logger(__name__)
-settings = get_settings()
+try:
+    from ....api.app.utils.logging import get_logger
+    logger = get_logger(log_level)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-
+#set global service instance
+    
+logger(__name__)
+settings(__name__)
 class TronSupportServiceError(Exception):
     """TRON support service error"""
     pass

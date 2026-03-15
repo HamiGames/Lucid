@@ -17,7 +17,7 @@ import uvicorn
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+logger = logging.getLogger()
 
 @dataclass
 class ServiceMetrics:

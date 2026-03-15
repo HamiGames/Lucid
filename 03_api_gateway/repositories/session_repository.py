@@ -8,14 +8,23 @@ Purpose: Session data access
 Dependencies: motor
 """
 
-import 03_api_gateway.api.app.utils.logging as logging
+
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from ...app.config import get_settings
+settings = get_settings()
+try:
+    import api.app.utils.logging as logging
+    logger = logging.get_logger(__name__)
+    logging.setup_logging(settings.LOG_LEVEL)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=settings.LOG_LEVEL)
 
-logger = logging.get_logger(__name__)
-
-
+logger(__name__)
+settings(__name__)
 class SessionRepository:
     """
     Session data access repository.
@@ -81,8 +90,8 @@ class SessionRepository:
             Created session document
         """
         try:
-            session_data["created_at"] = datetime.utcnow()
-            session_data["updated_at"] = datetime.utcnow()
+            session_data["created_at"] = datetime.timezone()
+            session_data["updated_at"] = datetime.timezone()
             
             result = await self.collection.insert_one(session_data)
             session_data["_id"] = str(result.inserted_id)
@@ -108,7 +117,7 @@ class SessionRepository:
             True if updated successfully
         """
         try:
-            update_data["updated_at"] = datetime.utcnow()
+            update_data["updated_at"] = datetime.timezone()
             
             result = await self.collection.update_one(
                 {"session_id": session_id},
@@ -153,7 +162,7 @@ class SessionRepository:
                 {
                     "$set": {
                         "status": "terminated",
-                        "terminated_at": datetime.utcnow()
+                        "terminated_at": datetime.timezone()
                     }
                 }
             )

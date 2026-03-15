@@ -11,7 +11,7 @@ Architecture Notes:
 """
 
 import os
-import api.app.utils.logging as logging
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,12 +21,12 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 import uvicorn
 
-from .config import get_settings
-from .middleware.auth import AuthMiddleware
-from .middleware.rate_limit import RateLimitMiddleware
-from .middleware.logging import LoggingMiddleware
-from .middleware.cors import CORSConfig
-from .routers import (
+from .config import Settings, get_settings
+from ...api.app.middleware.auth import AuthMiddleware
+from ...api.app.middleware.rate_limit import RateLimitMiddleware
+from ...api.app.middleware.logging import LoggingMiddleware
+from ...api.app.middleware.cors import CORSConfig
+from ...api.app.routers import (
     meta,
     auth,
     users,
@@ -41,18 +41,22 @@ from .routers import (
     gui_hardware,
     tron_support
 )
-from .database.connection import init_database
-from .utils.logging import setup_logging
-from .models.common import ErrorResponse, ErrorDetail
+from ...api.app.database.connection import init_database
+from ...api.app.models.common import ErrorResponse, ErrorDetail
 import uuid
 from datetime import datetime
 
-# Global settings
-settings = get_settings()
-
-# Setup logging
-setup_logging(settings.LOG_LEVEL)
-logger = logging.get_logger(__name__)
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+try:
+    from ...api.app.utils.logging import get_logger
+    logger = get_logger(log_level)
+except ImportError:
+    import logging
+    logger = logging.getLogger(log_level)
+    logging.basicConfig(level=log_level)
+logger(__name__)
+settings(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -140,7 +144,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         message="Invalid request data",
         details={"validation_errors": exc.errors()},
         request_id=request_id,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
         service="api-gateway",
         version="v1"
     )
@@ -174,7 +178,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         code=error_code,
         message=exc.detail,
         request_id=request_id,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
         service="api-gateway",
         version="v1"
     )
@@ -194,7 +198,7 @@ async def general_exception_handler(request: Request, exc: Exception):
         code="LUCID_ERR_5001",
         message="Internal server error",
         request_id=request_id,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.timezone(),
         service="api-gateway",
         version="v1"
     )

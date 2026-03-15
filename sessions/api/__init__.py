@@ -11,23 +11,11 @@ Features:
 - MongoDB integration for session storage
 - Redis caching for session data
 - FastAPI-based REST API
+
+Path: ..api
+file: sessions/api/__init__.py
+the api calls the sessions api
 """
-from sessions.api.config import SessionAPISettings, SessionAPIConfig
-from sessions.api.session_api import SessionStatus, RDPConfig, RecordingConfig, StorageConfig, SessionMetadata, CreateSessionRequest, UpdateSessionRequest, SessionResponse, SessionListResponse, ChunkResponse, ChunkListResponse, PipelineResponse, SessionAPI
-from sessions.api.routes import router
-import sessions.api.integration as integration
-import sessions.api.integration.rdp_controller_client as rdp_controller_client
-import sessions.api.entrypoint as entrypoint
-import sessions.api.main as main
+from ..core.logging import *
 
-__all__ = [
-   'SessionAPI', 'router', 'SessionStatus', 'CreateSessionRequest', 'UpdateSessionRequest',
-   'SessionResponse', 'SessionListResponse', 
-   'ChunkResponse', 'ChunkListResponse', 'PipelineResponse', 'StatisticsResponse',
-   'SessionAPISettings','integration', 'entrypoint', 'rdp_controller_client',
-   'main', 'SessionAPIConfig', 'RDPConfig', 'RecordingConfig', 'StorageConfig', 'SessionMetadata'
-]
-
-__version__ = "1.0.0"
-__cluster__ = "session-management"
-__port__ = 8080
+__all__ = [ '*'	]
