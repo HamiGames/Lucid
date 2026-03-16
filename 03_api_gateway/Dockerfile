@@ -101,7 +101,6 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "=== Verifying site-packages directory ===" && \
     ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" && \
-    echo " All packages ready for final image"
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep&& \
@@ -148,12 +147,13 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     && printf "LUCID_API_GATEWAY_GUI_API_BRIDGE_INTEGRATION_$(date +%s)" > ./gui_api_bridge/integration/.keep \
     # USE TOUCH TO AFFIRM DIRECTORY CREATION
     && touch ./api/app/.keep ./api/app/db/.keep ./api/app/database/.keep ./api/app/schemas/.keep ./api/app/routers/.keep ./api/app/services/.keep ./api/app/utils/.keep ./api/app/middleware/.keep ./api/app/scripts/.keep ./api/app/tests/.keep ./models/.keep ./services/.keep ./utils/.keep ./endpoints/.keep ./config/.keep ./sessions/.keep ./sessions/processor/.keep ./sessions/pipeline/.keep ./sessions/api/.keep ./sessions/core/.keep ./sessions/api/integration/.keep ./gui_api_bridge/.keep ./gui_api_bridge/integration/.keep ./sessions/integration/.keep
-    # Check the new directories with echo (list all .keep files in echo)
-    && echo "Directories created successfully" \
+   
+    && print "Directories created successfully" \
 
     # Application source COPY (only directories that exist with content)
-# copy 03_api_gateway/api/* directories to api/
-COPY 03_api_gateway/api/app/main.py ./api/app/main.py
+
+COPY 03_api_gateway/api/app/ ./api/app/
+COPY 03_api_gatewway/api/app/main.py ./api/app/main.py
 COPY 03_api_gateway/api/app/config.py ./api/app/config.py
 COPY 03_api_gateway/api/app/deps.py ./api/app/deps.py
 # import middleware files
