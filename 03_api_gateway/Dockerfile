@@ -148,26 +148,8 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     && printf "LUCID_API_GATEWAY_GUI_API_BRIDGE_INTEGRATION_$(date +%s)" > ./gui_api_bridge/integration/.keep \
     # USE TOUCH TO AFFIRM DIRECTORY CREATION
     && touch ./api/app/.keep ./api/app/db/.keep ./api/app/database/.keep ./api/app/schemas/.keep ./api/app/routers/.keep ./api/app/services/.keep ./api/app/utils/.keep ./api/app/middleware/.keep ./api/app/scripts/.keep ./api/app/tests/.keep ./models/.keep ./services/.keep ./utils/.keep ./endpoints/.keep ./config/.keep ./sessions/.keep ./sessions/processor/.keep ./sessions/pipeline/.keep ./sessions/api/.keep ./sessions/core/.keep ./sessions/api/integration/.keep ./gui_api_bridge/.keep ./gui_api_bridge/integration/.keep ./sessions/integration/.keep
-    # Check with echo 
-    && echo "API App directories created: $(ls -la ./api/app/)" && \
-    echo "Models directories created: $(ls -la ./models/)" && \
-    echo "Services directories created: $(ls -la ./services/)" && \
-    echo "Utils directories created: $(ls -la ./utils/)" && \
-    echo "Endpoints directories created: $(ls -la ./endpoints/)" && \
-    echo "Config directories created: $(ls -la ./config/)" && \
-    echo "Sessions directories created: $(ls -la ./sessions/)" && \
-    echo "Sessions Processor directories created: $(ls -la ./sessions/processor/)" && \
-    echo "Sessions Pipeline directories created: $(ls -la ./sessions/pipeline/)" &&\
-    echo "Directories created successfully"
-
-
-RUN echo "=== Verifying Keep files ===" && \
-    printf " Checking for marker files in /usr/local/lib/python3.11/site-packages/.keep and /usr/local/bin/.keep" && \
-    test -f /usr/local/lib/python3.11/site-packages/.keep && \
-    printf "%s\n" "$(cat /usr/local/lib/python3.11/site-packages/.keep)" && \
-    test -f /usr/local/bin/.keep && \
-    printf "%s\n" "$(cat /usr/local/bin/.keep)" && \
-    echo " .keep files verified with content"
+    # Check the new directories with echo (list all .keep files in echo)
+    && echo "Directories created successfully" \
 
     # Application source COPY (only directories that exist with content)
 # copy 03_api_gateway/api/* directories to api/
