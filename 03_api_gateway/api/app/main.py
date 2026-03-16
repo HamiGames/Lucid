@@ -22,11 +22,12 @@ from starlette.exceptions import HTTPException
 import uvicorn
 
 from .config import Settings, get_settings
-from ...api.app.middleware.auth import AuthMiddleware
-from ...api.app.middleware.rate_limit import RateLimitMiddleware
-from ...api.app.middleware.logging import LoggingMiddleware
-from ...api.app.middleware.cors import CORSConfig
-from ...api.app.routers import (
+
+from .middleware.auth import AuthMiddleware
+from .middleware.rate_limit import RateLimitMiddleware
+from .middleware.logging import LoggingMiddleware
+from .middleware.cors import CORSConfig
+from .routers import (
     meta,
     auth,
     users,
@@ -41,15 +42,15 @@ from ...api.app.routers import (
     gui_hardware,
     tron_support
 )
-from ...api.app.database.connection import init_database
-from ...api.app.models.common import ErrorResponse, ErrorDetail
+from .database.connection import init_database
+from .models.common import ErrorResponse, ErrorDetail
 import uuid
 from datetime import datetime
 
 log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from ...api.app.utils.logging import get_logger
+    from .utils.logging import get_logger
     logger = get_logger(log_level)
 except ImportError:
     import logging

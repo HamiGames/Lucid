@@ -7,10 +7,10 @@ Purpose: Integration with lucid-blockchain-engine for session data token recover
 
 import logging
 from typing import Optional, Dict, Any
-from gui_api_bridge.gui_api_bridge.service_base import ServiceBaseClient
-from gui_api_bridge.gui_api_bridge..config import GuiAPIBridgeSettings
+from ...gui_api_bridge.integration.service_base import ServiceBaseClient
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class BlockchainEngineClient(ServiceBaseClient):

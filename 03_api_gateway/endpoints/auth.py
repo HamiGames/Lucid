@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header
 from typing import Optional
 from datetime import datetime
 
-from ..models.auth import (
+from models.auth import (
     LoginRequest,
     LoginResponse,
     VerifyRequest,
@@ -26,7 +26,7 @@ from ..models.auth import (
     HardwareWalletRequest,
     HardwareWalletResponse,
 )
-from ..models.common import ErrorResponse
+from models.common import ErrorResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

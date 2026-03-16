@@ -10,11 +10,11 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 import os
-from ....api.app.config import Settings, get_settings
+from ..config import Settings, get_settings
 log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging

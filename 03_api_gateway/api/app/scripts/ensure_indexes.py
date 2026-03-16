@@ -6,7 +6,7 @@ from typing import Iterable, Tuple
 from pymongo import ASCENDING
 from pymongo.collection import Collection
 
-from ....api.app.database.connection import get_database as get_db
+from ..database.connection import get_database as get_db
 
 
 def _keyspec(pairs: Iterable[Tuple[str, int]]) -> OrderedDict:

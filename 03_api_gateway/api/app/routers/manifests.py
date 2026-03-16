@@ -5,8 +5,12 @@ File: 03_api_gateway/api/app/routers/manifests.py
 Purpose: Session manifest operations
 """
 
+import os 
+from ..config import get_settings, Settings
+log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging
@@ -15,11 +19,10 @@ except ImportError:
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger(__name__)
-settings(__name__)
+
+
 from fastapi import APIRouter, HTTPException
 
-logger = logging.get_logger(__name__)
 router = APIRouter()
 
 

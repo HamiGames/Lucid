@@ -15,7 +15,7 @@ from typing import List, Optional
 from datetime import datetime
 from uuid import uuid4
 
-from ..models.common import ErrorResponse
+from models.common import ErrorResponse
 
 router = APIRouter(prefix="/trust", tags=["Trust Policy"])
 

@@ -9,12 +9,15 @@ Dependencies: Pydantic, re
 """
 
 import re
-import 03_api_gateway.api.app.utils.logging as logging
+import logging
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, ValidationError, validator
 import uuid
-
-logger = logging.get_logger(__name__)
+import os
+from ...app.config import get_settings
+settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+logger = logging.getLogger(__name__)
+logging.basicConfig('LOG_LEVEL', "INFO")
 
 
 class ValidationError(Exception):

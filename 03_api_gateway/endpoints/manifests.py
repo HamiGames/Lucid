@@ -15,14 +15,14 @@ from typing import List, Optional
 from datetime import datetime
 from uuid import uuid4
 
-from ..models.session import (
+from models.session import (
     ManifestCreateRequest,
     ManifestResponse,
     ManifestDetail,
     MerkleProof,
     ChunkInfo,
 )
-from ..models.common import ErrorResponse
+from models.common import ErrorResponse
 
 router = APIRouter(prefix="/manifests", tags=["Manifests"])
 

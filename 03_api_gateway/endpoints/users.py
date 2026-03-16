@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from datetime import datetime
 
-from ..models.user import (
+from models.user import (
     UserProfile,
     UserCreateRequest,
     UserUpdateRequest,
@@ -23,7 +23,7 @@ from ..models.user import (
     UserPreferences,
     UserActivity,
 )
-from ..models.common import ErrorResponse, PaginationParams
+from models.common import ErrorResponse, PaginationParams
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

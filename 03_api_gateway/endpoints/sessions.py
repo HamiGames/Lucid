@@ -16,7 +16,7 @@ from typing import List, Optional
 from datetime import datetime
 from uuid import uuid4
 
-from ..models.session import (
+from models.session import (
     SessionCreateRequest,
     SessionResponse,
     SessionDetail,
@@ -24,7 +24,7 @@ from ..models.session import (
     SessionStatus,
     SessionTerminateRequest,
 )
-from ..models.common import ErrorResponse
+from models.common import ErrorResponse
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 

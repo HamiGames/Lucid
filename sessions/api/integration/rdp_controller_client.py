@@ -8,7 +8,7 @@ HTTP client for integrating with rdp-controller service.
 from typing import Dict, Any, Optional
 from uuid import UUID
 import httpx
-from ....sessions.api.config import get_config, load_config
+from ...api.config import get_config, load_config
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(load_config().log_level(), "INFO").upper()

@@ -6,10 +6,10 @@ File: gui_api_bridge/gui_api_bridge/services/routing_service.py
 import logging
 from typing import Optional, Dict, Any
 from fastapi import Request
-from gui_api_bridge.gui_api_bridge..config import GuiAPIBridgeSettings
-from gui_api_bridge.gui_api_bridge..integration.integration_manager import IntegrationManager
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
+from ...gui_api_bridge.integration.integration_manager import IntegrationManager
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class RoutingService:

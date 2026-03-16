@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 import blake3
 
-from ...sessions.api.config import get_config, load_config
+from ..api.config import get_config, load_config
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()

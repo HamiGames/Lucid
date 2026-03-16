@@ -7,7 +7,7 @@ Lazy initialization of all backend service clients
 
 import logging
 from typing import Optional
-from gui_api_bridge.gui_api_bridge..config import GuiAPIBridgeSettings
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
 from gui_api_bridge.gui_api_bridge.blockchain_client import BlockchainEngineClient
 from gui_api_bridge.gui_api_bridge.api_gateway_client import APIGatewayClient
 from gui_api_bridge.gui_api_bridge.auth_service_client import AuthServiceClient
@@ -16,7 +16,7 @@ from gui_api_bridge.gui_api_bridge.node_management_client import NodeManagementC
 from gui_api_bridge.gui_api_bridge.admin_interface_client import AdminInterfaceClient
 from gui_api_bridge.gui_api_bridge.tron_client import TronClient
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class IntegrationManager:

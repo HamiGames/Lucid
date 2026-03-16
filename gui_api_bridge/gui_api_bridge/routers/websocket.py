@@ -6,9 +6,10 @@ Endpoints: /ws
 
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from gui_api_bridge.gui_api_bridge..services.websocket_service import WebSocketService
 
-logger = logging.get_logger(__name__)
+from ...gui_api_bridge.services.websocket_service import WebSocketService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 ws_service = WebSocketService()

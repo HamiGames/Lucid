@@ -7,8 +7,8 @@ from typing import Any, Dict
 
 from fastapi import APIRouter
 
-from ....api.app.database.connection import ping as mongo_ping
-from ....api.app.utils.config import (
+from ..database.connection import ping as mongo_ping
+from ..utils.config import (
     mongo_conn_str,
     service_name,
     service_version,

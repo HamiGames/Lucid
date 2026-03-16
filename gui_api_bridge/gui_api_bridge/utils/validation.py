@@ -6,7 +6,7 @@ File: gui_api_bridge/gui_api_bridge/utils/validation.py
 import logging
 from typing import Optional
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def validate_service_url(url: str) -> bool:

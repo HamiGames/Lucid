@@ -5,7 +5,7 @@ File: gui_api_bridge/gui_api_bridge/services/websocket_service.py
 
 import logging
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class WebSocketService:

@@ -5,11 +5,11 @@ File: 03_api_gateway/api/app/routers/sessions.py
 Purpose: Session lifecycle management
 """
 import os
-from ....api.app.config import Settings, get_settings
+from ..config import Settings, get_settings
 log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging
@@ -18,8 +18,8 @@ except ImportError:
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger(__name__)
-settings(__name__)
+
+
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
@@ -42,8 +42,8 @@ async def list_sessions():
 
 @router.post("")
 async def create_session():
-        """Create new session"""
-    # TODO: Implement update session proxy
+    """Create new session"""
+    # TODO: Implement create session proxy
     #try: 
     #    from .....sessions.pipeline.pipeline_manager import PipelineManager
     #    await PipelineManager.initialize()
@@ -52,8 +52,7 @@ async def create_session():
   #  except Exception as e:
    #     logger.error(f"Failed to create session: {e}")
    #     raise HTTPException(status_code=500, detail=f"Failed to create session: {str(e)}")
-    
-
+    raise HTTPException(status_code=501, detail="Not implemented yet")
 
 @router.get("/{session_id}")
 async def get_session(session_id: str):

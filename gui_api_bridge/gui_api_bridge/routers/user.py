@@ -8,9 +8,10 @@ Allowed methods: GET, POST
 import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from gui_api_bridge.gui_api_bridge..models.auth import SessionRecoveryRequest, SessionRecoveryResponse
+from ...gui_api_bridge.models.auth import SessionRecoveryRequest, SessionRecoveryResponse
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/user", tags=["user"])
 

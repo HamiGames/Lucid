@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import blake3
-from ...sessions.api.config import get_config
+from ..api.config import get_config
 import os
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 settings = get_config()

@@ -6,12 +6,12 @@ Main service orchestration for API routing and backend integration
 
 import logging
 from typing import Optional, Dict, Any
-from gui_api_bridge.gui_api_bridge.config import GuiAPIBridgeSettings
-from gui_api_bridge.gui_api_bridge.integration.integration_manager import IntegrationManager
-from gui_api_bridge.gui_api_bridge.services.routing_service import RoutingService
-from gui_api_bridge.gui_api_bridge.services.discovery_service import ServiceDiscoveryService
+from .config import GuiAPIBridgeSettings
+from ..gui_api_bridge.integration.integration_manager import IntegrationManager
+from ..gui_api_bridge.services.routing_service import RoutingService
+from ..gui_api_bridge.services.discovery_service import ServiceDiscoveryService
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class GuiAPIBridgeService:

@@ -9,7 +9,7 @@ import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/node", tags=["node"])
 

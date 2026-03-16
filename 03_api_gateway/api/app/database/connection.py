@@ -8,11 +8,11 @@ Includes tor-proxy bootstrap wait sequence before attempting connections
 import os
 
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-from ....api.app.config import Settings, get_settings
+from ..config import Settings, get_settings
 settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
 try: 
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging

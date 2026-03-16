@@ -4,11 +4,11 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional
 import os
-from ....api.app.config import Settings, get_settings
+from ..config import Settings, get_settings
 log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging
@@ -20,11 +20,11 @@ except ImportError:
 logger(__name__)
 settings(__name__)
 
-from ....api.app.schemas.sessions import (
+from ..schemas.sessions import (
     ManifestResponse, ChunkMetadata, MerkleProof, AnchorReceipt
 )
-from ....api.app.schemas.errors import ErrorResponse
-from ....api.app.services.session_service import SessionService
+from ..schemas.errors import ErrorResponse
+from ..services.session_service import SessionService
 
 
 router = APIRouter()

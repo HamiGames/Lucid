@@ -21,17 +21,17 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from ...sessions.storage.session_storage import SessionStorage
-from ...sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
-from ...sessions.storage.config import StorageConfig as StorageConfigManager
-from ...sessions.pipeline.pipeline_manager import SessionPipeline, PipelineStage
+from ..storage.session_storage import SessionStorage
+from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
+from ..storage.config import StorageConfig as StorageConfigManager
+from ..pipeline.pipeline_manager import SessionPipeline, PipelineStage
 from .config import get_config, load_config
 
 import os
 log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(load_config().log_level(), "INFO").upper()
 try:  
-    from ...sessions.core.logging import get_logger, setup_logging
+    from ..core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level(), "INFO")
 except ImportError:

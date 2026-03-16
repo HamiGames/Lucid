@@ -30,11 +30,11 @@ import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 import os
-from ....api.app.config import get_settings, Settings
+from ..config import get_settings, Settings
 log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging

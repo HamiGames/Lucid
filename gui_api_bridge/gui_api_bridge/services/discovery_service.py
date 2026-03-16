@@ -5,9 +5,9 @@ File: gui_api_bridge/gui_api_bridge/services/discovery_service.py
 
 import logging
 from typing import Dict, List, Optional, Any
-from gui_api_bridge.gui_api_bridge..config import GuiAPIBridgeSettings
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ServiceDiscoveryService:

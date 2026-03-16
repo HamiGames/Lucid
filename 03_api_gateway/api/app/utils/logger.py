@@ -9,7 +9,7 @@ from .config import service_name, in_container
 log_level = os.getenv(in_container().LOG_LEVEL(), "INFO").upper()
 settings = os.getenv(service_name().LOG_LEVEL(), "INFO").upper()
 try:
-    from ....api.app.utils.logging import get_logger
+    from ..utils.logging import get_logger
     logger = get_logger(__name__)
 except ImportError:
     import logging

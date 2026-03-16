@@ -7,3 +7,10 @@ Database connection and utilities.
 """
 
 from .connection import get_database, close_database
+from api.app.utils.logging import get_logger
+
+__all__ = [
+    "get_database",
+    "close_database",
+    "get_logger"
+]

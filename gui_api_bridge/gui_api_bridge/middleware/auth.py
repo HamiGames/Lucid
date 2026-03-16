@@ -8,10 +8,10 @@ from typing import Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from jose import jwt, JWTError
-
-logger = logging.get_logger(__name__)
-
+from jose import JWTError
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
+logger = logging.getLogger(__name__)
+import jwt
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """Middleware for JWT authentication"""

@@ -13,7 +13,7 @@ from typing import Optional, List
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Regex patterns for URL validation (compiled at module level)
 LOCALHOST_PATTERN = re.compile(r'\blocalhost\b', re.IGNORECASE)

@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 # Base URL for the Blockchain Core service (Cluster B)
 # Defaults to local dev port 8084; override via env if needed.
-BLOCKCHAIN_CORE_URL = os.getenv("BLOCKCHAIN_CORE_URL", "http://blockchain-core-distroless:8084")
+BLOCKCHAIN_CORE_URL = os.getenv(env="BLOCKCHAIN_CORE_URL")
 
 router = APIRouter(prefix="/chain", tags=["chain"])
 

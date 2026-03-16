@@ -9,15 +9,19 @@ Dependencies: aiohttp, models
 """
 
 import aiohttp
-import 03_api_gateway.api.app.utils.logging as logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from ..models.user import User, UserCreate, UserUpdate
-from ..config import settings
-from ..database.connection import get_database
+from models.user import User, UserCreate, UserUpdate
+from config import settings
+from database.connection import get_database
+import os
+import logging
+from ...app.config import get_settings
+settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+logger = logging.getLogger(__name__)
+logging.basicConfig('LOG_LEVEL', "INFO")
 
-logger = logging.get_logger(__name__)
 
 
 class UserServiceError(Exception):

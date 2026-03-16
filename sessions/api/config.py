@@ -10,12 +10,12 @@ from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from .session_api import SessionAPI
-from .config import get_config, load_config
+from ..pipeline.config import PipelineConfig, PipelineSettings
 import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().log_level(), "INFO").upper()
+log_level = os.getenv(PipelineConfig().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(PipelineSettings().log_level(), "INFO").upper()
 try:  
-    from ...sessions.core.logging import get_logger, setup_logging
+    from ..core.logging import get_logger, setup_logging
     logger = get_logger(__name__)
     setup_logging(settings().log_level(), "INFO")
 except ImportError:

@@ -1,5 +1,5 @@
 """API Gateway Client"""
-from gui_api_bridge.gui_api_bridge.service_base import ServiceBaseClient
+from ...gui_api_bridge.integration.service_base import ServiceBaseClient
 
 class APIGatewayClient(ServiceBaseClient):
     def __init__(self, config):

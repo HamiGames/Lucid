@@ -20,7 +20,7 @@ from gui_api_bridge.gui_api_bridge.services.routing_service import RoutingServic
 from gui_api_bridge.gui_api_bridge.integration.integration_manager import IntegrationManager
 from gui_api_bridge.gui_api_bridge.routers import user, developer, node, admin, websocket
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class GuiAPIBridgeApp:

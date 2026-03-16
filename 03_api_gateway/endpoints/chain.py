@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from datetime import datetime
 
-from .midcommon import ErrorResponse
+from models.common import ErrorResponse
 
 router = APIRouter(prefix="/chain", tags=["Blockchain"])
 

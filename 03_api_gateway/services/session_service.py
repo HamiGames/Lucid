@@ -8,28 +8,22 @@ from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
-from ..api.app.schemas.sessions import (  
+from api.app.schemas.sessions import (  
     SessionCreate, SessionResponse, SessionDetail, SessionList, 
     SessionState, SessionStateUpdate
 )
-from ..api.app.db.models.session import RDPSession  
-from ..api.app.config import get_settings
+from api.app.db.models.session import RDPSession  
+from api.app.config import get_settings
 # Import session pipeline components
 import sys
 import os
-from ..api.app.config import get_settings
+from ...app.config import get_settings
 settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
-try:
-    import api.app.utils.logging as logging
-    logger = logging.get_logger(__name__)
-    logging.setup_logging(settings.LOG_LEVEL)
-except ImportError:
-    import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=settings.LOG_LEVEL)
+import logging
+settings = os.getenv(get_settings().LOG_LEVEL(), "INFO")  
+logger = logging.getLogger(__name__)
 
-logger(__name__)
-settings(__name__)
+
 # FIX: was '../../../../sessions' which resolves to /sessions (filesystem root) in the container.
 # __file__ = /app/api/app/services/session_service.py → 3 levels up = /app → /app/sessions
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../../sessions'))
@@ -37,7 +31,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../../sessions'))
 from sessions.pipeline.session_pipeline_manager import SessionPipelineManager, SessionState as PipelineSessionState 
 from sessions.core.session_generator import SessionIdGenerator  
 
-logger = logging.get_logger(__name__)
 
 
 class SessionService:

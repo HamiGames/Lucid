@@ -7,10 +7,10 @@ import logging
 import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
-from gui_api_bridge.gui_api_bridge.config import GuiAPIBridgeSettings
-from gui_api_bridge.gui_api_bridge.integration.integration_manager import IntegrationManager
+from .config import GuiAPIBridgeSettings
+from ..gui_api_bridge.integration.integration_manager import IntegrationManager
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class HealthCheck:

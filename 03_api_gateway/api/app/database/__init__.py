@@ -1,7 +1,5 @@
 """
 Database Package
-Path: ..03_api_gateway.api.app.database
-alt_path: .....database
 File: 03_api_gateway/api/app/database/__init__.py
 Purpose: Database connection and repository layer
 """

@@ -8,9 +8,9 @@ import logging
 import asyncio
 from typing import Optional, Dict, Any
 import httpx
-from gui_api_bridge.gui_api_bridge..config import GuiAPIBridgeSettings
+from ...gui_api_bridge.config import GuiAPIBridgeSettings
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ServiceBaseClient:
