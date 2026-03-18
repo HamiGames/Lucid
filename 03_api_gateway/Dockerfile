@@ -243,9 +243,7 @@ COPY 03_api_gateway/api/app/database/connection.py ./api/app/database/connection
 #copy .api.app.models files
 COPY 03_api_gateway/api/app/models/__init__.py ./api/app/models/__init__.py
 COPY 03_api_gateway/api/app/models/common.py ./api/app/models/common.py
-COPY 03_api_gateway/api/app/models/auth.py ./api/app/models/auth.py
-COPY 03_api_gateway/api/app/models/session.py ./api/app/models/session.py
-COPY 03_api_gateway/api/app/models/user.py ./api/app/models/user.py
+
 #copy .api.app.services files
 COPY 03_api_gateway/api/app/services/__init__.py ./api/app/services/__init__.py
 COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gui_bridge_service.py
@@ -257,7 +255,7 @@ COPY 03_api_gateway/api/app/db/connection.py ./api/app/db/connection.py
 COPY 03_api_gateway/api/app/db/user_repo.py ./api/app/db/user_repo.py
 # copy .api.app.db.models files
 COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.py
-COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/user.py
+COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/users.py
 COPY 03_api_gateway/api/app/db/models/session.py ./api/app/db/models/session.py
 # copy .api.app.utils files
 COPY 03_api_gateway/api/app/utils/__init__.py ./api/app/utils/__init__.py
@@ -268,7 +266,8 @@ COPY 03_api_gateway/api/app/utils/logger.py ./api/app/utils/logger.py
 COPY 03_api_gateway/api/app/schemas/__init__.py ./api/app/schemas/__init__.py
 COPY 03_api_gateway/api/app/schemas/auth.py ./api/app/schemas/auth.py
 COPY 03_api_gateway/api/app/schemas/sessions.py ./api/app/schemas/sessions.py
-COPY 03_api_gateway/api/app/schemas/user.py ./api/app/schemas/user.py
+COPY 03_api_gateway/api/app/schemas/users.py ./api/app/schemas/users.py
+COPY 03_api_gateway/api/app/schemas/meta.py ./api/app/schemas/meta.py
 COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
 # copy .services
 COPY 03_api_gateway/services/__init__.py ./services/__init__.py
@@ -280,14 +279,7 @@ COPY 03_api_gateway/services/tron_support_service.py ./services/tron_support_ser
 COPY 03_api_gateway/services/session_service.py ./services/session_service.py
 COPY 03_api_gateway/services/proxy_service.py ./services/proxy_service.py
 COPY 03_api_gateway/services/rate_limit_service.py ./services/rate_limit_service.py
-# copy .api.app.services
-COPY 03_api_gateway/api/app/services/__init__.py ./api/app/services/__init__.py
-COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gui_bridge_service.py
-COPY 03_api_gateway/api/app/services/gui_docker_manager_service.py ./api/app/services/gui_docker_manager_service.py
-COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
-COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
-COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
-# copy .config files
+#copy .config files
 COPY 03_api_gateway/config/ ./config/
 
 #copy .gateway files
