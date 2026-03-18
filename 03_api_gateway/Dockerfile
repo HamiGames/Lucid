@@ -278,7 +278,6 @@ COPY 03_api_gateway/services/gui_tor_manager_service.py ./services/gui_tor_manag
 COPY 03_api_gateway/services/gui_hardware_manager_service.py ./services/gui_hardware_manager_service.py
 COPY 03_api_gateway/services/tron_support_service.py ./services/tron_support_service.py
 COPY 03_api_gateway/services/session_service.py ./services/session_service.py
-COPY 03_api_gateway/services/mongo_service.py ./services/mongo_service.py
 COPY 03_api_gateway/services/proxy_service.py ./services/proxy_service.py
 COPY 03_api_gateway/services/rate_limit_service.py ./services/rate_limit_service.py
 # copy .api.app.services
@@ -289,11 +288,10 @@ COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_s
 COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
 COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
 # copy .config files
-COPY 03_api_gateway/config/rate-limiting-config.yml ./config/rate-limiting-config.yml
-COPY 03_api_gateway/config/routing-config.yml ./config/routing-config.yml
+COPY 03_api_gateway/config/ ./config/
 
 #copy .gateway files
-COPY 03_api_gateway/gateway/openapi.yml ./gateway/openapi.yml
+COPY 03_api_gateway/gateway/ ./gateway/
 
 # copy .utils
 COPY 03_api_gateway/utils/__init__.py ./utils/__init__.py
@@ -446,8 +444,7 @@ COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py 
 # import .api.app.routes files
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 # import .config files
-COPY --chown=65532:65532 --from=builder /build/config/rate-limiting-config.yml /app/config/rate-limiting-config.yml
-COPY --chown=65532:65532 --from=builder /build/config/routing-config.yml   /app/config/routing-config.yml
+COPY --chown=65532:65532 --from=builder /build/config/ /app/config/
 # import .sessions files
 COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/__init__.py         /app/sessions/api/integration/__init__.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/rdp_controller_client.py         /app/sessions/api/integration/rdp_controller_client.py
@@ -457,7 +454,6 @@ COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/       /app/ses
 COPY --chown=65532:65532 --from=builder /build/sessions/api/            /app/sessions/api/
 COPY --chown=65532:65532 --from=builder /build/sessions/core/           /app/sessions/core/
 # import .gateway files
-COPY --chown=65532:65532 --from=builder /build/gateway/openapi.yml       /app/gateway/openapi.yml
 #import .endpoints files
 COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
 # import .services files
