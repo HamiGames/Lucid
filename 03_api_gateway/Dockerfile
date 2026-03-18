@@ -215,11 +215,9 @@ COPY 03_api_gateway/api/app/deps.py ./api/app/deps.py
 COPY 03_api_gateway/api/app/middleware/__init__.py ./api/app/middleware/__init__.py
 COPY 03_api_gateway/api/app/middleware/auth.py ./api/app/middleware/auth.py
 COPY 03_api_gateway/api/app/middleware/logging.py ./api/app/middleware/logging.py
-COPY 03_api_gateway/api/app/middleware/rate_limiting.py ./api/app/middleware/rate_limiting.py
+COPY 03_api_gateway/api/app/middleware/rate_limit.py ./api/app/middleware/rate_limit.py
 COPY 03_api_gateway/api/app/middleware/cors.py ./api/app/middleware/cors.py
-COPY 03_api_gateway/api/app/middleware/security.py ./api/app/middleware/security.py
-COPY 03_api_gateway/api/app/middleware/error_handling.py ./api/app/middleware/error_handling.py
-COPY 03_api_gateway/api/app/middleware/performance.py ./api/app/middleware/performance.py
+
 # import .api.app.routers files
 COPY 03_api_gateway/api/app/routers/__init__.py ./api/app/routers/__init__.py
 COPY 03_api_gateway/api/app/routers/gui.py ./api/app/routers/gui.py
@@ -231,10 +229,10 @@ COPY 03_api_gateway/api/app/routers/sessions.py ./api/app/routers/sessions.py
 COPY 03_api_gateway/api/app/routers/trust.py ./api/app/routers/trust.py
 COPY 03_api_gateway/api/app/routers/users.py ./api/app/routers/users.py
 COPY 03_api_gateway/api/app/routers/chain.py ./api/app/routers/chain.py
-COPY 03_api_gateway/api/app/routers/manifest.py ./api/app/routers/manifest.py
+COPY 03_api_gateway/api/app/routers/manifests.py ./api/app/routers/manifests.py
 COPY 03_api_gateway/api/app/routers/meta.py ./api/app/routers/meta.py
 COPY 03_api_gateway/api/app/routers/auth.py ./api/app/routers/auth.py
-COPY 03_api_gateway/api/app/routers/wallet.py ./api/app/routers/wallet.py
+COPY 03_api_gateway/api/app/routers/wallets.py ./api/app/routers/wallets.py
 # copy .routes
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 
@@ -372,7 +370,7 @@ COPY --chown=65532:65532 --from=builder /build/api/app/deps.py                  
 # import .api.app.middleware files
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/auth.py            /app/api/app/middleware/auth.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/logging.py         /app/api/app/middleware/logging.py
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/rate_limiting.py   /app/api/app/middleware/rate_limiting.py
+COPY --chown=65532:65532 --from=builder /build/api/app/middleware/rate_limit.py   /app/api/app/middleware/rate_limit.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/cors.py            /app/api/app/middleware/cors.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/security.py        /app/api/app/middleware/security.py
 # import .api.app.utils files
