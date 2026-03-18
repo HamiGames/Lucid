@@ -12,10 +12,10 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional, Callable
 from datetime import datetime
-import grpc
-from grpc import aio
+from grpc import aio, grpc
 
-logger = logging.get_logger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 class GRPCClient:

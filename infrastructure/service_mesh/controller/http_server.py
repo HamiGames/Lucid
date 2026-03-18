@@ -24,7 +24,7 @@ except ImportError:
     logger = logging.get_logger(__name__)
     logger.warning("FastAPI not available - HTTP server will not start")
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class HTTPServer:

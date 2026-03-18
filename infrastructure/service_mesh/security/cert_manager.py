@@ -17,7 +17,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from .mtls_manager import mTLSManager
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class CertManager:

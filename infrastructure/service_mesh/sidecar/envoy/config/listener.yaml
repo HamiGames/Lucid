@@ -1,6 +1,5 @@
 # Lucid Service Mesh - Envoy Listener Configuration
 # File: infrastructure/service-mesh/sidecar/envoy/config/listener.yaml
-# Lines: ~250
 # Purpose: Envoy listener configuration for service mesh
 
 version_info: "1"
@@ -71,10 +70,6 @@ resources:
                     max_pending_requests: 2000
                     max_requests: 2000
                     max_retries: 3
-                rate_limits:
-                - actions:
-                  - generic_key:
-                      descriptor_value: "default"
         cors:
           allow_origin_string_match:
           - prefix: "*"

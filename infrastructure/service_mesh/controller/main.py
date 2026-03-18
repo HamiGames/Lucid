@@ -20,7 +20,7 @@ from .config_manager import ConfigManager
 from .policy_engine import PolicyEngine
 from .health_checker import HealthChecker
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ServiceMeshController:

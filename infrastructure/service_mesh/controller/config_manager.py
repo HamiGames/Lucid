@@ -24,7 +24,7 @@ except ImportError as e:
     logging.error(f"Failed to import yaml module: {e}")
     raise ImportError("yaml module is required but not available. Ensure PyYAML is installed.") from e
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ConfigManager:

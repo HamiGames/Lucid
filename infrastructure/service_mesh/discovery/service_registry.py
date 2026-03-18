@@ -14,7 +14,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from .consul_client import ConsulClient
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ServiceRegistry:

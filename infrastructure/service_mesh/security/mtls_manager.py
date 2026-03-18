@@ -25,7 +25,7 @@ try:
 except ImportError:
     CRYPTOGRAPHY_AVAILABLE = False
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class mTLSManager:

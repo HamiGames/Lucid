@@ -29,6 +29,3 @@ try:
 except ImportError:
     pass
 
-__version__ = "1.0.0"
-__cluster__ = "infrastructure"
-__port__ = 8090

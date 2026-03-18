@@ -56,8 +56,8 @@ ENV PATH=/root/.cargo/bin:$PATH
 WORKDIR /build
 
 # System markers (per Dockerfile-copy-pattern.md)
-RUN echo "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
+RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
 
 # Python dependencies
@@ -83,8 +83,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
-    echo "installation complete" && \
-    rm -rf /build/wheels
+    echo "installation complete" 
 
 # Builder-stage verification - ensure all packages built correctly
 RUN echo "=== Verifying pip installation success ===" && \
@@ -100,10 +99,10 @@ RUN echo "=== Verifying pip installation success ===" && \
     python3.11 -m pip show uvloop && \
     echo "=== Verifying site-packages directory ===" && \
     ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
-    echo "directories found in site-packages" && \
+    echo "directories found in site-packages" 
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
-RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep&& \
+RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
     printf "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.keep && \
     chmod 644 /usr/local/lib/python3.11/site-packages/.keep && \
     chmod 644 /usr/local/bin/.keep && \
@@ -112,51 +111,104 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
 # Verify marker files exist with content (critical for distroless COPY)
 
 
-    RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/database ./api/app/schemas ./api/app/routers \
-    ./services ./models ./endpoints ./config ./api/app/utils ./sessions/ ./sessions/pipeline ./sessions/api \
-    ./sessions/core ./sessions/api/integration./gui_api_bridge ./gui_api_bridge/integration  ./sessions/integration \
+RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database ./api/app/utils ./api/app/models ./api/app/routes \
+    && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
+    && mkdir -p ./config ./endpoints ./models ./utils ./services ./database ./api/app/tests \
+    && mkdir -p ./sidecar ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration  \
     # printf .keep in each directory
+    && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
+    && touch ./api/.keep \
+    && echo "api/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
+    && touch ./api/app/.keep \
+    && echo "api/app/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
+    && touch ./api/app/db/.keep \
+    && echo "api/app/db/.keep created" \
+    && printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
+    && touch ./api/app/db/models/.keep \
+    && echo "api/app/db/models/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
+    && touch ./api/app/database/.keep \
+    && echo "api/app/database/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep \
+    && touch ./api/app/schemas/.keep \
+    && echo "api/app/schemas/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
+    && touch ./api/app/routers/.keep \
+    && echo "api/app/routers/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep \
+    && touch ./api/app/services/.keep \
+    && echo "api/app/services/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep \
+    && touch ./api/app/utils/.keep \
+    && echo "api/app/utils/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep \
+    && touch ./api/app/middleware/.keep \
+    && echo "api/app/middleware/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
+    && touch ./api/app/scripts/.keep \
+    && echo "api/app/scripts/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_TESTS_$(date +%s)" > ./api/app/tests/.keep \
-    # still in 03_api_gateway collection
+    && touch ./api/app/tests/.keep \
+    && echo "api/app/tests/.keep created" \
+    && printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
+    && touch ./api/app/models/.keep \
+    && echo "api/app/models/.keep created" \
+    && printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep \
+    && touch ./api/app/routes/.keep \
+    && echo "api/app/routes/.keep created" \
     && printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep \
+    && touch ./models/.keep \
+    && echo "models/.keep created" \
     && printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep \
+    && touch ./services/.keep \
+    && echo "services/.keep created" \
     && printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep \
+    && touch ./utils/.keep \
+    && echo "utils/.keep created" \
     && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
+    && touch ./endpoints/.keep \
+    && echo "endpoints/.keep created" \
     && printf "LUCID_API_GATEWAY_CONFIG_$(date +%s)" > ./config/.keep \
-    # NOW SESSIONS COLLECTION
+    && touch ./config/.keep \
+    && echo "config/.keep created" \
+    && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
+    && touch ./database/.keep \
+    && echo "database/.keep created" \
+    && printf 
     && printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep \
+    && touch ./sessions/.keep \
+    && echo "sessions/.keep created" \
     && printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep \
+    && touch ./sessions/processor/.keep \
+    && echo "sessions/processor/.keep created" \
     && printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
+    && touch ./sessions/pipeline/.keep \
+    && echo "sessions/pipeline/.keep created" \
     && printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
+    && touch ./sessions/api/.keep \
+    && echo "sessions/api/.keep created" \
     && printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
+    && touch ./sessions/core/.keep \
+    && echo "sessions/core/.keep created" \
     && printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
-    && printf "LUCID_API_GATEWAY_GUI_API_BRIDGE_$(date +%s)" > ./gui_api_bridge/.keep \
-    && printf "LUCID_API_GATEWAY_GUI_API_BRIDGE_INTEGRATION_$(date +%s)" > ./gui_api_bridge/integration/.keep \
-    && printf "LUCID_API_GATEWAY_SESSIONS_INTEGRATION_$(date +%s)" > ./sessions/integration/.keep \
-    # NOW GUI_API_BRIDGE COLLECTION
-    && printf "LUCID_API_GATEWAY_GUI_API_BRIDGE_$(date +%s)" > ./gui_api_bridge/.keep \
-    && printf "LUCID_API_GATEWAY_GUI_API_BRIDGE_INTEGRATION_$(date +%s)" > ./gui_api_bridge/integration/.keep \
-    # USE TOUCH TO AFFIRM DIRECTORY CREATION
-    && touch ./api/app/.keep ./api/app/db/.keep ./api/app/database/.keep ./api/app/schemas/.keep ./api/app/routers/.keep ./api/app/services/.keep ./api/app/utils/.keep ./api/app/middleware/.keep ./api/app/scripts/.keep ./api/app/tests/.keep ./models/.keep ./services/.keep ./utils/.keep ./endpoints/.keep ./config/.keep ./sessions/.keep ./sessions/processor/.keep ./sessions/pipeline/.keep ./sessions/api/.keep ./sessions/core/.keep ./sessions/api/integration/.keep ./gui_api_bridge/.keep ./gui_api_bridge/integration/.keep ./sessions/integration/.keep
-   
-    && print "Directories created successfully" \
+    && touch ./sessions/api/integration/.keep \
+    && echo "sessions/api/integration/.keep created" \
+    && printf "LUCID_API_GATEWAY_SIDECAR_$(date +%s)" > ./sidecar/.keep \
+    && touch ./sidecar/.keep \
+    && echo "sidecar/.keep created" \
+    && echo "Directories created successfully" \
+    
 
     # Application source COPY (only directories that exist with content)
-
-COPY 03_api_gateway/api/app/ ./api/app/
+#copy .api.app files
+COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
 COPY 03_api_gatewway/api/app/main.py ./api/app/main.py
 COPY 03_api_gateway/api/app/config.py ./api/app/config.py
 COPY 03_api_gateway/api/app/deps.py ./api/app/deps.py
-# import middleware files
+# import .api.app.middleware files
+COPY 03_api_gateway/api/app/middleware/__init__.py ./api/app/middleware/__init__.py
 COPY 03_api_gateway/api/app/middleware/auth.py ./api/app/middleware/auth.py
 COPY 03_api_gateway/api/app/middleware/logging.py ./api/app/middleware/logging.py
 COPY 03_api_gateway/api/app/middleware/rate_limiting.py ./api/app/middleware/rate_limiting.py
@@ -164,7 +216,8 @@ COPY 03_api_gateway/api/app/middleware/cors.py ./api/app/middleware/cors.py
 COPY 03_api_gateway/api/app/middleware/security.py ./api/app/middleware/security.py
 COPY 03_api_gateway/api/app/middleware/error_handling.py ./api/app/middleware/error_handling.py
 COPY 03_api_gateway/api/app/middleware/performance.py ./api/app/middleware/performance.py
-# import router files
+# import .api.app.routers files
+COPY 03_api_gateway/api/app/routers/__init__.py ./api/app/routers/__init__.py
 COPY 03_api_gateway/api/app/routers/gui.py ./api/app/routers/gui.py
 COPY 03_api_gateway/api/app/routers/gui_docker.py ./api/app/routers/gui_docker.py
 COPY 03_api_gateway/api/app/routers/gui_tor.py ./api/app/routers/gui_tor.py
@@ -180,43 +233,90 @@ COPY 03_api_gateway/api/app/routers/manifest.py ./api/app/routers/manifest.py
 COPY 03_api_gateway/api/app/routers/meta.py ./api/app/routers/meta.py
 COPY 03_api_gateway/api/app/routers/auth.py ./api/app/routers/auth.py
 COPY 03_api_gateway/api/app/routers/wallet.py ./api/app/routers/wallet.py
-# import database files
+# import .api.app.database files
+COPY 03_api_gateway/api/app/database/__init__.py ./api/app/database/__init__.py
 COPY 03_api_gateway/api/app/database/connection.py ./api/app/database/connection.py
-COPY 03_api_gateway/models/common.py ./models/common.py
-COPY 03_api_gateway/models/auth.py ./models/auth.py
-COPY 03_api_gateway/models/session.py ./models/session.py
-COPY 03_api_gateway/api/models/user.py ./models/user.py
-
-COPY 03_api_gateway/services/gui_bridge_service.py ./services/gui_bridge_service.py
-COPY 03_api_gateway/services/proxy_service.py ./services/proxy_service.py
-COPY 03_api_gateway/services/rate_limit_service.py ./services/rate_limit_service.py
-
-COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
-COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
+#copy .api.app.models files
+COPY 03_api_gateway/api/app/models/__init__.py ./api/app/models/__init__.py
+COPY 03_api_gateway/api/app/models/common.py ./api/app/models/common.py
+COPY 03_api_gateway/api/app/models/auth.py ./api/app/models/auth.py
+COPY 03_api_gateway/api/app/models/session.py ./api/app/models/session.py
+COPY 03_api_gateway/api/app/models/user.py ./api/app/models/user.py
+#copy .api.app.services files
+COPY 03_api_gateway/api/app/services/__init__.py ./api/app/services/__init__.py
+COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gui_bridge_service.py
+COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
+COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
+#copy .api.app.db files
+COPY 03_api_gateway/api/app/db/__init__.py ./api/app/db/__init__.py
+COPY 03_api_gateway/api/app/db/connection.py ./api/app/db/connection.py
+COPY 03_api_gateway/api/app/db/user_repo.py ./api/app/db/user_repo.py
+# copy .api.app.db.models files
+COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.py
+COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/user.py
+COPY 03_api_gateway/api/app/db/models/session.py ./api/app/db/models/session.py
+# copy .api.app.utils files
+COPY 03_api_gateway/api/app/utils/__init__.py ./api/app/utils/__init__.py
 COPY 03_api_gateway/api/app/utils/config.py ./api/app/utils/config.py
 COPY 03_api_gateway/api/app/utils/logging.py ./api/app/utils/logging.py
 COPY 03_api_gateway/api/app/utils/logger.py ./api/app/utils/logger.py
+# copy .api.app.schemas files
+COPY 03_api_gateway/api/app/schemas/__init__.py ./api/app/schemas/__init__.py
+COPY 03_api_gateway/api/app/schemas/auth.py ./api/app/schemas/auth.py
+COPY 03_api_gateway/api/app/schemas/sessions.py ./api/app/schemas/sessions.py
+COPY 03_api_gateway/api/app/schemas/user.py ./api/app/schemas/user.py
+COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
+# copy .services
+COPY 03_api_gateway/services/__init__.py ./services/__init__.py
+COPY 03_api_gateway/services/gui_bridge_service.py ./services/gui_bridge_service.py
+COPY 03_api_gateway/services/gui_docker_manager_service.py ./services/gui_docker_manager_service.py
+COPY 03_api_gateway/services/gui_tor_manager_service.py ./services/gui_tor_manager_service.py
+COPY 03_api_gateway/services/gui_hardware_manager_service.py ./services/gui_hardware_manager_service.py
+COPY 03_api_gateway/services/tron_support_service.py ./services/tron_support_service.py
+COPY 03_api_gateway/services/session_service.py ./services/session_service.py
+COPY 03_api_gateway/services/mongo_service.py ./services/mongo_service.py
+COPY 03_api_gateway/services/proxy_service.py ./services/proxy_service.py
+COPY 03_api_gateway/services/rate_limit_service.py ./services/rate_limit_service.py
+# copy .api.app.services
+COPY 03_api_gateway/api/app/services/__init__.py ./api/app/services/__init__.py
+COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gui_bridge_service.py
+COPY 03_api_gateway/api/app/services/gui_docker_manager_service.py ./api/app/services/gui_docker_manager_service.py
+COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
+COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
+COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
+
+# copy .utils
+COPY 03_api_gateway/utils/__init__.py ./utils/__init__.py
+COPY 03_api_gateway/utils/validation.py ./utils/validation.py
+# copy .api.app.routes
+COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
+COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
+COPY 03_api_gateway/api/app/security/ ./api/app/security/
+# copy .endpoints
 COPY 03_api_gateway/endpoints/ ./endpoints/
+# copy .database
+COPY 03_api_gateway/database/ ./database/
+# copy .models
 COPY 03_api_gateway/models/ ./models/
-COPY 03_api_gateway/config/ ./config/
+# copy .gateway
 COPY 03_api_gateway/gateway/openapi.yml ./gateway/openapi.yml
 COPY 03_api_gateway/config/rate-limiting-config.yml ./config/rate-limiting-config.yml
 COPY 03_api_gateway/config/routing-config.yml ./config/routing-config.yml
-#copy ../../../../sessions/ to sessions/
+#copy to .sessions
 COPY ../../../../sessions/ ./sessions/
 COPY ../../../../sessions/pipeline/ ./sessions/pipeline/
 COPY ../../../../sessions/api/ ./sessions/api/
 COPY ../../../../sessions/core/                ./sessions/core/
 COPY ../../../../sessions/encryption/          ./sessions/encryption/
+COPY ../../../../sessions/api/integration/__init__.py         ./sessions/api/integration/__init__.py
 COPY ../../../../sessions/api/integration/rdp_controller_client.py         ./sessions/api/integration/rdp_controller_client.py
-
-COPY ../../../../sessions/integration/blockchain_client.py         ./sessions/integration/blockchain_client.py
-COPY ../../../../sessions/integration/service_base.py         ./sessions/integration/service_base.py
-COPY ../../../../sessions/integration/integration_manager.py         ./sessions/integration/integration_manager.py
-COPY ../../../../sessions/integration/session_pipeline_client.py         ./sessions/integration/session_pipeline_client.py
-COPY ../../../../sessions/integration/session_storage_client.py         ./sessions/integration/session_storage_client.py
-COPY ../../../../sessions/integration/session_pipeline_client.py         ./sessions/integration/session_pipeline_client.py
-
+# copy to .sidecar 
+COPY ../../../../service_mesh/sidecar/envoy/config/bootstrap.yaml ./sidecar/bootstrap.yaml
+COPY ../../../../service_mesh/sidecar/envoy/config/listener.yaml ./sidecar/listener.yaml
+COPY ../../../../service_mesh/sidecar/envoy/config/route.yaml ./sidecar/route.yaml
+COPY ../../../../infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml ./sidecar/cluster.yaml
+# copy to .gateway
+COPY ../../../../infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/api-gateway.yaml
 
 
 # Create marker files in app directories (ensures COPY won't fail silently)
@@ -272,20 +372,30 @@ COPY --from=builder --chown=65532:65532 /build/wheels         /app/build/wheels
 COPY --from=builder --chown=65532:65532 /usr/local/bin              /app/usr/local/bin
 COPY --from=builder --chown=65532:65532 /usr/bin/tini               /app/opt/bin/tini
 
-# Application layout COPY (only directories that exist)
+# import .api.app files
+COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py                     /app/api/app/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/main.py                       /app/api/app/main.py
 COPY --chown=65532:65532 --from=builder /build/api/app/config.py                     /app/api/app/config.py
 COPY --chown=65532:65532 --from=builder /build/api/app/deps.py                       /app/api/app/deps.py
+# import .api.app.middleware files
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/auth.py            /app/api/app/middleware/auth.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/logging.py         /app/api/app/middleware/logging.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/rate_limiting.py   /app/api/app/middleware/rate_limiting.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/cors.py            /app/api/app/middleware/cors.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/security.py        /app/api/app/middleware/security.py
+# import .api.app.utils files
+COPY --chown=65532:65532 --from=builder /build/api/app/utils/__init__.py             /app/api/app/utils/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/utils/config.py               /app/api/app/utils/config.py
 COPY --chown=65532:65532 --from=builder /build/api/app/utils/logging.py              /app/api/app/utils/logging.py
 COPY --chown=65532:65532 --from=builder /build/api/app/utils/logger.py               /app/api/app/utils/logger.py
-
-# import router files
+# import .api.app.schemas files
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/__init__.py          /app/api/app/schemas/__init__.py
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/auth.py             /app/api/app/schemas/auth.py
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/sessions.py         /app/api/app/schemas/sessions.py
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/user.py             /app/api/app/schemas/user.py
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/errors.py           /app/api/app/schemas/errors.py
+# import .api.app.routers files
+COPY --chown=65532:65532 --from=builder /build/api/app/routers/__init__.py       /app/api/app/routers/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui.py          /app/api/app/routers/gui.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui_docker.py   /app/api/app/routers/gui_docker.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui_tor.py      /app/api/app/routers/gui_tor.py
@@ -301,53 +411,84 @@ COPY --chown=65532:65532 --from=builder /build/api/app/routers/manifest.py     /
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/meta.py         /app/api/app/routers/meta.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/auth.py         /app/api/app/routers/auth.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/wallet.py       /app/api/app/routers/wallet.py
-# import database files
+# import .api.app.database files
+COPY --chown=65532:65532 --from=builder /build/api/app/database/__init__.py    /app/api/app/database/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/database/connection.py  /app/api/app/database/connection.py
-COPY --chown=65532:65532 --from=builder /build/models/common.py                /app/models/common.py
-COPY --chown=65532:65532 --from=builder /build/models/auth.py                  /app/models/auth.py
-COPY --chown=65532:65532 --from=builder /build/models/session.py               /app/models/session.py
-COPY --chown=65532:65532 --from=builder /build/models/user.py                  /app/models/user.py
-# import services files
-COPY --chown=65532:65532 --from=builder /build/services/gui_bridge_service.py   /app/services/gui_bridge_service.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/__init__.py          /app/api/app/db/__init__.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/connection.py       /app/api/app/db/connection.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/user_repo.py        /app/api/app/db/user_repo.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/models/__init__.py  /app/api/app/db/models/__init__.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/models/user.py     /app/api/app/db/models/user.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/models/session.py  /app/api/app/db/models/session.py
+
+# import app.api.app.services files
+COPY --chown=65532:65532 --from=builder /build/api/app/services/__init__.py   /app/api/app/services/__init__.py
+COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_bridge_service.py   /app/api/app/services/gui_bridge_service.py
+COPY --chown=65532:65532 --from=builder /build/api/app/services/session_service.py        /app/api/app/services/session_service.py
+COPY --chown=65532:65532 --from=builder /build/api/app/services/mongo_service.py        /app/api/app/services/mongo_service.py
+COPY --chown=65532:65532 --from=builder /build/api/app/services/tron_support_service.py        /app/api/app/services/tron_support_service.py
+COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_docker_manager_service.py        /app/api/app/services/gui_docker_manager_service.py
+COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_hardware_manager_service.py        /app/api/app/services/gui_hardware_manager_service.py
+
+#import .services files
 COPY --chown=65532:65532 --from=builder /build/services/proxy_service.py        /app/services/proxy_service.py
-COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py   /app/services/rate_limit_service.py
-# import routes files
+COPY --chown=65532:65532 --from=builder /build/services/gui_tor_manager_service.py        /app/services/gui_tor_manager_service.py
+COPY --chown=65532:65532 --from=builder /build/services/gui_hardware_manager_service.py        /app/services/gui_hardware_manager_service.py
+COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py        /app/services/tron_support_service.py
+COPY --chown=65532:65532 --from=builder /build/services/session_service.py        /app/services/session_service.py
+COPY --chown=65532:65532 --from=builder /build/services/mongo_service.py        /app/services/mongo_service.py
+COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py        /app/services/rate_limit_service.py
+COPY --chown=65532:65532 --from=builder /build/services/gui_docker_manager_service.py        /app/services/gui_docker_manager_service.py
+COPY --chown=65532:65532 --from=builder /build/services/gui_hardware_manager_service.py        /app/services/gui_hardware_manager_service.py
+COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py        /app/services/tron_support_service.py
+
+# import .api.app.routes files
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
-# import schemas files
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/         /app/api/app/schemas/
-# import config files
-COPY --chown=65532:65532 --from=builder /build/config/config.py         /app/config/config.py
-# import endpoints files
-COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
-
+# import .config files
+COPY --chown=65532:65532 --from=builder /build/config/rate-limiting-config.yml /app/config/rate-limiting-config.yml
+COPY --chown=65532:65532 --from=builder /build/config/routing-config.yml   /app/config/routing-config.yml
+# import .sessions files
+COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/__init__.py         /app/sessions/api/integration/__init__.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/rdp_controller_client.py         /app/sessions/api/integration/rdp_controller_client.py
-COPY --chown=65532:65532 --from=builder /build/sessions/integration/blockchain_client.py         /app/sessions/integration/blockchain_client.py
-COPY --chown=65532:65532 --from=builder /build/sessions/integration/service_base.py         /app/sessions/integration/service_base.py
-COPY --chown=65532:65532 --from=builder /build/sessions/integration/integration_manager.py         /app/sessions/integration/integration_manager.py
-COPY --chown=65532:65532 --from=builder /build/sessions/integration/session_storage_client.py         /app/sessions/integration/session_storage_client.py
-COPY --chown=65532:65532 --from=builder /build/sessions/integration/session_pipeline_client.py         /app/sessions/integration/session_pipeline_client.py
-
 COPY --chown=65532:65532 --from=builder /build/sessions/encryption/      /app/sessions/encryption/
 COPY --chown=65532:65532 --from=builder /build/sessions/                /app/sessions/
 COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/       /app/sessions/pipeline/
 COPY --chown=65532:65532 --from=builder /build/sessions/api/            /app/sessions/api/
 COPY --chown=65532:65532 --from=builder /build/sessions/core/           /app/sessions/core/
-# import gateway files
+# import .gateway files
 COPY --chown=65532:65532 --from=builder /build/gateway/openapi.yml       /app/gateway/openapi.yml
-COPY --chown=65532:65532 --from=builder /build/config/rate-limiting-config.yml /app/config/rate-limiting-config.yml
-COPY --chown=65532:65532 --from=builder /build/config/routing-config.yml   /app/config/routing-config.yml
-# import gui_api_bridge files
+#import .endpoints files
+COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
+# import .services files
+COPY --chown=65532:65532 --from=builder /build/services/__init__.py                /app/services/__init__.py
+COPY --chown=65532:65532 --from=builder /build/services/gui_bridge_service.py   /app/services/gui_bridge_service.py
+COPY --chown=65532:65532 --from=builder /build/services/proxy_service.py        /app/services/proxy_service.py
+COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py   /app/services/rate_limit_service.py
+#import .database files
+COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
+# import .models files
+COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
+# import .utils files
+COPY --chown=65532:65532 --from=builder /build/utils/ /app/utils/
+# import .sidecar files
+COPY --chown=65532:65532 --from=builder /build/sidecar/cluster.yaml /app/sidecar/cluster.yaml
+COPY --chown=65532:65532 --from=builder /build/sidecar/listener.yaml /app/sidecar/listener.yaml
+COPY --chown=65532:65532 --from=builder /build/sidecar/route.yaml /app/sidecar/route.yaml
+COPY --chown=65532:65532 --from=builder /build/sidecar/bootstrap.yaml /app/sidecar/bootstrap.yaml
+# import .gateway files
+COPY --chown=65532:65532 --from=builder /build/gateway/api-gateway.yaml /app/gateway/api-gateway.yaml
+
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
-RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.lucid-marker'); app_dirs = ['/app/api', '/app/gateway', '/app/config', '/app/sessions']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["python3", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8080)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8080)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 # tini as PID 1: proper signal handling & zombie reaping (aligned with tunnel-tools)
 ENTRYPOINT ["/app/opt/bin/tini", "--"]
 
-CMD ["python3", "-m", "uvicorn", "app.api.app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.api.app.main:app", "--host", "0.0.0.0", "--port", "8080"]

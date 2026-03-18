@@ -28,7 +28,7 @@ except ImportError:
 # Import Enum for ProxyStatus
 from enum import Enum
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ProxyStatus(Enum):

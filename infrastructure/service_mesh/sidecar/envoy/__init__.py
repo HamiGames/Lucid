@@ -1,0 +1,1 @@
+""" Envoy module for the sidecar """
