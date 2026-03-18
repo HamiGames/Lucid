@@ -253,7 +253,7 @@ COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/sessi
 #copy .api.app.db files
 COPY 03_api_gateway/api/app/db/__init__.py ./api/app/db/__init__.py
 COPY 03_api_gateway/api/app/db/connection.py ./api/app/db/connection.py
-COPY 03_api_gateway/api/app/db/user_repo.py ./api/app/db/user_repo.py
+COPY 03_api_gateway/api/app/db/users_repo.py ./api/app/db/users_repo.py
 # copy .api.app.db.models files
 COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.py
 COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/users.py
@@ -396,19 +396,20 @@ COPY --chown=65532:65532 --from=builder /build/api/app/routers/tron_support.py /
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/sessions.py     /app/api/app/routers/sessions.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/trust.py        /app/api/app/routers/trust.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/users.py        /app/api/app/routers/users.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/chain.py        /app/api/app/routers/chain.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/db_health.py    /app/api/app/routers/db_health.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/health.py       /app/api/app/routers/health.py
+COPY --chown=65532:65532 --from=builder /build/api/app/routers/chain.py        /app/api/app/routers/chain.py       /app/api/app/routers/health.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/manifest.py     /app/api/app/routers/manifest.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/meta.py         /app/api/app/routers/meta.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/auth.py         /app/api/app/routers/auth.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/wallet.py       /app/api/app/routers/wallet.py
+# import .api.app.routes files
+COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
+
 # import .api.app.database files
 COPY --chown=65532:65532 --from=builder /build/api/app/database/__init__.py    /app/api/app/database/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/database/connection.py  /app/api/app/database/connection.py
 COPY --chown=65532:65532 --from=builder /build/api/app/db/__init__.py          /app/api/app/db/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/db/connection.py       /app/api/app/db/connection.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/user_repo.py        /app/api/app/db/user_repo.py
+COPY --chown=65532:65532 --from=builder /build/api/app/db/users_repo.py        /app/api/app/db/users_repo.py
 COPY --chown=65532:65532 --from=builder /build/api/app/db/models/__init__.py  /app/api/app/db/models/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/db/models/user.py     /app/api/app/db/models/user.py
 COPY --chown=65532:65532 --from=builder /build/api/app/db/models/session.py  /app/api/app/db/models/session.py
