@@ -112,11 +112,14 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
 
 
 RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database ./api/app/utils ./api/app/models ./api/app/routes \
-    && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
-    && mkdir -p ./config ./endpoints ./models ./utils ./services ./database ./api/app/tests \
+    && mkdir -p ./api/app/schemas ./gateway ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
+    && mkdir -p ./config ./endpoints ./config ./models ./utils ./services ./database ./api/app/tests \
     && mkdir -p ./sidecar ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration  \
     # printf .keep in each directory
     && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
+    && printf "LUCID_API_GATEWAY_GATEWAY_$(date +%s)" > ./gateway/.keep \
+    && touch ./gateway/.keep \
+    && echo "gateway/.keep created" \
     && touch ./api/.keep \
     && echo "api/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
@@ -193,12 +196,14 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     && echo "sessions/core/.keep created" \
     && printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
     && touch ./sessions/api/integration/.keep \
+    && printf "LUCID_API_GATEWAY_CONFIG_RATE_LIMITING_$(date +%s)" > ./config/.keep \
+    && touch ./config/.keep \
+    && echo "config/.keep created" \
+
     && echo "sessions/api/integration/.keep created" \
     && printf "LUCID_API_GATEWAY_SIDECAR_$(date +%s)" > ./sidecar/.keep \
-    && touch ./sidecar/.keep \
-    && echo "sidecar/.keep created" \
-    && echo "Directories created successfully" \
-    
+    && echo "all container directories created" 
+
 
     # Application source COPY (only directories that exist with content)
 #copy .api.app files
@@ -283,6 +288,12 @@ COPY 03_api_gateway/api/app/services/gui_docker_manager_service.py ./api/app/ser
 COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
 COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
 COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
+# copy .config files
+COPY 03_api_gateway/config/rate-limiting-config.yml ./config/rate-limiting-config.yml
+COPY 03_api_gateway/config/routing-config.yml ./config/routing-config.yml
+
+#copy .gateway files
+COPY 03_api_gateway/gateway/openapi.yml ./gateway/openapi.yml
 
 # copy .utils
 COPY 03_api_gateway/utils/__init__.py ./utils/__init__.py
@@ -297,10 +308,6 @@ COPY 03_api_gateway/endpoints/ ./endpoints/
 COPY 03_api_gateway/database/ ./database/
 # copy .models
 COPY 03_api_gateway/models/ ./models/
-# copy .gateway
-COPY 03_api_gateway/gateway/openapi.yml ./gateway/openapi.yml
-COPY 03_api_gateway/config/rate-limiting-config.yml ./config/rate-limiting-config.yml
-COPY 03_api_gateway/config/routing-config.yml ./config/routing-config.yml
 #copy to .sessions
 COPY ../../../../sessions/ ./sessions/
 COPY ../../../../sessions/pipeline/ ./sessions/pipeline/
@@ -309,11 +316,6 @@ COPY ../../../../sessions/core/                ./sessions/core/
 COPY ../../../../sessions/encryption/          ./sessions/encryption/
 COPY ../../../../sessions/api/integration/__init__.py         ./sessions/api/integration/__init__.py
 COPY ../../../../sessions/api/integration/rdp_controller_client.py         ./sessions/api/integration/rdp_controller_client.py
-# copy to .sidecar 
-COPY ../../../../service_mesh/sidecar/envoy/config/bootstrap.yaml ./sidecar/bootstrap.yaml
-COPY ../../../../service_mesh/sidecar/envoy/config/listener.yaml ./sidecar/listener.yaml
-COPY ../../../../service_mesh/sidecar/envoy/config/route.yaml ./sidecar/route.yaml
-COPY ../../../../infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml ./sidecar/cluster.yaml
 # copy to .gateway
 COPY ../../../../infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/api-gateway.yaml
 
@@ -469,13 +471,8 @@ COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
 COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
 # import .utils files
 COPY --chown=65532:65532 --from=builder /build/utils/ /app/utils/
-# import .sidecar files
-COPY --chown=65532:65532 --from=builder /build/sidecar/cluster.yaml /app/sidecar/cluster.yaml
-COPY --chown=65532:65532 --from=builder /build/sidecar/listener.yaml /app/sidecar/listener.yaml
-COPY --chown=65532:65532 --from=builder /build/sidecar/route.yaml /app/sidecar/route.yaml
-COPY --chown=65532:65532 --from=builder /build/sidecar/bootstrap.yaml /app/sidecar/bootstrap.yaml
 # import .gateway files
-COPY --chown=65532:65532 --from=builder /build/gateway/api-gateway.yaml /app/gateway/api-gateway.yaml
+COPY --chown=65532:65532 --from=builder /build/gateway/ /app/gateway/
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
