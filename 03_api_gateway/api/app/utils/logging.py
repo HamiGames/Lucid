@@ -10,10 +10,10 @@ import logging
 import sys
 from typing import Any
 from pythonjsonlogger import jsonlogger
-from .config import service_name, in_container
+from .config import service_name
 
-settings = os.getenv(in_container().LOG_LEVEL(), "INFO").upper()
-log_level = os.getenv(service_name().LOG_LEVEL(), "INFO").upper()
+settings = os.getenv(service_name().LOG_LEVEL(), "INFO").upper()
+log_level = os.getenv('LOG_LEVEL', "INFO").upper()
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
