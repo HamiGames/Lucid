@@ -231,12 +231,13 @@ COPY 03_api_gateway/api/app/routers/sessions.py ./api/app/routers/sessions.py
 COPY 03_api_gateway/api/app/routers/trust.py ./api/app/routers/trust.py
 COPY 03_api_gateway/api/app/routers/users.py ./api/app/routers/users.py
 COPY 03_api_gateway/api/app/routers/chain.py ./api/app/routers/chain.py
-COPY 03_api_gateway/api/app/routers/db_health.py ./api/app/routers/db_health.py
-COPY 03_api_gateway/api/app/routers/health.py ./api/app/routers/health.py
 COPY 03_api_gateway/api/app/routers/manifest.py ./api/app/routers/manifest.py
 COPY 03_api_gateway/api/app/routers/meta.py ./api/app/routers/meta.py
 COPY 03_api_gateway/api/app/routers/auth.py ./api/app/routers/auth.py
 COPY 03_api_gateway/api/app/routers/wallet.py ./api/app/routers/wallet.py
+# copy .routes
+COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
+
 # import .api.app.database files
 COPY 03_api_gateway/api/app/database/__init__.py ./api/app/database/__init__.py
 COPY 03_api_gateway/api/app/database/connection.py ./api/app/database/connection.py
@@ -427,7 +428,6 @@ COPY --chown=65532:65532 --from=builder /build/services/gui_tor_manager_service.
 COPY --chown=65532:65532 --from=builder /build/services/gui_hardware_manager_service.py        /app/services/gui_hardware_manager_service.py
 COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py        /app/services/tron_support_service.py
 COPY --chown=65532:65532 --from=builder /build/services/session_service.py        /app/services/session_service.py
-COPY --chown=65532:65532 --from=builder /build/services/mongo_service.py        /app/services/mongo_service.py
 COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py        /app/services/rate_limit_service.py
 COPY --chown=65532:65532 --from=builder /build/services/gui_docker_manager_service.py        /app/services/gui_docker_manager_service.py
 COPY --chown=65532:65532 --from=builder /build/services/gui_hardware_manager_service.py        /app/services/gui_hardware_manager_service.py
