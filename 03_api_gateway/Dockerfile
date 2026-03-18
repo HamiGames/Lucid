@@ -176,7 +176,6 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
     && touch ./database/.keep \
     && echo "database/.keep created" \
-    && printf 
     && printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep \
     && touch ./sessions/.keep \
     && echo "sessions/.keep created" \
@@ -204,7 +203,7 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     # Application source COPY (only directories that exist with content)
 #copy .api.app files
 COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
-COPY 03_api_gatewway/api/app/main.py ./api/app/main.py
+COPY 03_api_gateway/api/app/main.py ./api/app/main.py
 COPY 03_api_gateway/api/app/config.py ./api/app/config.py
 COPY 03_api_gateway/api/app/deps.py ./api/app/deps.py
 # import .api.app.middleware files
