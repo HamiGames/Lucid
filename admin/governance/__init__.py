@@ -6,7 +6,7 @@ Purpose: Governance module for the Lucid admin interface
 
 from admin.governance.proposal_manager import (ProposalManager, ProposalType, ProposalStatus, VoteChoice, VoterType, ProposalContent, Vote, Proposal)
 from admin.utils.logging import get_logger
-logger = get_logger(__name__)
+
 
 __all__ = [
     "ProposalManager",
@@ -17,5 +17,5 @@ __all__ = [
     "ProposalContent",
     "Vote",
     "Proposal",
-    "logger", "logging"
+    "get_logger"
 ]

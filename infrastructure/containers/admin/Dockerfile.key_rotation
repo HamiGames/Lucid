@@ -70,8 +70,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
-    echo "installation complete" && \
-    rm -rf /build/wheels
+    echo "installation complete" 
 
 # Builder-stage verification
 RUN echo "=== Verifying pip installation success ===" && \
@@ -151,15 +150,15 @@ COPY --chown=65532:65532 --from=builder /build/admin/ /app/admin/
 COPY --chown=65532:65532 --from=builder /build/wallet/ /app/wallet/
 
 # Verify packages and application directories
-RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/admin'), os.path.isdir('/app/wallet')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All key rotation packages and application directories verified')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/admin'), os.path.isdir('/app/wallet')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All key rotation packages and application directories verified')"]
 
 EXPOSE 8060
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8060/health'); exit(0)"]
+  CMD ["/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://key-rotation:8060/health'); exit(0)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/opt/bin/tini", "--"]
 
-CMD ["/usr/bin/python3.11", "admin/key-rotation/key_rotation.py"]
+CMD ["/app/usr/bin/python3.11", "/app/admin/key-rotation/key_rotation.py"]

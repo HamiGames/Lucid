@@ -315,7 +315,7 @@ COPY ../../../../infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/ap
 RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/api/app/routers/gui.py && echo "gui.py found" && \
     echo "All new modules verified in builder stage" && \
-    python3 -c "import sys; sys.path.insert(0, '/build'); from app.api.app.routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from app.api.app.services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service; from pipeline import pipeline_manager; from core import session_generator; print('All module imports successful in builder')"
+    python3 -c "import sys; sys.path.insert(0, '/build/api/app'); from .routers import gui, gui_docker, gui_tor, gui_hardware, tron_support; from .services import gui_bridge_service, gui_docker_manager_service, gui_tor_manager_service, gui_hardware_manager_service, tron_support_service ;sys.path.insert(0, '/build/sessions'); from .pipeline import pipeline_manager; from core import session_generator; print('All module imports successful in builder')"
 
 ############################
 # Stage 2 – Runtime (Distroless)
