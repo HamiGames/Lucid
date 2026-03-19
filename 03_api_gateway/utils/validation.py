@@ -14,12 +14,15 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, ValidationError, validator
 import uuid
 import os
-from ...app.config import get_settings
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig('LOG_LEVEL', "INFO")
+from api.app.config import get_settings
 
-
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 class ValidationError(Exception):
     """Validation error exception."""
     pass

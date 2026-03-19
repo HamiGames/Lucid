@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import admin.utils.logging as logging
 import hashlib
 import base64
 from datetime import datetime, timezone, timedelta, field
@@ -15,12 +14,18 @@ import time
 import os
 from pathlib import Path
 
-logger = logging.getLogger("LOG_LEVEL", "INFO")
-logging.basicConfig(
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+logger("LOG_LEVEL" "INFO")
 # Configuration from environment
 KEY_ROTATION_INTERVAL_DAYS = 90
 KEY_ROTATION_WARNING_DAYS = 7

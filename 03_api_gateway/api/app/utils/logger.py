@@ -5,21 +5,13 @@ import json
 import os
 import sys
 from typing import Dict, Any
-from .config import service_name, in_container
-log_level = os.getenv(in_container().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(service_name().LOG_LEVEL(), "INFO").upper()
+from api.app.utils.config import service_name, in_container
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:

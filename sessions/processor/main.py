@@ -26,29 +26,23 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 import uvicorn
-from .chunk_processor import ChunkProcessorService, ProcessingResult
-from .encryption import EncryptionManager
-from .merkle_builder import MerkleTreeManager
-from .config import get_config, load_config, ChunkProcessorConfig
+from sessions.processor.chunk_processor import ChunkProcessorService, ProcessingResult
+from sessions.processor.encryption import EncryptionManager
+from sessions.processor.merkle_builder import MerkleTreeManager
+from sessions.processor.config import ChunkProcessorConfig
+
+
 import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
 try:
-    import sessions.core.logging as logging
-    logger = logging.get_logger(__name__)
-    logging.setup_logging(settings().log_level())
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
-
-
-logger(__name__)
-settings(__name__)
 
 
 # Global service instances
@@ -137,7 +131,7 @@ async def lifespan(app: FastAPI):
         
         # Initialize integration manager
         try:
-            from .integration.integration_manager import IntegrationManager
+            from sessions.processor.integration.integration_manager import IntegrationManager
             integrations = IntegrationManager(
                 service_timeout=float(os.getenv('SERVICE_TIMEOUT_SECONDS', '30')),
                 service_retry_count=int(os.getenv('SERVICE_RETRY_COUNT', '3')),

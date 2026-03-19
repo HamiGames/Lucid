@@ -14,25 +14,18 @@ from datetime import datetime
 import json
 
 # Configure logging
-from .config import PipelineConfig, PipelineSettings
+from sessions.pipeline.config import PipelineSettings, WorkerConfig
 import os
-log_level = os.getenv(PipelineConfig().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").uper()
+CONFIG = os.getenv("SESSIONS_CONFIG":-PipelineSettings())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
 try:
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 
-
-logger(__name__)
-settings(__name__)
 
 
 
@@ -122,6 +115,7 @@ class MerkleTreeBuilder:
         Returns:
             success: True if hash added successfully
         """
+        
         try:
             if session_id not in self.session_trees:
                 raise ValueError(f"No Merkle tree found for session {session_id}")
@@ -221,6 +215,7 @@ class MerkleTreeBuilder:
         Returns:
             combined_hash: Hash of concatenated hashes
         """
+        
         try:
             # Concatenate hashes (left first, then right)
             combined = left_hash + right_hash
@@ -250,6 +245,7 @@ class MerkleTreeBuilder:
         Returns:
             tree_proof: Finalized tree proof data
         """
+        
         try:
             if session_id not in self.session_trees:
                 raise ValueError(f"No Merkle tree found for session {session_id}")
@@ -426,6 +422,7 @@ class MerkleTreeBuilder:
     
     async def cleanup_session_tree(self, session_id: str):
         """Cleanup session tree resources"""
+        
         try:
             logger.info(f"Cleaning up Merkle tree for session {session_id}")
             

@@ -29,8 +29,7 @@ from admin.rbac.middleware import (
     validate_permission, validate_role,
     get_permission_info, get_role_info
     )
-import admin.utils.logging as logging
-logger = logging.get_logger(__name__)
+from admin.utils.logging import get_logger, setup_logging
 
 
 __all__ = [
@@ -44,7 +43,7 @@ __all__ = [
     "check_permission_dependency", "check_role_dependency",
     "require_permission_dependency", "require_role_dependency",
     "validate_permission", "validate_role",
-    "get_permission_info", "get_role_info", "logger", "logging",
+    "get_permission_info", "get_role_info","get_logger", "setup_logging",
     "get_all_permissions", "get_permissions_by_type", "get_permissions_by_resource",
     "get_permissions_by_action", "permission_exists", "get_permission_hierarchy",
     "validate_permission_name", "get_permission_dependencies", "get_permission_dependents",

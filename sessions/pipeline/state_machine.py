@@ -7,24 +7,22 @@ Handles state transitions for session processing pipelines
 from enum import Enum
 from typing import Dict, Set, Optional
 from dataclasses import dataclass
-from .config import PipelineSettings, WorkerConfig
+from sessions.pipeline.config import PipelineSettings, WorkerConfig
++
+
 import os
-log_level = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(WorkerConfig().CONFIG_FILE(), "INFO").upper()
+CONFIG = os.getenv("SESSIONS_CONFIG":-PipelineSettings())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+
 try:
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 
-logger(__name__)
-settings(__name__)
+
 
 class PipelineState(Enum):
     """Pipeline states"""

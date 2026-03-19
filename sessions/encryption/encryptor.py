@@ -17,24 +17,18 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 import blake3
 
-from ..api.config import get_config, load_config
+from sessions.api.config import get_config, load_config
 import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+CONFIG = os.getenv("SESSIONS_CONFIG":-get_config())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[load_config()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().LOG_LEVEL(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[load_config()])
 
-logger(__name__)
-settings(__name__)
 
 
 @dataclass

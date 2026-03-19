@@ -7,22 +7,21 @@ Handles interaction with node-management service for node coordination
 import os
 from typing import Dict, Any, Optional, List
 
-from .service_base import ServiceClientBase, ServiceError
-from ....sessions.api.config import get_config
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-settings = get_config()
-try:  
-    from ....sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+from sessionds.pipeline.integration.service_base import ServiceClientBase, ServiceError
+
+from sessions.pipeline.config import PipelineSettings, WorkerConfig
+import os
+CONFIG = os.getenv("SESSIONS_CONFIG":-PipelineSettings())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-    
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
+
+
 
 
 class NodeManagerClient(ServiceClientBase):

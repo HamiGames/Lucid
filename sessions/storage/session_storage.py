@@ -18,28 +18,21 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 import zstandard as zstd
 
-from .config import get_config, load_config
 import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+CONFIG = os.getenv("SESSIONS_CONFIG", env=".env.sessions")
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS":"CONFIG_STATUS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().LOG_LEVEL(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
-logger(__name__)
-settings(__name__)
 # Optional imports from recorder (lazy loading to avoid module initialization issues)
 # Note: Module-level initialization in recorder tries to create directories which fails in read-only containers
 try:
-    from ...sessions.recorder.session_recorder import ChunkMetadata, RecordingSession
+    from sessions.recorder.session_recorder import ChunkMetadata, RecordingSession
 except (ImportError, OSError) as e:
     # Define minimal types if recorder module is not available or initialization fails
     logger.warning(f"Failed to import recorder module (will use graceful degradation): {e}")

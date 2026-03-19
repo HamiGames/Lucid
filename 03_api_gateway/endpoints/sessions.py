@@ -24,7 +24,7 @@ from models.session import (
     SessionStatus,
     SessionTerminateRequest,
 )
-from models.common import ErrorResponse
+from api.app.models.common import ErrorResponse
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 

@@ -11,12 +11,17 @@ Dependencies: motor (async MongoDB)
 
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-import os 
-import logging
-from api.app.config  import get_settings
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig(settings.LOG_LEVEL(), "INFO")
+
+import os
+from api.app.config import get_settings
+
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 # Global database client and database
 _client: Optional[AsyncIOMotorClient] = None
 _database: Optional[AsyncIOMotorDatabase] = None

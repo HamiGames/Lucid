@@ -13,17 +13,17 @@ from api.app.schemas.sessions import (
     SessionState, SessionStateUpdate
 )
 from api.app.db.models.session import RDPSession  
-from api.app.config import get_settings
 # Import session pipeline components
 import sys
+from api.app.config import get_settings
 import os
-from ...app.config import get_settings
-settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
-import logging
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO")  
-logger = logging.getLogger(__name__)
-
-
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 # FIX: was '../../../../sessions' which resolves to /sessions (filesystem root) in the container.
 # __file__ = /app/api/app/services/session_service.py → 3 levels up = /app → /app/sessions
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../../sessions'))

@@ -13,24 +13,8 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
-from ..api.config import get_config
+from sessions.api.config import get_config
 import os
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-settings = get_config()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
-except ImportError:
-    import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-    
-logger(__name__)
-settings(__name__)
 
 
 try:
@@ -127,7 +111,7 @@ class ChunkProcessorConfig(BaseSettings):
     port: int = 8091  # Default port (overridden by SESSION_PROCESSOR_PORT from docker-compose)
     SESSION_PROCESSOR_PORT: str = ""  # From docker-compose: SESSION_PROCESSOR_PORT
     
-    # Database Configuration (from .env.foundation, .env.core)
+    # Database Configuration (from sessions.processor.env.foundation, .env.core)
     mongodb_url: str = ""  # Required from environment: MONGODB_URL
     redis_url: str = ""  # Required from environment: REDIS_URL
     
@@ -177,7 +161,7 @@ class ChunkProcessorConfig(BaseSettings):
     jaeger_enabled: bool = False
     jaeger_endpoint: Optional[str] = None
     
-    # External Service URLs (from .env.core, .env.application)
+    # External Service URLs (from sessions.processor.env.core, .env.application)
     BLOCKCHAIN_ENGINE_URL: str= os.getenv('BLOCKCHAIN_ENGINE_URL', '')  # From environment: BLOCKCHAIN_ENGINE_URL (e.g., http://blockchain-engine:8084)
     NODE_MANAGEMENT_URL: str = os.getenv('NODE_MANAGEMENT_URL', '')  # From environment: NODE_MANAGEMENT_URL (e.g., http://node-management:8095)
     API_GATEWAY_URL: str = os.getenv('API_GATEWAY_URL', '')  # From environment: API_GATEWAY_URL (e.g., http://api-gateway:8080)
@@ -186,7 +170,7 @@ class ChunkProcessorConfig(BaseSettings):
     SESSION_RECORDER_URL: str = os.getenv('SESSION_RECORDER_URL', '')  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
     SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
     SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
-    # Integration Service Timeout Configuration (from .env.application)
+    # Integration Service Timeout Configuration (from sessions.processor.env.application)
     SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
     SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls
     SERVICE_RETRY_DELAY_SECONDS: float = 1.0  # Default delay between retries
@@ -238,7 +222,7 @@ class ChunkProcessorConfig(BaseSettings):
             # This is acceptable - encryption may be optional
             return None
         if "your-" in str(v).lower() or "placeholder" in str(v).lower():
-            raise ValueError('ENCRYPTION_KEY contains placeholder value - must be set from .env.secrets')
+            raise ValueError('ENCRYPTION_KEY contains placeholder value - must be set from sessions.processor.env.secrets')
         return v
     
     @field_validator('encryption_key', mode='before')

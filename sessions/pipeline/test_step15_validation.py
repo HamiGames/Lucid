@@ -6,15 +6,16 @@ Tests that session pipeline progresses through all 6 states as required
 
 import asyncio
 import pytest
-import logging
 from typing import Dict, Any
 from datetime import datetime
 
 from .pipeline_manager import PipelineManager, SessionPipeline
 from .state_machine import PipelineState, StateTransition
 from .config import PipelineConfig
+import logging
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(settings= PipelineConfig(), "LOG_LEVEL", "INFO")
+
 
 class Step15ValidationTest:
     """

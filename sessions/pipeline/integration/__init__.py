@@ -6,7 +6,3 @@ path: ..pipeline.integration
 file: sessions/pipeline/integration/__init__.py
 the integration calls the sessions pipeline integration
 """
-
-from ...core.logging import *
-
-__all__ = [ '*'	]

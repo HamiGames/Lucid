@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import asyncio
-import sessions.core.logging as logging
+
 from typing import Dict, List, Optional, BinaryIO, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -12,8 +12,18 @@ from pathlib import Path
 import os
 import uuid
 from motor.motor_asyncio import AsyncIOMotorDatabase
+import os
 
-logger = logging.get_logger(__name__)
+CONFIG: os.getenv("SESSIONS_CONFIG", env=".env.sessions")
+INFO: os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS: os.getenv("SESSIONS_SETTINGS":"CONFIG_STATUS", env=".env.sessions")
+
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
+except ImportError:
+    import logging
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 
 @dataclass

@@ -17,26 +17,21 @@ import base64
 import secrets
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
-from .session_pipeline_manager import SessionMetrics
-from .state_machine import PipelineStateMachine, PipelineState, StateTransition
-from .config import PipelineSettings, WorkerConfig, PipelineConfig
+from sessions.pipeline.session_pipeline_manager import SessionMetrics
+from sessions.pipeline.state_machine import PipelineStateMachine, PipelineState, StateTransition
+from sessions.pipeline.config import PipelineSettings, WorkerConfig, Pipelineconfig
 import os
-log_level = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(WorkerConfig().CONFIG_FILE(), "INFO").upper()
+CONFIG = os.getenv("SESSIONS_CONFIG":-PipelineSettings())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
 try:
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 
-logger(__name__)
-settings(__name__)
+
 
 @dataclass
 class PipelineStage:
@@ -80,7 +75,7 @@ class PipelineManager:
         
         # Initialize integration manager for external service communication
         try:
-            from ...sessions.pipeline.integration.integration_manager import IntegrationManager
+            from sessions.pipeline.integration.integration_manager import IntegrationManager
             self.integrations = IntegrationManager(self.config)
             logger.info("Integration manager initialized")
         except Exception as e:
@@ -581,7 +576,7 @@ class PipelineManager:
         """Generate 10MB chunks from session data"""
         try:
             # Import chunk generator
-            from recorder.chunk_generator import ChunkGenerator, ChunkConfig
+            from sessions.recorder.chunk_generator import ChunkGenerator, ChunkConfig
             
             # Configure for 10MB chunks (use config from settings)
             chunk_size_mb = self.config.settings.CHUNK_SIZE_MB
@@ -609,7 +604,7 @@ class PipelineManager:
         """Build Merkle tree from chunk data"""
         try:
             # Import Merkle tree builder
-            from core.merkle_builder import MerkleTreeBuilder
+            from sessions.core.merkle_builder import MerkleTreeBuilder
             
             # Build Merkle tree
             builder = MerkleTreeBuilder()

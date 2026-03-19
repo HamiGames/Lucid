@@ -7,7 +7,8 @@
 from admin.emergency.controls import (EmergencyControls, EmergencyAction, EmergencyStatus, 
                                       EmergencySeverity, EmergencyControl, EmergencyEvent,
                                       get_emergency_controls )
-from ..utils.logging import get_logger
+from admin.utils.logging import get_logger
+from admin.config import AdminConfig, get_admin_config
 
 __all__ = [
     "EmergencyControls",
@@ -17,5 +18,7 @@ __all__ = [
     "EmergencySeverity",
     "EmergencyControl",
     "EmergencyEvent",
-    "get_logger"
+    "get_logger",
+    "AdminConfig",
+    "get_admin_config"
 ]

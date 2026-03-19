@@ -14,13 +14,15 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 import jwt
 
-from models.auth import LoginRequest, TokenResponse, TokenPayload
-from api.app.config  import get_settings
+from api.app.models.auth import LoginRequest, TokenResponse, TokenPayload
+from api.app.config import get_settings
 import os
-import logging
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig('LOG_LEVEL', "INFO")
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
 
 class AuthenticationError(Exception):
     """Base exception for authentication errors."""

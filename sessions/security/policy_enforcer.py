@@ -22,20 +22,17 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
 
+from sessions.api.config import get_config
 import os
-from ...sessions.config import get_config
-settings = os.getenv(get_config().LOG_LEVEL, 'INFO').upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+CONFIG = os.getenv("SESSIONS_CONFIG":-get_config())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS":"CONFIG_STATUS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=settings.LOG_LEVEL)
-
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 # Configuration from environment
 POLICY_PATH = Path(os.getenv("LUCID_POLICY_PATH", "/data/policies"))

@@ -23,7 +23,7 @@ from models.user import (
     UserPreferences,
     UserActivity,
 )
-from models.common import ErrorResponse, PaginationParams
+from api.app.models.common import ErrorResponse, PaginationParams
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

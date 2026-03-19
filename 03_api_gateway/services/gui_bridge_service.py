@@ -9,14 +9,14 @@ Manages communication with gui_api_bridge service for Electron GUI integration
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
-
-from api.app.config  import get_settings
+from api.app.config import get_settings
 import os
-import logging
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig('LOG_LEVEL', "INFO")
-
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
 
 
 class GuiBridgeServiceError(Exception):

@@ -16,6 +16,9 @@ file: sessions/storage/__init__.py
 the storage calls the sessions storage
 """
 
-from ..core.logging import *
+from sessions.core.logging import get_logger, setup_logging
 
-__all__ = [ '*'	]
+__all__ = [
+    'setup_logging',
+    'get_logger'
+]

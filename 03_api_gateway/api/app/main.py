@@ -23,11 +23,11 @@ import uvicorn
 
 from .config import Settings, get_settings
 
-from .middleware.auth import AuthMiddleware
-from .middleware.rate_limit import RateLimitMiddleware
-from .middleware.logging import LoggingMiddleware
-from .middleware.cors import CORSConfig
-from .routers import (
+from api.app.middleware.auth import AuthMiddleware
+from api.app.middleware.rate_limit import RateLimitMiddleware
+from api.app.middleware.logging import LoggingMiddleware
+from api.app.middleware.cors import CORSConfig
+from api.app.routers import (
     meta,
     auth,
     users,
@@ -42,22 +42,18 @@ from .routers import (
     gui_hardware,
     tron_support
 )
-from .database.connection import init_database
-from .models.common import ErrorResponse, ErrorDetail
+from api.app.database.connection import init_database
+from api.app.models.common import ErrorResponse, ErrorDetail
 import uuid
 from datetime import datetime
 
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
 try:
-    from .utils.logging import get_logger
-    logger = get_logger(log_level)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO")
 except ImportError:
     import logging
-    logger = logging.getLogger(log_level)
-    logging.basicConfig(level=log_level)
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger("LOG_LEVEL", "INFO")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

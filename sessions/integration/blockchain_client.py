@@ -21,24 +21,18 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
 import httpx
-from ..pipeline.config import PipelineSettings, PipelineConfig
+from sessions.pipeline.config import PipelineSettings, PipelineConfig
 import os
-log_level = os.getenv(PipelineSettings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(PipelineConfig().CONFIG_FILE(), "INFO").upper()
-try: 
-    from ..core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+CONFIG = os.getenv("SESSIONS_CONFIG":-PipelineConfig())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[PipelineSettings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[PipelineSettings()])
 
-logger(__name__)
-settings(__name__)
 
 # Configuration from environment - Updated for dual-chain architecture
 BLOCKCHAIN_CONFIG_PATH = Path(os.getenv("LUCID_BLOCKCHAIN_CONFIG_PATH", "/data/blockchain"))

@@ -8,12 +8,24 @@ Handles environment variables, service settings, and security configuration.
 """
 
 import os
-import admin.utils.logging as logging
+
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from pathlib import Path
 
-logger = logging.get_loggerogger(__name__)
+# Logger must be defined before use in exception handlers
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger("LOG_LEVEL" "INFO")
 
 
 @dataclass

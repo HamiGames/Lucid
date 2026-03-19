@@ -22,7 +22,7 @@ from models.session import (
     MerkleProof,
     ChunkInfo,
 )
-from models.common import ErrorResponse
+from api.app.models.common import ErrorResponse
 
 router = APIRouter(prefix="/manifests", tags=["Manifests"])
 

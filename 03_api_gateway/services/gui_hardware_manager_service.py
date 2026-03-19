@@ -10,11 +10,14 @@ import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 import os
-from ...app.config import get_settings
-import logging
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig('LOG_LEVEL', "INFO")
+from api.app.config import get_settings
+import os
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
 
 
 class GuiHardwareManagerServiceError(Exception):

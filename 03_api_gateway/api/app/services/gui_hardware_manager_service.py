@@ -6,19 +6,15 @@ File: 03_api_gateway/api/app/services/gui_hardware_manager_service.py
 Purpose: Service for handling GUI Hardware Manager integration and proxy operations
 """
 import os
-from ..config import Settings, get_settings
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+from api.app.config import get_settings
+
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(log_level)
-    logging.basicConfig(level=log_level)
-
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 class GuiHardwareManagerServiceError(Exception):
     """GUI Hardware Manager service error"""

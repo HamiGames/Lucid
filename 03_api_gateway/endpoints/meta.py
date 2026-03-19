@@ -18,7 +18,7 @@ from datetime import datetime
 import psutil
 import platform
 
-from models.common import ServiceInfo, HealthStatus, VersionInfo, MetricsResponse
+from api.app.models.common import ServiceInfo, HealthStatus, VersionInfo, MetricsResponse
 
 router = APIRouter(prefix="/meta", tags=["Meta"])
 

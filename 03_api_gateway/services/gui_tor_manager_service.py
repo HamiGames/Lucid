@@ -8,14 +8,14 @@ Purpose: Service for handling GUI Tor Manager integration and proxy operations
 import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
+from api.app.config import get_settings
 import os
-from ...app.config import get_settings
-settings = os.getenv('LOG_LEVEL', 'INFO').upper()
-import logging
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO")  
-logger = logging.getLogger(__name__)
-
-
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
 
 class GuiTorManagerServiceError(Exception):
     """GUI Tor Manager service error"""

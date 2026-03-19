@@ -17,27 +17,22 @@ import aiofiles.os
 from dataclasses import dataclass
 import zstandard as zstd
 import lz4.frame
-import os
-from .config import get_config, load_config
 
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
-try: 
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+import os
+CONFIG = os.getenv("SESSIONS_CONFIG", env=".env.sessions")
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS":"CONFIG_STATUS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=settings.LOG_LEVEL)
-    
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 # Optional import from recorder (lazy loading to avoid module initialization issues)
 # Note: Module-level initialization in recorder tries to create directories which fails in read-only containers
 try:
-    from ..recorder.session_recorder import ChunkMetadata
+    from sessions.recorder.session_recorder import ChunkMetadata
 except (ImportError, OSError) as e:
     # Define minimal type if recorder module is not available or initialization fails
     logger.warning(f"Failed to import recorder module (will use graceful degradation): {e}")

@@ -12,18 +12,21 @@ import hashlib
 import secrets
 import base64
 import os
-import logging
-from ...app.config import get_settings
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig('LOG_LEVEL', "INFO")
 from typing import Optional
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
 from cryptography.hazmat.backends import default_backend
 from eth_account.messages import encode_defunct
 from web3 import Web3
+from api.app.config import get_settings
 
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 def hash_password(password: str, salt: Optional[bytes] = None) -> tuple:
     """

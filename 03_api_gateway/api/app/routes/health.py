@@ -4,11 +4,10 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 from typing import Any, Dict
-
 from fastapi import APIRouter
 
-from ..database.connection import ping as mongo_ping
-from ..utils.config import (
+from api.app.database.connection import ping as mongo_ping
+from api.app.utils.config import (
     mongo_conn_str,
     service_name,
     service_version,

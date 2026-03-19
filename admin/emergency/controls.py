@@ -16,17 +16,17 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 import uuid
 
 try: 
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__, "INFO")
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__, "INFO")
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
     logging.basicConfig(
     level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-logger(__name__, "INFO")
+logger("LOG_LEVEL" "INFO")
 
 
 class EmergencyAction(Enum):

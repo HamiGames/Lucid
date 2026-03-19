@@ -25,26 +25,21 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import base64
 
-from .config import get_config, load_config  
+from sessions.processor.config import EncryptionConfig, ChunkProcessorConfig
+
 import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS": EncryptionConfig())
 try:
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 
 
-logger(__name__)
-settings(__name__)
 class EncryptionError(Exception):
     """Base exception for encryption-related errors."""
     pass

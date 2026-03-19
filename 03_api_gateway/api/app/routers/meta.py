@@ -5,25 +5,20 @@ File: 03_api_gateway/api/app/routers/meta.py
 Purpose: Service metadata, health checks, and version information
 """
 import os
-from ..config import Settings, get_settings
-log_level = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
+from api.app.config import get_settings
+
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 import time
 from datetime import datetime
 from fastapi import APIRouter, Response
-from ..models.common import ServiceInfo, HealthStatus
+from api.app.models.common import ServiceInfo, HealthStatus
 
 router = APIRouter()
 

@@ -6,8 +6,8 @@ from typing import Any
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 
-from ....api.app.database.connection import get_database
-from ....api.app.utils.config import mongo_conn_str, mongo_timeouts_ms
+from api.app.database.connection import get_database
+from api.app.utils.config import mongo_conn_str, mongo_timeouts_ms
 
 
 def _mongo_url() -> str:

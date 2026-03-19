@@ -10,14 +10,15 @@ import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 import os
-from ...app.config import get_settings
-settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
-import logging
-settings = os.getenv(get_settings().LOG_LEVEL(), "INFO")  
-logger = logging.getLogger(__name__)
+from api.app.config import get_settings
 
-
-
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 class TronSupportServiceError(Exception):
     """TRON support service error"""

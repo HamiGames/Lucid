@@ -9,20 +9,15 @@ import aiohttp
 from typing import Dict, Any, Optional
 from datetime import datetime
 import os
-from ..config import Settings, get_settings
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+from api.app.config import get_settings
+
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(log_level)
-    logging.basicConfig(level=log_level)
-
-logger(__name__)
-settings(__name__)
-
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 
 

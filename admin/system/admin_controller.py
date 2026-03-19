@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import admin.utils.logging as logging
 import hashlib
 import struct
 from pathlib import Path
@@ -28,11 +27,22 @@ import blake3
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import bcrypt
-
 from admin.config import get_admin_config
-
 # Logger must be defined before use in exception handlers
-logger = logging.get_logger(__name__)
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger("LOG_LEVEL" "INFO")
+
+
 
 # Import blockchain engine (optional - may not be available)
 import sys

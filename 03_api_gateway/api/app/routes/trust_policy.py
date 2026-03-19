@@ -3,28 +3,22 @@
 
 from fastapi import APIRouter, HTTPException, Depends, status
 import os
-from ..config import Settings, get_settings
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+from api.app.config import get_settings
+
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 from typing import Optional
 
-from ..schemas.sessions import (
+from api.app.schemas.sessions import (
     TrustPolicy, PolicyValidationRequest, PolicyValidationResponse
 )
-from ..schemas.errors import ErrorResponse
-from ..services.session_service import SessionService
+from api.app.schemas.errors import ErrorResponse
+from api.app.services.session_service import SessionService
 
 router = APIRouter()
 

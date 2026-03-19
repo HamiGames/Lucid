@@ -463,6 +463,11 @@ COPY --chown=65532:65532 --from=builder /build/utils/ /app/utils/
 # import .gateway files
 COPY --chown=65532:65532 --from=builder /build/gateway/ /app/gateway/
 
+RUN echo "Verifying new modules are included in builder stage" && \
+    test -f /build/api/app/routers/gui.py && echo "gui.py found" && \
+    echo "All new modules verified in builder stage" && \
+    python3 -c "import sys; sys.path.insert(0, '/app'); from api.app import config, main; from api.app.routers import auth, gui, trust, sessions, tron_support; from api.app.services import gui_bridge_service, tron_support_service; from sessions.pipeline import pipeline_manager; from sessions.core import session_generator, session_orchestrator; print('All module imports successful in builder')" && \
+    echo "Verification complete"
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 

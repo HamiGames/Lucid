@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 import asyncio
-import admin.utils.logging as logging
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import uuid
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-logger = logging.get_logger(__name__)
+# Logger must be defined before use in exception handlers
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger("LOG_LEVEL" "INFO")
 
 
 @dataclass

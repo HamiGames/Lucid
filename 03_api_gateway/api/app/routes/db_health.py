@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
-from ..services.mongo_service import ping as mongo_ping
+from api.app.services.mongo_service import ping as mongo_ping
 
 router = APIRouter(prefix="/health", tags=["health"])
 

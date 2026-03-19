@@ -1,4 +1,4 @@
-from .config import get_settings, Settings
+from api.app.config import get_settings, Settings
 
 
 def get_config() -> Settings:

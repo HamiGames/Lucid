@@ -8,20 +8,15 @@ Architecture Note: Proxies to isolated TRON payment system services
 """
 
 import os
-from ..config import Settings, get_settings
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+from api.app.config import get_settings
+
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 from fastapi import APIRouter, HTTPException
 
@@ -33,7 +28,7 @@ router = APIRouter()
 async def get_payout_router_info():
     """Get TRON Payout Router service information"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         info = await tron_support_service.get_payout_info()
         return info
@@ -46,7 +41,7 @@ async def get_payout_router_info():
 async def check_payout_router_health():
     """Check TRON Payout Router service health"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         is_healthy = await tron_support_service.check_payout_health()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -67,7 +62,7 @@ async def check_payout_router_health():
 async def get_payout_status():
     """Get TRON Payout Router status"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         status = await tron_support_service.get_payout_status()
         return status
@@ -81,7 +76,7 @@ async def get_payout_status():
 async def get_wallet_manager_info():
     """Get TRON Wallet Manager service information"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         info = await tron_support_service.get_wallet_info()
         return info
@@ -94,7 +89,7 @@ async def get_wallet_manager_info():
 async def check_wallet_manager_health():
     """Check TRON Wallet Manager service health"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         is_healthy = await tron_support_service.check_wallet_health()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -115,7 +110,7 @@ async def check_wallet_manager_health():
 async def list_wallets():
     """List TRON wallets from Wallet Manager"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         wallets = await tron_support_service.list_wallets()
         return wallets
@@ -129,7 +124,7 @@ async def list_wallets():
 async def get_usdt_manager_info():
     """Get TRON USDT Manager service information"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         info = await tron_support_service.get_usdt_info()
         return info
@@ -142,7 +137,7 @@ async def get_usdt_manager_info():
 async def check_usdt_manager_health():
     """Check TRON USDT Manager service health"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         is_healthy = await tron_support_service.check_usdt_health()
         return {
             "status": "healthy" if is_healthy else "unhealthy",
@@ -163,7 +158,7 @@ async def check_usdt_manager_health():
 async def get_usdt_balance(wallet_id: str):
     """Get USDT balance from USDT Manager"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         balance = await tron_support_service.get_usdt_balance(wallet_id)
         return balance
@@ -176,7 +171,7 @@ async def get_usdt_balance(wallet_id: str):
 async def transfer_usdt():
     """Transfer USDT via USDT Manager"""
     try:
-        from ..services.tron_support_service import tron_support_service
+        from api.app.services.tron_support_service import tron_support_service
         await tron_support_service.initialize()
         result = await tron_support_service.transfer_usdt()
         logger.info("USDT transfer initiated")

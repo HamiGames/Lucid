@@ -5,16 +5,24 @@ Provides common functionality for service communication
 """
 
 import asyncio
-import logging
+
 import os
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
 import httpx
 from datetime import datetime
+from sessions.pipeline.config import PipelineSettings, WorkerConfig
+import os
+CONFIG = os.getenv("SESSIONS_CONFIG":-PipelineSettings())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
+except ImportError:
+    import logging
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
 
-from core.logging import get_logger
-
-logger = logging.get_logger(__name__)
 
 
 class ServiceError(Exception):

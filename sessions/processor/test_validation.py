@@ -13,31 +13,20 @@ import asyncio
 import hashlib
 import time
 from typing import List
-
-from .encryption import EncryptionManager, ChunkEncryptor
-from .merkle_builder import MerkleTreeBuilder, MerkleTreeManager
-from .chunk_processor import ChunkProcessor
-
-from .config import get_config, load_config, ChunkProcessorConfig
+from sessions.processor.encryption import EncryptionManager, ChunkEncryptor
+from sessions.processor.merkle_builder import MerkleTreeBuilder, MerkleTreeManager
+from sessions.processor.chunk_processor import ChunkProcessor
+from sessions.processor.config import ChunkProcessorConfig
 import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().CONFIG_FILE(), "INFO").upper()
+CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
 try:
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-
-
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 
 async def test_encryption():

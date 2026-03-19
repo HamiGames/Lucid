@@ -21,31 +21,22 @@ import uuid
 import hashlib
 import gzip
 
-from .chunk_generator import ChunkGenerator
+from sessions.recorder.chunk_generator import ChunkGenerator
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Lifespan
 from pydantic import BaseModel
-from .config import RecorderSettings, RecorderConfig
-
+from sessions.recorder.config import RecorderConfig, RecorderSettings
 import os
-settings = os.getenv(RecorderSettings().LOG_LEVEL(), 'INFO').upper()
-log_level = os.getenv(RecorderConfig().LOG_LEVEL(), 'INFO').upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+CONFIG = os.getenv("SESSIONS_CONFIG":-RecorderConfig())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS":-RecorderSettings())
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, settings().log_level(), logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-  
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
-logger(__name__)
-settings(__name__)
-# Configuration will be loaded from config module
 # These are kept as fallback defaults for backward compatibility
 RECORDING_PATH = Path(os.getenv("LUCID_RECORDING_PATH", "/app/recordings"))
 FFMPEG_PATH = os.getenv("LUCID_FFMPEG_PATH", "/usr/bin/ffmpeg")

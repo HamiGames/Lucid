@@ -5,20 +5,15 @@ File: 03_api_gateway/api/app/routers/sessions.py
 Purpose: Session lifecycle management
 """
 import os
-from ..config import Settings, get_settings
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
+from api.app.config import get_settings
+
 try:
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 
 from fastapi import APIRouter, HTTPException
 
@@ -30,7 +25,7 @@ async def list_sessions():
     """List user sessions"""
     # TODO: Implement list sessions
     #try: 
-    #    from .....sessions.pipeline.pipeline_manager import PipelineManager
+    #    from api.app....sessions.pipeline.pipeline_manager import PipelineManager
     #    await PipelineManager.initialize()
     #    result = await PipelineManager.list_sessions()
     #    return result
@@ -45,7 +40,7 @@ async def create_session():
     """Create new session"""
     # TODO: Implement create session proxy
     #try: 
-    #    from .....sessions.pipeline.pipeline_manager import PipelineManager
+    #    from api.app....sessions.pipeline.pipeline_manager import PipelineManager
     #    await PipelineManager.initialize()
     #    result = await PipelineManager.create_session()
     #    return result
@@ -59,7 +54,7 @@ async def get_session(session_id: str):
     """Get session details"""
     # TODO: Implement get session
     #try: 
-    #    from .....sessions.pipeline.pipeline_manager import PipelineManager
+    #    from api.app....sessions.pipeline.pipeline_manager import PipelineManager
     #    await PipelineManager.initialize()
     #    result = await PipelineManager.get_session(session_id)
     #    return result
@@ -74,7 +69,7 @@ async def update_session(session_id: str):
     """Update session"""
     # TODO: Implement update session proxy
     #try: 
-    #    from .....sessions.pipeline.pipeline_manager import PipelineManager
+    #    from api.app....sessions.pipeline.pipeline_manager import PipelineManager
     #    await PipelineManager.initialize()
     #    result = await PipelineManager.update_session(session_id)
     #    return result
@@ -89,7 +84,7 @@ async def delete_session(session_id: str):
     """Delete session"""
     # TODO: Implement delete session proxy
     #try: 
-    #    from .....sessions.pipeline.pipeline_manager import PipelineManager
+    #    from api.app....sessions.pipeline.pipeline_manager import PipelineManager
     #    await PipelineManager.initialize()
     #    result = await PipelineManager.delete_session(session_id)
     #    return result

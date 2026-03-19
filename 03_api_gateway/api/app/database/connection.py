@@ -8,22 +8,14 @@ Includes tor-proxy bootstrap wait sequence before attempting connections
 import os
 
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-from ..config import Settings, get_settings
-settings = os.getenv(Settings().LOG_LEVEL(), "INFO").upper()
-log_level = os.getenv(get_settings().LOG_LEVEL(), "INFO").upper()
-try: 
-    from ..utils.logging import get_logger
-    logger = get_logger(__name__)
+from api.app.config import get_settings
+try:
+    from api.app.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger(__name__)
-settings(__name__)
-
+    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    
 import asyncio
 import socket
 from typing import Optional

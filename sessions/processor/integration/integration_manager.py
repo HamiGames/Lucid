@@ -4,37 +4,29 @@ Integration Manager for Session Processor
 Manages initialization and lifecycle of integration clients
 """
 
-import os
-
 from typing import Optional, Dict, Any
-
 # Use core.logging if available, fallback to standard logging
-from ....sessions.api.config import get_config
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-settings = get_config()
-try:  
-    from ....sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+from sessions.processor.config import ChunkProcessorConfig
+
+import os
+CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-logger(__name__)
-settings(__name__)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 
 # Import clients from pipeline integration (shared across services)
 # Note: PYTHONPATH includes /app, so sessions.pipeline.integration is accessible
 try:
-    from ...pipeline.integration.blockchain_engine_client import BlockchainEngineClient
-    from ...pipeline.integration.node_manager_client import NodeManagerClient
-    from ...pipeline.integration.api_gateway_client import APIGatewayClient
-    from ...pipeline.integration.auth_service_client import AuthServiceClient
+    from sessions.pipeline.integration.blockchain_engine_client import BlockchainEngineClient
+    from sessions.pipeline.integration.node_manager_client import NodeManagerClient
+    from sessions.pipeline.integration.api_gateway_client import APIGatewayClient
+    from sessions.pipeline.integration.auth_service_client import AuthServiceClient
 except ImportError:
     # Fallback if pipeline integration clients are not available
     BlockchainEngineClient = None
@@ -44,14 +36,14 @@ except ImportError:
 
 # Import local processor integration clients
 try:
-    from .session_pipeline_client import SessionPipelineClient
-    from .session_storage_client import SessionStorageClient
+    from sessions.pipeline.integration.session_pipeline_client import SessionPipelineClient
+    from sessions.pipeline.integration.session_storage_client import SessionStorageClient
 except ImportError:
     # Fallback if local clients fail to import
     SessionPipelineClient = None
     SessionStorageClient = None
 
-logger = logging.get_logger(__name__)
+
 
 
 class IntegrationManager:

@@ -8,7 +8,6 @@ Handles role assignment, permission checking, and access control.
 """
 
 import asyncio
-import admin.utils.logging as logging
 from typing import Dict, List, Optional, Set, Any
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
@@ -20,7 +19,18 @@ from pymongo.errors import DuplicateKeyError
 from admin.rbac.roles import Role, RoleType, get_role_hierarchy
 from admin.rbac.permissions import Permission, PermissionType, get_permission_mapping
 
-logger = logging.get_logger(__name__)
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger("LOG_LEVEL" "INFO")
 
 
 class RBACError(Exception):

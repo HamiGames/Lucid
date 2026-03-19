@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import asyncio
-import admin.utils.logging as logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -23,7 +22,19 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-logger = logging.get_logger(__name__)
+# Logger must be defined before use in exception handlers
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger("LOG_LEVEL" "INFO")
 
 # Configuration from admin config
 from admin.config import get_admin_config

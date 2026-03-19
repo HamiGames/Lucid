@@ -9,17 +9,17 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-
-
-import logging
 import os
-logger = logging.getLogger(__name__)
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-settings = os.getenv("LOG_LEVEL", "INFO").uper()
-logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+CONFIG = os.getenv("SESSIONS_CONFIG", env=".env.sessions")
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
+except ImportError:
+    import logging
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
+
 
 
 @dataclass
@@ -30,6 +30,7 @@ class WorkerConfig:
     timeout_seconds: int = 30
     retry_count: int = 3
     max_memory_mb: int = 512
+    logger: logger()
 
 @dataclass
 class StageConfig:

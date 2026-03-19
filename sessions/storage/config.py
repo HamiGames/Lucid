@@ -18,19 +18,8 @@ except ImportError:
     YAML_AVAILABLE = False
 import os
 import logging
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-settings = os.getenv("LOG_LEVEL", "INFO").upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
-except ImportError:
-    import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=settings().log_level())
-    
-logger(__name__)
-settings(__name__)
+logger = logging.getLogger(settings="SETTINGS", log_level= "INFO")
+
 
 
 class StorageSettings(BaseSettings):

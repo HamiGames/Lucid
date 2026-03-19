@@ -17,23 +17,21 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import uuid
-import os
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 import blake3
-from ...sessions.config import get_settings
-settings = os.getenv(get_settings().LOG_LEVEL, 'INFO').upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level())
+from sessions.api.config import get_config
+import os
+CONFIG = os.getenv("SESSIONS_CONFIG":-get_config())
+INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+SETTINGS = os.getenv("SESSIONS_SETTINGS":"CONFIG_STATUS", env=".env.sessions")
+try:
+    from sessions.core.logging import get_logger
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=settings.LOG_LEVEL)
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
-logger(__name__)
-settings(__name__)
 
 # Configuration from environment
 INPUT_CONTROL_PATH = Path(os.getenv("LUCID_INPUT_CONTROL_PATH", "/data/input_control"))

@@ -10,17 +10,9 @@ import logging
 import sys
 from typing import Any
 from pythonjsonlogger import jsonlogger
-from .config import service_name
+from api.app.config import service_name
 
-settings = os.getenv(service_name().LOG_LEVEL(), "INFO").upper()
-log_level = os.getenv('LOG_LEVEL', "INFO").upper()
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger(__name__)
-settings(__name__)
+logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 def setup_logging(log_level: str = "INFO") -> None:
     """

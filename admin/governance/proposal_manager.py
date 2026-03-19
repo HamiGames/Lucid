@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import asyncio
-from admin.utils.logging import get_logger
 import os
 import json
 import hashlib
@@ -21,7 +20,18 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.backends import default_backend
 
-logger = get_logger(__name__)
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger("LOG_LEVEL" "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL" "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger("LOG_LEVEL" "INFO")
 
 # Configuration from environment
 PROPOSAL_STORAGE_PATH = Path(os.getenv("PROPOSAL_STORAGE_PATH", "/data/governance/proposals"))
