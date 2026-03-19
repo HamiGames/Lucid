@@ -9,7 +9,7 @@ Emergency controls API endpoints for the Lucid admin interface.
 Provides emergency response capabilities and system lockdown controls.
 """
 
-import admin.utils.logging as logging
+
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends, status
@@ -17,8 +17,18 @@ from pydantic import BaseModel, Field
 
 from admin.emergency.controls import get_emergency_controls, EmergencyControls, EmergencyAction, EmergencyStatus, EmergencySeverity
 from admin.rbac.manager import get_rbac_manager, RBACManager
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger(__name__, "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__, "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-logger = logging.get_logger(__name__)
+logger(__name__, "INFO")
 
 router = APIRouter()
 

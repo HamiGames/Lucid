@@ -23,7 +23,7 @@ import aiohttp
 
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 # Configure logging
 

@@ -7,7 +7,7 @@ Session management API endpoints for the Lucid admin interface.
 Provides session monitoring, control, and termination functionality.
 """
 
-import admin.utils.logging as logging
+
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body
@@ -20,7 +20,18 @@ from admin.system.admin_controller import AdminController, AdminAccount
 from admin.rbac.manager import RBACManager
 from admin.audit.logger import AuditLogger
 
-logger = logging.get_logger(__name__)
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger(__name__, "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__, "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger(__name__, "INFO")
 
 # Create router
 router = APIRouter()

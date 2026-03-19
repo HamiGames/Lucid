@@ -15,7 +15,11 @@ import time
 import os
 from pathlib import Path
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger("LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 # Configuration from environment
 KEY_ROTATION_INTERVAL_DAYS = 90

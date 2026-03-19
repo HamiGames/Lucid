@@ -31,7 +31,7 @@ def setup_logging(log_level: str = "INFO") -> None:
     """
     
     # Configure root logger
-    root_logger = logging.getLogger()
+    root_logger = logging.getLogger("LOG_LEVEL", "INFO")
     root_logger.setLevel(getattr(logging, log_level.upper()))
     
     # Remove existing handlers

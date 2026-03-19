@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import aiofiles
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 # Configuration from environment
 KEY_STORAGE_PATH = Path(os.getenv("KEY_STORAGE_PATH", "/secrets/keys"))

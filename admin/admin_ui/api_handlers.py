@@ -12,14 +12,24 @@ from typing import List, Optional, Dict, Any
 import asyncio
 import json
 import os
-import logging
 from datetime import datetime, timedelta
 import aiofiles
 from pathlib import Path
+from admin.config import get_admin_config, AdminConfig
+log_level = os.getenv(AdminConfig().LOG_LEVEL(), "INFO") 
+settings = os.getenv(get_admin_config().LOG_LEVEL(), "INFO")
+try: 
+    from admin.utils.logging import get_logger
+    logger = get_logger(log_level().settings(), "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger("LOG_LEVEL", "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+logger(__name__, "INFO")
 
 app = FastAPI(
     title="LUCID Admin UI API",

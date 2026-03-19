@@ -7,8 +7,7 @@
 from admin.emergency.controls import (EmergencyControls, EmergencyAction, EmergencyStatus, 
                                       EmergencySeverity, EmergencyControl, EmergencyEvent,
                                       get_emergency_controls )
-import admin.utils.logging as logging
-logger = logging.get_logger(__name__)
+from ..utils.logging import get_logger
 
 __all__ = [
     "EmergencyControls",
@@ -18,5 +17,5 @@ __all__ = [
     "EmergencySeverity",
     "EmergencyControl",
     "EmergencyEvent",
-    "logger", "logging"
+    "get_logger"
 ]

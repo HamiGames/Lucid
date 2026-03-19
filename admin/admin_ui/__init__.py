@@ -24,15 +24,12 @@ from admin.admin_ui.provisioning_manager import (
     NodeType, ProvisioningStatus, NetworkType, ResourceRequirements, NodeConfiguration, ProvisioningRequest, ProvisioningStatusResponse, ProvisioningManager, create_provisioning_request, get_provisioning_status, get_all_provisioning_status, cancel_provisioning
 )
 
-import admin.utils.logging as logging
-logger = logging.get_logger(__name__)
-setup_logging= logging.setup_logging(__name__)
-
+from admin.utils.logging import get_logger, setup_logging
 __all__ = [
     "ExportFormat", "ExportStatus", "SessionStatus", "SessionChunk", "SessionManifest", "ExportRequest", "ExportStatusResponse", "SessionExportManager", "create_export_request", "get_export_status", "get_all_export_status", "download_export",
     "app", "get_system_status", "get_nodes", "get_sessions", "provision_node", "process_provisioning", "export_sessions", "process_session_export", "download_export", "get_logs", "get_metrics",
     "DiagnosticLevel", "SystemStatus", "DiagnosticResult", "SystemDiagnostics", "get_system_diagnostics", "get_service_logs",
     "KeyType", "KeyStatus", "KeyUsage", "KeyMetadata", "KeyRotationPolicy", "KeyRotationResult", "KeyManager", "generate_new_key", "get_key_data", "list_all_keys", "rotate_key_now", "get_rotation_schedule", "auto_rotate_all_keys",
     "NodeType", "ProvisioningStatus", "NetworkType", "ResourceRequirements", "NodeConfiguration", "ProvisioningRequest", "ProvisioningStatusResponse", "ProvisioningManager", "create_provisioning_request", "get_provisioning_status", "get_all_provisioning_status", "cancel_provisioning",
-    "logger", "setup_logging",
+    "get_logger", "setup_logging",
 ]

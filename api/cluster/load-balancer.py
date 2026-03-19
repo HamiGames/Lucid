@@ -16,7 +16,7 @@ import uvicorn
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
+logger = logging.getLogger("LOG_LEVEL", "INFO")
 
 @dataclass
 class BackendServer:

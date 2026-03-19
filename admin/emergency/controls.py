@@ -6,7 +6,7 @@ Step 23: Admin Backend APIs Implementation
 Emergency control system for system lockdown, session management, and critical operations.
 """
 
-import admin.utils.logging as logging
+
 import asyncio
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Any, Union
@@ -15,7 +15,18 @@ from enum import Enum
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 import uuid
 
-logger = logging.get_logger(__name__)
+try: 
+    from ..utils.logging import get_logger
+    logger = get_logger(__name__, "INFO")
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__, "INFO")
+    logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger(__name__, "INFO")
 
 
 class EmergencyAction(Enum):
