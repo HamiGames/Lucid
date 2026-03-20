@@ -28,15 +28,20 @@ import base64
 from sessions.processor.config import EncryptionConfig, ChunkProcessorConfig
 
 import os
-CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS": EncryptionConfig())
+CONFIG = os.getenv("SESSIONS_CONFIG")
+INFO = os.getenv("SESSIONS_INFO")
+SETTINGS = os.getenv("SESSIONS_SETTINGS")
 try:
-    from sessions.core.logging import get_logger
+    from sessions.core.logging import get_logger, setup_logging
+    settings = ChunkProcessorConfig()
+    log_level = settings.EncryptionConfig().log_level()
+    setup_logging(settings.LOG_LEVEL(), log_level)
     logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
+    settings = ChunkProcessorConfig()
+    log_level = settings.EncryptionConfig().log_level()
+    logger = logging.getLogger(settings="SETTINGS", log_level=log_level, config_logger="CONFIG")
 
 
 

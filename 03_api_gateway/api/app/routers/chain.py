@@ -19,7 +19,9 @@ try:
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    settings = get_settings()router = APIRouter()
+    settings = get_settings()
+
+router = APIRouter()
 
 
 @router.get("/info")
@@ -48,4 +50,3 @@ async def submit_transaction():
     """Submit transaction to lucid_blocks"""
     # TODO: Implement transaction submission proxy
     raise HTTPException(status_code=501, detail="Not implemented yet")
-

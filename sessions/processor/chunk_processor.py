@@ -26,11 +26,21 @@ from pathlib import Path
 import json
 from sessions.processor.encryption import ChunkEncryptor
 from sessions.processor.merkle_builder import MerkleTreeBuilder
-
 from sessions.processor.config import ChunkProcessorConfig
+from sessions.api.config import get_config
+
 import os
-import logging
-logger = logging.getLogger(settings= ChunkProcessorconfig(), "LOG_LEVEL", "INFO")
+CONFIG = os.getenv(env="SESSIONS_CONFIG")
+INFO = os.getenv(env="SESSIONS_INFO")
+SETTINGS = os.getenv(env="SESSIONS_SETTINGS")
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    settings = get_config()
+    setup_logging(settings.LOG_LEVEL(), settings.log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
+
 
 @dataclass
 class ChunkMetadata:

@@ -30,18 +30,22 @@ from sessions.processor.chunk_processor import ChunkProcessorService, Processing
 from sessions.processor.encryption import EncryptionManager
 from sessions.processor.merkle_builder import MerkleTreeManager
 from sessions.processor.config import ChunkProcessorConfig
-
+from sessions.api.config import get_config
 
 import os
-CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+CONFIG = os.getenv("SESSIONS_CONFIG")
+INFO = os.getenv("SESSIONS_INFO")
+SETTINGS = os.getenv("SESSIONS_SETTINGS")
 try:
-    from sessions.core.logging import get_logger
+    from sessions.core.logging import get_logger, setup_logging
+    settings = get_config()
+    setup_logging(settings)
     logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
-    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
+    settings = get_config()
+    setup_logging(settings)
+    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 
 
 

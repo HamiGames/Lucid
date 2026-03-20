@@ -18,11 +18,13 @@ import uuid
 from sessions.processor.config import ChunkProcessorConfig
 
 import os
-CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
+CONFIG = os.getenv("SESSIONS_CONFIG")
+INFO = os.getenv("SESSIONS_INFO")
 SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
 try:
-    from sessions.core.logging import get_logger
+    from sessions.core.logging import get_logger, setup_logging
+    settings = get_config()
+    setup_logging(settings.LOG_LEVEL(), settings.log_level())
     logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
 except ImportError:
     import logging
