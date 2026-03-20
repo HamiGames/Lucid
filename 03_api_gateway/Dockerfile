@@ -206,14 +206,6 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
 
 
     # Application source COPY (only directories that exist with content)
-COPY /var/lib/ ./var/lib/
-COPY /var/run/ ./var/run/
-COPY /etc/ssl/certs/ca-certificates.crt ./etc/ssl/certs/ca-certificates.crt
-COPY /usr/local/lib/python3.11/site-packages/ ./usr/local/lib/python3.11/site-packages/
-COPY /usr/local/bin/ ./usr/local/bin/
-COPY /usr/bin/ ./usr/bin/
-COPY /usr/sbin/ ./usr/sbin/
-
 
 #copy .api.app files
 COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
@@ -370,14 +362,14 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /build/var/run           /app/var/run
-COPY --from=builder --chown=65532:65532 /build/var/lib           /app/var/lib
-COPY --from=builder --chown=65532:65532 /build/etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder --chown=65532:65532 /build/usr/local/lib/python3.11/site-packages   /app/usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /build/usr/local/bin              /app/usr/local/bin
-COPY --from=builder --chown=65532:65532 /build/usr/bin/tini               /app/opt/bin/tini
-COPY --from=builder --chown=65532:65532 /build/usr/bin/ ./usr/bin/
-COPY --from=builder --chown=65532:65532 /build/usr/sbin/ ./usr/sbin/
+COPY --from=builder --chown=65532:65532 /var/run           /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib           /app/var/lib
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages   /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /usr/local/bin              /app/usr/local/bin
+COPY --from=builder --chown=65532:65532 /usr/bin/tini               /app/opt/bin/tini
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
