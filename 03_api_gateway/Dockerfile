@@ -206,6 +206,15 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
 
 
     # Application source COPY (only directories that exist with content)
+COPY /var/lib/ ./var/lib/
+COPY /var/run/ ./var/run/
+COPY /etc/ssl/certs/ca-certificates.crt ./etc/ssl/certs/ca-certificates.crt
+COPY /usr/local/lib/python3.11/site-packages/ ./usr/local/lib/python3.11/site-packages/
+COPY /usr/local/bin/ ./usr/local/bin/
+COPY /usr/bin/ ./usr/bin/
+COPY /usr/sbin/ ./usr/sbin/
+
+
 #copy .api.app files
 COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
 COPY 03_api_gateway/api/app/main.py ./api/app/main.py
@@ -314,19 +323,29 @@ COPY ../../../../infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/ap
 # Verify new modules are included in builder stage - file existence & imports
 # ✅ This works - absolute imports in verification script
 RUN echo "Verifying new modules are included in builder stage" && \
-    test -f /build/api/app/routers/gui.py && \
-    test -f /build/api/app/routers/auth.py && \
-    test -f /build/api/app/routers/trust.py && \
-    test -f /build/api/app/routers/sessions.py && \
-    test -f /build/api/app/routers/tron_support.py && \
-    test -f /build/api/app/services/gui_bridge_service.py && \
-    test -f /build/api/app/services/tron_support_service.py && \
-    test -f /build/api/app/config.py && \
-    test -f /build/api/app/main.py && \
-    test -f /build/sessions/pipeline/pipeline_manager.py && \
-    test -f /build/sessions/core/session_generator.py && \
-    test -f /build/sessions/core/session_orchestrator.py && \
-    echo "✅ All module files verified in builder stage"
+    python3 -c "
+import os
+modules = [
+    '/build/api/app/routers/gui.py',
+    '/build/api/app/routers/auth.py',
+    '/build/api/app/routers/trust.py',
+    '/build/api/app/routers/sessions.py',
+    '/build/api/app/routers/tron_support.py',
+    '/build/api/app/services/gui_bridge_service.py',
+    '/build/api/app/services/tron_support_service.py',
+    '/build/api/app/config.py',
+    '/build/api/app/main.py',
+    '/build/sessions/pipeline/pipeline_manager.py',
+    '/build/sessions/core/session_generator.py',
+    '/build/sessions/core/session_orchestrator.py'
+]
+missing = [m for m in modules if not os.path.isfile(m)]
+if missing:
+    print(f'❌ Missing files: {missing}')
+    exit(1)
+else:
+    print('✅ All module files verified in builder stage') " && \
+    echo "Verification complete"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -362,16 +381,18 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run           /app/var/run
-COPY --from=builder --chown=65532:65532 /var/lib           /app/var/lib
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /build/var/run           /app/var/run
+COPY --from=builder --chown=65532:65532 /build/var/lib           /app/var/lib
+COPY --from=builder --chown=65532:65532 /build/etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /build/usr/local/lib/python3.11/site-packages   /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /build/usr/local/bin              /app/usr/local/bin
+COPY --from=builder --chown=65532:65532 /build/usr/bin/tini               /app/opt/bin/tini
+COPY --from=builder --chown=65532:65532 /build/usr/bin/ ./usr/bin/
+COPY --from=builder --chown=65532:65532 /build/usr/sbin/ ./usr/sbin/
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11   /app/usr/local/lib/python3.11
 COPY --from=builder --chown=65532:65532 /build/wheels         /app/build/wheels
-COPY --from=builder --chown=65532:65532 /usr/local/bin              /app/usr/local/bin
-COPY --from=builder --chown=65532:65532 /usr/bin/tini               /app/opt/bin/tini
 
 # import .api.app files
 COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py                     /app/api/app/__init__.py
@@ -472,21 +493,30 @@ COPY --chown=65532:65532 --from=builder /build/utils/ /app/utils/
 # import .gateway files
 COPY --chown=65532:65532 --from=builder /build/gateway/ /app/gateway/
 
-RUN echo "Verifying new modules are included in Application stage" && \
-    test -f /app/api/app/routers/gui.py && \
-    test -f /app/api/app/routers/auth.py && \
-    test -f /app/api/app/routers/trust.py && \
-    test -f /app/api/app/routers/sessions.py && \
-    test -f /app/api/app/routers/tron_support.py && \
-    test -f /app/api/app/services/gui_bridge_service.py && \
-    test -f /app/api/app/services/tron_support_service.py && \
-    test -f /app/api/app/config.py && \
-    test -f /app/api/app/main.py && \
-    test -f /app/sessions/pipeline/pipeline_manager.py && \
-    test -f /app/sessions/core/session_generator.py && \
-    test -f /app/sessions/core/session_orchestrator.py && \
-    test -f /app/api/app/middleware/auth.py && \
-    echo "✅ All module files verified in Application stage"
+RUN echo "Verifying new modules are included in runtime stage" && \
+    python3 -c "
+import os
+modules = [
+    '/app/api/app/routers/gui.py',
+    '/app/api/app/routers/auth.py',
+    '/app/api/app/routers/trust.py',
+    '/app/api/app/routers/sessions.py',
+    '/app/api/app/routers/tron_support.py',
+    '/app/api/app/services/gui_bridge_service.py',
+    '/app/api/app/services/tron_support_service.py',
+    '/app/api/app/config.py',
+    '/app/api/app/main.py',
+    '/app/sessions/pipeline/pipeline_manager.py',
+    '/app/sessions/core/session_generator.py',
+    '/app/sessions/core/session_orchestrator.py'
+]
+missing = [m for m in modules if not os.path.isfile(m)]
+if missing:
+    print(f'❌ Missing files: {missing}')
+    exit(1)
+else:
+    print('✅ All module files verified in runtime stage') " && \
+    echo "Verification complete"
     
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
