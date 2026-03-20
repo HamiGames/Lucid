@@ -323,30 +323,19 @@ COPY ../../../../infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/ap
 # Verify new modules are included in builder stage - file existence & imports
 # ✅ This works - absolute imports in verification script
 RUN echo "Verifying new modules are included in builder stage" && \
-    python3 -c "
-import os
-modules = [
-    '/build/api/app/routers/gui.py',
-    '/build/api/app/routers/auth.py',
-    '/build/api/app/routers/trust.py',
-    '/build/api/app/routers/sessions.py',
-    '/build/api/app/routers/tron_support.py',
-    '/build/api/app/services/gui_bridge_service.py',
-    '/build/api/app/services/tron_support_service.py',
-    '/build/api/app/config.py',
-    '/build/api/app/main.py',
-    '/build/sessions/pipeline/pipeline_manager.py',
-    '/build/sessions/core/session_generator.py',
-    '/build/sessions/core/session_orchestrator.py'
-]
-missing = [m for m in modules if not os.path.isfile(m)]
-if missing:
-    print(f'❌ Missing files: {missing}')
-    exit(1)
-else:
-    print('✅ All module files verified in builder stage') " && \
-    echo "Verification complete"
-
+    test -f /build/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
+    test -f /build/api/app/routers/auth.py || (echo "Missing: auth.py" && exit 1) && \
+    test -f /build/api/app/routers/trust.py || (echo "Missing: trust.py" && exit 1) && \
+    test -f /build/api/app/routers/sessions.py || (echo "Missing: sessions.py" && exit 1) && \
+    test -f /build/api/app/routers/tron_support.py || (echo "Missing: tron_support.py" && exit 1) && \
+    test -f /build/api/app/services/gui_bridge_service.py || (echo "Missing: gui_bridge_service.py" && exit 1) && \
+    test -f /build/api/app/services/tron_support_service.py || (echo "Missing: tron_support_service.py" && exit 1) && \
+    test -f /build/api/app/config.py || (echo "Missing: config.py" && exit 1) && \
+    test -f /build/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
+    test -f /build/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
+    test -f /build/sessions/core/session_generator.py || (echo "Missing: session_generator.py" && exit 1) && \
+    test -f /build/sessions/core/session_orchestrator.py || (echo "Missing: session_orchestrator.py" && exit 1) && \
+    echo "✅ All module files verified in builder stage"
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
@@ -494,30 +483,19 @@ COPY --chown=65532:65532 --from=builder /build/utils/ /app/utils/
 COPY --chown=65532:65532 --from=builder /build/gateway/ /app/gateway/
 
 RUN echo "Verifying new modules are included in runtime stage" && \
-    python3 -c "
-import os
-modules = [
-    '/app/api/app/routers/gui.py',
-    '/app/api/app/routers/auth.py',
-    '/app/api/app/routers/trust.py',
-    '/app/api/app/routers/sessions.py',
-    '/app/api/app/routers/tron_support.py',
-    '/app/api/app/services/gui_bridge_service.py',
-    '/app/api/app/services/tron_support_service.py',
-    '/app/api/app/config.py',
-    '/app/api/app/main.py',
-    '/app/sessions/pipeline/pipeline_manager.py',
-    '/app/sessions/core/session_generator.py',
-    '/app/sessions/core/session_orchestrator.py'
-]
-missing = [m for m in modules if not os.path.isfile(m)]
-if missing:
-    print(f'❌ Missing files: {missing}')
-    exit(1)
-else:
-    print('✅ All module files verified in runtime stage') " && \
-    echo "Verification complete"
-    
+    test -f /app/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
+    test -f /app/api/app/routers/auth.py || (echo "Missing: auth.py" && exit 1) && \
+    test -f /app/api/app/routers/trust.py || (echo "Missing: trust.py" && exit 1) && \
+    test -f /app/api/app/routers/sessions.py || (echo "Missing: sessions.py" && exit 1) && \
+    test -f /app/api/app/routers/tron_support.py || (echo "Missing: tron_support.py" && exit 1) && \
+    test -f /app/api/app/services/gui_bridge_service.py || (echo "Missing: gui_bridge_service.py" && exit 1) && \
+    test -f /app/api/app/services/tron_support_service.py || (echo "Missing: tron_support_service.py" && exit 1) && \
+    test -f /app/api/app/config.py || (echo "Missing: config.py" && exit 1) && \
+    test -f /app/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
+    test -f /app/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
+    test -f /app/sessions/core/session_generator.py || (echo "Missing: session_generator.py" && exit 1) && \
+    test -f /app/sessions/core/session_orchestrator.py || (echo "Missing: session_orchestrator.py" && exit 1) && \
+    echo "✅ All modules verified in runtime stage"
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
