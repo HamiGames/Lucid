@@ -7,20 +7,21 @@ All configuration from environment variables via app.config.
 """
 
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from fastapi import Request
 from starlette.responses import JSONResponse
 import os
 from api.app.config import get_settings
 
 try:
-    from api.app.utils.logging import get_logger
-    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    from api.app.utils.logging import get_logger, setup_logging
+    logger = get_logger()
+    settings = get_settings()
+    setup_logging(settings)
 except ImportError:
     import logging
-    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
-    
-
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
 class AuthMiddleware:
     """Authentication middleware for request processing"""
     
@@ -41,6 +42,7 @@ class AuthMiddleware:
     
     def __init__(self, app):
         self.app = app
+        settings = get_settings()
         self.jwt_algorithm = settings.JWT_ALGORITHM
         self.jwt_secret = settings.JWT_SECRET_KEY
         logger.info("AuthMiddleware initialized")
@@ -109,7 +111,7 @@ class AuthMiddleware:
         """Check if endpoint is public (no authentication required)"""
         return any(path.startswith(public_path) for public_path in self.PUBLIC_PATHS)
     
-    async def _validate_token(self, token: str) -> tuple[bool, Optional[dict]]:
+    async def _validate_token(self, token: str) -> Tuple[bool, Optional[dict]]:
         """
         Validate JWT token.
         Returns (is_valid, user_data) tuple.
@@ -117,8 +119,7 @@ class AuthMiddleware:
         try:
             # Import here to avoid circular imports
             
-            from jose import JWT, JWTError
-            jwt = JWT()
+            from jose import jwt, JWTError
             
             payload = jwt.decode(
                 token,

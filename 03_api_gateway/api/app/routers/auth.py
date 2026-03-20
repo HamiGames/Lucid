@@ -10,14 +10,14 @@ import os
 from api.app.config import get_settings
 
 try:
-    from api.app.utils.logging import get_logger
-    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    from api.app.utils.logging import get_logger, setup_logging
+    logger = get_logger()
+    settings = get_settings()
+    setup_logging(settings)
 except ImportError:
     import logging
-    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
-    
-
-
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
 
 router = APIRouter()
 

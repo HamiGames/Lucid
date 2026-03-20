@@ -39,7 +39,7 @@ def mongo_conn_str() -> str:
 
 
 def service_name() -> str:
-    return os.getenv("SERVICE_NAME", "lucid-api")
+    return os.getenv("SERVICE_NAME", "lucid-api-gateway")
 
 
 def service_version() -> str:

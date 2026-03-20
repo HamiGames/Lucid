@@ -10,8 +10,6 @@ Architecture Notes:
 - TRON: Isolated payment service (NOT part of lucid_blocks)
 """
 
-import os
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,8 +18,6 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 import uvicorn
-
-from .config import Settings, get_settings
 
 from api.app.middleware.auth import AuthMiddleware
 from api.app.middleware.rate_limit import RateLimitMiddleware
@@ -46,13 +42,18 @@ from api.app.database.connection import init_database
 from api.app.models.common import ErrorResponse, ErrorDetail
 import uuid
 from datetime import datetime
+import os
+from api.app.config import get_settings
 
 try:
-    from api.app.utils.logging import get_logger
-    logger = get_logger("LOG_LEVEL", "INFO")
+    from api.app.utils.logging import get_logger, setup_logging
+    logger = get_logger()
+    settings = get_settings()
+    setup_logging(settings)
 except ImportError:
     import logging
-    logger = logging.getLogger("LOG_LEVEL", "INFO")
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
 
 
 @asynccontextmanager

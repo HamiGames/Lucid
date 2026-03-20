@@ -23,27 +23,27 @@ class Settings(BaseSettings):
     """Application settings"""
    
     # Service Configuration
-    API_GATEWAY_SERVICE_NAME: str = Field(default="api-gateway", env="API_GATEWAY_SERVICE_NAME")
+    API_GATEWAY_SERVICE_NAME: str = Field(env="API_GATEWAY_SERVICE_NAME")
     API_VERSION: str = Field(default="v1", env="API_VERSION")
     DEBUG: bool = Field(default=False, env="DEBUG")
-    ENVIRONMENT: str = Field(default="production", env="ENVIRONMENT")
+    ENVIRONMENT: str = Field( env="ENVIRONMENT")
     
     # Port Configuration
-    HTTP_GATEWAY_PORT: int = Field(default="", env="HTTP_GATEWAY_PORT")
-    HTTPS_GATEWAY_PORT: int = Field(default="", env="HTTPS_GATEWAY_PORT")
+    HTTP_GATEWAY_PORT: int = Field(env="HTTP_GATEWAY_PORT")
+    HTTPS_GATEWAY_PORT: int = Field( env="HTTPS_GATEWAY_PORT")
     
     # Security Configuration
-    JWT_SECRET_KEY: str = Field(default="", env="JWT_SECRET_KEY")
+    JWT_SECRET_KEY: str = Field(env="JWT_SECRET_KEY")
     JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15, env="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
     
     # Database Configuration (accepts MONGODB_URI or MONGODB_URL)
-    MONGODB_URI: str = Field(default="", env="MONGODB_URI")
-    MONGODB_URL: str = Field(default="", env="MONGODB_URL")
-    MONGODB_DATABASE: str = Field(default="lucid_gateway")
-    REDIS_URL: str = Field(default="", env="REDIS_URL")
-    REDIS_URI: str = Field(default="", env="REDIS_URI")
+    MONGODB_URI: str = Field(env="MONGODB_URI")
+    MONGODB_URL: str = Field( env="MONGODB_URL")
+    MONGODB_DATABASE: str = Field(env="MONGODB_GATEWAY_DB")
+    REDIS_URL: str = Field(env="REDIS_URL")
+    REDIS_URI: str = Field(env="REDIS_URI")
     
     @property
     def mongodb_connection_string(self) -> str:
@@ -54,20 +54,20 @@ class Settings(BaseSettings):
         return self.REDIS_URL or self.REDIS_URI
     # Backend Service URLs
     # lucid_blocks = on-chain blockchain system
-    BLOCKCHAIN_CORE_URL: str = Field(default="", env="BLOCKCHAIN_CORE_URL")
-    SESSION_MANAGEMENT_URL: str = Field(default="", env="SESSION_MANAGEMENT_URL")
-    AUTH_SERVICE_URL: str = Field(default="", env="AUTH_SERVICE_URL")
+    BLOCKCHAIN_CORE_URL: str = Field( env="BLOCKCHAIN_CORE_URL")
+    SESSION_MANAGEMENT_URL: str = Field( env="SESSION_MANAGEMENT_URL")
+    AUTH_SERVICE_URL: str = Field(env="AUTH_SERVICE_URL")
     # TRON = isolated payment service (NOT part of lucid_blocks)
-    TRON_PAYMENT_URL: str = Field(default="", env="TRON_PAYMENT_URL")
+    TRON_PAYMENT_URL: str = Field( env="TRON_PAYMENT_URL")
     # GUI Services
-    GUI_API_BRIDGE_URL: str = Field(default="", env="GUI_API_BRIDGE_URL")
-    GUI_DOCKER_MANAGER_URL: str = Field(default="", env="GUI_DOCKER_MANAGER_URL")
-    GUI_TOR_MANAGER_URL: str = Field(default="", env="GUI_TOR_MANAGER_URL")
-    GUI_HARDWARE_MANAGER_URL: str = Field(default="", env="GUI_HARDWARE_MANAGER_URL")
+    GUI_API_BRIDGE_URL: str = Field( env="GUI_API_BRIDGE_URL")
+    GUI_DOCKER_MANAGER_URL: str = Field( env="GUI_DOCKER_MANAGER_URL")
+    GUI_TOR_MANAGER_URL: str = Field( env="GUI_TOR_MANAGER_URL")
+    GUI_HARDWARE_MANAGER_URL: str = Field( env="GUI_HARDWARE_MANAGER_URL")
     # TRON Support Services
-    TRON_PAYOUT_ROUTER_URL: str = Field(default="", env="TRON_PAYOUT_ROUTER_URL")
-    TRON_WALLET_MANAGER_URL: str = Field(default="", env="TRON_WALLET_MANAGER_URL")
-    TRON_USDT_MANAGER_URL: str = Field(default="", env="TRON_USDT_MANAGER_URL")
+    TRON_PAYOUT_ROUTER_URL: str = Field( env="TRON_PAYOUT_ROUTER_URL")
+    TRON_WALLET_MANAGER_URL: str = Field( env="TRON_WALLET_MANAGER_URL")
+    TRON_USDT_MANAGER_URL: str = Field( env="TRON_USDT_MANAGER_URL")
     
     # Rate Limiting Configuration
     RATE_LIMIT_ENABLED: bool = Field(default=True, env="RATE_LIMIT_ENABLED")
@@ -296,23 +296,21 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """
     Get cached settings instance.
-    Loads base Settings from environment/env files,
-    then merges operator settings from JSON file if it exists.
+    Loads Settings from environment/env files.
     """
     import json
-    try:
-        from .utils.logging import get_logger
-        logger = get_logger(__name__)
-    except ImportError:
-        import logging
-        logger = logging.getLogger(__name__)
-    # Load base settings from environment/.env files
+    import logging
+    
+    logger = logging.getLogger("config")
+    
+    # Create Settings instance from environment variables and .env files
     settings = Settings()
     
-    # Try to load and merge operator settings JSON
+    # Try to load and merge operator settings JSON if it exists
     try:
-        if os.path.exists(settings.OPERATOR_SETTINGS_PATH):
-            with open(settings.OPERATOR_SETTINGS_PATH, 'r') as f:
+        operator_settings_path = os.getenv("OPERATOR_SETTINGS_PATH", "operator_settings.json")
+        if os.path.exists(operator_settings_path):
+            with open(operator_settings_path, 'r') as f:
                 operator_settings = json.load(f)
             
             # Merge operator settings into Settings instance
@@ -320,9 +318,9 @@ def get_settings() -> Settings:
                 if hasattr(settings, key):
                     setattr(settings, key, value)
             
-            logger.info(f"Loaded operator settings from {settings.OPERATOR_SETTINGS_PATH}")
+            logger.info(f"Loaded operator settings from {operator_settings_path}")
         else:
-            logger.warning(f"Operator settings file not found at {settings.OPERATOR_SETTINGS_PATH}")
+            logger.debug(f"Operator settings file not found at {operator_settings_path}")
     except Exception as e:
         logger.error(f"Failed to load operator settings: {e}")
     

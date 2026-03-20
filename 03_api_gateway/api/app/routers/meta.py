@@ -4,17 +4,17 @@ Meta Endpoints Router
 File: 03_api_gateway/api/app/routers/meta.py
 Purpose: Service metadata, health checks, and version information
 """
-import os
+import os 
 from api.app.config import get_settings
-
 try:
-    from api.app.utils.logging import get_logger
-    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    from api.app.utils.logging import get_logger, setup_logging
+    logger = get_logger()
+    settings = get_settings()
+    setup_logging(settings)
 except ImportError:
     import logging
-    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
-    
-
+    logger = logging.getLogger(__name__)
+    settings = get_settings()    
 import time
 from datetime import datetime
 from fastapi import APIRouter, Response

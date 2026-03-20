@@ -9,13 +9,21 @@ import pytest
 from typing import Dict, Any
 from datetime import datetime
 
-from .pipeline_manager import PipelineManager, SessionPipeline
-from .state_machine import PipelineState, StateTransition
-from .config import PipelineConfig
-import logging
+from sessions.pipeline.pipeline_manager import PipelineManager, SessionPipeline
+from sessions.pipeline.state_machine import PipelineState, StateTransition
 
-logger = logging.getLogger(settings= PipelineConfig(), "LOG_LEVEL", "INFO")
-
+from sessions.api.config import get_config, load_config, PipelineConfig
+settings = load_config()
+config = get_config()
+pipeline_config = PipelineConfig(settings, config)
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 
 class Step15ValidationTest:
     """
@@ -24,7 +32,7 @@ class Step15ValidationTest:
     """
     
     def __init__(self):
-        self.config = PipelineConfig()
+        self.config = pipeline_config
         self.pipeline_manager = PipelineManager(self.config)
         self.test_session_id = "test-session-step15"
         self.validation_results = {}

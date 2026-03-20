@@ -9,25 +9,20 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-from .session_api import SessionAPI
-from ..pipeline.config import PipelineConfig, PipelineSettings
-import os
-log_level = os.getenv(PipelineConfig().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(PipelineSettings().log_level(), "INFO").upper()
-try:  
-    from ..core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level(), "INFO")
+from sessions.api.session_api import SessionAPI
+from sessions.pipeline.config import PipelineConfig, PipelineSettings
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    config = PipelineConfig()
+    settings = PipelineSettings()
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-    
-logger(__name__)
-settings(__name__)
+    config = PipelineConfig()
+    settings = PipelineSettings()
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 
 try:
     import yaml
@@ -35,7 +30,6 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.get_logger(__name__)
 
 class SessionAPISettings(BaseSettings):
     """Session API configuration settings"""

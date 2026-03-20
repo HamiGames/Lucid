@@ -16,11 +16,13 @@ import os
 from api.app.config import get_settings
 
 try:
-    from api.app.utils.logging import get_logger
-    logger = get_logger("LOG_LEVEL", "INFO", optional=[get_settings()])
-except ImportError:
+    from api.app.utils.logging import get_logger, setup_logging
+    logger = get_logger("LOG_LEVEL", "INFO")
+    settings = get_settings()
+    setup_logging(settings) 
     import logging
-    logger = logging.getLogger("LOG_LEVEL", "INFO", optional=[get_settings()])
+    logger = logging.getLogger("LOG_LEVEL")
+    settings = get_settings()
     
 # Global database client and database
 _client: Optional[AsyncIOMotorClient] = None

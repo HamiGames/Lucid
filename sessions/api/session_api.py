@@ -21,30 +21,23 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from ..storage.session_storage import SessionStorage
-from ..storage.chunk_store import ChunkStore, ChunkStoreConfig
-from ..storage.config import StorageConfig as StorageConfigManager
-from ..pipeline.pipeline_manager import SessionPipeline, PipelineStage
-from .config import get_config, load_config
-
-import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().log_level(), "INFO").upper()
-try:  
-    from ..core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level(), "INFO")
+from sessions.storage.session_storage import SessionStorage
+from sessions.storage.chunk_store import ChunkStore, ChunkStoreConfig
+from sessions.storage.config import StorageConfig as StorageConfigManager
+from sessions.pipeline.pipeline_manager import SessionPipeline, PipelineStage
+from sessions.api.config import get_config, load_config, SessionAPIConfig
+settings = load_config()
+config = get_config()
+session_api_config = SessionAPIConfig(settings, config)
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
     
-logger(__name__)
-settings(__name__)
-
 # Safe environment variable handling
 def safe_int_env(key: str, default: int) -> int:
     """Safely convert environment variable to int."""

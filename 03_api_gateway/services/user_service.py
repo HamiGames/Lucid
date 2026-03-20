@@ -11,7 +11,7 @@ Dependencies: aiohttp, models
 import aiohttp
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from models.user import User, UserCreate, UserUpdate
+from api.app.models.user import User, UserCreate, UserUpdate
 from config import settings
 from api.app.database.connection import get_database
 import os

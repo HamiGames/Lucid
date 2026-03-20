@@ -5,13 +5,18 @@ import json
 import os
 import sys
 from typing import Dict, Any
-from api.app.utils.config import service_name, in_container
+import os
+from api.app.config import get_settings
+from api.app.utils.config import in_container, service_name
 try:
-    from api.app.utils.logging import get_logger
-    logger = get_logger("LOG_LEVEL", "INFO")
+    from api.app.utils.logging import get_logger, setup_logging
+    logger = get_logger()
+    settings = get_settings()
+    setup_logging(settings)
 except ImportError:
     import logging
-    logger = logging.getLogger("LOG_LEVEL", "INFO")
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:

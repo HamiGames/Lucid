@@ -12,7 +12,8 @@ from typing import Any
 from pythonjsonlogger import jsonlogger
 from api.app.config import service_name
 
-logger = logging.getLogger("LOG_LEVEL", "INFO")
+logger = logging.getLogger(__name__)
+log_level= service_name()
 
 def setup_logging(log_level: str = "INFO") -> None:
     """

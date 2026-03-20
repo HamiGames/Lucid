@@ -11,18 +11,18 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
-from sessions.api.config import get_config, load_config
-import os
-CONFIG = os.getenv("SESSIONS_CONFIG":-get_config())
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+from sessions.api.config import get_config, load_config, SessionAPIConfig
+settings = load_config()
+config = get_config()
+session_api_config = SessionAPIConfig(settings, config)
 try:
-    from sessions.core.logging import get_logger
-    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[load_config()])
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 except ImportError:
     import logging
-    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[load_config()])
-
+    logger = logging.getLogger(__name__)
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 
 @dataclass
 class MerkleNode:

@@ -15,30 +15,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from datetime import datetime
 
-from .session_api import SessionAPI
+from sessions.api.session_api import SessionAPI
 router = APIRouter()
 
 
-from ..api.integration.rdp_controller_client import RDPControllerClient
+from sessions.api.integration.rdp_controller_client import RDPControllerClient
 
-from .config import get_config, load_config
-import os
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().LOG_LEVEL(), "INFO").upper()
-try:  
-    from ...sessions.core.logging import get_logger, setup_logging
-    logger = get_logger(__name__)
-    setup_logging(settings().log_level(), "INFO")
+from sessions.api.config import get_config, load_config
+settings = load_config()
+config = get_config()
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    logging.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+    setup_logging(config.LOG_LEVEL(), settings.log_level())
     
-logger(__name__)
-settings(__name__)
 # Global instances
 session_api: Optional[SessionAPI]= None
 api_config: Optional[SessionAPI]= None
