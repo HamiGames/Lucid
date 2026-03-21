@@ -116,7 +116,11 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     echo " Marker files created to lock in directory structure"
 
 # Verify marker files exist with content (critical for distroless COPY)
-RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts ./api/app/security./infrastructure ./infrastructure/kubernetes ./common ./common/tor ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts && \
+RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
+    mkdir -p ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware && \
+    mkdir -p ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts && \
+    mkdir -p ./api/app/security ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
+    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts && \
     printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
     touch ./api/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
