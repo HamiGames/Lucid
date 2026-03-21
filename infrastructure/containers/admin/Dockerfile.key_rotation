@@ -40,6 +40,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
+        cargo \
+        libssl-dev-bin \
+        rustc \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -57,7 +60,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
     echo "upgrade complete"
 
-COPY ../../../../admin/requirements.txt ./requirements.txt
+COPY admin/requirements.txt ./requirements.txt
 
 # Step 1: Build wheels explicitly
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -74,7 +77,7 @@ RUN echo "installing wheels into system python" && \
 
 # Builder-stage verification
 RUN echo "=== Verifying pip installation success ===" && \
-    python3.11 -c "import cryptography, pydantic; print('✅ All critical packages installed')" && \
+    python3.11 -c "import cryptography, pydantic, rust, cargo, libssl-dev-bin, fastapi, motor, pymongo, redis, blake3, zstandard, lz4, httpx, aiohttp, structlog, prometheus_client, numpy, pandas, python-dateutil, pytz, python-jose, passlib, python-multipart, cryptography, pyotp, qrcode, email-validator, httpx, aiohttp, websockets, jinja2, celery, kombu, prometheus_client, psutil, pandas, numpy, python-dateutil, pytz, python-dotenv, pyyaml, toml, click, rich, typer, tenacity, cachetools, logging, logging.config, logging.handlers; print('✅ All critical packages installed')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list && \
     echo "=== All packages ready for final image"
@@ -87,15 +90,16 @@ RUN printf "LUCID_KEY_ROTATION_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/
     echo "Marker files created"
 
 # Create application directory structure
-RUN mkdir -p ./admin ./wallet && \
+RUN mkdir -p ./admin ./wallet ./common ./common/tor && \
     printf "LUCID_KEY_ROTATION_ADMIN_$(date +%s)" > ./admin/.keep && \
     printf "LUCID_KEY_ROTATION_WALLET_$(date +%s)" > ./wallet/.keep && \
     touch ./admin/.keep ./wallet/.keep && \
     echo "Application directories created with markers"
 
 # Application source COPY (key rotation specific)
-COPY ../../../../admin/key-rotation/ ./admin/key-rotation/
-COPY ../../../../wallet/ ./wallet/
+COPY admin/key-rotation/ ./admin/key-rotation/
+COPY common/tor/ ./common/tor/
+COPY wallet/ ./wallet/
 
 # Verify source files
 RUN echo "Verifying key rotation source files" && \

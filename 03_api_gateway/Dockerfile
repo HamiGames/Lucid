@@ -152,9 +152,6 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
     && touch ./api/app/scripts/.keep \
     && echo "api/app/scripts/.keep created" \
-    && printf "LUCID_API_GATEWAY_API_APP_TESTS_$(date +%s)" > ./api/app/tests/.keep \
-    && touch ./api/app/tests/.keep \
-    && echo "api/app/tests/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
     && touch ./api/app/models/.keep \
     && echo "api/app/models/.keep created" \
