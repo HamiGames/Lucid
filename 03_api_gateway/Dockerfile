@@ -308,9 +308,10 @@ COPY sessions/pipeline/pipeline_manager.py ./sessions/pipeline/pipeline_manager.
 COPY sessions/api/__init__.py ./sessions/api/__init__.py
 COPY sessions/api/main.py ./sessions/api/main.py
 COPY sessions/api/config.py ./sessions/api/config.py
-COPY sessions/api/endpoint.py ./sessions/api/endpoint.py
+COPY sessions/api/entrypoint.py ./sessions/api/entrypoint.py
+
 COPY sessions/api/routes.py ./sessions/api/routes.py
-COPY sessions/api/sessions_api.py ./sessions/api/sessions_api.py
+COPY sessions/api/session_api.py ./sessions/api/session_api.py
 
 COPY sessions/api/integration/__init__.py ./sessions/api/integration/__init__.py
 COPY sessions/api/integration/rdp_controller_client.py ./sessions/api/integration/rdp_controller_client.py
@@ -469,9 +470,9 @@ COPY --chown=65532:65532 --from=builder /build/sessions/                /app/ses
 COPY --chown=65532:65532 --from=builder /build/sessions/api/__init__.py            /app/sessions/api/__init__.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/main.py            /app/sessions/api/main.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/config.py            /app/sessions/api/config.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/endpoint.py            /app/sessions/api/endpoint.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/entrypoint.py            /app/sessions/api/entrypoint.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/routes.py            /app/sessions/api/routes.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/sessions_api.py            /app/sessions/api/sessions_api.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/session_api.py            /app/sessions/api/session_api.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/__init__.py         /app/sessions/api/integration/__init__.py
 COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/rdp_controller_client.py         /app/sessions/api/integration/rdp_controller_client.py
 COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
