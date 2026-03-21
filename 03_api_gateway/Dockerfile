@@ -113,7 +113,7 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
 
 RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database ./api/app/utils ./api/app/models ./api/app/routes \
     && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
-    && mkdir -p ./config ./endpoints ./config ./models ./services ./database ./common ./common/tor \
+    && mkdir -p ./config ./endpoints ./config ./models ./database ./common ./common/tor \
     && mkdir -p ./sidecar ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration  \
     # printf .keep in each directory
     && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
@@ -167,13 +167,13 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     && touch ./api/app/routes/.keep \
     && echo "api/app/routes/.keep created" \
 
+    && printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep \
+    && touch ./api/app/security/.keep \
+    && echo "api/app/security/.keep created" \
+
     && printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep \
     && touch ./models/.keep \
     && echo "models/.keep created" \
-
-    && printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep \
-    && touch ./services/.keep \
-    && echo "services/.keep created" \
 
     && printf "LUCID_API_GATEWAY_COMMON_$(date +%s)" > ./common/.keep \
     && touch ./common/.keep \
@@ -287,15 +287,11 @@ COPY 03_api_gateway/api/app/schemas/sessions.py ./api/app/schemas/sessions.py
 COPY 03_api_gateway/api/app/schemas/users.py ./api/app/schemas/users.py
 COPY 03_api_gateway/api/app/schemas/meta.py ./api/app/schemas/meta.py
 COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
-# copy .services
-COPY 03_api_gateway/services/ ./services/
-
 
 
 # copy .api.app.routes
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
-COPY 03_api_gateway/api/app/security/ ./api/app/security/
 # copy .endpoints
 COPY 03_api_gateway/endpoints/ ./endpoints/
 # copy .database
@@ -304,6 +300,9 @@ COPY 03_api_gateway/database/ ./database/
 COPY 03_api_gateway/models/ ./models/
 #copy to .sessions
 COPY sessions/__init__.py ./sessions/__init__.py
+
+COPY 03_api_gateway/api/app/security/__init__.py ./api/app/security/__init__.py
+COPY 03_api_gateway/api/app/security/jwt.py ./api/app/security/jwt.py
 
 COPY sessions/pipeline/__init__.py ./sessions/pipeline/__init__.py
 COPY sessions/pipeline/pipeline_manager.py ./sessions/pipeline/pipeline_manager.py
@@ -345,6 +344,7 @@ RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/api/app/routes/__init__.py || (echo "Missing: api/app/routes/__init__.py" && exit 1) && \
     test -f /build/api/app/scripts/__init__.py || (echo "Missing: api/app/scripts/__init__.py" && exit 1) && \
     test -f /build/api/app/routers/__init__.py || (echo "Missing: api/app/routers/__init__.py" && exit 1) && \
+    test -f /build/api/app/security/__init__.py || (echo "Missing: api/app/security/__init__.py" && exit 1) && \
     test -f /build/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
     test -f /build/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
     test -f /build/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
@@ -463,8 +463,7 @@ COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_bridge_servi
 COPY --chown=65532:65532 --from=builder /build/api/app/services/session_service.py        /app/api/app/services/session_service.py
 COPY --chown=65532:65532 --from=builder /build/api/app/services/mongo_service.py        /app/api/app/services/mongo_service.py
 COPY --chown=65532:65532 --from=builder /build/api/app/services/tron_support_service.py        /app/api/app/services/tron_support_service.py
-#import .services files
-COPY --chown=65532:65532 --from=builder /build/services/        /app/services/
+
 # import .api.app.routes files
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 # import .config files
@@ -488,22 +487,22 @@ COPY --chown=65532:65532 --from=builder /build/sessions/core/session_generator.p
 COPY --chown=65532:65532 --from=builder /build/sessions/core/session_orchestrator.py       /app/sessions/core/session_orchestrator.py
 COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
 
-
+#import .api.app.security files
+COPY --chown=65532:65532 --from=builder /build/api/app/security/__init__.py       /app/api/app/security/__init__.py
+COPY --chown=65532:65532 --from=builder /build/api/app/security/jwt.py       /app/api/app/security/jwt.py
 #import .endpoints files
 COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
 # import .services files
 COPY --chown=65532:65532 --from=builder /build/services/__init__.py                /app/services/__init__.py
 COPY --chown=65532:65532 --from=builder /build/services/gui_bridge_service.py   /app/services/gui_bridge_service.py
 COPY --chown=65532:65532 --from=builder /build/services/proxy_service.py        /app/services/proxy_service.py
-COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py   /app/services/rate_limit_service.py
-#import .database files
+
 COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
 # import .models files
 COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
 
 
 RUN echo "Verifying new modules are included in Runtime stage" && \
-    test -f /app/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
     test -f /app/api/app/schemas/__init__.py || (echo "Missing: api/app/schemas/__init__.py" && exit 1) && \
     test -f /app/api/app/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
     test -f /app/api/app/database/__init__.py || (echo "Missing: api/app/database/__init__.py" && exit 1) && \
@@ -515,6 +514,7 @@ RUN echo "Verifying new modules are included in Runtime stage" && \
     test -f /app/api/app/routes/__init__.py || (echo "Missing: api/app/routes/__init__.py" && exit 1) && \
     test -f /app/api/app/scripts/__init__.py || (echo "Missing: api/app/scripts/__init__.py" && exit 1) && \
     test -f /app/api/app/routers/__init__.py || (echo "Missing: api/app/routers/__init__.py" && exit 1) && \
+    test -f /app/api/app/security/__init__.py || (echo "Missing: api/app/security/__init__.py" && exit 1) && \
     test -f /app/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
     test -f /app/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
     test -f /app/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
