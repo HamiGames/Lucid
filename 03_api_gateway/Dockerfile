@@ -280,8 +280,6 @@ COPY 03_api_gateway/config/ ./config/
 #copy .gateway files
 COPY 03_api_gateway/gateway/ ./gateway/
 
-# copy .utils
-COPY 03_api_gateway/utils/ ./utils/
 # copy .api.app.routes
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
@@ -484,8 +482,7 @@ COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py   
 COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
 # import .models files
 COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
-# import .utils files
-COPY --chown=65532:65532 --from=builder /build/utils/ /app/utils/
+
 # import .gateway files
 COPY --chown=65532:65532 --from=builder /build/gateway/ /app/gateway/
 
