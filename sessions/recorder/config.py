@@ -18,18 +18,21 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-
 import os
-CONFIG = os.getenv("SESSIONS_CONFIG", env=".env.sessions")
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+from sessions.pipeline.config import PipelineConfig, PipelineSettings
+from sessions.api.config import CONFIG, SETTINGS
+if CONFIG is None:
+    CONFIG = PipelineConfig()
+if SETTINGS is None:
+    SETTINGS = PipelineSettings()
 try:
-    from sessions.core.logging import get_logger
-    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(CONFIG, SETTINGS)
 except ImportError:
     import logging
-    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
-
+    logger = logging.getLogger(__name__)
+    setup_logging(CONFIG, SETTINGS)
 
 class RecordingVideoConfig(BaseSettings):
     """Video recording configuration"""

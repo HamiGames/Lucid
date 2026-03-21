@@ -10,15 +10,25 @@ from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
-
 try:
     import yaml
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
-import os
-import logging
-logger = logging.getLogger(settings="SETTINGS", log_level= "INFO")
+from sessions.pipeline.config import PipelineConfig, PipelineSettings
+from sessions.api.config import CONFIG, SETTINGS
+if CONFIG is None:
+    CONFIG = PipelineConfig()
+if SETTINGS is None:
+    SETTINGS = PipelineSettings()
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(CONFIG, SETTINGS)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    setup_logging(CONFIG, SETTINGS)
 
 
 

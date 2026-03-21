@@ -249,6 +249,7 @@ COPY 03_api_gateway/api/app/services/__init__.py ./api/app/services/__init__.py
 COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gui_bridge_service.py
 COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
 COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
+COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
 #copy .api.app.db files
 COPY 03_api_gateway/api/app/db/__init__.py ./api/app/db/__init__.py
 COPY 03_api_gateway/api/app/db/connection.py ./api/app/db/connection.py
@@ -299,15 +300,29 @@ COPY 03_api_gateway/database/ ./database/
 # copy .models
 COPY 03_api_gateway/models/ ./models/
 #copy to .sessions
-COPY ../../../../sessions/ ./sessions/
-COPY ../../../../sessions/pipeline/ ./sessions/pipeline/
-COPY ../../../../sessions/api/ ./sessions/api/
-COPY ../../../../sessions/core/                ./sessions/core/
-COPY ../../../../sessions/encryption/          ./sessions/encryption/
-COPY ../../../../sessions/api/integration/__init__.py         ./sessions/api/integration/__init__.py
-COPY ../../../../sessions/api/integration/rdp_controller_client.py         ./sessions/api/integration/rdp_controller_client.py
+COPY sessions/__init__.py ./sessions/__init__.py
+
+COPY sessions/pipeline/__init__.py ./sessions/pipeline/__init__.py
+COPY sessions/pipeline/pipeline_manager.py ./sessions/pipeline/pipeline_manager.py
+
+COPY sessions/api/__init__.py ./sessions/api/__init__.py
+COPY sessions/api/main.py ./sessions/api/main.py
+COPY sessions/api/config.py ./sessions/api/config.py
+COPY sessions/api/endpoint.py ./sessions/api/endpoint.py
+COPY sessions/api/routes.py ./sessions/api/routes.py
+COPY sessions/api/sessions_api.py ./sessions/api/sessions_api.py
+
+COPY sessions/api/integration/__init__.py ./sessions/api/integration/__init__.py
+COPY sessions/api/integration/rdp_controller_client.py ./sessions/api/integration/rdp_controller_client.py
+
+COPY sessions/core/__init__.py ./sessions/core/__init__.py
+COPY sessions/core/session_generator.py ./sessions/core/session_generator.py
+COPY sessions/core/session_orchestrator.py ./sessions/core/session_orchestrator.py
+COPY sessions/core/logging.py ./sessions/core/logging.py
+COPY sessions/encryption/ ./sessions/encryption/
+
 # copy to .gateway
-COPY ../../../../infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/api-gateway.yaml
+COPY ./infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/api-gateway.yaml
 
 
 # Create marker files in app directories (ensures COPY won't fail silently)
@@ -442,21 +457,30 @@ COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py 
 COPY --chown=65532:65532 --from=builder /build/services/session_service.py        /app/services/session_service.py
 COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py        /app/services/rate_limit_service.py
 COPY --chown=65532:65532 --from=builder /build/services/gui_docker_manager_service.py        /app/services/gui_docker_manager_service.py
-COPY --chown=65532:65532 --from=builder /build/services/gui_hardware_manager_service.py        /app/services/gui_hardware_manager_service.py
-COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py        /app/services/tron_support_service.py
 
 # import .api.app.routes files
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 # import .config files
 COPY --chown=65532:65532 --from=builder /build/config/ /app/config/
 # import .sessions files
-COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/__init__.py         /app/sessions/api/integration/__init__.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/rdp_controller_client.py         /app/sessions/api/integration/rdp_controller_client.py
 COPY --chown=65532:65532 --from=builder /build/sessions/encryption/      /app/sessions/encryption/
 COPY --chown=65532:65532 --from=builder /build/sessions/                /app/sessions/
-COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/       /app/sessions/pipeline/
-COPY --chown=65532:65532 --from=builder /build/sessions/api/            /app/sessions/api/
-COPY --chown=65532:65532 --from=builder /build/sessions/core/           /app/sessions/core/
+
+COPY --chown=65532:65532 --from=builder /build/sessions/api/__init__.py            /app/sessions/api/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/main.py            /app/sessions/api/main.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/config.py            /app/sessions/api/config.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/endpoint.py            /app/sessions/api/endpoint.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/routes.py            /app/sessions/api/routes.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/sessions_api.py            /app/sessions/api/sessions_api.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/__init__.py         /app/sessions/api/integration/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/rdp_controller_client.py         /app/sessions/api/integration/rdp_controller_client.py
+COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions/core/logging.py       /app/sessions/core/logging.py
+COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/pipeline_manager.py       /app/sessions/pipeline/pipeline_manager.py
+COPY --chown=65532:65532 --from=builder /build/sessions/core/session_generator.py       /app/sessions/core/session_generator.py
+COPY --chown=65532:65532 --from=builder /build/sessions/core/session_orchestrator.py       /app/sessions/core/session_orchestrator.py
+COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
+
 # import .gateway files
 #import .endpoints files
 COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/

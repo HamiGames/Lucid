@@ -9,17 +9,20 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-import os
-CONFIG = os.getenv("SESSIONS_CONFIG", env=".env.sessions")
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+from sessions.processor.config import SessionOrchestratorConfig, ChunkProcessorConfig   
+from sessions.api.config import CONFIG, SETTINGS
+if CONFIG is None:
+    CONFIG = SessionOrchestratorConfig()
+if SETTINGS is None:
+    SETTINGS = ChunkProcessorConfig()
 try:
-    from sessions.core.logging import get_logger
-    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(CONFIG, SETTINGS)
 except ImportError:
     import logging
-    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG", optional=[WorkerConfig()])
-
+    logger = logging.getLogger(__name__)
+    setup_logging(CONFIG, SETTINGS)
 
 
 @dataclass

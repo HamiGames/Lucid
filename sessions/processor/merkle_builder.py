@@ -22,19 +22,21 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 import asyncio
 from sessions.processor.config import ChunkProcessorConfig
-
+from sessions.api.config import get_config, load_config
 import os
-CONFIG = os.getenv("SESSIONS_CONFIG":-ChunkProcessorConfig())
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS", env=".env.sessions")
+CONFIG = ChunkProcessorConfig()
+INFO = os.getenv("SESSIONS_INFO")
+SETTINGS = os.getenv("SESSIONS_SETTINGS")
 try:
-    from sessions.core.logging import get_logger
-    logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
+    from sessions.core.logging import get_logger, setup_logging
+    settings = load_config()
+    config = get_config()
+    setup_logging(settings)
+    logger = get_logger()
 except ImportError:
     import logging
-    logger = logging.getLogger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")
-
-
+    logger = logging.getLogger(__name__)
+    setup_logging(settings)
 
 
 @dataclass

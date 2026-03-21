@@ -11,18 +11,20 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from sessions.api.session_api import SessionAPI
 from sessions.pipeline.config import PipelineConfig, PipelineSettings
+CONFIG = os.getenv("SESSIONS_CONFIG")
+SETTINGS = os.getenv("SESSIONS_SETTINGS")
+if CONFIG is None:
+    CONFIG = PipelineConfig()
+if SETTINGS is None:
+    SETTINGS = PipelineSettings()
 try:
     from sessions.core.logging import get_logger, setup_logging
     logger = get_logger()
-    config = PipelineConfig()
-    settings = PipelineSettings()
-    setup_logging(config.LOG_LEVEL(), settings.log_level())
+    setup_logging(CONFIG, SETTINGS)
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    config = PipelineConfig()
-    settings = PipelineSettings()
-    setup_logging(config.LOG_LEVEL(), settings.log_level())
+    setup_logging(CONFIG, SETTINGS)
 
 try:
     import yaml

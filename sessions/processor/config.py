@@ -6,16 +6,21 @@ This module provides configuration management for the chunk processor service,
 including encryption settings, worker configuration, and performance tuning.
 """
 
-import sessions.core.logging as logging
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
-
-from sessions.api.config import get_config
 import os
-
+from sessions.api.config import CONFIG, SETTINGS
+try:
+    from sessions.core.logging import get_logger, setup_logging
+    logger = get_logger()
+    setup_logging(CONFIG, SETTINGS)
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+    setup_logging(CONFIG, SETTINGS)
 
 try:
     import yaml
@@ -24,7 +29,52 @@ except ImportError:
     YAML_AVAILABLE = False
 
 
-
+@dataclass
+class SessionOrchestratorConfig:
+    """Configuration for session orchestrator settings."""
+    max_workers: int = 10
+    queue_size: int = 1000
+    worker_timeout: int = 30  # seconds
+    batch_size: int = 100
+    retry_attempts: int = 3
+    retry_delay: float = 1.0  # seconds
+    max_session_size: int = 100 * 1024 * 1024 * 1024  # 100GB
+    compression_enabled: bool = True
+    compression_level: int = 6
+    cleanup_interval: int = 3600  # 1 hour in seconds
+    metrics_enabled: bool = True
+    metrics_interval: int = 10  # seconds
+    profiling_enabled: bool = False
+    memory_limit_mb: int = 1024  # 1GB
+    cpu_limit_percent: int = 80
+    io_timeout: int = 30  # seconds
+    audit_logging: bool = True
+    secure_headers: bool = True
+    prometheus_enabled: bool = True
+    prometheus_port: int = 9090
+    jaeger_enabled: bool = False
+    jaeger_endpoint: Optional[str] = None
+    health_check_interval: int = 30  # seconds
+    log_level: str = "INFO"
+    log_format: str = "json"
+    service_name: str = "session-orchestrator"
+    service_version: str = "1.0.0"
+    debug: bool = False
+    host: str = "0.0.0.0"  # Bind address (always 0.0.0.0 for container)
+    port: int = 8092  # Default port (overridden by SESSION_ORCHESTRATOR_PORT from docker-compose)
+    SESSION_ORCHESTRATOR_PORT: str = ""  # From docker-compose: SESSION_ORCHESTRATOR_PORT
+    BLOCKCHAIN_ENGINE_URL: str = os.getenv('BLOCKCHAIN_ENGINE_URL', '')  # From environment: BLOCKCHAIN_ENGINE_URL (e.g., http://blockchain-engine:8084)
+    NODE_MANAGEMENT_URL: str = os.getenv('NODE_MANAGEMENT_URL', '')  # From environment: NODE_MANAGEMENT_URL (e.g., http://node-management:8095)
+    API_GATEWAY_URL: str = os.getenv('API_GATEWAY_URL', '')  # From environment: API_GATEWAY_URL (e.g., http://api-gateway:8080)
+    AUTH_SERVICE_URL: str = os.getenv('AUTH_SERVICE_URL', '')  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
+    SESSION_PIPELINE_URL: str = os.getenv('SESSION_PIPELINE_URL', '')  # From environment: SESSION_PIPELINE_URL (e.g., http://session-pipeline:8083)
+    SESSION_RECORDER_URL: str = os.getenv('SESSION_RECORDER_URL', '')  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
+    SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
+    SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
+    # Integration Service Timeout Configuration (from sessions.processor.env.application)
+    SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
+    SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls
+    SERVICE_RETRY_DELAY_SECONDS: float = 1.0  # Default delay between retries
 
 @dataclass
 class EncryptionConfig:
