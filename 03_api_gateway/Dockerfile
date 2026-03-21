@@ -59,7 +59,7 @@ WORKDIR /build
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+    chown -R 65532:65532 /var/run /var/lib && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
 # Python dependencies
