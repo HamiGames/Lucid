@@ -12,7 +12,11 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pathlib import Path
 import os
-from sessions.api.config import CONFIG, SETTINGS
+from sessions.api.config import CONFIG, SETTINGS, SessionAPIConfig, SessionAPISettings
+if CONFIG is None:
+    CONFIG = SessionAPIConfig()
+if SETTINGS is None:
+    SETTINGS = SessionAPISettings()
 try:
     from sessions.core.logging import get_logger, setup_logging
     logger = get_logger()
@@ -21,6 +25,7 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
     setup_logging(CONFIG, SETTINGS)
+
 
 try:
     import yaml

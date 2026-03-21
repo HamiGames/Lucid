@@ -9,12 +9,12 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-from sessions.processor.config import SessionOrchestratorConfig, ChunkProcessorConfig   
-from sessions.api.config import CONFIG, SETTINGS
+
+from sessions.api.config import CONFIG, SETTINGS, SessionAPIConfig, SessionAPISettings
 if CONFIG is None:
-    CONFIG = SessionOrchestratorConfig()
+    CONFIG = SessionAPIConfig()
 if SETTINGS is None:
-    SETTINGS = ChunkProcessorConfig()
+    SETTINGS = SessionAPISettings()
 try:
     from sessions.core.logging import get_logger, setup_logging
     logger = get_logger()

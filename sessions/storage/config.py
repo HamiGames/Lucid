@@ -15,20 +15,37 @@ try:
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
-from sessions.pipeline.config import PipelineConfig, PipelineSettings
-from sessions.api.config import CONFIG, SETTINGS
+from sessions.pipeline.config import PipelineSettings, PipelineConfig
+from sessions.api.config import CONFIG, SETTINGS, SessionAPIConfig, SessionAPISettings
 if CONFIG is None:
-    CONFIG = PipelineConfig()
+    CONFIG = SessionAPIConfig()
+    if CONFIG in SessionAPIConfig is None:
+        CONFIG = PipelineConfig()
+    else:
+        CONFIG = os.getenv('SESSIONS_CONFIG')
+        raise ValueError('SESSIONS_CONFIG environment variable is required but not set')
 if SETTINGS is None:
-    SETTINGS = PipelineSettings()
+    SETTINGS = SessionAPISettings()
+    if SETTINGS in SessionAPISettings is None:
+        SETTINGS = PipelineSettings()
+    else:
+        SETTINGS = os.getenv('SESSIONS_SETTINGS')
+        raise ValueError('SESSIONS_SETTINGS environment variable is required but not set')
 try:
     from sessions.core.logging import get_logger, setup_logging
+    settings = SETTINGS()
+    config = CONFIG()
     logger = get_logger()
-    setup_logging(CONFIG, SETTINGS)
+    if logger is None:
+        raise ValueError('logger is required but not set')
+    setup_logging(config, settings)
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    setup_logging(CONFIG, SETTINGS)
+    if logger is None:
+        raise ValueError('logger is required but not set')
+    setup_logging(config, settings)
+    
 
 
 

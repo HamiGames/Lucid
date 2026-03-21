@@ -17,14 +17,12 @@ try:
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
-
 import os
-from sessions.pipeline.config import PipelineConfig, PipelineSettings
-from sessions.api.config import CONFIG, SETTINGS
+from sessions.api.config import CONFIG, SETTINGS, SessionAPIConfig, SessionAPISettings
 if CONFIG is None:
-    CONFIG = PipelineConfig()
+    CONFIG = SessionAPIConfig()
 if SETTINGS is None:
-    SETTINGS = PipelineSettings()
+    SETTINGS = SessionAPISettings()
 try:
     from sessions.core.logging import get_logger, setup_logging
     logger = get_logger()
@@ -33,6 +31,7 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
     setup_logging(CONFIG, SETTINGS)
+
 
 class RecordingVideoConfig(BaseSettings):
     """Video recording configuration"""

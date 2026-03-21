@@ -112,90 +112,105 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
 
 
 RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database ./api/app/utils ./api/app/models ./api/app/routes \
-    && mkdir -p ./api/app/schemas ./gateway ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
-    && mkdir -p ./config ./endpoints ./config ./models ./utils ./services ./database ./common ./common/tor \
+    && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
+    && mkdir -p ./config ./endpoints ./config ./models ./services ./database ./common ./common/tor \
     && mkdir -p ./sidecar ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration  \
     # printf .keep in each directory
     && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
-    && printf "LUCID_API_GATEWAY_GATEWAY_$(date +%s)" > ./gateway/.keep \
-    && touch ./gateway/.keep \
-    && echo "gateway/.keep created" \
     && touch ./api/.keep \
     && echo "api/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
     && touch ./api/app/.keep \
     && echo "api/app/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
     && touch ./api/app/db/.keep \
     && echo "api/app/db/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
     && touch ./api/app/db/models/.keep \
     && echo "api/app/db/models/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
     && touch ./api/app/database/.keep \
     && echo "api/app/database/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep \
     && touch ./api/app/schemas/.keep \
     && echo "api/app/schemas/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
     && touch ./api/app/routers/.keep \
     && echo "api/app/routers/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep \
     && touch ./api/app/services/.keep \
     && echo "api/app/services/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep \
     && touch ./api/app/utils/.keep \
     && echo "api/app/utils/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep \
     && touch ./api/app/middleware/.keep \
     && echo "api/app/middleware/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
     && touch ./api/app/scripts/.keep \
     && echo "api/app/scripts/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
     && touch ./api/app/models/.keep \
     && echo "api/app/models/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep \
     && touch ./api/app/routes/.keep \
     && echo "api/app/routes/.keep created" \
+
     && printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep \
     && touch ./models/.keep \
     && echo "models/.keep created" \
+
     && printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep \
     && touch ./services/.keep \
     && echo "services/.keep created" \
-    && printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep \
-    && touch ./utils/.keep \
-    && echo "utils/.keep created" \
-    && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
-    && touch ./endpoints/.keep \
-    && echo "endpoints/.keep created" \
+
     && printf "LUCID_API_GATEWAY_COMMON_$(date +%s)" > ./common/.keep \
     && touch ./common/.keep \
     && echo "common/.keep created" \
+
+    && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
+    && touch ./endpoints/.keep \
+    && echo "endpoints/.keep created" \
+
     && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
     && touch ./database/.keep \
     && echo "database/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep \
     && touch ./sessions/.keep \
     && echo "sessions/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep \
     && touch ./sessions/processor/.keep \
     && echo "sessions/processor/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
     && touch ./sessions/pipeline/.keep \
     && echo "sessions/pipeline/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
     && touch ./sessions/api/.keep \
     && echo "sessions/api/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
     && touch ./sessions/core/.keep \
     && echo "sessions/core/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
     && touch ./sessions/api/integration/.keep \
-    && printf "LUCID_API_GATEWAY_CONFIG_RATE_LIMITING_$(date +%s)" > ./config/.keep \
-    && touch ./config/.keep \
-    && echo "config/.keep created" \
+    && echo "sessions/api/integration/.keep created" \
+    
     && printf "LUCID_API_GATEWAY_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
     && touch ./common/tor/.keep \
     && echo "common/tor/.keep created" \
@@ -259,8 +274,8 @@ COPY 03_api_gateway/api/app/db/users_repo.py ./api/app/db/users_repo.py
 COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.py
 COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/user.py
 COPY 03_api_gateway/api/app/db/models/session.py ./api/app/db/models/session.py
-# copy .api.app.utils files
 
+# copy .api.app.utils files
 COPY 03_api_gateway/api/app/utils/__init__.py ./api/app/utils/__init__.py
 COPY 03_api_gateway/api/app/utils/config.py ./api/app/utils/config.py
 COPY 03_api_gateway/api/app/utils/logging.py ./api/app/utils/logging.py
@@ -318,21 +333,28 @@ COPY sessions/encryption/ ./sessions/encryption/
 # Verify new modules are included in builder stage - file existence & imports
 # ✅ This works - absolute imports in verification script
 RUN echo "Verifying new modules are included in builder stage" && \
-    test -f /build/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
-    test -f /build/services/rate_limit_service.py || (echo "Missing: rate_limit_service.py" && exit 1) && \
-    test -f /build/services/auth_service.py || (echo "Missing: auth_service.py" && exit 1) && \
-    test -f /build/api/app/routers/auth.py || (echo "Missing: auth.py" && exit 1) && \
-    test -f /build/api/app/routers/trust.py || (echo "Missing: trust.py" && exit 1) && \
-    test -f /build/api/app/routers/sessions.py || (echo "Missing: sessions.py" && exit 1) && \
-    test -f /build/api/app/routers/tron_support.py || (echo "Missing: tron_support.py" && exit 1) && \
-    test -f /build/api/app/services/gui_bridge_service.py || (echo "Missing: gui_bridge_service.py" && exit 1) && \
-    test -f /build/api/app/services/tron_support_service.py || (echo "Missing: tron_support_service.py" && exit 1) && \
-    test -f /build/api/app/config.py || (echo "Missing: config.py" && exit 1) && \
+    test -f /build/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
+    test -f /build/api/app/schemas/__init__.py || (echo "Missing: api/app/schemas/__init__.py" && exit 1) && \
+    test -f /build/api/app/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
+    test -f /build/api/app/database/__init__.py || (echo "Missing: api/app/database/__init__.py" && exit 1) && \
+    test -f /build/api/app/db/__init__.py || (echo "Missing: api/app/db/__init__.py" && exit 1) && \
+    test -f /build/api/app/db/models/__init__.py || (echo "Missing: api/app/db/models/__init__.py" && exit 1) && \
+    test -f /build/api/app/services/__init__.py || (echo "Missing: api/app/services/__init__.py" && exit 1) && \
+    test -f /build/api/app/utils/__init__.py || (echo "Missing: api/app/utils/__init__.py" && exit 1) && \
+    test -f /build/api/app/middleware/__init__.py || (echo "Missing: api/app/middleware/__init__.py" && exit 1) && \
+    test -f /build/api/app/routes/__init__.py || (echo "Missing: api/app/routes/__init__.py" && exit 1) && \
+    test -f /build/api/app/scripts/__init__.py || (echo "Missing: api/app/scripts/__init__.py" && exit 1) && \
+    test -f /build/api/app/routers/__init__.py || (echo "Missing: api/app/routers/__init__.py" && exit 1) && \
     test -f /build/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
-    test -f /build/api/app/utils/config.py || (echo "Missing: config.py" && exit 1) && \
+    test -f /build/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
+    test -f /build/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
+    test -f /build/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
+    test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
+    test -f /build/sessions/__init__.py || (echo "Missing: sessions/__init__.py" && exit 1) && \
+    test -f /build/sessions/pipeline/__init__.py || (echo "Missing: sessions/pipeline/__init__.py" && exit 1) && \
+    test -f /build/sessions/api/__init__.py || (echo "Missing: sessions/api/__init__.py" && exit 1) && \
+    test -f /build/sessions/api/integration/__init__.py || (echo "Missing: sessions/api/integration/__init__.py" && exit 1) && \
     test -f /build/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
-    test -f /build/sessions/core/session_generator.py || (echo "Missing: session_generator.py" && exit 1) && \
-    test -f /build/sessions/core/session_orchestrator.py || (echo "Missing: session_orchestrator.py" && exit 1) && \
     echo "✅ All module files verified in builder stage"
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -480,23 +502,30 @@ COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
 COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
 
 
-RUN echo "Verifying new modules are included in runtime stage" && \
-    test -f /app/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
-    test -f /app/api/app/routers/auth.py || (echo "Missing: auth.py" && exit 1) && \
-    test -f /app/api/app/routers/trust.py || (echo "Missing: trust.py" && exit 1) && \
-    test -f /app/services/rate_limit_service.py || (echo "Missing: rate_limit_service.py" && exit 1) && \
-    test -f /app/services/auth_service.py || (echo "Missing: auth_service.py" && exit 1) && \
-    test -f /app/api/app/routers/sessions.py || (echo "Missing: sessions.py" && exit 1) && \
-    test -f /app/api/app/routers/tron_support.py || (echo "Missing: tron_support.py" && exit 1) && \
-    test -f /app/api/app/middleware/auth.py || (echo "Missing: auth.py" && exit 1) && \
-    test -f /app/api/app/services/gui_bridge_service.py || (echo "Missing: gui_bridge_service.py" && exit 1) && \
-    test -f /app/api/app/services/tron_support_service.py || (echo "Missing: tron_support_service.py" && exit 1) && \
-    test -f /app/api/app/config.py || (echo "Missing: config.py" && exit 1) && \
+RUN echo "Verifying new modules are included in Runtime stage" && \
+    test -f /app/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
+    test -f /app/api/app/schemas/__init__.py || (echo "Missing: api/app/schemas/__init__.py" && exit 1) && \
+    test -f /app/api/app/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
+    test -f /app/api/app/database/__init__.py || (echo "Missing: api/app/database/__init__.py" && exit 1) && \
+    test -f /app/api/app/db/__init__.py || (echo "Missing: api/app/db/__init__.py" && exit 1) && \
+    test -f /app/api/app/db/models/__init__.py || (echo "Missing: api/app/db/models/__init__.py" && exit 1) && \
+    test -f /app/api/app/services/__init__.py || (echo "Missing: api/app/services/__init__.py" && exit 1) && \
+    test -f /app/api/app/utils/__init__.py || (echo "Missing: api/app/utils/__init__.py" && exit 1) && \
+    test -f /app/api/app/middleware/__init__.py || (echo "Missing: api/app/middleware/__init__.py" && exit 1) && \
+    test -f /app/api/app/routes/__init__.py || (echo "Missing: api/app/routes/__init__.py" && exit 1) && \
+    test -f /app/api/app/scripts/__init__.py || (echo "Missing: api/app/scripts/__init__.py" && exit 1) && \
+    test -f /app/api/app/routers/__init__.py || (echo "Missing: api/app/routers/__init__.py" && exit 1) && \
     test -f /app/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
+    test -f /app/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
+    test -f /app/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
+    test -f /app/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
+    test -f /app/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
+    test -f /app/sessions/__init__.py || (echo "Missing: sessions/__init__.py" && exit 1) && \
+    test -f /app/sessions/pipeline/__init__.py || (echo "Missing: sessions/pipeline/__init__.py" && exit 1) && \
+    test -f /app/sessions/api/__init__.py || (echo "Missing: sessions/api/__init__.py" && exit 1) && \
+    test -f /app/sessions/api/integration/__init__.py || (echo "Missing: sessions/api/integration/__init__.py" && exit 1) && \
     test -f /app/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
-    test -f /app/sessions/core/session_generator.py || (echo "Missing: session_generator.py" && exit 1) && \
-    test -f /app/sessions/core/session_orchestrator.py || (echo "Missing: session_orchestrator.py" && exit 1) && \
-    echo "✅ All modules verified in runtime stage"
+    echo "✅ All module files verified in Runtime stage"
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
