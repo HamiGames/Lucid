@@ -113,7 +113,7 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
 
 RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database ./api/app/utils ./api/app/models ./api/app/routes \
     && mkdir -p ./api/app/schemas ./gateway ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
-    && mkdir -p ./config ./endpoints ./config ./models ./utils ./services ./database ./api/app/tests \
+    && mkdir -p ./config ./endpoints ./config ./models ./utils ./services ./database ./common ./common/tor \
     && mkdir -p ./sidecar ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration  \
     # printf .keep in each directory
     && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
@@ -173,9 +173,9 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
     && touch ./endpoints/.keep \
     && echo "endpoints/.keep created" \
-    && printf "LUCID_API_GATEWAY_CONFIG_$(date +%s)" > ./config/.keep \
-    && touch ./config/.keep \
-    && echo "config/.keep created" \
+    && printf "LUCID_API_GATEWAY_COMMON_$(date +%s)" > ./common/.keep \
+    && touch ./common/.keep \
+    && echo "common/.keep created" \
     && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
     && touch ./database/.keep \
     && echo "database/.keep created" \
@@ -199,14 +199,15 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     && printf "LUCID_API_GATEWAY_CONFIG_RATE_LIMITING_$(date +%s)" > ./config/.keep \
     && touch ./config/.keep \
     && echo "config/.keep created" \
-
-    && echo "sessions/api/integration/.keep created" \
-    && printf "LUCID_API_GATEWAY_SIDECAR_$(date +%s)" > ./sidecar/.keep \
+    && printf "LUCID_API_GATEWAY_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
+    && touch ./common/tor/.keep \
+    && echo "common/tor/.keep created" \
     && echo "all container directories created" 
 
 
     # Application source COPY (only directories that exist with content)
-
+COPY common/__init__.py ./common/__init__.py
+COPY common/tor/__init__.py ./common/tor/__init__.py
 #copy .api.app files
 COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
 COPY 03_api_gateway/api/app/main.py ./api/app/main.py
@@ -250,13 +251,13 @@ COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gu
 COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
 COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
 COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
-#copy .api.app.db files
+
 COPY 03_api_gateway/api/app/db/__init__.py ./api/app/db/__init__.py
 COPY 03_api_gateway/api/app/db/connection.py ./api/app/db/connection.py
 COPY 03_api_gateway/api/app/db/users_repo.py ./api/app/db/users_repo.py
 # copy .api.app.db.models files
 COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.py
-COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/users.py
+COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/user.py
 COPY 03_api_gateway/api/app/db/models/session.py ./api/app/db/models/session.py
 # copy .api.app.utils files
 COPY 03_api_gateway/api/app/utils/__init__.py ./api/app/utils/__init__.py
@@ -390,7 +391,8 @@ COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
 COPY --from=builder --chown=65532:65532 /build/wheels         /app/build/wheels
-
+COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
+COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
 # import .api.app files
 COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py                     /app/api/app/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/main.py                       /app/api/app/main.py
@@ -401,7 +403,6 @@ COPY --chown=65532:65532 --from=builder /build/api/app/middleware/auth.py       
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/logging.py         /app/api/app/middleware/logging.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/rate_limit.py   /app/api/app/middleware/rate_limit.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/cors.py            /app/api/app/middleware/cors.py
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/security.py        /app/api/app/middleware/security.py
 # import .api.app.utils files
 COPY --chown=65532:65532 --from=builder /build/api/app/utils/__init__.py             /app/api/app/utils/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/utils/config.py               /app/api/app/utils/config.py
@@ -423,11 +424,11 @@ COPY --chown=65532:65532 --from=builder /build/api/app/routers/tron_support.py /
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/sessions.py     /app/api/app/routers/sessions.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/trust.py        /app/api/app/routers/trust.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/users.py        /app/api/app/routers/users.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/chain.py        /app/api/app/routers/chain.py       /app/api/app/routers/health.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/manifest.py     /app/api/app/routers/manifest.py
+COPY --chown=65532:65532 --from=builder /build/api/app/routers/chain.py        /app/api/app/routers/chain.py
+COPY --chown=65532:65532 --from=builder /build/api/app/routers/manifests.py     /app/api/app/routers/manifests.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/meta.py         /app/api/app/routers/meta.py
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/auth.py         /app/api/app/routers/auth.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/wallet.py       /app/api/app/routers/wallet.py
+COPY --chown=65532:65532 --from=builder /build/api/app/routers/wallets.py       /app/api/app/routers/wallets.py
 # import .api.app.routes files
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 
@@ -447,9 +448,6 @@ COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_bridge_servi
 COPY --chown=65532:65532 --from=builder /build/api/app/services/session_service.py        /app/api/app/services/session_service.py
 COPY --chown=65532:65532 --from=builder /build/api/app/services/mongo_service.py        /app/api/app/services/mongo_service.py
 COPY --chown=65532:65532 --from=builder /build/api/app/services/tron_support_service.py        /app/api/app/services/tron_support_service.py
-COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_docker_manager_service.py        /app/api/app/services/gui_docker_manager_service.py
-COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_hardware_manager_service.py        /app/api/app/services/gui_hardware_manager_service.py
-
 #import .services files
 COPY --chown=65532:65532 --from=builder /build/services/proxy_service.py        /app/services/proxy_service.py
 COPY --chown=65532:65532 --from=builder /build/services/gui_tor_manager_service.py        /app/services/gui_tor_manager_service.py

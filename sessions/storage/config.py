@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-
+import os
 try:
     import yaml
     YAML_AVAILABLE = True
