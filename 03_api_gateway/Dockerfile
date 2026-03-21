@@ -111,7 +111,7 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     echo " Marker files created to lock in directory structure"
 
 # Verify marker files exist with content (critical for distroless COPY)
-RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services && \
+RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts ./api/app/security./infrastructure ./infrastructure/kubernetes ./common ./common/tor ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts && \
     printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
     touch ./api/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
@@ -119,8 +119,6 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services && \
     printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep && \
     touch ./api/.keep ./api/app/.keep ./api/app/services/.keep && \
     echo "api/.keep, api/app/.keep, api/app/services/.keep created" && \
-    #api/app/ directories
-    mkdir -p ./api/app/schemas ./api/app/routers ./api/app/middleware ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts ./api/app/security && \
     printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep && \
     touch ./api/app/routers/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep && \
@@ -140,8 +138,6 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services && \
     printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep && \
     touch ./api/app/security/.keep && \
     echo "api/app/routers/.keep, api/app/utils/.keep, api/app/middleware/.keep, api/app/database/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/routes/.keep, api/app/security/.keep created" && \
-    #infrastructure directories
-    mkdir -p ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
     printf "LUCID_API_GATEWAY_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep && \
     touch ./infrastructure/.keep && \
     printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
@@ -154,15 +150,12 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services && \
     touch ./common/tor/.keep && \
     touch ./common/.keep ./common/tor/.keep && \
     echo "common/.keep, common/tor/.keep created" && \
-    echo "all container directories created" 
-    #api/app/db directories
-    mkdir -p ./api/app/db ./api/app/db/models && \
+    echo "all container directories created" && \
     printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep && \
     touch ./api/app/db/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep && \
     touch ./api/app/db/models/.keep && \
-    echo "api/app/db/.keep, api/app/db/models/.keep created" && \
-    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts && \
+    echo "api/app/db/.keep, api/app/db/models/.keep created" && \  
     printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep && \
     touch ./utils/.keep && \
     printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep && \
@@ -177,9 +170,10 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services && \
     touch ./models/.keep && \
     printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep && \
     touch ./database/.keep && \
-    && touch ./utils/.keep ./scripts/.keep ./config/.keep ./endpoints/.keep ./models/.keep ./database/.keep ./services/.keep \   
-    #sessions directories
-    mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration && \
+    echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created"
+
+
+RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration && \
     printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
     printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
