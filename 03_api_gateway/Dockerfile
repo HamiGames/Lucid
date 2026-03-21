@@ -310,8 +310,7 @@ COPY sessions/core/session_orchestrator.py ./sessions/core/session_orchestrator.
 COPY sessions/core/logging.py ./sessions/core/logging.py
 COPY sessions/encryption/ ./sessions/encryption/
 
-# copy to .gateway
-COPY ./infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/api-gateway.yaml
+
 
 
 # Create marker files in app directories (ensures COPY won't fail silently)
@@ -467,8 +466,7 @@ COPY --chown=65532:65532 --from=builder /build/sessions/core/session_generator.p
 COPY --chown=65532:65532 --from=builder /build/sessions/core/session_orchestrator.py       /app/sessions/core/session_orchestrator.py
 COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
 
-# import .infrastructure files
-COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/05-core/api-gateway.yaml /app/api-gateway.yaml
+
 #import .endpoints files
 COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
 # import .services files

@@ -6,26 +6,25 @@ Provides standardized logging setup and logger access
 
 
 import sys
+import logging
 from typing import Optional
 # Default log format
 DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-from ..api.config import get_config, load_config
 import os
-import logging
-log_level = os.getenv(get_config().LOG_LEVEL(), "INFO").upper()
-settings = os.getenv(load_config().log_level(), "INFO").upper()
-
+from sessions.pipeline.config import PipelineConfig, PipelineSettings
+from sessions.api.config import CONFIG, SETTINGS
+if CONFIG is None:
+    CONFIG = PipelineConfig()
+if SETTINGS is None:
+    SETTINGS = PipelineSettings()
 logger = logging.getLogger(__name__)
-
 logger.basicConfig(
-    level=getattr(logging, log_level, logging.INFO),
+    level=getattr(logging, CONFIG.LOG_LEVEL(), logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-logger(__name__)
-settings(__name__)
+
 
 def setup_logging(
     level: Optional[str] = None,
@@ -40,14 +39,12 @@ def setup_logging(
         format_string: Log format string. Defaults to DEFAULT_LOG_FORMAT
         date_format: Date format string. Defaults to DEFAULT_DATE_FORMAT
     """
-    import os
-    
     # Get log level from environment or parameter
     if level is None:
-        level = os.getenv('LOG_LEVEL', 'INFO').upper()
+        level = CONFIG.LOG_LEVEL()
     
     # Convert string level to logging constant
-    numeric_level = getattr(logging, level, logging.INFO)
+    numeric_level = getattr(logging, level.upper(), logging.INFO)
     
     # Setup basic configuration
     log_format = format_string or DEFAULT_LOG_FORMAT
