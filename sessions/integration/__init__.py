@@ -6,7 +6,10 @@ file: sessions/integration/__init__.py
 the integration calls the sessions integration
 """
 
-from sessions.core.logging import get_logger, setup_logging
-from sessions.pipeline.config import PipelineConfig, PipelineSettings
+from sessions.core import logging
+from sessions.pipeline import pipeline_manager, state_machine, config, entrypoint, merkle_builder
+from sessions.api.config import SETTINGS, CONFIG
 
-__all__ = [ 'get_logger', 'setup_logging', 'PipelineConfig', 'PipelineSettings' ]
+__all__ = [ 'logging', 'pipeline_manager', 'state_machine',
+'config', 'entrypoint', 'merkle_builder', 'SETTINGS', 'CONFIG'
+ ]

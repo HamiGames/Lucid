@@ -17,14 +17,12 @@ entrypoint,
 merkle_builder 
 )
 from sessions.api.config import SETTINGS, CONFIG
-from sessions.core.logging import get_logger, setup_logging
+
 __all__ = [
     "session_pipeline_manager",
     "pipeline_manager",
     "state_machine",
     "config",
-    "get_logger",
-    "setup_logging",
     "main",
     "SETTINGS",
     "CONFIG",

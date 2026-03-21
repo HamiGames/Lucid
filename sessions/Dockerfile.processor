@@ -48,7 +48,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libzstd1 \
         liblz4-dev \
         liblz4-1 \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
         curl \
+        tini \
+        cargo \
+        rustc \
         ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -67,20 +74,20 @@ COPY sessions/requirements.processor.txt ./requirements.txt
 
 # Note: Renamed to requirements.txt in build context for convenience
 
-RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
-    mkdir -p /root/.local/bin
+RUN mkdir -p ./root/.local/lib/python3.11/site-packages && \
+    mkdir -p ./root/.local/bin
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --user --no-cache-dir --prefer-binary -r requirements.txt
 
 # Marker files (per Dockerfile-copy-pattern.md)
-RUN echo "LUCID_CHUNK_PROCESSOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_CHUNK_PROCESSOR_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
+RUN echo "LUCID_CHUNK_PROCESSOR_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.keep && \
+    echo "LUCID_CHUNK_PROCESSOR_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.keep && \
     chown -R 65532:65532 /root/.local
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
-RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, cryptography, httpx, aiofiles, aiohttp, numpy, structlog, lz4, zstandard, zstd, brotli, blake3; print('✅ critical packages installed')" && \
+RUN python3 -c "import fastapi, cargo, rustc, uvicorn, pydantic, pydantic_settings, motor, pymongo, redis, async_timeout, cryptography, httpx, aiofiles, aiohttp, numpy, structlog, lz4, zstandard, zstd, brotli, blake3; print('✅ critical packages installed')" && \
     python3 -c "import uvicorn; print('uvicorn location:', uvicorn.__file__)" && \
     python3 -c "import async_timeout; print('async_timeout location:', async_timeout.__file__)" && \
     test -d /root/.local/lib/python3.11/site-packages && \
@@ -93,11 +100,22 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pym
     test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
     echo "✅ Marker file verified in builder (non-empty)"
 
+RUN mkdir -p ./sessions ./sessions/processor ./sessions/core ./sessions/pipeline ./sessions/pipeline/integration && \
+    printf "LUCID_SESSIONS_PROCESSOR_DIRECTORY_$(date +%s)" > ./sessions/processor/.keep && \
+    touch ./sessions/processor/.keep && \
+    printf "LUCID_SESSIONS_CORE_DIRECTORY_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_SESSIONS_PIPELINE_DIRECTORY_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
+    printf "LUCID_SESSIONS_PIPELINE_INTEGRATION_DIRECTORY_$(date +%s)" > ./sessions/pipeline/integration/.keep && \
+    touch ./sessions/pipeline/integration/.keep && \
+    echo "Application directories created with markers"
+    
 # Application source COPY
-COPY sessions/processor/ ./processor/
-COPY sessions/core/ ./core/
+COPY sessions/processor/ ./processor
+COPY sessions/core/ ./core
 COPY sessions/pipeline/__init__.py ./pipeline/__init__.py
-COPY sessions/pipeline/integration/ ./pipeline/integration/
+COPY sessions/pipeline/integration ./pipeline/integration
 COPY sessions/__init__.py ./__init__.py
 
 ############################
@@ -133,25 +151,29 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder --chown=65532:65532 /var/run /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
 
+COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
+COPY --from=builder --chown=65532:65532 /usr/bin/cargo /app/usr/bin/cargo
+COPY --from=builder --chown=65532:65532 /usr/bin/rustc /app/usr/bin/rustc
 # Distroless base already has correct linker/runtime; only copy CA certs
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 # Copy required dynamic libraries for zstandard, lz4, and other native extensions
 # CRITICAL: zstandard Python package requires libzstd.so.1 at runtime (distroless base doesn't include it)
 # Pattern matches architecture-specific subdirectories (aarch64-linux-gnu, x86_64-linux-gnu, etc.)
-COPY --from=builder /lib/*/libzstd.so.1 /lib/
-COPY --from=builder /lib/*/liblz4.so.1 /lib/
+COPY --from=builder /lib/*/libzstd.so.1 /app/lib/
+COPY --from=builder /lib/*/liblz4.so.1 /app/lib/
 
 # Python packages (per COPY pattern guide)
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+COPY --from=builder --chown=65532:65532 /build/root/.local/lib/python3.11/site-packages /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /build/root/.local/bin /app/usr/local/bin
+
 
 # Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+RUN ["/app/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 sys.path.insert(0, site_packages); \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
@@ -202,7 +224,7 @@ COPY --chown=65532:65532 --from=builder /build/pipeline/integration /app/session
 COPY --chown=65532:65532 --from=builder /build/__init__.py /app/sessions/__init__.py
 
 # Verify application source files were copied (prevents silent COPY failures)
-RUN ["/usr/bin/python3.11", "-c", "import os; \
+RUN ["/app/usr/bin/python3.11", "-c", "import os; \
 assert os.path.exists('/app/sessions/processor'), 'processor directory not found'; \
 assert os.path.exists('/app/sessions/processor/main.py'), 'main.py not found'; \
 assert os.path.exists('/app/sessions/processor/entrypoint.py'), 'entrypoint.py not found'; \
@@ -223,4 +245,4 @@ USER 65532:65532
 # Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
 
-CMD ["/usr/bin/python3.11", "/app/sessions/processor/entrypoint.py"]
+CMD ["/app/usr/bin/python3.11", "/app/sessions/processor/entrypoint.py"]
