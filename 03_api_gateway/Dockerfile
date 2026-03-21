@@ -260,7 +260,8 @@ RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/endpoints/__init__.py || (echo "Missing: endpoints/__init__.py" && exit 1) && \
     test -f /build/config/__init__.py || (echo "Missing: config/__init__.py" && exit 1) && \
     test -f /build/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
-    test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1
+    test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
+    echo "✅ All module files verified in builder stage"
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
