@@ -14,7 +14,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest AS builder
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -57,8 +57,11 @@ WORKDIR /build
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    touch /var/run/.keep && \
     printf "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
+    touch /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
+    chmod 644 /var/run/.keep /var/lib/.keep
 
 # Python dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
