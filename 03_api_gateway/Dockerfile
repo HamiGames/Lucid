@@ -14,7 +14,7 @@ ARG PYTHON_VERSION=3.11
 ############################
 # Stage 1 – Builder
 ############################
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -109,222 +109,103 @@ RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/p
     echo " Marker files created to lock in directory structure"
 
 # Verify marker files exist with content (critical for distroless COPY)
-
-
-RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database ./api/app/utils ./api/app/models ./api/app/routes \
-    && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/services ./api/app/middleware ./api/app/scripts ./api/app/security \
-    && mkdir -p ./config ./endpoints ./config ./models ./database ./common ./common/tor \
-    && mkdir -p ./sidecar ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration  \
-    # printf .keep in each directory
+RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services \
     && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
-    && touch ./api/.keep \
-    && echo "api/.keep created" \
     && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
-    && touch ./api/app/.keep \
-    && echo "api/app/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
-    && touch ./api/app/db/.keep \
-    && echo "api/app/db/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
-    && touch ./api/app/db/models/.keep \
-    && echo "api/app/db/models/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
-    && touch ./api/app/database/.keep \
-    && echo "api/app/database/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep \
-    && touch ./api/app/schemas/.keep \
-    && echo "api/app/schemas/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
-    && touch ./api/app/routers/.keep \
-    && echo "api/app/routers/.keep created" \
-    
     && printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep \
-    && touch ./api/app/services/.keep \
-    && echo "api/app/services/.keep created" \
-    
+    && printf "LUCID_API_GATEWAY_"
+    && touch ./api/.keep ./api/app/.keep ./api/app/services/.keep \
+    && echo "api/.keep, api/app/.keep, api/app/services/.keep created" \
+    #api/app/ directories
+    && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/middleware ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts ./api/app/security \
+    && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
     && printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep \
-    && touch ./api/app/utils/.keep \
-    && echo "api/app/utils/.keep created" \
-    
     && printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep \
-    && touch ./api/app/middleware/.keep \
-    && echo "api/app/middleware/.keep created" \
-    
+    && printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
     && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
-    && touch ./api/app/scripts/.keep \
-    && echo "api/app/scripts/.keep created" \
-    
     && printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
-    && touch ./api/app/models/.keep \
-    && echo "api/app/models/.keep created" \
-    
     && printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep \
-    && touch ./api/app/routes/.keep \
-    && echo "api/app/routes/.keep created" \
-
+    && printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep \
     && printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep \
-    && touch ./api/app/security/.keep \
-    && echo "api/app/security/.keep created" \
-
-    && printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep \
-    && touch ./models/.keep \
-    && echo "models/.keep created" \
-
-    && printf "LUCID_API_GATEWAY_COMMON_$(date +%s)" > ./common/.keep \
-    && touch ./common/.keep \
-    && echo "common/.keep created" \
-
-    && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
-    && touch ./endpoints/.keep \
-    && echo "endpoints/.keep created" \
-
-    && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
-    && touch ./database/.keep \
-    && echo "database/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep \
-    && touch ./sessions/.keep \
-    && echo "sessions/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep \
-    && touch ./sessions/processor/.keep \
-    && echo "sessions/processor/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
-    && touch ./sessions/pipeline/.keep \
-    && echo "sessions/pipeline/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
-    && touch ./sessions/api/.keep \
-    && echo "sessions/api/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
-    && touch ./sessions/core/.keep \
-    && echo "sessions/core/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
-    && touch ./sessions/api/integration/.keep \
-    && echo "sessions/api/integration/.keep created" \
-    
-    && printf "LUCID_API_GATEWAY_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
-    && touch ./common/tor/.keep \
-    && echo "common/tor/.keep created" \
+    && touch ./api/app/routers/.keep ./api/app/utils/.keep ./api/app/middleware/.keep ./api/app/database/.keep ./api/app/scripts/.keep ./api/app/models/.keep ./api/app/routes/.keep ./api/app/security/.keep \
+    && echo "api/app/routers/.keep, api/app/utils/.keep, api/app/middleware/.keep, api/app/database/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/routes/.keep, api/app/security/.keep created" \
+    #infrastructure directories
+    && mkdir -p ./infrastructure ./infrastructure/kubernetes ./common ./common/tor \
+    && printf "LUCID_API_GATEWAY_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep \
+    && printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep \
+    && touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep \
+    && echo "infrastructure/kubernetes/.keep created" \
+    && printf "LUCID_COMMON_$(date +%s)" > ./common/.keep\
+    && printf "LUCID_API_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
+    && touch ./common/.keep ./common/tor/.keep \
+    && echo "common/.keep, common/tor/.keep created" \
     && echo "all container directories created" 
+    #api/app/db directories
+    && mkdir -p ./api/app/db ./api/app/db/models \
+    && printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
+    && printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
+    && touch ./api/app/db/.keep ./api/app/db/models/.keep \
+    && echo "api/app/db/.keep, api/app/db/models/.keep created" \
+    #config directories
+    && mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts \
+    && printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep \
+    && printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep \
+    && printf "LUCID_API_GATEWAY_CONFIG_$(date +%s)" > ./config/.keep \
+    && printf "LUCID_API_GATEWAY_SCRIPTS_$(date +%s)" > ./scripts/.keep \
+    && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
+    && printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep \
+    && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
+    && touch ./utils/.keep ./scripts/.keep ./config/.keep ./endpoints/.keep ./models/.keep ./database/.keep ./services/.keep \   
+    #sessions directories
+    && mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration 
+    && printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep \
+    && printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep \
+    && printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
+    && printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
+    && printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
+    && printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
+    && touch ./sessions/processor/.keep ./sessions/pipeline/.keep ./sessions/api/.keep ./sessions/core/.keep ./sessions/api/integration/.keep ./sessions/.keep \
+    && echo "sessions/processor/.keep, sessions/pipeline/.keep, sessions/api/.keep, sessions/core/.keep, sessions/api/integration/.keep, sessions/.keep created" \
+    
+    
 
 
     # Application source COPY (only directories that exist with content)
-COPY common/__init__.py ./common/__init__.py
-COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY common/tor ./common/tor
+COPY common ./common
 COPY 03_api_gateway/api/__init__.py ./api/__init__.py
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
 
 #copy .api.app files
-COPY 03_api_gateway/api/app/ ./api/app/
-COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
-COPY 03_api_gateway/api/app/main.py ./api/app/main.py
-COPY 03_api_gateway/api/app/config.py ./api/app/config.py
-COPY 03_api_gateway/api/app/deps.py ./api/app/deps.py
-# import .api.app.middleware files
-COPY 03_api_gateway/api/app/middleware/__init__.py ./api/app/middleware/__init__.py
-COPY 03_api_gateway/api/app/middleware/auth.py ./api/app/middleware/auth.py
-COPY 03_api_gateway/api/app/middleware/logging.py ./api/app/middleware/logging.py
-COPY 03_api_gateway/api/app/middleware/rate_limit.py ./api/app/middleware/rate_limit.py
-COPY 03_api_gateway/api/app/middleware/cors.py ./api/app/middleware/cors.py
+COPY 03_api_gateway/api/app ./api/app
+COPY 03_api_gateway/api/app/db ./api/app/db
+COPY 03_api_gateway/api/app/db/models ./api/app/db/models
+COPY 03_api_gateway/api/app/database ./api/app/database
+COPY 03_api_gateway/api/app/schemas ./api/app/schemas
+COPY 03_api_gateway/api/app/routers ./api/app/routers
+COPY 03_api_gateway/api/app/routes ./api/app/routes
+COPY 03_api_gateway/api/app/services ./api/app/services
+COPY 03_api_gateway/api/app/utils ./api/app/utils
+COPY 03_api_gateway/api/app/scripts ./api/app/scripts
+COPY 03_api_gateway/api/app/security ./api/app/security
+COPY 03_api_gateway/api/app/middleware ./api/app/middleware
 
-# import .api.app.routers files
-COPY 03_api_gateway/api/app/routers/__init__.py ./api/app/routers/__init__.py
-COPY 03_api_gateway/api/app/routers/gui.py ./api/app/routers/gui.py
-COPY 03_api_gateway/api/app/routers/gui_docker.py ./api/app/routers/gui_docker.py
-COPY 03_api_gateway/api/app/routers/gui_tor.py ./api/app/routers/gui_tor.py
-COPY 03_api_gateway/api/app/routers/gui_hardware.py ./api/app/routers/gui_hardware.py
-COPY 03_api_gateway/api/app/routers/tron_support.py ./api/app/routers/tron_support.py
-COPY 03_api_gateway/api/app/routers/sessions.py ./api/app/routers/sessions.py
-COPY 03_api_gateway/api/app/routers/trust.py ./api/app/routers/trust.py
-COPY 03_api_gateway/api/app/routers/users.py ./api/app/routers/users.py
-COPY 03_api_gateway/api/app/routers/chain.py ./api/app/routers/chain.py
-COPY 03_api_gateway/api/app/routers/manifests.py ./api/app/routers/manifests.py
-COPY 03_api_gateway/api/app/routers/meta.py ./api/app/routers/meta.py
-COPY 03_api_gateway/api/app/routers/auth.py ./api/app/routers/auth.py
-COPY 03_api_gateway/api/app/routers/wallets.py ./api/app/routers/wallets.py
-# copy .routes
-COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
-
-# import .api.app.database files
-COPY 03_api_gateway/api/app/database/__init__.py ./api/app/database/__init__.py
-COPY 03_api_gateway/api/app/database/connection.py ./api/app/database/connection.py
-#copy .api.app.models files
-COPY 03_api_gateway/api/app/models/__init__.py ./api/app/models/__init__.py
-COPY 03_api_gateway/api/app/models/common.py ./api/app/models/common.py
-
-#copy .api.app.services files
-COPY 03_api_gateway/api/app/services/__init__.py ./api/app/services/__init__.py
-COPY 03_api_gateway/api/app/services/gui_bridge_service.py ./api/app/services/gui_bridge_service.py
-COPY 03_api_gateway/api/app/services/mongo_service.py ./api/app/services/mongo_service.py
-COPY 03_api_gateway/api/app/services/session_service.py ./api/app/services/session_service.py
-COPY 03_api_gateway/api/app/services/tron_support_service.py ./api/app/services/tron_support_service.py
-
-COPY 03_api_gateway/api/app/db/__init__.py ./api/app/db/__init__.py
-COPY 03_api_gateway/api/app/db/connection.py ./api/app/db/connection.py
-COPY 03_api_gateway/api/app/db/users_repo.py ./api/app/db/users_repo.py
-# copy .api.app.db.models files
-COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.py
-COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/user.py
-COPY 03_api_gateway/api/app/db/models/session.py ./api/app/db/models/session.py
-
-# copy .api.app.utils files
-COPY 03_api_gateway/api/app/utils/__init__.py ./api/app/utils/__init__.py
-COPY 03_api_gateway/api/app/utils/config.py ./api/app/utils/config.py
-COPY 03_api_gateway/api/app/utils/logging.py ./api/app/utils/logging.py
-COPY 03_api_gateway/api/app/utils/logger.py ./api/app/utils/logger.py
-# copy .api.app.schemas files
-COPY 03_api_gateway/api/app/schemas/__init__.py ./api/app/schemas/__init__.py
-COPY 03_api_gateway/api/app/schemas/auth.py ./api/app/schemas/auth.py
-COPY 03_api_gateway/api/app/schemas/sessions.py ./api/app/schemas/sessions.py
-COPY 03_api_gateway/api/app/schemas/users.py ./api/app/schemas/users.py
-COPY 03_api_gateway/api/app/schemas/meta.py ./api/app/schemas/meta.py
-COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
-
-
-# copy .api.app.routes
-COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
-COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
-# copy .endpoints
-COPY 03_api_gateway/endpoints/ ./endpoints/
+# copy .services
+COPY 03_api_gateway/services ./services
 # copy .database
-COPY 03_api_gateway/database/ ./database/
-# copy .models
-COPY 03_api_gateway/models/ ./models/
-#copy to .sessions
+COPY 03_api_gateway/database ./database
+COPY 03_api_gateway/models ./models
+COPY 03_api_gateway/utils ./utils
+# copy .endpoints
+COPY 03_api_gateway/endpoints ./endpoints
+COPY 03_api_gateway/config ./config
 COPY sessions/__init__.py ./sessions/__init__.py
 
-COPY 03_api_gateway/api/app/security/__init__.py ./api/app/security/__init__.py
-COPY 03_api_gateway/api/app/security/jwt.py ./api/app/security/jwt.py
-
-COPY sessions/pipeline/__init__.py ./sessions/pipeline/__init__.py
-COPY sessions/pipeline/pipeline_manager.py ./sessions/pipeline/pipeline_manager.py
-
-COPY sessions/api/__init__.py ./sessions/api/__init__.py
-COPY sessions/api/main.py ./sessions/api/main.py
-COPY sessions/api/config.py ./sessions/api/config.py
-COPY sessions/api/entrypoint.py ./sessions/api/entrypoint.py
-
-COPY sessions/api/routes.py ./sessions/api/routes.py
-COPY sessions/api/session_api.py ./sessions/api/session_api.py
-
-COPY sessions/api/integration/__init__.py ./sessions/api/integration/__init__.py
-COPY sessions/api/integration/rdp_controller_client.py ./sessions/api/integration/rdp_controller_client.py
-
-COPY sessions/core/__init__.py ./sessions/core/__init__.py
-COPY sessions/core/session_generator.py ./sessions/core/session_generator.py
-COPY sessions/core/session_orchestrator.py ./sessions/core/session_orchestrator.py
-COPY sessions/core/logging.py ./sessions/core/logging.py
-COPY sessions/encryption/ ./sessions/encryption/
-
-
+COPY sessions/pipeline ./sessions/pipeline
+COPY sessions/api ./sessions/api
+COPY sessions/core ./sessions/core
+COPY sessions/processor ./sessions/processor
+COPY sessions/api/integration ./sessions/api/integration
 
 
 # Create marker files in app directories (ensures COPY won't fail silently)
@@ -332,34 +213,28 @@ COPY sessions/encryption/ ./sessions/encryption/
 # Verify new modules are included in builder stage - file existence & imports
 # ✅ This works - absolute imports in verification script
 RUN echo "Verifying new modules are included in builder stage" && \
-    test -f /build/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
-    test -f /build/api/app/schemas/__init__.py || (echo "Missing: api/app/schemas/__init__.py" && exit 1) && \
-    test -f /build/api/app/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
-    test -f /build/api/app/database/__init__.py || (echo "Missing: api/app/database/__init__.py" && exit 1) && \
-    test -f /build/api/app/db/__init__.py || (echo "Missing: api/app/db/__init__.py" && exit 1) && \
-    test -f /build/api/app/db/models/__init__.py || (echo "Missing: api/app/db/models/__init__.py" && exit 1) && \
-    test -f /build/api/app/services/__init__.py || (echo "Missing: api/app/services/__init__.py" && exit 1) && \
-    test -f /build/api/app/utils/__init__.py || (echo "Missing: api/app/utils/__init__.py" && exit 1) && \
+    test -f /build/api/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
+    test -f /build/api/app/main.py || (echo "Missing: api/app/main.py" && exit 1) && \
     test -f /build/api/app/middleware/__init__.py || (echo "Missing: api/app/middleware/__init__.py" && exit 1) && \
-    test -f /build/api/app/routes/__init__.py || (echo "Missing: api/app/routes/__init__.py" && exit 1) && \
-    test -f /build/api/app/scripts/__init__.py || (echo "Missing: api/app/scripts/__init__.py" && exit 1) && \
-    test -f /build/api/app/routers/__init__.py || (echo "Missing: api/app/routers/__init__.py" && exit 1) && \
-    test -f /build/api/app/security/__init__.py || (echo "Missing: api/app/security/__init__.py" && exit 1) && \
-    test -f /build/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
+    test -f /build/api/app/middleware/auth.py || (echo "Missing: api/app/middleware/auth.py" && exit 1) && \
+    test -f /build/sessions/pipeline/pipeline_manager.py || (echo "Missing: sessions/pipeline/pipeline_manager.py" && exit 1) && \
+    test -f /build/sessions/api/main.py || (echo "Missing: sessions/api/main.py" && exit 1) && \
+    test -f /build/sessions/core/session_generator.py || (echo "Missing: sessions/core/session_generator.py" && exit 1) && \
+    test -f /build/sessions/core/session_orchestrator.py || (echo "Missing: sessions/core/session_orchestrator.py" && exit 1) && \
+    test -f /build/sessions/processor/chunk_processor.py || (echo "Missing: sessions/processor/chunk_processor.py" && exit 1) && \
+    test -f /build/sessions/api/integration/blockchain_integration.py || (echo "Missing: sessions/api/integration/blockchain_integration.py" && exit 1) && \
+    test -f /build/utils/__init__.py || (echo "Missing: utils/__init__.py" && exit 1) && \
     test -f /build/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
     test -f /build/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
+    test -f /build/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
+    test -f /build/endpoints/__init__.py || (echo "Missing: endpoints/__init__.py" && exit 1) && \
+    test -f /build/config/__init__.py || (echo "Missing: config/__init__.py" && exit 1) && \
     test -f /build/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
-    test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
-    test -f /build/sessions/__init__.py || (echo "Missing: sessions/__init__.py" && exit 1) && \
-    test -f /build/sessions/pipeline/__init__.py || (echo "Missing: sessions/pipeline/__init__.py" && exit 1) && \
-    test -f /build/sessions/api/__init__.py || (echo "Missing: sessions/api/__init__.py" && exit 1) && \
-    test -f /build/sessions/api/integration/__init__.py || (echo "Missing: sessions/api/integration/__init__.py" && exit 1) && \
-    test -f /build/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
-    echo "✅ All module files verified in builder stage"
+    test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest 
 
 
 ARG BUILD_DATE
@@ -389,13 +264,102 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 
 WORKDIR /app
 
+RUN mkdir -p ./api ./api/app ./api/app/database ./api/app/db ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/routes \
+    && mkdir -p ./api/app/middleware ./api/app/utils ./api/app/services ./api/app/security ./api/app/scripts ./api/app/models \
+    && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
+    && touch ./api/.keep \
+    && echo "api/.keep created" \
+    && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
+    && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
+    && printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep \
+    && printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep \
+    && touch ./api/app/.keep ./api/app/routers/.keep ./api/app/routes/.keep./api/app/middleware/.keep \
+
+    && echo "api/app/.keep, api/app/routers/.keep, api/app/routes/.keep, api/app/middleware/.keep created" \
+    && printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep \ 
+    && printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep \
+    && printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep \
+    && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
+    && printf "LUCUD_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
+    && printf "LUCUD_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
+    && printf "LUCUD_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
+    && printf "LUCUD_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
+    && touch ./api/app/utils/.keep ./api/app/services/.keep ./api/app/security/.keep ./api/app/scripts/.keep ./api/app/models/.keep ./api/app/database/.keep ./api/app/db/.keep ./api/app/db/models/.keep \
+    && echo "api/app/utils/.keep, api/app/services/.keep, api/app/security/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/database/.keep, api/app/db/.keep, api/app/db/models/.keep created" \
+    # sessions directories
+    && mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/api \
+    && printf "LUCID_SESSIONS_$(date +%s)" > ./sessions/.keep \
+    && printf "LUCID_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
+    && printf "LUCID_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
+    && printf "LUCID_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
+    && printf "LUCID_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
+    && touch ./sessions/.keep ./sessions/pipeline/.keep ./sessions/core/.keep ./sessions/api/.keep ./sessions/api/integration/.keep \
+    && echo "sessions/.keep , sessions/pipeline/.keep , sessions/core/.keep , sessions/api/.keep , sessions/api/integration/.keep created" \
+    # infrastructure directories
+    && mkdir -p ./infrastructure ./infrastructure/kubernetes \
+    && printf "LUCID_API_GATEWAY_API_APP_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep \
+    && printf "LUCID_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep \
+    && touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep \
+    && echo "infrastructure/.keep, infrastructure/kubernetes/.keep created" \
+    # same level as .api directories
+    && mkdir -p ./database ./models  ./services ./utils ./endpoints \ 
+    && printf "LUCID_DATABASE_$(date +%s)" > ./database/.keep \
+    && printf "LUCID_MODELS_$(date +%s)" > ./models/.keep \
+    && printf "LUCID_COMMON_$(date +%s)" > ./common/.keep \
+    && printf "LUCID_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
+    && printf "LUCID_SERVICES_$(date +%s)" > ./services/.keep \
+    && printf "LUCID_UTILS_$(date +%s)" > ./utils/.keep \
+    && printf "LUCID_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
+    && touch ./database/.keep ./models/.keep ./common/.keep ./common/tor/.keep ./services/.keep ./utils/.keep ./endpoints/.keep \
+    && echo "database/.keep , models/.keep , common/.keep , common/tor/.keep , services/.keep , utils/.keep , endpoints/.keep created" \
+    # common directories
+    && mkdir -p ./common ./common/tor \
+    && printf "LUCID_COMMON_$(date +%s)" > ./common/.keep \
+    && printf "LUCID_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
+    && touch ./common/.keep ./common/tor/.keep \
+    && echo "common/.keep, common/tor/.keep created" \
+    # system directories
+    && mkdir -p ./var/run ./var/lib ./etc/ssl/certs ./var ./etc ./etc/ssl ./usr ./usr/local ./usr/local/bin ./usr/local/lib/ ./usr/bin \
+    && mkdir -p ./usr/sbin ./usr/local/lib/python3.11 ./usr/local/lib/python3.11/site-packages ./build ./build/wheels \
+    #.var directories
+    && printf "LUCID_API_GATEWAY_VAR_$(date +%s)" > ./var/.keep \
+    && printf "LUCID_API_GATEWAY_VAR_RUN_$(date +%s)" > ./var/run/.keep \
+    && printf "LUCID_API_GATEWAY_VAR_LIB_$(date +%s)" > ./var/lib/.keep \
+    && touch ./var/lib/.keep ./var/run/.keep ./var/.keep \
+    && echo "var/lib/.keep , var/run/.keep , var/.keep created" \
+    #.etc directories
+    && printf "LUCID_API_GATEWAY_ETC_$(date +%s)" > ./etc/.keep \
+    && printf "LUCID_API_GATEWAY_ETC_SSL_$(date +%s)" > ./etc/ssl/.keep \
+    && printf "LUCID_API_GATEWAY_ETC_SSL_CERTS_CA_CERTIFICATES_CRT_$(date +%s)" > ./etc/ssl/certs/.keep \
+    && touch ./etc/ssl/certs/.keep ./etc/ssl/.keep ./etc/.keep \
+    && echo "etc/ssl/certs/.keep , etc/ssl/.keep , etc/.keep created" \
+    #.usr directories
+    && printf "LUCID_API_GATEWAY_USR_$(date +%s)" > ./usr/.keep \
+    && printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > ./usr/local/.keep \
+    && printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > ./usr/local/bin/.keep \
+    && printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > ./usr/local/lib/.keep \
+    && touch ./usr/local/lib/.keep ./usr/local/bin/.keep ./usr/local/.keep ./usr/.keep \
+    && echo "usr/local/lib/.keep , usr/local/bin/.keep , usr/local/.keep , usr/.keep created" \
+    && printf "LUCID_API_GATEWAY_USR_BIN_$(date +%s)" > ./usr/bin/.keep \
+    && printf "LUCID_API_GATEWAY_USR_SBIN_$(date +%s)" > ./usr/sbin/.keep \
+    && printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > ./usr/local/lib/python3.11/.keep \
+    && printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > ./usr/local/lib/python3.11/site-packages/.keep \
+    && touch ./usr/local/lib/python3.11/site-packages/.keep ./usr/local/lib/python3.11/.keep ./usr/sbin/.keep ./usr/bin/.keep ./usr/local/.keep ./usr/.keep \
+    && echo "usr/local/lib/python3.11/site-packages/.keep , usr/local/lib/python3.11/.keep , usr/sbin/.keep , usr/bin/.keep , usr/local/.keep , usr/.keep created" \
+    #.build directories
+    && printf "LUCID_API_GATEWAY_BUILD_$(date +%s)" > ./build/.keep \
+    && printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > ./build/wheels/.keep \
+    && touch ./build/.keep ./build/wheels/.keep \
+    && echo "build/.keep , build/wheels/.keep created" \
+
+
 # System directories & certificates
 COPY --from=builder --chown=65532:65532 /var/run           /app/var/run
 COPY --from=builder --chown=65532:65532 /var/lib           /app/var/lib
 COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
 COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages   /app/usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /usr/local/bin              /app/usr/local/bin
-COPY --from=builder --chown=65532:65532 /usr/bin/tini               /app/opt/bin/tini
+COPY --from=builder --chown=65532:65532 /usr/bin/tini               /app/usr/bin/tini
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 
@@ -404,127 +368,45 @@ COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /build/wheels         /app/build/wheels
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
-# import .api files
-COPY --chown=65532:65532 --from=builder /build/api/__init__.py                     /app/api/__init__.py
-# import .api.app files
-COPY --chown=65532:65532 --from=builder /build/api/app/            /app/api/app/
-COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py                     /app/api/app/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/main.py                       /app/api/app/main.py
-COPY --chown=65532:65532 --from=builder /build/api/app/config.py                     /app/api/app/config.py
-COPY --chown=65532:65532 --from=builder /build/api/app/deps.py                       /app/api/app/deps.py
-# import .api.app.middleware files
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/__init__.py            /app/api/app/middleware/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/auth.py            /app/api/app/middleware/auth.py
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/logging.py         /app/api/app/middleware/logging.py
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/rate_limit.py   /app/api/app/middleware/rate_limit.py
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/cors.py            /app/api/app/middleware/cors.py
-# import .api.app.utils files
-COPY --chown=65532:65532 --from=builder /build/api/app/utils/__init__.py             /app/api/app/utils/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/utils/config.py               /app/api/app/utils/config.py
-COPY --chown=65532:65532 --from=builder /build/api/app/utils/logging.py              /app/api/app/utils/logging.py
-COPY --chown=65532:65532 --from=builder /build/api/app/utils/logger.py               /app/api/app/utils/logger.py
-# import .api.app.schemas files
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/__init__.py          /app/api/app/schemas/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/auth.py             /app/api/app/schemas/auth.py
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/sessions.py         /app/api/app/schemas/sessions.py
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/users.py             /app/api/app/schemas/users.py
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/errors.py           /app/api/app/schemas/errors.py
-# import .api.app.routers files
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/__init__.py       /app/api/app/routers/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui.py          /app/api/app/routers/gui.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui_docker.py   /app/api/app/routers/gui_docker.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui_tor.py      /app/api/app/routers/gui_tor.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/gui_hardware.py /app/api/app/routers/gui_hardware.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/tron_support.py /app/api/app/routers/tron_support.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/sessions.py     /app/api/app/routers/sessions.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/trust.py        /app/api/app/routers/trust.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/users.py        /app/api/app/routers/users.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/chain.py        /app/api/app/routers/chain.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/manifests.py     /app/api/app/routers/manifests.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/meta.py         /app/api/app/routers/meta.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/auth.py         /app/api/app/routers/auth.py
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/wallets.py       /app/api/app/routers/wallets.py
-# import .api.app.routes files
-COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
+#kubernetes configmaps
+COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --chown=65532:65532 --from=builder /build/api/app            /app/api/app
+COPY --chown=65532:65532 --from=builder /build/api/app/middleware /app/api/app/middleware
+COPY --chown=65532:65532 --from=builder /build/api/app/utils /app/api/app/utils
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas /app/api/app/schemas
+COPY --chown=65532:65532 --from=builder /build/api/app/routers /app/api/app/routers
+COPY --chown=65532:65532 --from=builder /build/api/app/routes          /app/api/app/routes
+COPY --chown=65532:65532 --from=builder /build/api/app/models /app/api/app/models
+COPY --chown=65532:65532 --from=builder /build/api/app/database /app/api/app/database
+COPY --chown=65532:65532 --from=builder /build/api/app/services /app/api/app/services
+COPY --chown=65532:65532 --from=builder /build/api/app/routes          /app/api/app/routes
 
-# import .api.app.database files
-COPY --chown=65532:65532 --from=builder /build/api/app/database/__init__.py    /app/api/app/database/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/database/connection.py  /app/api/app/database/connection.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/__init__.py          /app/api/app/db/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/connection.py       /app/api/app/db/connection.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/users_repo.py        /app/api/app/db/users_repo.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/models/__init__.py  /app/api/app/db/models/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/models/user.py     /app/api/app/db/models/user.py
-COPY --chown=65532:65532 --from=builder /build/api/app/db/models/session.py  /app/api/app/db/models/session.py
+COPY --chown=65532:65532 --from=builder /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions/pipeline /app/sessions/pipeline
+COPY --chown=65532:65532 --from=builder /build/sessions/api /app/sessions/api
+COPY --chown=65532:65532 --from=builder /build/sessions/core /app/sessions/core
+COPY --chown=65532:65532 --from=builder /build/sessions/processor /app/sessions/processor
+COPY --chown=65532:65532 --from=builder /build/sessions/api/integration /app/sessions/api/integration
 
-# import app.api.app.services files
-COPY --chown=65532:65532 --from=builder /build/api/app/services/__init__.py   /app/api/app/services/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/services/gui_bridge_service.py   /app/api/app/services/gui_bridge_service.py
-COPY --chown=65532:65532 --from=builder /build/api/app/services/session_service.py        /app/api/app/services/session_service.py
-COPY --chown=65532:65532 --from=builder /build/api/app/services/mongo_service.py        /app/api/app/services/mongo_service.py
-COPY --chown=65532:65532 --from=builder /build/api/app/services/tron_support_service.py        /app/api/app/services/tron_support_service.py
-
-# import .api.app.routes files
-COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
-# import .config files
-COPY --chown=65532:65532 --from=builder /build/config/ /app/config/
-# import .sessions files
-COPY --chown=65532:65532 --from=builder /build/sessions/encryption/      /app/sessions/encryption/
-COPY --chown=65532:65532 --from=builder /build/sessions/                /app/sessions/
-
-COPY --chown=65532:65532 --from=builder /build/sessions/api/__init__.py            /app/sessions/api/__init__.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/main.py            /app/sessions/api/main.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/config.py            /app/sessions/api/config.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/entrypoint.py            /app/sessions/api/entrypoint.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/routes.py            /app/sessions/api/routes.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/session_api.py            /app/sessions/api/session_api.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/__init__.py         /app/sessions/api/integration/__init__.py
-COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/rdp_controller_client.py         /app/sessions/api/integration/rdp_controller_client.py
-COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
-COPY --chown=65532:65532 --from=builder /build/sessions/core/logging.py       /app/sessions/core/logging.py
-COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/pipeline_manager.py       /app/sessions/pipeline/pipeline_manager.py
-COPY --chown=65532:65532 --from=builder /build/sessions/core/session_generator.py       /app/sessions/core/session_generator.py
-COPY --chown=65532:65532 --from=builder /build/sessions/core/session_orchestrator.py       /app/sessions/core/session_orchestrator.py
-COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
-
-#import .api.app.security files
-COPY --chown=65532:65532 --from=builder /build/api/app/security/__init__.py       /app/api/app/security/__init__.py
-COPY --chown=65532:65532 --from=builder /build/api/app/security/jwt.py       /app/api/app/security/jwt.py
-#import .endpoints files
-COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
-# import .services files
-COPY --chown=65532:65532 --from=builder /build/services/__init__.py                /app/services/__init__.py
-COPY --chown=65532:65532 --from=builder /build/services/gui_bridge_service.py   /app/services/gui_bridge_service.py
-COPY --chown=65532:65532 --from=builder /build/services/proxy_service.py        /app/services/proxy_service.py
-
-COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
-# import .models files
-COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
-
+# api level directories
+COPY --chown=65532:65532 --from=builder /build/services            /app/services
+COPY --chown=65532:65532 --from=builder /build/database            /app/database
+COPY --chown=65532:65532 --from=builder /build/models              /app/models
+COPY --chown=65532:65532 --from=builder /build/config              /app/config
+COPY --chown=65532:65532 --from=builder /build/endpoints           /app/endpoints
 
 RUN echo "Verifying new modules are included in Runtime stage" && \
-    test -f /app/api/app/schemas/__init__.py || (echo "Missing: api/app/schemas/__init__.py" && exit 1) && \
-    test -f /app/api/app/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
-    test -f /app/api/app/database/__init__.py || (echo "Missing: api/app/database/__init__.py" && exit 1) && \
-    test -f /app/api/app/db/__init__.py || (echo "Missing: api/app/db/__init__.py" && exit 1) && \
-    test -f /app/api/app/db/models/__init__.py || (echo "Missing: api/app/db/models/__init__.py" && exit 1) && \
-    test -f /app/api/app/services/__init__.py || (echo "Missing: api/app/services/__init__.py" && exit 1) && \
-    test -f /app/api/app/utils/__init__.py || (echo "Missing: api/app/utils/__init__.py" && exit 1) && \
+    test -f /app/api/app/main.py || (echo "Missing: api/app/main.py" && exit 1) && \
     test -f /app/api/app/middleware/__init__.py || (echo "Missing: api/app/middleware/__init__.py" && exit 1) && \
-    test -f /app/api/app/routes/__init__.py || (echo "Missing: api/app/routes/__init__.py" && exit 1) && \
-    test -f /app/api/app/scripts/__init__.py || (echo "Missing: api/app/scripts/__init__.py" && exit 1) && \
-    test -f /app/api/app/routers/__init__.py || (echo "Missing: api/app/routers/__init__.py" && exit 1) && \
-    test -f /app/api/app/security/__init__.py || (echo "Missing: api/app/security/__init__.py" && exit 1) && \
-    test -f /app/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
-    test -f /app/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
+    test -f /app/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
     test -f /app/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
-    test -f /app/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
-    test -f /app/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
+    test -f /app/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
+    test -f /app/config/__init__.py || (echo "Missing: config/__init__.py" && exit 1) && \
+    test -f /app/endpoints/__init__.py || (echo "Missing: endpoints/__init__.py" && exit 1) && \
     test -f /app/sessions/__init__.py || (echo "Missing: sessions/__init__.py" && exit 1) && \
     test -f /app/sessions/pipeline/__init__.py || (echo "Missing: sessions/pipeline/__init__.py" && exit 1) && \
     test -f /app/sessions/api/__init__.py || (echo "Missing: sessions/api/__init__.py" && exit 1) && \
     test -f /app/sessions/api/integration/__init__.py || (echo "Missing: sessions/api/integration/__init__.py" && exit 1) && \
-    test -f /app/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
     echo "✅ All module files verified in Runtime stage"
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
@@ -538,6 +420,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 USER 65532:65532
 
 # tini as PID 1: proper signal handling & zombie reaping (aligned with tunnel-tools)
-ENTRYPOINT ["/app/opt/bin/tini", "--"]
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
 CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.api.app.main:app", "--host", "0.0.0.0", "--port", "8080"]

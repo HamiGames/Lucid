@@ -14,7 +14,23 @@ from typing import List, Optional
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict  # pyright: ignore[reportMissingImports]
 from functools import lru_cache
+import json
+import importlib
 import secrets
+
+config_path = importlib.import_module("app.infrastructure.kubernetes.01_configmaps.api-gateway-config.yaml")
+CONFIG = os.getenv("CONFIG", config_path())
+SETTINGS = os.getenv("SETTINGS")
+if os.path.exists(SETTINGS):
+    with open(SETTINGS, 'r') as f:
+        SETTINGS = json.load(f)
+else:
+    SETTINGS = {}
+if os.path.exists(CONFIG):
+    with open(CONFIG, config_path()) as f:
+        CONFIG = json.load(f)
+else:
+    CONFIG = {}
 
 
 
