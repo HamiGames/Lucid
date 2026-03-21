@@ -93,17 +93,23 @@ RUN printf "LUCID_KEY_ROTATION_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/
 RUN mkdir -p ./admin ./wallet ./common ./common/tor && \
     printf "LUCID_KEY_ROTATION_ADMIN_$(date +%s)" > ./admin/.keep && \
     printf "LUCID_KEY_ROTATION_WALLET_$(date +%s)" > ./wallet/.keep && \
-    touch ./admin/.keep ./wallet/.keep && \
+    printf "LUCID_KEY_ROTATION_COMMON_$(date +%s)" > ./common/.keep && \
+    printf "LUCID_KEY_ROTATION_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
+    touch ./admin/.keep ./wallet/.keep ./common/.keep ./common/tor/.keep && \
     echo "Application directories created with markers"
 
 # Application source COPY (key rotation specific)
 COPY admin/key-rotation/ ./admin/key-rotation/
+COPY common/__init__.py ./common/__init__.py
 COPY common/tor/ ./common/tor/
 COPY wallet/ ./wallet/
 
 # Verify source files
 RUN echo "Verifying key rotation source files" && \
-    test -d ./admin && echo "admin directory verified" && \
+    test -d /build/admin/key_rotation.py && echo "admin directory verified" && \
+    test -d /build/wallet/wallet_manager.py && echo "wallet directory verified" && \
+    test -d /build/common/__init__.py && echo "common directory verified" && \
+    test -d /build/common/tor/__init__.py && echo "common/tor directory verified" && \
     python3 -c "import sys; sys.path.insert(0, '/build'); print('Python path configured')"
 
 ############################
@@ -152,8 +158,16 @@ COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/opt/bin/tini
 # Application layout COPY (key rotation specific)
 COPY --chown=65532:65532 --from=builder /build/admin/ /app/admin/
 COPY --chown=65532:65532 --from=builder /build/wallet/ /app/wallet/
-
+COPY --chown=65532:65532 --from=builder /build/common/__init__.py /app/common/__init__.py
+COPY --chown=65532:65532 --from=builder /build/common/tor/ /app/common/tor/
 # Verify packages and application directories
+RUN echo "Verifying key rotation source files" && \
+    test -d /app/admin/key_rotation.py && echo "admin directory verified" && \
+    test -d /app/wallet/wallet_manager.py && echo "wallet directory verified" && \
+    test -d /app/common/__init__.py && echo "common directory verified" && \
+    test -d /app/common/tor/__init__.py && echo "common/tor directory verified" && \
+    echo "Key rotation source files verified"
+
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/admin'), os.path.isdir('/app/wallet')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All key rotation packages and application directories verified')"]
 
 EXPOSE 8060

@@ -409,7 +409,7 @@ COPY --chown=65532:65532 --from=builder /build/api/app/utils/logger.py          
 COPY --chown=65532:65532 --from=builder /build/api/app/schemas/__init__.py          /app/api/app/schemas/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/schemas/auth.py             /app/api/app/schemas/auth.py
 COPY --chown=65532:65532 --from=builder /build/api/app/schemas/sessions.py         /app/api/app/schemas/sessions.py
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/user.py             /app/api/app/schemas/user.py
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/users.py             /app/api/app/schemas/users.py
 COPY --chown=65532:65532 --from=builder /build/api/app/schemas/errors.py           /app/api/app/schemas/errors.py
 # import .api.app.routers files
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/__init__.py       /app/api/app/routers/__init__.py
