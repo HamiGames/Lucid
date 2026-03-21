@@ -274,11 +274,8 @@ COPY 03_api_gateway/api/app/schemas/meta.py ./api/app/schemas/meta.py
 COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
 # copy .services
 COPY 03_api_gateway/services/ ./services/
-#copy .config files
-COPY 03_api_gateway/config/ ./config/
 
-#copy .gateway files
-COPY 03_api_gateway/gateway/ ./gateway/
+
 
 # copy .api.app.routes
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
@@ -470,7 +467,8 @@ COPY --chown=65532:65532 --from=builder /build/sessions/core/session_generator.p
 COPY --chown=65532:65532 --from=builder /build/sessions/core/session_orchestrator.py       /app/sessions/core/session_orchestrator.py
 COPY --chown=65532:65532 --from=builder /build/sessions/core/__init__.py       /app/sessions/core/__init__.py
 
-# import .gateway files
+# import .infrastructure files
+COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/05-core/api-gateway.yaml /app/api-gateway.yaml
 #import .endpoints files
 COPY --chown=65532:65532 --from=builder /build/endpoints/               /app/endpoints/
 # import .services files
@@ -483,8 +481,6 @@ COPY --chown=65532:65532 --from=builder /build/database/ /app/database/
 # import .models files
 COPY --chown=65532:65532 --from=builder /build/models/ /app/models/
 
-# import .gateway files
-COPY --chown=65532:65532 --from=builder /build/gateway/ /app/gateway/
 
 RUN echo "Verifying new modules are included in runtime stage" && \
     test -f /app/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
@@ -506,10 +502,11 @@ RUN echo "Verifying new modules are included in runtime stage" && \
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
+
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8080)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-pipeline', 8080)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
