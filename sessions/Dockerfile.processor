@@ -112,10 +112,10 @@ RUN mkdir -p ./sessions ./sessions/processor ./sessions/core ./sessions/pipeline
     echo "Application directories created with markers"
     
 # Application source COPY
-COPY sessions/processor/ ./processor
-COPY sessions/core/ ./core
+COPY sessions/processor/ ./processor/
+COPY sessions/core/ ./core/
 COPY sessions/pipeline/__init__.py ./pipeline/__init__.py
-COPY sessions/pipeline/integration ./pipeline/integration
+COPY sessions/pipeline/integration/ ./pipeline/integration/
 COPY sessions/__init__.py ./__init__.py
 
 ############################

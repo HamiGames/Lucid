@@ -201,41 +201,41 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor 
 
 
     # Application source COPY (only directories that exist with content)
-COPY ./common/tor/ ./common/tor/
-COPY ./common/ ./common/
-COPY ./03_api_gateway/api/__init__.py ./api/__init__.py
-COPY ./infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY common/tor/ ./common/tor/
+COPY common/ ./common/
+COPY 03_api_gateway/api/__init__.py ./api/__init__.py
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
 
 #copy .api.app files
-COPY ./03_api_gateway/api/app/ ./api/app/
-COPY ./03_api_gateway/api/app/db/ ./api/app/db/
-COPY ./03_api_gateway/api/app/db/models/ ./api/app/db/models/
-COPY ./03_api_gateway/api/app/database/ ./api/app/database/
-COPY ./03_api_gateway/api/app/schemas/ ./api/app/schemas/
-COPY ./03_api_gateway/api/app/routers/ ./api/app/routers/
-COPY ./03_api_gateway/api/app/routes/ ./api/app/routes/
-COPY ./03_api_gateway/api/app/services/ ./api/app/services/
-COPY ./03_api_gateway/api/app/utils/ ./api/app/utils/
-COPY ./03_api_gateway/api/app/scripts/ ./api/app/scripts/
-COPY ./03_api_gateway/api/app/security/ ./api/app/security/
-COPY ./03_api_gateway/api/app/middleware/ ./api/app/middleware/
+COPY 03_api_gateway/api/app/ ./api/app/
+COPY 03_api_gateway/api/app/db/ ./api/app/db/
+COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
+COPY 03_api_gateway/api/app/database/ ./api/app/database/
+COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
+COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
+COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
+COPY 03_api_gateway/api/app/services/ ./api/app/services/
+COPY 03_api_gateway/api/app/utils/ ./api/app/utils/
+COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
+COPY 03_api_gateway/api/app/security/ ./api/app/security/
+COPY 03_api_gateway/api/app/middleware/ ./api/app/middleware/
 
 # copy .services
-COPY ./03_api_gateway/services/ ./services/
+COPY 03_api_gateway/services/ ./services/
 # copy .database
-COPY ./03_api_gateway/database/ ./database/
-COPY ./03_api_gateway/models/ ./models/
-COPY ./03_api_gateway/utils/ ./utils/
+COPY 03_api_gateway/database/ ./database/
+COPY 03_api_gateway/models/ ./models/
+COPY 03_api_gateway/utils/ ./utils/
 # copy .endpoints
-COPY ./03_api_gateway/endpoints/ ./endpoints/
-COPY ./03_api_gateway/config/ ./config/
-COPY ./sessions/__init__.py ./sessions/__init__.py
+COPY 03_api_gateway/endpoints/ ./endpoints/
+COPY 03_api_gateway/config/ ./config/
+COPY sessions/__init__.py ./sessions/__init__.py
 
-COPY ./sessions/pipeline/ ./sessions/pipeline/
-COPY ./sessions/api/ ./sessions/api/
-COPY ./sessions/core/ ./sessions/core/
-COPY ./sessions/processor/ ./sessions/processor/
-COPY ./sessions/api/integration/ ./sessions/api/integration/
+COPY sessions/pipeline/ ./sessions/pipeline/
+COPY sessions/api/ ./sessions/api/
+COPY sessions/core/ ./sessions/core/
+COPY sessions/processor/ ./sessions/processor/
+COPY sessions/api/integration/ ./sessions/api/integration/
 
 
 # Create marker files in app directories (ensures COPY won't fail silently)
