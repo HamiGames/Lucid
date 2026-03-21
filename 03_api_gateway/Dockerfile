@@ -42,7 +42,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
-        touch \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
         rustc \
         cargo \
     && apt-get clean \
