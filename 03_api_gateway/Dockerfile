@@ -42,6 +42,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
+        touch \
         rustc \
         cargo \
     && apt-get clean \
@@ -57,9 +58,7 @@ WORKDIR /build
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    touch /var/run/.keep && \
     printf "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
-    touch /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib
     chmod 644 /var/run/.keep /var/lib/.keep
 
