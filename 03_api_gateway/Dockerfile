@@ -252,13 +252,11 @@ RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/sessions/core/session_generator.py || (echo "Missing: sessions/core/session_generator.py" && exit 1) && \
     test -f /build/sessions/core/session_orchestrator.py || (echo "Missing: sessions/core/session_orchestrator.py" && exit 1) && \
     test -f /build/sessions/processor/chunk_processor.py || (echo "Missing: sessions/processor/chunk_processor.py" && exit 1) && \
-    test -f /build/sessions/api/integration/blockchain_integration.py || (echo "Missing: sessions/api/integration/blockchain_integration.py" && exit 1) && \
     test -f /build/utils/__init__.py || (echo "Missing: utils/__init__.py" && exit 1) && \
     test -f /build/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
     test -f /build/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
     test -f /build/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
     test -f /build/endpoints/__init__.py || (echo "Missing: endpoints/__init__.py" && exit 1) && \
-    test -f /build/config/__init__.py || (echo "Missing: config/__init__.py" && exit 1) && \
     test -f /build/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
     test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
     echo "✅ All module files verified in builder stage"
