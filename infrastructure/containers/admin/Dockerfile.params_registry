@@ -87,27 +87,55 @@ RUN printf "LUCID_PARAMS_REGISTRY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/l
     echo "Marker files created"
 
 # Create application directory structure
-RUN mkdir -p ./admin ./common ./common/governance && \
+RUN mkdir -p ./admin ./common ./common/governance ./admin/services ./admin/rbac ./admin/emergency ./admin/governance ./admin/system ./admin/utils ./admin/api ./admin/config ./admin/audit && \
     printf "LUCID_PARAMS_REGISTRY_ADMIN_$(date +%s)" > ./admin/.keep && \
     printf "LUCID_PARAMS_REGISTRY_COMMON_$(date +%s)" > ./common/.keep && \
     printf "LUCID_PARAMS_REGISTRY_COMMON_GOVERNANCE_$(date +%s)" > ./common/governance/.keep && \
-    touch ./admin/.keep ./common/.keep ./common/governance/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_SERVICES_$(date +%s)" > ./admin/services/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_RBAC_$(date +%s)" > ./admin/rbac/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_EMERGENCY_$(date +%s)" > ./admin/emergency/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_GOVERNANCE_$(date +%s)" > ./admin/governance/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_SYSTEM_$(date +%s)" > ./admin/system/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_UTILS_$(date +%s)" > ./admin/utils/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_API_$(date +%s)" > ./admin/api/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_CONFIG_$(date +%s)" > ./admin/config/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_ADMIN_AUDIT_$(date +%s)" > ./admin/audit/.keep && \
+    touch ./admin/.keep ./common/.keep ./common/governance/.keep ./admin/services/.keep ./admin/rbac/.keep ./admin/emergency/.keep ./admin/governance/.keep ./admin/system/.keep ./admin/utils/.keep ./admin/api/.keep ./admin/config/.keep ./admin/audit/.keep && \
     echo "Application directories created with markers"
 
 # Application source COPY (params registry specific)
-COPY admin/params-registry/ ./admin/params-registry/
+
 COPY common/__init__.py ./common/__init__.py
 COPY common/governance/__init__.py ./common/governance/__init__.py
 COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY admin/services/ ./admin/services/
+COPY admin/rbac/ ./admin/rbac/
+COPY admin/emergency/ ./admin/emergency/
+COPY admin/governance/ ./admin/governance/
+COPY admin/system/ ./admin/system/
+COPY admin/utils/ ./admin/utils/
+COPY admin/api/ ./admin/api/
+COPY admin/config/ ./admin/config/
+COPY admin/audit/ ./admin/audit/
+
 
 # Verify source files
 RUN echo "Verifying params registry source files" && \
-    test -f /build/admin/params-registry/params_registry.py && echo "params registry directory verified" && \
+    test -f /build/admin/__init__.py && echo "admin directory verified" && \
     test -f /build/common/__init__.py && echo "common directory verified" && \
     test -f /build/common/governance/param_registry.py && echo "common/governance directory verified" && \
+    test -f /build/admin/services/services_api.py && echo "admin/services/services_api.py directory verified" && \
+    test -f /build/admin/rbac/rbac_api.py && echo "admin/rbac/rbac_api.py directory verified" && \
+    test -f /build/admin/emergency/emergency_api.py && echo "admin/emergency/emergency_api.py directory verified" && \
+    test -f /build/admin/governance/governance_api.py && echo "admin/governance/governance_api.py directory verified" && \
+    test -f /build/admin/system/system_api.py && echo "admin/system/system_api.py directory verified" && \
+    test -f /build/admin/utils/utils_api.py && echo "admin/utils/utils_api.py directory verified" && \
+    test -f /build/admin/api/api_api.py && echo "admin/api/api_api.py directory verified" && \
+    test -f /build/admin/config/config_api.py && echo "admin/config/config_api.py directory verified" && \
+    test -f /build/admin/audit/audit_api.py && echo "admin/audit/audit_api.py directory verified" && \
     python3 -c "import sys; sys.path.insert(0, '/build'); print('Python path configured')"
 
-RUN rm -rf .keep && echo "Application directory structure marker files removed"
+
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -154,8 +182,29 @@ COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/opt/bin/tini
 
 # Application layout COPY (params registry specific)
 COPY --chown=65532:65532 --from=builder /build/admin/ /app/admin/
+COPY --chown=65532:65532 --from=builder /build/common/ /app/common/
+COPY --chown=65532:65532 --from=builder /build/admin/services/ /app/admin/services/
+COPY --chown=65532:65532 --from=builder /build/admin/rbac/ /app/admin/rbac/
+COPY --chown=65532:65532 --from=builder /build/admin/emergency/ /app/admin/emergency/
+COPY --chown=65532:65532 --from=builder /build/admin/governance/ /app/admin/governance/
+COPY --chown=65532:65532 --from=builder /build/admin/system/ /app/admin/system/
+COPY --chown=65532:65532 --from=builder /build/admin/utils/ /app/admin/utils/
+COPY --chown=65532:65532 --from=builder /build/admin/api/ /app/admin/api/
+COPY --chown=65532:65532 --from=builder /build/admin/config/ /app/admin/config/
+COPY --chown=65532:65532 --from=builder /build/admin/audit/ /app/admin/audit/
 COPY --chown=65532:65532 --from=builder /build/common/__init__.py /app/common/__init__.py
+COPY --chown=65532:65532 --from=builder /build/common/governance/__init__.py /app/common/governance/__init__.py
 COPY --chown=65532:65532 --from=builder /build/common/governance/param_registry.py /app/common/governance/param_registry.py
+
+RUN echo "Verifying params registry source files" && \
+    test -f /app/admin/__init__.py && echo "admin directory verified" && \
+    test -f /app/common/__init__.py && echo "common directory verified" && \
+    test -f /app/common/governance/__init__.py && echo "common/governance directory verified" && \
+    test -f /app/common/governance/param_registry.py && echo "common/governance/param_registry.py directory verified" && \
+    test -f /app/admin/services/services_api.py && echo "admin/services/services_api.py directory verified" && \
+    test -f /app/admin/rbac/rbac_api.py && echo "admin/rbac/rbac_api.py directory verified" && \
+    test -f /app/admin/emergency/emergency_api.py && echo "admin/emergency/emergency_api.py directory verified" && \
+    test -f /app/admin/governance/governance_api.py && echo "admin/governance/governance_api.py directory verified" && \
 
 RUN rm -rf .keep && echo "Application directory structure marker files removed"
 # Verify packages and application directories

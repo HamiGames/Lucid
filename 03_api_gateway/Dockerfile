@@ -260,6 +260,7 @@ COPY 03_api_gateway/api/app/db/models/__init__.py ./api/app/db/models/__init__.p
 COPY 03_api_gateway/api/app/db/models/user.py ./api/app/db/models/user.py
 COPY 03_api_gateway/api/app/db/models/session.py ./api/app/db/models/session.py
 # copy .api.app.utils files
+
 COPY 03_api_gateway/api/app/utils/__init__.py ./api/app/utils/__init__.py
 COPY 03_api_gateway/api/app/utils/config.py ./api/app/utils/config.py
 COPY 03_api_gateway/api/app/utils/logging.py ./api/app/utils/logging.py
@@ -273,7 +274,6 @@ COPY 03_api_gateway/api/app/schemas/meta.py ./api/app/schemas/meta.py
 COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
 # copy .services
 COPY 03_api_gateway/services/ ./services/
-
 #copy .config files
 COPY 03_api_gateway/config/ ./config/
 
@@ -281,8 +281,7 @@ COPY 03_api_gateway/config/ ./config/
 COPY 03_api_gateway/gateway/ ./gateway/
 
 # copy .utils
-COPY 03_api_gateway/utils/__init__.py ./utils/__init__.py
-COPY 03_api_gateway/utils/validation.py ./utils/validation.py
+COPY 03_api_gateway/utils/ ./utils/
 # copy .api.app.routes
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
@@ -336,6 +335,7 @@ RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/api/app/services/tron_support_service.py || (echo "Missing: tron_support_service.py" && exit 1) && \
     test -f /build/api/app/config.py || (echo "Missing: config.py" && exit 1) && \
     test -f /build/api/app/main.py || (echo "Missing: main.py" && exit 1) && \
+    test -f /build/api/app/utils/config.py || (echo "Missing: config.py" && exit 1) && \
     test -f /build/sessions/pipeline/pipeline_manager.py || (echo "Missing: pipeline_manager.py" && exit 1) && \
     test -f /build/sessions/core/session_generator.py || (echo "Missing: session_generator.py" && exit 1) && \
     test -f /build/sessions/core/session_orchestrator.py || (echo "Missing: session_orchestrator.py" && exit 1) && \

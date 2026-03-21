@@ -40,6 +40,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
+        cargo \
+        rustc \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -70,12 +72,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
-    echo "installation complete" && \
-    rm -rf /build/wheels
+    echo "installation complete" 
 
 # Builder-stage verification
 RUN echo "=== Verifying pip installation success ===" && \
-    python3.11 -c "print('✅ Python packages ready for distroless image')" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, httpx, docker, websockets, jsonschema, pyyaml, motor, zstandard, lz4, cryptography, blake3, asyncio-mqtt, aiofiles, aioredis, structlog, prometheus_client, cargo, rustc; print('✅ Python packages ready for distroless image')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list && \
     echo "=== All packages ready for final image"
@@ -88,15 +89,10 @@ RUN printf "LUCID_SESSION_PIPELINE_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/
     echo "Marker files created"
 
 # Create application directory structure
-RUN mkdir -p ./pipeline && \
-    printf "LUCID_SESSION_PIPELINE_$(date +%s)" > ./pipeline/.keep && \
-    touch ./pipeline/.keep && \
-    echo "Application directories created with markers"
+
 
 # Application source COPY (session pipeline specific)
-RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/encryption ./sessions/api ./sessions/config ./sessions/integration ./sessions/security ./sessions/storage ./sessions/recorder ./sessions/processor \
-    && printf "LUCID_SESSIONS_DIRECTORY_$(date +%s)" > ./sessions/.keep  \
-    && touch ./sessions/.keep \
+RUN mkdir -p ./sessions/pipeline ./sessions/core ./sessions/encryption ./sessions/api ./sessions/config ./sessions/integration ./sessions/security ./sessions/storage ./sessions/recorder ./sessions/processor \
     && printf "LUCID_SESSIONS_PIPELINE_DIRECTORY_$(date +%s)" > ./sessions/pipeline/.keep \
     && touch ./sessions/pipeline/.keep \
     && printf "LUCID_SESSIONS_CORE_DIRECTORY_$(date +%s)" > ./sessions/core/.keep \
@@ -119,21 +115,13 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/encryptio
     && touch ./sessions/processor/.keep \
     && echo "Application directories created with markers"
     
-COPY ../../../../sessions/api/ ./sessions/api/
-COPY ../../../../sessions/config/ ./sessions/config/
-COPY ../../../../sessions/integration/ ./sessions/integration/
-COPY ../../../../sessions/security/ ./sessions/security/
-COPY ../../../../sessions/storage/ ./sessions/storage/
-COPY ../../../../sessions/recorder/ ./sessions/recorder/
-COPY ../../../../sessions/processor/ ./sessions/processor/
-COPY ../../../../sessions/core/ ./sessions/core/
-COPY ../../../../sessions/encryption/ ./sessions/encryption/
-COPY ../../../../sessions/pipeline/ ./sessions/pipeline/
-COPY ../../../../sessions/__init__.py ./sessions/__init__.py
+COPY sessions/pipeline/ ./sessions/pipeline/
+COPY sessions/__init__.py ./sessions/__init__.py
 
 # Verify source files
 RUN echo "Verifying session pipeline source files" && \
-    test -d ./pipeline && echo "pipeline directory verified" && \
+    test -f /build/sessions/pipeline/__init__.py && echo "sessions/pipeline directory verified" && \
+    test -f /build/sessions/__init__.py && echo "sessions directory verified" && \
     python3 -c "import sys; sys.path.insert(0, '/build'); print('Python path configured')"
 
 ############################
@@ -178,17 +166,13 @@ COPY --from=builder --chown=65532:65532 /usr/local/bin /app/usr/local/bin
 COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/opt/bin/tini
 
 # Application layout COPY (session pipeline specific)
-COPY --from=builder --chown=65532:65532 /build/sessions/config/ /app/sessions/config/
-COPY --from=builder --chown=65532:65532 /build/sessions/integration/ /app/sessions/integration/
-COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/security/
-COPY --from=builder --chown=65532:65532 /build/sessions/storage /app/sessions/storage/
-COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
-COPY --from=builder --chown=65532:65532 /build/sessions/processor /app/sessions/processor/
-COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
-COPY --from=builder --chown=65532:65532 /build/sessions/api/ /app/sessions/api/
-COPY --from=builder --chown=65532:65532 /build/sessions/encryption/ /app/sessions/encryption/
-COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
-COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/ /app/sessions/pipeline/
+
+RUN echo "Verifying session pipeline source files" && \
+    test -f /app/sessions/__init__.py && echo "sessions directory verified" && \
+    test -f /app/sessions/pipeline/__init__.py && echo "sessions/pipeline directory verified" && \
+    python3 -c "import sys; sys.path.insert(0, '/app'); print('Python path configured')"
 
 # Verify packages and application directories
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/pipeline')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All session pipeline packages and application directories verified')"]
