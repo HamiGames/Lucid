@@ -103,67 +103,96 @@ RUN echo "=== Verifying pip installation success ===" && \
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
     printf "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
     chmod 644 /usr/local/lib/python3.11/site-packages/.keep && \
     chmod 644 /usr/local/bin/.keep && \
     echo " Marker files created to lock in directory structure"
 
 # Verify marker files exist with content (critical for distroless COPY)
-RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services \
-    && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep \
-    && touch ./api/.keep ./api/app/.keep ./api/app/services/.keep \
-    && echo "api/.keep, api/app/.keep, api/app/services/.keep created" \
+RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services && \
+    printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
+    touch ./api/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
+    touch ./api/app/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep && \
+    touch ./api/.keep ./api/app/.keep ./api/app/services/.keep && \
+    echo "api/.keep, api/app/.keep, api/app/services/.keep created" && \
     #api/app/ directories
-    && mkdir -p ./api/app/schemas ./api/app/routers ./api/app/middleware ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts ./api/app/security \
-    && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep \
-    && touch ./api/app/routers/.keep ./api/app/utils/.keep ./api/app/middleware/.keep ./api/app/database/.keep ./api/app/scripts/.keep ./api/app/models/.keep ./api/app/routes/.keep ./api/app/security/.keep \
-    && echo "api/app/routers/.keep, api/app/utils/.keep, api/app/middleware/.keep, api/app/database/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/routes/.keep, api/app/security/.keep created" \
+    mkdir -p ./api/app/schemas ./api/app/routers ./api/app/middleware ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts ./api/app/security && \
+    printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep && \
+    touch ./api/app/routers/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep && \
+    touch ./api/app/utils/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep && \
+    touch ./api/app/middleware/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep && \
+    touch ./api/app/database/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep && \
+    touch ./api/app/scripts/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep && \
+    touch ./api/app/models/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep && \
+    touch ./api/app/routes/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep && \
+    touch ./api/app/schemas/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep && \
+    touch ./api/app/security/.keep && \
+    echo "api/app/routers/.keep, api/app/utils/.keep, api/app/middleware/.keep, api/app/database/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/routes/.keep, api/app/security/.keep created" && \
     #infrastructure directories
-    && mkdir -p ./infrastructure ./infrastructure/kubernetes ./common ./common/tor \
-    && printf "LUCID_API_GATEWAY_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep \
-    && printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep \
-    && touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep \
-    && echo "infrastructure/kubernetes/.keep created" \
-    && printf "LUCID_COMMON_$(date +%s)" > ./common/.keep\
-    && printf "LUCID_API_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
-    && touch ./common/.keep ./common/tor/.keep \
-    && echo "common/.keep, common/tor/.keep created" \
-    && echo "all container directories created" 
+    mkdir -p ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
+    printf "LUCID_API_GATEWAY_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep && \
+    touch ./infrastructure/.keep && \
+    printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    touch ./infrastructure/kubernetes/.keep && \
+    touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep && \
+    echo "infrastructure/kubernetes/.keep created" && \
+    printf "LUCID_COMMON_$(date +%s)" > ./common/.keep && \
+    touch ./common/.keep && \
+    printf "LUCID_API_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
+    touch ./common/tor/.keep && \
+    touch ./common/.keep ./common/tor/.keep && \
+    echo "common/.keep, common/tor/.keep created" && \
+    echo "all container directories created" 
     #api/app/db directories
-    && mkdir -p ./api/app/db ./api/app/db/models \
-    && printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
-    && touch ./api/app/db/.keep ./api/app/db/models/.keep \
-    && echo "api/app/db/.keep, api/app/db/models/.keep created" \
-    && mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts \
-    && printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep \
-    && printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep \
-    && printf "LUCID_API_GATEWAY_CONFIG_$(date +%s)" > ./config/.keep \
-    && printf "LUCID_API_GATEWAY_SCRIPTS_$(date +%s)" > ./scripts/.keep \
-    && printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
-    && printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep \
-    && printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep \
+    mkdir -p ./api/app/db ./api/app/db/models && \
+    printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep && \
+    touch ./api/app/db/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep && \
+    touch ./api/app/db/models/.keep && \
+    echo "api/app/db/.keep, api/app/db/models/.keep created" && \
+    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts && \
+    printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep && \
+    touch ./utils/.keep && \
+    printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep && \
+    touch ./services/.keep && \
+    printf "LUCID_API_GATEWAY_CONFIG_$(date +%s)" > ./config/.keep && \
+    touch ./config/.keep && \
+    printf "LUCID_API_GATEWAY_SCRIPTS_$(date +%s)" > ./scripts/.keep && \
+    touch ./scripts/.keep && \
+    printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep && \
+    touch ./endpoints/.keep && \
+    printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep && \
+    touch ./models/.keep && \
+    printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep && \
+    touch ./database/.keep && \
     && touch ./utils/.keep ./scripts/.keep ./config/.keep ./endpoints/.keep ./models/.keep ./database/.keep ./services/.keep \   
     #sessions directories
-    && mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration 
-    && printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep \
-    && printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep \
-    && printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
-    && printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
-    && printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
-    && printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
-    && touch ./sessions/processor/.keep ./sessions/pipeline/.keep ./sessions/api/.keep ./sessions/core/.keep ./sessions/api/integration/.keep ./sessions/.keep \
-    && echo "sessions/processor/.keep, sessions/pipeline/.keep, sessions/api/.keep, sessions/core/.keep, sessions/api/integration/.keep, sessions/.keep created" \
+    mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration && \
+    printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep && \
+    touch ./sessions/.keep && \
+    printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
+    touch ./sessions/processor/.keep && \
+    printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
+    printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep && \
+    touch ./sessions/api/.keep && \
+    printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep && \
+    touch ./sessions/api/integration/.keep && \
+    echo "sessions/processor/.keep, sessions/pipeline/.keep, sessions/api/.keep, sessions/core/.keep, sessions/api/integration/.keep, sessions/.keep created"
     
     
 
@@ -262,83 +291,115 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 
 WORKDIR /app
 
-RUN mkdir -p ./api ./api/app ./api/app/database ./api/app/db ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/routes \
-    && mkdir -p ./api/app/middleware ./api/app/utils ./api/app/services ./api/app/security ./api/app/scripts ./api/app/models \
-    && printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep \
-    && touch ./api/.keep \
-    && echo "api/.keep created" \
-    && printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep \
-    && touch ./api/app/.keep ./api/app/routers/.keep ./api/app/routes/.keep./api/app/middleware/.keep \
-    && echo "api/app/.keep, api/app/routers/.keep, api/app/routes/.keep, api/app/middleware/.keep created" \
-    && printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep \ 
-    && printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep \
-    && printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep \
-    && printf "LUCUD_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep \
-    && printf "LUCUD_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep \
-    && printf "LUCUD_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep \
-    && printf "LUCUD_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep \
-    && touch ./api/app/utils/.keep ./api/app/services/.keep ./api/app/security/.keep ./api/app/scripts/.keep ./api/app/models/.keep ./api/app/database/.keep ./api/app/db/.keep ./api/app/db/models/.keep \
-    && echo "api/app/utils/.keep, api/app/services/.keep, api/app/security/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/database/.keep, api/app/db/.keep, api/app/db/models/.keep created" \
-    && mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/api \
-    && printf "LUCID_SESSIONS_$(date +%s)" > ./sessions/.keep \
-    && printf "LUCID_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep \
-    && printf "LUCID_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep \
-    && printf "LUCID_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep \
-    && printf "LUCID_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep \
-    && touch ./sessions/.keep ./sessions/pipeline/.keep ./sessions/core/.keep ./sessions/api/.keep ./sessions/api/integration/.keep \
-    && echo "sessions/.keep , sessions/pipeline/.keep , sessions/core/.keep , sessions/api/.keep , sessions/api/integration/.keep created" \
-    && mkdir -p ./infrastructure ./infrastructure/kubernetes \
-    && printf "LUCID_API_GATEWAY_API_APP_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep \
-    && printf "LUCID_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep \
-    && touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep \
-    && echo "infrastructure/.keep, infrastructure/kubernetes/.keep created" \
-    && mkdir -p ./database ./models  ./services ./utils ./endpoints \ 
-    && printf "LUCID_DATABASE_$(date +%s)" > ./database/.keep \
-    && printf "LUCID_MODELS_$(date +%s)" > ./models/.keep \
-    && printf "LUCID_COMMON_$(date +%s)" > ./common/.keep \
-    && printf "LUCID_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
-    && printf "LUCID_SERVICES_$(date +%s)" > ./services/.keep \
-    && printf "LUCID_UTILS_$(date +%s)" > ./utils/.keep \
-    && printf "LUCID_ENDPOINTS_$(date +%s)" > ./endpoints/.keep \
-    && touch ./database/.keep ./models/.keep ./common/.keep ./common/tor/.keep ./services/.keep ./utils/.keep ./endpoints/.keep \
-    && echo "database/.keep , models/.keep , common/.keep , common/tor/.keep , services/.keep , utils/.keep , endpoints/.keep created" \
-    && mkdir -p ./common ./common/tor \
-    && printf "LUCID_COMMON_$(date +%s)" > ./common/.keep \
-    && printf "LUCID_COMMON_TOR_$(date +%s)" > ./common/tor/.keep \
-    && touch ./common/.keep ./common/tor/.keep \
-    && echo "common/.keep, common/tor/.keep created" \
-    && mkdir -p ./var/run ./var/lib ./etc/ssl/certs ./var ./etc ./etc/ssl ./usr ./usr/local ./usr/local/bin ./usr/local/lib/ ./usr/bin \
-    && mkdir -p ./usr/sbin ./usr/local/lib/python3.11 ./usr/local/lib/python3.11/site-packages ./build ./build/wheels \
-    && printf "LUCID_API_GATEWAY_VAR_$(date +%s)" > ./var/.keep \
-    && printf "LUCID_API_GATEWAY_VAR_RUN_$(date +%s)" > ./var/run/.keep \
-    && printf "LUCID_API_GATEWAY_VAR_LIB_$(date +%s)" > ./var/lib/.keep \
-    && touch ./var/lib/.keep ./var/run/.keep ./var/.keep \
-    && echo "var/lib/.keep , var/run/.keep , var/.keep created" \
-    && printf "LUCID_API_GATEWAY_ETC_$(date +%s)" > ./etc/.keep \
-    && printf "LUCID_API_GATEWAY_ETC_SSL_$(date +%s)" > ./etc/ssl/.keep \
-    && printf "LUCID_API_GATEWAY_ETC_SSL_CERTS_CA_CERTIFICATES_CRT_$(date +%s)" > ./etc/ssl/certs/.keep \
-    && touch ./etc/ssl/certs/.keep ./etc/ssl/.keep ./etc/.keep \
-    && echo "etc/ssl/certs/.keep , etc/ssl/.keep , etc/.keep created" \
-    && printf "LUCID_API_GATEWAY_USR_$(date +%s)" > ./usr/.keep \
-    && printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > ./usr/local/.keep \
-    && printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > ./usr/local/bin/.keep \
-    && printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > ./usr/local/lib/.keep \
-    && touch ./usr/local/lib/.keep ./usr/local/bin/.keep ./usr/local/.keep ./usr/.keep \
-    && echo "usr/local/lib/.keep , usr/local/bin/.keep , usr/local/.keep , usr/.keep created" \
-    && printf "LUCID_API_GATEWAY_USR_BIN_$(date +%s)" > ./usr/bin/.keep \
-    && printf "LUCID_API_GATEWAY_USR_SBIN_$(date +%s)" > ./usr/sbin/.keep \
-    && printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > ./usr/local/lib/python3.11/.keep \
-    && printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > ./usr/local/lib/python3.11/site-packages/.keep \
-    && touch ./usr/local/lib/python3.11/site-packages/.keep ./usr/local/lib/python3.11/.keep ./usr/sbin/.keep ./usr/bin/.keep ./usr/local/.keep ./usr/.keep \
-    && echo "usr/local/lib/python3.11/site-packages/.keep , usr/local/lib/python3.11/.keep , usr/sbin/.keep , usr/bin/.keep , usr/local/.keep , usr/.keep created" \
-    && printf "LUCID_API_GATEWAY_BUILD_$(date +%s)" > ./build/.keep \
-    && printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > ./build/wheels/.keep \
-    && touch ./build/.keep ./build/wheels/.keep \
-    && echo "build/.keep , build/wheels/.keep created" \
+RUN mkdir -p ./api ./api/app ./api/app/database ./api/app/db ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/routes && \
+    mkdir -p ./api/app/middleware ./api/app/utils ./api/app/services ./api/app/security ./api/app/scripts ./api/app/models && \
+    mkdir -p ./var/run ./var/lib ./etc/ssl/certs ./var ./etc ./etc/ssl ./usr ./usr/local ./usr/local/bin ./usr/local/lib/ ./usr/bin && \
+    mkdir -p ./usr/sbin ./usr/local/lib/python3.11 ./usr/local/lib/python3.11/site-packages ./build ./build/wheels && \
+    mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/api ./sessions/api/integration && \
+    mkdir -p ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
+    mkdir -p ./database ./models  ./services ./utils ./endpoints && \
+    printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
+    touch ./api/.keep && \
+    echo "api/.keep created" && \
+    printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
+    touch ./api/app/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep && \
+    touch ./api/app/routers/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep && \
+    touch ./api/app/routes/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep && \
+    touch ./api/app/middleware/.keep && \
+    echo "api/app/.keep, api/app/routers/.keep, api/app/routes/.keep, api/app/middleware/.keep created" && \
+    printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep && \
+    touch ./api/app/utils/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep && \
+    touch ./api/app/services/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep && \
+    touch ./api/app/security/.keep && \
+    printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep && \
+    touch ./api/app/scripts/.keep && \
+    printf "LUCUD_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep && \
+    touch ./api/app/models/.keep && \
+    printf "LUCUD_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep && \
+    touch ./api/app/database/.keep && \
+    printf "LUCUD_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep && \
+    touch ./api/app/db/.keep && \
+    printf "LUCUD_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep && \
+    touch ./api/app/db/models/.keep && \
+    echo "api/app/utils/.keep, api/app/services/.keep, api/app/security/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/database/.keep, api/app/db/.keep, api/app/db/models/.keep created" && \
+    printf "LUCID_SESSIONS_$(date +%s)" > ./sessions/.keep && \
+    touch ./sessions/.keep && \
+    printf "LUCID_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
+    printf "LUCID_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep && \
+    touch ./sessions/api/.keep && \
+    printf "LUCID_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep && \
+    touch ./sessions/api/integration/.keep && \
+    echo "sessions/.keep , sessions/pipeline/.keep , sessions/core/.keep , sessions/api/.keep , sessions/api/integration/.keep created" && \
+    printf "LUCID_API_GATEWAY_API_APP_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep && \
+    touch ./infrastructure/.keep && \
+    printf "LUCID_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    touch ./infrastructure/kubernetes/.keep && \
+    echo "infrastructure/.keep, infrastructure/kubernetes/.keep created" && \
+    printf "LUCID_DATABASE_$(date +%s)" > ./database/.keep && \
+    touch ./database/.keep && \
+    printf "LUCID_MODELS_$(date +%s)" > ./models/.keep && \
+    touch ./models/.keep && \
+    printf "LUCID_COMMON_$(date +%s)" > ./common/.keep && \
+    touch ./common/.keep && \
+    printf "LUCID_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
+    touch ./common/tor/.keep && \
+    printf "LUCID_SERVICES_$(date +%s)" > ./services/.keep && \
+    touch ./services/.keep && \
+    printf "LUCID_UTILS_$(date +%s)" > ./utils/.keep && \
+    touch ./utils/.keep && \
+    printf "LUCID_ENDPOINTS_$(date +%s)" > ./endpoints/.keep && \
+    touch ./endpoints/.keep && \
+    echo "database/.keep , models/.keep , services/.keep , utils/.keep , endpoints/.keep created" && \
+    printf "LUCID_COMMON_$(date +%s)" > ./common/.keep && \
+    touch ./common/.keep && \
+    printf "LUCID_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
+    touch ./common/tor/.keep && \
+    echo "common/.keep, common/tor/.keep created" && \
+    printf "LUCID_API_GATEWAY_VAR_$(date +%s)" > ./var/.keep && \
+    touch ./var/.keep && \
+    printf "LUCID_API_GATEWAY_VAR_RUN_$(date +%s)" > ./var/run/.keep && \
+    touch ./var/run/.keep && \
+    printf "LUCID_API_GATEWAY_VAR_LIB_$(date +%s)" > ./var/lib/.keep && \
+    touch ./var/lib/.keep && \
+    echo "var/lib/.keep , var/run/.keep , var/.keep created" && \
+    printf "LUCID_API_GATEWAY_ETC_$(date +%s)" > ./etc/.keep && \
+    touch ./etc/.keep && \
+    printf "LUCID_API_GATEWAY_ETC_SSL_$(date +%s)" > ./etc/ssl/.keep && \
+    touch ./etc/ssl/.keep && \
+    printf "LUCID_API_GATEWAY_ETC_SSL_CERTS_CA_CERTIFICATES_CRT_$(date +%s)" > ./etc/ssl/certs/.keep && \
+    touch ./etc/ssl/certs/.keep && \
+    echo "etc/ssl/certs/.keep , etc/ssl/.keep , etc/.keep created" && \
+    printf "LUCID_API_GATEWAY_USR_$(date +%s)" > ./usr/.keep && \
+    touch ./usr/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > ./usr/local/.keep && \
+    touch ./usr/local/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > ./usr/local/bin/.keep && \
+    touch ./usr/local/bin/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > ./usr/local/lib/.keep && \
+    touch ./usr/local/lib/.keep && \
+    echo "usr/local/lib/.keep , usr/local/bin/.keep , usr/local/.keep , usr/.keep created" && \
+    printf "LUCID_API_GATEWAY_USR_BIN_$(date +%s)" > ./usr/bin/.keep && \
+    touch ./usr/bin/.keep && \
+    printf "LUCID_API_GATEWAY_USR_SBIN_$(date +%s)" > ./usr/sbin/.keep && \
+    touch ./usr/sbin/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > ./usr/local/lib/python3.11/.keep && \
+    touch ./usr/local/lib/python3.11/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > ./usr/local/lib/python3.11/site-packages/.keep && \
+    touch ./usr/local/lib/python3.11/site-packages/.keep && \
+    echo "usr/local/lib/python3.11/site-packages/.keep , usr/local/lib/python3.11/.keep , usr/sbin/.keep , usr/bin/.keep , usr/local/.keep , usr/.keep created" && \
+    printf "LUCID_API_GATEWAY_BUILD_$(date +%s)" > ./build/.keep && \
+    touch ./build/.keep && \
+    printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > ./build/wheels/.keep && \
+    touch ./build/wheels/.keep && \
+    echo "build/.keep , build/wheels/.keep created"
 
 
 # System directories & certificates
