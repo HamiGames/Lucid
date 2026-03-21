@@ -87,20 +87,27 @@ RUN printf "LUCID_PARAMS_REGISTRY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/l
     echo "Marker files created"
 
 # Create application directory structure
-RUN mkdir -p ./admin ./common && \
+RUN mkdir -p ./admin ./common ./common/governance && \
     printf "LUCID_PARAMS_REGISTRY_ADMIN_$(date +%s)" > ./admin/.keep && \
     printf "LUCID_PARAMS_REGISTRY_COMMON_$(date +%s)" > ./common/.keep && \
-    touch ./admin/.keep ./common/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_COMMON_GOVERNANCE_$(date +%s)" > ./common/governance/.keep && \
+    touch ./admin/.keep ./common/.keep ./common/governance/.keep && \
     echo "Application directories created with markers"
 
 # Application source COPY (params registry specific)
 COPY admin/params-registry/ ./admin/params-registry/
-COPY common/ ./common/
+COPY common/__init__.py ./common/__init__.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
 
 # Verify source files
 RUN echo "Verifying params registry source files" && \
-    test -d ./admin && echo "admin directory verified" && \
+    test -f /build/admin/params-registry/params_registry.py && echo "params registry directory verified" && \
+    test -f /build/common/__init__.py && echo "common directory verified" && \
+    test -f /build/common/governance/param_registry.py && echo "common/governance directory verified" && \
     python3 -c "import sys; sys.path.insert(0, '/build'); print('Python path configured')"
+
+RUN rm -rf .keep && echo "Application directory structure marker files removed"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -147,8 +154,10 @@ COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/opt/bin/tini
 
 # Application layout COPY (params registry specific)
 COPY --chown=65532:65532 --from=builder /build/admin/ /app/admin/
-COPY --chown=65532:65532 --from=builder /build/common/ /app/common/
+COPY --chown=65532:65532 --from=builder /build/common/__init__.py /app/common/__init__.py
+COPY --chown=65532:65532 --from=builder /build/common/governance/param_registry.py /app/common/governance/param_registry.py
 
+RUN rm -rf .keep && echo "Application directory structure marker files removed"
 # Verify packages and application directories
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/admin'), os.path.isdir('/app/common')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All params registry packages and application directories verified')"]
 

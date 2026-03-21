@@ -205,7 +205,10 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/db/models ./api/app/database
     # Application source COPY (only directories that exist with content)
 COPY common/__init__.py ./common/__init__.py
 COPY common/tor/__init__.py ./common/tor/__init__.py
+COPY 03_api_gateway/api/__init__.py ./api/__init__.py
+
 #copy .api.app files
+COPY 03_api_gateway/api/app/ ./api/app/
 COPY 03_api_gateway/api/app/__init__.py ./api/app/__init__.py
 COPY 03_api_gateway/api/app/main.py ./api/app/main.py
 COPY 03_api_gateway/api/app/config.py ./api/app/config.py
@@ -269,15 +272,8 @@ COPY 03_api_gateway/api/app/schemas/users.py ./api/app/schemas/users.py
 COPY 03_api_gateway/api/app/schemas/meta.py ./api/app/schemas/meta.py
 COPY 03_api_gateway/api/app/schemas/errors.py ./api/app/schemas/errors.py
 # copy .services
-COPY 03_api_gateway/services/__init__.py ./services/__init__.py
-COPY 03_api_gateway/services/gui_bridge_service.py ./services/gui_bridge_service.py
-COPY 03_api_gateway/services/gui_docker_manager_service.py ./services/gui_docker_manager_service.py
-COPY 03_api_gateway/services/gui_tor_manager_service.py ./services/gui_tor_manager_service.py
-COPY 03_api_gateway/services/gui_hardware_manager_service.py ./services/gui_hardware_manager_service.py
-COPY 03_api_gateway/services/tron_support_service.py ./services/tron_support_service.py
-COPY 03_api_gateway/services/session_service.py ./services/session_service.py
-COPY 03_api_gateway/services/proxy_service.py ./services/proxy_service.py
-COPY 03_api_gateway/services/rate_limit_service.py ./services/rate_limit_service.py
+COPY 03_api_gateway/services/ ./services/
+
 #copy .config files
 COPY 03_api_gateway/config/ ./config/
 
@@ -330,6 +326,8 @@ COPY ./infrastructure/kubernetes/05-core/api-gateway.yaml ./gateway/api-gateway.
 # ✅ This works - absolute imports in verification script
 RUN echo "Verifying new modules are included in builder stage" && \
     test -f /build/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
+    test -f /build/services/rate_limit_service.py || (echo "Missing: rate_limit_service.py" && exit 1) && \
+    test -f /build/services/auth_service.py || (echo "Missing: auth_service.py" && exit 1) && \
     test -f /build/api/app/routers/auth.py || (echo "Missing: auth.py" && exit 1) && \
     test -f /build/api/app/routers/trust.py || (echo "Missing: trust.py" && exit 1) && \
     test -f /build/api/app/routers/sessions.py || (echo "Missing: sessions.py" && exit 1) && \
@@ -390,12 +388,16 @@ COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /build/wheels         /app/build/wheels
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
+# import .api files
+COPY --chown=65532:65532 --from=builder /build/api/__init__.py                     /app/api/__init__.py
 # import .api.app files
+COPY --chown=65532:65532 --from=builder /build/api/app/            /app/api/app/
 COPY --chown=65532:65532 --from=builder /build/api/app/__init__.py                     /app/api/app/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/main.py                       /app/api/app/main.py
 COPY --chown=65532:65532 --from=builder /build/api/app/config.py                     /app/api/app/config.py
 COPY --chown=65532:65532 --from=builder /build/api/app/deps.py                       /app/api/app/deps.py
 # import .api.app.middleware files
+COPY --chown=65532:65532 --from=builder /build/api/app/middleware/__init__.py            /app/api/app/middleware/__init__.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/auth.py            /app/api/app/middleware/auth.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/logging.py         /app/api/app/middleware/logging.py
 COPY --chown=65532:65532 --from=builder /build/api/app/middleware/rate_limit.py   /app/api/app/middleware/rate_limit.py
@@ -446,14 +448,7 @@ COPY --chown=65532:65532 --from=builder /build/api/app/services/session_service.
 COPY --chown=65532:65532 --from=builder /build/api/app/services/mongo_service.py        /app/api/app/services/mongo_service.py
 COPY --chown=65532:65532 --from=builder /build/api/app/services/tron_support_service.py        /app/api/app/services/tron_support_service.py
 #import .services files
-COPY --chown=65532:65532 --from=builder /build/services/proxy_service.py        /app/services/proxy_service.py
-COPY --chown=65532:65532 --from=builder /build/services/gui_tor_manager_service.py        /app/services/gui_tor_manager_service.py
-COPY --chown=65532:65532 --from=builder /build/services/gui_hardware_manager_service.py        /app/services/gui_hardware_manager_service.py
-COPY --chown=65532:65532 --from=builder /build/services/tron_support_service.py        /app/services/tron_support_service.py
-COPY --chown=65532:65532 --from=builder /build/services/session_service.py        /app/services/session_service.py
-COPY --chown=65532:65532 --from=builder /build/services/rate_limit_service.py        /app/services/rate_limit_service.py
-COPY --chown=65532:65532 --from=builder /build/services/gui_docker_manager_service.py        /app/services/gui_docker_manager_service.py
-
+COPY --chown=65532:65532 --from=builder /build/services/        /app/services/
 # import .api.app.routes files
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 # import .config files
@@ -498,8 +493,11 @@ RUN echo "Verifying new modules are included in runtime stage" && \
     test -f /app/api/app/routers/gui.py || (echo "Missing: gui.py" && exit 1) && \
     test -f /app/api/app/routers/auth.py || (echo "Missing: auth.py" && exit 1) && \
     test -f /app/api/app/routers/trust.py || (echo "Missing: trust.py" && exit 1) && \
+    test -f /app/services/rate_limit_service.py || (echo "Missing: rate_limit_service.py" && exit 1) && \
+    test -f /app/services/auth_service.py || (echo "Missing: auth_service.py" && exit 1) && \
     test -f /app/api/app/routers/sessions.py || (echo "Missing: sessions.py" && exit 1) && \
     test -f /app/api/app/routers/tron_support.py || (echo "Missing: tron_support.py" && exit 1) && \
+    test -f /app/api/app/middleware/auth.py || (echo "Missing: auth.py" && exit 1) && \
     test -f /app/api/app/services/gui_bridge_service.py || (echo "Missing: gui_bridge_service.py" && exit 1) && \
     test -f /app/api/app/services/tron_support_service.py || (echo "Missing: tron_support_service.py" && exit 1) && \
     test -f /app/api/app/config.py || (echo "Missing: config.py" && exit 1) && \
