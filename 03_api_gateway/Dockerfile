@@ -58,8 +58,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-
-
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_API_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
@@ -127,7 +125,6 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "=== Verifying site-packages directory ===" && \
     ls -la ./usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" 
-
 
 # Verify marker files exist with content (critical for distroless COPY)
 RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
@@ -197,39 +194,47 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./database/.keep && \
     echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created"
 
-
-RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor ./sessions/core ./sessions/api/integration && \
-    printf "LUCID_API_GATEWAY_SESSIONS_$(date +%s)" > ./sessions/.keep && \
-    touch ./sessions/.keep && \
-    printf "LUCID_API_GATEWAY_SESSIONS_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
-    touch ./sessions/processor/.keep && \
-    printf "LUCID_API_GATEWAY_SESSIONS_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
-    touch ./sessions/pipeline/.keep && \
-    printf "LUCID_API_GATEWAY_SESSIONS_API_$(date +%s)" > ./sessions/api/.keep && \
-    touch ./sessions/api/.keep && \
-    printf "LUCID_API_GATEWAY_SESSIONS_CORE_$(date +%s)" > ./sessions/core/.keep && \
-    touch ./sessions/core/.keep && \
-    printf "LUCID_API_GATEWAY_SESSIONS_API_INTEGRATION_$(date +%s)" > ./sessions/api/integration/.keep && \
-    touch ./sessions/api/integration/.keep && \
-    echo "sessions/processor/.keep, sessions/pipeline/.keep, sessions/api/.keep, sessions/core/.keep, sessions/api/integration/.keep, sessions/.keep created"
-    
-    
-
-
     # Application source COPY (only directories that exist with content)
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
+
+RUN echo "=== Checking if verify_files.py was copied ===" && \
+    ls -la ./tmp/ && \
+    file ./tmp/verify_files.py && \
+    head -5 ./tmp/verify_files.py
+
+COPY common/__init__.py ./common/__init__.py
+RUN echo "=== Checking if common/__init__.py was copied ===" && \
+    ls -la ./common/ && \
+    file ./common/__init__.py && \
+    head -5 ./common/__init__.py
+
 COPY common/tor/ ./common/tor/
-COPY common/ ./common/
+RUN echo "=== Checking if common/tor/ was copied ===" && \
+    ls -la ./common/tor/ && \
+    file ./common/tor/ && \
+    head -5 ./common/tor/
+
 COPY 03_api_gateway/api/__init__.py ./api/__init__.py
 COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
 
 #copy .api.app files
 COPY 03_api_gateway/api/app/ ./api/app/
+RUN echo "=== Checking if api/app/ was copied ===" && \
+    ls -la ./api/app/ && \
+    file ./api/app/ && \
+    head -5 ./api/app/
+
 COPY 03_api_gateway/api/app/db/ ./api/app/db/
 COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
 COPY 03_api_gateway/api/app/database/ ./api/app/database/
 COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
 COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
+
+RUN echo "=== Checking if api/app/routers/ was copied ===" && \
+    ls -la ./api/app/routers/ && \
+    file ./api/app/routers/ && \
+    head -5 ./api/app/routers/
+
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 COPY 03_api_gateway/api/app/services/ ./api/app/services/
 COPY 03_api_gateway/api/app/utils/ ./api/app/utils/
@@ -255,13 +260,11 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/services/ || echo "services/ missing" && \
     ls -la /build/database/ || echo "database/ missing" && \
     ls -la /build/endpoints/ || echo "endpoints/ missing" && \
-    ls -la /build/common/ || echo "common/ missing" && \
-    ls -la /build/sessions/ || echo "sessions/ missing"
+    ls -la /build/common/ || echo "common/ missing" 
 
-    RUN echo "verifying files in /build directory" && \
+RUN echo "verifying files in /build directory" && \
     python3.11 ./tmp/verify_files.py && \
     echo "All files verified successfully"
-
 
 
 ############################
@@ -324,13 +327,6 @@ COPY --chown=65532:65532 --from=builder /build/api/app/models/ /app/api/app/mode
 COPY --chown=65532:65532 --from=builder /build/api/app/database/ /app/api/app/database/
 COPY --chown=65532:65532 --from=builder /build/api/app/services/ /app/api/app/services/
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
-
-COPY --chown=65532:65532 --from=builder /build/sessions/__init__.py /app/sessions/__init__.py
-COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/ /app/sessions/pipeline/
-COPY --chown=65532:65532 --from=builder /build/sessions/api/ /app/sessions/api/
-COPY --chown=65532:65532 --from=builder /build/sessions/core/ /app/sessions/core/  
-COPY --chown=65532:65532 --from=builder /build/sessions/processor/ /app/sessions/processor/
-COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/ /app/sessions/api/integration/
 
 # api level directories
 COPY --chown=65532:65532 --from=builder /build/services/            /app/services/

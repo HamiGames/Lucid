@@ -30,7 +30,7 @@ required_files = [
     base_dir / 'database/__init__.py',
     base_dir / 'endpoints/__init__.py',
     base_dir / 'common/__init__.py',
-    base_dir / 'sessions/__init__.py'
+    
 ]
 
 missing = [str(f) for f in required_files if not f.is_file()]
