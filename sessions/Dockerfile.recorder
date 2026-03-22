@@ -10,6 +10,7 @@
 # =============================================================================
 # BUILD ARGUMENTS
 # =============================================================================
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
@@ -33,6 +34,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_PREFER_BINARY=1 \
     DEBIAN_FRONTEND=noninteractive
 
+WORKDIR /build
+# System packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -44,26 +47,51 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libffi-dev \
         libssl-dev \
         pkg-config \
-        libzstd-dev \
-        liblz4-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libavutil-dev \
-        libswscale-dev \
         curl \
         ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-WORKDIR /build
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_API_GATEWAY_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_API_GATEWAY_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_API_GATEWAY_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod +x /root/.keep  /root/.rustup/.keep  /root/.cargo/.keep
+
+
+RUN apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+ENV PATH=/root/.cargo/bin:$PATH
 
 # Ensures /var/run and /var/lib exist with real content (COPY won't be silent)
 RUN echo "LUCID_SESSION_RECORDER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_SESSION_RECORDER_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+    chown -R 65532:65532 /var/run /var/lib && \
+    echo "LUCID_SESSION_RECORDER_RUNTIME_DIRECTORY" > /usr/bin/tini/.keep && \
+    echo "LUCID_SESSION_RECORDER_LIB_DIRECTORY" > /usr/bin/cargo/.keep && \
+    echo "LUCID_SESSION_RECORDER_LIB_DIRECTORY" > /usr/bin/rustc/.keep && \
+    chown -R 65532:65532 /usr/bin/tini /usr/bin/cargo /usr/bin/rustc
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+    mkdir -p /build/wheels && \
+    echo "upgrading pip and setuptools" && \
+    pip install --upgrade pip setuptools wheel &&\
+    echo "upgrade complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 COPY sessions/requirements.recorder.txt ./requirements.txt
 
@@ -71,7 +99,12 @@ RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" &&\
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 # Marker files (per Dockerfile-copy-pattern.md)
 RUN echo "LUCID_SESSION_RECORDER_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
@@ -138,11 +171,27 @@ COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 
 # Distroless base already has correct linker/runtime; only copy CA certs
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 # Python packages (per COPY pattern guide)
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY 
+
+# Rust packages
+COPY --from=builder --chown=65532:65532 /root/.cargo/        /app/rust/
+COPY --from=builder --chown=65532:65532 /root/.rustup/        /app/rust/
+
+COPY --from=builder --chown=65532:65532 /usr/bin/tini/ /app/usr/bin/tini/
+COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
+COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/__init__.py /app/sessions/pipeline/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/integration/ /app/sessions/pipeline/integration/
+COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/config/recorder-config.yaml /app/sessions/config/recorder-config.yaml
+
+
 
 # Runtime verification of packages (per Dockerfile-copy-pattern.md - CRITICAL)
 # This will fail the build if packages are missing (catches COPY failures immediately)
@@ -203,11 +252,11 @@ print('✅ All application source files verified')"]
 EXPOSE 8090
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8090)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-recorder', 8090)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 # Clear base ENTRYPOINT so CMD works as expected
 ENTRYPOINT []
 
-CMD ["/usr/bin/python3.11", "/app/sessions/recorder/entrypoint.py"]
+CMD ["/app/usr/bin/python3.11", "/app/sessions/recorder/entrypoint.py"]

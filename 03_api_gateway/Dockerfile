@@ -214,26 +214,51 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 RUN echo "=== Checking if verify_files.py was copied ===" && \
     ls -la ./tmp/ && \
-    head -5 ./tmp/verify_files.py
+    head -5 ./tmp/verify_files.py && \
+    chown -R 65532:65532 ./tmp/ && \
+    chmod +x ./tmp/verify_files.py && \
+    echo "verify_files.py was copied"
 
-COPY common/__init__.py ./common/__init__.py
+COPY common/ ./common/
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
     ls -la ./common/ &&  \
-    head -5 ./common/__init__.py
+    head -5 ./common/ && \
+    chown -R 65532:65532 ./common/ && \
+    chmod +x ./common/*.py && \
+    echo "common/ was copied"
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
     ls -la ./common/tor/ && \
-    head -5 ./common/tor/
+    head -5 ./common/tor/ && \
+    chown -R 65532:65532 ./common/tor/ && \
+    chmod +x ./common/tor/*.py && \
+    echo "common/tor/ was copied"
 
-COPY 03_api_gateway/api/__init__.py ./api/__init__.py
-COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY 03_api_gateway/api/ ./api/
+RUN echo "=== Checking if api/ was copied ===" && \
+    ls -la ./api/ && \
+    head -5 ./api/ && \
+    chown -R 65532:65532 ./api/ && \
+    chmod +x ./api/*.py && \
+    echo "api/ was copied"
+
+COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
+RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
+    ls -la ./infrastructure/kubernetes/ && \
+    head -5 ./infrastructure/kubernetes/ && \
+    chown -R 65532:65532 ./infrastructure/kubernetes/ && \
+    chmod +x ./infrastructure/kubernetes/*.yaml && \
+    echo "infrastructure/kubernetes/ was copied"
 
 #copy .api.app files
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/ && \
-    head -5 ./api/app/
+    head -5 ./api/app/ && \
+    chown -R 65532:65532 ./api/app/ && \
+    chmod +x ./api/app/*.py && \
+    echo "api/app/ was copied"
 
 COPY 03_api_gateway/api/app/db/ ./api/app/db/
 COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
@@ -243,7 +268,10 @@ COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
 
 RUN echo "=== Checking if api/app/routers/ was copied ===" && \
     ls -la ./api/app/routers/ && \
-    head -5 ./api/app/routers/
+    head -5 ./api/app/routers/ && \
+    chown -R 65532:65532 ./api/app/routers/ && \
+    chmod +x ./api/app/routers/*.py && \
+    echo "api/app/routers/ was copied"
 
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 COPY 03_api_gateway/api/app/services/ ./api/app/services/
