@@ -53,7 +53,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       xxd \
       rustc \
       cargo \
-      busybox \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
@@ -63,44 +62,65 @@ WORKDIR /build
 
 # Create application and data directories with proper ownership
 # Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
-RUN mkdir -p /app/scripts /var/lib/tunnel /var/log/tunnel /run \
-    && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)" > /app/scripts/.keep \
-    && echo "LUCID_TUNNEL_TOOLS_LIB_DIRECTORY_$(date +%s)" > /var/lib/tunnel/.keep \
-    && echo "LUCID_TUNNEL_TOOLS_LOG_DIRECTORY_$(date +%s)" > /var/log/tunnel/.keep \
-    && echo "LUCID_TUNNEL_TOOLS_RUN_DIRECTORY_$(date +%s)" > /run/.keep \
-    && chown -R 65532:65532 /app /var/lib/tunnel /var/log/tunnel /run /opt
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_API_GATEWAY_USR_$(date +%s)" > /usr/.keep && \
+    touch /usr/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
+    touch /usr/local/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
+    echo " Marker files created to lock in directory structure"
 
 # Copy tunnel application files
 # Build context: project root, so we prefix with 02_network_security/tunnels/
-COPY 02_network_security/tunnels/__init__.py /app/__init__.py
-COPY 02_network_security/tunnels/entrypoint.py /app/entrypoint.py
-COPY 02_network_security/tunnels/tunnel_metrics.py /app/tunnel_metrics.py
-COPY 02_network_security/tunnels/tunnel_status.py /app/tunnel_status.py
-COPY 02_network_security/tunnels/scripts/ /app/scripts/
-COPY 02_network_security/tunnels/config/ /app/config/
+RUN mkdir -p ./tunnels  ./tunnels/scripts ./tunnels/config && \
+    printf "LUCID_TUNNEL_TOOLS_TUNNELS_$(date +%s)" > ./tunnels/.keep && \
+    touch ./tunnels/.keep && \
+    printf "LUCID_TUNNEL_TOOLS_SCRIPTS_$(date +%s)" > ./tunnels/scripts/.keep && \
+    touch ./tunnels/scripts/.keep && \
+    printf "LUCID_TUNNEL_TOOLS_CONFIG_$(date +%s)" > ./tunnels/config/.keep && \
+    touch ./tunnels/config/.keep && \
+    chown -R 65532:65532 ./tunnels ./tunnels/scripts ./tunnels/config && \
+    chmod 644 ./tunnels/.keep ./tunnels/scripts/.keep ./tunnels/config/.keep && \
+    echo " Marker files created to lock in directory structure"
 
-RUN chmod +x /app/entrypoint.py || true \
-    && chmod +x /app/__init__.py || true \
-    && chmod +x /app/scripts/*.sh || true \
-    && chmod +x /app/tunnel_metrics.py || true \
-    && chmod +x /app/tunnel_status.py || true \
-    && mkdir -p /app/config \
-    && echo "LUCID_TUNNEL_TOOLS_ENTRYPOINT_$(date +%s)" > /app/.lucid-entrypoint-marker
+COPY 02_network_security/tunnels/ ./tunnels/
+COPY 02_network_security/tunnels/scripts/ ./tunnels/scripts/
+COPY 02_network_security/tunnels/config/ ./tunnels/config/
 
-# Builder stage verification: Verify Python and compile entrypoint
-RUN python3 --version && \
-    which python3 && \
-    test -f /app/entrypoint.py && \
-    python3 -m py_compile /app/entrypoint.py && \
-    python3 -m py_compile /app/__init__.py && \
-    python3 -m py_compile /app/tunnel_metrics.py && \
-    python3 -m py_compile /app/tunnel_status.py && \
+RUN chmod +x ./tunnels/entrypoint.py || true && \
+    chmod +x ./tunnels/__init__.py || true && \
+    chmod +x ./tunnels/scripts/*.sh || true && \
+    chmod +x ./tunnels/tunnel_metrics.py || true && \
+    chmod +x ./tunnels/tunnel_status.py || true && \
+    chmod +x ./tunnels/scripts/*.sh || true && \
+    chmod +x ./tunnels/config/* || true && \
+    echo "✅ Permissions set for all files"
+# Builder stage verification: Verify Python
+
+RUN python3.11 --version && \
+    which python3.11 && \
+    test -f ./tunnels/entrypoint.py && \
+    python3.11 -m py_compile ./tunnels/entrypoint.py && \
+    python3.11 -m py_compile ./tunnels/__init__.py && \
+    python3.11 -m py_compile ./tunnels/tunnel_metrics.py && \
+    python3.11 -m py_compile ./tunnels/tunnel_status.py && \
     echo "✅ Builder stage verification passed - All Python files compile successfully"
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Python3 (Debian 12)
 # =============================================================================
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -126,38 +146,45 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.env.config=".env.tunnel-tools,.env.secrets,.env.foundation"
 
 # Minimal, safe PATH and Python settings
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
 # Copy tini from builder (for proper signal handling)
-COPY --from=tunnel-builder /usr/bin/tini /usr/bin/tini
-
+COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
+COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tor/ /app/var/lib/tor/
+COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tor/control_auth_cookie /app/var/lib/tor/control_auth_cookie
 # Copy application and data directories owned by non-root (65532:65532)
-COPY --from=tunnel-builder --chown=65532:65532 /app /app
-COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tunnel /var/lib/tunnel
-COPY --from=tunnel-builder --chown=65532:65532 /var/log/tunnel /var/log/tunnel
-COPY --from=tunnel-builder --chown=65532:65532 /run /run
-
+COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/ /app/tunnels/
+COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/lib/tor /app/var/lib/tor
+COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/log/tor /app/var/log/tor
+COPY --from=tunnel-builder --chown=debian-tor:debian-tor /run/ /app/run/
+COPY --from=tunnel-builder --chown=debian-tor:debian-tor /run/lucid/onion/ /app/run/lucid/onion/
+COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/run/ /app/var/run/
+COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/lib/ /app/var/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin/python3.11/ /app/usr/local/bin/python3.11/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin/python3.11/site-packages/ /app/usr/local/bin/python3.11/site-packages/
 # Copy essential shell and utilities from builder
-COPY --from=tunnel-builder /bin/bash            /bin/bash
-COPY --from=tunnel-builder /bin/cat             /bin/cat
-COPY --from=tunnel-builder /bin/sh              /bin/sh
-COPY --from=tunnel-builder /usr/bin/curl        /usr/bin/curl
-COPY --from=tunnel-builder /usr/bin/jq          /usr/bin/jq
-COPY --from=tunnel-builder /usr/bin/nc          /usr/bin/nc
-COPY --from=tunnel-builder /usr/bin/socat       /usr/bin/socat
-COPY --from=tunnel-builder /usr/bin/xxd         /usr/bin/xxd
-COPY --from=tunnel-builder /usr/bin/timeout     /usr/bin/timeout
+COPY --from=tunnel-builder --chown=65532:65532 /bin/bash            /app/bin/bash
+COPY --from=tunnel-builder --chown=65532:65532 /bin/cat             /app/bin/cat
+COPY --from=tunnel-builder --chown=65532:65532 /bin/sh              /app/bin/sh
+COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/   /app/usr/bin/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin /app/usr/local/bin
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/sbin/ /app/usr/local/sbin/
+COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/certs/ /app/etc/ssl/certs/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/share/ /app/usr/local/share/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/share/ /app/usr/share/
+
 
 # Copy required libraries for these utilities
-COPY --from=tunnel-builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
-COPY --from=tunnel-builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
-COPY --from=tunnel-builder /usr/lib /usr/lib
+COPY --from=tunnel-builder --chown=65532:65532 /lib/aarch64-linux-gnu/ /app/lib/aarch64-linux-gnu
+COPY --from=tunnel-builder --chown=65532:65532 /lib/ld-linux-aarch64.so.1/ /app/lib/ld-linux-aarch64.so.1
+COPY --from=tunnel-builder --chown=65532:65532 /usr/lib /app/usr/lib/
 # Runtime verification: Verify entrypoint exists and modules can be imported
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; \
 sys.path.insert(0, '/app'); \
@@ -172,9 +199,9 @@ print('✅ All tunnel-tools modules verified')"]
 
 ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
-    COOKIE_FILE=/var/lib/tor/control_auth_cookie \
+    COOKIE_FILE=/app/var/lib/tor/control_auth_cookie \
     ONION_PORTS="80 api-gateway:8080" \
-    WRITE_ENV=/run/lucid/onion/.onion.env \
+    WRITE_ENV=/app/run/lucid/onion/.onion.env \
     ROTATE_INTERVAL=0 \
     TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
@@ -199,12 +226,12 @@ EXPOSE 7000
 
 # Run as non-root (distroless default)
 USER 65532:65532
-WORKDIR /app
+
 
 # Use tini for correct signal handling; run Python entrypoint directly (no shell)
 # Clear ENTRYPOINT pattern per dockerfile-design.md: tini in ENTRYPOINT, Python in CMD
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/usr/bin/python3.11", "/app/entrypoint.py"]
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+CMD ["/app/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
 
 # NOTES:
 #   Configuration files are expected at:

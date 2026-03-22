@@ -161,19 +161,19 @@ COPY --from=tor-builder /build/usr/bin/curl/        /app/usr/bin/curl/
 COPY --from=tor-builder /build/usr/bin/jq/          /app/usr/bin/jq/
 
 # Required libraries (include systemd/selinux/cap and loader)
-COPY --from=tor-builder /lib/*/libc.so.6         /app/lib/
-COPY --from=tor-builder /lib/*/libcrypto.so.3   /app/lib/
-COPY --from=tor-builder /lib/*/libssl.so.3      /app/lib/
-COPY --from=tor-builder /lib/*/libevent-2.1.so.7 /app/lib/
-COPY --from=tor-builder /lib/*/libzstd.so.1     /app/lib/
-COPY --from=tor-builder /lib/*/liblzma.so.5     /app/lib/
-COPY --from=tor-builder /lib/*/libz.so.1        /app/lib/
-COPY --from=tor-builder /lib/*/libtinfo.so.6    /app/lib/
-COPY --from=tor-builder /lib/*/libsystemd.so.0  /app/lib/
-COPY --from=tor-builder /lib/*/libselinux.so.1  /app/lib/
-COPY --from=tor-builder /lib/*/libcap.so.2      /app/lib/
-COPY --from=tor-builder /lib/*/libnsl.so.1      /app/lib/
-COPY --from=tor-builder /lib/*/libcrypt.so.1    /app/lib/
+COPY --from=tor-builder /lib/*/libc.so.6/       /app/lib/
+COPY --from=tor-builder /lib/*/libcrypto.so.3/   /app/lib/
+COPY --from=tor-builder /lib/*/libssl.so.3/      /app/lib/
+COPY --from=tor-builder /lib/*/libevent-2.1.so.7/ /app/lib/
+COPY --from=tor-builder /lib/*/libzstd.so.1/     /app/lib/
+COPY --from=tor-builder /lib/*/liblzma.so.5/     /app/lib/
+COPY --from=tor-builder /lib/*/libz.so.1/        /app/lib/
+COPY --from=tor-builder /lib/*/libtinfo.so.6/    /app/lib/
+COPY --from=tor-builder /lib/*/libsystemd.so.0/  /app/lib/
+COPY --from=tor-builder /lib/*/libselinux.so.1/  /app/lib/
+COPY --from=tor-builder /lib/*/libcap.so.2/      /app/lib/
+COPY --from=tor-builder /lib/*/libnsl.so.1/      /app/lib/
+COPY --from=tor-builder /lib/*/libcrypt.so.1/    /app/lib/
 # Dynamic linker and arch-specific libs for ARM64 (required by coreutils/tor)
 COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
 COPY --from=tor-builder /lib/aarch64-linux-gnu     /app/lib/aarch64-linux-gnu

@@ -138,54 +138,78 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "directories found in site-packages" 
 
 #Prep new directory structure with .keep files
-RUN mkdir -p ./auth ./admin ./core ./common ./configs ./database ./infrastructure ./node ./RDP ./tools ./utils ./wallet && \
+RUN mkdir -p ./auth ./auth/api ./auth/models ./auth/middleware ./auth/config ./auth/services ./auth/utils ./wallet ./wallet/walletd && \
     printf "LUCID_AUTH_SERVICE_AUTH_DIRECTORY_$(date +%s)" > ./auth/.keep && \
-    printf "LUCID_AUTH_SERVICE_ADMIN_DIRECTORY_$(date +%s)" > ./admin/.keep && \
-    printf "LUCID_AUTH_SERVICE_CORE_DIRECTORY_$(date +%s)" > ./core/.keep && \
-    printf "LUCID_AUTH_SERVICE_COMMON_DIRECTORY_$(date +%s)" > ./common/.keep && \
-    printf "LUCID_AUTH_SERVICE_CONFIGS_DIRECTORY_$(date +%s)" > ./configs/.keep && \
-    printf "LUCID_AUTH_SERVICE_DATABASE_DIRECTORY_$(date +%s)" > ./database/.keep && \
-    printf "LUCID_AUTH_SERVICE_INFRASTRUCTURE_DIRECTORY_$(date +%s)" > ./infrastructure/.keep && \
-    printf "LUCID_AUTH_SERVICE_NODE_DIRECTORY_$(date +%s)" > ./node/.keep && \
-    printf "LUCID_AUTH_SERVICE_RDP_DIRECTORY_$(date +%s)" > ./RDP/.keep && \
-    printf "LUCID_AUTH_SERVICE_TOOLS_DIRECTORY_$(date +%s)" > ./tools/.keep && \
-    printf "LUCID_AUTH_SERVICE_UTILS_DIRECTORY_$(date +%s)" > ./utils/.keep && \
+    touch ./auth/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_API_DIRECTORY_$(date +%s)" > ./auth/api/.keep && \
+    touch ./auth/api/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_MODELS_DIRECTORY_$(date +%s)" > ./auth/models/.keep && \
+    touch ./auth/models/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_UTILS_DIRECTORY_$(date +%s)" > ./auth/utils/.keep && \
+    touch ./auth/utils/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_MIDDLEWARE_DIRECTORY_$(date +%s)" > ./auth/middleware/.keep && \
+    touch ./auth/middleware/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_CONFIG_DIRECTORY_$(date +%s)" > ./auth/config/.keep && \
+    touch ./auth/config/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_SERVICES_DIRECTORY_$(date +%s)" > ./auth/services/.keep && \
+    touch ./auth/services/.keep && \
     printf "LUCID_AUTH_SERVICE_WALLET_DIRECTORY_$(date +%s)" > ./wallet/.keep && \
-    printf "LUCID_AUTH_SERVICE_VM_DIRECTORY_$(date +%s)" > ./vm/.keep && \
-    touch ./auth/.keep ./admin/.keep ./vm/.keep ./core/.keep ./common/.keep ./configs/.keep ./database/.keep ./infrastructure/.keep ./node/.keep ./RDP/.keep ./tools/.keep ./utils/.keep ./wallet/.keep \
-    && echo "New directory structure created with .keep files"
-    && chown -R 65532:65532 ./auth ./admin ./vm ./core ./common ./configs ./database ./infrastructure ./node ./RDP ./tools ./utils ./wallet \
+    touch ./wallet/.keep && \
+    printf "LUCID_AUTH_SERVICE_WALLETD_DIRECTORY_$(date +%s)" > ./wallet/walletd/.keep && \
+    touch ./wallet/walletd/.keep && \
+    chown -R 65532:65532 ./auth ./auth/api ./auth/models ./auth/utils ./auth/middleware ./auth/config ./auth/services ./wallet ./wallet/walletd && \
+    chmod 644 /auth/.keep /auth/api/.keep /auth/models/.keep /auth/utils/.keep /auth/middleware/.keep /auth/config/.keep /auth/services/.keep /auth/utils/.keep /wallet/.keep /wallet/walletd/.keep && \
+    echo "New directory structure created with .keep files"
 
 # Copy requirements file
+COPY infrastructure/kubernetes/04-auth/auth-service.yaml ./auth/auth-service.yaml
 
-COPY auth/ ./auth/
-COPY admin/ ./admin/
-RUN echo "=== Checking if admin/ was copied ===" && \
-    ls -la ./admin/* || echo "admin/ directory not found" && exit 1 && \
-    echo "admin/ was copied" 
+COPY auth/__init__.py ./auth/__init__.py
+COPY auth/main.py ./auth/main.py
+COPY auth/config.py ./auth/config.py
+COPY auth/session_manager.py ./auth/session_manager.py
+COPY auth/permissions.py ./auth/permissions.py
+COPY auth/http_server.py ./auth/http_server.py
+COPY auth/authentication_service.py ./auth/authentication_service.py
+COPY auth/healthcheck.py ./auth/healthcheck.py
+COPY auth/verify_runtime.py ./auth/verify_runtime.py
+COPY auth/user_manager.py ./auth/user_manager.py
+COPY auth/openapi.yaml ./auth/openapi.yaml
 
-COPY core/ ./core/
-COPY common/ ./common/
-COPY configs/ ./configs/
-COPY database/ ./database/
-COPY infrastructure/ ./infrastructure/
-COPY node/ ./node/
-COPY RDP/ ./RDP/
-COPY tools/ ./utils/
-COPY vm/ ./vm/
-COPY wallet/ ./wallet/
+RUN chmod +x ./auth/*.py && \
+    chown -R 65532:65532 ./auth/ && \
+    echo "Permissions and ownership set for auth directory"
+
+
+COPY auth/api/ ./auth/api/
+COPY auth/models/ ./auth/models/
+COPY auth/utils/ ./auth/utils/
+COPY auth/middleware/ ./auth/middleware/
+COPY auth/config/ ./auth/config/
+COPY auth/services/ ./auth/services/
+COPY wallet/__init__.py ./wallet/__init__.py
+COPY walletd/ ./walletd/
+
+RUN chown -R 65532:65532 ./wallet && \
+    chown -R 65532:65532 ./walletd && \
+    chown -R 65532:65532 ./auth/api && \
+    chown -R 65532:65532 ./auth/models && \
+    chown -R 65532:65532 ./auth/utils && \
+    chown -R 65532:65532 ./auth/middleware && \
+    chown -R 65532:65532 ./auth/config && \
+    chown -R 65532:65532 ./auth/services && \
+    chmod +x ./wallet/*.py && chmod +x ./walletd/*.py && \
+    echo "Permissions and ownership set for wallet, walletd, auth/api, auth/models, auth/utils, auth/middleware, auth/config, auth/services directories"
+
+RUN echo "=== Verifying wallet directory structure ===" && \
+    ls -la ./wallet/ && \
+    ls -la ./wallet/walletd/ && \
+
+
 # Install Python dependencies to user directory for distroless compatibility
-RUN --mount=type=cache,target=/root/.cache/pip \
-    mkdir -p /build/wheels && \
-    echo "building wheels from source" &&\
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
-    echo "wheel build complete" && \
-    ls -lh /build/wheels/ | head -20 && \
-    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
-    
 
 # Verify critical packages are installed
-RUN python -c "import fastapi, uvicorn, jwt, motor, redis; print('All critical packages installed successfully')"
+RUN python -c "import fastapi, uvicorn, jwt, motor, redis, tronpy, requests; print('All critical packages installed successfully')"
 
 # ============================================================================
 # Stage 2: Runtime - Distroless Python base
@@ -213,17 +237,28 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Set working directory
 WORKDIR /app
+COPY 
 
 # Copy application code from repository
-COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/auth/__init__.py /app/auth/__init__.py
+COPY --from=builder --chown=65532:65532 /build/auth/main.py /app/auth/main.py
+COPY --from=builder --chown=65532:65532 /build/auth/config.py /app/auth/config.py
+COPY --from=builder --chown=65532:65532 /build/auth/session_manager.py /app/auth/session_manager.py
+COPY --from=builder --chown=65532:65532 /build/auth/permissions.py /app/auth/permissions.py
+COPY --from=builder --chown=65532:65532 /build/auth/http_server.py /app/auth/http_server.py
+COPY --from=builder --chown=65532:65532 /build/auth/authentication_service.py /app/auth/authentication_service.py
+COPY --from=builder --chown=65532:65532 /build/auth/healthcheck.py /app/auth/healthcheck.py
 
-COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
-COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
-COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
-COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
-COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
+COPY --from=builder --chown=65532:65532 /build/auth/api/ /app/auth/api/
+COPY --from=builder --chown=65532:65532 /build/auth/models/ /app/auth/models/
+COPY --from=builder --chown=65532:65532 /build/auth/utils/ /app/auth/utils/
+COPY --from=builder --chown=65532:65532 /build/auth/middleware/ /app/auth/middleware/
+COPY --from=builder --chown=65532:65532 /build/auth/config/ /app/auth/config/
+COPY --from=builder --chown=65532:65532 /build/auth/services/ /app/auth/services/
+COPY --from=builder --chown=65532:65532 /build/wallet/__init__.py /app/wallet/__init__.py
+COPY --from=builder --chown=65532:65532 /build/wallet/walletd/ /app/wallet/walletd/
+
+
 
 # Create necessary directories for runtime using Python (distroless-compatible)
 # Distroless has Python but no shell utilities like mkdir
