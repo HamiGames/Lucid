@@ -246,18 +246,10 @@ COPY 03_api_gateway/utils/ ./utils/
 # copy .endpoints
 COPY 03_api_gateway/endpoints/ ./endpoints/
 COPY 03_api_gateway/config/ ./config/
-COPY sessions/__init__.py ./sessions/__init__.py
-
-COPY sessions/pipeline/ ./sessions/pipeline/
-COPY sessions/api/ ./sessions/api/
-COPY sessions/core/ ./sessions/core/
-COPY sessions/processor/ ./sessions/processor/
-COPY sessions/api/integration/ ./sessions/api/integration/
 
 RUN echo "=== Checking /build contents ===" && \
     ls -la /build/ && \
     echo "=== Checking specific paths ===" && \
-    ls -la /build/config/ || echo "config/ missing" && \
     ls -la /build/utils/ || echo "utils/ missing" && \
     ls -la /build/models/ || echo "models/ missing" && \
     ls -la /build/services/ || echo "services/ missing" && \
@@ -266,9 +258,9 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/common/ || echo "common/ missing" && \
     ls -la /build/sessions/ || echo "sessions/ missing"
 
-RUN echo " verifying files in /build directory" && \
-    python3.11 -m /build/tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
-    echo "/build/tmp/verify_files.py passed"
+    RUN echo "verifying files in /build directory" && \
+    python3.11 ./tmp/verify_files.py && \
+    echo "All files verified successfully"
 
 
 
@@ -306,46 +298,46 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run           /app/var/run
-COPY --from=builder --chown=65532:65532 /var/lib           /app/var/lib
+COPY --from=builder --chown=65532:65532 /var/run/          /app/var/run/
+COPY --from=builder --chown=65532:65532 /var/lib/           /app/var/lib/
 COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages   /app/usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /usr/local/bin              /app/usr/local/bin
-COPY --from=builder --chown=65532:65532 /usr/bin/tini               /app/usr/bin/tini
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/   /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/              /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/bin/tini/               /app/usr/bin/tini/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder --chown=65532:65532 /build/wheels         /app/build/wheels
+COPY --from=builder --chown=65532:65532 /build/wheels/         /app/build/wheels/
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
 #kubernetes configmaps
 COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
-COPY --chown=65532:65532 --from=builder /build/api/app            /app/api/app
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware /app/api/app/middleware
-COPY --chown=65532:65532 --from=builder /build/api/app/utils /app/api/app/utils
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas /app/api/app/schemas
-COPY --chown=65532:65532 --from=builder /build/api/app/routers /app/api/app/routers
-COPY --chown=65532:65532 --from=builder /build/api/app/routes          /app/api/app/routes
-COPY --chown=65532:65532 --from=builder /build/api/app/models /app/api/app/models
-COPY --chown=65532:65532 --from=builder /build/api/app/database /app/api/app/database
-COPY --chown=65532:65532 --from=builder /build/api/app/services /app/api/app/services
-COPY --chown=65532:65532 --from=builder /build/api/app/routes          /app/api/app/routes
+COPY --chown=65532:65532 --from=builder /build/api/app/            /app/api/app/
+COPY --chown=65532:65532 --from=builder /build/api/app/middleware/ /app/api/app/middleware/
+COPY --chown=65532:65532 --from=builder /build/api/app/utils/ /app/api/app/utils/
+COPY --chown=65532:65532 --from=builder /build/api/app/schemas/ /app/api/app/schemas
+COPY --chown=65532:65532 --from=builder /build/api/app/routers/  /app/api/app/routers/
+COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes
+COPY --chown=65532:65532 --from=builder /build/api/app/models/ /app/api/app/models/
+COPY --chown=65532:65532 --from=builder /build/api/app/database/ /app/api/app/database/
+COPY --chown=65532:65532 --from=builder /build/api/app/services/ /app/api/app/services/
+COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 
 COPY --chown=65532:65532 --from=builder /build/sessions/__init__.py /app/sessions/__init__.py
-COPY --chown=65532:65532 --from=builder /build/sessions/pipeline /app/sessions/pipeline
-COPY --chown=65532:65532 --from=builder /build/sessions/api /app/sessions/api
-COPY --chown=65532:65532 --from=builder /build/sessions/core /app/sessions/core
-COPY --chown=65532:65532 --from=builder /build/sessions/processor /app/sessions/processor
-COPY --chown=65532:65532 --from=builder /build/sessions/api/integration /app/sessions/api/integration
+COPY --chown=65532:65532 --from=builder /build/sessions/pipeline/ /app/sessions/pipeline/
+COPY --chown=65532:65532 --from=builder /build/sessions/api/ /app/sessions/api/
+COPY --chown=65532:65532 --from=builder /build/sessions/core/ /app/sessions/core/  
+COPY --chown=65532:65532 --from=builder /build/sessions/processor/ /app/sessions/processor/
+COPY --chown=65532:65532 --from=builder /build/sessions/api/integration/ /app/sessions/api/integration/
 
 # api level directories
-COPY --chown=65532:65532 --from=builder /build/services            /app/services
-COPY --chown=65532:65532 --from=builder /build/database            /app/database
-COPY --chown=65532:65532 --from=builder /build/models              /app/models
-COPY --chown=65532:65532 --from=builder /build/config              /app/config
-COPY --chown=65532:65532 --from=builder /build/endpoints           /app/endpoints
+COPY --chown=65532:65532 --from=builder /build/services/            /app/services/
+COPY --chown=65532:65532 --from=builder /build/database/            /app/database/
+COPY --chown=65532:65532 --from=builder /build/models/              /app/models/
+COPY --chown=65532:65532 --from=builder /build/config/              /app/config/
+COPY --chown=65532:65532 --from=builder /build/endpoints/           /app/endpoints/
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
@@ -354,7 +346,7 @@ RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-pipeline', 8080)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('api-gateway', 8080)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

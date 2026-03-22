@@ -24,7 +24,6 @@ required_files = [
     base_dir / 'api/app/database/__init__.py',
     base_dir / 'api/app/scripts/__init__.py',
     base_dir / 'api/app/security/__init__.py',
-    base_dir / 'config/__init__.py',
     base_dir / 'utils/__init__.py',
     base_dir / 'models/__init__.py',
     base_dir / 'services/__init__.py',
