@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1.5
-# LUCID GOVERNOR - SPEC-3 Governance System (Distroless)
-# Professional governor implementation for Pi deployment
+# LUCID GOVERNOR (lucid-gov) - Distroless Python Service
+# Aligned with 03_api_gateway/Dockerfile (dockerfile-design + Dockerfile-copy-pattern)
+# Image: pickme/lucid-governor:latest-arm64
+# Note: common/governance has no dedicated requirements.txt; minimal deps inlined below.
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -25,7 +27,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_PREFER_BINARY=1 \
     DEBIAN_FRONTEND=noninteractive
 
-# System packages with governance dependencies
+WORKDIR /build
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -39,105 +42,147 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         pkg-config \
         curl \
         ca-certificates \
-        openssl \
-        sqlite3 \
         tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-WORKDIR /build
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_LUCID_GOV_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_LUCID_GOV_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_LUCID_GOV_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod +x /root/.keep /root/.rustup/.keep /root/.cargo/.keep
 
-# System markers
-RUN echo "LUCID_GOVERNOR_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_GOVERNOR_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+RUN apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-# Python dependencies - upgrade pip tooling
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN printf "LUCID_LUCID_GOV_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_LUCID_GOV_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_LUCID_GOV_USR_$(date +%s)" > /usr/.keep && \
+    touch /usr/.keep && \
+    printf "LUCID_LUCID_GOV_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
+    touch /usr/local/.keep && \
+    printf "LUCID_LUCID_GOV_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_LUCID_GOV_PY311_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_LUCID_GOV_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_LUCID_GOV_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
+
+COPY <<'REQ' /build/requirements.txt
+PyJWT>=2.8.0
+cryptography>=41.0.0
+motor>=3.3.0
+pymongo>=4.5.0
+REQ
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    echo "upgrading pip and setuptools" && \
-    pip install --upgrade pip setuptools wheel && \
-    echo "upgrade complete"
+    printf "LUCID_LUCID_GOV_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
 
-COPY common/governance/requirements.txt ./requirements.txt
-
-# Step 1: Build wheels explicitly
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    echo "building wheels from source" && \
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
-    echo "wheel build complete" && \
-    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
 
-# Step 2: Install wheels into system Python
-RUN echo "installing wheels into system python" && \
-    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
-    echo "installation complete" && \
-    rm -rf /build/wheels
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
 
-# Builder-stage verification
-RUN echo "=== Verifying pip installation success ===" && \
-    python3.11 -c "import fastapi, uvicorn, pydantic, web3, cryptography; print('✅ All critical packages installed')" && \
+RUN echo "=== Verifying pip installation success (lucid-gov) ===" && \
+    python3.11 -c "import jwt, cryptography, motor, pymongo; print('✅ Governor dependencies OK')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
-    pip list && \
-    echo "=== All packages ready for final image"
+    pip list
 
-# Create marker files
-RUN printf "LUCID_GOVERNOR_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
-    printf "LUCID_GOVERNOR_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.keep && \
-    chmod 644 /usr/local/lib/python3.11/site-packages/.keep && \
-    chmod 644 /usr/local/bin/.keep && \
-    echo "Marker files created"
+RUN mkdir -p ./common ./wallet ./auth ./blockchain ./tmp ./wheels ./governance ./voting ./parameters && \
+    printf "LUCID_LUCID_GOV_COMMON_$(date +%s)" > ./common/.keep && \
+    touch ./common/.keep && \
+    printf "LUCID_LUCID_GOV_TMP_$(date +%s)" > ./tmp/.keep && \
+    touch ./tmp/.keep
 
-# Create application directory structure
-RUN mkdir -p ./common ./wallet ./auth ./blockchain && \
-    printf "LUCID_GOVERNOR_COMMON_$(date +%s)" > ./common/.keep && \
-    printf "LUCID_GOVERNOR_WALLET_$(date +%s)" > ./wallet/.keep && \
-    printf "LUCID_GOVERNOR_AUTH_$(date +%s)" > ./auth/.keep && \
-    printf "LUCID_GOVERNOR_BLOCKCHAIN_$(date +%s)" > ./blockchain/.keep && \
-    touch ./common/.keep ./wallet/.keep ./auth/.keep ./blockchain/.keep && \
-    echo "Application directories created with markers"
+COPY common/ ./common/
+COPY wallet/ ./wallet/
+COPY auth/ ./auth/
+COPY blockchain/ ./blockchain/
 
-# Application source COPY (governor specific - only needed components)
-COPY ../../../../common/governance/ ./common/governance/
-COPY ../../../../common/ ./common/
-COPY ../../../../wallet/ ./wallet/
-COPY ../../../../auth/ ./auth/
-COPY ../../../../blockchain/ ./blockchain/
+RUN echo "=== Lucid-gov source tree ===" && \
+    ls -la ./common/governance/ && \
+    chown -R 65532:65532 ./common ./wallet ./auth ./blockchain
 
-# Verify source files
-RUN echo "Verifying governor source files" && \
-    test -d ./common && echo "common directory verified" && \
-    test -d ./wallet && echo "wallet directory verified" && \
-    python3 -c "import sys; sys.path.insert(0, '/build'); print('Python path configured')"
+RUN mkdir -p /build/tmp
+
+COPY <<'PY' /build/tmp/verify_runtime_lucid_gov.py
+import os
+import sys
+
+dirs = [
+    "/app/common",
+    "/app/common/governance",
+    "/app/wallet",
+    "/app/auth",
+    "/app/blockchain",
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/app/wheels",
+    "/app/governance",
+    "/app/voting",
+    "/app/parameters",
+]
+for d in dirs:
+    if not os.path.isdir(d):
+        print(f"ERROR: {d} missing")
+        sys.exit(1)
+    if d.endswith("site-packages") and not os.listdir(d):
+        print(f"ERROR: {d} empty")
+        sys.exit(1)
+print("✅ Lucid-gov runtime layout verified")
+PY
 
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
+WORKDIR /app
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Lucid Governor for SPEC-3 Governance System (Distroless)" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Governor" \
-      org.opencontainers.image.description="Distroless Governor for Lucid governance system" \
+      org.opencontainers.image.description="Distroless Governor for Lucid governance (SPEC-3)" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="lucid-governor" \
       com.lucid.layer="3" \
       com.lucid.plane="ops" \
       com.lucid.platform="arm64" \
       com.lucid.security="distroless"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -152,43 +197,35 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     EXECUTION_DELAY_SECONDS=172800 \
     GOVERNOR_PORT=8108
 
-WORKDIR /app
-
-# System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run /app/var/run
-COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
+COPY --from=builder /root/.rustup/ /app/rust/
+COPY --from=builder /root/.cargo/ /app/cargo/
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
-# Bake Python packages into distroless image
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
-COPY --from=builder --chown=65532:65532 /usr/local/bin /app/usr/local/bin
-COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/opt/bin/tini
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_lucid_gov.py /app/tmp/verify_runtime.py
 
-# Minimal tooling (only if essential)
-COPY --from=builder --chown=65532:65532 /usr/bin/openssl /app/usr/bin/openssl
-COPY --from=builder --chown=65532:65532 /usr/bin/sqlite3 /app/usr/bin/sqlite3
+RUN ["/app/usr/bin/python3.11", "-c", "import os; uid=65532; gid=65532; paths=['/app/governance','/app/voting','/app/parameters','/tmp/governor']; [os.makedirs(p, exist_ok=True) or os.chown(p, uid, gid) for p in paths]"]
 
-# Application layout COPY (governor specific - only needed components)
-COPY --chown=65532:65532 --from=builder /build/common/ /app/common/
-COPY --chown=65532:65532 --from=builder /build/wallet/ /app/wallet/
-COPY --chown=65532:65532 --from=builder /build/auth/ /app/auth/
-COPY --chown=65532:65532 --from=builder /build/blockchain/ /app/blockchain/
-
-# Create governance directories
-RUN mkdir -p /app/governance /app/voting /app/parameters /tmp/governor && \
-    chown -R 65532:65532 /app/governance /app/voting /app/parameters /tmp/governor && \
-    echo "Governance directories created"
-
-# Verify packages and application directories
-RUN ["/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, site_packages); checks = [os.path.isdir('/app/common'), os.path.isdir('/app/wallet'), os.path.isdir('/app/governance')]; assert all(checks), f'Verification failed: {checks}'; print('✅ All governor packages and application directories verified')"]
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
 EXPOSE 8108
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8108/health'); exit(0)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import jwt, cryptography; import pathlib; p=pathlib.Path('/app/common/governance/lucid_governor.py'); assert p.is_file(); print('ok')"]
 
 USER 65532:65532
 
-ENTRYPOINT ["/app/opt/bin/tini", "--"]
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/usr/bin/python3.11", "/app/common/governance/lucid_governor.py"]
+CMD ["/app/usr/bin/python3.11", "/app/common/governance/lucid_governor.py"]

@@ -228,13 +228,13 @@ COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
-EXPOSE 8080
+EXPOSE 8091
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline:8080/health', timeout=2); exit(0)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline:8091/health', timeout=2); exit(0)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.pipeline.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.sessions.pipeline.main:app", "--host", "session-pipeline", "--port", "8091"]
