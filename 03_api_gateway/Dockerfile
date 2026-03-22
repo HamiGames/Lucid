@@ -120,7 +120,7 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     mkdir -p ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware && \
     mkdir -p ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts && \
     mkdir -p ./api/app/security ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
-    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts && \
+    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts /tmp ./tmp && \
     printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
     touch ./api/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
@@ -157,7 +157,12 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./common/.keep && \
     printf "LUCID_API_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
     touch ./common/tor/.keep && \
-    touch ./common/.keep ./common/tor/.keep && \
+    printf "LUCID_API_GATEWAY_TMP_$(date +%s)" > ./tmp/.keep && \
+    touch ./tmp/.keep && \
+    printf "LUCID_API_GATEWAY_TMP_$(date +%s)" > /tmp/.keep && \
+    touch /tmp/.keep && \
+    echo "tmp/.keep, /tmp/.keep created" && \
+    touch ./common/.keep ./common/tor/.keep ./tmp/.keep /tmp/.keep && \
     echo "common/.keep, common/tor/.keep created" && \
     echo "all container directories created" && \
     printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep && \
@@ -201,6 +206,8 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor 
 
 
     # Application source COPY (only directories that exist with content)
+COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
+COPY verify_files.py /tmp/verify_files.py
 COPY common/tor/ ./common/tor/
 COPY common/ ./common/
 COPY 03_api_gateway/api/__init__.py ./api/__init__.py
@@ -249,48 +256,6 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/common/ || echo "common/ missing" && \
     ls -la /build/sessions/ || echo "sessions/ missing"
 
-RUN python3.11 -c "
-    import os
-    import sys
-    import pathlib
-
-    build_dir = pathlib.Path('/build')
-    alt_dir = pathlib.Path('./')
-    if not build_dir.exists():
-        base_dir = alt_dir
-        print(f'Using alternative directory: {base_dir}')
-    else:
-        base_dir = build_dir
-        print(f'Using build directory: {base_dir}')
-    required_files = [
-        base_dir/ 'api/app/main.py',
-        base_dir/ 'api/app/middleware/__init__.py',
-        base_dir/ 'api/app/utils/__init__.py',
-        base_dir/ 'api/app/schemas/__init__.py',
-        base_dir/ 'api/app/routers/__init__.py',
-        base_dir/ 'api/app/routes/__init__.py',
-        base_dir/ 'api/app/services/__init__.py',
-        base_dir/ 'api/app/models/__init__.py',
-        base_dir/ 'api/app/database/__init__.py',
-        base_dir/ 'api/app/scripts/__init__.py',
-        base_dir/ 'api/app/security/__init__.py',
-        base_dir/ 'config/__init__.py',
-        base_dir/ 'utils/__init__.py',
-        base_dir/ 'models/__init__.py',
-        base_dir/ 'services/__init__.py',
-        base_dir/ 'database/__init__.py',
-        base_dir/ 'endpoints/__init__.py',
-        base_dir/ 'common/__init__.py',
-        base_dir/ 'sessions/__init__.py'
-    ]
-    
-    missing = [f for f in required_files if not os.path.isfile(f)]
-    if missing:
-        print(f'ERROR: Missing files: {missing}')
-        sys.exit(1)
-    else:
-        print('✅ All required files present')
-    "
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
