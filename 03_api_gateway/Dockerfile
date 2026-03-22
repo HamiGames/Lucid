@@ -313,20 +313,9 @@ COPY 03_api_gateway/utils/ ./utils/
 # copy .endpoints
 COPY 03_api_gateway/endpoints/ ./endpoints/
 COPY 03_api_gateway/config/ ./config/
-
-RUN echo "=== Checking /build contents ===" && \
-    ls -la /build/ && \
-    echo "=== Checking specific paths ===" && \
-    ls -la ./* && \
-    ls -la ./*/* && \
-    ls -la ./*/*/* && \
-    ls -la ./*/*/*/* && \
-    ls -la ./*/*/*/*/* && \
-    echo "build directory verified" || echo "build directory not found" && exit 1
     
 RUN python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
     echo "All files verified successfully"
-
 
 # Stage 2 – Runtime (Distroless)
 

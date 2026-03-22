@@ -89,8 +89,6 @@ COPY 02_network_security/tor/tor-health.sh ./tor/tor-health.sh
 COPY 02_network_security/tor/tor-show-onion.sh ./tor/tor-show-onion.sh
 COPY config/tor/torrc ./tor/torrc
 
-
-
 COPY 02_network_security/tor/scripts/create_ephemeral_onion.sh ./tor/scripts/create_ephemeral_onion.sh
 COPY 02_network_security/tor/scripts/start_tor.sh ./tor/scripts/start_tor.sh
 COPY 02_network_security/tor/scripts/check_tor_bootstrap.sh ./tor/scripts/check_tor_bootstrap.sh
@@ -212,8 +210,8 @@ ENV TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
     TOR_DATA_DIR=/var/lib/tor \
     PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:/app/etc:/app/usr/share:$PATH \
-    LD_LIBRARY_PATH=/app/lib:/app/usr/lib:/app/var/lib:/app/usr/local/lib:$LD_LIBRARY_PATH
-    TOR_PROXY_SERVICE=tor-proxy 
+    LD_LIBRARY_PATH=/app/lib:/app/usr/lib:/app/var/lib:/app/usr/local/lib:$LD_LIBRARY_PATH \
+    TOR_PROXY_SERVICE=tor-proxy \
 
 # Healthcheck uses /bin/bash copied above
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
@@ -224,6 +222,7 @@ EXPOSE 9050 9051 8888
 
 # Run as debian-tor (present from builder /etc/passwd)
 USER debian-tor
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
 
 # NOTE:

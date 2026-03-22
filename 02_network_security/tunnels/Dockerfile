@@ -33,28 +33,41 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc \
+      g++ \
+      libffi-dev \
+      libssl-dev \
+      pkg-config \
+      curl \
+      python3-dev \
+      python3-pip \
+      python3-setuptools \
+      python3-wheel \
       ca-certificates \
       tini \
       bash \
-      curl \
       jq \
       netcat-openbsd \
       socat \
       xxd \
+      rustc \
+      cargo \
+      busybox \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tunnel-nonroot || true
 
-WORKDIR /app
+WORKDIR /build
 
 # Create application and data directories with proper ownership
 # Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
 RUN mkdir -p /app/scripts /var/lib/tunnel /var/log/tunnel /run \
-    && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)" > /app/scripts/.lucid-keep \
-    && echo "LUCID_TUNNEL_TOOLS_LIB_DIRECTORY_$(date +%s)" > /var/lib/tunnel/.lucid-keep \
-    && echo "LUCID_TUNNEL_TOOLS_LOG_DIRECTORY_$(date +%s)" > /var/log/tunnel/.lucid-keep \
-    && echo "LUCID_TUNNEL_TOOLS_RUN_DIRECTORY_$(date +%s)" > /run/.lucid-keep \
+    && echo "LUCID_TUNNEL_TOOLS_SCRIPTS_DIRECTORY_$(date +%s)" > /app/scripts/.keep \
+    && echo "LUCID_TUNNEL_TOOLS_LIB_DIRECTORY_$(date +%s)" > /var/lib/tunnel/.keep \
+    && echo "LUCID_TUNNEL_TOOLS_LOG_DIRECTORY_$(date +%s)" > /var/log/tunnel/.keep \
+    && echo "LUCID_TUNNEL_TOOLS_RUN_DIRECTORY_$(date +%s)" > /run/.keep \
     && chown -R 65532:65532 /app /var/lib/tunnel /var/log/tunnel /run /opt
 
 # Copy tunnel application files
