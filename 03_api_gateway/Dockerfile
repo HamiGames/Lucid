@@ -142,7 +142,7 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     mkdir -p ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware && \
     mkdir -p ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts && \
     mkdir -p ./api/app/security ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
-    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts ./tmp ./rust && \
+    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts ./tmp ./rust ./cargo && \
     printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
     touch ./api/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
@@ -205,10 +205,11 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./models/.keep && \
     printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep && \
     touch ./database/.keep && \
+    printf "LUCID_API_GATEWAY_CARGO_$(date +%s)" > ./cargo/.keep && \
+    touch ./cargo/.keep && \
     echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created" && \
     echo "ALL Container directories created"
     
-
 # Application source COPY (only directories that exist with content)
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 RUN echo "=== Checking if verify_files.py was copied ===" && \
@@ -327,41 +328,46 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin:$PATH \
     API_GATEWAY_PORT=8080 \
     API_GATEWAY_HOST=0.0.0.0
 
+
+RUN install -d -o 65532 -g 65532 -m  755  /app/usr /app/usr/local /app/usr/bin /app/usr/sbin /app/usr/local/bin /app/usr/local/sbin /app/usr/local/lib /app/usr/local/lib/python3.11 /app/usr/local/lib/python3.11/site-packages
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /root/.rustup/        /app/rust/
-COPY --from=builder --chown=65532:65532 /root/.cargo/        /app/rust/
-COPY --from=builder --chown=65532:65532 /var/run/          /app/var/run/
-COPY --from=builder --chown=65532:65532 /var/lib/           /app/var/lib/
-COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/   /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder --chown=65532:65532 /usr/local/bin/              /app/usr/local/bin/
-COPY --from=builder --chown=65532:65532 /usr/bin/tini/               /app/usr/bin/tini/
-COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
+COPY --from=builder /root/.rustup/        /app/rust/
+COPY --from=builder /root/.cargo/        /app/cargo/
+COPY --from=builder /var/run/          /app/var/run/
+COPY --from=builder /var/lib/           /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/   /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/              /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+
+
+
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder --chown=65532:65532 /build/wheels/         /app/build/wheels/
-COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
-COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
+COPY --from=builder /build/wheels/         /app/build/wheels/
+COPY --from=builder /build/common/__init__.py         /app/common/__init__.py
+COPY --from=builder /build/common/tor/         /app/common/tor/
 #kubernetes configmaps
-COPY --chown=65532:65532 --from=builder /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
-COPY --chown=65532:65532 --from=builder /build/api/app/            /app/api/app/
-COPY --chown=65532:65532 --from=builder /build/api/app/middleware/ /app/api/app/middleware/
-COPY --chown=65532:65532 --from=builder /build/api/app/utils/ /app/api/app/utils/
-COPY --chown=65532:65532 --from=builder /build/api/app/schemas/ /app/api/app/schemas
-COPY --chown=65532:65532 --from=builder /build/api/app/routers/  /app/api/app/routers/
-COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
-COPY --chown=65532:65532 --from=builder /build/api/app/models/ /app/api/app/models/
-COPY --chown=65532:65532 --from=builder /build/api/app/database/ /app/api/app/database/
-COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
+COPY --from=builder /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder /build/api/app/            /app/api/app/
+COPY --from=builder /build/api/app/middleware/ /app/api/app/middleware/
+COPY --from=builder /build/api/app/utils/ /app/api/app/utils/
+COPY --from=builder /build/api/app/schemas/ /app/api/app/schemas
+COPY --from=builder /build/api/app/routers/  /app/api/app/routers/
+COPY --from=builder /build/api/app/routes/          /app/api/app/routes/
+COPY --from=builder /build/api/app/models/ /app/api/app/models/
+COPY --from=builder /build/api/app/database/ /app/api/app/database/
+COPY --from=builder /build/api/app/routes/          /app/api/app/routes/
 
 # api level directories
-COPY --chown=65532:65532 --from=builder /build/services/            /app/services/
-COPY --chown=65532:65532 --from=builder /build/database/            /app/database/
-COPY --chown=65532:65532 --from=builder /build/models/              /app/models/
-COPY --chown=65532:65532 --from=builder /build/config/              /app/config/
-COPY --chown=65532:65532 --from=builder /build/endpoints/           /app/endpoints/
+COPY --from=builder /build/services/            /app/services/
+COPY --from=builder /build/database/            /app/database/
+COPY --from=builder /build/models/              /app/models/
+COPY --from=builder /build/config/              /app/config/
+COPY --from=builder /build/endpoints/           /app/endpoints/
+
 
 
 
