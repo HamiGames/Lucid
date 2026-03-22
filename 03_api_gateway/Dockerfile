@@ -366,15 +366,9 @@ COPY --from=builder /build/models/              /app/models/
 COPY --from=builder /build/config/              /app/config/
 COPY --from=builder /build/endpoints/           /app/endpoints/
 
-RUN echo "$(ls -la /app/* )" && \
-    echo "$(ls -la /app/api/* )" && \
-    echo "$(ls -la /app/api/app/* )" && \
-    echo "$(ls -la /app/api/app/db/* )" && \
-    echo "$(ls -la /app/api/app/database/* )" && \
-    echo "$(ls -la /app/api/app/utils/* )" && \
-    echo "$(ls -la /app/api/app/models/* )" && \
-    echo "$(ls -la /app/api/app/routes/* )" && \
-    echo "$(ls -la /app/api/app/schemas/* )"
+RUN echo "=== Checking if all files were copied ===" && \
+    test -f /app/api/app/main.py && \
+    echo "api/app/main.py was copied"
 
 
 EXPOSE 8080
