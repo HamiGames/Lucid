@@ -216,8 +216,10 @@ RUN echo "=== Checking if verify_files.py was copied ===" && \
     ls -la ./tmp/* && echo "(ls -la ./tmp/* || echo "./tmp/ directory not found")" && \
     ls -la /build/tmp/* && echo "(ls -la /build/tmp/* || echo "/build/tmp/ directory not found")" && \
     echo "verify_files.py was copied"
+COPY 03_api_gateway/verify_runtime.py ./tmp/verify_runtime.py
 
-COPY common/ ./common/
+
+COPY common/__init__.py ./common/__init__.py
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
     ls -la ./common/* && echo "(ls -la ./common/* || echo "./common/ directory not found")" && \
     ls -la /build/common/* && echo "(ls -la /build/common/* || echo "/build/common/ directory not found")" && \
@@ -326,7 +328,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     API_GATEWAY_PORT=8080 \
-    API_GATEWAY_HOST=0.0.0.0
+    API_GATEWAY_HOST=api-gateway
 
 # System directories & certificates
 COPY --from=builder /root/.rustup/        /app/rust/
@@ -344,31 +346,36 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder /build/wheels/         /app/build/wheels/
-COPY --from=builder /build/common/__init__.py         /app/common/__init__.py
-COPY --from=builder /build/common/tor/         /app/common/tor/
+COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
+COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
 #kubernetes configmaps
-COPY --from=builder /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
-COPY --from=builder /build/api/app/            /app/api/app/
-COPY --from=builder /build/api/app/middleware/ /app/api/app/middleware/
-COPY --from=builder /build/api/app/utils/ /app/api/app/utils/
-COPY --from=builder /build/api/app/schemas/ /app/api/app/schemas
-COPY --from=builder /build/api/app/routers/  /app/api/app/routers/
-COPY --from=builder /build/api/app/routes/          /app/api/app/routes/
-COPY --from=builder /build/api/app/models/ /app/api/app/models/
-COPY --from=builder /build/api/app/database/ /app/api/app/database/
-COPY --from=builder /build/api/app/routes/          /app/api/app/routes/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/api/app/            /app/api/app/
+COPY --from=builder --chown=65532:65532 /build/api/app/middleware/ /app/api/app/middleware/
+COPY --from=builder --chown=65532:65532 /build/api/app/utils/ /app/api/app/utils/
+COPY --from=builder --chown=65532:65532 /build/api/app/schemas/ /app/api/app/schemas
+COPY --from=builder --chown=65532:65532 /build/api/app/models/ /app/api/app/models/
+COPY --from=builder --chown=65532:65532 /build/api/app/services/ /app/api/app/services/
+COPY --from=builder --chown=65532:65532 /build/api/app/db/ /app/api/app/db/
+COPY --from=builder --chown=65532:65532 /build/api/app/db/models/ /app/api/app/db/models/
+
+COPY --from=builder --chown=65532:65532 /build/api/app/routers/  /app/api/app/routers/
+COPY --from=builder --chown=65532:65532 /build/api/app/database/ /app/api/app/database/
+COPY --from=builder --chown=65532:65532 /build/api/app/routes/          /app/api/app/routes/
+
 
 # api level directories
-COPY --from=builder /build/services/            /app/services/
-COPY --from=builder /build/database/            /app/database/
-COPY --from=builder /build/models/              /app/models/
-COPY --from=builder /build/config/              /app/config/
-COPY --from=builder /build/endpoints/           /app/endpoints/
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+COPY --from=builder --chown=65532:65532 /build/services/            /app/services/
+COPY --from=builder --chown=65532:65532 /build/database/            /app/database/
+COPY --from=builder --chown=65532:65532 /build/models/              /app/models/
+COPY --from=builder --chown=65532:65532 /build/config/              /app/config/
+COPY --from=builder --chown=65532:65532 /build/endpoints/           /app/endpoints/
 
-RUN echo "=== Checking if all files were copied ===" && \
-    test -f /app/api/app/main.py && \
-    echo "api/app/main.py was copied"
+RUN python3.11 /app/tmp/verify_runtime.py
+
+RUN rm -f /app/tmp/verify_runtime.py
 
 
 EXPOSE 8080
@@ -381,4 +388,4 @@ USER 65532:65532
 # tini as PID 1: proper signal handling & zombie reaping (aligned with tunnel-tools)
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.api.app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.api.app.main:app", "--host", "api-gateway", "--port", "8080"]
