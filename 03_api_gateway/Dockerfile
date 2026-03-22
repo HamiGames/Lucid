@@ -222,23 +222,23 @@ RUN echo "=== Checking if verify_files.py was copied ===" && \
 COPY common/ ./common/
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
     ls -la ./common/* && \
-    head -5 ./common/* && \
+    ls -d ./common/*/ && \
     chown -R 65532:65532 ./common/ && \
-    chmod +x ./common/*.py && \
+    chmod +x ./common/* && \
     echo "common/ was copied"
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
     ls -la ./common/tor/* && \
-    head -5 ./common/tor/* && \
+    ls -d ./common/tor/*/ && \
     chown -R 65532:65532 ./common/tor/ && \
-    chmod +x ./common/tor/*.py && \
+    chmod +x ./common/tor/* && \
     echo "common/tor/ was copied"
 
 COPY 03_api_gateway/api/ ./api/
 RUN echo "=== Checking if api/ was copied ===" && \
     ls -la ./api/* && \
-    head -5 ./api/* && \
+    ls -d ./api/*/ && \
     chown -R 65532:65532 ./api/ && \
     chmod +x ./api/*.py && \
     echo "api/ was copied"
@@ -246,7 +246,6 @@ RUN echo "=== Checking if api/ was copied ===" && \
 COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
 RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
     ls -la ./infrastructure/kubernetes/* && \
-    head -5 ./infrastructure/kubernetes/* && \
     chown -R 65532:65532 ./infrastructure/kubernetes/ && \
     chmod +x ./infrastructure/kubernetes/*.yaml && \
     echo "infrastructure/kubernetes/ was copied"
@@ -255,13 +254,25 @@ RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/* && \
-    head -5 ./api/app/* && \
     chown -R 65532:65532 ./api/app/ && \
     chmod +x ./api/app/*.py && \
     echo "api/app/ was copied"
 
 COPY 03_api_gateway/api/app/db/ ./api/app/db/
+RUN echo "=== Checking if api/app/db/ was copied ===" && \
+    ls -la ./api/app/db/*.py && \
+    ls -d ./api/app/db/models/*/ && \
+    chown -R 65532:65532 ./api/app/db/ && \
+    chmod +x ./api/app/db/*.py && \
+    echo "api/app/db/ was copied"
+
 COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
+RUN echo "=== Checking if api/app/db/models/ was copied ===" && \
+    ls -la ./api/app/db/models/*.py && \
+    chown -R 65532:65532 ./api/app/db/models/ && \
+    chmod +x ./api/app/db/models/*.py && \
+    echo "api/app/db/models/ was copied"
+
 COPY 03_api_gateway/api/app/database/ ./api/app/database/
 COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
 COPY 03_api_gateway/api/app/routers/ ./api/app/routers/

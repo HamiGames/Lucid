@@ -12,7 +12,7 @@ ARG BUILDPLATFORM=linux/amd64
 # STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
 # =============================================================================
 FROM debian:12-slim AS tor-builder
-
+WORKDIR /build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
@@ -34,22 +34,47 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       curl \
       jq \
       adduser \
+      openssl \
+      ssl-cert \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tor-nonroot || true
 
 # Create runtime directories with correct ownership (including /run to avoid RUN in distroless)
-RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
- && install -d -o debian-tor -g debian-tor -m 755 /run \
- && install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion \
- && install -d -o root       -g root       -m 755 /usr/local/bin \
- && install -d -o root       -g root       -m 755 /etc/tor
-
-# =============================================================================
+RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor && \
+    install -d -o debian-tor -g debian-tor -m 755 /run && \
+    install -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion && \
+    install -d -o 65532       -g 65532       -m 755 /usr/local/bin && \
+    install -d -o 65532       -g 65532       -m 755 /etc/tor && \
+    install -d -o 65532 -g 65532 -m  755  /usr/local/share/ca-certificates && \
+    install -d -o 65532 -g 65532 -m  755  /usr/local/sbin && \
+    install -d -o 65532 -g 65532 -m  755  /usr/local/lib && \
+    install -d -o 65532 -g 65532 -m  755  /usr/local/bin && \
+    install -d -o 65532 -g 65532 -m  755  /usr/bin && \
+    install -d -o 65532 -g 65532 -m  755  /usr/sbin && \
+    install -d -o 65532 -g 65532 -m  755  /usr/share/tor && \
+    install -d -o 65532 -g 65532 -m  755  /etc/ssl/certs && \
+    install -d -o 65532 -g 65532 -m  755  /etc/tor/tunnels && \
+    install -d -o 65532 -g 65532 -m  755  /tmp/lucid/tor && \
+    install -d -o 65532 -g 65532 -m  755  /app/tor && \
+    install -d -o 65532 -g 65532 -m  755  /run/lucid/tor && \
+    install -d -o 65532 -g 65532 -m  755  /run/lucid/onion && \
+    install -d -o 65532 -g 65532 -m  755  /run/lucid/tor/lucid && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_admin && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_vm && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_node && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_blockchain && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_governance && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_payment && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_session && \
+    install -d -o 65532 -g 65532 -m  755  /var/lib/tor/lucid_rdp 
+    
+#=============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
 # =============================================================================
 FROM gcr.io/distroless/base-debian12:latest
+WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -77,22 +102,22 @@ LABEL maintainer="Lucid Development Team" \
 ENV PATH=/usr/local/bin:/usr/bin:/bin
 
 # Core binaries and helpers
-COPY --from=tor-builder /usr/bin/tor         /usr/bin/tor
-COPY --from=tor-builder /usr/bin/obfs4proxy  /usr/bin/obfs4proxy
-COPY --from=tor-builder /usr/bin/tini        /usr/bin/tini
-COPY --from=tor-builder /usr/sbin/gosu       /usr/sbin/gosu
-COPY --from=tor-builder /bin/bash            /bin/bash
-COPY --from=tor-builder /bin/busybox         /bin/busybox
-COPY --from=tor-builder /bin/mkdir           /bin/mkdir
-COPY --from=tor-builder /bin/sleep           /bin/sleep
-COPY --from=tor-builder /bin/tail            /bin/tail
-COPY --from=tor-builder /bin/chmod           /bin/chmod
-COPY --from=tor-builder /bin/chown           /bin/chown
-COPY --from=tor-builder /bin/rm              /bin/rm
-COPY --from=tor-builder /usr/bin/nc          /usr/bin/nc
-COPY --from=tor-builder /usr/bin/xxd         /usr/bin/xxd
-COPY --from=tor-builder /usr/bin/curl        /usr/bin/curl
-COPY --from=tor-builder /usr/bin/jq          /usr/bin/jq
+COPY --from=tor-builder /build/usr/bin/tor/         /app/usr/bin/tor/
+COPY --from=tor-builder /build/usr/bin/obfs4proxy/*  /app/usr/bin/obfs4proxy/
+COPY --from=tor-builder /build/usr/bin/tini/*        /app/usr/bin/tini/
+COPY --from=tor-builder /build/usr/sbin/gosu/*       /app/usr/sbin/gosu/
+COPY --from=tor-builder /build/bin/bash/*            /app/bin/bash/
+COPY --from=tor-builder /build/bin/busybox/*         /app/bin/busybox/
+COPY --from=tor-builder /build/bin/mkdir/*           /app/bin/mkdir/
+COPY --from=tor-builder /build/bin/sleep/*           /app/bin/sleep/
+COPY --from=tor-builder /build/bin/tail/*            /app/bin/tail/
+COPY --from=tor-builder /build/bin/chmod/*           /app/bin/chmod/
+COPY --from=tor-builder /build/bin/chown/*           /app/bin/chown/
+COPY --from=tor-builder /build/bin/rm/*              /app/bin/rm/
+COPY --from=tor-builder /build/usr/bin/nc/*          /app/usr/bin/nc/
+COPY --from=tor-builder /build/usr/bin/xxd/*         /app/usr/bin/xxd/
+COPY --from=tor-builder /build/usr/bin/curl/*        /app/usr/bin/curl/
+COPY --from=tor-builder /build/usr/bin/jq/*          /app/usr/bin/jq/
 
 # Required libraries (include systemd/selinux/cap and loader)
 COPY --from=tor-builder /lib/*/libc.so.6        /lib/
