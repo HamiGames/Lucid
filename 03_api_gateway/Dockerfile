@@ -296,7 +296,7 @@ COPY 03_api_gateway/config/ ./config/
 RUN echo "## changing permission on verify_files.py ##" && \
     chmod +x ./tmp/verify_files.py && \
     echo "verify_files.py permission changed" && \
-    python3.11 ./tmp/verify_files.py && \
+    /usr/bin/python3.11 ./tmp/verify_files.py && \
     echo "All files verified successfully"
 
 # Stage 2 – Runtime (Distroless)
@@ -373,9 +373,9 @@ COPY --from=builder --chown=65532:65532 /build/models/              /app/models/
 COPY --from=builder --chown=65532:65532 /build/config/              /app/config/
 COPY --from=builder --chown=65532:65532 /build/endpoints/           /app/endpoints/
 
-RUN python3.11 ./tmp/verify_runtime.py
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
-RUN rm -f /app/tmp/verify_runtime.py
 
 
 EXPOSE 8080

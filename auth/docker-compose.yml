@@ -1,20 +1,17 @@
 # Lucid Authentication Service – Standalone Compose aligned with foundation/core stack
 
-version: "3.8"
-
 services:
-  lucid-auth-service-dev:
+  lucid-auth-service:
     image: pickme/lucid-auth-service:latest-arm64
-    container_name: lucid-auth-service-dev
+    container_name: lucid-auth-service
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.authentication
-      - ../configs/environment/.env.secrets
-      - ../configs/environment/.env.distroless
+      - ".env.foundation"
+      - ".env.authentication"
+      - ".env.secrets"
+      - ".env.distroless"
     networks:
       lucid-pi-network:
-        ipv4_address: 172.20.0.214
     ports:
       - "18089:8089"
     working_dir: /app
@@ -23,9 +20,9 @@ services:
     environment:
       - LUCID_ENV=development
       - LUCID_PLATFORM=arm64
-      - AUTH_SERVICE_HOST=lucid-auth-service-dev
+      - AUTH_SERVICE_HOST=lucid-auth-service
       - AUTH_SERVICE_PORT=8089
-      - AUTH_SERVICE_URL=http://lucid-auth-service-dev:8089
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379/0
       - API_GATEWAY_URL=http://api-gateway:8080
@@ -38,7 +35,7 @@ services:
       - LEDGER_SUPPORTED=true
       - TREZOR_SUPPORTED=true
       - KEEPKEY_SUPPORTED=true
-      - TRON_NETWORK=${TRON_NETWORK:-mainnet}
+      - TRON_NETWORK=${TRON_NETWORK}
     depends_on:
       lucid-mongodb:
         condition: service_healthy
@@ -62,7 +59,7 @@ services:
           "CMD",
           "python3",
           "-c",
-          'import urllib.request; urllib.request.urlopen("http://localhost:8089/health").read()',
+          'import urllib.request; urllib.request.urlopen("http://lucid-auth-service:8089/health").read()',
         ]
       interval: 30s
       timeout: 10s
@@ -70,15 +67,14 @@ services:
       start_period: 40s
 
   # Optional local MongoDB for dev (renamed to avoid collisions)
-  lucid-auth-mongodb-dev:
-    image: mongo:7.0
-    container_name: lucid-auth-mongodb-dev
+  lucid-auth-mongodb:
+    image: pickme/lucid-mongodb:latest-arm64
+    container_name: lucid-auth-mongodb
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
+      - ".env.foundation"
     networks:
       lucid-pi-network:
-        ipv4_address: 172.20.0.215
     ports:
       - "27018:27017"
     environment:
@@ -87,8 +83,8 @@ services:
       - MONGO_INITDB_DATABASE=lucid_auth
     command: ["mongod", "--auth", "--bind_ip_all"]
     volumes:
-      - mongodb-dev-data:/data/db
-      - ./scripts/init-mongodb.js:/docker-entrypoint-initdb.d/init.js:ro
+      - lucid-auth-mongodb-data:/data/db
+      - "/app/auth/scripts/init-mongodb.js:/docker-entrypoint-initdb.d/init.js:ro"
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"]
       interval: 30s
@@ -97,15 +93,14 @@ services:
       start_period: 40s
 
   # Optional local Redis for dev (renamed to avoid collisions)
-  lucid-auth-redis-dev:
-    image: redis:7.0-alpine
-    container_name: lucid-auth-redis-dev
+  lucid-auth-redis:
+    image: pickme/lucid-redis:latest-arm64
+    container_name: lucid-auth-redis
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
+      - .env.foundation
     networks:
       lucid-pi-network:
-        ipv4_address: 172.20.0.216
     ports:
       - "6380:6379"
     command:
@@ -113,7 +108,7 @@ services:
       - --appendonly
       - "yes"
     volumes:
-      - redis-dev-data:/data
+      - lucid-auth-redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -131,7 +126,7 @@ volumes:
     name: lucid-auth-dev-cache
   mongodb-dev-data:
     driver: local
-    name: lucid-auth-dev-mongodb-data
+    name: lucid-auth-mongodb-data
   redis-dev-data:
     driver: local
-    name: lucid-auth-dev-redis-data
+    name: lucid-auth-redis-data
