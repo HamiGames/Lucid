@@ -27,6 +27,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_PREFER_BINARY=1 \
     DEBIAN_FRONTEND=noninteractive
 
+WORKDIR /build
 # System packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -57,7 +58,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-WORKDIR /build
+
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
@@ -78,12 +79,14 @@ RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python
     touch /usr/local/lib/python3.11/site-packages/.keep && \
     printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
     touch /usr/local/bin/.keep && \
-    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
-    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /build /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /build/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
     echo " Marker files created to lock in directory structure"
 # Python dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
+    printf "LUCID_API_GATEWAY_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
     echo "upgrading pip and setuptools" && \
     pip install --upgrade pip setuptools wheel &&\
     echo "upgrade complete" && \
@@ -118,11 +121,12 @@ RUN echo "=== Verifying pip installation success ===" && \
     python3.11 -m pip show motor && \
     python3.11 -m pip show redis && \
     python3.11 -m pip show uvloop && \
+    python3.11 -m pip show uvicorn && \
+    python3.11 -m pip show fastapi && \
+    python3.11 -m pip show pydantic && \
     echo "=== Verifying site-packages directory ===" && \
-    ls -la /usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
+    ls -la ./usr/local/lib/python3.11/site-packages/ | grep -E "^d" | wc -l && \
     echo "directories found in site-packages" 
-
-# Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
 
 
 # Verify marker files exist with content (critical for distroless COPY)
@@ -262,8 +266,8 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/common/ || echo "common/ missing" && \
     ls -la /build/sessions/ || echo "sessions/ missing"
 
-RUN echo " trying alternate directory" && \
-    python3.11 -m ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
+RUN echo " verifying files in /build directory" && \
+    python3.11 -m /build/tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
     echo "/build/tmp/verify_files.py passed"
 
 
