@@ -318,18 +318,16 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="core" \
       com.lucid.security="distroless"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin:$PATH \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app/api:/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app/api:/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     API_GATEWAY_PORT=8080 \
     API_GATEWAY_HOST=0.0.0.0
 
-
-RUN install -d -o 65532 -g 65532 -m  755  /app/usr /app/usr/local /app/usr/bin /app/usr/sbin /app/usr/local/bin /app/usr/local/sbin /app/usr/local/lib /app/usr/local/lib/python3.11 /app/usr/local/lib/python3.11/site-packages
 # System directories & certificates
 COPY --from=builder /root/.rustup/        /app/rust/
 COPY --from=builder /root/.cargo/        /app/cargo/
