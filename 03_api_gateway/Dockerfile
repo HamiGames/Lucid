@@ -65,6 +65,22 @@ RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chown -R 65532:65532 /var/run /var/lib && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_API_GATEWAY_USR_$(date +%s)" > /usr/.keep && \
+    touch /usr/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
+    touch /usr/local/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
+    echo " Marker files created to lock in directory structure"
 # Python dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
@@ -107,20 +123,14 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "directories found in site-packages" 
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
-RUN printf "LUCID_API_GATEWAY_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
-    touch /usr/local/lib/python3.11/site-packages/.keep && \
-    printf "LUCID_API_GATEWAY_BINARIES_INSTALLED_$(date +%s)" > /usr/local/bin/.keep && \
-    touch /usr/local/bin/.keep && \
-    chmod 644 /usr/local/lib/python3.11/site-packages/.keep && \
-    chmod 644 /usr/local/bin/.keep && \
-    echo " Marker files created to lock in directory structure"
+
 
 # Verify marker files exist with content (critical for distroless COPY)
 RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     mkdir -p ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware && \
     mkdir -p ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts && \
     mkdir -p ./api/app/security ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
-    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts /tmp ./tmp && \
+    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts ./tmp && \
     printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
     touch ./api/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
@@ -159,9 +169,6 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./common/tor/.keep && \
     printf "LUCID_API_GATEWAY_TMP_$(date +%s)" > ./tmp/.keep && \
     touch ./tmp/.keep && \
-    printf "LUCID_API_GATEWAY_TMP_$(date +%s)" > /tmp/.keep && \
-    touch /tmp/.keep && \
-    echo "tmp/.keep, /tmp/.keep created" && \
     touch ./common/.keep ./common/tor/.keep ./tmp/.keep /tmp/.keep && \
     echo "common/.keep, common/tor/.keep created" && \
     echo "all container directories created" && \
@@ -207,7 +214,6 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor 
 
     # Application source COPY (only directories that exist with content)
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
-COPY 03_api_gateway/verify_files.py /tmp/verify_files.py
 COPY common/tor/ ./common/tor/
 COPY common/ ./common/
 COPY 03_api_gateway/api/__init__.py ./api/__init__.py
@@ -256,11 +262,8 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/common/ || echo "common/ missing" && \
     ls -la /build/sessions/ || echo "sessions/ missing"
 
-RUN python3.11 /tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
-    echo "/tmp/verify_files.py passed"
-
 RUN echo " trying alternate directory" && \
-    python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
+    python3.11 -m ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
     echo "/build/tmp/verify_files.py passed"
 
 
