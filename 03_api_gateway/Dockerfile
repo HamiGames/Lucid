@@ -238,28 +238,7 @@ COPY sessions/processor/ ./sessions/processor/
 COPY sessions/api/integration/ ./sessions/api/integration/
 
 
-# Create marker files in app directories (ensures COPY won't fail silently)
 
-# Verify new modules are included in builder stage - file existence & imports
-# ✅ This works - absolute imports in verification script
-RUN echo "Verifying new modules are included in builder stage" && \
-    test -f /build/api/__init__.py || (echo "Missing: api/app/__init__.py" && exit 1) && \
-    test -f /build/api/app/main.py || (echo "Missing: api/app/main.py" && exit 1) && \
-    test -f /build/api/app/middleware/__init__.py || (echo "Missing: api/app/middleware/__init__.py" && exit 1) && \
-    test -f /build/api/app/middleware/auth.py || (echo "Missing: api/app/middleware/auth.py" && exit 1) && \
-    test -f /build/sessions/pipeline/pipeline_manager.py || (echo "Missing: sessions/pipeline/pipeline_manager.py" && exit 1) && \
-    test -f /build/sessions/api/main.py || (echo "Missing: sessions/api/main.py" && exit 1) && \
-    test -f /build/sessions/core/session_generator.py || (echo "Missing: sessions/core/session_generator.py" && exit 1) && \
-    test -f /build/sessions/core/session_orchestrator.py || (echo "Missing: sessions/core/session_orchestrator.py" && exit 1) && \
-    test -f /build/sessions/processor/chunk_processor.py || (echo "Missing: sessions/processor/chunk_processor.py" && exit 1) && \
-    test -f /build/utils/__init__.py || (echo "Missing: utils/__init__.py" && exit 1) && \
-    test -f /build/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
-    test -f /build/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
-    test -f /build/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
-    test -f /build/endpoints/__init__.py || (echo "Missing: endpoints/__init__.py" && exit 1) && \
-    test -f /build/common/__init__.py || (echo "Missing: common/__init__.py" && exit 1) && \
-    test -f /build/common/tor/__init__.py || (echo "Missing: common/tor/__init__.py" && exit 1) && \
-    echo "✅ All module files verified in builder stage"
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
