@@ -43,11 +43,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
-        python3.11-dev \
-        python3.11-pip \
-        python3.11-setuptools \
-        python3.11-wheel \
-        python3.11-libpython3.11 \
+        python3-wheel \
+        python3-libpython3.11 \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
         rustc \
         cargo \
     && apt-get clean \
