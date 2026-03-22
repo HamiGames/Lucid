@@ -236,7 +236,7 @@ RUN echo "=== Checking if api/ was copied ===" && \
     ls -la ./api/* && \
     ls -la /build/api/* && \
     echo "api/ was copied"
-
+COPY 03_api_gateway/utils/ ./utils/
 COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
@@ -359,6 +359,8 @@ COPY --from=builder --chown=65532:65532 /build/api/app/models/ /app/api/app/mode
 COPY --from=builder --chown=65532:65532 /build/api/app/services/ /app/api/app/services/
 COPY --from=builder --chown=65532:65532 /build/api/app/db/ /app/api/app/db/
 COPY --from=builder --chown=65532:65532 /build/api/app/db/models/ /app/api/app/db/models/
+
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
 
 COPY --from=builder --chown=65532:65532 /build/api/app/routers/  /app/api/app/routers/
 COPY --from=builder --chown=65532:65532 /build/api/app/database/ /app/api/app/database/
