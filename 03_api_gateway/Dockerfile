@@ -256,6 +256,15 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/common/ || echo "common/ missing" && \
     ls -la /build/sessions/ || echo "sessions/ missing"
 
+RUN python3.11 /tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
+    echo "/tmp/verify_files.py passed"
+
+RUN echo " trying alternate directory" && \
+    python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
+    echo "/build/tmp/verify_files.py passed"
+    
+
+
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
