@@ -207,63 +207,48 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./database/.keep && \
     echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created" && \
     echo "ALL Container directories created"
-
     
-    # Application source COPY (only directories that exist with content)
 
+# Application source COPY (only directories that exist with content)
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 RUN echo "=== Checking if verify_files.py was copied ===" && \
-    ls -la ./tmp/ && \
-    chown -R 65532:65532 ./tmp/* && \
-    chmod +x ./tmp/*.py && \
+    ls -la ./tmp/* && echo "(ls -la ./tmp/* || echo "./tmp/ directory not found")" && \
+    ls -la /build/tmp/* && echo "(ls -la /build/tmp/* || echo "/build/tmp/ directory not found")" && \
     echo "verify_files.py was copied"
 
 COPY common/ ./common/
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
-    ls -la ./common/ && \
-    chown -R 65532:65532 ./common && \
+    ls -la ./common/* && echo "(ls -la ./common/* || echo "./common/ directory not found")" && \
+    ls -la /build/common/* && echo "(ls -la /build/common/* || echo "/build/common/ directory not found")" && \
     echo "common/ was copied"
-
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
-    ls -la ./common/tor/ && \
-    chown -R 65532:65532 ./common/tor && \
+    ls -la ./common/tor/* && echo "(ls -la ./common/tor/* || echo "./common/tor/ directory not found")" && \
+    ls -la /build/common/tor/* && echo "(ls -la /build/common/tor/* || echo "/build/common/tor/ directory not found")" && \
     echo "common/tor/ was copied"
 
 COPY 03_api_gateway/api/ ./api/
 RUN echo "=== Checking if api/ was copied ===" && \
     ls -la ./api/* && \
-    chown -R 65532:65532 ./api/ && \
+    ls -la /build/api/* && \
     echo "api/ was copied"
 
 COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
-RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
-    ls -la ./infrastructure/kubernetes/* && \
-    chown -R 65532:65532 ./infrastructure/kubernetes/ && \
-    chmod +x ./infrastructure/kubernetes/*.yaml && \
-    echo "infrastructure/kubernetes/ was copied"
-
-#copy .api.app files
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/* && \
-    chown -R 65532:65532 ./api/app && \
-    chmod +x ./api/app/*.py && \
+    ls -la /build/api/app/* && \
     echo "api/app/ was copied"
 
 COPY 03_api_gateway/api/app/db/ ./api/app/db/
 RUN echo "=== Checking if api/app/db/ was copied ===" && \
     ls -la ./api/app/db/*.py && \
-    chown -R 65532:65532 ./api/app/db && \
-    chmod +x ./api/app/db/*.py && \
     echo "api/app/db/ was copied"
 
 COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
 RUN echo "=== Checking if api/app/db/models/ was copied ===" && \
     ls -la ./api/app/db/models/*.py && \
-    chown -R 65532:65532 ./api/app/db/models && \
-    chmod +x ./api/app/db/models/*.py && \
     echo "api/app/db/models/ was copied"
 
 COPY 03_api_gateway/api/app/database/ ./api/app/database/
@@ -272,15 +257,11 @@ COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
 
 RUN echo "=== Checking if api/app/routers/ was copied ===" && \
     ls -la ./api/app/routers/ && \
-    chown -R 65532:65532 ./api/app/routers && \
-    chmod +x ./api/app/routers/* && \
     echo "api/app/routers/ was copied"
 
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
 RUN echo "=== Checking if api/app/routes/ was copied ===" && \
     ls -la ./api/app/routes/ && \
-    chown -R 65532:65532 ./api/app/routes && \
-    chmod +x ./api/app/routes/* && \
     echo "api/app/routes/ was copied"
 
 
@@ -288,8 +269,6 @@ COPY 03_api_gateway/api/app/services/ ./api/app/services/
 COPY 03_api_gateway/api/app/utils/ ./api/app/utils/
 RUN echo "=== Checking if api/app/utils/ was copied ===" && \
     ls -la ./api/app/utils/ && \
-    chown -R 65532:65532 ./api/app/utils && \
-    chmod +x ./api/app/utils/* && \
     echo "api/app/utils/ was copied"
 
 COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
@@ -297,14 +276,11 @@ COPY 03_api_gateway/api/app/security/ ./api/app/security/
 COPY 03_api_gateway/api/app/middleware/ ./api/app/middleware/
 RUN echo "=== Checking if api/app/middleware/ was copied ===" && \
     ls -la ./api/app/middleware/ && \
-    chown -R 65532:65532 ./api/app/middleware && \
-    chmod +x ./api/app/middleware/* && \
     echo "api/app/middleware/ was copied"
 # copy .services
 COPY 03_api_gateway/services/ ./services/
 RUN echo "=== Checking if services/ was copied ===" && \
     ls -la ./services/ && \
-    chown -R 65532:65532 ./services && \
     echo "services/ was copied"
 # copy .database
 COPY 03_api_gateway/database/ ./database/
@@ -313,8 +289,11 @@ COPY 03_api_gateway/utils/ ./utils/
 # copy .endpoints
 COPY 03_api_gateway/endpoints/ ./endpoints/
 COPY 03_api_gateway/config/ ./config/
-    
-RUN python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
+  
+RUN echo "## changing permission on verify_files.py ##" && \
+    chmod +x ./tmp/verify_files.py && \
+    echo "verify_files.py permission changed" && \
+    python3.11 ./tmp/verify_files.py && \
     echo "All files verified successfully"
 
 # Stage 2 – Runtime (Distroless)
