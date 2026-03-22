@@ -52,23 +52,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir -p /root/.cargo/bin  /root/.cargo/env /root/.cargo/rustc ./root && \
-        printf "LUCID_API_GATEWAY_CARGO_BIN_$(date +%s)" > /root/.cargo/bin/.keep && \
-        touch /root/.cargo/bin/.keep && \
-        printf "LUCID_API_GATEWAY_CARGO_ENV_$(date +%s)" > /root/.cargo/env/.keep && \
-        touch /root/.cargo/env/.keep && \
-        printf "LUCID_API_GATEWAY_CARGO_RUSTC_$(date +%s)" > /root/.cargo/rustc/.keep && \
-        touch /root/.cargo/rustc/.keep && \
-        printf "LUCID_API_GATEWAY_ROOT_$(date +%s)" > ./root/.keep && \
-        touch ./root/.keep && \
-        chown -R 65532:65532 /root/.cargo/bin ./root /root/.cargo/env /root/.cargo/rustc && \
-        chmod 644 /root/.cargo/bin/.keep /root/.cargo/env/.keep ./root/.keep /root/.cargo/rustc/.keep
+RUN mkdir -p /root/.cargo/bin  /root/.cargo/env /root/.cargo/rustc /root && \
+    printf "LUCID_API_GATEWAY_ROOT_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \    
+    printf "LUCID_API_GATEWAY_CARGO_RUSTC_$(date +%s)" > /root/.cargo/rustc/.keep && \
+    touch /root/.cargo/bin/.keep && \
+    printf "LUCID_API_GATEWAY_CARGO_ENV_$(date +%s)" > /root/.cargo/env/.keep && \
+    touch /root/.cargo/env/.keep && \
+    chown -R 65532:65532 /root/.cargo/bin /root/.cargo/env /root/.cargo/rustc /root && \
+    chmod +x /root/.keep  /root/.cargo/bin/.keep  /root/.cargo/env/.keep  /root/.cargo/rustc/.keep
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-        . /root/.cargo/env && \
-        rustup default stable
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-ENV PATH=/root/.cargo/bin:/root/.cargo/env:/root/.cargo/rustc:$PATH
+ENV PATH=/root/.cargo/bin:$PATH
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
@@ -143,7 +139,7 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     mkdir -p ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware && \
     mkdir -p ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts && \
     mkdir -p ./api/app/security ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
-    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts ./tmp && \
+    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts ./tmp ./rust && \
     printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
     touch ./api/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
@@ -182,9 +178,11 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./common/tor/.keep && \
     printf "LUCID_API_GATEWAY_TMP_$(date +%s)" > ./tmp/.keep && \
     touch ./tmp/.keep && \
-    touch ./common/.keep ./common/tor/.keep ./tmp/.keep /tmp/.keep && \
+    printf "LUCID_API_GATEWAY_RUST_$(date +%s)" > ./rust/.keep && \
+    touch ./rust/.keep && \
+    echo "rust/.keep created" && \
     echo "common/.keep, common/tor/.keep created" && \
-    echo "all container directories created" && \
+    echo "common directories created" && \
     printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep && \
     touch ./api/app/db/.keep && \
     printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep && \
@@ -204,11 +202,13 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
     touch ./models/.keep && \
     printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep && \
     touch ./database/.keep && \
-    echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created"
+    echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created" && \
+    echo "ALL Container directories created"
 
+    
     # Application source COPY (only directories that exist with content)
-COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 
+COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 RUN echo "=== Checking if verify_files.py was copied ===" && \
     ls -la ./tmp/ && \
     head -5 ./tmp/verify_files.py
@@ -262,8 +262,12 @@ COPY 03_api_gateway/config/ ./config/
 RUN echo "=== Checking /build contents ===" && \
     ls -la /build/ && \
     echo "=== Checking specific paths ===" && \
-    ls -la /build/utils/ || echo "utils/ missing" && \
+    ls -la /build/api/app/ || echo "api/app/ missing" && \
     ls -la /build/models/ || echo "models/ missing" && \
+    ls -la /build/api/app/routers/ || echo "api/app/routers/ missing" && \
+    ls -la /build/api/app/routes/ || echo "api/app/routes/ missing" && \
+    ls -la /build/api/app/services/ || echo "api/app/services/ missing" && \
+    ls -la /build/api/app/utils/ || echo "api/app/utils/ missing" && \
     ls -la /build/services/ || echo "services/ missing" && \
     ls -la /build/database/ || echo "database/ missing" && \
     ls -la /build/endpoints/ || echo "endpoints/ missing" && \
@@ -308,7 +312,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /root/.cargo/bin/          /app/root/.cargo/bin/
+COPY --from=builder --chown=65532:65532 /root/.cargo/        /app/rust/
 COPY --from=builder --chown=65532:65532 /var/run/          /app/var/run/
 COPY --from=builder --chown=65532:65532 /var/lib/           /app/var/lib/
 COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
