@@ -221,32 +221,32 @@ RUN echo "=== Checking if verify_files.py was copied ===" && \
 
 COPY common/ ./common/
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
-    ls -la ./common/ &&  \
-    head -5 ./common/ && \
+    ls -la ./common/* && \
+    head -5 ./common/* && \
     chown -R 65532:65532 ./common/ && \
     chmod +x ./common/*.py && \
     echo "common/ was copied"
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
-    ls -la ./common/tor/ && \
-    head -5 ./common/tor/ && \
+    ls -la ./common/tor/* && \
+    head -5 ./common/tor/* && \
     chown -R 65532:65532 ./common/tor/ && \
     chmod +x ./common/tor/*.py && \
     echo "common/tor/ was copied"
 
 COPY 03_api_gateway/api/ ./api/
 RUN echo "=== Checking if api/ was copied ===" && \
-    ls -la ./api/ && \
-    head -5 ./api/ && \
+    ls -la ./api/* && \
+    head -5 ./api/* && \
     chown -R 65532:65532 ./api/ && \
     chmod +x ./api/*.py && \
     echo "api/ was copied"
 
 COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
 RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
-    ls -la ./infrastructure/kubernetes/ && \
-    head -5 ./infrastructure/kubernetes/ && \
+    ls -la ./infrastructure/kubernetes/* && \
+    head -5 ./infrastructure/kubernetes/* && \
     chown -R 65532:65532 ./infrastructure/kubernetes/ && \
     chmod +x ./infrastructure/kubernetes/*.yaml && \
     echo "infrastructure/kubernetes/ was copied"
@@ -254,8 +254,8 @@ RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
 #copy .api.app files
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
-    ls -la ./api/app/ && \
-    head -5 ./api/app/ && \
+    ls -la ./api/app/* && \
+    head -5 ./api/app/* && \
     chown -R 65532:65532 ./api/app/ && \
     chmod +x ./api/app/*.py && \
     echo "api/app/ was copied"
@@ -267,8 +267,8 @@ COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
 COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
 
 RUN echo "=== Checking if api/app/routers/ was copied ===" && \
-    ls -la ./api/app/routers/ && \
-    head -5 ./api/app/routers/ && \
+    ls -la ./api/app/routers/* && \
+    head -5 ./api/app/routers/* && \
     chown -R 65532:65532 ./api/app/routers/ && \
     chmod +x ./api/app/routers/*.py && \
     echo "api/app/routers/ was copied"
