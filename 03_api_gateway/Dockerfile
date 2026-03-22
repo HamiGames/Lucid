@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-    RUN mkdir -p /root/.cargo/bin  /root/.cargo/env /root/.cargo/rustc ./root && \
+RUN mkdir -p /root/.cargo/bin  /root/.cargo/env /root/.cargo/rustc ./root && \
         printf "LUCID_API_GATEWAY_CARGO_BIN_$(date +%s)" > /root/.cargo/bin/.keep && \
         touch /root/.cargo/bin/.keep && \
         printf "LUCID_API_GATEWAY_CARGO_ENV_$(date +%s)" > /root/.cargo/env/.keep && \
@@ -64,11 +64,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         chown -R 65532:65532 /root/.cargo/bin ./root /root/.cargo/env /root/.cargo/rustc && \
         chmod 644 /root/.cargo/bin/.keep /root/.cargo/env/.keep ./root/.keep /root/.cargo/rustc/.keep
 
-    RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
         . /root/.cargo/env && \
         rustup default stable
 
-    ENV PATH=/root/.cargo/bin:$PATH
+ENV PATH=/root/.cargo/bin:/root/.cargo/env:/root/.cargo/rustc:$PATH
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
