@@ -53,10 +53,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . /root/.cargo/env && \
+    . /usr/bin/cargo/env && \
     rustup default stable
 
-ENV PATH=/root/.cargo/bin:$PATH
+ENV PATH=/usr/bin/cargo/bin:$PATH
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
@@ -199,19 +199,16 @@ COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 
 RUN echo "=== Checking if verify_files.py was copied ===" && \
     ls -la ./tmp/ && \
-    file ./tmp/verify_files.py && \
     head -5 ./tmp/verify_files.py
 
 COPY common/__init__.py ./common/__init__.py
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
-    ls -la ./common/ && \
-    file ./common/__init__.py && \
+    ls -la ./common/ &&  \
     head -5 ./common/__init__.py
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
     ls -la ./common/tor/ && \
-    file ./common/tor/ && \
     head -5 ./common/tor/
 
 COPY 03_api_gateway/api/__init__.py ./api/__init__.py
@@ -221,7 +218,6 @@ COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastru
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/ && \
-    file ./api/app/ && \
     head -5 ./api/app/
 
 COPY 03_api_gateway/api/app/db/ ./api/app/db/
@@ -232,7 +228,6 @@ COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
 
 RUN echo "=== Checking if api/app/routers/ was copied ===" && \
     ls -la ./api/app/routers/ && \
-    file ./api/app/routers/ && \
     head -5 ./api/app/routers/
 
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
@@ -263,7 +258,7 @@ RUN echo "=== Checking /build contents ===" && \
     ls -la /build/common/ || echo "common/ missing" 
 
 RUN echo "verifying files in /build directory" && \
-    python3.11 ./tmp/verify_files.py && \
+    python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
     echo "All files verified successfully"
 
 
