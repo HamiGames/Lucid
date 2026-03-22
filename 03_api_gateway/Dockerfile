@@ -207,7 +207,7 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/api ./sessions/processor 
 
     # Application source COPY (only directories that exist with content)
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
-COPY verify_files.py /tmp/verify_files.py
+COPY 03_api_gateway/verify_files.py /tmp/verify_files.py
 COPY common/tor/ ./common/tor/
 COPY common/ ./common/
 COPY 03_api_gateway/api/__init__.py ./api/__init__.py
@@ -262,7 +262,7 @@ RUN python3.11 /tmp/verify_files.py || echo "ERROR: verify_files.py failed" && e
 RUN echo " trying alternate directory" && \
     python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
     echo "/build/tmp/verify_files.py passed"
-    
+
 
 
 ############################
