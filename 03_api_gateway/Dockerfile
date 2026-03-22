@@ -373,7 +373,7 @@ COPY --from=builder --chown=65532:65532 /build/models/              /app/models/
 COPY --from=builder --chown=65532:65532 /build/config/              /app/config/
 COPY --from=builder --chown=65532:65532 /build/endpoints/           /app/endpoints/
 
-RUN python3.11 /app/tmp/verify_runtime.py
+RUN python3.11 ./tmp/verify_runtime.py
 
 RUN rm -f /app/tmp/verify_runtime.py
 
