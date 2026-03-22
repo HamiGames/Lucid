@@ -214,33 +214,27 @@ RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
 RUN echo "=== Checking if verify_files.py was copied ===" && \
     ls -la ./tmp/ && \
-    head -5 ./tmp/verify_files.py && \
-    chown -R 65532:65532 ./tmp/ && \
-    chmod +x ./tmp/verify_files.py && \
+    chown -R 65532:65532 ./tmp/* && \
+    chmod +x ./tmp/*.py && \
     echo "verify_files.py was copied"
 
 COPY common/ ./common/
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
-    ls -la ./common/* && \
-    ls -d ./common/*/ && \
-    chown -R 65532:65532 ./common/ && \
-    chmod +x ./common/* && \
+    ls -la ./common/ && \
+    ls -d ./common/* && \
     echo "common/ was copied"
+
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
-    ls -la ./common/tor/* && \
-    ls -d ./common/tor/*/ && \
-    chown -R 65532:65532 ./common/tor/ && \
-    chmod +x ./common/tor/* && \
+    ls -la ./common/tor/ && \
+    ls -d ./common/tor/* && \
     echo "common/tor/ was copied"
 
 COPY 03_api_gateway/api/ ./api/
 RUN echo "=== Checking if api/ was copied ===" && \
     ls -la ./api/* && \
-    ls -d ./api/*/ && \
-    chown -R 65532:65532 ./api/ && \
-    chmod +x ./api/*.py && \
+    ls -d ./api/* && \
     echo "api/ was copied"
 
 COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
