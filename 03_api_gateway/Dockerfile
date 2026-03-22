@@ -52,11 +52,23 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . /usr/bin/cargo/env && \
-    rustup default stable
+    RUN mkdir -p /root/.cargo/bin  /root/.cargo/env /root/.cargo/rustc ./root && \
+        printf "LUCID_API_GATEWAY_CARGO_BIN_$(date +%s)" > /root/.cargo/bin/.keep && \
+        touch /root/.cargo/bin/.keep && \
+        printf "LUCID_API_GATEWAY_CARGO_ENV_$(date +%s)" > /root/.cargo/env/.keep && \
+        touch /root/.cargo/env/.keep && \
+        printf "LUCID_API_GATEWAY_CARGO_RUSTC_$(date +%s)" > /root/.cargo/rustc/.keep && \
+        touch /root/.cargo/rustc/.keep && \
+        printf "LUCID_API_GATEWAY_ROOT_$(date +%s)" > ./root/.keep && \
+        touch ./root/.keep && \
+        chown -R 65532:65532 /root/.cargo/bin ./root /root/.cargo/env /root/.cargo/rustc && \
+        chmod 644 /root/.cargo/bin/.keep /root/.cargo/env/.keep ./root/.keep /root/.cargo/rustc/.keep
 
-ENV PATH=/usr/bin/cargo/bin:$PATH
+    RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+        . /root/.cargo/env && \
+        rustup default stable
+
+    ENV PATH=/root/.cargo/bin:$PATH
 
 # System markers (per Dockerfile-copy-pattern.md)
 RUN printf "LUCID_API_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
@@ -296,6 +308,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
+COPY --from=builder --chown=65532:65532 /root/.cargo/bin/          /app/root/.cargo/bin/
 COPY --from=builder --chown=65532:65532 /var/run/          /app/var/run/
 COPY --from=builder --chown=65532:65532 /var/lib/           /app/var/lib/
 COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
@@ -317,10 +330,9 @@ COPY --chown=65532:65532 --from=builder /build/api/app/middleware/ /app/api/app/
 COPY --chown=65532:65532 --from=builder /build/api/app/utils/ /app/api/app/utils/
 COPY --chown=65532:65532 --from=builder /build/api/app/schemas/ /app/api/app/schemas
 COPY --chown=65532:65532 --from=builder /build/api/app/routers/  /app/api/app/routers/
-COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes
+COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 COPY --chown=65532:65532 --from=builder /build/api/app/models/ /app/api/app/models/
 COPY --chown=65532:65532 --from=builder /build/api/app/database/ /app/api/app/database/
-COPY --chown=65532:65532 --from=builder /build/api/app/services/ /app/api/app/services/
 COPY --chown=65532:65532 --from=builder /build/api/app/routes/          /app/api/app/routes/
 
 # api level directories
