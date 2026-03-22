@@ -237,8 +237,60 @@ COPY sessions/core/ ./sessions/core/
 COPY sessions/processor/ ./sessions/processor/
 COPY sessions/api/integration/ ./sessions/api/integration/
 
+RUN echo "=== Checking /build contents ===" && \
+    ls -la /build/ && \
+    echo "=== Checking specific paths ===" && \
+    ls -la /build/config/ || echo "config/ missing" && \
+    ls -la /build/utils/ || echo "utils/ missing" && \
+    ls -la /build/models/ || echo "models/ missing" && \
+    ls -la /build/services/ || echo "services/ missing" && \
+    ls -la /build/database/ || echo "database/ missing" && \
+    ls -la /build/endpoints/ || echo "endpoints/ missing" && \
+    ls -la /build/common/ || echo "common/ missing" && \
+    ls -la /build/sessions/ || echo "sessions/ missing"
 
+RUN python3.11 -c "
+    import os
+    import sys
+    import pathlib
 
+    build_dir = pathlib.Path('/build')
+    alt_dir = pathlib.Path('./')
+    if not build_dir.exists():
+        base_dir = alt_dir
+        print(f'Using alternative directory: {base_dir}')
+    else:
+        base_dir = build_dir
+        print(f'Using build directory: {base_dir}')
+    required_files = [
+        base_dir/ 'api/app/main.py',
+        base_dir/ 'api/app/middleware/__init__.py',
+        base_dir/ 'api/app/utils/__init__.py',
+        base_dir/ 'api/app/schemas/__init__.py',
+        base_dir/ 'api/app/routers/__init__.py',
+        base_dir/ 'api/app/routes/__init__.py',
+        base_dir/ 'api/app/services/__init__.py',
+        base_dir/ 'api/app/models/__init__.py',
+        base_dir/ 'api/app/database/__init__.py',
+        base_dir/ 'api/app/scripts/__init__.py',
+        base_dir/ 'api/app/security/__init__.py',
+        base_dir/ 'config/__init__.py',
+        base_dir/ 'utils/__init__.py',
+        base_dir/ 'models/__init__.py',
+        base_dir/ 'services/__init__.py',
+        base_dir/ 'database/__init__.py',
+        base_dir/ 'endpoints/__init__.py',
+        base_dir/ 'common/__init__.py',
+        base_dir/ 'sessions/__init__.py'
+    ]
+    
+    missing = [f for f in required_files if not os.path.isfile(f)]
+    if missing:
+        print(f'ERROR: Missing files: {missing}')
+        sys.exit(1)
+    else:
+        print('✅ All required files present')
+    "
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
@@ -314,19 +366,6 @@ COPY --chown=65532:65532 --from=builder /build/models              /app/models
 COPY --chown=65532:65532 --from=builder /build/config              /app/config
 COPY --chown=65532:65532 --from=builder /build/endpoints           /app/endpoints
 
-RUN echo "Verifying new modules are included in Runtime stage" && \
-    test -f /app/api/app/main.py || (echo "Missing: api/app/main.py" && exit 1) && \
-    test -f /app/api/app/middleware/__init__.py || (echo "Missing: api/app/middleware/__init__.py" && exit 1) && \
-    test -f /app/services/__init__.py || (echo "Missing: services/__init__.py" && exit 1) && \
-    test -f /app/database/__init__.py || (echo "Missing: database/__init__.py" && exit 1) && \
-    test -f /app/models/__init__.py || (echo "Missing: models/__init__.py" && exit 1) && \
-    test -f /app/config/__init__.py || (echo "Missing: config/__init__.py" && exit 1) && \
-    test -f /app/endpoints/__init__.py || (echo "Missing: endpoints/__init__.py" && exit 1) && \
-    test -f /app/sessions/__init__.py || (echo "Missing: sessions/__init__.py" && exit 1) && \
-    test -f /app/sessions/pipeline/__init__.py || (echo "Missing: sessions/pipeline/__init__.py" && exit 1) && \
-    test -f /app/sessions/api/__init__.py || (echo "Missing: sessions/api/__init__.py" && exit 1) && \
-    test -f /app/sessions/api/integration/__init__.py || (echo "Missing: sessions/api/integration/__init__.py" && exit 1) && \
-    echo "✅ All module files verified in Runtime stage"
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
