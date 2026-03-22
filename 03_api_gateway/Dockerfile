@@ -43,26 +43,30 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
-        python3-dev \
-        python3-pip \
-        python3-setuptools \
-        python3-wheel \
+        python3.11-dev \
+        python3.11-pip \
+        python3.11-setuptools \
+        python3.11-wheel \
+        python3.11-libpython3.11 \
         rustc \
         cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir -p /root/.cargo/bin  /root/.cargo/env /root/.cargo/rustc /root && \
-    printf "LUCID_API_GATEWAY_ROOT_$(date +%s)" > /root/.keep && \
-    touch /root/.keep && \    
-    printf "LUCID_API_GATEWAY_CARGO_RUSTC_$(date +%s)" > /root/.cargo/rustc/.keep && \
-    touch /root/.cargo/bin/.keep && \
-    printf "LUCID_API_GATEWAY_CARGO_ENV_$(date +%s)" > /root/.cargo/env/.keep && \
-    touch /root/.cargo/env/.keep && \
-    chown -R 65532:65532 /root/.cargo/bin /root/.cargo/env /root/.cargo/rustc /root && \
-    chmod +x /root/.keep  /root/.cargo/bin/.keep  /root/.cargo/env/.keep  /root/.cargo/rustc/.keep
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_API_GATEWAY_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_API_GATEWAY_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_API_GATEWAY_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod +x /root/.keep  /root/.rustup/.keep  /root/.cargo/.keep
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+RUN apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
 ENV PATH=/root/.cargo/bin:$PATH
 
@@ -312,6 +316,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
 WORKDIR /app
 
 # System directories & certificates
+COPY --from=builder --chown=65532:65532 /root/.rustup/        /app/rust/
 COPY --from=builder --chown=65532:65532 /root/.cargo/        /app/rust/
 COPY --from=builder --chown=65532:65532 /var/run/          /app/var/run/
 COPY --from=builder --chown=65532:65532 /var/lib/           /app/var/lib/
