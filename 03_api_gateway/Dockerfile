@@ -221,20 +221,20 @@ RUN echo "=== Checking if verify_files.py was copied ===" && \
 COPY common/ ./common/
 RUN echo "=== Checking if common/__init__.py was copied ===" && \
     ls -la ./common/ && \
-    ls -d ./common/* && \
+    chown -R 65532:65532 ./common && \
     echo "common/ was copied"
 
 
 COPY common/tor/ ./common/tor/
 RUN echo "=== Checking if common/tor/ was copied ===" && \
     ls -la ./common/tor/ && \
-    ls -d ./common/tor/* && \
+    chown -R 65532:65532 ./common/tor && \
     echo "common/tor/ was copied"
 
 COPY 03_api_gateway/api/ ./api/
 RUN echo "=== Checking if api/ was copied ===" && \
     ls -la ./api/* && \
-    ls -d ./api/* && \
+    chown -R 65532:65532 ./api/ && \
     echo "api/ was copied"
 
 COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
@@ -248,22 +248,21 @@ RUN echo "=== Checking if infrastructure/kubernetes/ was copied ===" && \
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/* && \
-    chown -R 65532:65532 ./api/app/ && \
+    chown -R 65532:65532 ./api/app && \
     chmod +x ./api/app/*.py && \
     echo "api/app/ was copied"
 
 COPY 03_api_gateway/api/app/db/ ./api/app/db/
 RUN echo "=== Checking if api/app/db/ was copied ===" && \
     ls -la ./api/app/db/*.py && \
-    ls -d ./api/app/db/models/*/ && \
-    chown -R 65532:65532 ./api/app/db/ && \
+    chown -R 65532:65532 ./api/app/db && \
     chmod +x ./api/app/db/*.py && \
     echo "api/app/db/ was copied"
 
 COPY 03_api_gateway/api/app/db/models/ ./api/app/db/models/
 RUN echo "=== Checking if api/app/db/models/ was copied ===" && \
     ls -la ./api/app/db/models/*.py && \
-    chown -R 65532:65532 ./api/app/db/models/ && \
+    chown -R 65532:65532 ./api/app/db/models && \
     chmod +x ./api/app/db/models/*.py && \
     echo "api/app/db/models/ was copied"
 
@@ -272,21 +271,41 @@ COPY 03_api_gateway/api/app/schemas/ ./api/app/schemas/
 COPY 03_api_gateway/api/app/routers/ ./api/app/routers/
 
 RUN echo "=== Checking if api/app/routers/ was copied ===" && \
-    ls -la ./api/app/routers/* && \
-    head -5 ./api/app/routers/* && \
-    chown -R 65532:65532 ./api/app/routers/ && \
-    chmod +x ./api/app/routers/*.py && \
+    ls -la ./api/app/routers/ && \
+    chown -R 65532:65532 ./api/app/routers && \
+    chmod +x ./api/app/routers/* && \
     echo "api/app/routers/ was copied"
 
 COPY 03_api_gateway/api/app/routes/ ./api/app/routes/
+RUN echo "=== Checking if api/app/routes/ was copied ===" && \
+    ls -la ./api/app/routes/ && \
+    chown -R 65532:65532 ./api/app/routes && \
+    chmod +x ./api/app/routes/* && \
+    echo "api/app/routes/ was copied"
+
+
 COPY 03_api_gateway/api/app/services/ ./api/app/services/
 COPY 03_api_gateway/api/app/utils/ ./api/app/utils/
+RUN echo "=== Checking if api/app/utils/ was copied ===" && \
+    ls -la ./api/app/utils/ && \
+    chown -R 65532:65532 ./api/app/utils && \
+    chmod +x ./api/app/utils/* && \
+    echo "api/app/utils/ was copied"
+
 COPY 03_api_gateway/api/app/scripts/ ./api/app/scripts/
 COPY 03_api_gateway/api/app/security/ ./api/app/security/
 COPY 03_api_gateway/api/app/middleware/ ./api/app/middleware/
-
+RUN echo "=== Checking if api/app/middleware/ was copied ===" && \
+    ls -la ./api/app/middleware/ && \
+    chown -R 65532:65532 ./api/app/middleware && \
+    chmod +x ./api/app/middleware/* && \
+    echo "api/app/middleware/ was copied"
 # copy .services
 COPY 03_api_gateway/services/ ./services/
+RUN echo "=== Checking if services/ was copied ===" && \
+    ls -la ./services/ && \
+    chown -R 65532:65532 ./services && \
+    echo "services/ was copied"
 # copy .database
 COPY 03_api_gateway/database/ ./database/
 COPY 03_api_gateway/models/ ./models/
@@ -298,27 +317,22 @@ COPY 03_api_gateway/config/ ./config/
 RUN echo "=== Checking /build contents ===" && \
     ls -la /build/ && \
     echo "=== Checking specific paths ===" && \
-    ls -la /build/api/app/ || echo "api/app/ missing" && \
-    ls -la /build/models/ || echo "models/ missing" && \
-    ls -la /build/api/app/routers/ || echo "api/app/routers/ missing" && \
-    ls -la /build/api/app/routes/ || echo "api/app/routes/ missing" && \
-    ls -la /build/api/app/services/ || echo "api/app/services/ missing" && \
-    ls -la /build/api/app/utils/ || echo "api/app/utils/ missing" && \
-    ls -la /build/services/ || echo "services/ missing" && \
-    ls -la /build/database/ || echo "database/ missing" && \
-    ls -la /build/endpoints/ || echo "endpoints/ missing" && \
-    ls -la /build/common/ || echo "common/ missing" 
-
-RUN echo "verifying files in /build directory" && \
-    python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
+    ls -la ./* && \
+    ls -la ./*/* && \
+    ls -la ./*/*/* && \
+    ls -la ./*/*/*/* && \
+    ls -la ./*/*/*/*/* && \
+    echo "build directory verified" || echo "build directory not found" && exit 1
+    
+RUN python3.11 ./tmp/verify_files.py || echo "ERROR: verify_files.py failed" && exit 1 && \
     echo "All files verified successfully"
 
 
-############################
 # Stage 2 – Runtime (Distroless)
-############################
+
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest 
 
+WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -335,7 +349,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="core" \
       com.lucid.security="distroless"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/usr/local/bin:/usr/bin:/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/api:/app:/usr/local/lib/python3.11/site-packages \
@@ -344,8 +358,6 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LC_ALL=C.UTF-8 \
     API_GATEWAY_PORT=8080 \
     API_GATEWAY_HOST=0.0.0.0
-
-WORKDIR /app
 
 # System directories & certificates
 COPY --from=builder --chown=65532:65532 /root/.rustup/        /app/rust/
@@ -383,7 +395,8 @@ COPY --chown=65532:65532 --from=builder /build/models/              /app/models/
 COPY --chown=65532:65532 --from=builder /build/config/              /app/config/
 COPY --chown=65532:65532 --from=builder /build/endpoints/           /app/endpoints/
 
-ENV PATH=/app/rust/bin:$PATH
+
+
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
 
