@@ -44,6 +44,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libssl-dev \
         pkg-config \
         curl \
+        tini \
+        cargo \
+        rustc \
         ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -51,25 +54,58 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 WORKDIR /build
 
 # Ensures /var/run and /var/lib exist with real content (COPY won't be silent)
-RUN echo "LUCID_SESSION_STORAGE_RUNTIME_DIRECTORY" > /var/run/.keep && \
-    echo "LUCID_SESSION_STORAGE_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+RUN printf "LUCID_SESSION_STORAGE_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_SESSION_STORAGE_LIB_DIRECTORY" > /var/lib/.keep && \
+    printf "LUCID_SESSION_STORAGE_RUNTIME_DIRECTORY" > /usr/bin/tini/.keep && \
+    printf "LUCID_SESSION_STORAGE_LIB_DIRECTORY" > /usr/bin/cargo/.keep && \
+    printf "LUCID_SESSION_STORAGE_LIB_DIRECTORY" > /usr/bin/rustc/.keep && \
+    chown -R 65532:65532 /var/run /var/lib /usr/bin/tini /usr/bin/cargo /usr/bin/rustc && \
+    chmod 644 /var/run/.keep /var/lib/.keep /usr/bin/tini/.keep /usr/bin/cargo/.keep /usr/bin/rustc/.keep
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+    mkdir -p /build/wheels && \
+    echo "upgrading pip and setuptools" && \
+    pip install --upgrade pip setuptools wheel && \
+    echo "upgrade complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 COPY sessions/requirements.storage.txt ./requirements.txt
 
-RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
-    mkdir -p /root/.local/bin
+RUN mkdir -p /usr/local/bin /usr/local/lib /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages /usr/local/lib /usr/local/sbin /usr/local/share && \
+    printf "LUCID_SESSION_STORAGE_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_LOCAL_SBIN_$(date +%s)" > /usr/local/sbin/.keep && \
+    touch /usr/local/sbin/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_LOCAL_SHARE_$(date +%s)" > /usr/local/share/.keep && \
+    touch /usr/local/share/.keep && \
+    chown -R 65532:65532 /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages /usr/local/lib /usr/local/sbin /usr/local/share && \
+    chmod 644 /usr/local/bin/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/lib/.keep /usr/local/sbin/.keep /usr/local/share/.keep
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-cache-dir --prefer-binary -r requirements.txt
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 # Marker files (per Dockerfile-copy-pattern.md)
-RUN echo "LUCID_SESSION_STORAGE_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    echo "LUCID_SESSION_STORAGE_BINARIES_INSTALLED_$(date +%s)" > /root/.local/bin/.lucid-marker && \
-    chown -R 65532:65532 /root/.local
+RUN mkdir -p /usr/bin/rustc /usr/bin/cargo /usr/bin/tini && \
+    printf "LUCID_SESSION_STORAGE_USR_BIN_RUSTC_$(date +%s)" > /usr/bin/rustc/.keep && \
+    touch /usr/bin/rustc/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_BIN_CARGO_$(date +%s)" > /usr/bin/cargo/.keep && \
+    touch /usr/bin/cargo/.keep && \
+    printf "LUCID_SESSION_STORAGE_USR_BIN_TINI_$(date +%s)" > /usr/bin/tini/.keep && \
+    touch /usr/bin/tini/.keep && \
+    chown -R 65532:65532 /usr/bin/rustc /usr/bin/cargo /usr/bin/tini && \
+    chmod 644 /usr/bin/rustc/.keep /usr/bin/cargo/.keep /usr/bin/tini/.keep 
 
 # Builder-stage verification (per Dockerfile-copy-pattern.md)
 # Verify packages are installed and verify directory structure
@@ -81,8 +117,14 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, pym
     echo "Package count: $(ls -1 /root/.local/lib/python3.11/site-packages/ | wc -l)" && \
     test -d /root/.local/lib/python3.11/site-packages/uvicorn && \
     echo "✅ uvicorn directory verified in builder" && \
-    test -f /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    test -s /root/.local/lib/python3.11/site-packages/.lucid-marker && \
+    test -f /usr/local/lib/python3.11/site-packages/.keep && \
+    test -s /usr/local/lib/python3.11/site-packages/.keep && \
+    test -f /usr/bin/tini/.keep && \
+    test -s /usr/bin/tini/.keep && \
+    test -f /usr/bin/cargo/.keep && \
+    test -s /usr/bin/cargo/.keep && \
+    test -f /usr/bin/rustc/.keep && \
+    test -s /usr/bin/rustc/.keep && \
     echo "✅ Marker file verified in builder (non-empty)"
 
 # Application source COPY
@@ -235,7 +277,7 @@ print('✅ All application source files and markers verified')"]
 EXPOSE 8082
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8082)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-storage', 8082)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

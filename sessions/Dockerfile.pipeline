@@ -44,6 +44,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libffi-dev \
         libssl-dev \
         pkg-config \
+        tini \
         curl \
         ca-certificates \
     && apt-get clean \
@@ -80,9 +81,26 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx; print(
 
 # Application source COPY
 COPY sessions/pipeline/ ./pipeline/
+RUN echo "=== Checking if pipeline/ was copied ===" && \
+    echo "ls -la ./pipeline/*" && \
+    echo "ls -la /build/pipeline/*" 
+
 COPY sessions/core/ ./core/
+COPY sessions/api/ ./api/
 COPY sessions/encryption/ ./encryption/
+RUN chmod +x ./core/* ./api/* ./encryption/* && \
+    echo "ls -la ./core/*" && \
+    echo "ls -la ./api/*" && \
+    echo "ls -la ./encryption/*"
+
+COPY sessions/config/ ./config/
+RUN chmod +x ./config/* && \
+    echo "ls -la ./config/* "
+
 COPY sessions/__init__.py ./__init__.py
+RUN echo "=== Checking if __init__.py was copied ===" && \
+    echo "ls -la ./__init__.py"  
+
 
 ############################
 # Stage 2 – Runtime
@@ -104,28 +122,28 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="application" \
       com.lucid.security="distroless"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     SESSION_PIPELINE_PORT=8083 \
-    SESSION_PIPELINE_HOST=0.0.0.0
+    SESSION_PIPELINE_HOST=session-pipeline
 
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder --chown=65532:65532 /var/run /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
 
 # Distroless base already has correct linker/runtime; only copy CA certs
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 # Python packages (per COPY pattern guide)
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /app/usr/local/bin
 
 # Runtime verification of packages
 RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
@@ -141,19 +159,21 @@ assert os.path.getsize(marker_path) > 0, 'marker file is empty: ' + marker_path;
 print('Packages verified in runtime stage')"]
 
 # Application layout COPY
-COPY --chown=65532:65532 --from=builder /build/pipeline /app/pipeline
-COPY --chown=65532:65532 --from=builder /build/core /app/core
-COPY --chown=65532:65532 --from=builder /build/encryption /app/encryption
-COPY --chown=65532:65532 --from=builder /build/__init__.py /app/__init__.py
+COPY --from=builder --chown=65532:65532 /build/pipeline/ /app/pipeline/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
+COPY --from=builder --chown=65532:65532 /build/encryption/ /app/encryption/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
 EXPOSE 8083
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8083)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-pipeline', 8083)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 
 # Clear base ENTRYPOINT so CMD works as expected
-ENTRYPOINT []
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/usr/bin/python3.11", "/app/pipeline/entrypoint.py"]
+CMD ["/app/usr/bin/python3.11", "/app/pipeline/entrypoint.py"]

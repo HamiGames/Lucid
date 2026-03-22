@@ -158,7 +158,7 @@ print('✅ All application source files verified')"]
 EXPOSE 8113
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8113)); s.close(); exit(0 if result == 0 else 1)"]
+    CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-api', 8113)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

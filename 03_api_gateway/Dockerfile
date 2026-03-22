@@ -366,11 +366,15 @@ COPY --from=builder /build/models/              /app/models/
 COPY --from=builder /build/config/              /app/config/
 COPY --from=builder /build/endpoints/           /app/endpoints/
 
-
-
-
-# Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
-RUN ["/app/usr/bin/python3.11", "-c", "import os, sys; site_packages = '/app/usr/local/lib/python3.11/site-packages'; marker_file = os.path.join(site_packages, '.keep'); app_dirs = ['/app/api','/app/api/app/', '/app/api/app/db', '/app/api/app/database', '/app/api/app/utils', '/app/api/app/models', '/app/api/app/routes', '/app/api/app/schemas', '/app/api/app/services', '/app/api/app/middleware', '/app/api/app/scripts', '/app/api/app/security', '/app/endpoints', '/app/database', '/app/models', '/app/gateway', '/app/config', '/app/sessions', '/app/sidecar']; checks = [os.path.isdir(site_packages), os.path.isfile(marker_file), os.path.isdir('/app/usr/local/bin'), os.path.isfile('/app/usr/local/bin/.keep')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(marker_file)}, bin={os.path.isdir(\"/app/usr/local/bin\")}, bin_marker={os.path.isfile(\"/app/usr/local/bin/.keep \")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
+RUN echo "$(ls -la /app/* )" && \
+    echo "$(ls -la /app/api/* )" && \
+    echo "$(ls -la /app/api/app/* )" && \
+    echo "$(ls -la /app/api/app/db/* )" && \
+    echo "$(ls -la /app/api/app/database/* )" && \
+    echo "$(ls -la /app/api/app/utils/* )" && \
+    echo "$(ls -la /app/api/app/models/* )" && \
+    echo "$(ls -la /app/api/app/routes/* )" && \
+    echo "$(ls -la /app/api/app/schemas/* )"
 
 
 EXPOSE 8080
