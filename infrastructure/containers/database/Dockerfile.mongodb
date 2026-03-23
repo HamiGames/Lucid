@@ -75,6 +75,8 @@ COPY infrastructure/containers/database/mongod.conf ./tmp/mongod.conf
 RUN test -f ./tmp/mongod.conf
 
 # Pack distroless layout under /build/export/app (mirrors api gateway /app layout)
+# mongo-extra must not include libc.so.6 or ld-linux-*: ENV LD_LIBRARY_PATH is shared with Python;
+# an older mongo-stage glibc in mongo-extra breaks /app/usr/bin/python3.11 on distroless (e.g. GLIBC_2.36 vs libexpat).
 RUN mkdir -p /build/export/app/usr/bin /build/export/app/usr/local/bin \
         "/build/export/app/usr/lib/mongodb" \
         "/build/export/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb" \
@@ -91,7 +93,11 @@ RUN mkdir -p /build/export/app/usr/bin /build/export/app/usr/local/bin \
     fi && \
     for bin in /build/export/app/usr/bin/mongod /build/export/app/usr/bin/mongosh; do \
         ldd "$bin" 2>/dev/null | awk '$3 ~ /^\// { print $3 }' | sort -u | while read -r lib; do \
-            base=$(basename "$lib"); cp -n "$lib" "/build/export/app/usr/lib/mongo-extra/$base" 2>/dev/null || true; \
+            base=$(basename "$lib"); \
+            case "$base" in \
+                libc.so.6|ld-linux-aarch64.so.1|ld-linux-x86-64.so.2) continue ;; \
+            esac; \
+            cp -n "$lib" "/build/export/app/usr/lib/mongo-extra/$base" 2>/dev/null || true; \
         done; \
     done
 
