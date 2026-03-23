@@ -52,7 +52,7 @@ COPY database/redis/requirements.redis.txt /tmp/requirements.redis.txt
 # Wheelhouse: resolve deps to wheels (build sdists here if needed), then install offline from /build/wheels.
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install --break-system-packages --no-cache-dir --upgrade pip setuptools wheel && \
-    pip3 wheel --break-system-packages --no-cache-dir --wheel-dir=/build/wheels -r /tmp/requirements.redis.txt && \
+    pip3 wheel --no-cache-dir --wheel-dir=/build/wheels -r /tmp/requirements.redis.txt && \
     pip3 install --break-system-packages --no-cache-dir --no-index --find-links=/build/wheels -r /tmp/requirements.redis.txt && \
     rm -f /tmp/requirements.redis.txt
 
