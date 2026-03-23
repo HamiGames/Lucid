@@ -110,20 +110,74 @@ RUN echo "=== Verifying pip installation (session storage) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./tmp ./wheels && \
+RUN mkdir -p ./sessions ./sessions/storage ./sessions/core ./sessions/recorder ./sessions/processor ./sessions/api ./sessions/config ./sessions/integration ./sessions/security ./sessions/pipeline ./tmp ./wheels && \
     printf "LUCID_SESSION_STORAGE_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
+    printf "LUCID_SESSION_STORAGE_STORAGE_$(date +%s)" > ./sessions/storage/.keep && \
+    touch ./sessions/storage/.keep && \
     printf "LUCID_SESSION_STORAGE_TMP_$(date +%s)" > ./tmp/.keep && \
-    touch ./tmp/.keep
+    touch ./tmp/.keep && \
+    printf "LUCID_SESSION_STORAGE_CORE_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_SESSION_STORAGE_RECORDER_$(date +%s)" > ./sessions/recorder/.keep && \
+    touch ./sessions/recorder/.keep && \
+    printf "LUCID_SESSION_STORAGE_ENCRYPTION_$(date +%s)" > ./sessions/encryption/.keep && \
+    touch ./sessions/encryption/.keep && \
+    printf "LUCID_SESSION_STORAGE_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
+    touch ./sessions/processor/.keep && \
+    printf "LUCID_SESSION_STORAGE_API_$(date +%s)" > ./sessions/api/.keep && \
+    touch ./sessions/api/.keep && \
+    printf "LUCID_SESSION_STORAGE_CONFIG_$(date +%s)" > ./sessions/config/.keep && \
+    touch ./sessions/config/.keep && \
+    printf "LUCID_SESSION_STORAGE_INTEGRATION_$(date +%s)" > ./sessions/integration/.keep && \
+    touch ./sessions/integration/.keep && \
+    printf "LUCID_SESSION_STORAGE_SECURITY_$(date +%s)" > ./sessions/security/.keep && \
+    touch ./sessions/security/.keep && \
+    printf "LUCID_SESSION_STORAGE_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
 
-COPY sessions/ ./sessions/
+COPY sessions/api/ ./sessions/api/
+COPY sessions/config/storage-config.yaml ./sessions/config/storage-config.yaml
+COPY sessions/config/api-config.yaml ./sessions/config/api-config.yaml
 
-RUN echo "=== Session storage tree ===" && \
-    ls -la ./sessions/storage/ | head -30
+RUN echo "=== Session storage config files ===" && \
+    ls -la ./sessions/config/ && \
+    chmod +x ./sessions/config/storage-config.yaml && chmod +x ./sessions/config/api-config.yaml && \
+    echo "Session storage config files verified"
 
-RUN mkdir -p /build/tmp
 
-COPY <<'PY' /build/tmp/verify_runtime_session_storage.py
+COPY sessions/integration/ ./sessions/integration/
+COPY sessions/security/ ./sessions/security/
+COPY sessions/pipeline/ ./sessions/pipeline/
+COPY sessions/core/ ./sessions/core/
+COPY sessions/encryption/ ./sessions/encryption/
+COPY sessions/processor/ ./sessions/processor/
+COPY sessions/recorder/ ./sessions/recorder/
+COPY sessions/storage/ ./sessions/storage/
+
+RUN echo "changing permissions for session storage files" && \
+    chmod +x ./sessions/integration/* && \
+    chmod +x ./sessions/security/* && \
+    chmod +x ./sessions/pipeline/* && \
+    chmod +x ./sessions/core/* && \
+    chmod +x ./sessions/encryption/* && \
+    chmod +x ./sessions/processor/* && \
+    chmod +x ./sessions/recorder/* && \
+    chmod +x ./sessions/storage/* && \
+    echo "Session storage files permissions changed"
+
+
+COPY sessions/__init__.py ./sessions/__init__.py
+COPY sessions/chunk_manager.py ./sessions/chunk_manager.py
+
+RUN echo "sessions files copied + activated" && \
+    ls -la ./sessions/ && \
+    chmod +x ./sessions/* && \
+    echo "sessions files verified"
+
+RUN mkdir -p ./tmp
+
+COPY <<'PY' ./tmp/verify_runtime_session_storage.py
 import os
 import sys
 
@@ -142,6 +196,9 @@ for d in dirs:
         sys.exit(1)
 print("✅ Session storage runtime layout verified")
 PY
+
+RUN chmod +x ./tmp/verify_runtime_session_storage.py
+
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -188,16 +245,31 @@ COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_session_storage.py /app/tmp/verify_runtime.py
 
+
+COPY --from=builder --chown=65532:65532 /build/sessions/chunk_manager.py /app/sessions/chunk_manager.py
+COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/storage/ /app/sessions/storage/
+COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
+COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
+COPY --from=builder --chown=65532:65532 /build/sessions/encryption/ /app/sessions/encryption/
+COPY --from=builder --chown=65532:65532 /build/sessions/processor/ /app/sessions/processor/
+COPY --from=builder --chown=65532:65532 /build/sessions/api/ /app/sessions/api/
+COPY --from=builder --chown=65532:65532 /build/sessions/config/ /app/sessions/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/integration/ /app/sessions/integration/
+COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/security/
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
+
+
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
 EXPOSE 8020
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/health', timeout=2); exit(0)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-storage-service:8020/health', timeout=2); exit(0)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.storage.main:app", "--host", "0.0.0.0", "--port", "8020"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.sessions.storage.main:app", "--host", "session-storage-service", "--port", "8020"]

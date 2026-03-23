@@ -12,14 +12,14 @@ service:
 tron:
   network: "${TRON_NETWORK:-mainnet}"
   api_url: "${TRON_API_URL:-https://api.trongrid.io}"
-  api_key: "${TRON_API_KEY:-}"
+  api_key: "${TRON_API_KEY}"
   timeout: 30
   retry_attempts: 3
   retry_delay: 1000
 
 # USDT Configuration
 usdt:
-  contract_address: "${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}"
+  contract_address: "${USDT_CONTRACT_ADDRESS}"
   decimals: 6
   min_transfer: 1
   max_transfer: 1000000
@@ -68,20 +68,20 @@ ports:
 # Database Configuration
 database:
   mongodb:
-    host: "${MONGODB_HOST:-localhost}"
-    port: "${MONGODB_PORT:-27017}"
-    database: "${MONGODB_DATABASE:-lucid}"
-    username: "${MONGODB_USERNAME:-lucid}"
-    password: "${MONGODB_PASSWORD:-}"
+    host: "${MONGODB_HOST}"
+    port: "${MONGODB_PORT}"
+    database: "${MONGODB_DATABASE}"
+    username: "${MONGODB_USERNAME}"
+    password: "${MONGODB_PASSWORD}"
     auth_source: "admin"
     pool_size: 20
     max_idle_time: 30000
     server_selection_timeout: 5000
 
   redis:
-    host: "${REDIS_HOST:-localhost}"
-    port: "${REDIS_PORT:-6379}"
-    password: "${REDIS_PASSWORD:-}"
+    host: "${REDIS_HOST}"
+    port: "${REDIS_PORT}"
+    password: "${REDIS_PASSWORD}"
     database: 0
     pool_size: 50
     max_connections: 1000
@@ -90,21 +90,21 @@ database:
 # Security Configuration
 security:
   jwt:
-    secret: "${JWT_SECRET:-}"
+    secret: "${JWT_SECRET}"
     algorithm: "HS256"
     access_token_expire_minutes: 15
     refresh_token_expire_days: 7
 
   encryption:
-    key: "${ENCRYPTION_KEY:-}"
+    key: "${ENCRYPTION_KEY}"
     algorithm: "AES-256-GCM"
     iv_length: 12
 
   ssl:
-    enabled: "${SSL_ENABLED:-true}"
-    cert_path: "${SSL_CERT_PATH:-/etc/ssl/certs/lucid.crt}"
-    key_path: "${SSL_KEY_PATH:-/etc/ssl/private/lucid.key}"
-    ca_path: "${SSL_CA_PATH:-/etc/ssl/certs/ca.crt}"
+    enabled: "${SSL_ENABLED}"
+    cert_path: "${SSL_CERT_PATH:/app/etc/ssl/certs/lucid.crt}"
+    key_path: "${SSL_KEY_PATH:/app/etc/ssl/private/lucid.key}"
+    ca_path: "${SSL_CA_PATH:/app/etc/ssl/certs/ca.crt}"
 
 # Rate Limiting
 rate_limiting:
@@ -124,9 +124,9 @@ monitoring:
 
 # Logging Configuration
 logging:
-  level: "${LOG_LEVEL:-INFO}"
+  level: "${LOG_LEVEL}"
   format: "json"
-  file: "/var/log/lucid/tron-payment.log"
+  file: "/app/logs/tron-payment.log"
   max_size: "100MB"
   max_files: 10
   compress: true
@@ -135,12 +135,12 @@ logging:
 alerting:
   enabled: true
   email:
-    smtp_host: "${ALERTING_EMAIL_SMTP_HOST:-}"
-    smtp_port: "${ALERTING_EMAIL_SMTP_PORT:-587}"
-    smtp_user: "${ALERTING_EMAIL_SMTP_USER:-}"
-    smtp_password: "${ALERTING_EMAIL_SMTP_PASSWORD:-}"
-    from: "${ALERTING_EMAIL_FROM:-}"
-    to: "${ALERTING_EMAIL_TO:-}"
+    smtp_host: "${ALERTING_EMAIL_SMTP_HOST}"
+    smtp_port: "${ALERTING_EMAIL_SMTP_PORT}"
+    smtp_user: "${ALERTING_EMAIL_SMTP_USER}"
+    smtp_password: "${ALERTING_EMAIL_SMTP_PASSWORD}"
+    from: "${ALERTING_EMAIL_FROM}"
+    to: "${ALERTING_EMAIL_TO}"
 
   thresholds:
     error_rate: 5
@@ -150,7 +150,7 @@ alerting:
 
 # Network Configuration
 network:
-  interface: "${NETWORK_INTERFACE:-eth0}"
+  interface: "${NETWORK_INTERFACE}"
   mtu: 1500
   buffer_size: 65536
   timeout: 30
@@ -160,8 +160,8 @@ network:
 container:
   runtime: "docker"
   network: "lucid-tron-isolated"
-  subnet: "172.21.0.0/16"
-  gateway: "172.21.0.1"
+  subnet: "${TRON_ISOLATED_SUBNET}"
+  gateway: "tron-client.lucid.local"
 
 # Resource Limits
 resources:
@@ -193,40 +193,40 @@ health_checks:
 
 # Service Dependencies
 dependencies:
-  - name: "mongodb"
-    host: "mongodb"
-    port: 27017
+  - name: "lucid-mongodb"
+    host: "lucid-mongodb"
+    port: "${MONGODB_PORT}"
     timeout: 10
 
-  - name: "redis"
-    host: "redis"
-    port: 6379
+  - name: "lucid-redis"
+    host: "lucid-redis"
+    port: "${REDIS_PORT}"
     timeout: 10
 
-  - name: "auth-service"
-    host: "auth-service"
-    port: 8089
+  - name: "lucid-auth-service"
+    host: "lucid-auth-service"
+    port: "${AUTH_SERVICE_PORT}"
     timeout: 10
 
 # Environment Variables
 environment:
-  TRON_NETWORK: "${TRON_NETWORK:-mainnet}"
-  TRON_API_URL: "${TRON_API_URL:-https://api.trongrid.io}"
-  TRON_API_KEY: "${TRON_API_KEY:-}"
-  USDT_CONTRACT_ADDRESS: "${USDT_CONTRACT_ADDRESS:-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t}"
-  JWT_SECRET: "${JWT_SECRET:-}"
-  ENCRYPTION_KEY: "${ENCRYPTION_KEY:-}"
-  MONGODB_URI: "mongodb://${MONGODB_USERNAME:-lucid}:${MONGODB_PASSWORD:-}@${MONGODB_HOST:-localhost}:${MONGODB_PORT:-27017}/${MONGODB_DATABASE:-lucid}?authSource=admin"
-  REDIS_URL: "redis://${REDIS_HOST:-localhost}:${REDIS_PORT:-6379}"
+  TRON_NETWORK: "${TRON_NETWORK}"
+  TRON_API_URL: "${TRON_API_URL}"
+  TRON_API_KEY: "${TRON_API_KEY}"
+  USDT_CONTRACT_ADDRESS: "${USDT_CONTRACT_ADDRESS}"
+  JWT_SECRET: "${JWT_SECRET}"
+  ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+  MONGODB_URI: "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_DATABASE}?authSource=admin"
+  REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}"
 
 # Service Discovery
 discovery:
   enabled: true
   consul:
-    host: "consul"
-    port: 8500
+    host: "lucid-consul"
+    port: "${CONSUL_PORT}"
     service_name: "tron-payment"
-    service_tags: ["payment", "tron", "crypto"]
+    service_tags: ["tron-payment", "payment","distribution", "tron", "crypto"]
     health_check_interval: 30
 
 # Load Balancing
@@ -252,7 +252,7 @@ backup:
   encryption: true
   storage:
     type: "local"
-    path: "/var/backups/lucid/tron-payment"
+    path: "/app/data/backups/lucid/tron-payment"
 
 # Development Configuration
 development:
@@ -268,7 +268,7 @@ production:
   mock_external_apis: false
   test_mode: false
   ssl_required: true
-  cors_origins: ["https://lucid.example.com"]
+  cors_origins: ["https://${LUCID_DOMAIN}"]
 
 # Testing Configuration
 testing:

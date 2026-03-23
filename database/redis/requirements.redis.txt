@@ -4,18 +4,25 @@
 # Core dependencies
 redis==5.0.1
 hiredis==2.2.3
-
+uvicorn[standard]==0.30.0
+fastapi==0.111.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+cryptography>=41.0.0
 # Configuration and utilities
 python-dotenv==1.0.0
 pyyaml==6.0.1
 
 # Health check and monitoring
 requests==2.31.0
+httpx==0.25.2
 psutil==5.9.6
+zstandard==0.22.0
 
 # Logging and structured output
 structlog==23.2.0
 colorama==0.4.6
+logging==0.4.9.6
 
 # Security and encryption
 cryptography==41.0.7
@@ -23,4 +30,5 @@ bcrypt==4.1.2
 
 # Network and connectivity
 urllib3==2.1.0
-httpx==0.25.2
+pathlib==1.0.1
+

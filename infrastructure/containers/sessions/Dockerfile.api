@@ -1,0 +1,272 @@
+# syntax=docker/dockerfile:1.5
+# LUCID SESSION API - Distroless Python service
+# Aligned with 03_api_gateway/Dockerfile layout and Dockerfile-copy-pattern.md
+# Session API (lucid-session-api) — Port 8113
+# Image: pickme/lucid-session-api:latest-arm64
+# Build context: project root (sessions/ prefix in COPY paths)
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        libzstd-dev \
+        liblz4-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_SESSION_API_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_SESSION_API_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_SESSION_API_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod +x /root/.keep /root/.rustup/.keep /root/.cargo/.keep
+
+RUN apt-get update --allow-releaseinfo-change && \
+    apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN printf "LUCID_SESSION_API_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_SESSION_API_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_SESSION_API_USR_$(date +%s)" > /usr/.keep && \
+    touch /usr/.keep && \
+    printf "LUCID_SESSION_API_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
+    touch /usr/local/.keep && \
+    printf "LUCID_SESSION_API_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_SESSION_API_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_SESSION_API_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_SESSION_API_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_SESSION_API_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
+
+COPY sessions/requirements.api.txt ./requirements.api.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.api.txt
+
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.api.txt
+
+RUN echo "=== Verifying pip installation (session API) ===" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, async_timeout, httpx, zstandard, lz4, blake3, structlog, prometheus_client; print('✅ All critical session API packages installed')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
+    pip list
+
+RUN mkdir -p ./sessions ./sessions/api ./sessions/core ./sessions/pipeline ./sessions/storage ./sessions/recorder ./sessions/config ./sessions/integration ./sessions/security ./sessions/encryption ./sessions/processor ./tmp && \
+    printf "LUCID_SESSION_API_SESSIONS_$(date +%s)" > ./sessions/.keep && \
+    touch ./sessions/.keep && \
+    printf "LUCID_SESSION_API_API_$(date +%s)" > ./sessions/api/.keep && \
+    touch ./sessions/api/.keep && \
+    printf "LUCID_SESSION_API_TMP_$(date +%s)" > ./tmp/.keep && \
+    touch ./tmp/.keep && \
+    printf "LUCID_SESSION_API_CORE_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_SESSION_API_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
+    printf "LUCID_SESSION_API_STORAGE_$(date +%s)" > ./sessions/storage/.keep && \
+    touch ./sessions/storage/.keep && \
+    printf "LUCID_SESSION_API_RECORDER_$(date +%s)" > ./sessions/recorder/.keep && \
+    touch ./sessions/recorder/.keep && \
+    printf "LUCID_SESSION_API_CONFIG_$(date +%s)" > ./sessions/config/.keep && \
+    touch ./sessions/config/.keep && \
+    printf "LUCID_SESSION_API_INTEGRATION_$(date +%s)" > ./sessions/integration/.keep && \
+    touch ./sessions/integration/.keep && \
+    printf "LUCID_SESSION_API_SECURITY_$(date +%s)" > ./sessions/security/.keep && \
+    touch ./sessions/security/.keep && \
+    printf "LUCID_SESSION_API_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
+    touch ./sessions/processor/.keep && \
+    printf "LUCID_SESSION_API_ENCRYPTION_$(date +%s)" > ./sessions/encryption/.keep && \
+    touch ./sessions/encryption/.keep && \
+    chown -R 65532:65532 ./sessions ./tmp ./sessions/pipeline ./sessions/core ./sessions/storage ./sessions/encryption ./sessions/recorder ./sessions/config ./sessions/integration ./sessions/security ./sessions/processor && \
+    chmod 644 ./sessions/.keep ./sessions/api/.keep ./tmp/.keep ./sessions/core/.keep ./sessions/pipeline/.keep ./sessions/storage/.keep ./sessions/encryption/.keep ./sessions/recorder/.keep ./sessions/config/.keep ./sessions/integration/.keep ./sessions/security/.keep ./sessions/processor/.keep
+
+COPY sessions/api/ ./sessions/api/
+COPY sessions/core/ ./sessions/core/
+COPY sessions/storage/ ./sessions/storage/
+COPY sessions/encryption/ ./sessions/encryption/
+COPY sessions/pipeline/ ./sessions/pipeline/
+COPY sessions/recorder/ ./sessions/recorder/
+COPY sessions/config/api-config.yaml ./sessions/config/api-config.yaml
+COPY sessions/config/pipeline-config.yaml ./sessions/config/pipeline-config.yaml
+
+COPY sessions/integration/ ./sessions/integration/
+COPY sessions/security/ ./sessions/security/
+COPY sessions/processor/ ./sessions/processor/
+COPY sessions/__init__.py ./sessions/__init__.py
+
+RUN chmod +x /sessions/* && \
+    chmod +x /sessions/api/* && \
+    chmod +x /sessions/core/* && \
+    chmod +x /sessions/storage/* && \
+    chmod +x /sessions/encryption/* && \
+    chmod +x /sessions/pipeline/* && \
+    chmod +x /sessions/recorder/* && \
+    chmod +x /sessions/config/* && \
+    chmod +x /sessions/integration/* && \
+    chmod +x /sessions/security/* && \
+    chmod +x /sessions/processor/* && \
+    chmod +x /sessions/__init__.py
+
+COPY <<'PY' ./tmp/verify_runtime.py
+import os
+import sys
+
+dirs = [
+    "/app/sessions",
+    "/app/sessions/api",
+    "/app/sessions/core",
+    "/app/sessions/storage",
+    "/app/sessions/encryption",
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/app/wheels",
+]
+for d in dirs:
+    if not os.path.isdir(d):
+        print(f"ERROR: {d} missing")
+        sys.exit(1)
+    if d.endswith("site-packages") and not os.listdir(d):
+        print(f"ERROR: {d} empty")
+        sys.exit(1)
+print("✅ Session API runtime layout verified")
+PY
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Session API" \
+      org.opencontainers.image.description="Distroless session API service for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="session-api" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="application" \
+      com.lucid.security="distroless"
+
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    SESSION_API_PORT=8113 \
+    SESSION_API_HOST=session-api
+
+COPY --from=builder /root/.rustup/        /app/rust/
+COPY --from=builder /root/.cargo/         /app/cargo/
+COPY --from=builder /var/run/             /app/var/run/
+COPY --from=builder /var/lib/             /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/       /app/usr/local/bin/
+COPY --from=builder /usr/bin/             /app/usr/bin/
+COPY --from=builder /usr/sbin/            /app/usr/sbin/
+COPY --from=builder --chown=65532:65532 /usr/local/sbin/ /app/usr/local/sbin/
+
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+
+COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/api/ /app/sessions/api/
+COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
+COPY --from=builder --chown=65532:65532 /build/sessions/storage/ /app/sessions/storage/
+COPY --from=builder --chown=65532:65532 /build/sessions/encryption/ /app/sessions/encryption/
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
+COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
+COPY --from=builder --chown=65532:65532 /build/sessions/config/ /app/sessions/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/integration/ /app/sessions/integration/
+COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/security/
+COPY --from=builder --chown=65532:65532 /build/sessions/processor/ /app/sessions/processor/
+
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+RUN ["/app/usr/bin/python3.11", "-c", "import os, uvicorn, fastapi, pydantic, motor, async_timeout, redis, httpx, zstandard, lz4, blake3; sp='/app/usr/local/lib/python3.11/site-packages'; assert os.path.isdir(sp) and os.listdir(sp), sp; print('✅ Session API packages verified in runtime stage')"]
+
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
+
+EXPOSE 8113
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-api', 8113)); s.close(); exit(0 if result == 0 else 1)"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/sessions/api/entrypoint.py"]

@@ -27,11 +27,11 @@ dependencies:
     - name: "api-gateway"
       url: "http://api-gateway:8080"
       required: true
-    - name: "blockchain-core"
-      url: "http://blockchain-core:8084"
+    - name: "blockchain-engine"
+      url: "http://blockchain-engine:8084"
       required: true
-    - name: "session-management"
-      url: "http://session-management:8087"
+    - name: "session-anchoring"
+      url: "http://session-anchoring:8085"
       required: true
     - name: "rdp-services"
       url: "http://rdp-services:8090"
@@ -39,8 +39,8 @@ dependencies:
     - name: "node-management"
       url: "http://node-management:8095"
       required: true
-    - name: "auth-service"
-      url: "http://auth-service:8089"
+    - name: "lucid-auth-service"
+      url: "http://lucid-auth-service:8089"
       required: true
   external:
     - name: "mongodb"
@@ -470,7 +470,7 @@ validation:
     - "ports.admin_ui"
     - "containers.admin_ui.base_image"
   port_ranges:
-    admin_ui: [8000, 8999]
+    admin_ui: [8083, 8999]
   resource_limits:
     cpu_max: "8"
     memory_max: "16Gi"

@@ -1,111 +1,141 @@
-# LUCID Redis Container - SPEC-1B Implementation
-# Distroless container for Redis cache
-# FIXED: All hardcoded passwords removed - uses environment variables from .env.* files
+# syntax=docker/dockerfile:1.5
+# LUCID Redis - Distroless Python + redis-server
+# Design aligned with 03_api_gateway/Dockerfile (stages, ARGs, markers, labels, /app layout, tini, 65532)
+# Builder: official Redis image (correct base for redis-server / redis-cli binaries)
+# Build context: repository root
 
-# syntax=docker/dockerfile:1.7
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
-# Stage 1: Builder
-FROM redis:7.2 AS builder
+############################
+# Stage 1 – Builder (Redis + Python deps for entrypoint/healthcheck)
+############################
+FROM --platform=$TARGETPLATFORM redis:7.2 AS redis-builder
 
-# Set build arguments
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-# Install additional tools for customization and Python for entrypoint script
-RUN apt-get update && apt-get install -y \
-    curl \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Python dependencies for entrypoint script (using --user and --break-system-packages for PEP 668 compliance in Docker)
-COPY database/redis/requirements.txt /tmp/requirements.txt
-RUN pip3 install --user --break-system-packages --no-cache-dir -r /tmp/requirements.txt && \
-    rm -f /tmp/requirements.txt
+WORKDIR /build
 
-# Create marker files with actual content (ensures directory structure is locked in per copy-pattern)
-RUN echo "LUCID_REDIS_PACKAGES_INSTALLED_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-marker && \
-    chown -R 65532:65532 /root/.local
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        python3 \
+        python3-pip \
+        tini \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Verify packages are installed
-RUN python3 -c "import redis, hiredis; print('✅ critical packages installed')" && \
-    test -d /root/.local/lib/python3.11/site-packages
+RUN printf "LUCID_REDIS_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_REDIS_LIB_DIRECTORY" > /var/lib/.keep && \
+    chmod 644 /var/run/.keep /var/lib/.keep
 
-# Copy template Redis configuration (without hardcoded password)
-COPY configs/database/redis/redis.conf /etc/redis.conf.template
+RUN mkdir -p /build/wheels && \
+    printf "LUCID_REDIS_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep
 
-# Copy entrypoint script
-COPY database/redis/start-redis.py /usr/local/bin/start-redis.py
-RUN chmod +x /usr/local/bin/start-redis.py
+COPY database/redis/requirements.redis.txt /tmp/requirements.redis.txt
 
-# Copy healthcheck script
-COPY database/redis/healthcheck.py /usr/local/bin/redis-healthcheck.py
-RUN chmod +x /usr/local/bin/redis-healthcheck.py
+RUN pip3 install --break-system-packages --no-cache-dir --upgrade pip setuptools wheel && \
+    pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.redis.txt && \
+    rm -f /tmp/requirements.redis.txt
 
-# Stage 2: Runtime (Distroless with Python)
-FROM gcr.io/distroless/python3-debian12:nonroot
+RUN python3 -c "import redis, hiredis; print('✅ redis + hiredis OK')"
 
-# Copy Redis binary and configuration
-COPY --from=builder /usr/local/bin/redis-server /usr/local/bin/redis-server
-COPY --from=builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli
-COPY --from=builder /etc/redis.conf.template /etc/redis.conf.template
+# Bundle redis-server/redis-cli shared libraries for distroless (multi-arch friendly)
+RUN mkdir -p /export/app/usr/local/bin /export/app/usr/lib/redis-ldd /export/app/etc/ssl/certs && \
+    cp /usr/local/bin/redis-server /usr/local/bin/redis-cli /export/app/usr/local/bin/ && \
+    for bin in /export/app/usr/local/bin/redis-server /export/app/usr/local/bin/redis-cli; do \
+        ldd "$bin" 2>/dev/null | awk '$3 ~ /^\// { print $3 }' | sort -u | while read -r lib; do \
+            base=$(basename "$lib"); cp -n "$lib" "/export/app/usr/lib/redis-ldd/$base" 2>/dev/null || true; \
+        done; \
+    done && \
+    cp /etc/ssl/certs/ca-certificates.crt /export/app/etc/ssl/certs/
 
-# Copy entrypoint script
-COPY --from=builder /usr/local/bin/start-redis.py /usr/local/bin/start-redis.py
+# Copy pip-installed packages to a path distroless python3.11 expects (handles site-packages vs dist-packages)
+RUN PURELIB=$(python3 -c "import sysconfig; print(sysconfig.get_path('purelib'))") && \
+    mkdir -p /export/app/usr/local/lib/python3.11/site-packages && \
+    cp -a "${PURELIB}"/* /export/app/usr/local/lib/python3.11/site-packages/
 
-# Copy Python site-packages (for redis module used in healthcheck)
-# Packages installed with --user go to /root/.local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY configs/database/redis/redis.conf /export/app/etc/redis.conf.template
+COPY database/redis/__init__.py /export/app/usr/local/bin/__init__.py
+COPY database/redis/start-redis.py /export/app/usr/local/bin/start-redis.py
+COPY database/redis/healthcheck.py /export/app/usr/local/bin/redis-healthcheck.py
 
-# Verify packages were copied (fails build if missing)
-RUN ["/usr/bin/python3", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; assert os.path.exists(site_packages), 'site_packages missing'; assert os.path.exists(os.path.join(site_packages, 'redis')), 'redis not found'; print('Packages verified')"]
+RUN chmod +x /export/app/usr/local/bin/start-redis.py /export/app/usr/local/bin/redis-healthcheck.py && \
+    test -f /export/app/etc/redis.conf.template
 
-# Copy required libraries (ARM64-compatible pattern)
-COPY --from=builder /lib/*/libc.so.6 /lib/
-COPY --from=builder /lib/*/libm.so.6 /lib/
-COPY --from=builder /lib/*/libpthread.so.0 /lib/
-COPY --from=builder /lib/*/libdl.so.2 /lib/
-COPY --from=builder /lib/*/librt.so.1 /lib/
-COPY --from=builder /lib/*/libcrypt.so.1 /lib/
-COPY --from=builder /lib/*/libz.so.1 /lib/
-COPY --from=builder /lib/*/libssl.so.3 /lib/
-COPY --from=builder /lib/*/libcrypto.so.3 /lib/
-COPY --from=builder /lib/*/libzstd.so.1 /lib/
-COPY --from=builder /lib/*/liblzma.so.5 /lib/
+############################
+# Stage 2 – Runtime (Distroless Python 3.11)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-# Copy dynamic linker for ARM64
-COPY --from=builder /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+WORKDIR /app
 
-# Copy arch-specific libraries
-COPY --from=builder /lib/aarch64-linux-gnu /lib/aarch64-linux-gnu
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Set environment variables (defaults, overridden by docker-compose env_file)
-ENV REDIS_PASSWORD=""
-ENV REDIS_MAX_MEMORY="512mb"
-ENV REDIS_MAX_MEMORY_POLICY="allkeys-lru"
-ENV REDIS_PORT="6379"
-ENV REDIS_HOST="0.0.0.0"
-# Fix locale warnings in distroless (use C instead of C.UTF-8 for distroless compatibility)
-ENV LANG=C
-ENV LC_ALL=C
-# Set PYTHONPATH so Python can find packages in /usr/local/lib/python3.11/site-packages
-ENV PYTHONPATH=/usr/local/lib/python3.11/site-packages
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Redis" \
+      org.opencontainers.image.description="Distroless Redis with Python entrypoint for Lucid" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="lucid-redis" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="foundation" \
+      com.lucid.security="distroless"
 
-# Set working directory
-WORKDIR /data
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/usr/local/lib/python3.11/site-packages \
+    LANG=C \
+    LC_ALL=C \
+    REDIS_PASSWORD=${REDIS_PASSWORD} \
+    REDIS_MAX_MEMORY="512mb" \
+    REDIS_MAX_MEMORY_POLICY="allkeys-lru" \
+    REDIS_PORT=${REDIS_PORT} \
+    REDIS_HOST="lucid-redis" \
+    LD_LIBRARY_PATH=/app/usr/lib/redis-ldd
 
-# Create non-root user
-USER nonroot
+COPY --from=redis-builder /var/run/ /app/var/run/
+COPY --from=redis-builder /var/lib/ /app/var/lib/
+COPY --from=redis-builder /export/app/etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=redis-builder /export/app/etc/redis.conf.template /app/etc/redis.conf.template
 
-# Copy healthcheck script
-COPY --from=builder /usr/local/bin/redis-healthcheck.py /usr/local/bin/healthcheck.py
+COPY --from=redis-builder --chown=65532:65532 /export/app/usr/local/bin/__init__.py /app/usr/local/bin/__init__.py
+COPY --from=redis-builder --chown=65532:65532 /export/app/usr/local/bin/start-redis.py /app/usr/local/bin/start-redis.py
+COPY --from=redis-builder --chown=65532:65532 /export/app/usr/local/bin/redis-healthcheck.py /app/usr/local/bin/redis-healthcheck.py
 
-# Health check using Python script that reads REDIS_PASSWORD from environment
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/usr/bin/python3", "/usr/local/bin/healthcheck.py"]
+COPY --from=redis-builder /export/app/usr/local/bin/redis-server/ /app/usr/local/bin/redis-server/
+COPY --from=redis-builder /export/app/usr/local/bin/redis-cli/ /app/usr/local/bin/redis-cli/
 
-# Expose port
+COPY --from=redis-builder /export/app/usr/lib/redis-ldd/ /app/usr/lib/redis-ldd/
+
+COPY --from=redis-builder --chown=65532:65532 /export/app/usr/local/lib/python3.11-site-packages/ /app/usr/local/lib/python3.11/site-packages/
+
+COPY --from=redis-builder /usr/bin/ /app/usr/bin/
+
+RUN ["/app/usr/bin/python3.11", "-c", "import os, redis; sp='/app/usr/local/lib/python3.11/site-packages'; assert os.path.isdir(sp) and os.listdir(sp); print('✅ Redis runtime python deps OK')"]
+
 EXPOSE 6379
 
-# Run Redis via Python entrypoint script (reads REDIS_PASSWORD from environment)
-ENTRYPOINT ["/usr/bin/python3", "/usr/local/bin/start-redis.py"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "/app/usr/local/bin/redis-healthcheck.py"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/usr/local/bin/start-redis.py"]

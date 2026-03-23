@@ -108,7 +108,7 @@ RUN echo "=== Verifying pip installation (session pipeline) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/api ./sessions/encryption ./sessions/processor ./sessions/recorder ./sessions/storage ./sessions/config ./sessions/security ./tmp ./wheels && \
+RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./configs ./sessions/api ./sessions/encryption ./sessions/processor ./sessions/recorder ./sessions/storage ./sessions/config ./sessions/security ./tmp ./wheels && \
     printf "LUCID_SESSION_PIPELINE_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
     printf "LUCID_SESSION_PIPELINE_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
@@ -133,6 +133,8 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/api ./ses
     touch ./tmp/.keep
 
 COPY sessions/ ./sessions/
+COPY configs/services/session-management.yml ./configs/session-management.yml
+
 COPY sessions/pipeline/ ./sessions/pipeline/
 COPY sessions/core/ ./sessions/core/
 COPY sessions/api/ ./sessions/api/
@@ -212,6 +214,8 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_session_pipeline.py /app/tmp/verify_runtime.py
+
+COPY --from=builder --chown=65532:65532 /build/configs/services/session-management.yml /app/configs/session-management.yml
 
 
 COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/

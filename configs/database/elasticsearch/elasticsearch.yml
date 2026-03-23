@@ -16,10 +16,10 @@ node.name: lucid-node
 # ----------------------------------- Paths ------------------------------------
 
 # Path to directory where to store the data (aligned with path_plan.md)
-path.data: /usr/share/elasticsearch/data
+path.data: /app/usr/share/elasticsearch/data
 
 # Path to log files (aligned with path_plan.md)
-path.logs: /usr/share/elasticsearch/logs
+path.logs: /app/usr/share/elasticsearch/logs
 
 # ----------------------------------- Memory -----------------------------------
 
@@ -33,7 +33,7 @@ bootstrap.memory_lock: false
 # ---------------------------------- Network -----------------------------------
 
 # Bind to all interfaces for Docker network
-network.host: 0.0.0.0
+network.host: lucid-pi-network
 
 # HTTP port (aligned with essentials.md: 9200)
 http.port: 9200

@@ -11,11 +11,11 @@ service:
   
 # Port Configuration
 ports:
-  node_service: 8095
+  node-management: 8095
 
 # Container Configuration
 containers:
-  node_service:
+  node-management:
     name: lucid-node-management
     base_image: "pickme/lucid-node-management:latest-arm64"
     tag: "latest"
@@ -27,30 +27,30 @@ dependencies:
     - name: "api-gateway"
       url: "http://api-gateway:8080"
       required: true
-    - name: "blockchain-core"
-      url: "http://blockchain-core:8084"
+    - name: "blockchain-engine"
+      url: "http://blockchain-engine:8084"
       required: true
     - name: "tron-payment"
       url: "http://tron-payment:8085"
       required: true
       isolated: true
   external:
-    - name: "mongodb"
-      url: "mongodb://mongodb:27017/lucid_nodes"
+    - name: "lucid-mongodb"
+      url: "mongodb://lucid-mongodb:27017/lucid_nodes"
       required: true
-    - name: "redis"
-      url: "redis://redis:6379/4"
+    - name: "lucid-redis"
+      url: "redis://lucid-redis:6379/4"
       required: true
 
 # Node Management Configuration
-node_management:
-  worker_nodes:
+node-management:
+  worker-nodes:
     max_nodes: 10000
     registration_timeout: 60
     heartbeat_interval: 30
     offline_timeout: 300
     cleanup_timeout: 3600
-  node_lifecycle:
+  node-lifecycle:
     states:
       - "registering"
       - "active"
@@ -60,7 +60,7 @@ node_management:
       - "terminated"
     state_timeout: 300
     auto_cleanup: true
-  resource_requirements:
+  resource-requirements:
     min_cpu: "1"
     min_memory: "2Gi"
     min_disk: "10Gi"
@@ -71,7 +71,7 @@ node_management:
     max_network: "1Gbps"
 
 # Pool Management Configuration
-pool_management:
+pool-management:
   pools:
     - name: "high_performance"
       min_cpu: "4"
@@ -88,7 +88,7 @@ pool_management:
       min_memory: "2Gi"
       min_disk: "20Gi"
       priority: 3
-  pool_assignment:
+  pool-assignment:
     strategy: "resource_based"
     load_balancing: true
     auto_scaling: true
@@ -115,7 +115,7 @@ poot:
     distribution_interval: 86400  # 24 hours
 
 # Resource Monitoring Configuration
-resource_monitoring:
+resource-monitoring:
   metrics_collection:
     interval: 30
     retention: 604800  # 7 days
@@ -147,20 +147,20 @@ resource_monitoring:
     - "error_rate"
 
 # Payout Management Configuration
-payout_management:
-  tron_integration:
+payout-management:
+  tron-integration:
     enabled: true
-    network: "mainnet"
-    usdt_contract: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
-    payout_frequency: "daily"
-    batch_size: 100
+    network: "${TRON_NETWORK}"
+    usdt-contract: "${USDT_CONTRACT_ADDRESS}"
+    payout-frequency: "daily"
+    batch-size: 100
     timeout: 300
-  payout_calculation:
+  payout-calculation:
     base_rate: 1.0
     performance_multiplier: true
     uptime_multiplier: true
     quality_multiplier: true
-  payout_processing:
+  payout-processing:
     auto_processing: true
     manual_approval: false
     minimum_payout: 1.0
@@ -210,8 +210,8 @@ api:
 
 # Database Configuration
 database:
-  mongodb:
-    uri: "mongodb://mongodb:27017/lucid_nodes"
+  lucid-mongodb:
+    uri: "mongodb://lucid-mongodb:27017/lucid_nodes"
     database: "lucid_nodes"
     collections:
       - "nodes"
@@ -231,7 +231,7 @@ database:
     connection_pool: 20
     timeout: 30
   redis:
-    uri: "redis://redis:6379/4"
+    uri: "redis://lucid-redis:6379/4"
     database: 4
     use_cases:
       - "node_cache"
@@ -249,8 +249,8 @@ security:
   authorization:
     rbac_enabled: true
     roles:
-      - "node_operator"
-      - "pool_manager"
+      - "node-operator"
+      - "pool-manager"
       - "admin"
   encryption:
     data_in_transit: true
@@ -306,7 +306,7 @@ health_check:
   dependencies:
     - "mongodb"
     - "redis"
-    - "blockchain-core"
+    - "blockchain-engine"
     - "tron-payment"
 
 # Metrics Configuration
@@ -407,10 +407,10 @@ validation:
   required_fields:
     - "service.name"
     - "service.version"
-    - "ports.node_service"
-    - "containers.node_service.base_image"
+    - "ports.node-management"
+    - "containers.node-management.base_image"
   port_ranges:
-    node_service: [8000, 8999]
+    node-management: [8095, 8999]
   resource_limits:
     cpu_max: "8"
     memory_max: "16Gi"

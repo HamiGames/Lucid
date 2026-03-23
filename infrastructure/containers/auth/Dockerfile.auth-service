@@ -120,9 +120,21 @@ RUN echo "=== Verifying pip installation success (auth service) ===" && \
     echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
     pip list
 
-RUN mkdir -p ./auth ./wallet ./infrastructure/kubernetes ./tmp ./wheels ./rust ./cargo && \
+RUN mkdir -p ./auth ./auth/api ./auth/middleware ./auth/models ./auth/utils ./auth/services ./auth/config ./wallet ./configs ./infrastructure/kubernetes ./tmp ./wheels ./rust ./cargo && \
     printf "LUCID_AUTH_SERVICE_AUTH_$(date +%s)" > ./auth/.keep && \
     touch ./auth/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_API_$(date +%s)" > ./auth/api/.keep && \
+    touch ./auth/api/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_MIDDLEWARE_$(date +%s)" > ./auth/middleware/.keep && \
+    touch ./auth/middleware/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_MODELS_$(date +%s)" > ./auth/models/.keep && \
+    touch ./auth/models/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_UTILS_$(date +%s)" > ./auth/utils/.keep && \
+    touch ./auth/utils/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_SERVICES_$(date +%s)" > ./auth/services/.keep && \
+    touch ./auth/services/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_CONFIG_$(date +%s)" > ./auth/config/.keep && \
+    touch ./auth/config/.keep && \
     printf "LUCID_AUTH_SERVICE_WALLET_$(date +%s)" > ./wallet/.keep && \
     touch ./wallet/.keep && \
     printf "LUCID_AUTH_SERVICE_INFRA_$(date +%s)" > ./infrastructure/.keep && \
@@ -133,19 +145,49 @@ RUN mkdir -p ./auth ./wallet ./infrastructure/kubernetes ./tmp ./wheels ./rust .
     touch ./tmp/.keep && \
     printf "LUCID_AUTH_SERVICE_RUST_STAMP_$(date +%s)" > ./rust/.keep && \
     touch ./rust/.keep && \
+    printf "LUCID_AUTH_SERVICE_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    touch ./configs/.keep && \
     printf "LUCID_AUTH_SERVICE_CARGO_STAMP_$(date +%s)" > ./cargo/.keep && \
     touch ./cargo/.keep
 
+COPY configs/services/auth-service.yml ./configs/auth-service.yml
 COPY infrastructure/kubernetes/04-auth/auth-service.yaml ./infrastructure/kubernetes/auth-service.yaml
 
 COPY auth/ ./auth/
+
 COPY wallet/ ./wallet/
 
 RUN printf "LUCID_AUTH_SOURCE_MIDDLEWARE_$(date +%s)" > ./auth/middleware/.lucid-middleware-marker && \
     chown -R 65532:65532 ./auth ./wallet && \
     echo "middleware marker created"
 
-COPY auth/verify_runtime.py ./tmp/verify_runtime.py
+COPY <<'PY' ./tmp/verify_runtime.py
+    import os
+    import sys
+    
+    dirs = [
+        "/app/auth",
+        "/app/auth/api",
+        "/app/auth/middleware",
+        "/app/auth/models",
+        "/app/auth/utils",
+        "/app/auth/services",
+        "/app/auth/config",
+        "/app/wallet",
+        "/app/configs",
+        "/app/usr/local/lib/python3.11/site-packages",
+        "/app/wheels",
+    ]
+    for d in dirs:
+        if not os.path.isdir(d):
+            print(f"ERROR: {d} missing")
+            sys.exit(1)
+        if d.endswith("site-packages") and not os.listdir(d):
+            print(f"ERROR: {d} empty")
+            sys.exit(1)
+    print("✅ Session pipeline runtime layout verified")
+    PY
+    
 
 RUN chmod +x ./tmp/verify_runtime.py && \
     echo "verify_runtime.py staged for runtime"
@@ -167,8 +209,8 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="auth-service" \
-      com.lucid.cluster="09-authentication" \
+      com.lucid.service="lucid-auth-service" \
+      com.lucid.cluster="foundation" \
       com.lucid.platform="arm64" \
       com.lucid.security="distroless"
 
@@ -196,6 +238,7 @@ COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
 COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
 COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/auth-service.yaml /app/infrastructure/kubernetes/auth-service.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/services/auth-service.yml /app/configs/auth-service.yml
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os; uid=65532; gid=65532; paths=['/app/logs','/app/data']; [os.makedirs(p, exist_ok=True) or os.chown(p, uid, gid) for p in paths]"]

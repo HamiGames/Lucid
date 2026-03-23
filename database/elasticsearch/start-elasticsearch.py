@@ -17,12 +17,12 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger('elasticsearch-distroless')
+logger = logging.getLogger('elasticsearch-distroless')
 
 class ElasticsearchDistroless:
     def __init__(self):
         self.elasticsearch_process = None
-        self.data_dir = Path('/usr/share/elasticsearch/data')
+        self.data_dir = Path('/app/usr/share/elasticsearch/data')
         
     def setup_directories(self):
         """Create necessary directories with proper permissions"""
@@ -40,7 +40,7 @@ class ElasticsearchDistroless:
         os.environ['ES_JAVA_OPTS'] = java_opts
         
         cmd = [
-            '/usr/bin/elasticsearch',
+            '/app/usr/bin/elasticsearch',
             '-E', 'discovery.type=single-node',
             '-E', 'xpack.security.enabled=false',
             '-E', f'cluster.name={os.getenv("ELASTICSEARCH_CLUSTER_NAME", "lucid-cluster")}',

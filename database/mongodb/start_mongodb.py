@@ -21,13 +21,13 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger('mongodb-distroless')
+logger = logging.getLogger('mongodb-distroless')
 
 class MongoDBDistroless:
     def __init__(self):
         self.mongod_process = None
-        self.data_dir = Path('/data/db')
-        self.log_dir = Path('/var/log/mongodb')
+        self.data_dir = Path('/app/data/db')
+        self.log_dir = Path('/app/var/log/mongodb')
         
     def is_port_listening(self, host='127.0.0.1', port=27017, timeout=1):
         """Check if a TCP port is accepting connections"""
@@ -238,7 +238,7 @@ class MongoDBDistroless:
                     for user in users:
                         try:
                             cmd = [
-                                '/usr/bin/mongosh',
+                                '/app/usr/bin/mongosh',
                                 '--quiet',
                                 '--host', host,
                                 '--port', str(port),
@@ -285,7 +285,7 @@ class MongoDBDistroless:
                 else:
                     # Connect without authentication
                     cmd = [
-                        '/usr/bin/mongosh',
+                        '/app/usr/bin/mongosh',
                         '--quiet',
                         '--host', host,
                         '--port', str(port),
@@ -331,7 +331,7 @@ class MongoDBDistroless:
         # First try without auth (if MongoDB was started without --auth)
         try:
             cmd = [
-                '/usr/bin/mongosh',
+                '/app/usr/bin/mongosh',
                 '--quiet',
                 '--host', host,
                 '--port', str(port),
@@ -359,7 +359,7 @@ class MongoDBDistroless:
             for user in users:
                 try:
                     cmd = [
-                        '/usr/bin/mongosh',
+                        '/app/usr/bin/mongosh',
                         '--quiet',
                         '--host', host,
                         '--port', str(port),
@@ -389,14 +389,9 @@ class MongoDBDistroless:
     
     def create_admin_user(self):
         """Create admin users (both root and lucid) and ensure lucid_auth database exists"""
-        password = os.getenv('MONGODB_PASSWORD', '')
-        if not password:
-            logger.error("MONGODB_PASSWORD environment variable is not set!")
-            logger.error("Please ensure MONGODB_PASSWORD is set in .env.secrets or docker-compose environment")
-            return False
-        
-        host = '127.0.0.1'
-        port = int(os.getenv('MONGODB_PORT', '27017'))
+        password = os.getenv('MONGODB_PASSWORD')
+        host = 'lucid-mongodb'
+        port = int(os.getenv('MONGODB_PORT'))
         
         logger.info("Creating admin users (root and lucid) in admin database...")
         
@@ -478,7 +473,7 @@ class MongoDBDistroless:
         try:
             result = subprocess.run(
                 [
-                    '/usr/bin/mongosh',
+                    '/app/usr/bin/mongosh',
                     '--quiet',
                     '--host', host,
                     '--port', str(port),
@@ -506,7 +501,7 @@ class MongoDBDistroless:
     def get_mongod_command(self, use_auth=True, bypass_localhost=False):
         """Build MongoDB command with security and performance settings"""
         cmd = [
-            '/usr/bin/mongod',
+            '/app/usr/bin/mongod',
             '--bind_ip_all',
             '--dbpath', str(self.data_dir),
             '--logpath', str(self.log_dir / 'mongod.log'),
@@ -524,7 +519,7 @@ class MongoDBDistroless:
         # MongoDB requires keyFile when using auth + replica sets, which adds complexity
         # For single-node foundation deployments, replica sets are disabled by default
         # For multi-node deployments, enable via MONGODB_REPLICA_SET_ENABLED=true
-        if os.getenv('MONGODB_REPLICA_SET_ENABLED', 'false').lower() == 'true':
+        if os.getenv('MONGODB_REPLICA_SET_ENABLED').lower() == 'true':
             repl_set = os.getenv('MONGODB_REPLICA_SET', 'lucid-rs')
             cmd.extend(['--replSet', repl_set])
         

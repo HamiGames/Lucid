@@ -79,27 +79,41 @@ RUN python3 -c "import fastapi, uvicorn, pydantic, motor, pymongo, httpx; print(
     test -d /root/.local/lib/python3.11/site-packages && \
     echo "Directory exists: /root/.local/lib/python3.11/site-packages"
 
+
+
+RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/api ./sessions/encryption ./sessions/config ./sessions/__init__.py && \
+    printf "LUCID_SESSION_PIPELINE_SESSIONS_$(date +%s)" > ./sessions/.keep && \
+    touch ./sessions/.keep && \
+    printf "LUCID_SESSION_PIPELINE_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
+    printf "LUCID_SESSION_PIPELINE_CORE_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_SESSION_PIPELINE_API_$(date +%s)" > ./sessions/api/.keep && \
+    touch ./sessions/api/.keep && \
+    printf "LUCID_SESSION_PIPELINE_ENCRYPTION_$(date +%s)" > ./sessions/encryption/.keep && \
+    touch ./sessions/encryption/.keep && \
+    printf "LUCID_SESSION_PIPELINE_CONFIG_$(date +%s)" > ./sessions/config/.keep && \
+    touch ./sessions/config/.keep && \
+    printf "LUCID_SESSION_PIPELINE___INIT___.py_$(date +%s)" > ./sessions/__init__.py/.keep && \
+    touch ./sessions/__init__.py/.keep && \
+    chown -R 65532:65532 ./sessions ./sessions/pipeline ./sessions/core ./sessions/api ./sessions/encryption ./sessions/config ./sessions/__init__.py && \
+    chmod 644 ./sessions/.keep ./sessions/pipeline/.keep ./sessions/core/.keep ./sessions/api/.keep ./sessions/encryption/.keep ./sessions/config/.keep ./sessions/__init__.py/.keep
 # Application source COPY
 COPY sessions/pipeline/ ./pipeline/
 RUN echo "=== Checking if pipeline/ was copied ===" && \
     echo "ls -la ./pipeline/*" && \
     echo "ls -la /build/pipeline/*" 
-
 COPY sessions/core/ ./core/
 COPY sessions/api/ ./api/
 COPY sessions/encryption/ ./encryption/
 RUN chmod +x ./core/* ./api/* ./encryption/* && \
-    echo "ls -la ./core/*" && \
-    echo "ls -la ./api/*" && \
-    echo "ls -la ./encryption/*"
-
+    echo "core/ was copied"
 COPY sessions/config/ ./config/
 RUN chmod +x ./config/* && \
-    echo "ls -la ./config/* "
-
+    echo "config/ was copied"
 COPY sessions/__init__.py ./__init__.py
 RUN echo "=== Checking if __init__.py was copied ===" && \
-    echo "ls -la ./__init__.py"  
+    echo "__init__.py was copied"
 
 
 ############################

@@ -26,14 +26,14 @@ container:
 # Service Dependencies
 dependencies:
   internal:
-    - name: "blockchain-core"
-      url: "http://blockchain-core:8084"
+    - name: "blockchain-engine"
+      url: "http://blockchain-engine:8084"
       required: true
-    - name: "session-management"
-      url: "http://session-management:8085"
+    - name: "session-anchoring"
+      url: "http://session-anchoring:8085"
       required: true
     - name: "auth-service"
-      url: "http://auth-service:8089"
+      url: "http://lucid-auth-service:8089"
       required: true
     - name: "tron-payment"
       url: "http://tron-payment:8085"
@@ -52,7 +52,7 @@ api:
   version: "v1"
   base_path: "/api/v1"
   cors:
-    origins: ["http://localhost:3000", "https://lucid.onion"]
+    origins: ["http://api-gateway:3000", "https://api-gateway.lucid.onion:3000"]
     allow_credentials: true
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     headers: ["*"]
@@ -60,6 +60,7 @@ api:
 # Authentication Configuration
 authentication:
   jwt:
+    env_file: ".env.secrets"
     secret_key: "${JWT_SECRET_KEY}"
     algorithm: "HS256"
     access_token_expire_minutes: 15
@@ -266,8 +267,10 @@ validation:
     - "ports.https"
     - "container.base_image"
   port_ranges:
-    http: [8000, 8999]
-    https: [8000, 8999]
+    http: [3000, 9999]
+    https: [3001, 9999]
+    auth: [3002, 9999]
+    rate_limiter: [3003, 9999]
   resource_limits:
     cpu_max: "4"
     memory_max: "8Gi"

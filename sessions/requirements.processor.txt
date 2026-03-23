@@ -33,8 +33,7 @@ httpx==0.25.2
 # =============================================================================
 # Compression libraries
 # =============================================================================
-zstandard>=0.21.0  # REQUIRED: Used by sessions/processor/compressor.py for session data compression
-zstd>=1.5.5  # Required by core/chunker.py for direct zstd.compress/decompress API
+zstandard>=0.22.0
 lz4>=4.3.2
 brotli>=1.1.0
 
@@ -43,7 +42,7 @@ brotli>=1.1.0
 # =============================================================================
 numpy==1.24.4
 PyYAML==6.0.1
-
+logging>=0.4.9.6
 # =============================================================================
 # Monitoring and observability
 # =============================================================================

@@ -13,20 +13,16 @@ from redis.exceptions import ConnectionError, TimeoutError, AuthenticationError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger('redis-healthcheck')
+logger = logging.getLogger('redis-healthcheck')
 
 def check_redis_health():
     """Check Redis health using redis-py"""
     try:
         # Get connection parameters from environment (from .env.* files)
         # Use localhost for healthcheck connections (REDIS_HOST is for binding, not connecting)
-        host = '127.0.0.1'
-        port = int(os.getenv('REDIS_PORT', '6379'))
-        password = os.getenv('REDIS_PASSWORD', '')
-        
-        if not password:
-            logger.error("REDIS_PASSWORD environment variable is not set!")
-            return False
+        host = 'lucid-redis'
+        port = int(os.getenv('REDIS_PORT'))
+        password = os.getenv('REDIS_PASSWORD')
         
         # Create Redis client with password from environment
         client = redis.Redis(

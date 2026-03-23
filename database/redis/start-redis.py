@@ -18,12 +18,12 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger('redis-distroless')
+logger = logging.getLogger('redis-distroless')
 
 class RedisDistroless:
     def __init__(self):
         self.redis_process = None
-        self.data_dir = Path('/data')
+        self.data_dir = Path('/app/data')
         
     def setup_directories(self):
         """Create necessary directories with proper permissions"""
@@ -42,7 +42,7 @@ class RedisDistroless:
     def get_redis_command(self):
         """Build Redis command with security and performance settings from environment"""
         # CRITICAL: Read password from environment variable (from .env.* files)
-        password = os.getenv('REDIS_PASSWORD', '')
+        password = os.getenv('REDIS_PASSWORD')
         if not password:
             logger.error("REDIS_PASSWORD environment variable is not set!")
             logger.error("Please ensure REDIS_PASSWORD is set in .env.secrets or docker-compose environment")
@@ -50,13 +50,13 @@ class RedisDistroless:
         
         max_memory = os.getenv('REDIS_MAX_MEMORY', '512mb')
         max_memory_policy = os.getenv('REDIS_MAX_MEMORY_POLICY', 'allkeys-lru')
-        port = os.getenv('REDIS_PORT', '6379')
-        host = os.getenv('REDIS_HOST', '0.0.0.0')
+        port = os.getenv('REDIS_PORT')
+        host = os.getenv('REDIS_HOST')
         
         # Build command using template config and override with command-line args
         cmd = [
-            '/usr/local/bin/redis-server',
-            '/etc/redis.conf.template',  # Use template config
+            '/app/usr/local/bin/redis-server',
+            '/app/etc/redis.conf.template',  # Use template config
             '--port', port,
             '--bind', host,
             '--requirepass', password,  # Password from environment

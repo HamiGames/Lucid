@@ -10,7 +10,7 @@ service:
 
 # Service Port Configuration
 port:
-  host: "0.0.0.0"
+  host: "gui-hardware-manager"
   port: 8099
   url: "http://gui-hardware-manager:8099"
 
@@ -23,10 +23,10 @@ database:
 integration:
   api_gateway_url: "http://api-gateway:8080"
   auth_service_url: "http://lucid-auth-service:8089"
-  gui-api-bridge_url: "http://gui-api-bridge:8102"
+  gui_api_bridge_url: "http://gui-api-bridge:8102"
 
 # Hardware Wallet Configuration
-hardware_wallets:
+hardware-wallets:
   ledger:
     enabled: true
     vendor_id: "0x2c97"
@@ -65,7 +65,7 @@ blockchain:
     api_key: "${TRON_API_KEY}"
 
 # Device Management
-device_management:
+device-management:
   scan_interval: 5  # seconds
   connection_timeout: 60  # seconds
   max_concurrent_devices: 5
@@ -104,9 +104,9 @@ logging:
 
 # Storage Configuration
 storage:
-  data_path: "/mnt/myssd/Lucid/Lucid/data/gui-hardware-manager"
-  logs_path: "/mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager"
-  cache_path: "/tmp/gui-hardware-manager"
+  data_path: "/app/data/gui-hardware-manager:./data/gui-hardware-manager"
+  logs_path: "/app/logs/gui-hardware-manager:./logs/gui-hardware-manager"
+  cache_path: "/app/cache/gui-hardware-manager:./cache/gui-hardware-manager"
 
 # Monitoring & Health Check
 monitoring:
@@ -146,7 +146,7 @@ api:
       method: "POST"
       description: "Connect to hardware wallet"
     
-    wallet_disconnect:
+    wallet-disconnect:
       path: "/hardware/wallets/{id}"
       method: "DELETE"
       description: "Disconnect from hardware wallet"

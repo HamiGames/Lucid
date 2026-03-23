@@ -37,7 +37,7 @@ service_registration:
   # Service metadata
   default_metadata:
     version: "1.0.0"
-    environment: "${LUCID_ENVIRONMENT:-production}"
+    environment: "${LUCID_ENVIRONMENT}"
     cluster: "lucid"
     
   # Health check configuration
@@ -75,17 +75,17 @@ service_planes:
     services:
       - name: "lucid-service-mesh-controller"
         port: 8500
-        tags: ["consul", "service-mesh", "ops"]
+        tags: ["api-gateway", "lucid-service-mesh-controller", "service-mesh", "ops"]
         health_check: "/v1/status/leader"
         
       - name: "lucid-admin-interface"
         port: 8083
-        tags: ["admin", "management", "ops"]
+        tags: ["admin-interface", "lucid-admin-interface", "admin", "management", "ops"]
         health_check: "/health"
         
-      - name: "lucid-gui-docker-manager"
+      - name: "gui-docker-manager"
         port: 8098
-        tags: ["gui", "docker", "management", "ops"]
+        tags: ["gui-docker-manager", "lucid-gui-docker-manager", "docker", "management", gui-manager", "ops"]
         health_check: "/health"
 
   # Chain Plane
@@ -93,17 +93,17 @@ service_planes:
     name: "blockchain"
     description: "Core blockchain operations (lucid_blocks)"
     network: "lucid-pi-network"
-    subnet: "172.20.0.0/16"
+    subnet: "${LUCID_PI_SUBNET}"
     
     services:
-      - name: "lucid-blockchain-core"
+      - name: "blockchain-engine"
         port: 8084
-        tags: ["blockchain", "consensus", "chain"]
+        tags: ["blockchain-engine", "lucid-blockchain-engine", "blockchain", "consensus", "chain"]
         health_check: "/health"
         
-      - name: "lucid-api-gateway"
+      - name: "api-gateway"
         port: 8080
-        tags: ["gateway", "api", "chain"]
+        tags: ["api-gateway", "lucid-api-gateway", "gateway", "api", "chain"]
         health_check: "/health"
 
   # Wallet Plane (Isolated)
@@ -115,22 +115,22 @@ service_planes:
     isolated: true
     
     services:
-      - name: "lucid-tron-client"
+      - name: "tron-client"
         port: 8091
-        tags: ["tron", "payment", "wallet"]
+        tags: ["tron-client", "lucid-tron-client", "tron", "payment", "wallet"]
         health_check: "/health"
         
-      - name: "lucid-payout-router"
+      - name: "payout-router"
         port: 8092
-        tags: ["tron", "payout", "wallet"]
+        tags: ["payout-router", "lucid-payout-router", "tron", "payout", "wallet"]
         health_check: "/health"
         
-      - name: "lucid-wallet-manager"
+      - name: "wallet-manager"
         port: 8093
-        tags: ["tron", "wallet", "wallet"]
+        tags: ["wallet-manager", "lucid-wallet-manager", "tron", "wallet", "wallet"]
         health_check: "/health"
         
-      - name: "lucid-usdt-manager"
+      - name: "usdt-manager"
         port: 8094
         tags: ["tron", "usdt", "wallet"]
         health_check: "/health"
@@ -140,22 +140,22 @@ service_planes:
     name: "gui"
     description: "GUI integration services"
     network: "lucid-gui-network"
-    subnet: "172.22.0.0/16"
+    subnet: "${LUCID_GUI_SUBNET}"
     
     services:
-      - name: "lucid-gui-api-bridge"
+      - name: "gui-api-bridge"
         port: 8097
-        tags: ["gui", "api-bridge", "integration"]
+        tags: ["gui-api-bridge", "lucid-gui-api-bridge", "gui", "api-bridge", "integration"]
         health_check: "/health"
         
-      - name: "lucid-gui-tor-manager"
+      - name: "gui-tor-manager"
         port: 9050
-        tags: ["gui", "tor", "privacy"]
+        tags: ["gui-tor-manager", "lucid-gui-tor-manager", "gui", "tor", "privacy"]
         health_check: "/health"
         
-      - name: "lucid-gui-hardware-wallet"
+      - name: "gui-hardware-manager"
         port: 8099
-        tags: ["gui", "hardware-wallet", "security"]
+        tags: ["gui-hardware-manager", "lucid-gui-hardware-manager", "gui", "hardware-manager", "security"]
         health_check: "/health"
 
 # Service Mesh Configuration
@@ -251,13 +251,15 @@ dns:
     
     # Service name resolution
     service_names:
-      - "lucid-api-gateway.lucid.local"
-      - "lucid-blockchain-core.lucid.local"
+      - "api-gateway.lucid.local"
+      - "blockchain-engine.lucid.local"
       - "lucid-auth-service.lucid.local"
-      - "lucid-session-api.lucid.local"
-      - "lucid-node-management.lucid.local"
-      - "lucid-admin-interface.lucid.local"
-      - "lucid-tron-client.lucid.local"
+      - "session-api.lucid.local"
+      - "node-management.lucid.local"
+      - "admin-interface.lucid.local"
+      - "tron-client.lucid.local"
+      - "payout-router.lucid.local"
+      - "wallet-manager.lucid.local"
 
 # Load Balancing Configuration
 load_balancing:
@@ -291,14 +293,14 @@ health_checks:
     
   # Service-specific health checks
   services:
-    lucid-api-gateway:
+    api-gateway:
       type: "http"
       path: "/health"
       expected_status: 200
       interval: 30
       timeout: 10
       
-    lucid-blockchain-core:
+    blockchain-engine:
       type: "http"
       path: "/health"
       expected_status: 200
@@ -312,7 +314,7 @@ health_checks:
       interval: 30
       timeout: 10
       
-    lucid-tron-client:
+    tron-client:
       type: "http"
       path: "/health"
       expected_status: 200
@@ -379,9 +381,9 @@ security:
   # mTLS configuration
   mtls:
     enabled: true
-    cca_cert: "/mnt/myssd/Lucid/Lucid/certs/consul/ca.crt"
-    cert_file: "/mnt/myssd/Lucid/Lucid/certs/consul/consul.crt"
-    key_file: "/mnt/myssd/Lucid/Lucid/certs/consul/consul.key"
+    cca_cert: "/app/certs/consul/ca-certificates.crt"
+    cert_file: "/app/certs/consul/service-mesh-controller.crt"
+    key_file: "/app/certs/consul/service-mesh-controller.key"
 
     
   # ACL configuration
@@ -393,25 +395,25 @@ security:
     policies:
       - name: "gui-access"
         rules: |
-          service "lucid-gui-api-bridge" {
+          service "gui-api-bridge" {
             policy = "write"
           }
-          service "lucid-gui-docker-manager" {
+          service "gui-docker-manager" {
             policy = "write"
           }
           
       - name: "chain-access"
         rules: |
-          service "lucid-blockchain-core" {
+          service "blockchain-engine" {
             policy = "write"
           }
-          service "lucid-api-gateway" {
+          service "api-gateway" {
             policy = "write"
           }
           
       - name: "wallet-access"
         rules: |
-          service "lucid-tron-client" {
+          service "wallet-manager" {
             policy = "write"
           }
           
@@ -431,11 +433,11 @@ backup:
   # Backup targets
   targets:
     - name: "consul-data"
-      path: "/mnt/myssd/Lucid/Lucid/data/consul"
+      path: "/app/data/consul"
       compress: true
       
     - name: "service-configs"
-      path: "/mnt/myssd/Lucid/Lucid/configs/consul"
+      path: "/app/configs/consul"
       compress: true
       
   # Backup retention

@@ -15,22 +15,18 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.get_logger('mongodb-healthcheck')
+logger = logging.getLogger('mongodb-healthcheck')
 
 def check_mongodb_health():
     """Check MongoDB health using mongosh with retries and user fallback"""
-    password = os.getenv('MONGODB_PASSWORD', '')
-    host = '127.0.0.1'
-    port = os.getenv('MONGODB_PORT', '27017')
-    users = ['root', 'lucid']  # try root first, then lucid
-
-    if not password:
-        logger.error("MONGODB_PASSWORD not set")
-        return False
+    password = os.getenv('MONGODB_PASSWORD')
+    host = 'lucid-mongodb'
+    port = os.getenv('MONGODB_PORT')
+    users = ['lucid']  # try lucid first, then root
 
     for user in users:
         cmd = [
-            '/usr/bin/mongosh',
+            '/app/usr/bin/mongosh',
             '--quiet',
             '--host', host,
             '--port', str(port),

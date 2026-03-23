@@ -11,36 +11,36 @@ service:
   
 # Port Configuration
 ports:
-  pipeline_manager: 8083
-  session_recorder: 8084
-  chunk_processor: 8085
-  session_storage: 8086
-  session_api: 8087
+  session-pipeline_manager: 7990
+  session_recorder: 8090
+  chunk_processor: 8010
+  session_storage-service: 8020
+  session_api: 8113
 
 # Container Configuration
 containers:
   pipeline_manager:
-    name: lucid-session-pipeline
-    base_image: "pickme/lucid-session-pipeline:latest-arm64"
+    name: session-pipeline-manager
+    base_image: "pickme/lucid-session-pipeline-manager:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_recorder:
-    name: lucid-session-recorder
+    name: session-recorder
     base_image: "pickme/lucid-session-recorder:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   chunk_processor:
-    name: lucid-chunk-processor
-    base_image: "pickme/lucid-chunk-processor:latest-arm64"
+    name: session-chunk-processor
+    base_image: "pickme/lucid-session-chunk-processor:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_storage:
-    name: lucid-session-storage
-    base_image: "pickme/lucid-session-storage:latest-arm64"
+    name: session-storage-service
+    base_image: "pickme/lucid-session-storage-service:latest-arm64"
     tag: "latest"
     multi_stage_build: true
   session_api:
-    name: lucid-session-api
+    name: session-api
     base_image: "pickme/lucid-session-api:latest-arm64"
     tag: "latest"
     multi_stage_build: true
@@ -51,11 +51,11 @@ dependencies:
     - name: "api-gateway"
       url: "http://api-gateway:8080"
       required: true
-    - name: "blockchain-core"
-      url: "http://blockchain-core:8084"
+    - name: "blockchain-engine"
+      url: "http://blockchain-engine:8084"
       required: true
-    - name: "rdp-services"
-      url: "http://rdp-services:8090"
+    - name: "rdp-server-manager"
+      url: "http://rdp-server-manager:8090"
       required: true
   external:
     - name: "mongodb"
@@ -133,7 +133,7 @@ session_storage:
   metadata_storage: "mongodb"
   indexing:
     enabled: true
-    elasticsearch_url: "http://elasticsearch:9200"
+    elasticsearch_url: "http://lucid-elasticsearch:9200"
     index_name: "lucid_sessions"
   backup:
     enabled: true
@@ -372,11 +372,11 @@ validation:
     - "ports.pipeline_manager"
     - "containers.pipeline_manager.base_image"
   port_ranges:
-    pipeline_manager: [8000, 8999]
-    session_recorder: [8000, 8999]
-    chunk_processor: [8000, 8999]
-    session_storage: [8000, 8999]
-    session_api: [8000, 8999]
+    session-pipeline-manager: [7990, 8999]
+    session-recorder: [8090, 8999]
+    session-chunk-processor: [8010, 8999]
+    session-storage-service: [8020, 8999]
+    session-api: [8113, 8999]
   resource_limits:
     cpu_max: "8"
     memory_max: "16Gi"

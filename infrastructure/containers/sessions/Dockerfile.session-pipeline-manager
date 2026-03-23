@@ -108,21 +108,63 @@ RUN echo "=== Verifying pip installation (session pipeline manager) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./tmp ./wheels && \
+RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./common/tor ./sessions/processor ./common ./common/governance./sessions/recorder ./sessions/storage ./sessions/config ./sessions/security ./tmp ./wheels && \
     printf "LUCID_SESSION_PIPELINE_MANAGER_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
     printf "LUCID_SESSION_PIPELINE_MANAGER_TMP_$(date +%s)" > ./tmp/.keep && \
-    touch ./tmp/.keep
+    touch ./tmp/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
+    touch ./sessions/pipeline/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_CORE_$(date +%s)" > ./sessions/core/.keep && \
+    touch ./sessions/core/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
+    touch ./sessions/processor/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_RECORDER_$(date +%s)" > ./sessions/recorder/.keep && \
+    touch ./sessions/recorder/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_STORAGE_$(date +%s)" > ./sessions/storage/.keep && \
+    touch ./sessions/storage/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_CONFIG_$(date +%s)" > ./sessions/config/.keep && \
+    touch ./sessions/config/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_SECURITY_$(date +%s)" > ./sessions/security/.keep && \
+    touch ./sessions/security/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_COMMON_$(date +%s)" > ./common/.keep && \
+    touch ./common/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_COMMON_GOVERNANCE_$(date +%s)" > ./common/governance/.keep && \
+    touch ./common/governance/.keep && \
+    printf "LUCID_SESSION_PIPELINE_MANAGER_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
+    touch ./common/tor/.keep && \
 
-COPY sessions/ ./sessions/
+COPY common/__init__.py ./common/__init__.py
+COPY common/governance/__init__.py ./common/governance/__init__.py
+COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
+COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/tor/ ./common/tor/
 
-RUN echo "=== Session pipeline manager tree ===" && \
-    ls -la ./sessions/pipeline/ | head -20 && \
-    ls -la ./sessions/core/ | head -15
+COPY sessions/__init__.py ./sessions/__init__.py
+COPY sessions/pipeline/ ./sessions/pipeline/
+COPY sessions/core/ ./sessions/core/
+COPY sessions/processor/ ./sessions/processor/
+COPY sessions/recorder/ ./sessions/recorder/
+COPY sessions/storage/ ./sessions/storage/
+COPY sessions/config/pipeline-config.yaml ./sessions/config/pipeline-config.yaml
+COPY sessions/config/api-config.yaml ./sessions/config/api-config.yaml
 
-RUN mkdir -p /build/tmp
+COPY sessions/security/ ./sessions/security/
 
-COPY <<'PY' /build/tmp/verify_runtime_session_pipeline_manager.py
+RUN chmod +x ./sessions/pipeline/* && \
+    chmod +x ./sessions/core/* && \
+    chmod +x ./sessions/processor/* && \
+    chmod +x ./sessions/recorder/* && \
+    chmod +x ./sessions/storage/* && \
+    chmod +x ./sessions/config/* && \
+    chmod +x ./sessions/security/* && \
+    chmod +x ./sessions/* && \
+    chmod +x ./common/* && \
+    chmod +x ./common/governance/* && \
+    echo "Session pipeline manager files permissions changed"
+
+
+COPY <<'PY' ./tmp/verify_runtime.py
 import os
 import sys
 
@@ -175,30 +217,50 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LC_ALL=C.UTF-8 \
     SESSION_PIPELINE_MANAGER_PORT=7990
 
-COPY --from=builder /root/.rustup/ /app/rust/
-COPY --from=builder /root/.cargo/ /app/cargo/
-COPY --from=builder /var/run/ /app/var/run/
-COPY --from=builder /var/lib/ /app/var/lib/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder /usr/bin/ /app/usr/bin/
-COPY --from=builder /usr/sbin/ /app/usr/sbin/
+COPY --from=builder --chown=65532:65532 /root/.rustup/ /app/rust/
+COPY --from=builder --chown=65532:65532 /root/.cargo/ /app/cargo/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_session_pipeline_manager.py /app/tmp/verify_runtime.py
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+
+COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
+COPY --from=builder --chown=65532:65532 /build/common/governance/__init__.py /app/common/governance/__init__.py
+COPY --from=builder --chown=65532:65532 /build/common/governance/lucid_governor.py /app/common/governance/lucid_governor.py
+COPY --from=builder --chown=65532:65532 /build/common/governance/param_registry.py /app/common/governance/param_registry.py
+
+COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
+COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
+COPY --from=builder --chown=65532:65532 /build/sessions/processor/ /app/sessions/processor/
+COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
+COPY --from=builder --chown=65532:65532 /build/sessions/storage/ /app/sessions/storage/
+COPY --from=builder --chown=65532:65532 /build/sessions/config/ /app/sessions/config/
+COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/security/
+
+COPY --from=builder --chown=65532:65532 /build/common/tor/ /app/common/tor/
+
+
 
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
 EXPOSE 7990
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7990/health', timeout=2); exit(0)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline-manager:7990/health', timeout=2); exit(0)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.pipeline.main:app", "--host", "0.0.0.0", "--port", "7990"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.pipeline.main:app", "--host", "session-pipeline-manager", "--port", "7990"]

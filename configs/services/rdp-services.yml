@@ -11,29 +11,29 @@ service:
   
 # Port Configuration
 ports:
-  server_manager: 8090
-  xrdp: 8091
-  session_controller: 8092
-  resource_monitor: 8093
+  rdp-server-manager: 8001
+  lucid-xrdp: 8250
+  rdp-session-controller: 8101
+  rdp-resource-monitor: 8201
 
 # Container Configuration
 containers:
-  server_manager:
+  rdp-server-manager:
     name: lucid-rdp-server-manager
     base_image:  "pickme/lucid-rdp-server-manager:latest-arm64"
     tag: "latest"
     multi_stage_build: true
-  xrdp:
+  lucid-xrdp:
     name: lucid-xrdp
     base_image: "pickme/lucid-rdp-xrdp:latest-arm64"
     tag: "latest"
     multi_stage_build: true
-  session_controller:
+  rdp-session-controller:
     name: lucid-rdp-session-controller
-    base_image: "pickme/lucid-rdp-controller:latest-arm64"
+    base_image: "pickme/lucid-rdp-session-controller:latest-arm64"
     tag: "latest"
     multi_stage_build: true
-  resource_monitor:
+  rdp-resource-monitor:
     name: lucid-rdp-resource-monitor
     base_image: "pickme/lucid-rdp-monitor:latest-arm64"
     tag: "latest"
@@ -45,25 +45,25 @@ dependencies:
     - name: "api-gateway"
       url: "http://api-gateway:8080"
       required: true
-    - name: "session-management"
-      url: "http://session-management:8087"
+    - name: "session-api"
+      url: "http://session-api:8087"
       required: true
-    - name: "auth-service"
-      url: "http://auth-service:8089"
+    - name: "lucid-auth-service"
+      url: "http://lucid-auth-service:8089"
       required: true
   external:
-    - name: "mongodb"
-      url: "mongodb://mongodb:27017/lucid_rdp"
+    - name: "lucid-mongodb"
+      url: "mongodb://lucid-mongodb:27017/lucid_rdp"
       required: true
-    - name: "redis"
-      url: "redis://redis:6379/3"
+    - name: "lucid-redis"
+      url: "redis://lucid-redis:6379/3"
       required: true
 
 # RDP Server Configuration
 rdp_servers:
   port_range:
-    start: 13389
-    end: 14389
+    start: 13350
+    end: 14350
     max_servers: 1000
   server_lifecycle:
     creation_timeout: 30
@@ -87,8 +87,8 @@ xrdp:
   port: 3389
   ssl:
     enabled: true
-    cert_path: "/certs/xrdp.crt"
-    key_path: "/certs/xrdp.key"
+    cert_path: "/app/etc/certs/xrdp.crt"
+    key_path: "/app/etc/certs/xrdp.key"
   authentication:
     methods: ["password", "certificate"]
     timeout: 30
@@ -102,7 +102,7 @@ xrdp:
     refresh_rate: 60
 
 # Session Control Configuration
-session_control:
+rdp-session-control:
   connection_manager:
     max_connections: 1000
     connection_timeout: 30
@@ -125,7 +125,7 @@ session_control:
     session_transfer: false
 
 # Resource Monitoring Configuration
-resource_monitoring:
+rdp-resource-monitor:
   metrics_collection:
     interval: 30
     retention: 86400  # 24 hours
@@ -189,7 +189,7 @@ api:
 # Database Configuration
 database:
   mongodb:
-    uri: "mongodb://mongodb:27017/lucid_rdp"
+    uri: "mongodb://lucid-mongodb:27017/lucid_rdp"
     database: "lucid_rdp"
     collections:
       - "servers"
@@ -207,7 +207,7 @@ database:
     connection_pool: 20
     timeout: 30
   redis:
-    uri: "redis://redis:6379/3"
+    uri: "redis://lucid-redis:6379/3"
     database: 3
     use_cases:
       - "server_cache"
@@ -273,22 +273,22 @@ logging:
 
 # Health Check Configuration
 health_check:
-  server_manager:
+  rdp-server-manager:
     endpoint: "/api/v1/servers/health"
     interval: 30
     timeout: 10
     retries: 3
-  xrdp:
+  lucid-xrdp:
     endpoint: "/api/v1/xrdp/health"
     interval: 30
     timeout: 10
     retries: 3
-  session_controller:
+  rdp-session-controller:
     endpoint: "/api/v1/sessions/health"
     interval: 30
     timeout: 10
     retries: 3
-  resource_monitor:
+  rdp-resource-monitor:
     endpoint: "/api/v1/monitoring/health"
     interval: 30
     timeout: 10
@@ -320,16 +320,16 @@ monitoring:
     enabled: true
     dashboard_id: "rdp-services"
   alerts:
-    - name: "server_creation_failure"
+    - name: "rdp-server-creation-failure"
       condition: "server_creation_success_rate < 0.9"
       severity: "critical"
-    - name: "high_resource_usage"
+    - name: "rdp-high-resource-usage"
       condition: "resource_utilization > 0.9"
       severity: "warning"
-    - name: "session_connection_failure"
+    - name: "rdp-session-connection-failure"
       condition: "session_connection_success_rate < 0.95"
       severity: "critical"
-    - name: "server_overload"
+    - name: "rdp-server-overload"
       condition: "active_sessions > 0.8 * max_sessions"
       severity: "warning"
 
@@ -392,13 +392,13 @@ validation:
   required_fields:
     - "service.name"
     - "service.version"
-    - "ports.server_manager"
-    - "containers.server_manager.base_image"
+    - "ports.rdp-server-manager"
+    - "containers.rdp-server-manager.base_image"
   port_ranges:
-    server_manager: [8000, 8999]
-    xrdp: [8000, 8999]
-    session_controller: [8000, 8999]
-    resource_monitor: [8000, 8999]
+    rdp-server-manager: [8001, 8999]
+    lucid-xrdp: [8250, 8999]
+    rdp-session-controller: [8101, 8999]
+    rdp-resource-monitor: [8201, 8999]
   resource_limits:
     cpu_max: "8"
     memory_max: "16Gi"

@@ -11,7 +11,7 @@ service:
 
 # Docker Configuration
 docker:
-  host: "unix:///var/run/docker.sock"
+  host: "gui-docker-manager"
   api_version: "1.40"
   timeout: 60000
   retry_attempts: 3
@@ -82,10 +82,14 @@ service_groups:
     compose_file: "configs/docker/docker-compose.foundation.yml"
     services:
       - "lucid-mongodb"
+      - "tor-proxy"
       - "lucid-redis"
       - "lucid-elasticsearch"
       - "lucid-auth-service"
-      - "lucid-storage-database"
+      - "lucid-base"
+      - "lucid-base-python"
+      - "lucid-base-java"
+      - "lucid-service-mesh-controller"
     dependencies: []
     startup_order: 1
 
@@ -94,9 +98,13 @@ service_groups:
     description: "API gateway, blockchain core, and service mesh"
     compose_file: "configs/docker/docker-compose.core.yml"
     services:
-      - "lucid-api-gateway"
-      - "lucid-blockchain-core"
-      - "lucid-service-mesh-controller"
+      - "api-gateway"
+      - "blockchain-engine"
+      - "service-mesh"
+      - "lucid-tunnel-tools"
+      - "data-chain"
+      - "session-anchoring"
+      - "block-manager"
     dependencies:
       - "foundation"
     startup_order: 2
@@ -106,8 +114,15 @@ service_groups:
     description: "Session management, RDP services, and node management"
     compose_file: "configs/docker/docker-compose.application.yml"
     services:
-      - "lucid-session-pipeline"
-      - "lucid-node-management"
+      - "session-pipeline"
+      - "session-recorder"
+      - "chunk-processor"
+      - "session-storage"
+      - "session-api"
+      - "rdp-server-manager"
+      - "rdp-controller"
+      - "rdp-monitor"
+      - "node-management"
     dependencies:
       - "foundation"
       - "core"
@@ -120,6 +135,13 @@ service_groups:
     services:
       - "lucid-admin-interface"
       - "lucid-tron-client"
+      - "tron-relay"
+      - "tron-payout-client" 
+      - "tron-wallet-manager"
+      - "tron-usdt-manager"
+      - "tron-staking"
+      - "tron-payment-gateway"
+
     dependencies:
       - "foundation"
       - "core"
@@ -131,13 +153,18 @@ service_groups:
     description: "GUI-specific services and integration"
     compose_file: "configs/docker/docker-compose.gui-integration.yml"
     services:
-      - "lucid-gui-api-bridge"
-      - "lucid-gui-docker-manager"
-      - "lucid-gui-tor-manager"
-      - "lucid-gui-hardware-wallet"
+      - "gui-api-bridge"
+      - "gui-docker-manager"
+      - "gui-tor-manager"
+      - "gui-hardware-wallet"
+      - "admin-interface"
+      - "user-interface"
+      - "node-interface"
+
     dependencies:
       - "foundation"
       - "core"
+      - "application"
     startup_order: 5
 
 # Docker Compose Management
@@ -212,7 +239,7 @@ health_checks:
   # Custom health check commands
   custom_checks:
     lucid-mongodb:
-      command: ["mongosh", "--eval", "db.runCommand('ping').ok"]
+      command: ["mongosh", "--eval", "app.data.db.runCommand('ping').ok"]
       interval: 30
       timeout: 10
       retries: 3
@@ -224,7 +251,7 @@ health_checks:
       retries: 3
     
     lucid-api-gateway:
-      command: ["curl", "-f", "http://localhost:8080/health"]
+      command: ["curl", "-f", "http://api-gateway:8080/health"]
       interval: 30
       timeout: 10
       retries: 3
@@ -247,7 +274,7 @@ logging:
     
     # Log filtering
     filters:
-      exclude_containers: ["lucid-gui-docker-manager"]  # Avoid recursion
+      exclude_containers: ["gui-docker-manager"]  # Avoid recursion
       include_labels: ["com.lucid.service"]
 
 # Monitoring Configuration
@@ -279,7 +306,7 @@ monitoring:
     enabled: true
     rules:
       - alert: "ContainerDown"
-        expr: "lucid_containers_running == 0"
+        expr: "gui_containers_running == 0"
         for: "1m"
         labels:
           severity: "critical"
@@ -287,7 +314,7 @@ monitoring:
           summary: "All Lucid containers are down"
       
       - alert: "ServiceUnhealthy"
-        expr: "lucid_services_healthy < 5"
+        expr: "gui_services_healthy < 5"
         for: "2m"
         labels:
           severity: "warning"
@@ -330,7 +357,7 @@ backup:
       compress: true
     
     - name: "docker_volumes"
-      path: "/var/lib/docker/volumes/"
+      path: "/app/var/lib/docker/volumes/"
       compress: true
       exclude_patterns: ["lucid-gui-*"]  # Exclude GUI-specific volumes
 

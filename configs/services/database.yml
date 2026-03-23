@@ -15,31 +15,31 @@ mongodb:
   replica_set: "lucid-rs"
   
   primary:
-    host: "${MONGODB_HOST:-localhost}"
-    port: "${MONGODB_PORT:-27017}"
-    database: "${MONGODB_DATABASE:-lucid}"
-    username: "${MONGODB_USERNAME:-lucid}"
-    password: "${MONGODB_PASSWORD:-}"
+    host: "${MONGODB_HOST}"
+    port: "${MONGODB_PORT}"
+    database: "${MONGODB_DATABASE}"
+    username: "${MONGODB_USERNAME}"
+    password: "${MONGODB_PASSWORD}"
     auth_source: "admin"
   
   secondary:
-    host: "${MONGODB_SECONDARY_HOST:-localhost}"
-    port: "${MONGODB_SECONDARY_PORT:-27018}"
-    database: "${MONGODB_DATABASE:-lucid}"
-    username: "${MONGODB_USERNAME:-lucid}"
-    password: "${MONGODB_PASSWORD:-}"
+    host: "${MONGODB_SECONDARY_HOST}"
+    port: "${MONGODB_SECONDARY_PORT}"
+    database: "${MONGODB_DATABASE}"
+    username: "${MONGODB_USERNAME}"
+    password: "${MONGODB_PASSWORD}"
     auth_source: "admin"
   
   arbiter:
-    host: "${MONGODB_ARBITER_HOST:-localhost}"
-    port: "${MONGODB_ARBITER_PORT:-27019}"
-    database: "${MONGODB_DATABASE:-lucid}"
-    username: "${MONGODB_USERNAME:-lucid}"
-    password: "${MONGODB_PASSWORD:-}"
+    host: "${MONGODB_ARBITER_HOST}"
+    port: "${MONGODB_ARBITER_PORT}"
+    database: "${MONGODB_DATABASE}"
+    username: "${MONGODB_USERNAME}"
+    password: "${MONGODB_PASSWORD}"
     auth_source: "admin"
 
   connection:
-    pool_size: "${MONGODB_POOL_SIZE:-20}"
+    pool_size: "${MONGODB_POOL_SIZE}"
     max_idle_time: 30000
     server_selection_timeout: 5000
     connect_timeout: 10000
@@ -64,7 +64,7 @@ mongodb:
         - key: { "user_id": 1 }
         - key: { "created_at": 1 }
         - key: { "expires_at": 1 }
-          expireAfterSeconds: 0
+          expireAfterSeconds: "${SESSION_EXPIRATION_TIME}"
     
     blocks:
       indexes:
@@ -135,10 +135,10 @@ elasticsearch:
   version: "8.11.0"
   
   primary:
-    host: "${ELASTICSEARCH_HOST:-localhost}"
-    port: "${ELASTICSEARCH_PORT:-9200}"
-    username: "${ELASTICSEARCH_USERNAME:-}"
-    password: "${ELASTICSEARCH_PASSWORD:-}"
+    host: "${ELASTICSEARCH_HOST}"
+    port: "${ELASTICSEARCH_PORT}"
+    username: "${ELASTICSEARCH_USERNAME}"
+    password: "${ELASTICSEARCH_PASSWORD}"
     scheme: "http"
   
   connection:
@@ -245,7 +245,7 @@ backup:
     method: "rdb"
     storage:
       type: "local"
-      path: "/var/backups/lucid/redis"
+      path: "/app/var/backups/lucid/redis"
   
   elasticsearch:
     enabled: true
@@ -253,7 +253,7 @@ backup:
     repository: "lucid-backups"
     storage:
       type: "local"
-      path: "/var/backups/lucid/elasticsearch"
+      path: "/app/var/backups/lucid/elasticsearch"
 
 # Monitoring Configuration
 monitoring:
@@ -268,7 +268,7 @@ monitoring:
 logging:
   level: "${LOG_LEVEL:-INFO}"
   format: "json"
-  file: "/mnt/myssd/Lucid/Lucid/logs/database.log"
+  file: "/app/var/logs/database.log"
   max_size: "100MB"
   max_files: 10
   compress: true
@@ -277,12 +277,12 @@ logging:
 alerting:
   enabled: true
   email:
-    smtp_host: "${ALERTING_EMAIL_SMTP_HOST:-}"
-    smtp_port: "${ALERTING_EMAIL_SMTP_PORT:-587}"
-    smtp_user: "${ALERTING_EMAIL_SMTP_USER:-}"
-    smtp_password: "${ALERTING_EMAIL_SMTP_PASSWORD:-}"
-    from: "${ALERTING_EMAIL_FROM:-}"
-    to: "${ALERTING_EMAIL_TO:-}"
+    smtp_host: "${ALERTING_EMAIL_SMTP_HOST}"
+    smtp_port: "${ALERTING_EMAIL_SMTP_PORT}"
+    smtp_user: "${ALERTING_EMAIL_SMTP_USER}"
+    smtp_password: "${ALERTING_EMAIL_SMTP_PASSWORD}"
+    from: "${ALERTING_EMAIL_FROM}"
+    to: "${ALERTING_EMAIL_TO}"
 
   thresholds:
     connection_errors: 10
@@ -293,7 +293,7 @@ alerting:
 
 # Network Configuration
 network:
-  interface: "${NETWORK_INTERFACE:-eth0}"
+  interface: "${NETWORK_INTERFACE}"
   mtu: 1500
   buffer_size: 65536
   timeout: 30
@@ -303,8 +303,8 @@ network:
 container:
   runtime: "docker"
   network: "lucid-pi-network"
-  subnet: "172.20.0.0/16"
-  gateway: "172.20.0.1"
+  subnet: "${NETWORK_SUBNET}"
+  gateway: "${NETWORK_GATEWAY}"
 
 # Resource Limits
 resources:
@@ -334,7 +334,7 @@ health_checks:
   mongodb:
     liveness:
       enabled: true
-      command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+      command: ["mongosh", "--eval", "app.database.db.adminCommand('ping')"]
       initial_delay: 30
       period: 10
       timeout: 5
@@ -342,7 +342,7 @@ health_checks:
     
     readiness:
       enabled: true
-      command: ["mongosh", "--eval", "db.adminCommand('listDatabases')"]
+      command: ["mongosh", "--quiet", "--eval", "app.database.db.adminCommand('listDatabases')"]
       initial_delay: 5
       period: 5
       timeout: 3
@@ -368,7 +368,7 @@ health_checks:
   elasticsearch:
     liveness:
       enabled: true
-      command: ["curl", "-f", "http://localhost:9200/_cluster/health"]
+      command: ["curl", "-f", "http://lucid-elasticsearch:9200/_cluster/health"]
       initial_delay: 30
       period: 10
       timeout: 5
@@ -376,7 +376,7 @@ health_checks:
     
     readiness:
       enabled: true
-      command: ["curl", "-f", "http://localhost:9200/_cat/indices"]
+      command: ["curl", "-f", "http://lucid-elasticsearch:9200/_cat/indices"]
       initial_delay: 5
       period: 5
       timeout: 3
@@ -385,17 +385,17 @@ health_checks:
 # Service Dependencies
 dependencies:
   - name: "mongodb"
-    host: "mongodb"
+    host: "lucid-mongodb"
     port: 27017
     timeout: 10
   
   - name: "redis"
-    host: "redis"
+    host: "lucid-redis"
     port: 6379
     timeout: 10
   
   - name: "elasticsearch"
-    host: "elasticsearch"
+    host: "lucid-elasticsearch"
     port: 9200
     timeout: 10
 
@@ -443,7 +443,7 @@ production:
   mock_external_services: false
   test_mode: false
   ssl_required: true
-  cors_origins: ["https://lucid.example.com"]
+  cors_origins: ["http://lucid-api-gateway:8080", "http://lucid-frontend:3000"]
 
 # Testing Configuration
 testing:

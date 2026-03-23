@@ -13,14 +13,14 @@ from requests.exceptions import ConnectionError, Timeout
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger('elasticsearch-healthcheck')
+logger = logging.getLogger('elasticsearch-healthcheck')
 
 def check_elasticsearch_health():
     """Check Elasticsearch health using requests"""
     try:
         # Get connection parameters from environment
-        host = os.getenv('ELASTICSEARCH_HOST', 'localhost')
-        port = int(os.getenv('ELASTICSEARCH_PORT', '9200'))
+        host = os.getenv('ELASTICSEARCH_HOST', 'lucid-elasticsearch')
+        port = int(os.getenv('ELASTICSEARCH_PORT'))
         url = f"http://{host}:{port}"
         
         # Test cluster health

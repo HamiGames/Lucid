@@ -20,22 +20,22 @@ ports:
 
 # Container Configuration
 containers:
-  blockchain_engine:
+  blockchain-engine:
     name: lucid-blockchain-engine
     base_image: "pickme/lucid-blockchain-engine:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
-  session_anchoring:
+  session-anchoring:
     name: lucid-session-anchoring
     base_image: "pickme/lucid-session-anchoring:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
-  block_manager:
+  block-manager:
     name: lucid-block-manager
     base_image: "pickme/lucid-block-manager:latest-arm64"  # ✅ CORRECT
     tag: "latest"
     multi_stage_build: true
-  data_chain:
+  data-chain:
     name: lucid-data-chain
     base_image: "pickme/lucid-data-chain:latest-arm64"  # ✅ CORRECT
     tag: "latest"
@@ -47,15 +47,15 @@ dependencies:
     - name: "api-gateway"
       url: "http://api-gateway:8080"
       required: true
-    - name: "session-management"
-      url: "http://session-management:8085"
+    - name: "session-anchoring"
+      url: "http://session-anchoring:8085"
       required: true
   external:
     - name: "mongodb"
       url: "mongodb://mongodb:27017/lucid_blocks"
       required: true
   storage:
-    - name: "file_system"
+    - name: "file-system"
       path: "/data"
       required: true
       volumes:
@@ -64,7 +64,7 @@ dependencies:
         - "chunk_data:/data/chunks"
 
 # Blockchain Configuration
-blockchain:
+blockchain-engine:
   consensus_algorithm: "PoOT"  # Proof of Observation Time
   block_time_seconds: 10
   block_size_limit_mb: 1
@@ -86,7 +86,7 @@ consensus:
   max_rounds: 10
   
 # Session Anchoring Configuration
-session_anchoring:
+session-anchoring:
   batch_size: 10
   timeout: 60
   merkle_tree_height_max: 20
@@ -95,7 +95,7 @@ session_anchoring:
   integrity_verification: true
   
 # Block Management Configuration
-block_management:
+block-manager:
   storage_path: "/data/blocks"
   max_blocks_in_memory: 1000
   block_validation: true
@@ -104,7 +104,7 @@ block_management:
   block_compression: true
   
 # Data Chain Configuration
-data_chain:
+data-chain:
   chunk_storage_path: "/data/chunks"
   merkle_storage_path: "/data/merkle"
   max_chunk_size: "10MB"
@@ -113,7 +113,7 @@ data_chain:
   integrity_checks: true
   
 # Merkle Tree Configuration
-merkle_tree:
+merkle-tree:
   algorithm: "sha256"
   max_height: 20
   proof_generation: true
@@ -212,22 +212,22 @@ logging:
 
 # Health Check Configuration
 health_check:
-  blockchain_engine:
+  blockchain-engine:
     endpoint: "/api/v1/chain/status"
     interval: 30
     timeout: 10
     retries: 3
-  session_anchoring:
+  session-anchoring:
     endpoint: "/api/v1/anchoring/status"
     interval: 30
     timeout: 10
     retries: 3
-  block_manager:
+  block-manager:
     endpoint: "/api/v1/blocks/latest"
     interval: 30
     timeout: 10
     retries: 3
-  data_chain:
+  data-chain:
     endpoint: "/api/v1/chain/info"
     interval: 30
     timeout: 10
@@ -371,13 +371,13 @@ validation:
     - "service.name"
     - "service.version"
     - "blockchain.consensus_algorithm"
-    - "ports.blockchain_engine"
-    - "containers.blockchain_engine.base_image"
+    - "ports.blockchain-engine"
+    - "containers.blockchain-engine.base_image"
   port_ranges:
-    blockchain_engine: [8000, 8999]
-    session_anchoring: [8000, 8999]
-    block_manager: [8000, 8999]
-    data_chain: [8000, 8999]
+    blockchain-engine: [8084, 8999]
+    session-anchoring: [8085, 8999]
+    block-manager: [8086, 8999]
+    data-chain: [8087, 8999]
   resource_limits:
     cpu_max: "8"
     memory_max: "16Gi"
