@@ -27,9 +27,9 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Lifespan
 from pydantic import BaseModel
 from sessions.recorder.config import RecorderConfig, RecorderSettings
 import os
-CONFIG = os.getenv("SESSIONS_CONFIG":-RecorderConfig())
-INFO = os.getenv("SESSIONS_INFO", env=".env.sessions")
-SETTINGS = os.getenv("SESSIONS_SETTINGS":-RecorderSettings())
+CONFIG = os.getenv("SESSIONS_CONFIG")
+INFO = os.getenv("SESSIONS_INFO")
+SETTINGS = os.getenv("SESSIONS_SETTINGS")
 try:
     from sessions.core.logging import get_logger
     logger = get_logger(settings="SETTINGS", log_level="INFO", config_logger="CONFIG")

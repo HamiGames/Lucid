@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID SESSION PIPELINE MANAGER - Distroless Python Service
-# Aligned with 03_api_gateway/Dockerfile (dockerfile-design + Dockerfile-copy-pattern)
+# creates session-pipeline-manager service
 # Image: pickme/lucid-session-pipeline-manager:latest-arm64
 # Port: 7990
 
@@ -206,7 +206,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="session-pipeline-manager" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="processing" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.api.gateway="api-gateway"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \

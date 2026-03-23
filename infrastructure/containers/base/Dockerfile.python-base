@@ -1,7 +1,7 @@
-# LUCID PYTHON BASE - SPEC-1B Implementation
-# Distroless-ready Python base layer for Lucid services
-# Build context: project root (paths prefixed with infrastructure/containers/base/)
-# Target architecture: linux/arm64 (Pi console deployment)
+# syntax=docker/dockerfile:1.5
+# LUCID PYTHON BASE - Distroless Python 3.11 base layer
+# Design aligned with 03_api_gateway/Dockerfile (stages, ARGs, markers, wheels, /app runtime, tini, USER 65532)
+# Build context: repository root (e.g. from Lucid repo: docker build -f infrastructure/containers/base/Dockerfile.python-base .)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -10,10 +10,10 @@ ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
-# =============================================================================
-# Stage 1: Python builder
-# =============================================================================
-FROM python:3.11-slim AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -30,31 +30,62 @@ WORKDIR /build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y --no-install-recommends \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
         libffi-dev \
         libssl-dev \
+        pkg-config \
         curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN printf "LUCID_PYTHON_BASE_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_PYTHON_BASE_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_PYTHON_BASE_USR_LOCAL_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_PYTHON_BASE_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
 
 COPY infrastructure/containers/base/requirements-minimal.txt ./requirements-minimal.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip wheel setuptools && \
-    pip install --user --prefer-binary -r requirements-minimal.txt
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements-minimal.txt
 
-# Distroless-safe bootstrap written in Python
-RUN cat <<'EOF' > /build/python_base_bootstrap.py
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements-minimal.txt
+
+RUN echo "=== Verifying minimal Python base packages ===" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, orjson, bcrypt, dotenv; print('✅ Minimal base packages OK')" && \
+    pip list
+
+COPY <<'PY' /build/opt/python_base_bootstrap.py
 #!/usr/bin/env python3
 import os
 import sys
 import time
 from pathlib import Path
 
-LOG_DIR = Path(os.getenv("PYTHON_BASE_LOG_DIR", "/var/log/python-base"))
+LOG_DIR = Path(os.getenv("PYTHON_BASE_LOG_DIR", "/tmp/python-base"))
 LOG_FILE = LOG_DIR / "bootstrap.log"
 
 
@@ -73,7 +104,7 @@ def main() -> None:
         log("INFO", f"Executing custom command: {' '.join(args)}")
         os.execvp(args[0], args)
 
-    log("INFO", "Python base container idle. Override with docker exec as needed.")
+    log("INFO", "Python base container idle. Override CMD or use docker exec as needed.")
     while True:
         time.sleep(3600)
 
@@ -84,43 +115,60 @@ if __name__ == "__main__":
     except Exception as exc:
         log("ERROR", f"Bootstrap failure: {exc}")
         sys.exit(1)
-EOF
+PY
 
-# =============================================================================
-# Stage 2: Distroless runtime
-# =============================================================================
-FROM gcr.io/distroless/python3-debian12:latest
+RUN chmod 755 /build/opt/python_base_bootstrap.py
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      version="${VERSION}" \
-      description="Lucid distroless Python base runtime" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Python Base" \
       org.opencontainers.image.description="Distroless Python base layer for Lucid services" \
-      com.lucid.plane="foundation" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="python-base" \
       com.lucid.platform="arm64" \
+      com.lucid.cluster="foundation" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.tor.compatible="true"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/usr/local/lib/python3.11/site-packages
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
 
-COPY --from=builder /root/.local /usr/local
-COPY --from=builder --chmod=755 /build/python_base_bootstrap.py /opt/python_base_bootstrap.py
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
-WORKDIR /app
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chmod=755 /build/opt/python_base_bootstrap.py /app/opt/python_base_bootstrap.py
+
+COPY --from=builder /usr/bin/tini /app/usr/bin/tini
+
+RUN ["/app/usr/bin/python3.11", "-c", "import os, fastapi, uvicorn; sp='/app/usr/local/lib/python3.11/site-packages'; assert os.path.isdir(sp) and os.listdir(sp); print('✅ Python base runtime OK')"]
+
 USER 65532:65532
 
-ENTRYPOINT ["python3", "/opt/python_base_bootstrap.py"]
-CMD []
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/opt/python_base_bootstrap.py"]

@@ -20,7 +20,7 @@ import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 class RDPStatus(Enum):
     """RDP server status"""

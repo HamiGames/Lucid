@@ -136,7 +136,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="chunk-processor" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="application" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless"\
+      com.lucid.api.gateway="api-gateway"
 
 ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
@@ -238,7 +239,7 @@ print('✅ All application source files verified')"]
 EXPOSE 8091
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8091)); s.close(); exit(0 if result == 0 else 1)"]
+  CMD ["/usr/bin/python3.11", "-c", "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('session-processor', 8091)); s.close(); exit(0 if result == 0 else 1)"]
 
 USER 65532:65532
 

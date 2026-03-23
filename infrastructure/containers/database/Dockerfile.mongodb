@@ -99,7 +99,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.mongodb.version="7.0" \
       com.lucid.expose="27017" \
       com.lucid.cluster="foundation" \
-      com.lucid.tor.compatible="true"
+      com.lucid.tor.compatible="true" \
+      com.lucid.api.gateway="api-gateway"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \

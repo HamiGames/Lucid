@@ -190,7 +190,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="session-pipeline" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="processing" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.api.gateway="api-gateway"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
