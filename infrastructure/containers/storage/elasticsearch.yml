@@ -1,6 +1,6 @@
-# Elasticsearch Configuration for Lucid System
-# Aligned with essentials.md - Elasticsearch Service
-# Container: lucid-elasticsearch
+# Elasticsearch paths for Lucid STORAGE PLANE (path.data / path.logs on mounted volumes).
+# Index templates and cluster operations are database/ops concerns.
+# Container image: lucid-storage-elasticsearch (see infrastructure/containers/storage/Dockerfile.elasticsearch)
 # Image: pickme/lucid-elasticsearch:latest-arm64
 # Network: lucid-pi-network (172.20.0.13)
 # Ports: 9200 (HTTP), 9300 (Transport)

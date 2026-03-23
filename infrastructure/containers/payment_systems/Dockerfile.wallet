@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.5
-# LUCID VM MANAGEMENT — Distroless Python (aligned with infrastructure/containers/blockchain/Dockerfile.engine + 03_api_gateway/Dockerfile)
-# Image: pickme/lucid-vm:latest-arm64
+# LUCID WALLET MANAGER (TRON) — Distroless Python (aligned with 03_api_gateway/Dockerfile + blockchain/Dockerfile.data)
+# Image: pickme/lucid-wallet-manager:latest-arm64
 # Build context: repository root (.)
-# Entry: vm/main.py (async VM manager loop; exposes 8107 for orchestration alignment)
+# Application source: payment_systems/tron/ mounted as Python package `tron` at /app/tron
+# Entry: payment_systems/tron/wallet_manager_entrypoint.py
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -35,6 +36,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential gcc g++ libffi-dev libssl-dev pkg-config \
+        libxml2-dev libxslt1-dev zlib1g-dev \
         curl ca-certificates tini \
         python3-wheel python3-dev python3-pip python3-setuptools \
         rustc cargo \
@@ -48,8 +50,8 @@ RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN printf "LUCID_VM_RUNTIME" > /var/run/.keep && \
-    printf "LUCID_VM_LIB" > /var/lib/.keep && \
+RUN printf "LUCID_WALLET_MANAGER_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_WALLET_MANAGER_LIB" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
@@ -58,24 +60,28 @@ RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY vm/requirements.vm.txt ./requirements.txt
+COPY payment_systems/tron/requirements.txt ./requirements.txt
+COPY payment_systems/tron/requirements-prod.txt ./requirements-prod.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    printf "LUCID_VM_WHEELS_$(date +%s)" > /build/wheels/.keep && \
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+    printf "LUCID_WALLET_MANAGER_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt -r ./requirements-prod.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+    pip install --no-cache-dir --no-index --find-links /build/wheels \
+        -r ./requirements.txt -r ./requirements-prod.txt
 
-RUN printf "LUCID_VM_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+RUN printf "LUCID_WALLET_MANAGER_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
-RUN python3.11 -c "import fastapi,uvicorn,pydantic,docker,cryptography,httpx,requests,prometheus_client; print('vm deps OK')"
+RUN python3.11 -c "import fastapi,uvicorn,pydantic,pydantic_settings,motor,tronpy,httpx,cryptography; print('wallet-manager deps OK')"
 
-COPY vm/ ./vm/
+# Package layout: /app/tron/... so `import tron.*` works with PYTHONPATH=/app
+COPY payment_systems/tron/ ./tron/
 
-RUN test -f ./vm/main.py && test -f ./vm/vm_manager.py && echo "vm source OK"
+RUN test -f ./tron/wallet_manager_entrypoint.py && test -f ./tron/wallet_manager_main.py && \
+    echo "wallet-manager source OK"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -89,17 +95,20 @@ ARG VCS_REF
 ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      org.opencontainers.image.title="Lucid VM Manager" \
-      org.opencontainers.image.description="Distroless VM management service (Docker API)" \
+      org.opencontainers.image.title="Lucid Wallet Manager" \
+      org.opencontainers.image.description="Distroless TRON wallet manager for Lucid platform" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="vm-manager" \
-      com.lucid.platform="arm64" \
-      com.lucid.cluster="support" \
-      com.lucid.security="distroless" \
-      com.lucid.expose="8107" \
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.plane="support" \
+      com.lucid.service="wallet-manager" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="payment" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8093,8103" \
+      com.lucid.env.config=".env.support,.env.tron-wallet-manager,.env.secrets,.env.foundation" \
+      com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
       com.lucid.tor.compatible="true"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
@@ -109,8 +118,11 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    VM_SERVICE_PORT=8107 \
-    VM_SERVICE_HOST=0.0.0.0
+    SERVICE_PORT=8093 \
+    WALLET_MANAGER_PORT=8093 \
+    WORKERS=1 \
+    SERVICE_HOST=0.0.0.0 \
+    LOG_LEVEL=INFO
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -121,19 +133,19 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/vm/ /app/vm/
+COPY --from=builder --chown=65532:65532 /build/tron/ /app/tron/
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import docker,fastapi; print('runtime OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,tronpy; print('runtime OK')"]
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/vm/main.py'); print('layout OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/tron/wallet_manager_entrypoint.py'); print('layout OK')"]
 
-EXPOSE 8107
+EXPOSE 8093 8103
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import docker; from vm.vm_manager import VMManager; print('healthy')"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/app/usr/bin/python3.11", "-c", "import os,urllib.request; p=os.getenv('WALLET_MANAGER_PORT',os.getenv('SERVICE_PORT','8093')); urllib.request.urlopen(f'http://127.0.0.1:{p}/health',timeout=5).read()"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "/app/vm/main.py"]
+CMD ["/app/usr/bin/python3.11", "/app/tron/wallet_manager_entrypoint.py"]

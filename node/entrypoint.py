@@ -12,8 +12,17 @@ No hardcoded values - all configuration from environment variables.
 import os
 import sys
 
-# Ensure site-packages and app directory are in Python path (defensive programming)
-site_packages = '/usr/local/lib/python3.11/site-packages'
+# Ensure site-packages and app directory are in Python path (distroless /app layout + legacy)
+site_packages = None
+for _sp in (
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/usr/local/lib/python3.11/site-packages",
+):
+    if os.path.isdir(_sp):
+        site_packages = _sp
+        break
+if site_packages is None:
+    site_packages = "/app/usr/local/lib/python3.11/site-packages"
 app_path = '/app'
 script_dir = os.path.dirname(os.path.abspath(__file__))
 

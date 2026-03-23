@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.5
-# LUCID VM MANAGEMENT — Distroless Python (aligned with infrastructure/containers/blockchain/Dockerfile.engine + 03_api_gateway/Dockerfile)
-# Image: pickme/lucid-vm:latest-arm64
+# LUCID NODE MANAGEMENT — Distroless Python (aligned with 03_api_gateway/Dockerfile + blockchain/Dockerfile.data)
+# Image: pickme/lucid-node-management:latest-arm64
 # Build context: repository root (.)
-# Entry: vm/main.py (async VM manager loop; exposes 8107 for orchestration alignment)
+# Ports: 8095, 8099
+# Entry: node/entrypoint.py
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -48,34 +49,47 @@ RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN printf "LUCID_VM_RUNTIME" > /var/run/.keep && \
-    printf "LUCID_VM_LIB" > /var/lib/.keep && \
+RUN printf "LUCID_NODE_MANAGEMENT_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_NODE_MANAGEMENT_LIB" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
     chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
 
+RUN mkdir -p /app-dirs/cache/node /app-dirs/data/node /app-dirs/logs/node && \
+    printf "LUCID_NODE_MANAGEMENT_CACHE_$(date +%s)" > /app-dirs/cache/node/.keep && \
+    printf "LUCID_NODE_MANAGEMENT_DATA_$(date +%s)" > /app-dirs/data/node/.keep && \
+    printf "LUCID_NODE_MANAGEMENT_LOGS_$(date +%s)" > /app-dirs/logs/node/.keep && \
+    chown -R 65532:65532 /app-dirs
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY vm/requirements.vm.txt ./requirements.txt
+COPY node/requirements.txt ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    printf "LUCID_VM_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    printf "LUCID_NODE_MANAGEMENT_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
 
-RUN printf "LUCID_VM_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+RUN printf "LUCID_NODE_MANAGEMENT_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
-RUN python3.11 -c "import fastapi,uvicorn,pydantic,docker,cryptography,httpx,requests,prometheus_client; print('vm deps OK')"
+RUN python3.11 -c "\
+import uvicorn, fastapi, pydantic, pydantic_settings, motor, redis, blake3, stem, socks, tronpy, pkg_resources, web3; \
+print('node-management deps OK')"
 
-COPY vm/ ./vm/
+COPY node/ ./node/
 
-RUN test -f ./vm/main.py && test -f ./vm/vm_manager.py && echo "vm source OK"
+RUN echo "LUCID_NODE_MANAGEMENT_SOURCE_$(date +%s)" > ./node/.lucid-source-marker && \
+    chown 65532:65532 ./node/.lucid-source-marker
+
+RUN test -f ./node/main.py && test -f ./node/entrypoint.py && test -f ./node/config.py && \
+    test -f ./node/openapi.yaml && test -f ./node/models.py && \
+    echo "node-management source OK"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -89,18 +103,15 @@ ARG VCS_REF
 ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      org.opencontainers.image.title="Lucid VM Manager" \
-      org.opencontainers.image.description="Distroless VM management service (Docker API)" \
+      org.opencontainers.image.title="Lucid Node Management" \
+      org.opencontainers.image.description="Distroless node management service for Lucid project" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="vm-manager" \
+      com.lucid.service="node-management" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="support" \
-      com.lucid.security="distroless" \
-      com.lucid.expose="8107" \
-      com.lucid.plane="support" \
-      com.lucid.tor.compatible="true"
+      com.lucid.cluster="application" \
+      com.lucid.security="distroless"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -109,8 +120,8 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    VM_SERVICE_PORT=8107 \
-    VM_SERVICE_HOST=0.0.0.0
+    NODE_MANAGEMENT_PORT=8095 \
+    NODE_MANAGEMENT_HOST=0.0.0.0
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -121,19 +132,22 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/vm/ /app/vm/
+COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
+COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
+COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import docker,fastapi; print('runtime OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,pydantic_settings,blake3,stem,socks,tronpy,pkg_resources,web3; print('runtime OK')"]
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/vm/main.py'); print('layout OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/node/entrypoint.py'); assert os.path.getsize('/app/node/.lucid-source-marker')>0; print('layout OK')"]
 
-EXPOSE 8107
+EXPOSE 8095 8099
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import docker; from vm.vm_manager import VMManager; print('healthy')"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/app/usr/bin/python3.11", "-c", "import os,socket,sys; p=int(os.getenv('NODE_MANAGEMENT_PORT','8095')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "/app/vm/main.py"]
+CMD ["/app/usr/bin/python3.11", "/app/node/entrypoint.py"]

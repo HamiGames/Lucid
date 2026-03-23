@@ -12,10 +12,13 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-# Ensure site-packages is in Python path (per master-docker-design.md)
-site_packages = '/usr/local/lib/python3.11/site-packages'
-if site_packages not in sys.path:
-    sys.path.insert(0, site_packages)
+# Ensure site-packages is in Python path (distroless /app layout + legacy /usr/local)
+for _sp in (
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/usr/local/lib/python3.11/site-packages",
+):
+    if os.path.isdir(_sp) and _sp not in sys.path:
+        sys.path.insert(0, _sp)
 
 # Add app directory to path
 app_dir = '/app'

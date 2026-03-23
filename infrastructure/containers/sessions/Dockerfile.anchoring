@@ -107,36 +107,37 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="session-anchoring" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="core" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.api.gateway="api-gateway"
 
-ENV PATH=/usr/local/bin:/usr/bin:/bin \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     SESSION_ANCHORING_PORT=8085 \
-    SESSION_ANCHORING_HOST=0.0.0.0
+    SESSION_ANCHORING_HOST=session-anchoring
 
 WORKDIR /app
 
 # Copy runtime directories from builder (directory already populated with .keep files)
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder --chown=65532:65532 /var/run /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
 
 # Copy CA certificates (required for SSL/TLS operations)
 # Distroless base already has correct linker/runtime; only copy CA certs
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 # Copy Python packages (directory already populated with packages + marker files from builder stage)
 # Following Dockerfile-copy-pattern.md: copy to /usr/local for better distroless compatibility
-COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
+COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /app/usr/local/lib/python3.11/site-packages
+COPY --from=builder --chown=65532:65532 /root/.local/bin /app/usr/local/bin
 
 # Verify packages were copied (this will fail the build if packages are missing)
 # Following Dockerfile-copy-pattern.md: verify in runtime stage with correct path
-RUN ["/usr/bin/python3.11", "-c", "import sys; import os; \
+RUN ["/app/usr/bin/python3.11", "-c", "import sys; import os; \
 site_packages = '/usr/local/lib/python3.11/site-packages'; \
 assert os.path.exists(site_packages), site_packages + ' does not exist'; \
 assert os.path.exists(os.path.join(site_packages, 'uvicorn')), 'uvicorn not found'; \

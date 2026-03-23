@@ -1,4 +1,5 @@
-﻿# Path: storage/mongodb_volume.py
+# Path: storage/mongodb_volume.py
+# Database-layer helper (sharding / indexes). Storage plane only ensures volume capacity and layout.
 
 import asyncio
 import logging

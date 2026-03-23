@@ -1,10 +1,13 @@
 #!/bin/bash
 # infrastructure/containers/storage/build-storage-containers.sh
-# Build storage database containers for Lucid system
+# Build Lucid STORAGE PLANE images (capacity + durability paths). Context = repository root.
 
 set -e
 
-echo "Building storage database containers..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+echo "Building Lucid storage plane container images (context: $PROJECT_ROOT)..."
 
 # Check if images already exist
 check_existing_images() {
@@ -45,24 +48,22 @@ build_mongodb() {
     echo "Building MongoDB container..."
     
     # Try comprehensive Dockerfile first
-    if [ -f "infrastructure/docker/databases/Dockerfile.mongodb" ]; then
+    if [ -f "$PROJECT_ROOT/infrastructure/docker/databases/Dockerfile.mongodb" ]; then
         echo "Using comprehensive MongoDB Dockerfile..."
-        cd infrastructure/docker/databases
         docker buildx build \
           --platform linux/arm64 \
           -t pickme/lucid-mongodb:latest-arm64 \
-          -f Dockerfile.mongodb \
-          --push .
-        cd - > /dev/null
-    elif [ -f "infrastructure/containers/storage/Dockerfile.mongodb" ]; then
-        echo "Using storage MongoDB Dockerfile..."
-        cd infrastructure/containers/storage
+          -f "$PROJECT_ROOT/infrastructure/docker/databases/Dockerfile.mongodb" \
+          --push \
+          "$PROJECT_ROOT"
+    elif [ -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.mongodb" ]; then
+        echo "Using storage-plane MongoDB Dockerfile..."
         docker buildx build \
           --platform linux/arm64 \
           -t pickme/lucid-mongodb:latest-arm64 \
-          -f Dockerfile.mongodb \
-          --push .
-        cd - > /dev/null
+          -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.mongodb" \
+          --push \
+          "$PROJECT_ROOT"
     else
         echo "ERROR: No MongoDB Dockerfile found"
         exit 1
@@ -79,24 +80,22 @@ build_redis() {
     echo "Building Redis container..."
     
     # Try comprehensive Dockerfile first
-    if [ -f "infrastructure/docker/databases/Dockerfile.redis" ]; then
+    if [ -f "$PROJECT_ROOT/infrastructure/docker/databases/Dockerfile.redis" ]; then
         echo "Using comprehensive Redis Dockerfile..."
-        cd infrastructure/docker/databases
         docker buildx build \
           --platform linux/arm64 \
           -t pickme/lucid-redis:latest-arm64 \
-          -f Dockerfile.redis \
-          --push .
-        cd - > /dev/null
-    elif [ -f "infrastructure/containers/storage/Dockerfile.redis" ]; then
-        echo "Using storage Redis Dockerfile..."
-        cd infrastructure/containers/storage
+          -f "$PROJECT_ROOT/infrastructure/docker/databases/Dockerfile.redis" \
+          --push \
+          "$PROJECT_ROOT"
+    elif [ -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.redis" ]; then
+        echo "Using storage-plane Redis Dockerfile..."
         docker buildx build \
           --platform linux/arm64 \
           -t pickme/lucid-redis:latest-arm64 \
-          -f Dockerfile.redis \
-          --push .
-        cd - > /dev/null
+          -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.redis" \
+          --push \
+          "$PROJECT_ROOT"
     else
         echo "ERROR: No Redis Dockerfile found"
         exit 1
@@ -113,32 +112,44 @@ build_elasticsearch() {
     echo "Building Elasticsearch container..."
     
     # Try comprehensive Dockerfile first
-    if [ -f "infrastructure/docker/databases/Dockerfile.elasticsearch" ]; then
+    if [ -f "$PROJECT_ROOT/infrastructure/docker/databases/Dockerfile.elasticsearch" ]; then
         echo "Using comprehensive Elasticsearch Dockerfile..."
-        cd infrastructure/docker/databases
         docker buildx build \
           --platform linux/arm64 \
           -t pickme/lucid-elasticsearch:latest-arm64 \
-          -f Dockerfile.elasticsearch \
-          --push .
-        cd - > /dev/null
-    elif [ -f "infrastructure/containers/storage/Dockerfile.elasticsearch" ]; then
-        echo "Using storage Elasticsearch Dockerfile..."
-        cd infrastructure/containers/storage
+          -f "$PROJECT_ROOT/infrastructure/docker/databases/Dockerfile.elasticsearch" \
+          --push \
+          "$PROJECT_ROOT"
+    elif [ -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.elasticsearch" ]; then
+        echo "Using storage-plane Elasticsearch Dockerfile..."
         docker buildx build \
           --platform linux/arm64 \
           -t pickme/lucid-elasticsearch:latest-arm64 \
-          -f Dockerfile.elasticsearch \
-          --push .
-        cd - > /dev/null
+          -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.elasticsearch" \
+          --push \
+          "$PROJECT_ROOT"
     else
         echo "ERROR: No Elasticsearch Dockerfile found"
         exit 1
     fi
 }
 
+build_storage_orchestrator() {
+    echo "Building storage plane orchestrator (layout / capacity watchdog)..."
+    if [ ! -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.storage" ]; then
+        echo "WARNING: Dockerfile.storage not found, skipping"
+        return 0
+    fi
+    docker buildx build \
+      --platform linux/arm64 \
+      -t pickme/lucid-system-storage:latest-arm64 \
+      -f "$PROJECT_ROOT/infrastructure/containers/storage/Dockerfile.storage" \
+      --push \
+      "$PROJECT_ROOT"
+}
+
 # Main execution
-echo "=== Lucid Storage Containers Build ==="
+echo "=== Lucid Storage Plane Images Build ==="
 echo "Target: ARM64 (Raspberry Pi)"
 echo "Registry: Docker Hub (pickme/lucid-*)"
 echo ""
@@ -147,15 +158,15 @@ echo ""
 check_existing_images
 
 echo ""
-echo "=== Building Storage Containers ==="
+echo "=== Building storage plane images ==="
 
-# Build containers
 build_mongodb
 build_redis
 build_elasticsearch
+build_storage_orchestrator
 
 echo ""
 echo "=== Build Summary ==="
-echo "✓ Storage containers build completed successfully"
+echo "✓ Storage plane images build completed successfully"
 echo "✓ All images pushed to Docker Hub"
 echo "✓ Ready for Phase 1 Foundation Services deployment"

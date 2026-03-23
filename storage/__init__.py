@@ -1,12 +1,22 @@
-﻿# Path: storage/__init__.py  
+# Path: storage/__init__.py
 """
-Storage package for Lucid RDP.
-Manages MongoDB volumes, sharding, and data persistence.
-path: .storage
-file: storage/__init__.py
-the storage calls the storage
+Lucid storage package: storage plane (capacity / layout) plus optional database helpers.
+MongoVolumeManager is loaded lazily so `import storage.plane` does not require motor/pymongo.
 """
 
-from .mongodb_volume import MongoVolumeManager
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 __all__ = ["MongoVolumeManager"]
+
+if TYPE_CHECKING:
+    from .mongodb_volume import MongoVolumeManager as MongoVolumeManagerType
+
+
+def __getattr__(name: str) -> Any:
+    if name == "MongoVolumeManager":
+        from .mongodb_volume import MongoVolumeManager
+
+        return MongoVolumeManager
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
