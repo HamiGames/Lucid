@@ -3,6 +3,8 @@
 # Aligned with dockerfile-design.md and Dockerfile-copy-pattern.md
 # Image: pickme/lucid-user-interface:latest-arm64
 # Port: 3001
+# Build context: repository root (paths COPY electron_gui/... relative to Lucid root)
+# Build: docker build -f infrastructure/containers/electron_gui/Dockerfile.user -t pickme/lucid-user-interface:latest-arm64 .
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -10,6 +12,7 @@ ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG NODE_VERSION=18
+# Runtime image is gcr.io/distroless/nodejs18-debian11; keep NODE_VERSION=18 in sync.
 
 ############################
 # Stage 1 – Builder
@@ -93,6 +96,7 @@ RUN npm run build:user
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
+ARG TARGETPLATFORM=linux/arm64
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/nodejs18-debian11
 
 WORKDIR /app

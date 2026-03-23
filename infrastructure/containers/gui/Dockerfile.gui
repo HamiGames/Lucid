@@ -1,191 +1,174 @@
+# syntax=docker/dockerfile:1.5
+# LUCID ELECTRON GUI STRAP - Distroless bundle image (Node tarballs + strap script)
+# Structure aligned with 03_api_gateway/Dockerfile (ARG order, LABELs, platform-aware FROMs)
+# Content aligned with infrastructure/docker/distroless/gui/Dockerfile.gui
+# Image: pickme/lucid-gui:latest-arm64 (strap / configuration image, not the Python `gui/` package)
+# Build context: repository root
+# Build: docker build -f infrastructure/containers/gui/Dockerfile.gui -t pickme/lucid-gui:latest-arm64 .
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
-ARG PYTHON_VERSION=3.11
+ARG NPM_INSTALL_FLAGS="--omit=dev"
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
 
-FROM gcr.io/distroless/python3-debian12:arm64 as builder
+############################
+# Stage 1 – Strapper (electron_gui sources + node_modules tarballs)
+############################
+FROM --platform=$TARGETPLATFORM node:20-bookworm AS strapper
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PREFER_BINARY=1 \
-    DEBIAN_FRONTEND=noninteractive
+ARG NPM_INSTALL_FLAGS="--omit=dev"
+ARG TARGETPLATFORM
 
-# System packages with cache mounts
+WORKDIR /work/electron_gui
+
+COPY electron_gui/package*.json ./
+RUN npm install ${NPM_INSTALL_FLAGS}
+
+COPY electron_gui/ ./
+
+RUN npm dedupe && npm cache clean --force
+
+RUN mkdir -p /tmp/strap \
+ && tar --exclude-vcs \
+        --exclude=.turbo \
+        --exclude=.cache \
+        --exclude=dist \
+        --exclude=build \
+        --create \
+        --gzip \
+        --file=/tmp/strap/electron_gui-src.tar.gz \
+        . \
+ && if [ -d node_modules ]; then \
+        tar --create \
+            --gzip \
+            --file=/tmp/strap/electron_gui-node_modules.tar.gz \
+            node_modules; \
+    else \
+        echo "[strapper] node_modules directory missing; creating empty archive." \
+        && tar --create \
+               --gzip \
+               --file=/tmp/strap/electron_gui-node_modules.tar.gz \
+               --files-from=/dev/null; \
+    fi
+
+############################
+# Stage 2 – Bundle prep (Debian: bash, tar, gzip, lucid-gui-strap)
+############################
+FROM --platform=$TARGETPLATFORM debian:12-slim AS bundle-prep
+
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
+ARG TARGETPLATFORM
+
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
-        build-essential \
-        gcc \
-        g++ \
-        libffi-dev \
-        libssl-dev \
-        pkg-config \
-        curl \
-        ca-certificates \
-        tini \
+        bash \
+        tar \
+        gzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-WORKDIR /build
+RUN ln -sf /bin/bash /bin/sh
 
-# Copy requirements first for better caching
-COPY gui/requirements.txt ./requirements.txt
+RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
 
-# Install Python dependencies
-RUN --mount=type=cache,target=/root/.cache/pip \
-    mkdir -p /build/wheels && \
-    echo "upgrading pip and setuptools" && \
-    pip install --upgrade pip setuptools wheel &&\
-    echo "upgrade complete" && \
-    ls -lh /build/wheels/ | head -20 && \
-    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz ${BUNDLE_DIR}/electron_gui-src.tar.gz
+COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz ${BUNDLE_DIR}/electron_gui-node_modules.tar.gz
 
+COPY <<'EOF' /usr/local/bin/lucid-gui-strap
+#!/bin/bash
+set -euo pipefail
 
-# make new dir structure for externals
-RUN mkdir -p ./gui ./gui_api_bridge ./user-content ./RDP ./node ./contracts ./service_mesh ./sessions ./infrastructure/service_mesh ./infrastructure/kubernetes ./src/gui ./electron_gui \
-&& printf "LUCID_GUI_RUNTIME_DIRECTORY" > ./gui/.keep && \
-&& printf "LUCID_GUI_API_BRIDGE_RUNTIME_DIRECTORY" > ./gui_api_bridge/.keep && \
-&& printf "LUCID_GUI_USER_CONTENT_RUNTIME_DIRECTORY" > ./user-content/.keep \
-&& printf "LUCID_GUI_RDP_RUNTIME_DIRECTORY" > ./RDP/.keep \
-&& printf "LUCID_GUI_NODE_RUNTIME_DIRECTORY" > ./node/.keep \
-&& printf "LUCID_GUI_CONTRACTS_RUNTIME_DIRECTORY" > ./contracts/.keep \
-&& printf "LUCID_GUI_SERVICE_MESH_RUNTIME_DIRECTORY" > ./service_mesh/.keep \
-&& printf "LUCID_GUI_SESSIONS_RUNTIME_DIRECTORY" > ./sessions/.keep \
-&& printf "LUCID_GUI_INFRASTRUCTURE_SERVICE_MESH_RUNTIME_DIRECTORY" > ./infrastructure/service_mesh/.keep \
-&& printf "LUCID_GUI_INFRASTRUCTURE_KUBERNETES_RUNTIME_DIRECTORY" > ./infrastructure/kubernetes/.keep \
-&& printf "LUCID_GUI_SRC_GUI_RUNTIME_DIRECTORY" > ./src/gui/.keep \
-&& printf "LUCID_GUI_ELECTRON_GUI_RUNTIME_DIRECTORY" > ./electron_gui/.keep \
-&& touch ./gui/.keep ./gui_api_bridge/.keep ./user-content/.keep ./RDP/.keep ./node/.keep ./contracts/.keep ./service_mesh/.keep ./sessions/.keep ./infrastructure/service_mesh/.keep ./infrastructure/kubernetes/.keep ./src/gui/.keep ./electron_gui/.keep \
-&& echo "Externals directory structure created"
+STRAP_DIR="${STRAP_DIR:-/opt/lucid/electron_gui}"
+BUNDLE_DIR="${BUNDLE_DIR:-/opt/lucid/bundles}"
 
+echo "[lucid-gui-strap] Preparing Electron GUI bundle..."
+echo "  Target directory: ${STRAP_DIR}"
+echo "  Bundle archive  : ${BUNDLE_DIR}"
 
-# Copy EXTERNALS to builder stage
+if [ ! -d "${STRAP_DIR}" ]; then
+  mkdir -p "${STRAP_DIR}"
+fi
 
-COPY gui/ ./gui/
-COPY ../gui_api_bridge/routers/ ./gui_api_bridge/routers/
-COPY ../gui_api_bridge/services/ ./gui_api_bridge/services/
-COPY ../gui_api_bridge/middleware/ ./gui_api_bridge/middleware/
-COPY ../user-content/ ./user-content/
-COPY ../RDP/ ./RDP/
-COPY ../node/ ./node/
-COPY ../contracts/ ./contracts/
-COPY ../service_mesh/ ./service_mesh/
+if [ "$(ls -A "${STRAP_DIR}" 2>/dev/null)" ]; then
+  echo "[lucid-gui-strap] Target directory is not empty; skipping unpack."
+else
+  tar -xzf "${BUNDLE_DIR}/electron_gui-src.tar.gz" -C "${STRAP_DIR}"
+  tar -xzf "${BUNDLE_DIR}/electron_gui-node_modules.tar.gz" -C "${STRAP_DIR}" || true
+  echo "[lucid-gui-strap] Bundle unpacked into ${STRAP_DIR}"
+fi
 
-COPY ../sessions/ ./sessions/
-COPY ../service_mesh/ ./service_mesh/
-COPY ../infrastructure/service_mesh/ ./infrastructure/service_mesh/
-COPY ../infrastructure/kubernetes/ ./infrastructure/kubernetes/
-COPY ../src/gui/ ./src/gui/
+cat <<INFO
 
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest as runtime
-#JAVA local/bin
+Lucid Electron GUI bundle is available in ${STRAP_DIR}.
+Next steps on the Pi console:
+  1. Mount or copy your .env files (see plan/constants/env_file-names.md).
+  2. cd ${STRAP_DIR} && npm run build
+  3. Package / deploy a distroless runtime image once configuration is validated.
 
-COPY /usr/local/lib/java/openjdk-17/ ./runtime/usr/local/lib/java/openjdk-17/
-COPY /usr/local/bin/java ./usr/local/bin/java
-COPY /usr/local/bin/javac ./usr/local/bin/javac
-COPY /usr/local/bin/jar ./usr/local/bin/jar
-COPY /usr/local/bin/jtsdk ./usr/local/bin/jtsdk
-COPY /usr/local/bin/jps ./usr/local/bin/jps
-COPY /usr/local/bin/jstat ./usr/local/bin/jstat
-COPY /usr/local/bin/jmap ./usr/local/bin/jmap
-COPY /usr/local/bin/jhat ./usr/local/bin/jhat
-COPY /usr/local/bin/jtool ./usr/local/bin/jtool
-COPY /usr/local/bin/jinfo ./usr/local/bin/jinfo
-COPY /usr/local/bin/jstack ./usr/local/bin/jstack
-COPY /usr/local/bin/jconsole ./usr/local/bin/jconsole
-COPY /usr/local/bin/jvisualvm ./usr/local/bin/jvisualvm
-#JAVA lib
-COPY /var/lib/sbin/java ./var/lib/sbin/java
-COPY /var/lib/sbin/jtsdk ./var/lib/sbin/jtsdk
-COPY /var/lib/sbin/javac ./var/lib/sbin/javac
-COPY /var/lib/sbin/jar ./var/lib/sbin/jar
-COPY /var/lib/sbin/jps ./var/lib/sbin/jps
-COPY /var/lib/sbin/jstat ./var/lib/sbin/jmap
-COPY /var/lib/sbin/jhat ./var/lib/sbin/jhat
-COPY /var/lib/sbin/jtool ./var/lib/sbin/jtool
-COPY /var/lib/sbin/jinfo ./var/lib/sbin/jinfo
-COPY /var/lib/sbin/jstack ./var/lib/sbin/jstack
-COPY /var/lib/sbin/jconsole ./var/lib/sbin/jconsole
-COPY /var/lib/sbin/jvisualvm ./var/lib/sbin/jvisualvm
-#JAVA run
-COPY /var/run/javac ./var/run/javac
-COPY /var/run/jar ./var/run/jar
-COPY /var/run/jps ./var/run/jps
-COPY /var/run/jstat ./var/run/jstat
-COPY /var/run/jmap ./var/run/jmap
-COPY /var/run/jhat ./var/run/jhat
-COPY /var/run/jtool ./var/run/jtool
-COPY /var/run/jinfo ./var/run/jinfo
-#COPY to runtime builder stage
-COPY ../electron_gui/ ./electron_gui/
-COPY ../
-# Set non-root user for security
-USER nonroot
-WORKDIR /app
-COPY --from=builder --chown=65532:65532 /build/gui /app/gui
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/routers /app/gui_api_bridge/routers
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/services /app/gui_api_bridge/services
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/middleware /app/gui_api_bridge/middleware
-COPY --from=builder --chown=65532:65532 /build/user-content/ /app/user-content/
-COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
-COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
-COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
-COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/service_mesh/ /app/infrastructure/service_mesh/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
-COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
+INFO
 
-# runtime local.bin COPY
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/lib/java/openjdk-17/ /usr/local/lib/java/openjdk-17/
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/java /usr/local/bin/java
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/javac /usr/local/bin/javac
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jar /usr/local/bin/jar
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jps /usr/local/bin/jps
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jstat /usr/local/bin/jstat
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jmap /usr/local/bin/jmap
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jhat /usr/local/bin/jhat
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jtool /usr/local/bin/jtool
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jinfo /usr/local/bin/jinfo
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jstack /usr/local/bin/jstack
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jconsole /usr/local/bin/jconsole
-COPY --from=runtime --chown=65532:65532 /runtime/usr/local/bin/jvisualvm /usr/local/bin/jvisualvm
-# runtime sbin COPY 
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/java /var/lib/sbin/java
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jtsdk /var/lib/sbin/jtsdk
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/javac /var/lib/sbin/javac
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jar /var/lib/sbin/jar
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jps /var/lib/sbin/jps
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jstat /var/lib/sbin/jstat
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jmap /var/lib/sbin/jmap
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jhat /var/lib/sbin/jhat
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jtool /var/lib/sbin/jtool
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jinfo /var/lib/sbin/jinfo
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jstack /var/lib/sbin/jstack
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jconsole /var/lib/sbin/jconsole
-COPY --from=runtime --chown=65532:65532 /runtime/var/lib/sbin/jvisualvm /var/lib/sbin/jvisualvm
-# runtime run COPY
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/javac /var/run/javac
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jar /var/run/jar
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jps /var/run/jps
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jstat /var/run/jstat
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jmap /var/run/jmap
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jhat /var/run/jhat
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jtool /var/run/jtool
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jinfo /var/run/jinfo
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jstack /var/run/jstack
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jconsole /var/run/jconsole
-COPY --from=runtime --chown=65532:65532 /runtime/var/run/jvisualvm /var/run/jvisualvm
+exec tail -f /dev/null
+EOF
 
-COPY --from=runtime --chown=65532:65532 /runtime/electron_gui/ /app/electron_gui/
-# Expose port
-EXPOSE 8000
+RUN chmod +x /usr/local/bin/lucid-gui-strap
 
-# Run the application
-CMD ["python3", "app/gui/entrypoint.py"]
+############################
+# Stage 3 – Runtime (distroless base + bash/tar/gzip and libs)
+############################
+ARG TARGETPLATFORM=linux/arm64
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
+
+WORKDIR /
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG STRAP_DIR=/opt/lucid/electron_gui
+ARG BUNDLE_DIR=/opt/lucid/bundles
+
+COPY --from=bundle-prep ${BUNDLE_DIR} ${BUNDLE_DIR}
+COPY --from=bundle-prep ${STRAP_DIR} ${STRAP_DIR}
+COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap
+COPY --from=bundle-prep /bin/bash /bin/bash
+COPY --from=bundle-prep /bin/sh /bin/sh
+COPY --from=bundle-prep /bin/tar /bin/tar
+COPY --from=bundle-prep /bin/gzip /bin/gzip
+COPY --from=bundle-prep /usr/lib/*/libz.so.1 /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libbz2.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/liblzma.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libzstd.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libpthread.so.0 /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libc.so.6 /usr/lib/
+COPY --from=bundle-prep /usr/lib/*/libtinfo.so.* /usr/lib/
+COPY --from=bundle-prep /usr/lib*/ld-linux-*.so.* /usr/lib64/
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Electron GUI Strap" \
+      org.opencontainers.image.description="Distroless Electron GUI bundle for Pi console configuration" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="gui-strap" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.cluster="support" \
+      com.lucid.security="distroless"
+
+ENV STRAP_DIR=${STRAP_DIR} \
+    BUNDLE_DIR=${BUNDLE_DIR} \
+    NODE_ENV=development \
+    LUCID_PLATFORM=arm64
+
+WORKDIR ${STRAP_DIR}
+
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/lucid-gui-strap"]
