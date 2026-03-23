@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.5
-# LUCID SESSION PIPELINE - Distroless Python Service
-# Aligned with 03_api_gateway/Dockerfile (dockerfile-design + Dockerfile-copy-pattern)
+# LUCID SESSION PIPELINE - Distroless Python service
+# Design aligned with 03_api_gateway/Dockerfile (ARGs, rustup, usr markers, pip wheel + install, /app runtime, tini, verify)
 # Image: pickme/lucid-session-pipeline:latest-arm64
-# Port: 8080
+# Port: 8083 (SESSION_PIPELINE_PORT)
+# Build context: repository root
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -62,9 +63,12 @@ RUN mkdir -p /root /root/.rustup /root/.cargo && \
     chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
     chmod +x /root/.keep /root/.rustup/.keep /root/.cargo/.keep
 
-RUN apt-get remove -y rustc cargo && \
+RUN apt-get update --allow-releaseinfo-change && \
+    apt-get remove -y rustc cargo && \
     rm -rf /root/.cargo /root/.rustup && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PATH=/root/.cargo/bin:$PATH
 
@@ -108,45 +112,20 @@ RUN echo "=== Verifying pip installation (session pipeline) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./configs ./sessions/api ./sessions/encryption ./sessions/processor ./sessions/recorder ./sessions/storage ./sessions/config ./sessions/security ./tmp ./wheels && \
+RUN mkdir -p ./sessions ./configs ./tmp && \
     printf "LUCID_SESSION_PIPELINE_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
-    printf "LUCID_SESSION_PIPELINE_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
-    touch ./sessions/pipeline/.keep && \
-    printf "LUCID_SESSION_PIPELINE_CORE_$(date +%s)" > ./sessions/core/.keep && \
-    touch ./sessions/core/.keep && \
-    printf "LUCID_SESSION_PIPELINE_API_$(date +%s)" > ./sessions/api/.keep && \
-    touch ./sessions/api/.keep && \
-    printf "LUCID_SESSION_PIPELINE_ENCRYPTION_$(date +%s)" > ./sessions/encryption/.keep && \
-    touch ./sessions/encryption/.keep && \
-    printf "LUCID_SESSION_PIPELINE_PROCESSOR_$(date +%s)" > ./sessions/processor/.keep && \
-    touch ./sessions/processor/.keep && \
-    printf "LUCID_SESSION_PIPELINE_RECORDER_$(date +%s)" > ./sessions/recorder/.keep && \
-    touch ./sessions/recorder/.keep && \
-    printf "LUCID_SESSION_PIPELINE_STORAGE_$(date +%s)" > ./sessions/storage/.keep && \
-    touch ./sessions/storage/.keep && \
-    printf "LUCID_SESSION_PIPELINE_CONFIG_$(date +%s)" > ./sessions/config/.keep && \
-    touch ./sessions/config/.keep && \
-    printf "LUCID_SESSION_PIPELINE_SECURITY_$(date +%s)" > ./sessions/security/.keep && \
-    touch ./sessions/security/.keep && \
+    printf "LUCID_SESSION_PIPELINE_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    touch ./configs/.keep && \
     printf "LUCID_SESSION_PIPELINE_TMP_$(date +%s)" > ./tmp/.keep && \
-    touch ./tmp/.keep
+    touch ./tmp/.keep && \
+    chown -R 65532:65532 ./sessions ./configs ./tmp
 
 COPY sessions/ ./sessions/
 COPY configs/services/session-management.yml ./configs/session-management.yml
 
-COPY sessions/pipeline/ ./sessions/pipeline/
-COPY sessions/core/ ./sessions/core/
-COPY sessions/api/ ./sessions/api/
-COPY sessions/encryption/ ./sessions/encryption/
-COPY sessions/processor/ ./sessions/processor/
-COPY sessions/recorder/ ./sessions/recorder/
-COPY sessions/storage/ ./sessions/storage/
-COPY sessions/config/ ./sessions/config/
-COPY sessions/security/ ./sessions/security/
-
-RUN echo "=== Session pipeline tree ===" && \
-    ls -la ./sessions/pipeline/ | head -30
+RUN test -f ./sessions/pipeline/main.py && test -f ./configs/session-management.yml && \
+    echo "✅ Session pipeline sources present"
 
 RUN mkdir -p /build/tmp
 
@@ -157,6 +136,7 @@ import sys
 dirs = [
     "/app/sessions",
     "/app/sessions/pipeline",
+    "/app/configs",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -167,6 +147,14 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
+cfg = "/app/configs/session-management.yml"
+if not os.path.isfile(cfg):
+    print(f"ERROR: {cfg} missing")
+    sys.exit(1)
+main_py = "/app/sessions/pipeline/main.py"
+if not os.path.isfile(main_py):
+    print(f"ERROR: {main_py} missing")
+    sys.exit(1)
 print("✅ Session pipeline runtime layout verified")
 PY
 
@@ -183,15 +171,14 @@ ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.title="Lucid Session Pipeline" \
-      org.opencontainers.image.description="Distroless Session Pipeline for Lucid project" \
+      org.opencontainers.image.description="Distroless session pipeline manager for Lucid" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       com.lucid.service="session-pipeline" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="processing" \
-      com.lucid.security="distroless" \
-      com.lucid.api.gateway="api-gateway"
+      com.lucid.security="distroless"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -200,7 +187,8 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    SESSION_PIPELINE_PORT=8080
+    SESSION_PIPELINE_PORT=8083 \
+    SESSION_PIPELINE_HOST=session-pipeline
 
 COPY --from=builder /root/.rustup/ /app/rust/
 COPY --from=builder /root/.cargo/ /app/cargo/
@@ -214,32 +202,23 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_session_pipeline.py /app/tmp/verify_runtime.py
 
-COPY --from=builder --chown=65532:65532 /build/configs/services/session-management.yml /app/configs/session-management.yml
+COPY --from=builder /usr/bin/tini /app/usr/bin/tini
 
-
-COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
-COPY --from=builder --chown=65532:65532 /build/sessions/core/ /app/sessions/core/
-COPY --from=builder --chown=65532:65532 /build/sessions/api/ /app/sessions/api/
-COPY --from=builder --chown=65532:65532 /build/sessions/encryption/ /app/sessions/encryption/
-COPY --from=builder --chown=65532:65532 /build/sessions/processor/ /app/sessions/processor/
-COPY --from=builder --chown=65532:65532 /build/sessions/recorder/ /app/sessions/recorder/
-COPY --from=builder --chown=65532:65532 /build/sessions/storage/ /app/sessions/storage/
-COPY --from=builder --chown=65532:65532 /build/sessions/config/ /app/sessions/config/
-COPY --from=builder --chown=65532:65532 /build/sessions/security/ /app/sessions/security/
-
+RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/sessions/pipeline/main.py'); import fastapi, uvicorn; print('✅ Session pipeline runtime imports OK')"]
 
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
-EXPOSE 8091
+EXPOSE 8083
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline:8091/health', timeout=2); exit(0)"]
+    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline:8083/health', timeout=2).read()"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.sessions.pipeline.main:app", "--host", "session-pipeline", "--port", "8091"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.pipeline.main:app", "--host", "session-pipeline", "--port", "8083"]

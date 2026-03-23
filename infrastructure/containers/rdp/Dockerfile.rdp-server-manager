@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.5
 # LUCID RDP Server Manager - Distroless Python service
-# Design aligned with 03_api_gateway/Dockerfile (stages, ARGs, markers, wheels, /app layout, tini, USER 65532)
-# HTTP API: uvicorn xrdp_integration:app (see RDP/server/xrdp_integration.py)
-# Build context: repository root (e.g. docker build -f infrastructure/containers/rdp/Dockerfile.rdp-server-manager .)
+# Design aligned with 03_api_gateway/Dockerfile (ARGs, usr/var markers, pip wheel + install, /app runtime, tini, verify)
+# HTTP API: uvicorn xrdp_integration:app (RDP/server/xrdp_integration.py)
+# Build context: repository root
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -56,10 +56,20 @@ RUN printf "LUCID_RDP_SERVER_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
-    printf "LUCID_RDP_USR_LOCAL_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_RDP_USR_$(date +%s)" > /usr/.keep && \
+    touch /usr/.keep && \
+    printf "LUCID_RDP_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
+    touch /usr/local/.keep && \
+    printf "LUCID_RDP_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_RDP_PY311_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_RDP_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
     touch /usr/local/lib/python3.11/site-packages/.keep && \
-    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages && \
-    chmod 644 /usr/local/lib/python3.11/site-packages/.keep
+    printf "LUCID_RDP_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
@@ -76,7 +86,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
 
 RUN echo "=== Verifying RDP server manager packages ===" && \
-    python3.11 -c "import fastapi, uvicorn, pydantic, motor, redis, httpx, requests, psutil, cryptography; print('✅ RDP manager stack OK')" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, motor, redis, httpx, requests, psutil, cryptography, structlog, prometheus_client; print('✅ RDP manager stack OK')" && \
     pip list
 
 RUN mkdir -p ./app ./tmp && \
@@ -90,6 +100,8 @@ COPY RDP/server/__init__.py ./app/__init__.py
 COPY RDP/server/rdp_server_manager.py ./app/rdp_server_manager.py
 COPY RDP/server/session_controller.py ./app/session_controller.py
 COPY RDP/server/xrdp_integration.py ./app/xrdp_integration.py
+
+RUN mkdir -p /build/tmp
 
 COPY <<'PY' /build/tmp/verify_runtime.py
 import os

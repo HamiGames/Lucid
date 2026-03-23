@@ -1,127 +1,178 @@
-# LUCID GOVERNOR - SPEC-3 Governance System (Distroless)
-# Professional governor implementation for Pi deployment
-# Multi-platform build for ARM64 Pi and AMD64 development
+# syntax=docker/dockerfile:1.5
+# LUCID GOVERNOR - SPEC-3 governance (Distroless Python)
+# Design aligned with 03_api_gateway/Dockerfile (ARGs, rustup, usr markers, pip wheel + install, /app + /opt layout, tini, USER 65532)
+# Build context: repository root (docker build -f infrastructure/docker/common/Dockerfile.lucid-governor .)
+# Port: 8108 (for future HTTP wiring; entrypoint runs lucid_governor.py)
 
-# syntax=docker/dockerfile:1.7
-FROM python:3.11-slim AS governor-builder
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Metadata for professional container management
-LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Lucid Governor for SPEC-3 Governance System (Distroless)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="lucid-governor" \
-      org.lucid.layer="3" \
-      org.lucid.expose="8108"
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-# Build-time environment for dependency installation
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies and governance tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
         curl \
         ca-certificates \
-        netcat-traditional \
-        jq \
-        gosu \
-        # Governance dependencies
+        tini \
+        python3-wheel \
         python3-dev \
-        # Cryptographic tools
-        openssl \
-        # Database support
-        sqlite3 \
-    && rm -rf /var/lib/apt/lists/* \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
     && apt-get clean \
-    && groupadd --gid 1000 lucid \
-    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Set up application directory
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_GOVERNOR_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_GOVERNOR_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_GOVERNOR_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod +x /root/.keep /root/.rustup/.keep /root/.cargo/.keep
+
+RUN apt-get update --allow-releaseinfo-change && \
+    apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN printf "LUCID_GOVERNOR_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_GOVERNOR_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_GOVERNOR_USR_LOCAL_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_GOVERNOR_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
+
+COPY infrastructure/docker/common/requirements.lucid-governor.txt ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+
+RUN echo "=== Verifying governor packages ===" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, httpx, web3, eth_account, cryptography, structlog, jwt, motor; print('✅ Governor stack OK')" && \
+    pip list
+
 WORKDIR /app
-RUN chown -R lucid:lucid /app
 
-# Install Python dependencies for governance
-RUN pip install --no-cache-dir \
-        "uvicorn[standard]>=0.24.0" \
-        "fastapi>=0.104.0" \
-        "pydantic>=2.0.0" \
-        "httpx>=0.25.0" \
-        "web3>=6.11.0" \
-        "eth-account>=0.9.0" \
-        "cryptography>=41.0.0" \
-        "structlog>=23.2.0" \
-        "python-dotenv>=1.0.0" \
-        "websockets>=11.0.0"
+RUN mkdir -p \
+        /app/common/governance \
+        /opt/lucid/governance /opt/lucid/voting /opt/lucid/parameters \
+        /data/governance \
+        /tmp/governor \
+    && printf "LUCID_GOVERNOR_OPT_$(date +%s)" > /opt/lucid/governance/.keep && \
+    touch /opt/lucid/voting/.keep /opt/lucid/parameters/.keep /data/governance/.keep /tmp/governor/.keep
 
-# Copy application code
-COPY common/ /app/common/
+COPY common/__init__.py /app/common/__init__.py
 COPY common/governance/ /app/common/governance/
 COPY wallet/ /app/wallet/
 COPY auth/ /app/auth/
 COPY blockchain/ /app/blockchain/
 
-# Create governance directories
-RUN mkdir -p /opt/lucid/governance /opt/lucid/voting /opt/lucid/parameters /data/governance /tmp/governor \
-    && chown -R lucid:lucid /opt/lucid /data /tmp/governor
+RUN test -f /app/common/governance/lucid_governor.py && echo "✅ lucid_governor.py present"
 
-# Create non-root user for runtime
-RUN adduser --disabled-password --gecos '' governor_user && \
-    chown -R governor_user:governor_user /app /data /tmp/governor /opt/lucid
+RUN mkdir -p /build/tmp
 
-# Stage 2: Distroless runtime with Python and governance dependencies
-FROM gcr.io/distroless/python3-debian12:nonroot
+COPY <<'PY' /build/tmp/verify_runtime.py
+import os
+import sys
 
-# Metadata for runtime container
+dirs = [
+    "/app/common/governance",
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/app/wheels",
+    "/opt/lucid/governance",
+]
+for d in dirs:
+    if not os.path.isdir(d):
+        print(f"ERROR: {d} missing")
+        sys.exit(1)
+    if d.endswith("site-packages") and not os.listdir(d):
+        print(f"ERROR: {d} empty")
+        sys.exit(1)
+if not os.path.isfile("/app/common/governance/lucid_governor.py"):
+    print("ERROR: lucid_governor.py missing")
+    sys.exit(1)
+print("✅ Lucid governor runtime layout verified")
+PY
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Lucid Governor for SPEC-3 Governance System (Distroless Runtime)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="lucid-governor" \
-      org.lucid.layer="3" \
-      org.lucid.expose="8108"
+      org.opencontainers.image.title="Lucid Governor" \
+      org.opencontainers.image.description="Distroless Lucid SPEC-3 governance runtime" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="lucid-governor" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="foundation" \
+      com.lucid.security="distroless" \
+      com.lucid.layer="3"
 
-# Copy Python installation and packages from builder
-COPY --from=governor-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=governor-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
-COPY --from=governor-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
-
-# Copy governance and system tools
-COPY --from=governor-builder /usr/bin/openssl /usr/bin/openssl
-COPY --from=governor-builder /usr/bin/sqlite3 /usr/bin/sqlite3
-COPY --from=governor-builder /usr/bin/curl /usr/bin/curl
-COPY --from=governor-builder /bin/nc /bin/nc
-COPY --from=governor-builder /usr/bin/jq /usr/bin/jq
-COPY --from=governor-builder /usr/sbin/gosu /usr/sbin/gosu
-
-# Copy required dynamic libraries (architecture-specific)
-COPY --from=governor-builder /lib/*-linux-*/libc.so.6 /lib/
-COPY --from=governor-builder /lib/*-linux-*/libssl.so.3 /lib/
-COPY --from=governor-builder /lib/*-linux-*/libcrypto.so.3 /lib/
-COPY --from=governor-builder /lib/*-linux-*/libz.so.1 /lib/
-COPY --from=governor-builder /lib/*-linux-*/liblzma.so.5 /lib/
-COPY --from=governor-builder /lib/*-linux-*/libzstd.so.1 /lib/
-COPY --from=governor-builder /lib*/ld-linux-*.so.2 /lib64/
-
-# Copy user and group information
-COPY --from=governor-builder /etc/passwd /etc/passwd
-COPY --from=governor-builder /etc/group /etc/group
-
-# Copy CA certificates
-COPY --from=governor-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-# Copy application with proper ownership
-COPY --from=governor-builder --chown=governor_user:governor_user /app /app
-COPY --from=governor-builder --chown=governor_user:governor_user /data /data
-COPY --from=governor-builder --chown=governor_user:governor_user /tmp/governor /tmp/governor
-COPY --from=governor-builder --chown=governor_user:governor_user /opt/lucid /opt/lucid
-
-# Runtime environment for governor
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     GOVERNANCE_PATH=/opt/lucid/governance \
     VOTING_PATH=/opt/lucid/voting \
     PARAMETERS_PATH=/opt/lucid/parameters \
@@ -132,10 +183,40 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     VOTING_DELAY_SECONDS=86400 \
     EXECUTION_DELAY_SECONDS=172800
 
-# Security and runtime configuration
-EXPOSE 8108
-USER governor_user
-WORKDIR /app
+COPY --from=builder /root/.rustup/ /app/rust/
+COPY --from=builder /root/.cargo/ /app/cargo/
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
-# Default command for governor service
-ENTRYPOINT ["/usr/local/bin/python3.11", "/app/common/governance/lucid_governor.py"]
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+
+COPY --from=builder --chown=65532:65532 /app/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /app/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /app/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /app/blockchain/ /app/blockchain/
+
+COPY --from=builder --chown=65532:65532 /opt/lucid/ /opt/lucid/
+COPY --from=builder --chown=65532:65532 /data/governance/ /data/governance/
+COPY --from=builder --chown=65532:65532 /tmp/governor/ /tmp/governor/
+
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+COPY --from=builder /usr/bin/tini /app/usr/bin/tini
+
+RUN ["/app/usr/bin/python3.11", "-c", "import web3, eth_account, cryptography, jwt; print('✅ Governor deps OK')"]
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
+
+EXPOSE 8108
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/common/governance/lucid_governor.py"]

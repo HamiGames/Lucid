@@ -62,9 +62,12 @@ RUN mkdir -p /root /root/.rustup /root/.cargo && \
     chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
     chmod +x /root/.keep /root/.rustup/.keep /root/.cargo/.keep
 
-RUN apt-get remove -y rustc cargo && \
+RUN apt-get update --allow-releaseinfo-change && \
+    apt-get remove -y rustc cargo && \
     rm -rf /root/.cargo /root/.rustup && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PATH=/root/.cargo/bin:$PATH
 
@@ -133,11 +136,13 @@ RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./common/tor ./sessi
     touch ./common/governance/.keep && \
     printf "LUCID_SESSION_PIPELINE_MANAGER_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
     touch ./common/tor/.keep && \
+    chown -R 65532:65532 ./sessions ./common ./tmp && \
+    chmod 644 ./sessions/.keep ./tmp/.keep ./common/.keep ./common/governance/.keep ./common/tor/.keep
 
 COPY common/__init__.py ./common/__init__.py
-COPY common/governance/__init__.py ./common/governance/__init__.py
 COPY common/governance/lucid_governor.py ./common/governance/lucid_governor.py
 COPY common/governance/param_registry.py ./common/governance/param_registry.py
+COPY common/governance/timelock.py ./common/governance/timelock.py
 COPY common/tor/ ./common/tor/
 
 COPY sessions/__init__.py ./sessions/__init__.py
@@ -160,7 +165,7 @@ RUN chmod +x ./sessions/pipeline/* && \
     chmod +x ./sessions/security/* && \
     chmod +x ./sessions/* && \
     chmod +x ./common/* && \
-    chmod +x ./common/governance/* && \
+    chmod +x ./common/governance/* 2>/dev/null || true && \
     echo "Session pipeline manager files permissions changed"
 
 
@@ -234,9 +239,9 @@ COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/ve
 
 
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
-COPY --from=builder --chown=65532:65532 /build/common/governance/__init__.py /app/common/governance/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/governance/lucid_governor.py /app/common/governance/lucid_governor.py
 COPY --from=builder --chown=65532:65532 /build/common/governance/param_registry.py /app/common/governance/param_registry.py
+COPY --from=builder --chown=65532:65532 /build/common/governance/timelock.py /app/common/governance/timelock.py
 
 COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
 COPY --from=builder --chown=65532:65532 /build/sessions/pipeline/ /app/sessions/pipeline/
@@ -258,7 +263,7 @@ RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 EXPOSE 7990
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline-manager:7990/health', timeout=2); exit(0)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-pipeline-manager:7990/health', timeout=2).read()"]
 
 USER 65532:65532
 

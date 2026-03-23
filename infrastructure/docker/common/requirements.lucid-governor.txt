@@ -1,0 +1,14 @@
+# Lucid Governor (SPEC-3) — pinned for reproducible wheel builds
+uvicorn[standard]>=0.24.0,<1.0
+fastapi>=0.104.0,<1.0
+pydantic>=2.0.0,<3.0
+httpx>=0.25.0
+web3>=6.11.0
+eth-account>=0.9.0
+cryptography>=41.0.0
+structlog>=23.2.0
+python-dotenv>=1.0.0
+websockets>=11.0.0
+PyJWT>=2.8.0
+motor>=3.3.0
+pymongo>=4.6.0
