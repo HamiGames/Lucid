@@ -1,57 +1,152 @@
-# LUCID Params Registry Container - SPEC-1B Implementation
-# Distroless container for params registry service
+# syntax=docker/dockerfile:1.5
+# LUCID PARAMS REGISTRY — Distroless Python Service
+# Aligned with 03_api_gateway/Dockerfile (wheels, markers, /app/usr layout, tini)
+# Build context: repository root (.)
+# Port: 8050
 
-# syntax=docker/dockerfile:1.7
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Stage 1: Builder
-FROM python:3.11-slim AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-# Set build arguments
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
+ARG PYTHON_VERSION
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Set working directory
 WORKDIR /build
 
-# Copy requirements
-COPY admin/params-registry/requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy source code
-COPY admin/params-registry/ ./src/
+RUN printf "LUCID_PARAMS_REGISTRY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
 
-# Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/python3-debian12:nonroot
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    printf "LUCID_PARAMS_REGISTRY_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr/local/lib/python3.11 /usr/local/bin && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /app/.local
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_PARAMS_REGISTRY_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
 
-# Copy application code
-COPY --from=builder /build/src /app
+COPY admin/params-registry/requirements.txt ./requirements.txt
 
-# Set environment variables
-ENV PYTHONPATH=/app/.local/lib/python3.11/site-packages:/app
-ENV PATH=/app/.local/bin:$PATH
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
-# Set working directory
+RUN echo "installing wheels into system python" && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
+    echo "installation complete"
+
+RUN echo "=== Verifying pip installation ===" && \
+    python3.11 -c "import sys; assert sys.version_info[:2] == (3, 11); print('params-registry python ok')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    pip list
+
+RUN mkdir -p ./admin/params-registry && \
+    printf "LUCID_PARAMS_REGISTRY_APP_$(date +%s)" > ./admin/params-registry/.keep && \
+    touch ./admin/params-registry/.keep
+
+COPY admin/params-registry/ ./admin/params-registry/
+
+RUN test -f ./admin/params-registry/params_registry.py && ls -la ./admin/params-registry/
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
 WORKDIR /app
 
-# Create non-root user
-USER nonroot
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["python", "-c", "import requests; requests.get('http://localhost:8050/health')"]
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Params Registry" \
+      org.opencontainers.image.description="Distroless params registry service for Lucid" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="params-registry" \
+      com.lucid.platform="arm64" \
+      com.lucid.security="distroless"
 
-# Expose port
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PARAMS_REGISTRY_PORT=8050
+
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/admin/params-registry/ /app/admin/params-registry/
+
+RUN ["/app/usr/bin/python3.11", "-c", \
+    "import os; assert os.path.isfile('/app/admin/params-registry/params_registry.py'); print('params-registry runtime OK')"]
+
 EXPOSE 8050
 
-# Run application
-ENTRYPOINT ["python", "params_registry.py"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD ["/app/usr/bin/python3.11", "-c", \
+    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8050/health', timeout=2)"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/admin/params-registry/params_registry.py"]

@@ -1,63 +1,176 @@
-# LUCID Admin UI Backend Container - SPEC-1B Implementation
-# Distroless container for admin UI backend
+# syntax=docker/dockerfile:1.5
+# LUCID ADMIN UI BACKEND — Distroless Python (FastAPI admin interface)
+# Aligned with 03_api_gateway/Dockerfile (wheels, markers, /app/usr layout, tini)
+# Build context: repository root (.)
+# Image: pickme/lucid-admin-ui-backend:latest-arm64
+# Port: 8120
+#
+# Entrypoint: admin/entrypoint.py → uvicorn admin.main:app
+# Tier URLs (compose / env): LUCID_SERVER_CORE_URL, LUCID_SERVER_OPERATIONS_URL, LUCID_RDP_MANAGER_URL
 
-# syntax=docker/dockerfile:1.7
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Stage 1: Builder
-FROM node:20-slim AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-# Set build arguments
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
+ARG PYTHON_VERSION
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Set working directory
 WORKDIR /build
 
-# Copy package files
-COPY admin/backend/package*.json ./
-COPY admin/backend/yarn.lock* ./
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        zlib1g-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install dependencies
-RUN npm ci --only=production
+RUN printf "LUCID_ADMIN_UI_BACKEND_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_ADMIN_UI_BACKEND_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
 
-# Copy source code
-COPY admin/backend/ ./
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    printf "LUCID_ADMIN_UI_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_ADMIN_UI_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr/local/lib/python3.11 /usr/local/bin && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
 
-# Build application
-RUN npm run build
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_ADMIN_UI_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
 
-# Stage 2: Runtime (Distroless)
-FROM gcr.io/distroless/nodejs20-debian12:nonroot
+COPY admin/requirements.txt ./requirements.txt
+RUN sed -i '/^rust==/d;/^cargo==/d;/^logging==/d;/^logging\./d' requirements.txt
 
-# Copy application from builder
-COPY --from=builder /build/dist /app/dist
-COPY --from=builder /build/node_modules /app/node_modules
-COPY --from=builder /build/package*.json /app/
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3001
+RUN echo "installing wheels into system python" && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
+    echo "installation complete"
 
-# Set working directory
+RUN printf "LUCID_ADMIN_UI_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.lucid-marker
+
+RUN echo "=== Verifying pip installation success ===" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, httpx, aiohttp, jinja2, email_validator, cryptography, aiofiles, yaml, tenacity, blake3; print('admin ui backend packages OK')" && \
+    test -d /usr/local/lib/python3.11/site-packages
+
+RUN mkdir -p ./admin && \
+    printf "LUCID_ADMIN_UI_APP_$(date +%s)" > ./admin/.keep && \
+    touch ./admin/.keep
+
+COPY admin/ ./admin/
+
+RUN test -f ./admin/entrypoint.py && test -f ./admin/main.py && test -f ./admin/config.py && \
+    test -f ./admin/config/health-schema.json && test -f ./admin/config/admin-interface-config.yaml && \
+    test -d ./admin/services && test -f ./admin/services/service_client.py && \
+    echo "admin application tree verified"
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
 WORKDIR /app
 
-# Create non-root user
-USER nonroot
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["node", "-e", "const http = require('http'); const options = {host: 'localhost', port: 3001, path: '/health'}; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); req.end();"]
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Admin UI Backend" \
+      org.opencontainers.image.description="Distroless FastAPI admin backend for Lucid" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="admin-ui-backend" \
+      com.lucid.role="admin-api" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="support" \
+      com.lucid.security="distroless"
 
-# Expose port
-EXPOSE 3001
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    ADMIN_INTERFACE_PORT=8120 \
+    ADMIN_INTERFACE_HOST=0.0.0.0 \
+    LUCID_SERVER_CORE_URL=http://lucid-server-core:8088 \
+    LUCID_SERVER_OPERATIONS_URL=http://lucid-server-operations:8081 \
+    LUCID_RDP_MANAGER_URL=http://lucid-rdp-server-manager:8090
 
-# Run application
-ENTRYPOINT ["node", "dist/main.js"]
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+
+RUN ["/app/usr/bin/python3.11", "-c", \
+    "import os, sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, sp); \
+     assert os.path.isfile(os.path.join(sp, '.lucid-marker')); \
+     import uvicorn, fastapi, jinja2, httpx; \
+     assert os.path.isfile('/app/admin/entrypoint.py') and os.path.isfile('/app/admin/main.py'); \
+     print('admin-ui-backend runtime OK')"]
+
+EXPOSE 8120
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD ["/app/usr/bin/python3.11", "-c", \
+    "import os, socket, sys; p=int(os.getenv('ADMIN_INTERFACE_PORT','8120')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/admin/entrypoint.py"]

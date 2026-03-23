@@ -20,7 +20,10 @@ if site_packages not in sys.path:
 if __name__ == "__main__":
     # Get configuration from environment variables (from docker-compose)
     # SESSION_STORAGE_HOST is service name, but bind address must be 0.0.0.0
-    port_str = os.getenv('SESSION_STORAGE_PORT', '8082')
+    port_str = os.getenv(
+        'SESSION_STORAGE_SERVICE_PORT',
+        os.getenv('SESSION_STORAGE_PORT', os.getenv('PORT', '8020')),
+    )
     host = '0.0.0.0'  # Always bind to all interfaces in container
     
     try:

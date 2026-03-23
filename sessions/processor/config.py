@@ -74,8 +74,8 @@ class SessionOrchestratorConfig:
     AUTH_SERVICE_URL: str = os.getenv('AUTH_SERVICE_URL', '')  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
     SESSION_PIPELINE_URL: str = os.getenv('SESSION_PIPELINE_URL', '')  # From environment: SESSION_PIPELINE_URL (e.g., http://session-pipeline:8083)
     SESSION_RECORDER_URL: str = os.getenv('SESSION_RECORDER_URL', '')  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
-    SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
-    SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
+    SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # e.g., http://session-storage:8020
+    SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # e.g., http://session-api:8113
     # Integration Service Timeout Configuration (from sessions.processor.env.application)
     SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
     SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls
@@ -223,8 +223,8 @@ class ChunkProcessorConfig(BaseSettings):
     AUTH_SERVICE_URL: str = os.getenv('AUTH_SERVICE_URL', '')  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
     SESSION_PIPELINE_URL: str = os.getenv('SESSION_PIPELINE_URL', '')  # From environment: SESSION_PIPELINE_URL (e.g., http://session-pipeline:8083)
     SESSION_RECORDER_URL: str = os.getenv('SESSION_RECORDER_URL', '')  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
-    SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
-    SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
+    SESSION_STORAGE_URL: str = os.getenv('SESSION_STORAGE_URL', '')  # e.g., http://session-storage:8020
+    SESSION_API_URL: str = os.getenv('SESSION_API_URL', '')  # e.g., http://session-api:8113
     # Integration Service Timeout Configuration (from sessions.processor.env.application)
     SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls
     SERVICE_RETRY_COUNT: int = 3  # Default retry count for service calls

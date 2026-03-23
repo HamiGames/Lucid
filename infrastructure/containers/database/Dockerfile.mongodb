@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.5
-# LUCID MongoDB - Distroless Python + mongod/mongosh
-# Design aligned with 03_api_gateway/Dockerfile (ARGs, markers, labels, /app layout, tini, USER 65532)
-# Builder: official MongoDB image (correct base for mongod / mongosh and WiredTiger plugin paths)
-# Multi-arch: pass DEBIAN_MULTIARCH=x86_64-linux-gnu when building linux/amd64 (default: aarch64-linux-gnu for Pi)
+# LUCID MONGODB — Distroless Python + mongod/mongosh
+# Rewritten to follow 03_api_gateway/Dockerfile (ARGs, markers, /build export, /app runtime, tini, USER 65532)
+# Image: pickme/lucid-mongodb:latest-arm64
+# Port: 27017
+# Builder: mongo:7.0 (WiredTiger + multiarch lib paths). Multi-arch: DEBIAN_MULTIARCH=x86_64-linux-gnu for amd64.
 # Build context: repository root
 
 ARG BUILD_DATE
@@ -10,21 +11,23 @@ ARG VCS_REF
 ARG VERSION=1.0.0
 ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
-# Debian multiarch tuple for /usr/lib/$DEBIAN_MULTIARCH/mongodb
+ARG PYTHON_VERSION=3.11
 ARG DEBIAN_MULTIARCH=aarch64-linux-gnu
 
 ############################
-# Stage 1 – MongoDB builder
+# Stage 1 – Builder (MongoDB binaries + export tree under /build)
 ############################
-FROM --platform=$TARGETPLATFORM mongo:7.0 AS mongodb-builder
+FROM --platform=$TARGETPLATFORM mongo:7.0 AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-# Default matches Pi (linux/arm64); for amd64 images use: --build-arg DEBIAN_MULTIARCH=x86_64-linux-gnu
-ARG DEBIAN_MULTIARCH=aarch64-linux-gnu
+ARG PYTHON_VERSION
+ARG DEBIAN_MULTIARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    DEBCONF_NONINTERACTIVE_SEEN=true
+    DEBCONF_NONINTERACTIVE_SEEN=true \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /build
 
@@ -36,47 +39,96 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         ca-certificates \
         curl \
         tini \
+        python3-minimal \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && dpkg --configure -a --force-unsafe-io --no-triggers 2>/dev/null || true
 
+# System markers (aligned with Dockerfile-copy-pattern.md / api gateway)
 RUN printf "LUCID_MONGODB_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_MONGODB_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
-COPY database/mongodb/start_mongodb.py /usr/local/bin/start_mongodb.py
-RUN test -f /usr/local/bin/start_mongodb.py && chmod +x /usr/local/bin/start_mongodb.py
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    printf "LUCID_MONGODB_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_MONGODB_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr/local/lib/python3.11 /usr/local/bin && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
 
-COPY database/mongodb/healthcheck.py /usr/local/bin/healthcheck.py
-RUN test -f /usr/local/bin/healthcheck.py && chmod +x /usr/local/bin/healthcheck.py
+RUN mkdir -p ./database/mongodb ./tmp ./export && \
+    printf "LUCID_MONGODB_DATABASE_$(date +%s)" > ./database/.keep && \
+    touch ./database/.keep && \
+    printf "LUCID_MONGODB_TMP_$(date +%s)" > ./tmp/.keep && \
+    touch ./tmp/.keep
 
-COPY infrastructure/containers/database/mongod.conf /tmp/mongod.conf
-RUN test -f /tmp/mongod.conf
+COPY database/mongodb/start_mongodb.py ./database/mongodb/start_mongodb.py
+COPY database/mongodb/healthcheck.py ./database/mongodb/healthcheck.py
+RUN chmod +x ./database/mongodb/start_mongodb.py ./database/mongodb/healthcheck.py && \
+    cp ./database/mongodb/start_mongodb.py /usr/local/bin/start_mongodb.py && \
+    cp ./database/mongodb/healthcheck.py /usr/local/bin/healthcheck.py && \
+    chmod +x /usr/local/bin/start_mongodb.py /usr/local/bin/healthcheck.py
 
-# Pack /app layout + dynamic libs for distroless (no invalid "COPY || true" — optional dirs handled in shell)
-RUN mkdir -p /export/app/usr/bin /export/app/usr/local/bin \
-        "/export/app/usr/lib/mongodb" \
-        "/export/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb" \
-        /export/app/usr/lib/mongo-extra \
-        /export/app/etc/ssl/certs /export/app/etc && \
-    cp /usr/bin/mongod /usr/bin/mongosh /export/app/usr/bin/ && \
-    cp /usr/local/bin/start_mongodb.py /usr/local/bin/healthcheck.py /export/app/usr/local/bin/ && \
-    cp /tmp/mongod.conf /export/app/etc/mongod.conf && \
-    cp /etc/ssl/certs/ca-certificates.crt /export/app/etc/ssl/certs/ && \
-    if [ -d /usr/lib/mongodb ]; then cp -a /usr/lib/mongodb/. /export/app/usr/lib/mongodb/ || true; fi && \
+COPY infrastructure/containers/database/mongod.conf ./tmp/mongod.conf
+RUN test -f ./tmp/mongod.conf
+
+# Pack distroless layout under /build/export/app (mirrors api gateway /app layout)
+RUN mkdir -p /build/export/app/usr/bin /build/export/app/usr/local/bin \
+        "/build/export/app/usr/lib/mongodb" \
+        "/build/export/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb" \
+        /build/export/app/usr/lib/mongo-extra \
+        /build/export/app/etc/ssl/certs \
+        /build/export/app/etc && \
+    cp /usr/bin/mongod /usr/bin/mongosh /usr/bin/tini /build/export/app/usr/bin/ && \
+    cp /usr/local/bin/start_mongodb.py /usr/local/bin/healthcheck.py /build/export/app/usr/local/bin/ && \
+    cp /build/tmp/mongod.conf /build/export/app/etc/mongod.conf && \
+    cp /etc/ssl/certs/ca-certificates.crt /build/export/app/etc/ssl/certs/ && \
+    if [ -d /usr/lib/mongodb ]; then cp -a /usr/lib/mongodb/. /build/export/app/usr/lib/mongodb/ || true; fi && \
     if [ -d "/usr/lib/${DEBIAN_MULTIARCH}/mongodb" ]; then \
-        cp -a "/usr/lib/${DEBIAN_MULTIARCH}/mongodb/." "/export/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb/" || true; \
+        cp -a "/usr/lib/${DEBIAN_MULTIARCH}/mongodb/." "/build/export/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb/" || true; \
     fi && \
-    for bin in /export/app/usr/bin/mongod /export/app/usr/bin/mongosh; do \
+    for bin in /build/export/app/usr/bin/mongod /build/export/app/usr/bin/mongosh; do \
         ldd "$bin" 2>/dev/null | awk '$3 ~ /^\// { print $3 }' | sort -u | while read -r lib; do \
-            base=$(basename "$lib"); cp -n "$lib" "/export/app/usr/lib/mongo-extra/$base" 2>/dev/null || true; \
+            base=$(basename "$lib"); cp -n "$lib" "/build/export/app/usr/lib/mongo-extra/$base" 2>/dev/null || true; \
         done; \
     done
+
+COPY <<'PY' /build/tmp/verify_runtime_mongodb.py
+import os
+import sys
+
+def main() -> int:
+    base = "/build/export/app"
+    req = [
+        f"{base}/usr/bin/mongod",
+        f"{base}/usr/bin/mongosh",
+        f"{base}/usr/bin/tini",
+        f"{base}/usr/local/bin/start_mongodb.py",
+        f"{base}/usr/local/bin/healthcheck.py",
+        f"{base}/etc/mongod.conf",
+    ]
+    missing = [p for p in req if not os.path.isfile(p)]
+    if missing:
+        print("ERROR missing:", missing)
+        return 1
+    print("MongoDB export tree OK")
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+PY
+
+RUN chmod +x /build/tmp/verify_runtime_mongodb.py && \
+    python3 /build/tmp/verify_runtime_mongodb.py
 
 ############################
 # Stage 2 – Runtime (Distroless Python 3.11)
 ############################
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest AS lucid-distroless-base
+
+FROM lucid-distroless-base
 
 WORKDIR /app
 
@@ -95,55 +147,47 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.security="distroless" \
-      com.lucid.vulnerabilities="zero" \
       com.lucid.mongodb.version="7.0" \
       com.lucid.expose="27017" \
-      com.lucid.cluster="foundation" \
-      com.lucid.tor.compatible="true" \
-      com.lucid.api.gateway="api-gateway"
+      com.lucid.cluster="foundation"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     LD_LIBRARY_PATH=/app/usr/lib/mongo-extra:/app/usr/lib/mongodb:/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb \
-    PROJECT_NAME=Lucid \
-    PROJECT_VERSION=0.1.0 \
-    ENVIRONMENT=production \
-    LOG_LEVEL=INFO \
-    LUCID_ENV=production \
-    LUCID_PLATFORM=arm64 \
-    LUCID_ARCHITECTURE=linux/arm64 \
-    LUCID_TARGET_PLATFORM=linux/arm64 \
     MONGODB_HOST=lucid-mongodb \
     MONGODB_PORT=27017 \
     MONGODB_DATABASE=lucid \
-    MONGO_INITDB_ROOT_USERNAME=lucid \
-    MONGO_INITDB_DATABASE=lucid
+    MONGO_INITDB_ROOT_USERNAME=lucid
 
-COPY --from=mongodb-builder /export/app/ /app/
+# System directories & certificates (api gateway ordering)
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
-COPY --from=mongodb-builder /usr/bin/tini /app/usr/bin/tini
+# MongoDB payload from builder export
+COPY --from=builder --chown=65532:65532 /build/export/app/ /app/
 
-RUN ["/usr/bin/python3.11", "-c", "import os; \
-assert os.path.isfile('/app/usr/bin/mongod'), 'mongod missing'; \
-assert os.path.isfile('/app/usr/bin/mongosh'), 'mongosh missing'; \
-assert os.path.isfile('/app/usr/local/bin/start_mongodb.py'), 'start_mongodb.py missing'; \
-assert os.path.isfile('/app/usr/local/bin/healthcheck.py'), 'healthcheck.py missing'; \
-assert os.path.isfile('/app/etc/mongod.conf'), 'mongod.conf missing'; \
-print('✅ MongoDB runtime paths verified')"]
+# Interpreter under /app/usr/bin (same convention as api gateway)
+COPY --from=lucid-distroless-base /usr/bin/python3.11 /app/usr/bin/python3.11
+
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_mongodb.py /app/tmp/verify_runtime_mongodb.py
+
+RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; req=['/app/usr/bin/mongod','/app/usr/bin/mongosh','/app/usr/bin/tini','/app/usr/bin/python3.11','/app/usr/local/bin/start_mongodb.py','/app/usr/local/bin/healthcheck.py','/app/etc/mongod.conf']; missing=[p for p in req if not os.path.isfile(p)]; sys.exit(1 if missing else 0)"]
+
+RUN ["rm", "-f", "/app/tmp/verify_runtime_mongodb.py"]
 
 EXPOSE 27017
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD ["/usr/bin/python3.11", "/app/usr/local/bin/healthcheck.py"]
-
-WORKDIR /app/data/db
+    CMD ["/app/usr/bin/python3.11", "/app/usr/local/bin/healthcheck.py"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/usr/bin/python3.11", "/app/usr/local/bin/start_mongodb.py"]
+CMD ["/app/usr/bin/python3.11", "/app/usr/local/bin/start_mongodb.py"]

@@ -125,6 +125,13 @@ class MongoDBDistroless:
                 os.chmod(str(self.log_dir), 0o755)
             except:
                 pass
+
+            pid_dir = Path('/app/var/run/mongodb')
+            try:
+                pid_dir.mkdir(parents=True, exist_ok=True)
+                os.chmod(str(pid_dir), 0o755)
+            except Exception as e:
+                logger.warning(f"Could not create pid directory {pid_dir}: {e}")
                 
             logger.info(f"Using directories: data={self.data_dir}, logs={self.log_dir}")
         except Exception as e:
@@ -500,12 +507,14 @@ class MongoDBDistroless:
     
     def get_mongod_command(self, use_auth=True, bypass_localhost=False):
         """Build MongoDB command with security and performance settings"""
+        config_path = '/app/etc/mongod.conf'
         cmd = [
             '/app/usr/bin/mongod',
+            '--config', config_path,
             '--bind_ip_all',
             '--dbpath', str(self.data_dir),
             '--logpath', str(self.log_dir / 'mongod.log'),
-            '--logappend'
+            '--logappend',
         ]
         
         if use_auth:
@@ -519,7 +528,7 @@ class MongoDBDistroless:
         # MongoDB requires keyFile when using auth + replica sets, which adds complexity
         # For single-node foundation deployments, replica sets are disabled by default
         # For multi-node deployments, enable via MONGODB_REPLICA_SET_ENABLED=true
-        if os.getenv('MONGODB_REPLICA_SET_ENABLED').lower() == 'true':
+        if os.getenv('MONGODB_REPLICA_SET_ENABLED', '').lower() == 'true':
             repl_set = os.getenv('MONGODB_REPLICA_SET', 'lucid-rs')
             cmd.extend(['--replSet', repl_set])
         

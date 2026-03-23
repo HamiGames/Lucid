@@ -1,20 +1,29 @@
-name: lucid-block-manager
+# Compose file directory: blockchain/ — use ../configs/environment/ for repo-root env files.
+# Does not define lucid-mongodb / lucid-redis / lucid-blockchain-engine; run those separately or merge compose files.
+#
+# From repository root:
+#   docker compose -f blockchain/docker-compose.manager.yml up -d
+
+name: blockchain-manager
+
+x-env-blockchain: &env-blockchain
+  - ../configs/environment/.env.secrets
+  - ../configs/environment/.env.foundation
+  - ../configs/environment/.env.core
+
 services:
   block-manager:
     image: pickme/lucid-block-manager:latest-arm64
     container_name: block-manager
     restart: unless-stopped
-    env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    env_file: *env-blockchain
     networks:
       - lucid-pi-network
     ports:
       - "8086:8086"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
+      - /app/var/data/block-manager:/app/data:rw
+      - /app/var/logs/block-manager:/app/logs:rw
       - block-manager-cache:/tmp/blocks
     environment:
       - LUCID_ENV=production
@@ -44,7 +53,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8086/health', timeout=5).read(); exit(0)",
+          "import urllib.request; urllib.request.urlopen('http://block-manager:8086/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -56,16 +65,6 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-auth-service:
-        condition: service_healthy
-      blockchain-engine:
-        condition: service_healthy
-
 networks:
   lucid-pi-network:
     external: true
@@ -75,4 +74,3 @@ volumes:
   block-manager-cache:
     driver: local
     name: lucid-block-manager-cache
-

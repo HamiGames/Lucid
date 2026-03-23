@@ -1,12 +1,10 @@
 # RDP/docker-compose.yml
 # Lucid RDP services (Phase 3) – aligned with foundation/core configs
 
-version: "3.8"
-
 services:
-  lucid-rdp-server-manager:
-    image: pickme/lucid-rdp-server-manager:latest-arm64
-    container_name: lucid-rdp-server-manager
+  rdp-server-manager:
+    image: pickme/rdp-server-manager:latest-arm64
+    container_name: rdp-server-manager
     restart: unless-stopped
     env_file:
       - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
@@ -17,7 +15,7 @@ services:
     networks:
       - lucid-pi-network
     ports:
-      - "${RDP_SERVER_MANAGER_PORT:-8081}:${RDP_SERVER_MANAGER_PORT:-8081}"
+      - "${RDP_SERVER_MANAGER_PORT:8801}:${RDP_SERVER_MANAGER_PORT:8801}"
     volumes:
       - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
@@ -27,8 +25,8 @@ services:
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
       - RDP_SERVER_MANAGER_HOST=lucid-rdp-server-manager
-      - RDP_SERVER_MANAGER_PORT=${RDP_SERVER_MANAGER_PORT:-8081}
-      - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:${RDP_SERVER_MANAGER_PORT:-8081}
+      - RDP_SERVER_MANAGER_PORT=${RDP_SERVER_MANAGER_PORT:8801}
+      - RDP_SERVER_MANAGER_URL=http://lucid-rdp-server-manager:${RDP_SERVER_MANAGER_PORT:8801}
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
       - API_GATEWAY_URL=${API_GATEWAY_URL:-http://api-gateway:8080}

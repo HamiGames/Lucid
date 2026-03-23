@@ -1,13 +1,24 @@
+# Compose file directory: blockchain/ — env files and paths are relative to this folder.
+# Repository root is one level up: use ../configs/environment/ for shared .env.* files.
+# This stack does not define lucid-mongodb / lucid-redis / lucid-auth-service; start them separately
+# (e.g. infrastructure compose) or merge with another compose file that provides those services.
+#
+# From repository root:
+#   docker compose -f blockchain/docker-compose.chain.yml up -d
+
 name: lucid-blockchain
+
+x-env-chain: &env-chain
+  - ../configs/environment/.env.foundation
+  - ../configs/environment/.env.core
+  - ../configs/environment/.env.secrets
+
 services:
   blockchain-engine:
     image: pickme/lucid-blockchain-engine:latest-arm64
     container_name: blockchain-engine
     restart: unless-stopped
-    env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+    env_file: *env-chain
     networks:
       - lucid-pi-network
     ports:
@@ -43,7 +54,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8084/health', timeout=5).read(); exit(0)",
+          "import urllib.request; urllib.request.urlopen('http://blockchain-engine:8084/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -55,29 +66,18 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
-    depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-auth-service:
-        condition: service_healthy
-
   session-anchoring:
     image: pickme/lucid-session-anchoring:latest-arm64
     container_name: session-anchoring
     restart: unless-stopped
-    env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    env_file: *env-chain
     networks:
       - lucid-pi-network
     ports:
       - "8085:8085"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw
+      - /app/var/data/session-anchoring:/app/data:rw
+      - /app/var/logs/session-anchoring:/app/logs:rw
       - session-anchoring-cache:/tmp/anchoring
     environment:
       - LUCID_ENV=production
@@ -105,7 +105,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8085/health', timeout=5).read(); exit(0)",
+          "import urllib.request; urllib.request.urlopen('http://session-anchoring:8085/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -117,13 +117,15 @@ services:
       - "lucid.platform=arm64"
       - "lucid.security=hardened"
       - "lucid.cluster=core"
+      - "com.lucid.api.gateway= http://api-gateway:8080"
+      - "com.lucid.blockchain.engine= http://blockchain-engine:8084"
+      - "com.lucid.auth-service= http://lucid-auth-service:8089"
+      - "com.lucid.mongodb= http://lucid-mongodb:27017"
+      - "com.lucid.redis= http://lucid-redis:6379"
+      - "com.lucid.blockchain.secret-key= ${BLOCKCHAIN_SECRET_KEY}"
+      - "com.lucid.blockchain.anchor-interval= 60"
+      - "com.lucid.blockchain.anchor-timeout= 10"
     depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-auth-service:
-        condition: service_healthy
       blockchain-engine:
         condition: service_healthy
 
@@ -131,17 +133,14 @@ services:
     image: pickme/lucid-block-manager:latest-arm64
     container_name: block-manager
     restart: unless-stopped
-    env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    env_file: *env-chain
     networks:
       - lucid-pi-network
     ports:
       - "8086:8086"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
+      - /app/var/data/block-manager:/app/data:rw
+      - /app/var/logs/block-manager:/app/logs:rw
       - block-manager-cache:/tmp/blocks
     environment:
       - LUCID_ENV=production
@@ -169,7 +168,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8086/health', timeout=5).read(); exit(0)",
+          "import urllib.request; urllib.request.urlopen('http://block-manager:8086/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -182,12 +181,6 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=core"
     depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-auth-service:
-        condition: service_healthy
       blockchain-engine:
         condition: service_healthy
 
@@ -195,17 +188,14 @@ services:
     image: pickme/lucid-data-chain:latest-arm64
     container_name: data-chain
     restart: unless-stopped
-    env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+    env_file: *env-chain
     networks:
       - lucid-pi-network
     ports:
       - "8087:8087"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
+      - /app/var/data/data-chain:/app/data:rw
+      - /app/var/logs/data-chain:/app/logs:rw
       - data-chain-cache:/tmp/chain
     environment:
       - LUCID_ENV=production
@@ -233,7 +223,7 @@ services:
           "CMD",
           "/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8087/health', timeout=5).read(); exit(0)",
+          "import urllib.request; urllib.request.urlopen('http://data-chain:8087/health', timeout=5).read(); exit(0)",
         ]
       interval: 30s
       timeout: 10s
@@ -246,12 +236,6 @@ services:
       - "lucid.security=hardened"
       - "lucid.cluster=core"
     depends_on:
-      lucid-mongodb:
-        condition: service_healthy
-      lucid-redis:
-        condition: service_healthy
-      lucid-auth-service:
-        condition: service_healthy
       blockchain-engine:
         condition: service_healthy
 
@@ -273,4 +257,3 @@ volumes:
   data-chain-cache:
     driver: local
     name: lucid-data-chain-cache
-

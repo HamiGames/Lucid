@@ -37,14 +37,14 @@ class SessionAPISettings(BaseSettings):
     """Session API configuration settings"""
     
     # Service Configuration
-    SERVICE_NAME: str = "lucid-session-api"
+    SERVICE_NAME: str = "session-api"  # Matches docker-compose.session-images.yml SERVICE_NAME
     SERVICE_VERSION: str = "1.0.0"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
     
     # Network Configuration
     SESSION_API_HOST: str = "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-    SESSION_API_PORT: int = 8087
+    SESSION_API_PORT: int = 8113  # Matches docker-compose.session-images.yml (session-api)
     SESSION_API_URL: str = ""  # Service URL (from docker-compose)
     SESSION_API_WORKERS: int = 1
     
@@ -276,12 +276,12 @@ def create_default_config_file(config_path: str = "config.yaml"):
         raise ImportError("PyYAML is required to create configuration files. Install it with: pip install PyYAML")
     
     default_config = {
-        "SERVICE_NAME": "lucid-session-api",
+        "SERVICE_NAME": "session-api",
         "SERVICE_VERSION": "1.0.0",
         "DEBUG": False,
         "LOG_LEVEL": "INFO",
         "SESSION_API_HOST": "0.0.0.0",
-        "SESSION_API_PORT": 8087,  # Default port (override with SESSION_API_PORT env var)
+        "SESSION_API_PORT": 8113,  # docker-compose.session-images.yml session-api
         "SESSION_API_URL": "",  # Set via SESSION_API_URL env var
         "SESSION_API_WORKERS": 1,
         "MONGODB_URL": "",  # Must be set from MONGODB_URL env var (required)

@@ -1,0 +1,173 @@
+# syntax=docker/dockerfile:1.5
+# LUCID SESSION SYSTEMS CONTROL - Distroless Python Service
+# Supervises session stack services listed in docker-compose.session-images.yml
+# Pattern: infrastructure/containers/sessions/Dockerfile.session-pipeline-manager + 03_api_gateway/Dockerfile
+# Image: pickme/lucid-session-systems-control:latest-arm64
+# Port: 7988
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN printf "LUCID_SESSION_SYSTEMS_CONTROL_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_SITE_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr/local/lib/python3.11 /usr/local/bin && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
+
+COPY sessions/requirements.session-systems-control.txt ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+
+RUN echo "=== Verifying session systems control dependencies ===" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, httpx; print('✅ Critical packages OK')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    pip list
+
+RUN mkdir -p ./sessions/session_systems_control ./tmp ./wheels && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_SESSIONS_$(date +%s)" > ./sessions/.keep && \
+    touch ./sessions/.keep && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_PKG_$(date +%s)" > ./sessions/session_systems_control/.keep && \
+    touch ./sessions/session_systems_control/.keep && \
+    printf "LUCID_SESSION_SYSTEMS_CONTROL_TMP_$(date +%s)" > ./tmp/.keep && \
+    touch ./tmp/.keep && \
+    chown -R 65532:65532 ./sessions ./tmp && \
+    chmod 644 ./sessions/.keep ./tmp/.keep ./sessions/session_systems_control/.keep
+
+COPY sessions/__init__.py ./sessions/__init__.py
+COPY sessions/session_systems_control/ ./sessions/session_systems_control/
+
+COPY <<'PY' ./tmp/verify_runtime.py
+import os
+import sys
+
+dirs = [
+    "/app/sessions",
+    "/app/sessions/session_systems_control",
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/app/wheels",
+]
+for d in dirs:
+    if not os.path.isdir(d):
+        print(f"ERROR: {d} missing")
+        sys.exit(1)
+    if d.endswith("site-packages") and not os.listdir(d):
+        print(f"ERROR: {d} empty")
+        sys.exit(1)
+print("✅ Session systems control runtime layout verified")
+PY
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Session Systems Control" \
+      org.opencontainers.image.description="Distroless supervision plane for Lucid session stack containers" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="session-systems-control" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="sessions" \
+      com.lucid.security="distroless"
+
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    SESSION_SYSTEMS_CONTROL_PORT=7988
+
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/sessions/__init__.py /app/sessions/__init__.py
+COPY --from=builder --chown=65532:65532 /build/sessions/session_systems_control/ /app/sessions/session_systems_control/
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
+
+EXPOSE 7988
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://session-systems-control:7988/health', timeout=2).read()"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.session_systems_control.main:app", "--host", "session-systems-control", "--port", "7988"]

@@ -272,4 +272,4 @@ USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "app.sessions.storage.main:app", "--host", "session-storage-service", "--port", "8020"]
+CMD ["/app/usr/bin/python3.11", "-m", "uvicorn", "sessions.storage.main:app", "--host", "session-storage-service", "--port", "8020"]

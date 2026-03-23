@@ -1,10 +1,8 @@
 # syntax=docker/dockerfile:1.5
-# LUCID CONSENSUS ENGINE — Distroless Python (aligned with 03_api_gateway/Dockerfile)
-# Image: pickme/lucid-consensus-engine:latest-arm64
+# LUCID BLOCK MANAGER — Distroless Python (aligned with 03_api_gateway/Dockerfile)
+# Image: pickme/lucid-block-manager:latest-arm64
 # Build context: repository root (.)
-#
-# Same application stack as the blockchain engine (api.app exposes /consensus and related routes).
-# Default port 8085 so it can run beside blockchain-engine (8084). entrypoint reads BLOCKCHAIN_ENGINE_PORT.
+# Entry: api/app/entrypoint_manager.py → uvicorn api.app.main:app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -50,8 +48,8 @@ RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
 
 ENV PATH=/root/.cargo/bin:$PATH
 
-RUN printf "LUCID_CONSENSUS_ENGINE_RUNTIME" > /var/run/.keep && \
-    printf "LUCID_CONSENSUS_ENGINE_LIB" > /var/lib/.keep && \
+RUN printf "LUCID_BLOCK_MANAGER_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_BLOCK_MANAGER_LIB" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
@@ -60,24 +58,24 @@ RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY blockchain/requirements.txt ./requirements.txt
+COPY blockchain/manager/requirements.txt ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    printf "LUCID_CONSENSUS_ENGINE_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    printf "LUCID_BLOCK_MANAGER_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
 
-RUN printf "LUCID_CONSENSUS_ENGINE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+RUN printf "LUCID_BLOCK_MANAGER_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
-RUN python3.11 -c "import fastapi,uvicorn,pydantic,sqlalchemy,cryptography,httpx,motor,pymongo,blake3,web3,aiohttp,redis,aiofiles,yaml; print('consensus-engine deps OK')"
+RUN python3.11 -c "import fastapi,uvicorn,pydantic,pydantic_settings,motor,pymongo,blake3,web3,aiohttp,redis,aiofiles,async_timeout,prometheus_client; print('block-manager deps OK')"
 
 COPY blockchain/ ./blockchain_src/
 RUN set -e; \
-    for d in api core utils config contracts deployment chain_client evm on_system_chain scripts tests; do \
+    for d in manager api core utils config contracts deployment chain_client evm on_system_chain; do \
       cp -r "blockchain_src/$d" "./$d"; \
     done; \
     sh -c 'cp blockchain_src/*.py ./'; \
@@ -85,7 +83,7 @@ RUN set -e; \
 
 RUN mkdir -p /build/top_py && find /build -maxdepth 1 -type f -name '*.py' -exec cp {} /build/top_py/ \;
 
-RUN test -f ./api/app/entrypoint.py && test -f ./api/app/main.py && echo "consensus-engine source OK"
+RUN test -f ./api/app/entrypoint_manager.py && test -f ./api/app/main.py && echo "block-manager source OK"
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -99,12 +97,12 @@ ARG VCS_REF
 ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
-      org.opencontainers.image.title="Lucid Consensus Engine" \
-      org.opencontainers.image.description="Distroless API stack for PoOT / consensus routes (same image layout as blockchain-engine; dedicated port)" \
+      org.opencontainers.image.title="Lucid Block Manager" \
+      org.opencontainers.image.description="Distroless block manager API (FastAPI)" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="consensus-engine" \
+      com.lucid.service="block-manager" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="core" \
       com.lucid.security="distroless"
@@ -116,8 +114,8 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    BLOCKCHAIN_ENGINE_PORT=8085 \
-    BLOCKCHAIN_ENGINE_HOST=0.0.0.0
+    BLOCK_MANAGER_PORT=8086 \
+    BLOCK_MANAGER_HOST=0.0.0.0
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -128,6 +126,7 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/manager /app/manager
 COPY --from=builder --chown=65532:65532 /build/api /app/api
 COPY --from=builder --chown=65532:65532 /build/core /app/core
 COPY --from=builder --chown=65532:65532 /build/utils /app/utils
@@ -137,22 +136,20 @@ COPY --from=builder --chown=65532:65532 /build/deployment /app/deployment
 COPY --from=builder --chown=65532:65532 /build/chain_client /app/chain_client
 COPY --from=builder --chown=65532:65532 /build/evm /app/evm
 COPY --from=builder --chown=65532:65532 /build/on_system_chain /app/on_system_chain
-COPY --from=builder --chown=65532:65532 /build/scripts /app/scripts
-COPY --from=builder --chown=65532:65532 /build/tests /app/tests
 
 COPY --from=builder --chown=65532:65532 /build/top_py/ /app/
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi; print('runtime OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,web3; print('runtime OK')"]
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/api/app/entrypoint.py'); print('layout OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/api/app/entrypoint_manager.py'); print('layout OK')"]
 
-EXPOSE 8085
+EXPOSE 8086
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD ["/app/usr/bin/python3.11", "-c", "import os,socket,sys; p=int(os.getenv('BLOCKCHAIN_ENGINE_PORT','8085')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)"]
+  CMD ["/app/usr/bin/python3.11", "-c", "import os,socket,sys; p=int(os.getenv('BLOCK_MANAGER_PORT','8086')); s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r==0 else 1)"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
 
-CMD ["/app/usr/bin/python3.11", "/app/api/app/entrypoint.py"]
+CMD ["/app/usr/bin/python3.11", "/app/api/app/entrypoint_manager.py"]

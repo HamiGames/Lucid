@@ -1,38 +1,52 @@
-# Lucid Session API - API Configuration
-# Optional YAML configuration for session API service
-# File: sessions/config/api-config.yaml
-# Purpose: Define API endpoints, rate limiting, and session management rules
-# NOTE: All service URLs, ports, and database connections must be provided via
-# environment variables from docker-compose.application.yml
+# Lucid Session API — reference configuration (sessions/config/api-config.yaml)
+# Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml
+#
+# Compose (session-api): SERVICE_NAME=session-api, PORT=8113, HOST=session-api,
+#   PYTHONPATH=/app, volumes session_data -> /app/data/sessions, session_api_logs -> /app/logs
+# Network: lucid-session-network (bridge, name: lucid-session-network)
+#
+# Runtime: PORT/HOST/LOG_LEVEL/DEBUG are injected by compose; MONGODB_URL, REDIS_URL, etc. from env.
+# The session API loader (sessions/api/config.py) expects flat SessionAPISettings keys when using
+# config.yaml beside config.py; this file documents the full stack shape for operators.
 
-# Global API Configuration
+# --- Values that mirror docker-compose.session-images.yml + typical service mesh ---
+compose_alignment:
+  session_images_file: infrastructure/containers/sessions/docker-compose.session-images.yml
+  session_api:
+    container_name: session-api
+    service_name: session-api
+    host_dns: session-api
+    port: 8113
+    health_url: http://session-api:8113/health
+  peer_services:
+    session_pipeline: { host: session-pipeline, port: 8083 }
+    session_recorder: { host: session-recorder, port: 8090 }
+    session_chunk_processor: { host: session-chunk-processor, port: 8010 }
+    session_storage: { host: session-storage, port: 8020 }
+    session_anchoring: { host: session-anchoring, port: 8084 }
+    session_pipeline_manager: { host: session-pipeline-manager, port: 7990 }
+    session_management: { host: session-management, port: 9090 }
+    session_systems_control: { host: session-systems-control, port: 7988 }
+
+# Global API Configuration (documentation / optional mirrors for tooling)
 global:
-  service_name: "lucid-session-api"
+  service_name: session-api
   service_version: "1.0.0"
   debug: false
-  log_level: "INFO"  # Override with LOG_LEVEL env var
-  # Network configuration from environment:
-  # - SESSION_API_HOST (default: session-api)
-  # - SESSION_API_PORT (default: 8087)
-  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
-  port: 8087  # Override with SESSION_API_PORT env var
+  log_level: INFO
+  # Bind in container: 0.0.0.0; compose HOST=session-api is the Docker DNS name for the service.
+  host: "0.0.0.0"
+  port: 8113
 
-# API Configuration
 api:
-  # API Versioning
-  version: "v1"
-  base_path: "/api/v1"
-  
-  # CORS Configuration
+  version: v1
+  base_path: /api/v1
   cors:
     enabled: true
-    # CORS origins should be configured via environment variables in production
     allow_origins: []
     allow_credentials: true
     allow_methods: ["*"]
     allow_headers: ["*"]
-  
-  # Rate Limiting
   rate_limiting:
     enabled: true
     requests_per_minute: 1000
@@ -49,138 +63,114 @@ api:
         requests_per_minute: 10
         burst_size: 3
 
-# Session Management Configuration
 session_management:
-  # Session Creation
   creation:
     max_concurrent_sessions_per_user: 5
     max_sessions_per_user: 100
-    session_timeout_seconds: 7200  # 2 hours
+    session_timeout_seconds: 7200
     default_retention_days: 30
-  
-  # Session Lifecycle
   lifecycle:
     states:
-      - "created"
-      - "starting"
-      - "recording"
-      - "paused"
-      - "stopped"
-      - "processing"
-      - "completed"
-      - "failed"
-      - "deleted"
-    
+      - created
+      - starting
+      - recording
+      - paused
+      - stopped
+      - processing
+      - completed
+      - failed
+      - deleted
     state_transitions:
-      - from: "created"
-        to: ["starting", "deleted"]
-      - from: "starting"
-        to: ["recording", "failed"]
-      - from: "recording"
-        to: ["paused", "stopped", "failed"]
-      - from: "paused"
-        to: ["recording", "stopped"]
-      - from: "stopped"
-        to: ["processing", "deleted"]
-      - from: "processing"
-        to: ["completed", "failed"]
-      - from: "completed"
-        to: ["deleted"]
-      - from: "failed"
-        to: ["deleted"]
-  
-  # Session Limits
+      - from: created
+        to: [starting, deleted]
+      - from: starting
+        to: [recording, failed]
+      - from: recording
+        to: [paused, stopped, failed]
+      - from: paused
+        to: [recording, stopped]
+      - from: stopped
+        to: [processing, deleted]
+      - from: processing
+        to: [completed, failed]
+      - from: completed
+        to: [deleted]
+      - from: failed
+        to: [deleted]
   limits:
     max_session_duration_hours: 24
     max_session_size_gb: 100
     max_chunks_per_session: 10000
     max_concurrent_recordings: 10
 
-# Storage Integration
-# NOTE: Service URLs MUST come from environment variables:
-# - SESSION_STORAGE_URL (from docker-compose.application.yml)
+# Service URLs — set via environment in production (defaults match session-images compose)
 storage:
-  storage_service_url: ""  # Set via SESSION_STORAGE_URL env var (http://session-storage:8082)
-  chunk_storage_url: ""  # Set via SESSION_STORAGE_URL env var
+  storage_service_url: http://session-storage:8020
+  chunk_storage_url: http://session-storage:8020
   timeout_seconds: 30
   retry_attempts: 3
   retry_delay_seconds: 1
 
-# Pipeline Integration
-# NOTE: Service URL MUST come from environment variable:
-# - SESSION_PIPELINE_URL (from docker-compose.application.yml)
 pipeline:
-  pipeline_service_url: ""  # Set via SESSION_PIPELINE_URL env var (http://session-pipeline:8083)
+  pipeline_service_url: http://session-pipeline:8083
   timeout_seconds: 60
   retry_attempts: 3
   auto_start_pipeline: true
 
-# Blockchain Integration
-# NOTE: Service URLs MUST come from environment variables:
-# - BLOCKCHAIN_ENGINE_URL (from docker-compose.core.yml)
-# - SESSION_ANCHORING_URL would be derived from BLOCKCHAIN_ENGINE_URL
+chunk_processor:
+  service_url: http://session-chunk-processor:8010
+
 blockchain:
-  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (http://blockchain-engine:8084)
-  session_anchoring_url: ""  # Derived from BLOCKCHAIN_ENGINE_URL
+  # Anchoring service from session-images stack (port 8084 in that compose file)
+  session_anchoring_url: http://session-anchoring:8084
+  blockchain_engine_url: ""
   auto_anchor_on_complete: true
   anchoring_timeout_seconds: 60
 
-# Database Configuration
-# NOTE: Database URLs MUST come from environment variables:
-# - MONGODB_URL (required, from .env.secrets)
-# - REDIS_URL (from .env.core or .env.secrets)
-# - ELASTICSEARCH_URL (from .env.core or .env.secrets)
 database:
-  mongodb_url: ""  # Set via MONGODB_URL env var (required)
-  redis_url: ""    # Set via REDIS_URL env var
-  elasticsearch_url: ""  # Set via ELASTICSEARCH_URL env var
+  mongodb_url: ""
+  redis_url: ""
+  elasticsearch_url: ""
 
-# Monitoring and Metrics
 monitoring:
   enabled: true
   metrics:
     enabled: true
-    endpoint: "/metrics"
-    port: 9090
-  
+    endpoint: /metrics
+    # Same HTTP server as the API when exposed in-process
+    port: 8113
   health_check:
     enabled: true
-    endpoint: "/health"
+    endpoint: /health
     interval_seconds: 30
     timeout_seconds: 10
-  
   logging:
     enabled: true
-    format: "json"
-    level: "INFO"
+    format: json
+    level: INFO
     include_request_body: false
     include_response_body: false
 
-# Error Handling
 error_handling:
   retry:
     enabled: true
     max_retries: 3
     retry_delay_seconds: 1
     exponential_backoff: true
-  
   error_responses:
     include_stack_trace: false
     include_details: true
     log_errors: true
 
-# Security Configuration
 security:
   authentication:
     require_authentication: true
     jwt_validation: true
-    token_expiry_seconds: 900  # 15 minutes
-  
+    token_expiry_seconds: 900
   authorization:
     require_authorization: true
     role_based_access: true
-    allowed_roles: ["USER", "NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
-  
+    allowed_roles: [USER, NODE_OPERATOR, ADMIN, SUPER_ADMIN]
   data_privacy:
     audit_log_enabled: true
     audit_log_retention_days: 90

@@ -167,7 +167,7 @@ class RecorderSettings(BaseSettings):
     """Main configuration class for session recorder service"""
     
     # Service Configuration
-    service_name: str = "lucid-session-recorder"
+    service_name: str = "session-recorder"  # Matches docker-compose.session-images.yml SERVICE_NAME
     service_version: str = "1.0.0"
     debug: bool = False
     log_level: str = "INFO"
@@ -177,8 +177,8 @@ class RecorderSettings(BaseSettings):
     port: int = 8090
     
     # Recording Configuration
-    recording_path: str = "/app/recordings"
-    chunk_output_path: str = "/app/chunks"
+    recording_path: str = "/data/recordings"  # Matches LUCID_RECORDING_PATH in session-images compose
+    chunk_output_path: str = "/data/chunks"  # Matches LUCID_CHUNK_OUTPUT_PATH in session-images compose
     
     # Video Configuration
     video_enabled: bool = True
@@ -236,8 +236,8 @@ class RecorderSettings(BaseSettings):
     cleanup_interval_seconds: int = 3600
     
     # Storage
-    storage_recordings_path: str = "/app/recordings"
-    storage_chunks_path: str = "/app/chunks"
+    storage_recordings_path: str = "/data/recordings"
+    storage_chunks_path: str = "/data/chunks"
     max_storage_size_gb: int = 500
     retention_days: int = 30
     auto_cleanup: bool = True
@@ -463,12 +463,12 @@ def _flatten_yaml_config(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
     if "global" in yaml_data:
         global_data = yaml_data["global"]
         flattened.update({
-            "service_name": global_data.get("service_name", "lucid-session-recorder"),
+            "service_name": global_data.get("service_name", "session-recorder"),
             "service_version": global_data.get("service_version", "1.0.0"),
             "debug": global_data.get("debug", False),
             "log_level": global_data.get("log_level", "INFO"),
-            "recording_path": global_data.get("recording_path", "/app/recordings"),
-            "chunk_output_path": global_data.get("chunk_output_path", "/app/chunks"),
+            "recording_path": global_data.get("recording_path", "/data/recordings"),
+            "chunk_output_path": global_data.get("chunk_output_path", "/data/chunks"),
         })
     
     # Handle recording section
@@ -562,8 +562,8 @@ def _flatten_yaml_config(yaml_data: Dict[str, Any]) -> Dict[str, Any]:
     if "storage" in yaml_data:
         st = yaml_data["storage"]
         flattened.update({
-            "storage_recordings_path": st.get("recordings_path", "/app/recordings"),
-            "storage_chunks_path": st.get("chunks_path", "/app/chunks"),
+            "storage_recordings_path": st.get("recordings_path", "/data/recordings"),
+            "storage_chunks_path": st.get("chunks_path", "/data/chunks"),
             "max_storage_size_gb": st.get("max_storage_size_gb", 500),
             "retention_days": st.get("retention_days", 30),
             "auto_cleanup": st.get("auto_cleanup", True),

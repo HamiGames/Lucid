@@ -7,7 +7,7 @@ Configuration management for session storage service
 import json
 from typing import Dict, Any, Optional
 from pathlib import Path
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings
 import os
 try:
@@ -53,7 +53,7 @@ class StorageSettings(BaseSettings):
     """Storage configuration settings"""
     
     # Service Configuration
-    SERVICE_NAME: str = "lucid-session-storage"
+    SERVICE_NAME: str = "session-storage-service"  # Matches infrastructure/containers/sessions/Dockerfile.session-storage-service label
     SERVICE_VERSION: str = "1.0.0"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
@@ -62,7 +62,14 @@ class StorageSettings(BaseSettings):
     # Note: SESSION_STORAGE_HOST and SESSION_STORAGE_PORT are provided by docker-compose
     # HOST is the bind address (should be 0.0.0.0), PORT is the service port
     HOST: str = "0.0.0.0"  # Bind address (always 0.0.0.0 for container binding)
-    PORT: int = 8082  # Default port (overridden by SESSION_STORAGE_PORT from docker-compose)
+    PORT: int = Field(
+        default=8020,
+        validation_alias=AliasChoices(
+            "PORT",
+            "SESSION_STORAGE_SERVICE_PORT",
+            "SESSION_STORAGE_PORT",
+        ),
+    )  # Dockerfile.session-storage-service sets SESSION_STORAGE_SERVICE_PORT=8020
     SESSION_STORAGE_HOST: str = ""  # From docker-compose: SESSION_STORAGE_HOST (service name, not bind address)
     SESSION_STORAGE_PORT: str = ""  # From docker-compose: SESSION_STORAGE_PORT (string, converted to int)
     
@@ -516,12 +523,12 @@ def create_default_config_file(config_path: str = "config.yaml"):
         raise ValueError(f"Unsupported configuration file format: {file_extension}. Use .yaml, .yml, or .json")
     
     default_config = {
-        "SERVICE_NAME": "lucid-session-storage",
+        "SERVICE_NAME": "session-storage-service",
         "SERVICE_VERSION": "1.0.0",
         "DEBUG": False,
         "LOG_LEVEL": "INFO",
         "HOST": "0.0.0.0",
-        "PORT": 8082,  # Default port (override with SESSION_STORAGE_PORT env var)
+        "PORT": 8020,  # docker-compose.session-images.yml session-storage
         "SESSION_STORAGE_HOST": "",  # Set via SESSION_STORAGE_HOST env var
         "SESSION_STORAGE_PORT": "",  # Set via SESSION_STORAGE_PORT env var
         "MONGODB_URL": "",  # Must be set from MONGODB_URL or MONGO_URL env var (required)

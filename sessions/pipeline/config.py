@@ -152,8 +152,8 @@ class PipelineSettings(BaseSettings):
     AUTH_SERVICE_URL: str = ""  # From environment: AUTH_SERVICE_URL (e.g., http://lucid-auth-service:8089)
     SESSION_RECORDER_URL: str = ""  # From environment: SESSION_RECORDER_URL (e.g., http://session-recorder:8090)
     SESSION_PROCESSOR_URL: str = ""  # From environment: SESSION_PROCESSOR_URL (e.g., http://session-processor:8091)
-    SESSION_STORAGE_URL: str = ""  # From environment: SESSION_STORAGE_URL (e.g., http://session-storage:8082)
-    SESSION_API_URL: str = ""  # From environment: SESSION_API_URL (e.g., http://session-api:8087)
+    SESSION_STORAGE_URL: str = ""  # From environment (e.g., http://session-storage:8020)
+    SESSION_API_URL: str = ""  # From environment (e.g., http://session-api:8113)
     
     # Integration Service Timeout Configuration (from .env.application)
     SERVICE_TIMEOUT_SECONDS: int = 30  # Default timeout for service calls

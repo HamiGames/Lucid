@@ -1,0 +1,281 @@
+# syntax=docker/dockerfile:1.5
+# Lucid Service Mesh Controller – distroless (aligned with 03_api_gateway/Dockerfile)
+# pickme/lucid-service-mesh-controller:latest-arm64 — ports 8500,8501,8502,8600,8088; IP 172.20.0.19
+# Build context: repository root (.)
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_PREFER_BINARY=1
+
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        git \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN printf "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SITE_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr/local/lib/python3.11 /usr/local/bin && \
+    chmod 644 /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel && \
+    python3.11 -m wheel version
+
+COPY infrastructure/service_mesh/requirements.txt ./requirements.txt
+
+RUN test -f ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+
+RUN python3.11 -c "import grpc, aiohttp, consul, pydantic, cryptography, yaml, fastapi, uvicorn; print('✅ service mesh deps OK')" && \
+    pip list | head -40
+
+COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
+COPY infrastructure/service_mesh/entrypoint.py ./entrypoint.py
+COPY infrastructure/service_mesh/controller/ ./controller/
+COPY infrastructure/service_mesh/sidecar/ ./sidecar/
+COPY infrastructure/service_mesh/discovery/ ./discovery/
+COPY infrastructure/service_mesh/communication/ ./communication/
+COPY infrastructure/service_mesh/security/ ./security/
+COPY infrastructure/service_mesh/test_basic.py ./test/test_basic.py
+COPY infrastructure/service_mesh/test_imports.py ./test/test_imports.py
+COPY infrastructure/service_mesh/test_controller.py ./test/test_controller.py
+
+COPY configs/services/ ./configs/services/
+COPY service_mesh/ ./service_mesh/
+COPY api/ ./api/
+COPY admin/ ./admin/
+COPY auth/ ./auth/
+COPY common/ ./common/
+COPY core/ ./core/
+COPY database/ ./database/
+COPY infrastructure/ ./infrastructure/
+COPY node/ ./node/
+COPY RDP/ ./RDP/
+COPY tools/ ./tools/
+COPY utils/ ./utils/
+COPY wallet/ ./wallet/
+COPY sessions/ ./sessions/
+COPY src/gui/ ./src/gui/
+COPY electron_gui/ ./electron_gui/
+COPY gui/ ./gui/
+COPY gui_api_bridge/ ./gui_api_bridge/
+COPY payment_systems/ ./payment_systems/
+COPY contracts/ ./contracts/
+
+RUN test -d ./controller && test -d ./sidecar && test -d ./discovery && \
+    test -d ./communication && test -d ./security && test -f ./entrypoint.py && \
+    chmod +x ./entrypoint.py
+
+RUN printf "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /build/controller/.lucid-source-marker && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > /build/sidecar/.lucid-sidecar-marker && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > /build/discovery/.lucid-discovery-marker && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > /build/communication/.lucid-communication-marker && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > /build/security/.lucid-security-marker && \
+    test -f /build/controller/.lucid-source-marker && \
+    chown -R 65532:65532 /build/controller /build/sidecar /build/discovery /build/communication /build/security
+
+RUN python3.11 -m compileall -q \
+    /build/controller \
+    /build/sidecar \
+    /build/discovery \
+    /build/communication \
+    /build/security \
+    /build/infrastructure/service_mesh \
+    /build/entrypoint.py || (echo "compileall failed" && exit 1)
+
+RUN test -f /etc/ssl/certs/ca-certificates.crt
+
+############################
+# Stage 2 – Runtime (distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+WORKDIR /app
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Service Mesh Controller" \
+      org.opencontainers.image.description="Distroless service mesh controller for Lucid platform" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="Lucid" \
+      org.opencontainers.image.licenses="MIT" \
+      lucid.service="service_mesh-controller" \
+      lucid.type="distroless" \
+      lucid.platform="arm64" \
+      lucid.security="hardened" \
+      phase="2" \
+      cluster="10-cross-cluster-integration"
+
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=UTC \
+    COUNTRY=US
+
+COPY --from=builder /var/run/          /app/var/run/
+COPY --from=builder /var/lib/           /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/   /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/              /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
+
+RUN ["/app/usr/bin/python3.11", "-c", \
+    "import os, importlib, importlib.util, sys; \
+sp='/app/usr/local/lib/python3.11/site-packages'; bd='/app/usr/local/bin'; \
+sys.path.insert(0, sp); \
+assert os.path.isdir(sp) and os.path.isdir(bd); \
+req=('grpc','aiohttp','consul','pydantic','cryptography','yaml'); \
+failed=[p for p in req if importlib.util.find_spec(p) is None]; \
+assert not failed, failed; \
+[importlib.import_module(p) for p in req]; \
+keep=os.path.join(sp,'.keep'); assert os.path.isfile(keep) and os.path.getsize(keep)>0, keep; \
+print('✅ runtime packages OK')"]
+
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
+COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
+COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
+COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
+COPY --from=builder --chown=65532:65532 /build/sidecar/         /app/sidecar/
+COPY --from=builder --chown=65532:65532 /build/discovery/       /app/discovery/
+COPY --from=builder --chown=65532:65532 /build/communication/   /app/communication/
+COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
+COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
+COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
+COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
+COPY --from=builder --chown=65532:65532 /build/core/            /app/core/
+COPY --from=builder --chown=65532:65532 /build/database/        /app/database/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/  /app/infrastructure/
+COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
+COPY --from=builder --chown=65532:65532 /build/RDP/             /app/RDP/
+COPY --from=builder --chown=65532:65532 /build/admin/           /app/admin/
+COPY --from=builder --chown=65532:65532 /build/auth/            /app/auth/
+COPY --from=builder --chown=65532:65532 /build/api/             /app/api/
+COPY --from=builder --chown=65532:65532 /build/configs/         /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_mesh/    /app/service_mesh/
+COPY --from=builder --chown=65532:65532 /build/sessions/        /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/src/gui/         /app/src/gui/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/    /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui/             /app/gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/  /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/contracts/       /app/contracts/
+
+RUN ["/app/usr/bin/python3.11", "-c", \
+    "import os, importlib.util, sys; \
+sys.path.insert(0, '/app/usr/local/lib/python3.11/site-packages'); \
+assert os.path.isdir('/app/controller') and os.path.isfile('/app/entrypoint.py'); \
+assert os.path.isfile('/app/controller/.lucid-source-marker'); \
+assert os.path.isfile('/app/sidecar/.lucid-sidecar-marker'); \
+assert os.path.isfile('/app/discovery/.lucid-discovery-marker'); \
+assert os.path.isfile('/app/communication/.lucid-communication-marker'); \
+assert os.path.isfile('/app/security/.lucid-security-marker'); \
+assert importlib.util.find_spec('controller.main') is not None; \
+print('✅ controller layout OK')"]
+
+ENV LUCID_ENV=production \
+    LUCID_PLATFORM=arm64 \
+    LUCID_ARCHITECTURE=linux/arm64 \
+    SERVICE_NAME=service_mesh-controller \
+    CONTAINER_NAME=lucid-service_mesh-controller \
+    HOSTNAME=lucid-service_mesh-controller \
+    PORT=8500 \
+    SERVICE_MESH_CONTROLLER_PORT=8500 \
+    HTTP_PORT=8088 \
+    HEALTHCHECK_PORT=8088 \
+    HEALTHCHECK_PATH=/health \
+    SERVICE_MESH_CONTROLLER_HOST=172.20.0.19 \
+    SERVICE_DISCOVERY_URL=http://lucid-service_mesh-controller:8500 \
+    SERVICE_MESH_ENABLED=true \
+    CONSUL_PORT=8500 \
+    CONSUL_DATACENTER=lucid-dc \
+    CONSUL_BOOTSTRAP_EXPECT=1 \
+    CONSUL_UI_ENABLED=true \
+    CONSUL_CONNECT_ENABLED=true \
+    CONSUL_NODE_NAME=lucid-service_mesh-controller \
+    MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-changeme}@lucid-mongodb:27017/lucid?authSource=admin \
+    REDIS_URL=redis://lucid-redis:6379/0 \
+    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
+    PROJECT_NAME=Lucid \
+    PROJECT_VERSION=0.1.0 \
+    LOG_LEVEL=INFO \
+    DEBUG=false \
+    LOG_FORMAT=json \
+    LUCID_PI_NETWORK=lucid-pi-network \
+    LUCID_PI_SUBNET=172.20.0.0/16 \
+    LUCID_PI_GATEWAY=172.20.0.1
+
+EXPOSE 8500 8501 8502 8600 8088
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health').read()"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/entrypoint.py"]

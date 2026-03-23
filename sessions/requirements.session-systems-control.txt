@@ -1,0 +1,5 @@
+# Lucid Session Systems Control — minimal deps (no Rust / blake3)
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30
+pydantic>=2.5.0
+httpx>=0.25.2

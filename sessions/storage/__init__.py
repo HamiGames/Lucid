@@ -1,7 +1,7 @@
 """
 Lucid Session Storage Service
 Cluster: Session Storage
-Port: 8082
+Port: 8020 (session-images compose; override with PORT / SESSION_STORAGE_PORT)
 
 Features:
 - Session data storage and retrieval

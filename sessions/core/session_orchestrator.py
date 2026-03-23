@@ -16,18 +16,22 @@ import json
 from sessions.core.chunker import SessionChunker, ChunkMetadata
 from sessions.encryption.encryptor import EncryptedChunk, SessionEncryptor
 from sessions.core.merkle_builder import MerkleTreeBuilder, MerkleRoot
-from sessions.api.config import get_config, load_config, SessionAPIConfig
-settings = load_config()
-config = get_config()
-session_api_config = SessionAPIConfig(settings, config)
+from sessions.processor.config import SessionOrchestratorConfig
+from sessions.api.config import get_config, load_config
+import os
+CONFIG = SessionOrchestratorConfig()
+INFO = os.getenv("SESSIONS_INFO")
+SETTINGS = os.getenv("SESSIONS_SETTINGS")
 try:
     from sessions.core.logging import get_logger, setup_logging
+    settings = load_config()
+    config = get_config()
+    setup_logging(settings)
     logger = get_logger()
-    setup_logging(config.LOG_LEVEL(), settings.log_level())
 except ImportError:
     import logging
     logger = logging.getLogger(__name__)
-    setup_logging(config.LOG_LEVEL(), settings.log_level())
+    setup_logging(settings)
 
 class PipelineStage(Enum):
     """Session pipeline stages"""
