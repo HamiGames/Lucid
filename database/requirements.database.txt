@@ -1,34 +1,50 @@
-# LUCID Project Dependencies
-# Core framework
-fastapi>=0.111,<1.0
-uvicorn[standard]>=0.30
-pydantic>=2.5.0
+# LUCID database stack — base requirements (Dockerfile.database installs this first).
+# Keep pins aligned with database/redis/requirements.redis.txt, database/elasticsearch/requirements.elasticsearch.txt,
+# and database/mongodb/requirements.mongodb.txt where those packages overlap.
 
-# Database
+# Core API stack
+uvicorn[standard]==0.30.0
+fastapi==0.111.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator>=2.0.0
+
+# Crypto & auth (single cryptography pin for the whole stack)
+cryptography==41.0.7
+bcrypt==4.1.2
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Config / serialization
+python-dotenv==1.0.0
+pyyaml==6.0.1
+
+# HTTP clients
+requests==2.31.0
+httpx==0.25.2
+urllib3==2.1.0
+
+# Metrics & system utilities
+prometheus-client>=0.19.0
+psutil==5.9.6
+zstandard==0.22.0
+
+# Structured logging (stdlib logging only — never install PyPI "logging")
+structlog==23.2.0
+colorama==0.4.6
+
+# PostgreSQL / SQL toolkit
 sqlalchemy>=2.0.0
 alembic>=1.13.0
 psycopg2-binary>=2.9.0
 
-# Security
-cryptography>=41.0.0
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-
-# HTTP client
-httpx>=0.25.0
-requests>=2.31.0
-
-# Async support
+# Async helpers
 asyncio-mqtt>=0.16.0
 aiofiles>=23.2.0
 
-# Monitoring
-prometheus-client>=0.19.0
-zstandard>=0.22.0
-psutil>=5.9.0
-
-# Development
+# Development & quality (database image build verifies these imports)
 pytest>=7.4.0
-pytest-asyncio>=0.21.0
-black>=23.0.0
-isort>=5.12.0
+pytest-asyncio>=0.23.0
+black>=23.12.0
+ruff>=0.1.8
+mypy>=1.8.0

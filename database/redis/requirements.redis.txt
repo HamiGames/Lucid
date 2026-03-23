@@ -27,7 +27,5 @@ colorama==0.4.6
 cryptography==41.0.7
 bcrypt==4.1.2
 
-# Network and connectivity
+# Network and connectivity (stdlib pathlib only — never install PyPI "pathlib")
 urllib3==2.1.0
-pathlib==1.0.1
-

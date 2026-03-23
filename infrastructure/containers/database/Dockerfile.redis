@@ -18,7 +18,9 @@ FROM --platform=$TARGETPLATFORM redis:7.2 AS redis-builder
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1
 
 WORKDIR /build
 
@@ -47,8 +49,11 @@ RUN mkdir -p /build/wheels && \
 
 COPY database/redis/requirements.redis.txt /tmp/requirements.redis.txt
 
-RUN pip3 install --break-system-packages --no-cache-dir --upgrade pip setuptools wheel && \
-    pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.redis.txt && \
+# Wheelhouse: resolve deps to wheels (build sdists here if needed), then install offline from /build/wheels.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip3 install --break-system-packages --no-cache-dir --upgrade pip setuptools wheel && \
+    pip3 wheel --break-system-packages --no-cache-dir --wheel-dir=/build/wheels -r /tmp/requirements.redis.txt && \
+    pip3 install --break-system-packages --no-cache-dir --no-index --find-links=/build/wheels -r /tmp/requirements.redis.txt && \
     rm -f /tmp/requirements.redis.txt
 
 RUN python3 -c "import redis, hiredis; print('✅ redis + hiredis OK')"
