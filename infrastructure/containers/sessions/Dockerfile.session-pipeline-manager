@@ -108,7 +108,7 @@ RUN echo "=== Verifying pip installation (session pipeline manager) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./common/tor ./sessions/processor ./common ./common/governance./sessions/recorder ./sessions/storage ./sessions/config ./sessions/security ./tmp ./wheels && \
+RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./common/tor ./sessions/processor ./common ./common/governance ./sessions/recorder ./sessions/storage ./sessions/config ./sessions/security ./tmp ./wheels && \
     printf "LUCID_SESSION_PIPELINE_MANAGER_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
     printf "LUCID_SESSION_PIPELINE_MANAGER_TMP_$(date +%s)" > ./tmp/.keep && \
