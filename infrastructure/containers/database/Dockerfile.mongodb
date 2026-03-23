@@ -185,7 +185,6 @@ COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_mongodb.py /ap
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; req=['/app/usr/bin/mongod','/app/usr/bin/mongosh','/app/usr/bin/tini','/app/usr/bin/python3.11','/app/usr/local/bin/start_mongodb.py','/app/usr/local/bin/healthcheck.py','/app/etc/mongod.conf']; missing=[p for p in req if not os.path.isfile(p)]; sys.exit(1 if missing else 0)"]
 
-RUN ["rm", "-f", "/app/tmp/verify_runtime_mongodb.py"]
 
 EXPOSE 27017
 
