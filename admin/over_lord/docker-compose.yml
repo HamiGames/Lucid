@@ -1,0 +1,140 @@
+# admin/over_lord/docker-compose.yml
+# Reference stack for Lucid admin containers (build from repository root).
+# Run from repo: docker compose -f admin/over_lord/docker-compose.yml build
+# Networks/volumes should match your Pi deployment (see node/over_lord patterns).
+
+services:
+  admin-overlord:
+    build:
+      context: ../..
+      dockerfile: infrastructure/containers/admin/dockerfile.admin-overlord
+      platforms:
+        - linux/arm64
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-1.0.0}
+    image: pickme/lucid-admin-overlord:latest-arm64
+    container_name: admin-overlord
+    hostname: admin-overlord
+    ports:
+      - "${ADMIN_OVERLORD_PORT:-8140}:8140"
+    environment:
+      - OVERLORD_DOMAIN=admin
+      - OVERLORD_HOST=0.0.0.0
+      - OVERLORD_PORT=8140
+      - OVERLORD_CONFIG_ROOT=/app/configs/environment
+      - OVERLORD_BUNDLE_ROOT=/app/over_lord
+      - OVERLORD_TRIGGERS_PATH=/app/over_lord/triggers.yaml
+    networks:
+      - lucid-pi-network
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+  admin-ui-backend:
+    build:
+      context: ../..
+      dockerfile: infrastructure/containers/admin/Dockerfile.admin-ui-backend
+      platforms:
+        - linux/arm64
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-1.0.0}
+    image: pickme/lucid-admin-ui-backend:latest-arm64
+    container_name: admin-ui-backend
+    hostname: admin-ui-backend
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
+      - ../../configs/environment/.env.admin-interface
+    ports:
+      - "${ADMIN_INTERFACE_PORT:-8120}:8120"
+    networks:
+      - lucid-pi-network
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+
+  params-registry:
+    build:
+      context: ../..
+      dockerfile: infrastructure/containers/admin/Dockerfile.params-registry
+      platforms:
+        - linux/arm64
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-1.0.0}
+    image: pickme/lucid-params-registry:latest-arm64
+    container_name: params-registry
+    hostname: params-registry
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
+    ports:
+      - "${PARAMS_REGISTRY_PORT:-8050}:8050"
+    networks:
+      - lucid-pi-network
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+  key-rotation:
+    build:
+      context: ../..
+      dockerfile: infrastructure/containers/admin/Dockerfile.key-rotation
+      platforms:
+        - linux/arm64
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-1.0.0}
+    image: pickme/lucid-key-rotation:latest-arm64
+    container_name: key-rotation
+    hostname: key-rotation
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
+      - ../../configs/environment/.env.secrets
+    ports:
+      - "${KEY_ROTATION_PORT:-8060}:8060"
+    networks:
+      - lucid-pi-network
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+
+  governance-client:
+    build:
+      context: ../..
+      dockerfile: infrastructure/containers/admin/Dockerfile.gov-client
+      platforms:
+        - linux/arm64
+    image: pickme/lucid-governance-client:latest-arm64
+    container_name: governance-client
+    hostname: governance-client
+    env_file:
+      - ../../configs/environment/.env.foundation
+      - ../../configs/environment/.env.core
+    ports:
+      - "${GOVERNANCE_CLIENT_PORT:-8070}:8070"
+    networks:
+      - lucid-pi-network
+
+networks:
+  lucid-pi-network:
+    external: true

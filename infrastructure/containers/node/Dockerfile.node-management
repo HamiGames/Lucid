@@ -45,6 +45,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         pkg-config \
         curl \
         ca-certificates \
+        tini \
+        python3-wheel \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -63,6 +65,7 @@ RUN mkdir -p /app-dirs/cache/node /app-dirs/data/node /app-dirs/logs/node && \
     echo "LUCID_NODE_MANAGEMENT_LOGS_$(date +%s)" > /app-dirs/logs/node/.keep && \
     chown -R 65532:65532 /app-dirs
 
+# Bootstrap pip + wheel (pip-wheel path for building requirement wheels)
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip wheel setuptools
 
@@ -72,9 +75,13 @@ COPY node/requirements.txt ./requirements.txt
 RUN mkdir -p /root/.local/lib/python3.11/site-packages && \
     mkdir -p /root/.local/bin
 
-# Install all requirements first
+# Build wheels then install from local wheelhouse (no PyPI at install time)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --prefer-binary -r requirements.txt
+    mkdir -p /build/wheels && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
 
 # Explicitly ensure setuptools is installed in user site-packages (required by web3 for pkg_resources)
 # This must be AFTER requirements.txt to ensure it's available and not overwritten
@@ -181,6 +188,8 @@ WORKDIR /app
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# tini as PID 1: signal handling & zombie reaping (matches api-gateway / node-utils pattern)
+COPY --from=builder --chmod=755 /usr/bin/tini /usr/bin/tini
 
 # Writable directories for runtime (required by uptime_beacon.py and work_credits.py)
 # These MUST be volume mounts in docker-compose for write access in read-only container
@@ -254,7 +263,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 USER 65532:65532
 
-ENTRYPOINT []
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
 CMD ["/usr/bin/python3.11", "/app/node/entrypoint.py"]
 

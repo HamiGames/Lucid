@@ -9,7 +9,7 @@ import os
 import logging
 import sys
 from typing import Any
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import jsonlogger  # pyright: ignore[reportMissingImports]
 from api.app.config import service_name
 
 logger = logging.getLogger(__name__)

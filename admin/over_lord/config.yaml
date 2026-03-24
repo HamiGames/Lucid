@@ -1,0 +1,29 @@
+# Lucid admin plane — reference metadata for admin-overlord bundle
+# Path: admin/over_lord/config.yaml
+# Compose and image paths: admin/over_lord/docker-compose.yml
+
+version: 1
+
+global:
+  service_name: admin-overlord
+  description: YAML/compose orchestration reference for Lucid admin containers
+  overlord_port: 8140
+  api_prefix: /api/v1/admin/overlord
+
+admin_services:
+  admin_ui_backend:
+    image: pickme/lucid-admin-ui-backend:latest-arm64
+    dockerfile: infrastructure/containers/admin/Dockerfile.admin-ui-backend
+    default_port: 8120
+  params_registry:
+    image: pickme/lucid-params-registry:latest-arm64
+    dockerfile: infrastructure/containers/admin/Dockerfile.params-registry
+    default_port: 8050
+  key_rotation:
+    image: pickme/lucid-key-rotation:latest-arm64
+    dockerfile: infrastructure/containers/admin/Dockerfile.key-rotation
+    default_port: 8060
+  governance_client:
+    image: pickme/lucid-governance-client:latest-arm64
+    dockerfile: infrastructure/containers/admin/Dockerfile.gov-client
+    default_port: 8070

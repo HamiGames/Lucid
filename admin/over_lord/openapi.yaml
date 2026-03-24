@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: Lucid Admin Overlord — bundle reference
+  description: |
+    Operational OpenAPI for Lucid admin services lives with each service.
+    Admin-overlord HTTP API is served by infrastructure/containers/overlord/runtime/app.py
+    (FastAPI) with prefix /api/v1/admin/overlord on port 8140.
+  version: 1.0.0
+
+servers:
+  - url: http://admin-overlord:8140
+    description: Admin overlord (internal)
+
+paths: {}

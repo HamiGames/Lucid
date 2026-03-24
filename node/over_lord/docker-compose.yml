@@ -1,0 +1,228 @@
+# node/docker-compose.yml
+# Lucid Node Management stack – aligned with foundation/core constants
+
+services:
+  node-management:
+    build:
+      context: ..
+      dockerfile: node/Dockerfile.node-management
+      target: distroless
+      platforms:
+        - linux/arm64
+      args:
+        BUILD_DATE: ${BUILD_DATE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
+        VCS_REF: ${VCS_REF:-$(git rev-parse --short HEAD)}
+        VERSION: ${VERSION:-1.0.0}
+    image: pickme/lucid-node-management:latest-arm64
+    container_name: node-management
+    hostname: node-management
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.support
+      - ../configs/environment/.env.secrets
+      - ../configs/environment/.env.node-management
+    ports:
+      - "${NODE_MANAGEMENT_PORT:-8095}:${NODE_MANAGEMENT_PORT:-8095}"
+      - "${NODE_MANAGEMENT_STAGING_PORT:-8099}:${NODE_MANAGEMENT_STAGING_PORT:-8099}"
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
+      - NODE_MANAGEMENT_HOST=node-management
+      - NODE_MANAGEMENT_PORT=${NODE_MANAGEMENT_PORT:-8095}
+      - NODE_MANAGEMENT_STAGING_PORT=${NODE_MANAGEMENT_STAGING_PORT:-8099}
+      - NODE_MANAGEMENT_URL=http://node-management:${NODE_MANAGEMENT_PORT:-8095}
+      - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
+      - API_GATEWAY_URL=${API_GATEWAY_URL}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL}
+      - NODE_MANAGEMENT_API_URL=http://node-management:${NODE_MANAGEMENT_PORT:-8095}/api/v1
+      - ELECTRON_GUI_ENDPOINT=http://node-management:${NODE_MANAGEMENT_PORT:-8095}/api/v1
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    volumes:
+      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data:rw
+      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs:rw
+      - /mnt/myssd/Lucid/Lucid/cache/node-management:/app/cache:rw
+      - node-management-cache:/tmp/nodes
+    networks:
+      - lucid-pi-network
+      - lucid-gui-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import os, urllib.request, sys; port = os.getenv('NODE_MANAGEMENT_PORT', '8095'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/tmp:noexec,nosuid,size=50m
+    labels:
+      - "lucid.service=node-management"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.security=hardened"
+      - "lucid.cluster=support"
+      - "lucid.plane=management"
+      - "lucid.port=8095"
+      - "lucid.port.staging=8099"
+      - "lucid.features=poot-calculation,payout-processing,node-pool-management"
+    depends_on:
+      tor-proxy:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  lucid-mongodb:
+    image: pickme/lucid-mongodb:latest-arm64
+    container_name: lucid-mongodb
+    hostname: lucid-mongodb
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.node
+      - ../configs/environment/.env.secrets
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=lucid
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+      - MONGO_INITDB_DATABASE=lucid_node_management
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.11
+    expose:
+      - "27017"
+    command:
+      - /usr/bin/mongod
+      - --auth
+      - --bind_ip_all
+      - --dbpath=/data/db
+      - --logpath=/var/log/mongodb/mongod.log
+      - --logappend
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    labels:
+      - "lucid.service=mongodb"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=foundation"
+      - "lucid.port=27017"
+      - "lucid.ip=172.20.0.11"
+    restart: unless-stopped
+
+  lucid-redis:
+    image: pickme/lucid-redis:latest-arm64
+    container_name: lucid-redis
+    hostname: lucid-redis
+    env_file:
+      - ../configs/environment/.env.foundation
+      - ../configs/environment/.env.core
+      - ../configs/environment/.env.secrets
+    networks:
+      lucid-pi-network:
+        ipv4_address: 172.20.0.12
+    expose:
+      - "6379"
+    command:
+      - /usr/local/bin/redis-server
+      - --bind
+      - 0.0.0.0
+      - --port
+      - "6379"
+      - --requirepass
+      - "${REDIS_PASSWORD}"
+      - --appendonly
+      - "yes"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$REDIS_PASSWORD" -p 6379 ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    labels:
+      - "lucid.service=redis"
+      - "lucid.type=distroless"
+      - "lucid.platform=arm64"
+      - "lucid.cluster=foundation"
+      - "lucid.port=6379"
+      - "lucid.ip=172.20.0.12"
+    restart: unless-stopped
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-gui-network:
+    driver: bridge
+    name: lucid-gui-network
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+
+volumes:
+  node-management-cache:
+    driver: local
+    name: lucid-node-management-cache
+  mongodb-data:
+    name: lucid-mongodb-data
+  mongodb-config:
+    name: lucid-mongodb-config
+  redis-data:
+    name: lucid-redis-data

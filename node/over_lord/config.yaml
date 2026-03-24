@@ -1,0 +1,214 @@
+# Lucid Node Management - Node Management Configuration
+# Optional YAML configuration for node management service
+# File: node/config/node-management-config.yaml
+# Purpose: Define node pool management, PoOT consensus, and payout policies
+# NOTE: All service URLs, ports, and database connections must be provided via
+# environment variables from docker-compose.application.yml
+
+# Global Node Management Configuration
+global:
+  service_name: "node-management"  # Service name (container_name: node-management, hostname: node-management, image: pickme/lucid-node-management:latest-arm64)
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"  # Override with LOG_LEVEL env var
+  host: "0.0.0.0"  # Bind address (always 0.0.0.0 in container)
+  # Network configuration from environment (Pydantic Settings):
+  # - NODE_MANAGEMENT_HOST (default: 0.0.0.0 for binding, service name: node-management for URL)
+  # - NODE_MANAGEMENT_PORT (default: 8095)
+  # - NODE_MANAGEMENT_STAGING_PORT (default: 8099)
+  # - NODE_MANAGEMENT_URL (required, e.g., http://node-management:8095)
+  port: 8095  # Override with NODE_MANAGEMENT_PORT env var
+  staging_port: 8099
+
+# Node Pool Configuration
+# Aligned with Pydantic Settings: MAX_NODES_PER_POOL, MIN_NODES_PER_POOL, POOL_HEALTH_CHECK_INTERVAL, POOL_SYNC_INTERVAL
+node_pool:
+  # Pool Limits (aligned with config.py defaults)
+  limits:
+    max_nodes_per_pool: 100  # MAX_NODES_PER_POOL default
+    min_nodes_per_pool: 3    # MIN_NODES_PER_POOL default (was 1)
+    max_pools: 10
+  
+  # Pool Management (aligned with config.py defaults)
+  management:
+    auto_join_enabled: true
+    auto_leave_enabled: false
+    pool_health_check_interval_seconds: 300  # POOL_HEALTH_CHECK_INTERVAL default (was 120)
+    pool_sync_interval_seconds: 60           # POOL_SYNC_INTERVAL default (was 30)
+    pool_join_timeout_seconds: 60
+  
+  # Pool Selection
+  selection:
+    strategy: "round_robin"  # Options: round_robin, least_loaded, random, geographic
+    consider_load: true
+    consider_uptime: true
+    consider_reputation: true
+
+# PoOT (Proof of Operational Time) Configuration
+# Aligned with Pydantic Settings: POOT_CALCULATION_INTERVAL, POOT_SCORE_THRESHOLD, etc.
+poot:
+  enabled: true
+  calculation_interval_seconds: 300  # POOT_CALCULATION_INTERVAL default (5 minutes)
+  score_threshold: 0.5               # POOT_SCORE_THRESHOLD default
+  history_days: 30
+  # Additional PoOT settings from Pydantic Settings:
+  challenge_validity_minutes: 15     # POOT_CHALLENGE_VALIDITY_MINUTES default
+  proof_cache_minutes: 60            # POOT_PROOF_CACHE_MINUTES default
+  min_token_stake_amount: 100.0      # MIN_TOKEN_STAKE_AMOUNT default
+  max_validation_attempts: 3         # MAX_VALIDATION_ATTEMPTS default
+  challenge_complexity_bytes: 32     # CHALLENGE_COMPLEXITY_BYTES default
+  validation_required: true          # POOT_VALIDATION_REQUIRED default
+  
+  # PoOT Factors
+  factors:
+    operational_time_weight: 0.4
+    stake_amount_weight: 0.3
+    reputation_score_weight: 0.2
+    network_contribution_weight: 0.1
+  
+  # Operational Time Calculation
+  operational_time:
+    min_uptime_percentage: 0.95  # 95% uptime required
+    measurement_interval_seconds: 60
+    history_retention_days: 30
+  
+  # Validation
+  validation:
+    enabled: true
+    validate_uptime: true
+    validate_stake: true
+    validate_reputation: true
+    validation_interval_seconds: 300
+
+# Work Credits System
+work_credits:
+  enabled: true
+  credit_earn_rate: 1.0  # Credits per second of operational time
+  credit_decay_rate: 0.01  # Credits decay per day
+  min_credits_for_validation: 100
+  max_credits: 10000
+  credit_history_days: 30
+
+# Staking Configuration
+staking:
+  enabled: true
+  minimum_stake_amount: 1000  # Minimum TRX or tokens required
+  staking_period_days: 30
+  unstaking_cooldown_days: 7
+  reward_distribution:
+    method: "proportional"  # Options: proportional, fixed, performance_based
+    distribution_interval_blocks: 100
+    reward_per_block: 10
+
+# Payout Configuration
+# Aligned with Pydantic Settings: PAYOUT_THRESHOLD_USDT, PAYOUT_PROCESSING_INTERVAL, etc.
+payout:
+  enabled: true
+  processing_interval_seconds: 3600  # PAYOUT_PROCESSING_INTERVAL default (1 hour)
+  threshold_usdt: 10.0               # PAYOUT_THRESHOLD_USDT default (minimum for payout processing)
+  minimum_amount_usdt: 1.0           # PAYOUT_MIN_AMOUNT_USDT default (was 10.0)
+  maximum_amount_usdt: 10000.0       # PAYOUT_MAX_AMOUNT_USDT default
+  processing_fee_percent: 1.0        # PAYOUT_PROCESSING_FEE_PERCENT default (1%)
+  batch_size: 10
+  payout_method: "tron"  # Options: tron, ethereum, manual
+  
+  # Payout Processing
+  processing:
+    enabled: true
+    auto_process: true
+    require_confirmation: true
+    confirmation_blocks: 6
+  
+  # Payout Limits (aligned with PAYOUT_MAX_AMOUNT_USDT default: 10000.0)
+  limits:
+    max_payout_amount_usdt: 10000.0  # PAYOUT_MAX_AMOUNT_USDT default
+    max_payouts_per_day: 100
+    max_payouts_per_user_per_day: 10
+  
+  # Payout Fees (aligned with PAYOUT_PROCESSING_FEE_PERCENT default: 1.0)
+  fees:
+    enabled: true
+    fee_percentage: 1.0  # PAYOUT_PROCESSING_FEE_PERCENT default (1%, was 0.01 which is incorrect)
+    min_fee_usdt: 0.1
+    max_fee_usdt: 10.0
+
+# Resource Monitoring
+resource_monitoring:
+  enabled: true
+  monitoring_interval_seconds: 30
+  resource_collection_interval_seconds: 10
+  
+  # Resource Thresholds
+  thresholds:
+    cpu_percent: 80.0
+    memory_percent: 80.0
+    disk_percent: 85.0
+    network_bandwidth_mbps: 100.0
+  
+  # Resource Limits
+  limits:
+    max_cpu_percent: 100.0
+    max_memory_mb: 2048
+    max_disk_gb: 100.0
+    max_bandwidth_mbps: 1000.0
+
+# Database Configuration
+# NOTE: Database URLs MUST come from environment variables (Pydantic Settings validates these):
+# - MONGODB_URL or MONGODB_URI (required, from .env.secrets) - validated to not use localhost
+# - REDIS_URL or REDIS_URI (required, from .env.core or .env.secrets) - validated to not use localhost
+# - MONGODB_DATABASE (default: lucid_node_management)
+database:
+  mongodb_url: ""  # Set via MONGODB_URL or MONGODB_URI env var (required, validated by Pydantic Settings)
+  mongodb_database: "lucid_node_management"  # MONGODB_DATABASE default (was empty string)
+  redis_url: ""    # Set via REDIS_URL or REDIS_URI env var (required, validated by Pydantic Settings)
+
+# External Service URLs (Optional - Pydantic Settings)
+# NOTE: Service URLs come from environment variables (all optional):
+# - API_GATEWAY_URL (optional, from docker-compose)
+# - BLOCKCHAIN_ENGINE_URL (optional, from docker-compose)
+# - NODE_MANAGEMENT_API_URL (optional)
+# - ELECTRON_GUI_ENDPOINT (optional)
+external_services:
+  api_gateway_url: ""  # Set via API_GATEWAY_URL env var (optional, e.g., http://api-gateway:8080)
+  blockchain_engine_url: ""  # Set via BLOCKCHAIN_ENGINE_URL env var (optional, e.g., http://blockchain-engine:8084)
+  node_management_api_url: ""  # Set via NODE_MANAGEMENT_API_URL env var (optional)
+  electron_gui_endpoint: ""  # Set via ELECTRON_GUI_ENDPOINT env var (optional)
+
+# Monitoring Configuration (aligned with Pydantic Settings)
+monitoring:
+  enabled: true
+  metrics_enabled: true  # METRICS_ENABLED default
+  metrics_port: 9090     # METRICS_PORT default
+  health_check_interval: 30  # HEALTH_CHECK_INTERVAL default (seconds)
+  health_check_enabled: true  # HEALTH_CHECK_ENABLED default
+  prometheus_enabled: true
+  jaeger_enabled: false
+  jaeger_endpoint: null
+
+# Error Handling
+error_handling:
+  retry_policies:
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+    backoff_multiplier: 2
+  
+  failure_handling:
+    log_failures: true
+    notify_on_failure: false
+    queue_failed_items: true
+    retry_failed_items: true
+    max_retry_attempts: 5
+
+# Security Configuration
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  
+  data_privacy:
+    encrypt_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_data_in_logs: true
