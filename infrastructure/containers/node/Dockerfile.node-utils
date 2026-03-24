@@ -92,6 +92,41 @@ RUN test -f ./node/main.py && test -f ./node/entrypoint.py && test -f ./node/con
     test -f ./node/openapi.yaml && test -f ./node/models.py && \
     echo "node-utils source OK"
 
+RUN mkdir -p ./tmp
+
+COPY <<'PY' ./tmp/verify_runtime.py
+import os
+import sys
+
+dirs = [
+    "/app/node",
+    "/app/usr/local/lib/python3.11/site-packages",
+    "/app/wheels",
+    "/app/cache/node",
+    "/app/data/node",
+    "/app/logs/node",
+]
+for d in dirs:
+    if not os.path.isdir(d):
+        print(f"ERROR: {d} missing")
+        sys.exit(1)
+    if d.endswith("site-packages") and not os.listdir(d):
+        print(f"ERROR: {d} empty")
+        sys.exit(1)
+
+sp = "/app/usr/local/lib/python3.11/site-packages"
+marker = os.path.join(sp, ".lucid-marker")
+if not os.path.isfile(marker):
+    print(f"ERROR: {marker} missing")
+    sys.exit(1)
+
+if not os.path.isfile("/app/node/main.py"):
+    print("ERROR: /app/node/main.py missing")
+    sys.exit(1)
+
+print("✅ Node utils runtime layout verified")
+PY
+
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
@@ -138,9 +173,13 @@ COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
 COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,pydantic_settings,blake3,stem,socks,tronpy,pkg_resources,web3; print('runtime OK')"]
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/node/main.py'); assert os.path.getsize('/app/node/.lucid-source-marker')>0; print('layout OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,pydantic_settings,blake3,stem,socks,tronpy,pkg_resources,web3; print('✅ Node utils packages verified in runtime stage')"]
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
 EXPOSE 8630
 

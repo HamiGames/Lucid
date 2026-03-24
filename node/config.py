@@ -17,7 +17,22 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
+
+
+def _yaml_str_or_csv(value: Any) -> Optional[str]:
+    """Normalize YAML list or scalar to a comma-separated string for env-style settings."""
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return ",".join(str(x).strip() for x in value if str(x).strip())
+    s = str(value).strip()
+    return s if s else None
+
+
+def _settings_field_env_set(field_name: str) -> bool:
+    """True if the OS environment supplies this setting (case-sensitive keys, per BaseSettings)."""
+    return field_name in os.environ or field_name.upper() in os.environ
 
 
 class NodeManagementSettings(BaseSettings):
@@ -281,9 +296,9 @@ def load_config(config_file: Optional[str] = None) -> NodeManagementSettings:
         else:
             # Try default locations
             default_locations = [
-                Path(__file__).parent / "config.yaml",  # Same directory as config.py
-                Path(__file__).parent / "config" / "node-management-config.yaml",  # config directory
-                Path(__file__).parent.parent / "node" / "config.yaml",  # Alternative path
+                Path(__file__).parent / "config" / "node-management-config.yaml",
+                Path(__file__).parent / "config.yaml",
+                Path(__file__).parent.parent / "node" / "config.yaml",
             ]
             for loc in default_locations:
                 if loc.exists():
@@ -312,9 +327,36 @@ def load_config(config_file: Optional[str] = None) -> NodeManagementSettings:
                             flattened_data['SERVICE_NAME'] = global_cfg['service_name']
                         if 'log_level' in global_cfg:
                             flattened_data['LOG_LEVEL'] = global_cfg['log_level']
+                        if 'log_format' in global_cfg:
+                            flattened_data['LOG_FORMAT'] = global_cfg['log_format']
                         if 'debug' in global_cfg:
                             flattened_data['DEBUG'] = global_cfg['debug']
+                        if 'host' in global_cfg:
+                            flattened_data['NODE_MANAGEMENT_HOST'] = global_cfg['host']
+                        if 'port' in global_cfg:
+                            flattened_data['NODE_MANAGEMENT_PORT'] = global_cfg['port']
+                        if 'staging_port' in global_cfg:
+                            flattened_data['NODE_MANAGEMENT_STAGING_PORT'] = global_cfg['staging_port']
+                        for url_key in ('node_management_url', 'url'):
+                            if url_key in global_cfg and global_cfg[url_key]:
+                                flattened_data['NODE_MANAGEMENT_URL'] = global_cfg[url_key]
+                                break
                     
+                    # Node registration / lifecycle
+                    if 'node_registration' in raw_yaml_data:
+                        nr = raw_yaml_data['node_registration']
+                        if 'enabled' in nr:
+                            flattened_data['NODE_REGISTRATION_ENABLED'] = nr['enabled']
+                        if 'verification_required' in nr:
+                            flattened_data['NODE_VERIFICATION_REQUIRED'] = nr['verification_required']
+                        if 'health_check_interval_seconds' in nr:
+                            flattened_data['NODE_HEALTH_CHECK_INTERVAL'] = nr['health_check_interval_seconds']
+
+                    if 'runtime' in raw_yaml_data:
+                        rt = raw_yaml_data['runtime']
+                        if 'workers' in rt:
+                            flattened_data['WORKERS'] = rt['workers']
+
                     # Database configuration
                     if 'database' in raw_yaml_data:
                         db_cfg = raw_yaml_data['database']
@@ -336,7 +378,42 @@ def load_config(config_file: Optional[str] = None) -> NodeManagementSettings:
                             flattened_data['HEALTH_CHECK_INTERVAL'] = mon_cfg['health_check_interval']
                         if 'health_check_enabled' in mon_cfg:
                             flattened_data['HEALTH_CHECK_ENABLED'] = mon_cfg['health_check_enabled']
-                    
+
+                    # Error handling / outbound resilience
+                    if 'error_handling' in raw_yaml_data:
+                        eh = raw_yaml_data['error_handling']
+                        if 'service_timeout_seconds' in eh:
+                            flattened_data['SERVICE_TIMEOUT_SECONDS'] = eh['service_timeout_seconds']
+                        rp = eh.get('retry_policies') or {}
+                        if 'max_retries' in rp:
+                            flattened_data['SERVICE_RETRY_COUNT'] = rp['max_retries']
+                        if 'retry_delay_seconds' in rp:
+                            flattened_data['SERVICE_RETRY_DELAY_SECONDS'] = float(rp['retry_delay_seconds'])
+
+                    # Storage paths
+                    if 'storage' in raw_yaml_data:
+                        st = raw_yaml_data['storage']
+                        if 'data_path' in st and st['data_path']:
+                            flattened_data['LUCID_DATA_PATH'] = st['data_path']
+                        if 'log_path' in st and st['log_path']:
+                            flattened_data['LUCID_LOG_PATH'] = st['log_path']
+                        if 'log_file' in st and st['log_file']:
+                            flattened_data['LOG_FILE'] = st['log_file']
+                        if 'temp_storage_path' in st and st['temp_storage_path']:
+                            flattened_data['TEMP_STORAGE_PATH'] = st['temp_storage_path']
+
+                    # TRON integration (optional)
+                    if 'tron' in raw_yaml_data:
+                        tr = raw_yaml_data['tron']
+                        if 'network' in tr and tr['network']:
+                            flattened_data['TRON_NETWORK'] = tr['network']
+                        if 'api_url' in tr and tr['api_url']:
+                            flattened_data['TRON_API_URL'] = tr['api_url']
+                        if 'api_key' in tr and tr['api_key']:
+                            flattened_data['TRON_API_KEY'] = tr['api_key']
+                        if 'usdt_contract_address' in tr and tr['usdt_contract_address']:
+                            flattened_data['USDT_CONTRACT_ADDRESS'] = tr['usdt_contract_address']
+
                     # Node pool configuration
                     if 'node_pool' in raw_yaml_data:
                         pool_cfg = raw_yaml_data['node_pool']
@@ -394,7 +471,23 @@ def load_config(config_file: Optional[str] = None) -> NodeManagementSettings:
                             flattened_data['API_GATEWAY_URL'] = ext_svc['api_gateway_url']
                         if 'blockchain_engine_url' in ext_svc and ext_svc['blockchain_engine_url']:
                             flattened_data['BLOCKCHAIN_ENGINE_URL'] = ext_svc['blockchain_engine_url']
-                    
+                        if 'node_management_api_url' in ext_svc and ext_svc['node_management_api_url']:
+                            flattened_data['NODE_MANAGEMENT_API_URL'] = ext_svc['node_management_api_url']
+                        if 'electron_gui_endpoint' in ext_svc and ext_svc['electron_gui_endpoint']:
+                            flattened_data['ELECTRON_GUI_ENDPOINT'] = ext_svc['electron_gui_endpoint']
+
+                    # Security / HTTP hardening
+                    if 'security' in raw_yaml_data:
+                        sec = raw_yaml_data['security']
+                        if 'production' in sec:
+                            flattened_data['PRODUCTION'] = sec['production']
+                        co = _yaml_str_or_csv(sec.get('cors_origins'))
+                        if co:
+                            flattened_data['CORS_ORIGINS'] = co
+                        th = _yaml_str_or_csv(sec.get('trusted_hosts'))
+                        if th:
+                            flattened_data['TRUSTED_HOSTS'] = th
+
                     # Filter out empty string values from YAML (they should come from env vars)
                     # Empty strings in YAML indicate "use environment variable", so we remove them
                     yaml_data = {k: v for k, v in flattened_data.items() if v != ""}
@@ -421,23 +514,16 @@ def load_config(config_file: Optional[str] = None) -> NodeManagementSettings:
                 # Step 2: Create config normally to get environment variable values
                 env_config = NodeManagementSettings()
                 
-                # Step 3: Override YAML config with environment variable values
-                # Environment variables take highest priority
+                # Step 3: Override YAML only for fields explicitly set in the environment.
+                # (Comparing to NodeManagementSettings() alone is wrong: defaults would wipe YAML.)
                 env_dict = env_config.model_dump()
-                yaml_dict = config.model_dump()
-                
-                # For each field, if env_config value differs from yaml_config value,
-                # use the env value (environment variable was set)
                 for key in env_dict.keys():
-                    env_value = env_dict[key]
-                    yaml_value = yaml_dict.get(key)
-                    
-                    # If values differ, environment variable was set - use it
-                    if env_value != yaml_value:
-                        try:
-                            setattr(config, key, env_value)
-                        except Exception as e:
-                            logger.debug(f"Could not override {key} with environment variable: {str(e)}")
+                    if not _settings_field_env_set(key):
+                        continue
+                    try:
+                        setattr(config, key, env_dict[key])
+                    except Exception as e:
+                        logger.debug(f"Could not override {key} with environment variable: {str(e)}")
                 
             except Exception as e:
                 logger.warning(f"Error merging YAML with environment variables: {str(e)}")
