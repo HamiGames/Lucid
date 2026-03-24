@@ -54,8 +54,8 @@ mypy==1.7.1
 stem>=1.8.0
 PySocks>=1.7.1
 
-# Setuptools (required by web3 for pkg_resources)
-setuptools>=65.0.0
+# Setuptools (required by web3 for pkg_resources; 82+ removed pkg_resources)
+setuptools>=65.0.0,<82.0.0
 
 # Optional: TRON integration
 tronpy==0.4.0

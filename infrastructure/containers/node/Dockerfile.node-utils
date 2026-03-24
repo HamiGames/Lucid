@@ -62,8 +62,9 @@ RUN mkdir -p /app-dirs/cache/node /app-dirs/data/node /app-dirs/logs/node && \
     printf "LUCID_NODE_UTILS_LOGS_$(date +%s)" > /app-dirs/logs/node/.keep && \
     chown -R 65532:65532 /app-dirs
 
+# Upgrade pip/wheel only; setuptools version comes from requirements.txt wheels (82+ drops pkg_resources)
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip wheel
 
 COPY node/requirements.txt ./requirements.txt
 
