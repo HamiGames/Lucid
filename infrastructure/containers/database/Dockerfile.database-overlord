@@ -1,0 +1,9 @@
+# the container that creates /hosts the .env file for the database services
+# contains all content required for database-overlord services
+# using .sh files to generate the .env files and .yml/.yaml files to control the database services
+# http://database-overlord:8120/api/v1/database/overlord
+# ports: 8120
+# python version: 3.11 - distroless
+# store in /app/configs/environment/.env.database
+# use the .env.database.template file to generate the .env file
+# use .env.secrets.template to create the .env.secrets file 

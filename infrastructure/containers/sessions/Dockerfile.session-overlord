@@ -1,0 +1,8 @@
+# the container that creates /hosts the .env file for the sessions services
+# contains all content required for session-overlord services
+# using .sh files to generate the .env files and .yml/.yaml files to control the session services
+# http://session-overlord:8110/api/v1/session/overlord
+# ports: 8110
+# python version: 3.11 - distroless
+# store in /app/configs/environment/.env.sessions
+# use the .env.sessions.template file to generate the .env file
