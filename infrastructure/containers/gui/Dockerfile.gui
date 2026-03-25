@@ -81,6 +81,11 @@ RUN ln -sf /bin/bash /bin/sh
 
 RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
 
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz ${BUNDLE_DIR}/electron_gui-src.tar.gz
 COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz ${BUNDLE_DIR}/electron_gui-node_modules.tar.gz
 
@@ -137,6 +142,10 @@ ARG STRAP_DIR=/opt/lucid/electron_gui
 ARG BUNDLE_DIR=/opt/lucid/bundles
 
 COPY --from=bundle-prep ${BUNDLE_DIR} ${BUNDLE_DIR}
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=bundle-prep ${STRAP_DIR} ${STRAP_DIR}
 COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap
 COPY --from=bundle-prep /bin/bash /bin/bash

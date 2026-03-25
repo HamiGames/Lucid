@@ -110,7 +110,7 @@ create_networks() {
     
     # TRON isolated network
     if ! docker network ls | grep -q "lucid-tron-isolated"; then
-        docker network create --driver bridge --attachable --subnet=172.21.0.0/16 --gateway=172.21.0.1 lucid-tron-isolated
+        docker network create --driver bridge --attachable --subnet=172.26.0.0/16 --gateway=172.26.0.1 lucid-tron-isolated
         log_success "Created lucid-tron-isolated network"
     else
         log_info "lucid-tron-isolated network already exists"

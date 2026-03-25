@@ -132,7 +132,7 @@ All `/mnt/myssd/Lucid` paths are CORRECT and were preserved:
 
 ### Network Configuration (Preserved)
 - `lucid-pi-network` - 172.20.0.0/16
-- `lucid-tron-isolated` - 172.21.0.0/16 (for TRON services)
+- `lucid-tron-isolated` - 172.26.0.0/16 (for TRON services)
 
 ### Public Images (Unchanged)
 These public images are correctly configured and work as-is:

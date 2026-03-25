@@ -44,7 +44,7 @@ This document summarizes the completion of Step 27: TRON Containers (Isolated) f
 - `payment-systems/tron/docker-compose.yml`
 
 **Key Features Implemented:**
-- ✅ Isolated network (lucid-network-isolated: 172.21.0.0/16)
+- ✅ Isolated network (lucid-network-isolated: 172.26.0.0/16)
 - ✅ 6 TRON services with proper dependencies
 - ✅ Service-to-service communication
 - ✅ Volume management for logs, wallets, and secrets
@@ -83,8 +83,8 @@ This document summarizes the completion of Step 27: TRON Containers (Isolated) f
 ### Network Isolation
 
 **Isolated Network:** `lucid-network-isolated`
-- **Subnet:** 172.21.0.0/16
-- **Gateway:** 172.21.0.1
+- **Subnet:** 172.26.0.0/16
+- **Gateway:** 172.26.0.1
 - **Purpose:** Complete isolation from blockchain core
 - **Security:** Wallet plane only, no consensus operations
 
@@ -280,7 +280,7 @@ docker exec lucid-payout-router ping -c 1 payout-router
 ### ✅ All Step 27 Requirements Completed
 
 1. **6 Distroless Containers:** ✅ All Dockerfiles created with distroless base images
-2. **Isolated Network:** ✅ Deployed to lucid-network-isolated (172.21.0.0/16)
+2. **Isolated Network:** ✅ Deployed to lucid-network-isolated (172.26.0.0/16)
 3. **TRON Mainnet URLs:** ✅ Configured in environment variables
 4. **Contract Addresses:** ✅ USDT and staking contract addresses configured
 5. **Service Isolation:** ✅ All 6 TRON services running, isolated from blockchain core

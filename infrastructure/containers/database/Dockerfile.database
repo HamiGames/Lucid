@@ -30,6 +30,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -207,6 +212,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     MONITORING_SERVICE_PORT=27018 \
     MONGODB_URI=${MONGODB_URI:-mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin} \
     PROMETHEUS_ENABLED=true
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=builder --chown=65532:65532 /var/run/          /app/var/run/
 COPY --from=builder --chown=65532:65532 /var/lib/           /app/var/lib/

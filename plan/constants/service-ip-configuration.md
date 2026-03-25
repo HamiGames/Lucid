@@ -16,8 +16,8 @@
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  Main Network:        172.20.0.0/16                          │
-│  TRON Isolated:       172.21.0.0/16                          │
-│  GUI Network:         172.22.0.0/16                          │
+│  TRON Isolated:       172.26.0.0/16                          │
+│  GUI Network:         172.27.0.0/16                          │
 │                                                               │
 │  Total Services:      35 containers                          │
 │  Total Networks:      4 networks                             │
@@ -31,11 +31,11 @@
 | Network Name | Subnet | Gateway | Purpose | Status |
 |-------------|---------|---------|---------|--------|
 | `lucid-pi-network` | 172.20.0.0/16 | 172.20.0.1 | Main production services | **IN USE** |
-| `lucid-tron-isolated` | 172.21.0.0/16 | 172.21.0.1 | TRON payment isolation | Available |
-| `lucid-gui-network` | 172.22.0.0/16 | 172.22.0.1 | GUI and admin access | Available |
-| `lucid-distroless-production` | 172.23.0.0/16 | 172.23.0.1 | Distroless containers | Available |
-| `lucid-distroless-dev` | 172.24.0.0/16 | 172.24.0.1 | Distroless development | Available |
-| `lucid-multi-stage-network` | 172.25.0.0/16 | 172.25.0.1 | Multi-stage builds | Available |
+| `lucid-tron-isolated` | 172.26.0.0/16 | 172.26.0.1 | TRON payment isolation | Available |
+| `lucid-gui-network` | 172.27.0.0/16 | 172.27.0.1 | GUI and admin access | Available |
+| `lucid-distroless-production` | 172.28.0.0/16 | 172.28.0.1 | Distroless containers | Available |
+| `lucid-distroless-dev` | 172.29.0.0/16 | 172.29.0.1 | Distroless development | Available |
+| `lucid-multi-stage-network` | 172.30.0.0/16 | 172.30.0.1 | Multi-stage builds | Available |
 
 ---
 
@@ -110,7 +110,7 @@ name=api-gateway
 container_name=lucid-api-gateway
 image=pickme/lucid-api-gateway:latest-arm64
 network=lucid-pi-network,lucid-gui-network
-ipv4_address=172.20.0.10,172.22.0.10
+ipv4_address=172.20.0.10,172.27.0.10
 hostname=lucid-api-gateway
 ports=8080:8080,8081:8081
 api_url=http://lucid-api-gateway:8080
@@ -516,12 +516,12 @@ primary_subnet=172.20.0.0/16
 primary_gateway=172.20.0.1
 
 gui_network=lucid-gui-network
-gui_subnet=172.22.0.0/16
-gui_gateway=172.22.0.1
+gui_subnet=172.27.0.0/16
+gui_gateway=172.27.0.1
 
 tron_network=lucid-tron-isolated
-tron_subnet=172.21.0.0/16
-tron_gateway=172.21.0.1
+tron_subnet=172.26.0.0/16
+tron_gateway=172.26.0.1
 ```
 
 #### **Database Connections**
@@ -559,7 +559,7 @@ network_rules:
     protocol: "tcp"
     
 # Future Isolation Rules (when TRON network is used):
-  # - source: "172.21.0.0/16"  # TRON Network (isolated)
+  # - source: "172.26.0.0/16"  # TRON Network (isolated)
   #   destination: "172.20.0.0/16"  # Main Network
   #   allowed_ports: [8091, 8092, 8093, 8094, 8096, 8097]  # TRON services only
   #   protocol: "tcp"
@@ -635,19 +635,19 @@ Main Network (172.20.0.0/16) - lucid-pi-network:
   - Total Services: 27 allocated IPs
   
 Secondary Networks (Available but not used in current allocation):
-  - TRON Network (172.21.0.0/16): Available for TRON isolation
-  - GUI Network (172.22.0.0/16): Available for GUI services
-  - Distroless Production (172.23.0.0/16): Available for distroless containers
-  - Distroless Dev (172.24.0.0/16): Available for development
-  - Multi-Stage Network (172.25.0.0/16): Available for multi-stage builds
+  - TRON Network (172.26.0.0/16): Available for TRON isolation
+  - GUI Network (172.27.0.0/16): Available for GUI services
+  - Distroless Production (172.28.0.0/16): Available for distroless containers
+  - Distroless Dev (172.29.0.0/16): Available for development
+  - Multi-Stage Network (172.30.0.0/16): Available for multi-stage builds
 ```
 
 ---
 
 ## 📝 **USAGE NOTES**
 
-1. **Network Isolation**: The TRON network (172.21.0.0/16) is isolated for security
-2. **GUI Access**: GUI network (172.22.0.0/16) provides admin access
+1. **Network Isolation**: The TRON network (172.26.0.0/16) is isolated for security
+2. **GUI Access**: GUI network (172.27.0.0/16) provides admin access
 3. **Main Network**: Most services run on the main network (172.20.0.0/16)
 4. **Health Checks**: All services provide `/health` endpoints
 5. **API Versioning**: All APIs use `/api/v1` prefix

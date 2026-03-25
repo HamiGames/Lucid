@@ -142,7 +142,7 @@ All containers implement:
 - **TRON Services**: Ports 8091-8096
 - **Purpose**: Payment operations only
 - **Access**: Isolated from blockchain core
-- **Subnet**: 172.21.0.0/16
+- **Subnet**: 172.26.0.0/16
 
 ---
 

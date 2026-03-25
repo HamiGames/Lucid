@@ -59,6 +59,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tunnel-nonroot || true
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 # Create application and data directories with proper ownership
 # Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
@@ -155,6 +160,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
     LC_ALL=C.UTF-8
 
 # Copy tini from builder (for proper signal handling)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
 COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tor/ /app/var/lib/tor/
 COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tor/control_auth_cookie /app/var/lib/tor/control_auth_cookie

@@ -1,22 +1,64 @@
 #!/usr/bin/env bash
-# Shared helpers for tunnel scripts (works against tor-proxy container)
+# Shared helpers for tunnel scripts
+# Aligns with:
+#   - 02_network_security/tunnels/Dockerfile (lucid-tunnel-tools, WORKDIR /app)
+#   - 02_network_security/tor/Dockerfile.tor-proxy-02 (scripts also at /app/run/lucid/tunnels/scripts)
+#
+# Terminal DIR: scripts live at repo 02_network_security/tunnels/scripts or
+#   /app/tunnels/scripts (tunnel-tools) / /app/run/lucid/tunnels/scripts (tor-proxy).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load environment variables from .env file (set by docker-compose or environment)
-# Default to WRITE_ENV if set, otherwise use standard location
-ENV_FILE="${ENV_FILE:-${WRITE_ENV:-/run/lucid/onion/.onion.env}}"
+# Defaults from tunnels/Dockerfile ENV unless already set by compose:
+#   CONTROL_HOST=tor-proxy CONTROL_PORT=9051
+#   COOKIE_FILE=/app/var/lib/tor/control_auth_cookie
+#   WRITE_ENV=/app/run/lucid/onion/.onion.env
+_lucid_tunnel_env_defaults() {
+  if [[ -d /app ]]; then
+    # tor-proxy distroless: torrc present, no tunnel-tools Python entrypoint
+    if [[ -f /app/run/lucid/tor/torrc ]] && [[ ! -f /app/tunnels/entrypoint.py ]]; then
+      CONTROL_HOST="${CONTROL_HOST:-127.0.0.1}"
+      if [[ -z "${COOKIE_FILE:-}" ]]; then
+        COOKIE_FILE=""
+        local c
+        for c in /app/run/lucid/tor/control_auth_cookie /app/var/lib/tor/control_auth_cookie; do
+          [[ -r "$c" ]] && { COOKIE_FILE="$c"; break; }
+        done
+        COOKIE_FILE="${COOKIE_FILE:-/app/run/lucid/tor/control_auth_cookie}"
+      fi
+    else
+      # lucid-tunnel-tools (or dev with /app layout)
+      CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
+      if [[ -z "${COOKIE_FILE:-}" ]]; then
+        COOKIE_FILE=""
+        local c
+        for c in /app/var/lib/tor/control_auth_cookie /app/run/lucid/tor/control_auth_cookie; do
+          [[ -r "$c" ]] && { COOKIE_FILE="$c"; break; }
+        done
+        COOKIE_FILE="${COOKIE_FILE:-/app/var/lib/tor/control_auth_cookie}"
+      fi
+    fi
+    WRITE_ENV="${WRITE_ENV:-/app/run/lucid/onion/.onion.env}"
+  else
+    # Host / CI: no /app — use legacy paths or env
+    CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
+    COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
+    WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
+  fi
+  CONTROL_PORT="${CONTROL_PORT:-9051}"
+  TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
+  ENV_FILE="${ENV_FILE:-${WRITE_ENV}}"
+}
 
-# Tor container name (from environment or default)
-TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"
+_lucid_tunnel_env_defaults
 
-_have(){ command -v "$1" >/dev/null 2>&1; }
+_have() { command -v "$1" >/dev/null 2>&1; }
 
 load_env() {
   if [[ -f "$ENV_FILE" ]]; then
     # shellcheck disable=SC2046
-    export $(grep -E '^(ONION|COOKIE|HEX)=' "$ENV_FILE" | xargs -d '\n' || true)
+    export $(grep -E '^(ONION|COOKIE|HEX)=' "$ENV_FILE" | xargs -d '\n' 2>/dev/null || true)
   fi
 }
 
@@ -36,18 +78,12 @@ save_env_var() {
 }
 
 hex_from_cookie_in_container() {
-  # NOTE: tor-proxy is distroless (gcr.io/distroless/base-debian12) — no shell,
-  # no xxd, no nc inside the container. Cookie is read directly from the
-  # volume-mounted path accessible to lucid-tunnel-tools.
-  # The 'container' arg is retained for API compatibility but is not used.
-  local cookie_file="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
+  # Read cookie from path visible to tunnel-tools or tor sidecar (see Dockerfiles).
+  local cookie_file="${COOKIE_FILE:-/app/var/lib/tor/control_auth_cookie}"
   xxd -p "${cookie_file}" 2>/dev/null | tr -d '\n' || true
 }
 
 tor_ctl() {
-  # Sends raw Tor control protocol commands directly over the Docker network.
-  # tor-proxy is distroless — nc must run here in lucid-tunnel-tools, not via
-  # docker exec into the container.
   local container="${1:-${TOR_CONTAINER_NAME}}" cmds="${2:-}"
   local control_host="${CONTROL_HOST:-${container}}"
   local control_port="${CONTROL_PORT:-9051}"
@@ -55,10 +91,23 @@ tor_ctl() {
 }
 
 wait_bootstrap() {
-  local container="${1:-${TOR_CONTAINER_NAME}}" tries=60
-  for _ in $(seq 1 "$tries"); do
-    if docker logs "$container" 2>&1 | grep -q "Bootstrapped 100%"; then
-      return 0
+  local tries="${1:-60}" i
+  for ((i = 0; i < tries; i++)); do
+    if _have docker; then
+      if docker logs "${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}" 2>&1 | grep -q "Bootstrapped 100%"; then
+        return 0
+      fi
+    else
+      local hex=""
+      [[ -r "${COOKIE_FILE:-}" ]] && hex="$(xxd -p "${COOKIE_FILE}" 2>/dev/null | tr -d '\n' || true)"
+      if [[ -n "$hex" ]]; then
+        local out
+        out="$(printf 'AUTHENTICATE %s\r\nGETINFO status/bootstrap-phase\r\nQUIT\r\n' "$hex" \
+          | nc -w 3 "${CONTROL_HOST}" "${CONTROL_PORT}" 2>/dev/null || true)"
+        if echo "$out" | grep -q "PROGRESS=100"; then
+          return 0
+        fi
+      fi
     fi
     sleep 1
   done

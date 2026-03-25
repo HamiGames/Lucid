@@ -101,7 +101,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.23.0.0/16
+        - subnet: 172.28.0.0/16
 ```
 
 #### **Required (CORRECT):**
@@ -118,15 +118,15 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-        - gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+        - gateway: 172.26.0.1
   
   lucid-gui-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
-        - gateway: 172.22.0.1
+        - subnet: 172.27.0.0/16
+        - gateway: 172.27.0.1
 ```
 
 **Impact:** Services cannot communicate using defined network topology from `path_plan.md`.
@@ -379,7 +379,7 @@ volumes:
 ### **1. IMMEDIATE ACTIONS (CRITICAL)**
 1. **Create new compose file** with all 35 services
 2. **Use correct image references** (`pickme/lucid-*:latest-arm64`)
-3. **Implement proper network configuration** (172.20.0.0/16, 172.21.0.0/16, 172.22.0.0/16)
+3. **Implement proper network configuration** (172.20.0.0/16, 172.26.0.0/16, 172.27.0.0/16)
 4. **Add all required port mappings** (8080-8099, 27017, 6379, 9200, 3389)
 5. **Configure proper environment variables** (from path_plan.md)
 

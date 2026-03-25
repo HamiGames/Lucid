@@ -28,6 +28,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -230,6 +235,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     SESSION_STORAGE_SERVICE_PORT=8020
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=builder /root/.rustup/ /app/rust/
 COPY --from=builder /root/.cargo/ /app/cargo/

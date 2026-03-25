@@ -151,6 +151,10 @@ RUN mkdir -p ./auth ./auth/api ./auth/middleware ./auth/models ./auth/utils ./au
     touch ./cargo/.keep
 
 COPY configs/services/auth-service.yml ./configs/auth-service.yml
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+
 COPY infrastructure/kubernetes/04-auth/auth-service.yaml ./infrastructure/kubernetes/auth-service.yaml
 
 COPY auth/ ./auth/
@@ -233,6 +237,10 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/
 COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/

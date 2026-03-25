@@ -45,7 +45,7 @@ All three services include:
 
 - **Networks:** Connected to both:
   - `lucid-pi-network` (main cluster)
-  - `lucid-gui-network` (GUI-specific, 172.22.0.0/16)
+  - `lucid-gui-network` (GUI-specific, 172.27.0.0/16)
 
 - **API Bridge Integration:** Each service connects to `lucid-gui-api-bridge:8097`
 
@@ -148,7 +148,7 @@ docker-compose -f configs/docker/docker-compose.gui-integration.yml up -d
 
 ### Internal Communication
 
-All services communicate via `lucid-gui-network` (172.22.0.0/16):
+All services communicate via `lucid-gui-network` (172.27.0.0/16):
 - DNS resolution uses container names
 - Secure inter-service communication
 - Isolated from main `lucid-pi-network`

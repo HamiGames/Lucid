@@ -198,7 +198,7 @@ log_info "  • MongoDB URI: mongodb://lucid:***@mongo-distroless:27019/lucid"
 log_info "  • Redis URI: redis://:***@lucid-redis:6379/0"
 log_info "  • JWT Secret: ${JWT_SECRET:0:8}... (64+ bytes)"
 log_info "  • Encryption Key: ${ENCRYPTION_KEY:0:8}... (32+ bytes)"
-log_info "  • Network: lucid-distroless-production (172.23.0.0/16)"
+log_info "  • Network: lucid-distroless-production (172.28.0.0/16)"
 echo ""
 
 log_success "========================================"

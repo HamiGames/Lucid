@@ -123,8 +123,8 @@ networks:
     name: lucid-multi-stage-test
     ipam:
       config:
-        - subnet: 172.25.0.0/16  # ✅ Matches constants for multi-stage
-          gateway: 172.25.0.1
+        - subnet: 172.30.0.0/16  # ✅ Matches constants for multi-stage
+          gateway: 172.30.0.1
 
 volumes:
   test-logs:

@@ -373,12 +373,12 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.26.0.0/16
   chain_plane:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
+        - subnet: 172.27.0.0/16
 ```
 
 ### Docker Compose - Production
@@ -500,7 +500,7 @@ networks:
     internal: true
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.26.0.0/16
 ```
 
 ## Kubernetes Configuration

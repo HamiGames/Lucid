@@ -17,15 +17,15 @@ Network: lucid-pi-network (bridge, 172.20.0.0/16)
 
 | File | Network Name | Subnet | External | Issue |
 |------|-------------|--------|----------|-------|
-| docker-compose.foundation.yml | `lucid-pi-network` | **172.22.0.0/16** | ✅ true | ❌ WRONG SUBNET |
+| docker-compose.foundation.yml | `lucid-pi-network` | **172.27.0.0/16** | ✅ true | ❌ WRONG SUBNET |
 | docker-compose.application.yml | `lucid-pi-network` | **172.20.0.0/16** | ✅ true | ✅ Correct but conflicts with foundation |
 | docker-compose.core.yml | `lucid-dev` | 172.20.0.0/16 | ❌ false | ❌ WRONG NETWORK NAME |
 | docker-compose.support.yml | `lucid-dev` | 172.20.0.0/16 | ❌ false | ❌ WRONG NETWORK NAME |
 | docker-compose.all.yml | `lucid-dev_lucid_net` | 172.20.0.0/16 | ❌ false | ❌ WRONG NETWORK NAME |
-| docker-compose.gui-integration.yml | `lucid-gui-network` | 172.22.0.0/16 | ❌ false | ❌ SEPARATE NETWORK |
+| docker-compose.gui-integration.yml | `lucid-gui-network` | 172.27.0.0/16 | ❌ false | ❌ SEPARATE NETWORK |
 
 **PROBLEM:**
-- Foundation services use static IPs in 172.22.0.0/16 range
+- Foundation services use static IPs in 172.27.0.0/16 range
 - Application services expect 172.20.0.0/16 range
 - Core/Support/All use different network name (`lucid-dev`)
 - **Services from different compose files CANNOT communicate!**
@@ -107,27 +107,27 @@ services:
   lucid-mongodb:
     networks:
       lucid-pi-network:
-        ipv4_address: 172.22.0.10   ← Static IP
+        ipv4_address: 172.27.0.10   ← Static IP
         
   lucid-redis:
     networks:
       lucid-pi-network:
-        ipv4_address: 172.22.0.11   ← Static IP
+        ipv4_address: 172.27.0.11   ← Static IP
         
   lucid-elasticsearch:
     networks:
       lucid-pi-network:
-        ipv4_address: 172.22.0.12   ← Static IP
+        ipv4_address: 172.27.0.12   ← Static IP
         
   lucid-auth-service:
     networks:
       lucid-pi-network:
-        ipv4_address: 172.22.0.13   ← Static IP
+        ipv4_address: 172.27.0.13   ← Static IP
 ```
 
 **PROBLEM:**
 - Plan says network should be 172.20.0.0/16
-- Foundation file uses 172.22.0.0/16
+- Foundation file uses 172.27.0.0/16
 - Static IPs in 172.22.x range won't work on 172.20.x network
 - If network doesn't exist, deployment FAILS (external: true)
 
@@ -244,8 +244,8 @@ networks:
     attachable: true
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 ```
 
 **All files must use:**
@@ -259,7 +259,7 @@ networks:
 ```yaml
 networks:
   lucid-pi-network:
-    ipv4_address: 172.22.0.10   ← Remove static IPs
+    ipv4_address: 172.27.0.10   ← Remove static IPs
 ```
 
 **To:**
@@ -359,8 +359,8 @@ bash scripts/deployment/create-pi-networks.sh
 
 **Creates 3 networks:**
 1. `lucid-pi-network` (172.20.0.0/16) - Main services
-2. `lucid-tron-isolated` (172.21.0.0/16) - TRON isolated services
-3. `lucid-gui-network` (172.22.0.0/16) - GUI integration services
+2. `lucid-tron-isolated` (172.26.0.0/16) - TRON isolated services
+3. `lucid-gui-network` (172.27.0.0/16) - GUI integration services
 
 ---
 

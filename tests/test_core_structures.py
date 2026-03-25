@@ -141,14 +141,14 @@ def test_network_configuration():
                 "internal": True
             },
             "lucid_external": {
-                "subnet": "172.21.0.0/24",
-                "gateway": "172.21.0.1",
+                "subnet": "172.26.0.0/24",
+                "gateway": "172.26.0.1",
                 "purpose": "user-portals",
                 "internal": False
             },
             "lucid_blockchain": {
-                "subnet": "172.22.0.0/24",
-                "gateway": "172.22.0.1",
+                "subnet": "172.27.0.0/24",
+                "gateway": "172.27.0.1",
                 "purpose": "ledger-only",
                 "internal": True
             }

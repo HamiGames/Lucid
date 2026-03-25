@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "description": "TCP portal routes: admin-plane containers connect to this gateway; forwards to core services. Override hosts/ports via .env.admin-system-gateway* (see template).",
+  "routes": [
+    {
+      "name": "api_gateway",
+      "listen_port": 28080,
+      "upstream_host": "api-gateway",
+      "upstream_port": 8080,
+      "tls_upstream": false,
+      "tls_profile": null
+    },
+    {
+      "name": "admin_ui_backend",
+      "listen_port": 28120,
+      "upstream_host": "admin-ui-backend",
+      "upstream_port": 8120,
+      "tls_upstream": false,
+      "tls_profile": null
+    },
+    {
+      "name": "admin_params_registry",
+      "listen_port": 28050,
+      "upstream_host": "admin-params-registry",
+      "upstream_port": 8050,
+      "tls_upstream": false,
+      "tls_profile": null
+    },
+    {
+      "name": "tunnel_tools_metrics",
+      "listen_port": 27000,
+      "upstream_host": "lucid-tunnel-tools",
+      "upstream_port": 7000,
+      "tls_upstream": false,
+      "tls_profile": null
+    }
+  ]
+}

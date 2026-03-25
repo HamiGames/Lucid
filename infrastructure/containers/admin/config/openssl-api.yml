@@ -1,0 +1,36 @@
+# Lucid Admin System Gateway — OpenSSL / TLS API contract
+# Consumed at runtime by entrypoint.py (Python ssl module). Paths may be overridden via .env.admin-system-gateway*.
+#
+# Reference: docs/deployment/security-hardening-guide.md (internal TLS patterns)
+
+api_version: 1
+
+tls_client_defaults:
+  minimum_version: TLSv1_2
+  verify_mode: CERT_REQUIRED
+  check_hostname: true
+  # CA bundle (distroless layout under /app/etc; override with ADMIN_GATEWAY_SSL_CA_FILE)
+  cafile: /app/etc/ssl/certs/ca-certificates.crt
+  # Optional mTLS (mount secrets and set paths in .env)
+  certfile: ""
+  keyfile: ""
+
+# Named profiles merged per-route when connections.json sets tls_profile
+tls_profiles:
+  internal_mesh:
+    minimum_version: TLSv1_2
+    verify_mode: CERT_REQUIRED
+    check_hostname: true
+    cafile: /app/etc/ssl/certs/ca-certificates.crt
+  relaxed_lab:
+    minimum_version: TLSv1_2
+    verify_mode: CERT_NONE
+    check_hostname: false
+    cafile: ""
+
+# Cipher policy (OpenSSL 3 cipher string; empty = Python/ssl default)
+ciphers: ""
+
+# Health endpoint TLS (off by default — health is plain HTTP on ADMIN_GATEWAY_HEALTH_PORT)
+health_tls:
+  enabled: false

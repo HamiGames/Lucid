@@ -1,0 +1,183 @@
+# syntax=docker/dockerfile:1.5
+# LUCID CHAIN-TO-PAY GATEWAY — Distroless HTTP bridge (data-chain, consensus, session-chunk, tron-payment)
+# Structure aligned with infrastructure/containers/node/Dockerfile.node-system-gateway
+# Image: pickme/lucid-chain-to-pay:latest-arm64 | Listen: 8114 | Health: GET /health
+# Build context: repository root (.)
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_CHAIN_TO_PAY_RUST_%s" "$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_CHAIN_TO_PAY_RUSTUP_%s" "$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_CHAIN_TO_PAY_CARGO_%s" "$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod 644 /root/.keep /root/.rustup/.keep /root/.cargo/.keep
+
+RUN apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN printf "LUCID_CHAIN_TO_PAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_CHAIN_TO_PAY_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_CHAIN_TO_PAY_WHEELS_%s" "$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
+
+COPY infrastructure/containers/blockchain/requirements.chain-to-pay.txt ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+
+RUN printf "LUCID_CHAIN_TO_PAY_PACKAGES_%s" "$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
+
+RUN python3.11 -c "import yaml; yaml.safe_load('x: 1'); print('PyYAML OK')"
+
+RUN mkdir -p /build/chain/config /build/tmp && \
+    printf "LUCID_CHAIN_TO_PAY_CONFIG_%s" "$(date +%s)" > /build/chain/config/.keep && \
+    chown -R 65532:65532 /build/chain /build/tmp
+
+COPY infrastructure/containers/blockchain/chain-to-pay/verify_files.py ./tmp/verify_files.py
+COPY infrastructure/containers/blockchain/chain-to-pay/verify_runtime.py ./tmp/verify_runtime.py
+
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json /build/chain/config/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/config/openssl-api.yml /build/chain/config/openssl-api.yml
+COPY infrastructure/containers/blockchain/chain-to-pay/entrypoint.py /build/chain/chain_to_pay_entrypoint.py
+
+RUN chmod +x ./tmp/verify_files.py && \
+    /usr/bin/python3.11 ./tmp/verify_files.py && \
+    chown -R 65532:65532 /build/chain /build/tmp && \
+    python3.11 -m py_compile /build/chain/chain_to_pay_entrypoint.py
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid chain-to-pay gateway" \
+      org.opencontainers.image.description="HTTP gateway: blockchain services ↔ tron-payment (ports.txt 8114)" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="chain-to-pay" \
+      com.lucid.plane="blockchain" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="core" \
+      com.lucid.security="distroless"
+
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    CHAIN_TO_PAY_LISTEN_PORT=8114 \
+    CHAIN_TO_PAY_CONFIG=/app/chain/config/chain-to-pay.connections.json \
+    CHAIN_TO_PAY_OPENSSL_API_YAML=/app/chain/config/openssl-api.yml
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
+COPY --from=builder /root/.rustup/ /app/rust/
+COPY --from=builder /root/.cargo/ /app/cargo/
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/chain/ /app/chain/
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
+
+EXPOSE 8114
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8114/health', timeout=5).read()"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/chain/chain_to_pay_entrypoint.py"]

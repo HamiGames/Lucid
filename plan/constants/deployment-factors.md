@@ -84,21 +84,21 @@ This document provides a comprehensive summary of Docker Compose files used to l
 ##### 6. Distroless Base Configuration
 **File**: `configs/docker/distroless/distroless-config.yml`
 - **Purpose**: Distroless base infrastructure (base, minimal-base, arm64-base)
-- **Network**: `lucid-distroless-production` (172.23.0.0/16)
+- **Network**: `lucid-distroless-production` (172.28.0.0/16)
 - **Images**: `pickme/lucid-base:latest-arm64`
 - **Services**: 3 base containers
 
 ##### 7. Distroless Runtime Configuration
 **File**: `configs/docker/distroless/distroless-runtime-config.yml`
 - **Purpose**: Distroless runtime infrastructure (distroless-runtime, minimal-runtime, arm64-runtime)
-- **Network**: `lucid-distroless-production` (172.23.0.0/16)
+- **Network**: `lucid-distroless-production` (172.28.0.0/16)
 - **Images**: `pickme/lucid-base:latest-arm64`
 - **Services**: 3 runtime containers
 
 ##### 8. Distroless Development Configuration
 **File**: `configs/docker/distroless/distroless-development-config.yml`
 - **Purpose**: Development distroless containers
-- **Network**: `lucid-distroless-dev` (172.24.0.0/16)
+- **Network**: `lucid-distroless-dev` (172.29.0.0/16)
 
 ##### 9. Distroless Security Configuration
 **File**: `configs/docker/distroless/distroless-security-config.yml`
@@ -113,7 +113,7 @@ This document provides a comprehensive summary of Docker Compose files used to l
 ##### 11. Multi-Stage Build Configuration
 **File**: `configs/docker/multi-stage/multi-stage-config.yml`
 - **Purpose**: Multi-stage build configuration
-- **Network**: `lucid-multi-stage-network` (172.25.0.0/16)
+- **Network**: `lucid-multi-stage-network` (172.30.0.0/16)
 
 ##### 12. Multi-Stage Development Configuration
 **File**: `configs/docker/multi-stage/multi-stage-development-config.yml`
@@ -132,7 +132,7 @@ This document provides a comprehensive summary of Docker Compose files used to l
 ##### 15. GUI Integration Configuration
 **File**: `configs/docker/docker-compose.gui-integration.yml`
 - **Purpose**: GUI services integration
-- **Network**: `lucid-gui-network` (172.22.0.0/16)
+- **Network**: `lucid-gui-network` (172.27.0.0/16)
 
 ##### 16. GUI Docker Manager Service
 **File**: `configs/services/gui-docker-manager.yml`
@@ -145,7 +145,7 @@ This document provides a comprehensive summary of Docker Compose files used to l
 ##### 17. Base Container Development
 **File**: `infrastructure/containers/base/docker-compose.base.yml`
 - **Purpose**: Base container development environment
-- **Network**: `lucid-base-net` (172.21.0.0/16)
+- **Network**: `lucid-base-net` (172.26.0.0/16)
 - **Images**: `lucid-python-base:latest`, `lucid-java-base:latest`
 - **Services**: Python and Java base containers
 
@@ -158,11 +158,11 @@ The Docker Compose files use the following networks as defined in `network-confi
 | Network Name | Subnet | Gateway | Purpose |
 |--------------|--------|---------|---------|
 | `lucid-pi-network` | 172.20.0.0/16 | 172.20.0.1 | Main network for Foundation, Core, Application, and Admin services |
-| `lucid-tron-isolated` | 172.21.0.0/16 | 172.21.0.1 | Isolated network for TRON payment services |
-| `lucid-gui-network` | 172.22.0.0/16 | 172.22.0.1 | GUI services network |
-| `lucid-distroless-production` | 172.23.0.0/16 | 172.23.0.1 | Distroless production containers |
-| `lucid-distroless-dev` | 172.24.0.0/16 | 172.24.0.1 | Distroless development containers |
-| `lucid-multi-stage-network` | 172.25.0.0/16 | 172.25.0.1 | Multi-stage build network |
+| `lucid-tron-isolated` | 172.26.0.0/16 | 172.26.0.1 | Isolated network for TRON payment services |
+| `lucid-gui-network` | 172.27.0.0/16 | 172.27.0.1 | GUI services network |
+| `lucid-distroless-production` | 172.28.0.0/16 | 172.28.0.1 | Distroless production containers |
+| `lucid-distroless-dev` | 172.29.0.0/16 | 172.29.0.1 | Distroless development containers |
+| `lucid-multi-stage-network` | 172.30.0.0/16 | 172.30.0.1 | Multi-stage build network |
 
 ### **Network Security Features**
 
@@ -403,11 +403,11 @@ docker-compose --env-file configs/environment/.env.foundation -f configs/docker/
 ```bash
 # Create all required networks
 docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1 --attachable
-docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1 --attachable
-docker network create lucid-gui-network --driver bridge --subnet 172.22.0.0/16 --gateway 172.22.0.1 --attachable
-docker network create lucid-distroless-production --driver bridge --subnet 172.23.0.0/16 --gateway 172.23.0.1 --attachable
-docker network create lucid-distroless-dev --driver bridge --subnet 172.24.0.0/16 --gateway 172.24.0.1 --attachable
-docker network create lucid-multi-stage-network --driver bridge --subnet 172.25.0.0/16 --gateway 172.25.0.1 --attachable
+docker network create lucid-tron-isolated --driver bridge --subnet 172.26.0.0/16 --gateway 172.26.0.1 --attachable
+docker network create lucid-gui-network --driver bridge --subnet 172.27.0.0/16 --gateway 172.27.0.1 --attachable
+docker network create lucid-distroless-production --driver bridge --subnet 172.28.0.0/16 --gateway 172.28.0.1 --attachable
+docker network create lucid-distroless-dev --driver bridge --subnet 172.29.0.0/16 --gateway 172.29.0.1 --attachable
+docker network create lucid-multi-stage-network --driver bridge --subnet 172.30.0.0/16 --gateway 172.30.0.1 --attachable
 ```
 
 ## Troubleshooting Guide

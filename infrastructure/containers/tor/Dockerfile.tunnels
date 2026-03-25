@@ -58,6 +58,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tunnel-nonroot || true
 
 WORKDIR /app/tunnel
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 # =============================================================================
 # Create the container's internal runtime directory structure.
@@ -138,6 +143,10 @@ ENV PATH=/opt/lucid/tunnel/bin:/opt/bin:/opt/sbin:/bin \
     LC_ALL=C.UTF-8
 
 # Copy tini from builder (for proper signal handling)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=tunnel-builder /usr/bin/tini /opt/bin/tini
 
 # =============================================================================

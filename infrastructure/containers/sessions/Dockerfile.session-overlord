@@ -38,6 +38,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /build/overlord
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip wheel setuptools
@@ -102,6 +107,10 @@ COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 COPY --from=builder --chown=65532:65532 /build/overlord/entrypoint.py /build/overlord/app.py /build/overlord/trigger_engine.py /app/
 COPY --from=builder --chown=65532:65532 /build/overlord/templates /app/templates
 COPY --from=builder --chown=65532:65532 /build/overlord/configs /app/configs
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 
 RUN ["/usr/bin/python3.11", "-c", "import sys; sys.path[:0]=['/usr/local/lib/python3.11/site-packages']; import fastapi, uvicorn, yaml; assert fastapi and uvicorn; print('✅ runtime deps ok')"]
 

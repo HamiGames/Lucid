@@ -1,0 +1,239 @@
+# LUCID TOR PROXY - SPEC-4 Stage 0 Beta Sidecar
+# Distroless Tor proxy for Lucid (ARM64), aligned with project spin-up
+# Build Context: project root (same as tunnel-tools)
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=2.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+
+# =============================================================================
+# STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
+# =============================================================================
+FROM debian:12-slim AS tor-builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      tor \
+      tor-geoipdb \
+      obfs4proxy \
+      tini \
+      bash \
+      busybox \
+      coreutils \
+      netcat-openbsd \
+      xxd \
+      gosu \
+      ca-certificates \
+      dnsutils \
+      curl \
+      jq \
+      adduser \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
+    && adduser --system --no-create-home --uid 65532 --gid 65532 --group tor-nonroot || true
+
+# =============================================================================
+# Directory scaffold — /run/lucid (runtime) + /opt/lucid/tor (static/config)
+# All dirs get .keep markers so COPY in Stage 2 carries them into distroless
+# =============================================================================
+RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
+   install  -d -o debian-tor -g debian-tor -m 755 /run \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/data \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/bin \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/log \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/tor/pid \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/ssl \
+   install  -d -o debian-tor -g debian-tor -m 755 /run/lucid/onion \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_admin \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_api \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_auth \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_config \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_dev \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_health \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_lb \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_metrics \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_mgmt \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_onion \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_relay \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_resolver \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_rpc \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_ui \
+   install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_vm \
+   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_ws \
+   install -d -o root -g root -m 755 /opt/lucid && \
+   install -d -o root -g root -m 755 /opt/lucid/tor && \
+   install -d -o root -g root -m 755 /opt/lucid/tor/bin && \
+   install -d -o root -g root -m 755 /opt/lucid/tor/lib && \
+   install -d -o root -g root -m 755 /opt/lucid/tor/config && \
+   install -d -o debian-tor -g debian-tor -m 755 /opt/lucid/tor/data && \
+   install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels && \
+   install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels/scripts && \
+   install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels/config && \
+   install -d -o root -g root -m 755 /usr/local/bin && \
+   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
+   install -d -o root -g root -m 755 /etc/tor && \
+   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
+   printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n'                > /run/lucid/tor/.keep && \
+   printf 'dir=run/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /run/lucid/tor/data/.keep && \
+   printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/bin/.keep && \
+   printf 'dir=run/lucid/tor/log\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/log/.keep && \
+   printf 'dir=run/lucid/tor/pid\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/pid/.keep && \
+   printf 'dir=run/lucid/ssl\nplatform=lucid-tor-proxy\n'                > /run/lucid/ssl/.keep && \
+   printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n'              > /run/lucid/onion/.keep && \
+   printf 'dir=run/lucid/onion/lucid_admin\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_admin/.keep && \
+   printf 'dir=run/lucid/onion/lucid_api\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_api/.keep && \
+   printf 'dir=run/lucid/onion/lucid_auth\nplatform=lucid-tor-proxy\n'     > /run/lucid/onion/lucid_auth/.keep && \
+   printf 'dir=run/lucid/onion/lucid_config\nplatform=lucid-tor-proxy\n'   > /run/lucid/onion/lucid_config/.keep && \
+   printf 'dir=run/lucid/onion/lucid_dev\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_dev/.keep && \
+   printf 'dir=run/lucid/onion/lucid_health\nplatform=lucid-tor-proxy\n'   > /run/lucid/onion/lucid_health/.keep && \
+   printf 'dir=run/lucid/onion/lucid_lb\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_lb/.keep && \
+   printf 'dir=run/lucid/onion/lucid_metrics\nplatform=lucid-tor-proxy\n'  > /run/lucid/onion/lucid_metrics/.keep && \
+   printf 'dir=run/lucid/onion/lucid_mgmt\nplatform=lucid-tor-proxy\n'     > /run/lucid/onion/lucid_mgmt/.keep && \
+   printf 'dir=run/lucid/onion/lucid_onion\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_onion/.keep && \
+   printf 'dir=run/lucid/onion/lucid_relay\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_relay/.keep && \
+   printf 'dir=run/lucid/onion/lucid_resolver\nplatform=lucid-tor-proxy\n' > /run/lucid/onion/lucid_resolver/.keep && \
+   printf 'dir=run/lucid/onion/lucid_rpc\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_rpc/.keep && \
+   printf 'dir=run/lucid/onion/lucid_ui\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ui/.keep && \
+   printf 'dir=run/lucid/onion/lucid_vm\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_vm/.keep && \
+   printf 'dir=run/lucid/onion/lucid_ws\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ws/.keep && \
+   printf 'dir=opt/lucid\nplatform=lucid-tor-proxy\n'                    > /opt/lucid/.keep && \
+   printf 'dir=opt/lucid/tor\nplatform=lucid-tor-proxy\n'                > /opt/lucid/tor/.keep && \
+   printf 'dir=opt/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/bin/.keep && \
+   printf 'dir=opt/lucid/tor/lib\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/lib/.keep && \
+   printf 'dir=opt/lucid/tor/config\nplatform=lucid-tor-proxy\n'         > /opt/lucid/tor/config/.keep && \
+   printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep && \
+   printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep && \
+   printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > /run/lucid/tunnels/.keep && \
+   printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep && \
+   printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep
+# =============================================================================
+# STAGE 2: Distroless Runtime with Inherent Tor System
+# =============================================================================
+FROM gcr.io/distroless/base-debian12:latest
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=2.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Distroless Tor proxy for Lucid project" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Tor Proxy" \
+      org.opencontainers.image.description="Distroless Tor proxy for Lucid project" \
+      com.lucid.plane="ops" \
+      com.lucid.service="tor-proxy" \
+      com.lucid.platform="arm64" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.security="distroless" \
+      com.lucid.vulnerabilities="zero" \
+      com.lucid.tor.inherent="true" \
+      com.lucid.tor.system="built-in" \
+      com.lucid.expose="9050,9051,8888" \
+      com.lucid.cluster="foundation"
+
+ENV PATH=/app/run/lucid/tor/bin:/app/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/bin:/app/opt/lucid \
+    LD_LIBRARY_PATH=/opt/lucid/tor/lib \
+    TOR_SOCKS_PORT=9050 \
+    TOR_CONTROL_PORT=9051 \
+    TOR_DATA_DIR=/run/lucid/tor
+
+# Core binaries and helpers
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=tor-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=tor-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
+COPY --from=tor-builder /usr/bin/tor         /app/usr/bin/tor
+COPY --from=tor-builder /usr/bin/obfs4proxy  /app/usr/bin/obfs4proxy
+COPY --from=tor-builder /usr/bin/tini        /app/usr/bin/tini
+COPY --from=tor-builder /usr/sbin/gosu       /app/usr/sbin/gosu
+COPY --from=tor-builder /bin/bash            /app/bin/bash
+COPY --from=tor-builder /bin/busybox         /app/bin/busybox
+COPY --from=tor-builder /bin/mkdir           /app/bin/mkdir
+COPY --from=tor-builder /bin/sleep           /app/bin/sleep
+COPY --from=tor-builder /bin/tail            /app/bin/tail
+COPY --from=tor-builder /bin/chmod           /app/bin/chmod
+COPY --from=tor-builder /bin/chown           /app/bin/chown
+COPY --from=tor-builder /bin/rm              /app/bin/rm
+COPY --from=tor-builder /usr/bin/nc          /app/usr/bin/nc
+COPY --from=tor-builder /usr/bin/xxd         /app/usr/bin/xxd
+COPY --from=tor-builder /usr/bin/curl        /app/usr/bin/curl
+COPY --from=tor-builder /usr/bin/jq          /app/usr/bin/jq
+#static assets /app/opt/lucid/tor
+# Required libraries (include systemd/selinux/cap and loader) /app/opt/lib
+COPY --from=tor-builder /lib/*/libc.so.6         /app/lib/
+COPY --from=tor-builder /lib/*/libcrypto.so.3    /app/lib/
+COPY --from=tor-builder /lib/*/libssl.so.3       /app/lib/
+COPY --from=tor-builder /lib/*/libevent-2.1.so.7 /app/lib/
+COPY --from=tor-builder /lib/*/libzstd.so.1      /app/lib/
+COPY --from=tor-builder /lib/*/liblzma.so.5      /app/lib/
+COPY --from=tor-builder /lib/*/libz.so.1         /app/lib/
+COPY --from=tor-builder /lib/*/libtinfo.so.6     /app/lib/
+COPY --from=tor-builder /lib/*/libsystemd.so.0   /app/lib/
+COPY --from=tor-builder /lib/*/libselinux.so.1   /app/lib/
+COPY --from=tor-builder /lib/*/libcap.so.2       /app/lib/
+COPY --from=tor-builder /lib/*/libnsl.so.1       /app/lib/
+COPY --from=tor-builder /lib/*/libcrypt.so.1     /app/lib/
+# Dynamic linker and arch-specific libs for ARM64 (required by coreutils/tor) /app/lib
+COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
+COPY --from=tor-builder /lib/aarch64-linux-gnu     /app/lib/aarch64-linux-gnu
+
+# Bring in /usr/lib to satisfy Debian dynamic deps (libselinux, libcap, etc.)
+COPY --from=tor-builder /usr/lib /app/usr/lib
+
+# Ensure /etc/tor directory exists in runtime and is traversable
+COPY --from=tor-builder /etc/tor /app/etc/tor
+
+# Tor data/config and system files
+COPY --from=tor-builder /usr/share/tor                                 /app/usr/share/tor
+COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt             /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor     /app/var/lib/tor
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run             /app/run
+COPY --from=tor-builder /etc/passwd                                    /app/etc/passwd
+COPY --from=tor-builder /etc/group                                     /app/etc/group
+
+# /opt/lucid/tor scaffold (static config tree + .keep markers)
+COPY --from=tor-builder --chown=root:root /opt/lucid /app/opt/lucid
+
+# Lucid scripts and tor configuration (torrc baked into image)
+# Build context: project root, so we prefix with 02_network_security/tor/
+COPY --chmod=644 02_network_security/tor/torrc                                  /app/run/lucid/tor/torrc
+COPY --chmod=755 02_network_security/tor/entrypoint.sh                          /app/run/lucid/tor/bin/entrypoint.sh
+COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh                    /app/run/lucid/tor/bin/bootstrap-helper.sh
+COPY --chmod=755 02_network_security/tor/tor_entrypoint.sh                      /app/run/lucid/tor/bin/tor_entrypoint.sh
+COPY --chmod=755 02_network_security/tor/t_entrypoint.sh                        /app/run/lucid/tor/bin/t_entrypoint.sh
+COPY --chmod=755 02_network_security/tor/tor-health.sh                          /app/run/lucid/tor/bin/tor-health.sh
+COPY --chmod=755 02_network_security/tor/tor-show-onion.sh                      /app/run/lucid/tor/bin/tor-show-onion.sh
+COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh      /app/run/lucid/tor/bin/create-ephemeral-onion.sh
+# Tunnel tools cross-container config (lucid-tunnel-tools interop)
+COPY --chmod=755 02_network_security/tunnels/scripts/                      /app/run/lucid/tunnels/scripts/
+COPY --chmod=644 02_network_security/tunnels/config/                       /app/run/lucid/tunnels/config/
+# Healthcheck uses /bin/bash copied above
+HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
+  CMD ["/app/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
+
+# Expose ports (SOCKS, Control, optional HTTP)
+EXPOSE 9050 9051 8888
+
+# Run as debian-tor (present from builder /etc/passwd)
+USER debian-tor
+WORKDIR /app
+
+ENTRYPOINT ["/app/bin/tini", "--"]
+

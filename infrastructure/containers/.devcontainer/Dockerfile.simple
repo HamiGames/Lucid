@@ -11,6 +11,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Set workspace
 WORKDIR /workspaces/Lucid
 
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p configs
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+
 # Install only essential packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \

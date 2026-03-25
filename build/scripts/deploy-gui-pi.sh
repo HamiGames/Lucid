@@ -321,8 +321,8 @@ networks:
     attachable: true
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 EOF"
     fi
     

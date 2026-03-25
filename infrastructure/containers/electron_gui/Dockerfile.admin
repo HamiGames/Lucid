@@ -32,6 +32,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     npm_config_cache=/root/.npm
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -139,6 +144,10 @@ COPY --from=builder --chown=65532:65532 /build/.build-marker /app/.build-marker
 COPY --from=builder --chown=65532:65532 /build/.packages-marker /app/.packages-marker
 COPY --from=builder --chown=65532:65532 /build/dist/ ./dist/
 COPY --from=builder --chown=65532:65532 /build/configs/ ./configs/
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 
 RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json'), apiServices: fs.existsSync('/app/configs/api-services.conf') }; if (!Object.values(checks).every(v => v)) { console.error('Verification failed:', checks); process.exit(1); } console.log('Runtime artifacts verified');"]
 

@@ -28,7 +28,7 @@ PI_PLATFORM=linux/arm64
 LUCID_NETWORK=lucid-pi-network
 NETWORK_SUBNET=172.20.0.0/16
 TRON_ISOLATED_NETWORK=lucid-tron-isolated
-TRON_SUBNET=172.21.0.0/16
+TRON_SUBNET=172.26.0.0/16
 
 # Docker Registry
 DOCKER_REGISTRY=pickme/lucid
@@ -242,7 +242,7 @@ PI_PLATFORM=linux/arm64
 LUCID_NETWORK=lucid-pi-network
 NETWORK_SUBNET=172.20.0.0/16
 TRON_ISOLATED_NETWORK=lucid-tron-isolated
-TRON_SUBNET=172.21.0.0/16
+TRON_SUBNET=172.26.0.0/16
 
 # Docker Registry
 DOCKER_REGISTRY=pickme/lucid

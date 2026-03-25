@@ -74,8 +74,8 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
     labels:
       - "org.lucid.plane=ops"
       - "org.lucid.network=core"
@@ -186,7 +186,7 @@ services:
     networks:
       lucid_core_net:
         aliases: [mongo, lucid_mongo, mongodb]
-        ipv4_address: 172.21.0.10
+        ipv4_address: 172.26.0.10
       lucid-dev_lucid_net: {}  # External connectivity
     healthcheck:
       test: [
@@ -242,7 +242,7 @@ services:
     networks:
       lucid_core_net:
         aliases: [tor, tor-proxy, torproxy]
-        ipv4_address: 172.21.0.11
+        ipv4_address: 172.26.0.11
       lucid-dev_lucid_net: {}  # External connectivity
     expose: ["8888", "9050", "9051"]
     healthcheck:
@@ -295,7 +295,7 @@ services:
     networks:
       lucid_core_net:
         aliases: [api, lucid_api, api-server]
-        ipv4_address: 172.21.0.12
+        ipv4_address: 172.26.0.12
       lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       lucid_mongo:
@@ -345,7 +345,7 @@ services:
     networks:
       lucid_core_net:
         aliases: [gateway, lucid_gateway, api-gateway]
-        ipv4_address: 172.21.0.13
+        ipv4_address: 172.26.0.13
       lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       lucid_api:
@@ -389,7 +389,7 @@ services:
     networks:
       lucid_core_net:
         aliases: [tunnel, tunnel-tools, tunnels]
-        ipv4_address: 172.21.0.14
+        ipv4_address: 172.26.0.14
       lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       tor-proxy:
@@ -429,7 +429,7 @@ services:
     networks:
       lucid_core_net:
         aliases: [server-tools, utils, lucid-utils]
-        ipv4_address: 172.21.0.15
+        ipv4_address: 172.26.0.15
       lucid-dev_lucid_net: {}  # External connectivity
     depends_on:
       tor-proxy:

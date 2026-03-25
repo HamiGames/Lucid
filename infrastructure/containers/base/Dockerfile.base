@@ -41,6 +41,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /opt
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip wheel setuptools
@@ -122,6 +127,10 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/lucid-base /opt/lucid-base

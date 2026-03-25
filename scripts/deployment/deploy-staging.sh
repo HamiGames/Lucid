@@ -84,7 +84,7 @@ CLUSTER_ID=staging-cluster
 
 # Network Configuration
 LUCID_NETWORK=lucid-staging
-LUCID_SUBNET=172.22.0.0/16
+LUCID_SUBNET=172.27.0.0/16
 
 # Database Configuration
 MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
@@ -379,7 +379,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
+        - subnet: 172.27.0.0/16
 
 volumes:
   mongodb_data:

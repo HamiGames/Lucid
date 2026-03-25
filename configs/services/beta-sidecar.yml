@@ -38,13 +38,13 @@ networking:
       gateway: "172.20.0.1"
       
     - name: "lucid-tron-isolated"
-      subnet: "172.21.0.0/16"
-      gateway: "172.21.0.1"
+      subnet: "172.26.0.0/16"
+      gateway: "172.26.0.1"
       isolated: true
       
     - name: "lucid-gui-network"
-      subnet: "172.22.0.0/16"
-      gateway: "172.22.0.1"
+      subnet: "172.27.0.0/16"
+      gateway: "172.27.0.1"
   
   # Network policies
   policies:

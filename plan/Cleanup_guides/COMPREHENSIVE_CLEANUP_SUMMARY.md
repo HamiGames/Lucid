@@ -209,7 +209,7 @@ The TRON isolation cleanup is a critical process designed to completely separate
 **Purpose**: Verify network isolation between blockchain core and TRON services to ensure complete separation.
 
 **Key Actions**:
-- Verify TRON services on lucid-network-isolated (172.21.0.0/16)
+- Verify TRON services on lucid-network-isolated (172.26.0.0/16)
 - Verify blockchain services on lucid-dev
 - Test network separation
 - Validate isolation
@@ -375,11 +375,11 @@ The TRON isolation cleanup is a critical process designed to completely separate
 ### Step 21: Validate TRON Containers
 **Priority**: CRITICAL | **Time**: 30 minutes
 
-**Purpose**: Validate 6 distroless TRON containers built and deployed to isolated network (lucid-network-isolated: 172.21.0.0/16), ensuring proper container security labels and complete service isolation.
+**Purpose**: Validate 6 distroless TRON containers built and deployed to isolated network (lucid-network-isolated: 172.26.0.0/16), ensuring proper container security labels and complete service isolation.
 
 **Key Actions**:
 - Verify 6 distroless TRON containers built
-- Check deployment to isolated network (lucid-network-isolated: 172.21.0.0/16)
+- Check deployment to isolated network (lucid-network-isolated: 172.26.0.0/16)
 - Validate container security labels
 - Ensure ports 8091-8096 properly mapped
 - Verify service isolation from blockchain core
@@ -387,7 +387,7 @@ The TRON isolation cleanup is a critical process designed to completely separate
 
 **Expected Results**:
 - 6 distroless TRON containers built successfully
-- Deployed to isolated network (lucid-network-isolated: 172.21.0.0/16)
+- Deployed to isolated network (lucid-network-isolated: 172.26.0.0/16)
 - Container security labels properly configured
 - Ports 8091-8096 properly mapped
 - Service isolation from blockchain core verified

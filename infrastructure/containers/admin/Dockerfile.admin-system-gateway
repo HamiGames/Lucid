@@ -1,0 +1,186 @@
+# syntax=docker/dockerfile:1.5
+# LUCID ADMIN SYSTEM GATEWAY — Distroless Python (aligned with 03_api_gateway/Dockerfile)
+# Portal: TCP/TLS forwards from listen ports to upstream services; openssl-api.yml + connections.json under /app/node/config.
+# Image: pickme/lucid-admin-system-gateway:latest-arm64
+# Build context: repository root (.)
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
+
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
+
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl \
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_ADMIN_GATEWAY_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod 644 /root/.keep /root/.rustup/.keep /root/.cargo/.keep
+
+RUN apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN printf "LUCID_ADMIN_GATEWAY_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_LIB_DIRECTORY" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_ADMIN_GATEWAY_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
+
+COPY infrastructure/containers/admin/requirements.txt ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+
+RUN printf "LUCID_ADMIN_GATEWAY_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
+
+RUN python3.11 -c "import yaml; yaml.safe_load('x: 1'); print('✅ PyYAML OK')"
+
+# /app/node/* scaffold at build (copied to runtime as /app/node)
+RUN mkdir -p /build/node/config /build/node/cache /build/node/data /build/node/logs /build/node/runtime /build/node/tmp && \
+    printf "LUCID_ADMIN_GATEWAY_NODE_CONFIG_$(date +%s)" > /build/node/config/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_NODE_CACHE_$(date +%s)" > /build/node/cache/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_NODE_DATA_$(date +%s)" > /build/node/data/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_NODE_LOGS_$(date +%s)" > /build/node/logs/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_NODE_RUNTIME_$(date +%s)" > /build/node/runtime/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_NODE_TMP_$(date +%s)" > /build/node/tmp/.keep && \
+    chown -R 65532:65532 /build/node
+
+COPY infrastructure/containers/admin/config/openssl-api.yml /build/node/config/openssl-api.yml
+COPY infrastructure/containers/admin/config/admin-system-gateway.connections.json /build/node/config/connections.json
+COPY infrastructure/containers/admin/admin-system-gateway/entrypoint.py /build/node/entrypoint.py
+COPY infrastructure/containers/admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
+
+RUN chown -R 65532:65532 /build/node /build/tmp && \
+    python3.11 -m py_compile /build/node/entrypoint.py /build/tmp/verify_runtime.py
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
+WORKDIR /app
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+
+LABEL maintainer="Lucid Development Team" \
+      org.opencontainers.image.title="Lucid Admin System Gateway" \
+      org.opencontainers.image.description="Distroless admin portal gateway (openssl-api + /app/node layout)" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="admin-system-gateway" \
+      com.lucid.plane="admin" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="core" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8155,28080,28120,28050,27000" \
+      com.lucid.env.config=".env.admin-system-gateway,.env.foundation,.env.secrets"
+
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    ADMIN_GATEWAY_OPENSSL_API_YAML=/app/node/config/openssl-api.yml \
+    ADMIN_GATEWAY_CONNECTIONS_JSON=/app/node/config/connections.json \
+    ADMIN_GATEWAY_HEALTH_PORT=8155
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
+COPY --from=builder /root/.rustup/ /app/rust/
+COPY --from=builder /root/.cargo/ /app/cargo/
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8155/health', timeout=5).read()"]
+
+EXPOSE 8155 28080 28120 28050 27000
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+CMD ["/app/usr/bin/python3.11", "/app/node/entrypoint.py"]

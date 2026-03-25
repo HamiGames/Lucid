@@ -69,8 +69,8 @@ The deployment includes 15+ services organized into layers:
 - RDP Host (remote desktop)
 
 ### Network Architecture
-- **Network**: `lucid_core_net` (172.21.0.0/24)
-- **Gateway**: 172.21.0.1
+- **Network**: `lucid_core_net` (172.26.0.0/24)
+- **Gateway**: 172.26.0.1
 - **Internal Communication**: Service-to-service only
 - **External Access**: Only necessary ports exposed
 

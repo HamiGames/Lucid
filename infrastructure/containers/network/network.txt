@@ -1,0 +1,147 @@
+###################################################################################
+# Lucid bridge /16 plan (RFC1918 172.16.0.0/12). Uses 172.23–172.24 for session + service-mesh
+# stacks and 172.26–172.30 so Lucid’s user-defined bridges sit above Docker’s usual auto-pool band
+# (172.17 default bridge, often 172.18+ for sequentially created networks), reducing accidental overlap on busy hosts.
+#
+#   Network                     Subnet           Gateway      Role
+#   --------------------------  ---------------  -----------  --------------------------------
+#   lucid-session-network       172.23.0.0/16    172.23.0.1   Session images (build/docker-compose.session-images.yml)
+#   lucid-service-mesh-network  172.24.0.0/16    172.24.0.1   Service mesh / discovery / Consul data plane
+#   lucid-tron-isolated         172.26.0.0/16    172.26.0.1   TRON / payment isolation
+#   lucid-gui-network           172.27.0.0/16    172.27.0.1   GUI / api-bridge integration
+#   lucid-admin-net             172.28.0.0/16    172.28.0.1   Distroless production / admin
+#   lucid-dev-net               172.29.0.0/16    172.29.0.1   Development / distroless dev
+#   lucid-server-network        172.30.0.0/16    172.30.0.1   Multi-stage / server / CI build
+#
+# to be edited:
+# - all 0.0.0.0 bindings
+# - concrete 172.* below → service-relative / env-driven config when gateway automation lands
+# - each network will be created and stored inside a GATEWAY container.
+# - alignment with host-config.yml (names) and compose/k8s (subnets) required
+#
+# Future:
+# - convert to *.json or *.sh for container-driven network creation on any host
+#
+##################################################################################
+ # api-gateway base network
+ docker network create lucid-pi-network \
+    --driver bridge \
+    --subnet 172.20.0.0/16 \
+    --gateway 172.20.0.1 \
+    --attachable \
+    --opt com.docker.network.bridge.enable_icc=true \
+    --opt com.docker.network.bridge.enable_ip_masquerade=true \
+    --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+    --opt com.docker.network.driver.mtu=1500 \
+    --label "lucid.network=main" \
+    --label "lucid.subnet=172.20.0.0/16" \
+    --label "lucid.distroless=true" \
+    --label "lucid.security=isolated"
+
+# lucid-session-network — aligned with build/docker-compose.session-images.yml (name: lucid-session-network)
+docker network create lucid-session-network \
+  --driver bridge \
+  --subnet 172.23.0.0/16 \
+  --gateway 172.23.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=session" \
+  --label "lucid.subnet=172.23.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=session-isolated"
+
+# lucid-service-mesh-network — aligned with infrastructure/service_mesh/config/service-mesh.yaml, configs/services/service-discovery.yml
+docker network create lucid-service-mesh-network \
+  --driver bridge \
+  --subnet 172.24.0.0/16 \
+  --gateway 172.24.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=service-mesh" \
+  --label "lucid.subnet=172.24.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=mesh-internal"
+
+# lucid-tron-isolated — subnet/gateway aligned with docker-compose.dev.yml, service-discovery.yml
+docker network create lucid-tron-isolated \
+  --driver bridge \
+  --subnet 172.26.0.0/16 \
+  --gateway 172.26.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=tron-isolated" \
+  --label "lucid.subnet=172.26.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=payment-isolated"
+
+# lucid-gui-network — subnet/gateway aligned with node/over_lord/docker-compose.yml,
+# infrastructure/kubernetes/01_configmaps/node-management-config.yaml (LUCID_GUI_*)
+docker network create lucid-gui-network \
+  --driver bridge \
+  --subnet 172.27.0.0/16 \
+  --gateway 172.27.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=gui" \
+  --label "lucid.subnet=172.27.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=gui-isolated"
+
+# lucid-admin-net — aligned with configs/docker/distroless/distroless-runtime-config.yml
+docker network create lucid-admin-net \
+  --driver bridge \
+  --subnet 172.28.0.0/16 \
+  --gateway 172.28.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=distroless-production" \
+  --label "lucid.subnet=172.28.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=production-hardened"
+
+# lucid-dev-net — aligned with configs/docker/multi-stage/multi-stage-development-config.yml
+docker network create lucid-dev-net \
+  --driver bridge \
+  --subnet 172.29.0.0/16 \
+  --gateway 172.29.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=distroless-dev" \
+  --label "lucid.subnet=172.29.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=development"
+
+# lucid-server-network — aligned with configs/docker/multi-stage/multi-stage-testing-config.yml
+docker network create lucid-server-network \
+  --driver bridge \
+  --subnet 172.30.0.0/16 \
+  --gateway 172.30.0.1 \
+  --attachable \
+  --opt com.docker.network.bridge.enable_icc=true \
+  --opt com.docker.network.bridge.enable_ip_masquerade=true \
+  --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
+  --opt com.docker.network.driver.mtu=1500 \
+  --label "lucid.network=multi-stage" \
+  --label "lucid.subnet=172.30.0.0/16" \
+  --label "lucid.distroless=true" \
+  --label "lucid.security=build-isolated"
+
+

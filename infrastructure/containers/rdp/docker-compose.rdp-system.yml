@@ -1,0 +1,138 @@
+# LUCID RDP SYSTEM
+# Path: infrastructure/containers/rdp/docker-compose.rdp-system.yml
+#
+# Aligned with: ports.txt / host-config.yml (rdp_server 8001, rdp_server_manager 8090,
+#   rdp_session_controller 8101, rdp_resource_monitor 8201, lucid_xrdp 8250, xrdp_desktop 3389, xrdp_sesman 3350).
+# Secrets template: infrastructure/containers/env/env.secrets.template → MONGODB_RDP_* (use configs/environment/.env.secrets).
+# Networks: lucid-pi-network, lucid-gui-network (gui-api-bridge ↔ xrdp), lucid-rdp-internal (optional local bridge).
+#
+# Host collision note (ports.txt): 8090 is also session-recorder — override *_PUBLISH_PORT on a shared host.
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/rdp/docker-compose.rdp-system.yml up -d
+
+name: lucid-rdp-system
+
+x-env-rdp: &env-rdp
+  - ../../../configs/.env.master
+  - ../../../configs/environment/.env.secrets
+
+services:
+  rdp-server:
+    image: ${LUCID_RDP_SERVER_IMAGE:-pickme/lucid-rdp-server:latest-arm64}
+    container_name: rdp-server
+    hostname: rdp-server
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    environment:
+      PORT: "8001"
+      MONGODB_URL: ${RDP_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+      REDIS_URL: ${RDP_REDIS_URL:-redis://lucid-redis:6379/2}
+    ports:
+      - "${RDP_SERVER_PUBLISH_PORT:-8001}:8001"
+    networks:
+      - lucid-pi-network
+      - lucid-rdp-internal
+
+  rdp-server-manager-http:
+    image: ${LUCID_RDP_SERVER_MANAGER_IMAGE:-pickme/lucid-rdp-server-manager:latest-arm64}
+    container_name: rdp-server-manager-http
+    hostname: rdp-server-manager-http
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    environment:
+      PORT: "8090"
+      MONGODB_URL: ${RDP_MANAGER_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+    ports:
+      - "${RDP_SERVER_MANAGER_PUBLISH_PORT:-8090}:8090"
+    networks:
+      - lucid-pi-network
+      - lucid-rdp-internal
+
+  rdp-session-controller:
+    image: ${LUCID_RDP_SESSION_CONTROLLER_IMAGE:-pickme/lucid-rdp-session-control:latest-arm64}
+    container_name: rdp-session-controller
+    hostname: rdp-session-controller
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    environment:
+      PORT: "8101"
+      MONGODB_URL: ${RDP_CONTROLLER_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+    ports:
+      - "${RDP_SESSION_CONTROLLER_PUBLISH_PORT:-8101}:8101"
+    networks:
+      - lucid-pi-network
+      - lucid-rdp-internal
+
+  rdp-resource-monitor:
+    image: ${LUCID_RDP_RESOURCE_MONITOR_IMAGE:-pickme/lucid-rdp-monitor:latest-arm64}
+    container_name: rdp-resource-monitor
+    hostname: rdp-resource-monitor
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    environment:
+      PORT: "8201"
+      MONGODB_URL: ${RDP_MONITOR_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+    ports:
+      - "${RDP_RESOURCE_MONITOR_PUBLISH_PORT:-8201}:8201"
+    networks:
+      - lucid-pi-network
+      - lucid-rdp-internal
+
+  lucid-xrdp:
+    image: ${LUCID_XRDP_IMAGE:-pickme/lucid-xrdp:latest-arm64}
+    container_name: lucid-xrdp
+    hostname: lucid-xrdp
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    ports:
+      - "${LUCID_XRDP_PUBLISH_PORT:-8250}:8250"
+    networks:
+      - lucid-pi-network
+      - lucid-gui-network
+      - lucid-rdp-internal
+
+  xrdp-rdp:
+    image: ${LUCID_XRDP_DESKTOP_IMAGE:-pickme/lucid-xrdp-d:latest-arm64}
+    container_name: xrdp-rdp
+    hostname: xrdp-rdp
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    ports:
+      - "${XRDP_DESKTOP_PUBLISH_PORT:-3389}:3389"
+    networks:
+      - lucid-pi-network
+      - lucid-gui-network
+      - lucid-rdp-internal
+
+  xrdp-sesman:
+    image: ${LUCID_XRDP_SESMAN_IMAGE:-pickme/lucid-xrdp-sesman:latest-arm64}
+    container_name: xrdp-sesman
+    hostname: xrdp-sesman
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-rdp
+    ports:
+      - "${XRDP_SESMAN_PUBLISH_PORT:-3350}:3350"
+    networks:
+      - lucid-pi-network
+      - lucid-rdp-internal
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-gui-network:
+    external: true
+    name: lucid-gui-network
+  lucid-rdp-internal:
+    name: lucid-rdp-internal
+    driver: bridge
+    labels:
+      lucid.network: rdp-internal

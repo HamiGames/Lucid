@@ -29,6 +29,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -56,11 +61,13 @@ RUN printf "LUCID_NODE_REGISTRY_RUNTIME" > /var/run/.keep && \
 RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
     chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
 
-RUN mkdir -p /app-dirs/cache/node /app-dirs/data/node /app-dirs/logs/node && \
+RUN mkdir -p /app-dirs/cache/node /app-dirs/data/node /app-dirs/logs/node ./node ./host && \
     printf "LUCID_NODE_REGISTRY_CACHE_$(date +%s)" > /app-dirs/cache/node/.keep && \
     printf "LUCID_NODE_REGISTRY_DATA_$(date +%s)" > /app-dirs/data/node/.keep && \
     printf "LUCID_NODE_REGISTRY_LOGS_$(date +%s)" > /app-dirs/logs/node/.keep && \
-    chown -R 65532:65532 /app-dirs
+    printf "LUCID_NODE_REGISTRY_NODE_$(date +%s)" > ./node/.keep && \
+    printf "LUCID_NODE_REGISTRY_HOST_$(date +%s)" > ./host/.keep && \
+    chown -R 65532:65532 /app-dirs ./node ./host
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
@@ -83,6 +90,7 @@ import uvicorn, fastapi, pydantic, pydantic_settings, motor, redis, blake3, stem
 print('node-registry deps OK')"
 
 COPY node/ ./node/
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
 
 RUN echo "LUCID_NODE_REGISTRY_SOURCE_$(date +%s)" > ./node/.lucid-source-marker && \
     chown 65532:65532 ./node/.lucid-source-marker
@@ -123,6 +131,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     NODE_REGISTRY_PORT=8610 \
     NODE_REGISTRY_HOST=0.0.0.0
 
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
@@ -131,6 +143,7 @@ COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
+COPY --from=builder --chown=65532:65532 /host/host-config.yml /app/host/host-config.yml
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
 COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data

@@ -1,78 +1,67 @@
 #!/usr/bin/env bash
 # Tunnel Tools Health Check Script
-# Outputs JSON status for monitoring and health checks
-# All configuration from environment variables - no hardcoded values
-# Compatible with distroless containers
+# Path: 02_network_security/tunnels/scripts/tunnel-health.sh
+# See: 02_network_security/tunnels/Dockerfile ENV (CONTROL_*, COOKIE_FILE, WRITE_ENV)
 
 set -euo pipefail
 
-# Load configuration from environment
-COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
-CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
-CONTROL_PORT="${CONTROL_PORT:-9051}"
-STATUS_JSON_PATH="${STATUS_JSON_PATH:-/run/lucid/onion/tunnel_status.json}"
-WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
-OUTDIR="${OUTDIR:-/run/lucid/onion}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/_lib.sh"
 
-# Health check result
+STATUS_JSON_PATH="${STATUS_JSON_PATH:-/app/run/lucid/onion/tunnel_status.json}"
+OUTDIR="${OUTDIR:-/app/run/lucid/onion}"
+
 HEALTH_STATUS="unknown"
 HEALTH_MESSAGE=""
 EXIT_CODE=1
 
-# Check if cookie file exists and is readable
 if [[ ! -s "$COOKIE_FILE" ]]; then
-    HEALTH_STATUS="unhealthy"
-    HEALTH_MESSAGE="Cookie file missing or empty at $COOKIE_FILE"
-    EXIT_CODE=1
+  HEALTH_STATUS="unhealthy"
+  HEALTH_MESSAGE="Cookie file missing or empty at $COOKIE_FILE"
+  EXIT_CODE=1
 else
-    # Try to read cookie hex
-    if command -v xxd >/dev/null 2>&1; then
-        HEX="$(xxd -p "$COOKIE_FILE" | tr -d '\n' 2>/dev/null || true)"
-    elif command -v hexdump >/dev/null 2>&1; then
-        HEX="$(hexdump -v -e '1/1 "%02x"' "$COOKIE_FILE" 2>/dev/null || true)"
+  HEX=""
+  if command -v xxd >/dev/null 2>&1; then
+    HEX="$(xxd -p "$COOKIE_FILE" | tr -d '\n' 2>/dev/null || true)"
+  elif command -v hexdump >/dev/null 2>&1; then
+    HEX="$(hexdump -v -e '1/1 "%02x"' "$COOKIE_FILE" 2>/dev/null || true)"
+  else
+    HEALTH_STATUS="unhealthy"
+    HEALTH_MESSAGE="No hexdump tool available (xxd or hexdump)"
+    EXIT_CODE=1
+  fi
+
+  if [[ -z "${HEX:-}" && "$HEALTH_STATUS" == "unknown" ]]; then
+    HEALTH_STATUS="unhealthy"
+    HEALTH_MESSAGE="Failed to read cookie file"
+    EXIT_CODE=1
+  elif [[ -n "${HEX:-}" ]]; then
+    REQ=$(printf 'AUTHENTICATE %s\r\nGETINFO version\r\nQUIT\r\n' "$HEX")
+    OUT="$(printf '%s' "$REQ" | nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null || true)"
+
+    if echo "$OUT" | grep -q "^250 OK"; then
+      VERSION="$(echo "$OUT" | sed -n 's/^250-version=//p' | tr -d '\r' || true)"
+      if [[ -f "$STATUS_JSON_PATH" ]]; then
+        HEALTH_STATUS="healthy"
+        HEALTH_MESSAGE="Tunnel tools operational (Tor ${VERSION:-ok})"
+        EXIT_CODE=0
+      else
+        HEALTH_STATUS="degraded"
+        HEALTH_MESSAGE="Tor connected but status file not found at $STATUS_JSON_PATH"
+        EXIT_CODE=0
+      fi
     else
-        HEALTH_STATUS="unhealthy"
-        HEALTH_MESSAGE="No hexdump tool available (xxd or hexdump)"
-        EXIT_CODE=1
+      HEALTH_STATUS="unhealthy"
+      HEALTH_MESSAGE="Tor control port authentication failed"
+      EXIT_CODE=1
     fi
-    
-    if [[ -n "${HEX:-}" ]]; then
-        # Test Tor control port connection
-        REQ=$(printf 'AUTHENTICATE %s\r\nGETINFO version\r\nQUIT\r\n' "$HEX")
-        OUT="$(printf '%s' "$REQ" | nc -w 3 "$CONTROL_HOST" "$CONTROL_PORT" 2>/dev/null || true)"
-        
-        if echo "$OUT" | grep -q "^250 OK"; then
-            VERSION="$(echo "$OUT" | sed -n 's/^250-version=//p' | tr -d '\r' || true)"
-            
-            # Check if status JSON exists
-            if [[ -f "$STATUS_JSON_PATH" ]]; then
-                HEALTH_STATUS="healthy"
-                HEALTH_MESSAGE="Tunnel tools operational"
-                EXIT_CODE=0
-            else
-                HEALTH_STATUS="degraded"
-                HEALTH_MESSAGE="Tor connected but status file not found"
-                EXIT_CODE=0
-            fi
-        else
-            HEALTH_STATUS="unhealthy"
-            HEALTH_MESSAGE="Tor control port authentication failed"
-            EXIT_CODE=1
-        fi
-    else
-        HEALTH_STATUS="unhealthy"
-        HEALTH_MESSAGE="Failed to read cookie file"
-        EXIT_CODE=1
-    fi
+  fi
 fi
 
-# Get timestamp
 STAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "$(date +%s)")"
+mkdir -p "$OUTDIR" 2>/dev/null || true
 
-# Create output directory
-mkdir -p "$OUTDIR"
-
-# Write health status to JSON
 cat > "$OUTDIR/tunnel_health.json" <<EOF
 {
   "status": "$HEALTH_STATUS",
@@ -96,14 +85,11 @@ cat > "$OUTDIR/tunnel_health.json" <<EOF
 }
 EOF
 
-# Write health status to .env file for shell script compatibility
 cat > "$OUTDIR/tunnel_health.env" <<EOF
 TUNNEL_HEALTH_STATUS=$HEALTH_STATUS
 TUNNEL_HEALTH_MESSAGE=$HEALTH_MESSAGE
 TUNNEL_HEALTH_TIMESTAMP=$STAMP
 EOF
 
-# Output status
 echo "[hc] $HEALTH_MESSAGE"
-exit $EXIT_CODE
-
+exit "$EXIT_CODE"

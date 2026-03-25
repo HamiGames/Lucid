@@ -10,7 +10,7 @@ The current `infrastructure/docker/compose/docker-compose.yml` file has critical
 
 1. **Wrong Image References**: Uses generic infrastructure images instead of `pickme/lucid-*:latest-arm64`
 2. **Missing Services**: Only includes 3 services instead of all 35 available distroless images
-3. **Wrong Network Configuration**: Uses `172.23.0.0/16` instead of required `172.20.0.0/16`
+3. **Wrong Network Configuration**: Uses `172.28.0.0/16` instead of required `172.20.0.0/16`
 4. **Missing Port Mappings**: Missing ports 8080-8099, 27017, 6379, 9200, 3389
 5. **Missing Environment Variables**: Generic variables instead of service-specific configuration
 6. **Missing Service Dependencies**: Services will start in wrong order
@@ -29,7 +29,7 @@ The current `infrastructure/docker/compose/docker-compose.yml` file has critical
 ## Action Plan
 
 Replace the main `docker-compose.yml` file with the contents from `docker-compose.lucid-services.yml` and add:
-- Additional networking (172.21.0.0/16 for TRON isolation, 172.22.0.0/16 for GUI)
+- Additional networking (172.26.0.0/16 for TRON isolation, 172.27.0.0/16 for GUI)
 - Missing services that are in the error document but not in lucid-services.yml
 - Proper volume mappings as specified in the errors document
 - Enhanced health checks
@@ -88,13 +88,13 @@ Replace the main `docker-compose.yml` file with the contents from `docker-compos
 
 ### Isolated Network (for TRON)
 - **Name:** lucid-tron-isolated
-- **Subnet:** 172.21.0.0/16
-- **Gateway:** 172.21.0.1
+- **Subnet:** 172.26.0.0/16
+- **Gateway:** 172.26.0.1
 
 ### GUI Network (optional)
 - **Name:** lucid-gui-network
-- **Subnet:** 172.22.0.0/16
-- **Gateway:** 172.22.0.1
+- **Subnet:** 172.27.0.0/16
+- **Gateway:** 172.27.0.1
 
 ## Next Steps
 

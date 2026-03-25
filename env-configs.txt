@@ -1,0 +1,3263 @@
+﻿MONGO_URL=mongodb://lucid:lucid@${MONGO_URL:-lucid-mongobd}:27017/lucid?authSource=admin&retryWrites=false&directConnection=true
+MONGO_URI=mongodb://lucid:lucid@${MONGO_URI:-lucid-mongobd}:27017/lucid?authSource=admin&retryWrites=false&directConnection=true
+MONGODB_URI=mongodb://lucid:lucid@${MONGODB_URI:-lucid-mongobd}:27017/lucid?authSource=admin&retryWrites=false&directConnection=true
+DATABASE_URL=mongodb://lucid:lucid@${DATABASE_URL:-lucid-mongobd}:27017/lucid?authSource=admin&retryWrites=false&directConnection=true
+
+# Phase 3 Application Services Configuration
+# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# Target: Raspberry Pi 5 (192.168.0.75)
+# Services: Session Pipeline, Session Recorder, Chunk Processor, Session Storage, Session API, RDP Services, Node Management
+# Architecture: ARM64
+# Design: Distroless + Secure (NO PLACEHOLDERS)
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
+# DISTROLESS BASE CONFIGURATION
+# =============================================================================
+# Distroless Base Image
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# Main Network (Foundation + Core + Application + Blockchain)
+LUCID_MAIN_NETWORK=lucid-pi-network
+LUCID_MAIN_SUBNET=172.20.0.0/16
+LUCID_MAIN_GATEWAY=${LUCID_MAIN_GATEWAY:-api-gateway}
+
+# =============================================================================
+# DATABASE CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+# Note: Services define connection URIs directly using container names
+# MongoDB, Redis, Elasticsearch are accessed by service name in docker-compose files
+
+# MongoDB Configuration
+MONGODB_DATABASE=lucid
+MONGODB_AUTH_SOURCE=admin
+MONGODB_RETRY_WRITES=false
+
+# Redis Configuration
+REDIS_PORT=6379
+
+# Elasticsearch Configuration
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_USERNAME=elastic
+
+# =============================================================================
+# SECURITY CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+# JWT Configuration
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION=3600
+
+# Encryption Configuration
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# =============================================================================
+# SESSION MANAGEMENT CONFIGURATION
+# =============================================================================
+# Session Configuration
+SESSION_TIMEOUT=1800
+SESSION_CHUNK_SIZE=8388608
+SESSION_COMPRESSION_LEVEL=1
+SESSION_ENCRYPTION_ENABLED=true
+SESSION_RETENTION_DAYS=30
+SESSION_MERKLE_TREE_ENABLED=true
+
+# Session Processing
+SESSION_PROCESSING_WORKERS=4
+SESSION_ENCRYPTION_WORKERS=2
+SESSION_COMPRESSION_WORKERS=2
+SESSION_STORAGE_BACKEND=mongodb
+SESSION_INDEXING_ENABLED=true
+SESSION_CACHING_ENABLED=true
+
+# Session Pipeline Configuration
+SESSION_PIPELINE_BATCH_SIZE=100
+SESSION_PIPELINE_TIMEOUT=30
+SESSION_PIPELINE_RETRY_ATTEMPTS=3
+
+# Session Recorder Configuration
+SESSION_RECORDER_BUFFER_SIZE=64MB
+SESSION_RECORDER_FLUSH_INTERVAL=5
+SESSION_RECORDER_COMPRESSION_ENABLED=true
+
+# Session Storage Configuration
+SESSION_STORAGE_WORKERS=4
+
+# Session API Configuration
+SESSION_API_PORT=8087
+
+# =============================================================================
+# RDP SERVICES CONFIGURATION
+# =============================================================================
+# RDP Configuration
+RDP_MAX_SESSIONS=10
+RDP_SESSION_TIMEOUT=3600
+RDP_RESOURCE_LIMIT_CPU=80
+RDP_RESOURCE_LIMIT_MEMORY=2GB
+RDP_RESOURCE_LIMIT_DISK=10GB
+
+# RDP Server Manager Configuration
+RDP_SERVER_MANAGER_POOL_SIZE=5
+RDP_SERVER_MANAGER_TIMEOUT=30
+RDP_SERVER_MANAGER_HEALTH_CHECK_INTERVAL=60
+
+# RDP XRDP Configuration
+RDP_XRDP_DISPLAY_RESOLUTION=1920x1080
+RDP_XRDP_COLOR_DEPTH=24
+RDP_XRDP_COMPRESSION_ENABLED=true
+
+# RDP Controller Configuration
+RDP_CONTROLLER_SESSION_TIMEOUT=3600
+RDP_CONTROLLER_IDLE_TIMEOUT=1800
+RDP_CONTROLLER_MAX_IDLE_SESSIONS=5
+
+# RDP Monitor Configuration
+RDP_MONITOR_METRICS_ENABLED=true
+RDP_MONITOR_ALERT_THRESHOLD_CPU=80
+RDP_MONITOR_ALERT_THRESHOLD_MEMORY=80
+RDP_MONITOR_ALERT_THRESHOLD_DISK=90
+
+# =============================================================================
+# NODE MANAGEMENT CONFIGURATION
+# =============================================================================
+# Node Management Configuration
+NODE_MANAGEMENT_SECRET=${NODE_MANAGEMENT_SECRET}
+NODE_POOL_MAX_SIZE=100
+NODE_PAYOUT_THRESHOLD=10
+NODE_CONSENSUS_WEIGHT=1.0
+NODE_POOL_MIN_SIZE=5
+NODE_POOL_SCALE_UP_THRESHOLD=80
+NODE_POOL_SCALE_DOWN_THRESHOLD=20
+NODE_POOL_HEALTH_CHECK_INTERVAL=30
+NODE_PERFORMANCE_MONITORING=true
+NODE_PERFORMANCE_METRICS_ENABLED=true
+NODE_PERFORMANCE_ALERT_THRESHOLD=90
+
+# Node Pool Configuration
+NODE_POOL_MIN_SIZE=5
+NODE_POOL_SCALE_UP_THRESHOLD=80
+NODE_POOL_SCALE_DOWN_THRESHOLD=20
+NODE_POOL_HEALTH_CHECK_INTERVAL=30
+
+# Node Performance Configuration
+NODE_PERFORMANCE_MONITORING=true
+NODE_PERFORMANCE_METRICS_ENABLED=true
+NODE_PERFORMANCE_ALERT_THRESHOLD=90
+
+# =============================================================================
+# SESSION MANAGEMENT CONFIGURATION
+# =============================================================================
+# Session Health Endpoints (use service names for Docker DNS resolution)
+SESSION_PIPELINE_HEALTH_URL=http://session-pipeline:8083/health
+SESSION_RECORDER_HEALTH_URL=http://session-recorder:8084/health
+SESSION_PROCESSOR_HEALTH_URL=http://session-processor:8085/health
+SESSION_STORAGE_HEALTH_URL=http://session-storage:8086/health
+SESSION_API_HEALTH_URL=http://session-api:8087/health
+
+# RDP Services Health Endpoints
+RDP_SERVER_MANAGER_HEALTH_URL=http://rdp-server-manager:8090/health
+RDP_CONTROLLER_HEALTH_URL=http://rdp-controller:8092/health
+
+# =============================================================================
+# DISTROLESS RUNTIME CONFIGURATION
+# =============================================================================
+# Runtime Environment
+LUCID_ENV=production
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
+HEALTH_CHECK_RETRIES=3
+
+# Service Health Endpoints (use service names)
+MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
+REDIS_HEALTH_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379
+ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD:?ELASTICSEARCH_PASSWORD not set}@lucid-elasticsearch:9200/_cluster/health
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+# Log Level
+LOG_LEVEL=INFO
+
+# Log Format
+LOG_FORMAT=json
+
+# Log Output
+LOG_OUTPUT=stdout
+LOG_FILE=/dev/stdout
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+# Metrics Configuration
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+# Deployment Target
+DEPLOYMENT_TARGET=raspberry-pi
+DEPLOYMENT_HOST=192.168.0.75
+DEPLOYMENT_USER=pickme
+DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+
+# Registry Configuration
+REGISTRY=ghcr.io
+REPOSITORY=hamigames/lucid
+IMAGE_TAG=latest-arm64
+
+# =============================================================================
+# BUILD CONFIGURATION
+# =============================================================================
+# Build Platform
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCH=arm64
+BUILD_OS=linux
+
+# Build Arguments
+BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+BUILD_VERSION=0.1.0
+BUILD_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")# Authentication Service Configuration
+# Generated: 2025-11-27T10:05:53Z
+# Auto-generated for docker-compose.foundation.yml
+
+# Service Configuration
+AUTH_SERVICE_HOST=lucid-auth-service
+AUTH_SERVICE_PORT=8089
+AUTH_SERVICE_URL=http://lucid-auth-service:8089
+SERVICE_NAME=lucid-auth-service
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+# Phase 2 Core Services Configuration
+# Generated: 2025-10-24T10:36:07Z
+# Target: Raspberry Pi 5 (192.168.0.75)
+# Services: API Gateway, Blockchain Engine, Service Mesh, Session Anchoring, Block Manager, Data Chain
+# Architecture: ARM64
+# Design: Distroless + Secure (NO PLACEHOLDERS)
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoOT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
+# DISTROLESS BASE CONFIGURATION
+# =============================================================================
+
+# Distroless Base Image
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+
+# Main Network (Foundation + Core + Application + Blockchain)
+LUCID_MAIN_NETWORK=lucid-pi-network
+LUCID_MAIN_SUBNET=172.20.0.0/16
+LUCID_MAIN_GATEWAY=${LUCID_MAIN_GATEWAY:-api-gateway}
+
+# =============================================================================
+# DATABASE CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+# MongoDB Configuration
+# Note: Services define connection URIs directly using container names
+MONGODB_DATABASE=lucid
+MONGODB_AUTH_SOURCE=admin
+MONGODB_RETRY_WRITES=false
+
+# Redis Configuration
+# Note: Services define connection URIs directly using container names
+REDIS_PORT=6379
+
+# Elasticsearch Configuration
+# Note: Services define connection URIs directly using container names
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_USERNAME=elastic
+
+# =============================================================================
+# SECURITY CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+# JWT Configuration
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION=3600
+
+# Encryption Configuration
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# =============================================================================
+# CORE SERVICES CONFIGURATION
+# =============================================================================
+
+# API Gateway
+API_GUI_BRIDGE_URL=
+API_GATEWAY_URL=http://api-gateway:8080
+SESSION_API_URL=http://session-api:8113
+# Blockchain Engine
+BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+SESSION_RECORDER_PORT=8090
+# Service Mesh
+SERVICE_MESH_URL=http://service-mesh:8500
+# Session Anchoring
+SESSION_PIPELINE_URL=http://lucid-session-pipeline:8083
+SESSION_RECORDER_URL=http://session-recorder:8090
+SESSION_ANCHORING_URL=http://session-anchoring:8085
+SESSION_PROCESSOR_URL=http://session-processor:8091
+SESSION_STORAGE_URL=http://session-storage:8082
+
+#Node
+NODE_MANAGEMENT_HOST=node-management
+NODE_MANAGEMENT_URL=http://node-management:8095
+
+# Block Manager
+BLOCK_MANAGER_URL=http://block-manager:8086
+
+# Data Chain
+DATA_CHAIN_URL=http://data-chain:8087
+#RDP
+RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8081
+RDP_XRDP_URL=http://rdp-xrdp:3389
+RDP_CONTROLLER_URL=http://rdp-controller:8092
+RDP_MONITOR_URL=http://rdp-monitor:8093
+RDP_MONITOR_HOST=rdp-monitor
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+# Blockchain Engine Configuration
+BLOCKCHAIN_SECRET=${BLOCKCHAIN_SECRET:?BLOCKCHAIN_SECRET not set}
+BLOCKCHAIN_ALGORITHM=PoOT
+BLOCK_INTERVAL=10
+BLOCK_SIZE_LIMIT=1MB
+TRANSACTION_LIMIT=1000
+
+# Consensus Configuration
+CONSENSUS_ALGORITHM=PoOT
+CONSENSUS_THRESHOLD=0.67
+CONSENSUS_TIMEOUT=30
+
+# Network Configuration
+NETWORK_PROTOCOL_VERSION=1.0.0
+NETWORK_PEER_DISCOVERY=true
+NETWORK_PEER_LIMIT=100
+
+# =============================================================================
+# SERVICE MESH CONFIGURATION
+# =============================================================================
+
+# Service Mesh Controller
+SERVICE_MESH_CONTROLLER_HOST=service-mesh-controller
+SERVICE_MESH_CONTROLLER_PORT=8088
+SERVICE_MESH_CONTROLLER_URL=http://service-mesh-controller:8086
+
+# Service Discovery
+SERVICE_DISCOVERY_ENABLED=true
+SERVICE_DISCOVERY_CONSUL_PORT=8500
+SERVICE_DISCOVERY_CONSUL_HOST=consul
+
+# Load Balancing
+LOAD_BALANCING_ENABLED=true
+LOAD_BALANCING_ALGORITHM=round_robin
+LOAD_BALANCING_TIMEOUT=30
+
+# =============================================================================
+# SESSION CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET not set}
+
+# =============================================================================
+# CORE SERVICES CONFIGURATION
+# =============================================================================
+
+# API Gateway
+API_GATEWAY_HEALTH_URL=http://api-gateway:8080/health
+
+# Blockchain Engine
+BLOCKCHAIN_ENGINE_HEALTH_URL=http://blockchain-engine:8084/health
+
+# Service Mesh
+SERVICE_MESH_HEALTH_URL=http://service-mesh:8500/health
+
+# Session Anchoring
+SESSION_ANCHORING_HEALTH_URL=http://session-anchoring:8085/health
+
+# Block Manager
+BLOCK_MANAGER_HEALTH_URL=http://block-manager:8086/health
+
+# Data Chain
+DATA_CHAIN_HEALTH_URL=http://data-chain:8087/health
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
+HEALTH_CHECK_RETRIES=3
+
+# Service Health Endpoints
+# MongoDB Health URL
+MONGODB_HEALTH_URL=mongodb://lucid:${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid?authSource=admin
+# Redis Health URL
+REDIS_HEALTH_URL=redis://${REDIS_USERNAME:?REDIS_USERNAME not set}:-${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379
+# Elasticsearch Health URL
+ELASTICSEARCH_HEALTH_URL=http://elastic:${ELASTICSEARCH_PASSWORD:?ELASTICSEARCH_PASSWORD not set}@lucid-elasticsearch:9200/_cluster/health
+# API Gateway Health URL
+API_GATEWAY_HEALTH_URL=http://api-gateway:8080/health
+# Blockchain Engine Health URL
+BLOCKCHAIN_ENGINE_HEALTH_URL=http://blockchain-engine:8084/health
+
+# Service Mesh Health URL
+SERVICE_MESH_HEALTH_URL=http://service-mesh:8500/health
+
+# Session Anchoring Health URL
+SESSION_ANCHORING_HEALTH_URL=http://session-anchoring:8085/health
+
+# Block Manager Health URL
+BLOCK_MANAGER_HEALTH_URL=http://block-manager:8086/health
+
+# Data Chain Health URL
+http://data-chain:8087/health
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Log Level
+LOG_LEVEL=INFO
+
+# Log Format
+LOG_FORMAT=json
+
+# Log Output
+LOG_OUTPUT=stdout
+LOG_FILE=/dev/stdout
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+
+# Metrics Configuration
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+
+# Deployment Target
+DEPLOYMENT_TARGET=raspberry-pi
+DEPLOYMENT_HOST=192.168.0.75
+DEPLOYMENT_USER=pickme
+DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+
+# Registry Configuration
+REGISTRY=ghcr.io
+REPOSITORY=hamigames/lucid
+IMAGE_TAG=latest-arm64
+
+# =============================================================================
+# BUILD CONFIGURATION
+# =============================================================================
+
+# Build Platform
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCH=arm64
+BUILD_OS=linux
+
+# Database Configuration
+MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_URI=mongodb://lucid:-${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}@lucid-mongodb:27017/lucid_auth?authSource=admin
+MONGODB_DATABASE=lucid_auth
+MONGODB_MAX_POOL_SIZE=100
+MONGODB_MIN_POOL_SIZE=10
+
+# Redis Configuration
+REDIS_URL=redis://${REDIS_PASSWORD:?REDIS_PASSWORD not set}@lucid-redis:6379/1
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_MAX_CONNECTIONS=50
+REDIS_DECODE_RESPONSES=true
+
+# JWT Configuration
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+JWT_ISSUER=lucid-auth-service
+JWT_AUDIENCE=lucid-system
+
+# Security Configuration
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+BCRYPT_ROUNDS=12
+SESSION_TIMEOUT=1800
+MAX_LOGIN_ATTEMPTS=5
+LOCKOUT_DURATION=900
+PASSWORD_MIN_LENGTH=12
+
+# Hardware Wallet Configuration
+HARDWARE_WALLET_ENABLED=true
+HARDWARE_WALLET_TIMEOUT=30
+HARDWARE_WALLET_RETRY_ATTEMPTS=3
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_REQUESTS_PER_MINUTE=100
+RATE_LIMIT_BURST_SIZE=20
+
+# TRON Integration
+TRON_NETWORK=mainnet
+TRON_RPC_URL=https://api.trongrid.io
+
+# TOR Configuration (cookie authentication)
+TOR_COOKIE_HEX=${TOR_COOKIE_HEX}
+TOR_CONTROL_HOST=tor-proxy
+TOR_CONTROL_PORT=9051
+TOR_SOCKS_PORT=9050
+TOR_SOCKS_HOST=tor-proxy# Phase 2 Core Services Configuration
+# Generated: 2025-10-24T10:36:07Z
+# Target: Raspberry Pi 5 (192.168.0.75)
+# Services: API Gateway, Blockchain Engine, Service Mesh, Session Anchoring, Block Manager, Data Chain
+# Architecture: ARM64
+# Design: Distroless + Secure (NO PLACEHOLDERS)
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+API_GATEWAY_HOST=api-gateway
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+JWT_SECRET=${JWT_SECRET}
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoOT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
+# DISTROLESS BASE CONFIGURATION
+# =============================================================================
+
+# Distroless Base Image
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+
+# Main Network (Foundation + Core + Application + Blockchain)
+LUCID_MAIN_NETWORK=lucid-pi-network
+LUCID_MAIN_SUBNET=172.20.0.0/16
+LUCID_MAIN_GATEWAY=0.0.0.0
+
+# =============================================================================
+# DATABASE CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+# MongoDB Configuration
+MONGODB_HOST=lucid-mongodb
+MONGODB_PORT=27017
+MONGODB_DATABASE=lucid
+MONGODB_USERNAME=lucid
+MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_AUTH_SOURCE=admin
+MONGODB_RETRY_WRITES=false
+MONGODB_URL=mongodb://lucid:-${MONGODB_PASSWORD}@lucid-mongodb/lucid?authSource=admin&retryWrites=false
+
+# Redis Configuration
+REDIS_HOST=lucid-redis
+REDIS_PORT=6379
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_URL=redis://:${REDIS_PASSWORD}@lucid-redis:6379
+
+# Elasticsearch Configuration
+ELASTICSEARCH_HOST=lucid-elasticsearch
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_USERNAME=elastic
+ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+ELASTICSEARCH_URL=http://elastic:-${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200
+
+# =============================================================================
+# SECURITY CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+
+
+# Encryption Configuration
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# Session Configuration
+SESSION_SECRET=${SESSION_SECRET}
+SESSION_API_SECRET=${SESSION_API_SECRET}
+SESSION_API_HOST=session-api
+SESSION_API_URL=http://session-api:8113
+
+# =============================================================================
+# CORE SERVICES CONFIGURATION
+# =============================================================================
+
+# API Gateway
+API_GATEWAY_URL=http://api-gateway:8080
+
+# Blockchain Engine
+BLOCKCHAIN_ENGINE_HOST=blockchain-engine
+BLOCKCHAIN_ENGINE_PORT=8084
+BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+
+# Service Mesh
+SERVICE_MESH_HOST=service-mesh
+SERVICE_MESH_PORT=8500
+SERVICE_MESH_URL=http://service-mesh:8500
+
+# Session Anchoring
+SESSION_ANCHORING_HOST=session-anchoring
+SESSION_ANCHORING_PORT=8085
+SESSION_ANCHORING_URL=http://session-anchoring:8085
+
+# Block Manager
+BLOCK_MANAGER_HOST=block-manager
+BLOCK_MANAGER_PORT=8086
+BLOCK_MANAGER_URL=http://block-manager:8086
+
+# Data Chain
+DATA_CHAIN_HOST=data-chain
+DATA_CHAIN_PORT=8087
+DATA_CHAIN_URL=http://data-chain:8087
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION
+# =============================================================================
+
+# Blockchain Engine Configuration
+BLOCKCHAIN_SECRET=${BLOCKCHAIN_SECRET}
+BLOCKCHAIN_ALGORITHM=PoOT
+BLOCK_INTERVAL=10
+BLOCK_SIZE_LIMIT=1MB
+TRANSACTION_LIMIT=1000
+
+# Consensus Configuration
+CONSENSUS_ALGORITHM=PoOT
+CONSENSUS_THRESHOLD=0.67
+CONSENSUS_TIMEOUT=30
+
+# Network Configuration
+NETWORK_PROTOCOL_VERSION=1.0.0
+NETWORK_PEER_DISCOVERY=true
+NETWORK_PEER_LIMIT=100
+
+# =============================================================================
+# SERVICE MESH CONFIGURATION
+# =============================================================================
+
+# Service Mesh Controller
+SERVICE_MESH_CONTROLLER_HOST=service-mesh-controller
+SERVICE_MESH_CONTROLLER_PORT=8086
+SERVICE_MESH_CONTROLLER_URL=http://service-mesh-controller:8086
+
+# Service Discovery
+SERVICE_DISCOVERY_ENABLED=true
+SERVICE_DISCOVERY_CONSUL_PORT=8500
+SERVICE_DISCOVERY_CONSUL_HOST=consul
+
+# Load Balancing
+LOAD_BALANCING_ENABLED=true
+LOAD_BALANCING_ALGORITHM=round_robin
+LOAD_BALANCING_TIMEOUT=30
+
+# =============================================================================
+# DISTROLESS RUNTIME CONFIGURATION
+# =============================================================================
+
+# Runtime Environment
+LUCID_ENV=production
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
+
+# Service Health Endpoints
+API_GATEWAY_HEALTH_URL=http://api-gateway:8080/health
+BLOCKCHAIN_ENGINE_HEALTH_URL=http://blockchain-engine:8084/health
+SERVICE_MESH_HEALTH_URL=http://service-mesh:8500/health
+SESSION_ANCHORING_HEALTH_URL=http://session-anchoring:8085/health
+BLOCK_MANAGER_HEALTH_URL=http://block-manager:8086/health
+DATA_CHAIN_HEALTH_URL=http://data-chain:8087/health
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Log Level
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+
+# Log Output
+LOG_OUTPUT=stdout
+LOG_FILE=/dev/stdout
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+
+# Metrics Configuration
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+
+# Deployment Target
+DEPLOYMENT_TARGET=raspberry-pi
+DEPLOYMENT_HOST=192.168.0.75
+DEPLOYMENT_USER=pickme
+DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+
+# Registry Configuration
+REGISTRY=ghcr.io
+REPOSITORY=hamigames/lucid
+IMAGE_TAG=latest-arm64
+
+# =============================================================================
+# BUILD CONFIGURATION
+# =============================================================================
+
+# Build Platform
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCH=arm64
+BUILD_OS=linux
+
+# Build Arguments
+BUILD_DATE=2025-10-24T10:36:07Z
+BUILD_VERSION=0.1.0
+BUILD_REVISION=0923137
+
+# Lucid Distroless Environment Configuration
+# Generated: 2025-10-24T10:36:06Z
+# Target: Raspberry Pi 5 (192.168.0.75)
+# Architecture: ARM64
+# Design: Distroless + Secure (NO PLACEHOLDERS)
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+API_GATEWAY_HOST=api-gateway
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+#==============================================================================
+#SESSION API CONFIGURATION
+#==============================================================================
+SESSION_API_HOST=session-api
+SESSION_API_PORT=${SESSION_API_PORT:-8113}
+SESSION_API_URL=http://session-api:8113
+
+
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+
+JWT_SECRET=${JWT_SECRET}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoOT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
+# DISTROLESS BASE CONFIGURATION
+# =============================================================================
+
+# Distroless Base Image (CRITICAL: Must be distroless)
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+
+# Main Network (Foundation + Core + Application + Blockchain)
+LUCID_MAIN_NETWORK=lucid-pi-network
+LUCID_MAIN_SUBNET=172.20.0.0/16
+LUCID_MAIN_GATEWAY=${LUCID_MAIN_GATEWAY:-api-gateway}
+
+# TRON Isolated Network (Payment Services)
+LUCID_TRON_NETWORK=lucid-tron-isolated
+LUCID_TRON_SUBNET=172.21.0.0/16
+LUCID_TRON_GATEWAY=${LUCID_TRON_GATEWAY:-lucid-tron-isolated}
+
+# GUI Network (Electron GUI Services)
+LUCID_GUI_NETWORK=lucid-gui-network
+LUCID_GUI_SUBNET=172.22.0.0/16
+LUCID_GUI_GATEWAY=${LUCID_GUI_GATEWAY:-api-gui-bridge}
+
+# Distroless Production Network
+LUCID_DISTROLESS_PROD_NETWORK=lucid-distroless-production
+LUCID_DISTROLESS_PROD_SUBNET=172.23.0.0/16
+LUCID_DISTROLESS_PROD_GATEWAY=${LUCID_DISTROLESS_PROD_GATEWAY:-lucid-distroless-production}
+
+# Distroless Development Network
+LUCID_DISTROLESS_DEV_NETWORK=lucid-distroless-dev
+LUCID_DISTROLESS_DEV_SUBNET=172.24.0.0/16
+LUCID_DISTROLESS_DEV_GATEWAY=${LUCID_DISTROLESS_DEV_GATEWAY:-lucid-distroless-dev}
+
+# Multi-Stage Build Network
+LUCID_MULTI_STAGE_NETWORK=lucid-multi-stage-network
+LUCID_MULTI_STAGE_SUBNET=172.25.0.0/16
+LUCID_MULTI_STAGE_GATEWAY=${LUCID_MULTI_STAGE_GATEWAY:-lucid-multi-stage-network}
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+# MongoDB Configuration
+MONGODB_HOST=${MONGODB_HOST:-lucid-mongobd}
+MONGODB_PORT=27017
+MONGODB_DATABASE=lucid
+MONGODB_USERNAME=lucid
+MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_AUTH_SOURCE=admin
+MONGODB_RETRY_WRITES=false
+MONGODB_URL=mongodb://${MONGODB_USERNAME:-${MONGODB_PASSWORD}}@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
+
+# Redis Configuration
+REDIS_HOST=${REDIS_HOST:-lucid-redis}
+REDIS_PORT=6379
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_URL=redis://:-${REDIS_PASSWORD}@${REDIS_HOST:-6379}
+
+# Elasticsearch Configuration
+ELASTICSEARCH_HOST=lucid-elasticsearch
+ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT:-9200} 
+ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME:-elastic}
+ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+ELASTICSEARCH_URL=http://${ELASTICSEARCH_USERNAME:-${ELASTICSEARCH_PASSWORD}}@${ELASTICSEARCH_HOST:-${ELASTICSEARCH_PORT}}
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+
+# JWT Configuration
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_EXPIRATION=3600
+
+# Session Configuration
+SESSION_SECRET=${SESSION_SECRET}
+SESSION_TIMEOUT=1800
+
+# User Configuration
+USER_ID=${USER_ID:-001}
+USER_ROLE={USER_ROLE:-admin}
+
+# Encryption Configuration
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# Tor Configuration
+TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+
+# API Gateway
+API_GATEWAY_HOST=api-gateway
+API_GATEWAY_PORT=8080
+API_GATEWAY_URL=http://api-gateway:8080
+API_GATEWAY_SECRET=${API_GATEWAY_SECRET}
+
+# Auth Service
+AUTH_SERVICE_HOST=lucid-auth-service
+AUTH_SERVICE_PORT=8089
+AUTH_SERVICE_URL=http://lucid-auth-service:8089
+
+# Blockchain Engine
+BLOCKCHAIN_ENGINE_HOST=blockchain-engine
+BLOCKCHAIN_ENGINE_PORT=8084
+BLOCKCHAIN_ENGINE_URL=http://blockchain-engine:8084
+BLOCKCHAIN_SECRET=${BLOCKCHAIN_SECRET}
+
+# Service Mesh
+SERVICE_MESH_HOST=service-mesh
+SERVICE_MESH_PORT=8500
+SERVICE_MESH_URL=http://service-mesh:8500
+
+# Session API
+SESSION_API_HOST=session-api
+SESSION_API_PORT=8087
+SESSION_API_URL=http://session-api:8087
+SESSION_API_SECRET=${SESSION_API_SECRET}
+# RDP Services
+RDP_SERVER_MANAGER_HOST=rdp-server-manager
+RDP_SERVER_MANAGER_PORT=8095
+RDP_SERVER_MANAGER_URL=http://rdp-server-manager:8095
+
+# Admin Interface
+ADMIN_INTERFACE_HOST=admin-interface
+ADMIN_INTERFACE_PORT=8083
+ADMIN_INTERFACE_URL=http://admin-interface:8083
+ADMIN_SECRET=${ADMIN_SECRET}
+
+# Node Management
+NODE_MANAGEMENT_HOST=node-management
+NODE_MANAGEMENT_PORT=8095
+NODE_MANAGEMENT_URL=http://node-management:8095
+NODE_MANAGEMENT_SECRET=${NODE_MANAGEMENT_SECRET}
+
+# TRON Payment Services
+TRON_CLIENT_HOST=tron-client
+TRON_CLIENT_PORT=8091
+TRON_CLIENT_URL=http://tron-client:8091
+TRON_PAYMENT_SECRET=${TRON_PAYMENT_SECRET}
+
+# =============================================================================
+# DISTROLESS RUNTIME CONFIGURATION
+# =============================================================================
+
+# Runtime Environment
+LUCID_ENV=production
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+
+# Container Configuration (DISTROLESS STANDARD)
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options (DISTROLESS + SECURE)
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration (DISTROLESS STANDARD)
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
+HEALTH_CHECK_START_PERIOD=40s
+
+# Service Health Endpoints
+MONGODB_HEALTH_URL=mongodb://lucid:-${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin
+REDIS_HEALTH_URL=redis://:-${REDIS_PASSWORD}@lucid-redis:6379
+ELASTICSEARCH_HEALTH_URL=http://${ELASTICSEARCH_USERNAME}:-${ELASTICSEARCH_PASSWORD}@lucid-elasticsearch:9200/_cluster/health
+AUTH_SERVICE_HEALTH_URL=http://lucid-auth-service:8089/health
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Log Level
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+
+# Log Output
+LOG_OUTPUT=stdout
+LOG_FILE=/dev/stdout
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+
+# Metrics Configuration
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# TRON BLOCKCHAIN CONFIGURATION
+# =============================================================================
+
+# TRON Network Configuration
+TRON_NETWORK=shasta
+TRON_NODE_URL=https://api.shasta.trongrid.io
+TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+TRON_ADDRESS=${TRON_ADDRESS}
+
+# USDT Configuration
+USDT_CONTRACT_ADDRESS=${USDT_CONTRACT_ADDRESS}
+USDT_DECIMALS=6
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+
+# Deployment Target
+DEPLOYMENT_TARGET=raspberry-pi
+DEPLOYMENT_HOST=192.168.0.75
+DEPLOYMENT_USER=${DEPLOYMENT_USER:-pickme}
+DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+
+# Registry Configuration
+REGISTRY=docker.io
+REPOSITORY=pickme/lucid
+IMAGE_TAG=latest-arm64
+
+# =============================================================================
+# BUILD CONFIGURATION
+# =============================================================================
+
+# Build Platform
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCH=arm64
+BUILD_OS=linux
+
+# Build Arguments
+BUILD_DATE=2025-10-24T10:36:06Z
+BUILD_VERSION=0.1.0
+BUILD_REVISION=0923137
+# Foundation Services Environment Configuration
+# Generated: 2025-10-24T10:36:07Z
+# Target: Raspberry Pi 5 (192.168.0.75)
+# Services: MongoDB, Redis, Elasticsearch, Auth Service
+# Architecture: ARM64
+# Design: Distroless + Secure (NO PLACEHOLDERS)
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# RUNTIME CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+LUCID_ENV=production
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+# Main Network (Foundation + Core + Application + Blockchain)
+LUCID_MAIN_NETWORK=lucid-pi-network
+LUCID_MAIN_SUBNET=172.20.0.0/16
+LUCID_MAIN_GATEWAY=172.20.0.1
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# MongoDB Configuration (service defines URI directly using container name)
+# Database Configuration (ADD BACK these that I incorrectly removed)
+MONGODB_USERNAME=lucid
+MONGODB_DATABASE=lucid
+MONGODB_AUTH_SOURCE=admin
+
+# Elasticsearch Configuration (ADD BACK that I incorrectly removed)
+
+MONGODB_RETRY_WRITES=false
+MONGODB_PORT=27017
+
+# Redis Configuration (service defines URI directly using container name)
+REDIS_PORT=6379
+
+# Elasticsearch Configuration (service defines URI directly using container name)
+ELASTICSEARCH_USERNAME=elastic
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_USERNAME=elastic
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
+# DISTROLESS BASE CONFIGURATION
+# =============================================================================
+# Distroless Base Image
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# RUNTIME CONFIGURATION
+# =============================================================================
+LUCID_ENV=production
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+# Log Level
+LOG_LEVEL=INFO
+
+# Log Format
+LOG_FORMAT=json
+
+# Log Output
+LOG_OUTPUT=stdout
+LOG_FILE=/dev/stdout
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+# Metrics Configuration
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+# Deployment Target
+DEPLOYMENT_TARGET=raspberry-pi
+DEPLOYMENT_HOST=192.168.0.75
+DEPLOYMENT_USER=pickme
+DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+
+# Registry Configuration
+REGISTRY=ghcr.io
+REPOSITORY=hamigames/lucid
+IMAGE_TAG=latest-arm64
+
+# =============================================================================
+# BUILD CONFIGURATION
+# =============================================================================
+# Build Platform
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCH=arm64
+BUILD_OS=linux
+
+# Build Arguments
+BUILD_DATE=2025-10-24T10:36:07Z
+BUILD_VERSION=0.1.0
+BUILD_REVISION=0923137# GUI Integration Configuration
+# Generated: 2025-10-24T10:36:09Z
+# Services: Electron GUI, API Bridge, Docker Manager, Tor Manager, Hardware Wallet
+
+# Database Configuration (inherited from foundation)
+MONGODB_PASSWORD=mVRcvVrfPtv1D6naPhiAyVWinC2amsH
+MONGODB_URI=mongodb://lucid:mVRcvVrfPtv1D6naPhiAyVWinC2amsH@mongodb:27017/lucid?authSource=admin
+REDIS_PASSWORD=MkhlnLTi2rWYuE7eEicYUVpR1fASZEL6
+REDIS_URI=redis://redis:6379/0
+
+# Authentication Configuration (inherited from foundation)
+JWT_SECRET_KEY=I4vplxRRIIo1ypfynrFAQfSjRe3QOmprjzrXjA4sMGljcRLwAgEs4r6fXKRT0
+ENCRYPTION_KEY=d8e88e20ace7070d0d801af30f83b7fbc2f3c1e694d9b52f4f9ef7237a5724c4
+
+# GUI API Bridge Configuration
+GUI_API_BRIDGE_PORT=8099
+GUI_API_BRIDGE_HOST=gui-api-bridge
+GUI_API_BRIDGE_TIMEOUT=30
+
+# GUI Docker Manager Configuration
+GUI_DOCKER_MANAGER_PORT=8100
+GUI_DOCKER_MANAGER_HOST=gui-docker-manager
+GUI_DOCKER_MANAGER_TIMEOUT=30
+
+# GUI Tor Manager Configuration
+GUI_TOR_MANAGER_PORT=8101
+GUI_TOR_MANAGER_HOST=gui-tor-manager
+GUI_TOR_MANAGER_TIMEOUT=30
+
+# GUI Hardware Wallet Configuration
+GUI_HARDWARE_WALLET_PORT=8102
+GUI_HARDWARE_WALLET_HOST=gui-hardware-wallet
+GUI_HARDWARE_WALLET_TIMEOUT=30
+
+# Electron GUI Configuration
+ELECTRON_GUI_PORT=3000
+ELECTRON_GUI_HOST=localhost
+ELECTRON_GUI_DEVELOPMENT=false
+ELECTRON_GUI_PRODUCTION=true
+
+# GUI Variants
+GUI_VARIANTS=user,developer,node,admin
+GUI_DEFAULT_VARIANT=user
+
+# Hardware Wallet Configuration
+HARDWARE_WALLET_ENABLED=true
+HARDWARE_WALLET_SUPPORTED=ledger,trezor,keepkey
+HARDWARE_WALLET_TIMEOUT=30
+
+# Tor Configuration
+TOR_ENABLED=true
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+TOR_DATA_DIR=/var/lib/tor
+TOR_LOG_DIR=/var/log/tor
+
+# GUI Security Configuration
+GUI_HTTPS_ENABLED=true
+GUI_CERT_PATH=/etc/ssl/certs/lucid-gui.crt
+GUI_KEY_PATH=/etc/ssl/private/lucid-gui.key
+GUI_CORS_ENABLED=true
+GUI_CORS_ORIGINS=*
+# Lucid Pi Build Environment Configuration
+# Target: Raspberry Pi (192.168.0.75)
+# Generated: 2025-01-14
+# Based on: lucid-container-build-plan.plan.md Step 2
+
+# ============================================================================
+# PI TARGET CONFIGURATION
+# ============================================================================
+PI_HOST=192.168.0.75
+PI_USER=pickme
+PI_DEPLOY_DIR=/opt/lucid/production
+PI_ARCHITECTURE=linux/arm64
+PI_PLATFORM=linux/arm64
+
+# ============================================================================
+# BUILD HOST CONFIGURATION (Windows 11)
+# ============================================================================
+BUILD_HOST=windows11
+BUILD_ARCHITECTURE=linux/arm64
+DOCKER_BUILDX_ENABLED=true
+DOCKER_BUILDKIT=1
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# ============================================================================
+# DOCKER REGISTRY CONFIGURATION
+# ============================================================================
+DOCKER_REGISTRY=docker.io
+DOCKER_NAMESPACE=pickme
+DOCKER_IMAGE_PREFIX=lucid
+DOCKER_TAG_SUFFIX=arm64
+
+# ============================================================================
+# NETWORK CONFIGURATION
+# ============================================================================
+LUCID_NETWORK=lucid-pi-network
+LUCID_NETWORK_SUBNET=172.20.0.0/16
+LUCID_NETWORK_GATEWAY=172.20.0.1
+LUCID_TRON_ISOLATED_NETWORK=lucid-tron-isolated
+LUCID_TRON_ISOLATED_SUBNET=172.21.0.0/16
+
+# ============================================================================
+# SERVICE PORTS (Fixed Assignments)
+# ============================================================================
+API_GATEWAY_PORT=8080
+BLOCKCHAIN_CORE_PORT=8084
+AUTH_SERVICE_PORT=8089
+SESSION_API_PORT=8087
+NODE_MANAGEMENT_PORT=8095
+ADMIN_INTERFACE_PORT=8090
+TRON_PAYMENT_PORT=8085
+
+# ============================================================================
+# DATABASE CONFIGURATION
+# ============================================================================
+MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@192.168.0.75:27017/lucid?authSource=admin&retryWrites=false
+REDIS_URL=redis://:${REDIS_PASSWORD}@192.168.0.75:6379/0
+ELASTICSEARCH_URL=http://192.168.0.75:9200
+
+# ============================================================================
+# SECURITY (Generated During Build)
+# ============================================================================
+JWT_SECRET_KEY=${GENERATED_JWT_SECRET}
+ENCRYPTION_KEY=${GENERATED_ENCRYPTION_KEY}
+TOR_CONTROL_PASSWORD=${GENERATED_TOR_PASSWORD}
+MONGODB_PASSWORD=${GENERATED_MONGODB_PASSWORD}
+REDIS_PASSWORD=${GENERATED_REDIS_PASSWORD}
+
+# ============================================================================
+# TRON CONFIGURATION (Isolated)
+# ============================================================================
+TRON_NETWORK=mainnet
+TRON_API_URL=https://api.trongrid.io
+USDT_TRC20_CONTRACT=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+
+# ============================================================================
+# BUILD CONFIGURATION
+# ============================================================================
+BUILD_PHASE=all
+BUILD_PARALLEL=true
+BUILD_DISTROLESS=true
+BUILD_MULTI_STAGE=true
+
+# ============================================================================
+# DEPLOYMENT CONFIGURATION
+# ============================================================================
+DEPLOY_METHOD=ssh
+DEPLOY_SSH_KEY_PATH=~/.ssh/id_rsa
+DEPLOY_TIMEOUT=300
+DEPLOY_RETRIES=3
+
+# ============================================================================
+# VALIDATION CONFIGURATION
+# ============================================================================
+VALIDATE_HEALTH_CHECKS=true
+VALIDATE_SERVICE_DEPENDENCIES=true
+VALIDATE_NETWORK_ISOLATION=true
+VALIDATE_TRON_ISOLATION=true
+# =============================================================================
+# LUCID PROJECT - SECRETS CONFIGURATION
+# =============================================================================
+# WARNING: This file contains sensitive credentials
+# NEVER commit this file to version control
+# Generated: 2025-11-25T22:34:41Z
+# =============================================================================
+
+# =============================================================================
+# DATABASE PASSWORDS (Required by all services)
+# =============================================================================
+MONGODB_HOST=
+# MongoDB Password (lucid database - Foundation/Core/Application)
+MONGODB_PASSWORD=RzENjKTj4G1V2Ohfd8HdsbaiBpzOo97x
+
+# MongoDB Password (lucid_auth database - Auth Service)
+MONGODB_LUCID_AUTH_PASSWORD=authL456XYZ789LMNauthPass123
+
+# MongoDB Password (lucid_payments database - TRON Payment Gateway)
+MONGODB_PAYMENT_PASSWORD=payLMNOP789XYZ456GHtransactionsPass
+
+# MongoDB Password (blockchain storage database - Blockchain Engine)
+MONGODB_BLOCKCHAIN_PASSWORD=blockLMNOP789XYZ456GHstoragePass
+
+# MongoDB Password (blockchain ledger database - Blockchain Engine)
+MONGODB_BLOCKCHAIN_LEDGER_PASSWORD=ledgerLMNOP789XYZ456GHledgerPass
+
+# MongoDB Password (blockchain data database - Blockchain Engine)
+MONGODB_BLOCKCHAIN_DATA_PASSWORD=dataLMNOP789XYZ456GHdataPass
+
+# MongoDB Password (blockchain data database - TRON Wallet Manager)
+MONGODB_WALLET_PASSWORD=walletLMNOP789XYZ456GHwalletPass
+
+# MongoDB Password (user database - Node Management)
+MONGODB_USER_PASSWORD=userLMNOP789XYZ456GHuserPass
+
+# MongoDB Password (node pool database - Node Management)
+MONGODB_NODE_PASSWORD=nodeLMNOP789XYZ456GHnodePass
+
+# MongoDB Password (RDP services database - RDP Server Manager)
+MONGODB_RDP_PASSWORD=rdpLMNOP789XYZ456GHrdpPass
+
+# MongoDB Password (RDP services database - RDP Controller)
+MONGODB_RDP_CONTROLLER_PASSWORD=rdpctrlLMNOP789XYZ456GHrdpctrlPass
+
+# MongoDB Password (RDP services database - RDP Monitor)
+MONGODB_RDP_MONITOR_PASSWORD=rdpmonLMNOP789XYZ456GHrdpmonPass
+
+# =============================================================================
+# REDIS PASSWORD (Required by all services)
+# =============================================================================
+
+# Redis Password (main cache - Foundation/Core/Application)
+REDIS_PASSWORD=CAafNePARt5eqivBsZmsXF8yvR2bJ4FJ
+
+# Redis Password (auth cache - Auth Service)
+REDIS_LUCID_AUTH_PASSWORD=authC5h7vKg9hPZ7d9TmcmqtcbiS6m3T
+
+# Redis Password (session cache - Session Pipeline)
+REDIS_SESSION_PIPELINE_PASSWORD=sessionC5h7vKg9hPZ7d9TmcmqtcbiS5m2T
+
+# Redis Password (session storage - Session Storage)
+REDIS_SESSION_STORAGE_PASSWORD=storageC5h7vKg9hPZ7d9TmcmqtcbiS1m1T
+
+# Redis Password (session API cache - Session API)
+REDIS_SESSION_API_PASSWORD=apiC5h7vKg9hPZ7d9TmcmqtcbiS9m3T
+
+# Redis Password (blockchain cache - Blockchain Engine)
+REDIS_BLOCKCHAIN_PASSWORD=blockC5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Redis Password (blockchain ledger cache - Blockchain Engine)
+REDIS_BLOCKCHAIN_LEDGER_PASSWORD=ledgerC5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Redis Password (blockchain data cache - Blockchain Engine)
+REDIS_BLOCKCHAIN_DATA_PASSWORD=dataC5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Redis Password (blockchain wallet cache - TRON Wallet Manager)
+REDIS_WALLET_PASSWORD=walletC5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Redis Password (node pool cache - Node Management)
+REDIS_NODE_PASSWORD=nodeC5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Redis Password (RDP services cache - RDP Services)
+REDIS_RDP_PASSWORD=rdpC5h7vKg9hPZ7d9TmcmqtcbiS3m3T
+
+# Redis Password (RDP services cache - RDP Controller)
+REDIS_RDP_CONTROLLER_PASSWORD=rdpctrlC5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Redis Password (RDP services cache - RDP Monitor)
+REDIS_RDP_MONITOR_PASSWORD=rdpmonC5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Redis Password (payment services cache - TRON Payment Gateway)
+REDIS_PAYMENT_PASSWORD=paymentC5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Redis Password (payment services cache - TRON Wallet Manager)
+REDIS_WALLET_PASSWORD=walletpayC5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Redis Password (payment services cache - TRON Payout Router)
+REDIS_PAYOUT_PASSWORD=payoutC5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Redis Password (payment services cache - TRON Relay)
+REDIS_RELAY_PASSWORD=relayC5h7vKg9hPZ7d9TmcmqtcbiS9m1T
+
+# Redis Password (payment services cache - TRON USDT Manager)
+REDIS_USDT_PASSWORD=usdtC5h7vKg9hPZ7d9TmcmqtcbiS10m1T
+
+# Redis Password (payment services cache - TRON Staking)
+REDIS_STAKING_PASSWORD=stakingC5h7vKg9hPZ7d9TmcmqtcbiS11m1T
+
+# =============================================================================
+# ELASTICSEARCH PASSWORDS (Required by all services)
+# =============================================================================
+
+# Elasticsearch Password (main index - Foundation/Core/Application)
+ELASTICSEARCH_PASSWORD=L8PD6BchI8dFCdPxXKriPJsC7nvhjfN
+
+# Elasticsearch Password (auth cache - Auth Service)
+ELASTICSEARCH_LUCID_AUTH_PASSWORD=authL5h7vKg9hPZ7d9TmcmqtcbiS1m2T
+
+# Elasticsearch Password (session cache - Session Pipeline)
+ELASTICSEARCH_SESSION_PIPELINE_PASSWORD=sessionL5h7vKg9hPZ7d9TmcmqtcbiS3m2T
+
+# Elasticsearch Password (session storage - Session Storage)
+ELASTICSEARCH_SESSION_STORAGE_PASSWORD=storageL5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Elasticsearch Password (session API cache - Session API)
+ELASTICSEARCH_SESSION_API_PASSWORD=apiL5h7vKg9hPZ7d9TmcmqtcbiS9m3T
+
+# Elasticsearch Password (blockchain cache - Blockchain Engine)
+ELASTICSEARCH_BLOCKCHAIN_PASSWORD=blockL5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Elasticsearch Password (blockchain ledger cache - Blockchain Engine)
+ELASTICSEARCH_BLOCKCHAIN_LEDGER_PASSWORD=ledgerL5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Elasticsearch Password (blockchain data cache - Blockchain Engine)
+ELASTICSEARCH_BLOCKCHAIN_DATA_PASSWORD=dataL5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Elasticsearch Password (blockchain wallet cache - TRON Wallet Manager)
+ELASTICSEARCH_WALLET_PASSWORD=walletL5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Elasticsearch Password (node pool cache - Node Management)
+ELASTICSEARCH_NODE_PASSWORD=nodeL5h7vKg9hPZ7d9TmcmqtcbiS9m1T
+
+# Elasticsearch Password (RDP services cache - RDP Services)
+ELASTICSEARCH_RDP_PASSWORD=rdpL5h7vKg9hPZ7d9TmcmqtcbiS3m3T
+
+# Elasticsearch Password (RDP services cache - RDP Controller)
+ELASTICSEARCH_RDP_CONTROLLER_PASSWORD=rdpctrlL5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Elasticsearch Password (RDP services cache - RDP Monitor)
+ELASTICSEARCH_RDP_MONITOR_PASSWORD=rdpmonL5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Elasticsearch Password (payment services cache - TRON Payment Gateway)
+ELASTICSEARCH_PAYMENT_PASSWORD=paymentL5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Elasticsearch Password (payment services cache - TRON Wallet Manager)
+ELASTICSEARCH_WALLET_PASSWORD=walletpayL5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Elasticsearch Password (payment services cache - TRON Payout Router)
+ELASTICSEARCH_PAYOUT_PASSWORD=payoutL5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Elasticsearch Password (payment services cache - TRON Relay)
+ELASTICSEARCH_RELAY_PASSWORD=relayL5h7vKg9hPZ7d9TmcmqtcbiS9m1T
+
+# Elasticsearch Password (payment services cache - TRON USDT Manager)
+ELASTICSEARCH_USDT_PASSWORD=usdtL5h7vKg9hPZ7d9TmcmqtcbiS10m1T
+
+# Elasticsearch Password (payment services cache - TRON Staking)
+ELASTICSEARCH_STAKING_PASSWORD=stakingL5h7vKg9hPZ7d9TmcmqtcbiS11m1T
+
+# =============================================================================
+# AUTHENTICATION SECRETS (JWT & Session Management)
+# =============================================================================
+
+# JWT Secret Key (for API Gateway & service-to-service auth)
+JWT_SECRET_KEY=w+p9+dr7IeOhTRlj6f9R7UqH1q9bCeZii2h4ZjgTBUo=
+
+# Session Secret (for session tokens)
+SESSION_SECRET=P1zO4ICyD3OQ7K47i0vS88poz3dPl65y
+
+# Encryption Key (for sensitive data encryption)
+ENCRYPTION_KEY=cb02b88cb193d003201d39e918982f55f117c188f4a2cf61c288bf9febce4e71
+
+# =============================================================================
+# TOR AUTHENTICATION SECRETS (Tor Proxy Control)
+# =============================================================================
+
+# Tor Control Password (for tor-proxy control port 9051)
+TOR_CONTROL_PASSWORD=Bkni9GoqLh6VZ8JdSiKJFHrw1oMoLpc3Z3kUJQ
+
+# Tor SOCKS5 Password (for tor-proxy SOCKS5 port 9050)
+TOR_SOCKS_PASSWORD=T5EMj7697M3V8SItIP4KtMd5HK4AhE6b3XCZ60KaI
+
+# Tor HTTP Proxy Password (for tor-proxy HTTP port 8888)
+TOR_PASSWORD=ypfYDuIrN7XuG5RKMmiMT0mHTlgoPgNcpw2DZOnNaA
+
+# =============================================================================
+# BLOCKCHAIN SECRETS (TRON Wallet & Consensus)
+# =============================================================================
+
+# Blockchain Engine Wallet Secret Key
+BLOCKCHAIN_SECRET_KEY=JJInMxkBi0w23whUgP2SfE3ui4RIBYgMvHFZRZ2
+
+# Blockchain Consensus Secret (for Proof-of-Work)
+BLOCKCHAIN_CONSENSUS_SECRET=CO27Shs/EDY8+Tr8tYmj7G8EEog2d+0w+He5W7JLiJhINcQqYxZMrT+K1TqrLH+Qg8Iaw10sHZ6/hWfKE9p0ww==
+BLOCKCHAIN_VALIDATOR_KEY=2ad180e18fe701bfa9430f803d9b67e3bee439537078920ec4ce54c72932b89aa1f54f2d44f3bc471175090952971dbab47d5cac43a3152cef04d96570333ee0
+
+# Node Operator Key (for Node Management)
+NODE_OPERATOR_KEY=6b8c9af8fa93a0c5f13beb57ac5bb1e018cf186e3c09475bd5955ea2b66d15227099077883ae37964808d5187119e49f62453e7119d5ddf52c24e0c86d0bb44d
+
+# TRON Wallet Private Key (for on-chain transactions)
+TRON_PRIVATE_KEY=5005c91bc985f9d115559b4917951e059771369a3d9bd802999fa774f02dd5b7c2932cef04d96570333ee0
+
+TOR_HOST=0.0.0.0
+MONGODB_HOST=0.0.0.0
+REDIS_HOST=0.0.0.0
+AUTH_HOST=0.0.0.0
+BLOCKCHAIN_ENGINE_HOST=0.0.0.0
+BLOCK_MANAGER_HOST=0.0.0.0
+DATA_CHAIN_HOST=0.0.0.0# =============================================================================
+# LUCID PROJECT - SECRETS CONFIGURATION
+# =============================================================================
+# WARNING: This file contains sensitive credentials
+# NEVER commit this file to version control
+# Generated: 2025-11-25T22:34:41Z
+# =============================================================================
+
+# =============================================================================
+# DATABASE PASSWORDS (Required by all services)
+# =============================================================================
+
+# MongoDB Password (lucid database - Foundation/Core/Application)
+MONGODB_PASSWORD=RzENjKTj4G1V2Ohfd8HdsbaiBpzOo97x
+
+# MongoDB Password (lucid_auth database - Auth Service)
+MONGODB_LUCID_AUTH_PASSWORD=authL456XYZ789LMNauthPass123
+
+# MongoDB Password (lucid_payments database - TRON Payment Gateway)
+MONGODB_PAYMENT_PASSWORD=payLMNOP789XYZ456GHtransactionsPass
+
+# MongoDB Password (blockchain storage database - Blockchain Engine)
+MONGODB_BLOCKCHAIN_PASSWORD=blockLMNOP789XYZ456GHstoragePass
+
+# MongoDB Password (blockchain ledger database - Blockchain Engine)
+MONGODB_BLOCKCHAIN_LEDGER_PASSWORD=ledgerLMNOP789XYZ456GHledgerPass
+
+# MongoDB Password (blockchain data database - Blockchain Engine)
+MONGODB_BLOCKCHAIN_DATA_PASSWORD=dataLMNOP789XYZ456GHdataPass
+
+# MongoDB Password (blockchain data database - TRON Wallet Manager)
+MONGODB_WALLET_PASSWORD=walletLMNOP789XYZ456GHwalletPass
+
+# MongoDB Password (user database - Node Management)
+MONGODB_USER_PASSWORD=userLMNOP789XYZ456GHuserPass
+
+# MongoDB Password (node pool database - Node Management)
+MONGODB_NODE_PASSWORD=nodeLMNOP789XYZ456GHnodePass
+
+# MongoDB Password (RDP services database - RDP Server Manager)
+MONGODB_RDP_PASSWORD=rdpLMNOP789XYZ456GHrdpPass
+
+# MongoDB Password (RDP services database - RDP Controller)
+MONGODB_RDP_CONTROLLER_PASSWORD=rdpctrlLMNOP789XYZ456GHrdpctrlPass
+
+# MongoDB Password (RDP services database - RDP Monitor)
+MONGODB_RDP_MONITOR_PASSWORD=rdpmonLMNOP789XYZ456GHrdpmonPass
+
+# =============================================================================
+# REDIS PASSWORD (Required by all services)
+# =============================================================================
+
+# Redis Password (main cache - Foundation/Core/Application)
+REDIS_PASSWORD=CAafNePARt5eqivBsZmsXF8yvR2bJ4FJ
+
+# Redis Password (auth cache - Auth Service)
+REDIS_LUCID_AUTH_PASSWORD=authC5h7vKg9hPZ7d9TmcmqtcbiS6m3T
+
+# Redis Password (session cache - Session Pipeline)
+REDIS_SESSION_PIPELINE_PASSWORD=sessionC5h7vKg9hPZ7d9TmcmqtcbiS5m2T
+
+# Redis Password (session storage - Session Storage)
+REDIS_SESSION_STORAGE_PASSWORD=storageC5h7vKg9hPZ7d9TmcmqtcbiS1m1T
+
+# Redis Password (session API cache - Session API)
+REDIS_SESSION_API_PASSWORD=apiC5h7vKg9hPZ7d9TmcmqtcbiS9m3T
+
+# Redis Password (blockchain cache - Blockchain Engine)
+REDIS_BLOCKCHAIN_PASSWORD=blockC5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Redis Password (blockchain ledger cache - Blockchain Engine)
+REDIS_BLOCKCHAIN_LEDGER_PASSWORD=ledgerC5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Redis Password (blockchain data cache - Blockchain Engine)
+REDIS_BLOCKCHAIN_DATA_PASSWORD=dataC5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Redis Password (blockchain wallet cache - TRON Wallet Manager)
+REDIS_WALLET_PASSWORD=walletC5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Redis Password (node pool cache - Node Management)
+REDIS_NODE_PASSWORD=nodeC5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Redis Password (RDP services cache - RDP Services)
+REDIS_RDP_PASSWORD=rdpC5h7vKg9hPZ7d9TmcmqtcbiS3m3T
+
+# Redis Password (RDP services cache - RDP Controller)
+REDIS_RDP_CONTROLLER_PASSWORD=rdpctrlC5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Redis Password (RDP services cache - RDP Monitor)
+REDIS_RDP_MONITOR_PASSWORD=rdpmonC5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Redis Password (payment services cache - TRON Payment Gateway)
+REDIS_PAYMENT_PASSWORD=paymentC5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Redis Password (payment services cache - TRON Wallet Manager)
+REDIS_WALLET_PASSWORD=walletpayC5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Redis Password (payment services cache - TRON Payout Router)
+REDIS_PAYOUT_PASSWORD=payoutC5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Redis Password (payment services cache - TRON Relay)
+REDIS_RELAY_PASSWORD=relayC5h7vKg9hPZ7d9TmcmqtcbiS9m1T
+
+# Redis Password (payment services cache - TRON USDT Manager)
+REDIS_USDT_PASSWORD=usdtC5h7vKg9hPZ7d9TmcmqtcbiS10m1T
+
+# Redis Password (payment services cache - TRON Staking)
+REDIS_STAKING_PASSWORD=stakingC5h7vKg9hPZ7d9TmcmqtcbiS11m1T
+
+# =============================================================================
+# ELASTICSEARCH PASSWORDS (Required by all services)
+# =============================================================================
+
+# Elasticsearch Password (main index - Foundation/Core/Application)
+ELASTICSEARCH_PASSWORD=L8PD6BchI8dFCdPxXKriPJsC7nvhjfN
+
+# Elasticsearch Password (auth cache - Auth Service)
+ELASTICSEARCH_LUCID_AUTH_PASSWORD=authL5h7vKg9hPZ7d9TmcmqtcbiS1m2T
+
+# Elasticsearch Password (session cache - Session Pipeline)
+ELASTICSEARCH_SESSION_PIPELINE_PASSWORD=sessionL5h7vKg9hPZ7d9TmcmqtcbiS3m2T
+
+# Elasticsearch Password (session storage - Session Storage)
+ELASTICSEARCH_SESSION_STORAGE_PASSWORD=storageL5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Elasticsearch Password (session API cache - Session API)
+ELASTICSEARCH_SESSION_API_PASSWORD=apiL5h7vKg9hPZ7d9TmcmqtcbiS9m3T
+
+# Elasticsearch Password (blockchain cache - Blockchain Engine)
+ELASTICSEARCH_BLOCKCHAIN_PASSWORD=blockL5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Elasticsearch Password (blockchain ledger cache - Blockchain Engine)
+ELASTICSEARCH_BLOCKCHAIN_LEDGER_PASSWORD=ledgerL5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Elasticsearch Password (blockchain data cache - Blockchain Engine)
+ELASTICSEARCH_BLOCKCHAIN_DATA_PASSWORD=dataL5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Elasticsearch Password (blockchain wallet cache - TRON Wallet Manager)
+ELASTICSEARCH_WALLET_PASSWORD=walletL5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Elasticsearch Password (node pool cache - Node Management)
+ELASTICSEARCH_NODE_PASSWORD=nodeL5h7vKg9hPZ7d9TmcmqtcbiS9m1T
+
+# Elasticsearch Password (RDP services cache - RDP Services)
+ELASTICSEARCH_RDP_PASSWORD=rdpL5h7vKg9hPZ7d9TmcmqtcbiS3m3T
+
+# Elasticsearch Password (RDP services cache - RDP Controller)
+ELASTICSEARCH_RDP_CONTROLLER_PASSWORD=rdpctrlL5h7vKg9hPZ7d9TmcmqtcbiS4m1T
+
+# Elasticsearch Password (RDP services cache - RDP Monitor)
+ELASTICSEARCH_RDP_MONITOR_PASSWORD=rdpmonL5h7vKg9hPZ7d9TmcmqtcbiS5m1T
+
+# Elasticsearch Password (payment services cache - TRON Payment Gateway)
+ELASTICSEARCH_PAYMENT_PASSWORD=paymentL5h7vKg9hPZ7d9TmcmqtcbiS6m1T
+
+# Elasticsearch Password (payment services cache - TRON Wallet Manager)
+ELASTICSEARCH_WALLET_PASSWORD=walletpayL5h7vKg9hPZ7d9TmcmqtcbiS7m1T
+
+# Elasticsearch Password (payment services cache - TRON Payout Router)
+ELASTICSEARCH_PAYOUT_PASSWORD=payoutL5h7vKg9hPZ7d9TmcmqtcbiS8m1T
+
+# Elasticsearch Password (payment services cache - TRON Relay)
+ELASTICSEARCH_RELAY_PASSWORD=relayL5h7vKg9hPZ7d9TmcmqtcbiS9m1T
+
+# Elasticsearch Password (payment services cache - TRON USDT Manager)
+ELASTICSEARCH_USDT_PASSWORD=usdtL5h7vKg9hPZ7d9TmcmqtcbiS10m1T
+
+# Elasticsearch Password (payment services cache - TRON Staking)
+ELASTICSEARCH_STAKING_PASSWORD=stakingL5h7vKg9hPZ7d9TmcmqtcbiS11m1T
+
+# =============================================================================
+# AUTHENTICATION SECRETS (JWT & Session Management)
+# =============================================================================
+
+# JWT Secret Key (for API Gateway & service-to-service auth)
+JWT_SECRET_KEY=w+p9+dr7IeOhTRlj6f9R7UqH1q9bCeZii2h4ZjgTBUo=
+
+# Session Secret (for session tokens)
+SESSION_SECRET=P1zO4ICyD3OQ7K47i0vS88poz3dPl65y
+
+# Encryption Key (for sensitive data encryption)
+ENCRYPTION_KEY=cb02b88cb193d003201d39e918982f55f117c188f4a2cf61c288bf9febce4e71
+
+# =============================================================================
+# TOR AUTHENTICATION SECRETS (Tor Proxy Control)
+# =============================================================================
+
+# Tor Control Password (for tor-proxy control port 9051)
+TOR_CONTROL_PASSWORD=Bkni9GoqLh6VZ8JdSiKJFHrw1oMoLpc3Z3kUJQ
+
+# Tor SOCKS5 Password (for tor-proxy SOCKS5 port 9050)
+TOR_SOCKS_PASSWORD=T5EMj7697M3V8SItIP4KtMd5HK4AhE6b3XCZ60KaI
+
+# Tor HTTP Proxy Password (for tor-proxy HTTP port 8888)
+TOR_PASSWORD=ypfYDuIrN7XuG5RKMmiMT0mHTlgoPgNcpw2DZOnNaA
+
+# =============================================================================
+# BLOCKCHAIN SECRETS (TRON Wallet & Consensus)
+# =============================================================================
+
+# Blockchain Engine Wallet Secret Key
+BLOCKCHAIN_SECRET_KEY=JJInMxkBi0w23whUgP2SfE3ui4RIBYgMvHFZRZ2
+
+# Blockchain Consensus Secret (for Proof-of-Work)
+BLOCKCHAIN_CONSENSUS_SECRET=CO27Shs/EDY8+Tr8tYmj7G8EEog2d+0w+He5W7JLiJhINcQqYxZMrT+K1TqrLH+Qg8Iaw10sHZ6/hWfKE9p0ww==
+BLOCKCHAIN_VALIDATOR_KEY=2ad180e18fe701bfa9430f803d9b67e3bee439537078920ec4ce54c72932b89aa1f54f2d44f3bc471175090952971dbab47d5cac43a3152cef04d96570333ee0
+
+# Node Operator Key (for Node Management)
+NODE_OPERATOR_KEY=6b8c9af8fa93a0c5f13beb57ac5bb1e018cf186e3c09475bd5955ea2b66d15227099077883ae37964808d5187119e49f62453e7119d5ddf52c24e0c86d0bb44d
+
+# TRON Wallet Private Key (for on-chain transactions)
+TRON_PRIVATE_KEY=5005c91bc985f9d115559b4917951e059771369a3d9bd802999fa774f02dd5b7c2932cef04d96570333ee0
+
+TOR_HOST=0.0.0.0
+MONGODB_HOST=0.0.0.0
+REDIS_HOST=0.0.0.0
+AUTH_HOST=0.0.0.0
+BLOCKCHAIN_ENGINE_HOST=0.0.0.0
+BLOCK_MANAGER_HOST=0.0.0.0
+DATA_CHAIN_HOST=0.0.0.0# Lucid Secure Environment Variables
+# Generated: 2025-10-24T09:48:40Z
+# WARNING: Keep this file secure and never commit to version control
+
+# ============================================================================
+# SECURITY KEYS AND PASSWORDS
+# ============================================================================
+
+# JWT Configuration
+JWT_SECRET_KEY=kcsUkjilZrHTXSEr0fzgwpn9X6JpGlqkrXYQ3UaIiSjvsnLi3PVtc5yiI5UnU
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Encryption Configuration
+ENCRYPTION_KEY=878e4a71de3cc515f63b963001653319531a0579ee7b971a24aa7936f5e0fcef
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# Tor Configuration
+TOR_CONTROL_PASSWORD=NeQjUaIjYrl7zQRDEqb9HlBD1tqaOKFQtgoIbst3I
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+
+# Database Passwords
+MONGODB_PASSWORD=6TTEeYdjfu37VPefx0IpjbdWITcRRZkB
+REDIS_PASSWORD=2FzQe3oKbC5FON67MAXFBUiproyznQE
+ELASTICSEARCH_PASSWORD=lhp5IDrNzrnYif1jcI9HFMqJZdQhRpo
+
+# Service Secrets
+API_GATEWAY_SECRET=Bci45BcRZTzAFZuO5as2gn4J2YBLG0eB
+BLOCKCHAIN_SECRET=1MKdrBZjSqPFYO0QWInE9WRLOva7bAll
+SESSION_SECRET=iGbASVK7VJTnk3kbAqQ3ps82GwdrJUXe
+NODE_MANAGEMENT_SECRET=Vz8QLJ4uG7gNGEnuxv7D0UPdlHVTF8Jh
+ADMIN_SECRET=UwO9rJiCjT5BRuhd3Gd8YwLTOECupjhr
+TRON_PAYMENT_SECRET=X2LD5jrZJxvg6eUXWmXL1YJGc37ikiE5
+
+# ============================================================================
+# GENERATED VALUES FOR BUILD PLAN
+# ============================================================================
+GENERATED_JWT_SECRET=kcsUkjilZrHTXSEr0fzgwpn9X6JpGlqkrXYQ3UaIiSjvsnLi3PVtc5yiI5UnU
+GENERATED_ENCRYPTION_KEY=878e4a71de3cc515f63b963001653319531a0579ee7b971a24aa7936f5e0fcef
+GENERATED_TOR_PASSWORD=NeQjUaIjYrl7zQRDEqb9HlBD1tqaOKFQtgoIbst3I
+GENERATED_MONGODB_PASSWORD=6TTEeYdjfu37VPefx0IpjbdWITcRRZkB
+GENERATED_REDIS_PASSWORD=2FzQe3oKbC5FON67MAXFBUiproyznQE
+
+# ============================================================================
+# SECURITY NOTES
+# ============================================================================
+# - All keys are cryptographically secure random values
+# - JWT_SECRET_KEY: 64 characters, base64 encoded
+# - ENCRYPTION_KEY: 256-bit (32 bytes) hex encoded
+# - Database passwords: 24 characters, base64 encoded
+# - Service secrets: 32 characters, base64 encoded
+# - Store this file securely and never commit to version control
+# - Rotate keys regularly in production environments
+# Server Tools Configuration
+# Generated: 2025-10-25T14:12:10Z
+
+# Server Management
+SERVER_MANAGEMENT_ENABLED=true
+SERVER_HOST=192.168.0.75
+SERVER_USER=pickme
+SERVER_SSH_PORT=22
+SERVER_SSH_KEY_PATH=/root/.ssh/id_rsa
+
+# System Monitoring
+SYSTEM_MONITORING_ENABLED=true
+SYSTEM_MONITORING_INTERVAL=30
+SYSTEM_CPU_THRESHOLD=80
+SYSTEM_MEMORY_THRESHOLD=85
+SYSTEM_DISK_THRESHOLD=90
+SYSTEM_NETWORK_THRESHOLD=1000
+
+# Process Management
+PROCESS_MANAGEMENT_ENABLED=true
+PROCESS_MONITORING_INTERVAL=60
+PROCESS_AUTO_RESTART=true
+PROCESS_RESTART_DELAY=5
+PROCESS_MAX_RESTART_ATTEMPTS=3
+
+# Log Management
+LOG_MANAGEMENT_ENABLED=true
+LOG_ROTATION_ENABLED=true
+LOG_MAX_SIZE=100MB
+LOG_MAX_FILES=10
+LOG_COMPRESSION_ENABLED=true
+LOG_CLEANUP_INTERVAL=86400
+
+# Backup Management
+BACKUP_MANAGEMENT_ENABLED=true
+BACKUP_SCHEDULE="0 2 * * *"
+BACKUP_RETENTION_DAYS=30
+BACKUP_COMPRESSION_ENABLED=true
+BACKUP_ENCRYPTION_ENABLED=true
+BACKUP_ENCRYPTION_KEY=ep/CQTqSu2b5FuXeZ70PAFgRpxzVdlrnUD1Bi77cXIY=
+
+# Security Management
+SECURITY_MANAGEMENT_ENABLED=true
+SECURITY_SCAN_INTERVAL=3600
+SECURITY_UPDATE_CHECK=true
+SECURITY_FIREWALL_ENABLED=true
+SECURITY_ANTIVIRUS_ENABLED=false
+
+# Network Management
+NETWORK_MANAGEMENT_ENABLED=true
+NETWORK_MONITORING_ENABLED=true
+NETWORK_BANDWIDTH_MONITORING=true
+NETWORK_LATENCY_MONITORING=true
+NETWORK_PACKET_LOSS_MONITORING=true
+
+# Docker Management
+DOCKER_MANAGEMENT_ENABLED=true
+DOCKER_CLEANUP_ENABLED=true
+DOCKER_CLEANUP_INTERVAL=86400
+DOCKER_IMAGE_CLEANUP=true
+DOCKER_CONTAINER_CLEANUP=true
+DOCKER_VOLUME_CLEANUP=true
+
+# Health Check
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
+HEALTH_CHECK_RETRY_ATTEMPTS=3
+
+# Alerting
+ALERTING_ENABLED=true
+ALERT_EMAIL_ENABLED=false
+ALERT_SLACK_ENABLED=false
+ALERT_WEBHOOK_ENABLED=true
+ALERT_WEBHOOK_URL=http://lucid-admin-interface:8083/alerts
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_FILE=/var/log/lucid/server-tools.log
+LOG_ROTATE=true
+LOG_MAX_SIZE=50MB
+LOG_MAX_FILES=5pickme@pickme-desktop:/mnt/myssd/Lucid/Lucid$ sudo cat /mnt/myssd/Lucid/Lucid/configs/environment/.env.service-mesh
+# =============================================================================
+# Lucid Service Mesh Controller - Environment Variables Template
+# =============================================================================
+# File: service-mesh/config/env-service-mesh.template
+# Purpose: Template for all configurable environment variables
+# Usage: Copy to configs/environment/.env.service-mesh and customize values
+# =============================================================================
+
+# =============================================================================
+# SERVICE MESH CONTROLLER SETTINGS
+# =============================================================================
+SERVICE_MESH_NAME=lucid-service-mesh
+SERVICE_MESH_VERSION=1.0.0
+SERVICE_NAME=service-mesh-controller
+SERVICE_MESH_HOST=0.0.0.0
+SERVICE_MESH_PORT=8500
+HTTP_PORT=8088
+LUCID_NAMESPACE=lucid
+LUCID_CLUSTER=core
+LUCID_PLATFORM=arm64
+LUCID_ENV=production
+
+# =============================================================================
+# CONSUL CONFIGURATION
+# =============================================================================
+CONSUL_HOST=localhost
+CONSUL_PORT=8500
+CONSUL_DATACENTER=lucid-dc
+CONSUL_NODE_NAME=lucid-service-mesh-controller
+CONSUL_BOOTSTRAP_EXPECT=1
+CONSUL_UI_ENABLED=true
+CONSUL_CONNECT_ENABLED=true
+CONSUL_SERVER=true
+CONSUL_DATA_DIR=/tmp/consul
+CONSUL_BIND_ADDR=0.0.0.0
+CONSUL_CLIENT_ADDR=0.0.0.0
+CONSUL_ADVERTISE_ADDR=
+CONSUL_HTTP_PORT=8500
+CONSUL_HTTPS_PORT=8501
+CONSUL_GRPC_PORT=8502
+CONSUL_DNS_PORT=8600
+CONSUL_ACL_ENABLED=false
+CONSUL_ACL_DEFAULT_POLICY=allow
+CONSUL_ACL_TOKEN_PERSISTENCE=true
+CONSUL_VERIFY_INCOMING=false
+CONSUL_VERIFY_OUTGOING=false
+CONSUL_VERIFY_SERVER_HOSTNAME=false
+CONSUL_LEAVE_ON_TERMINATE=true
+CONSUL_REJOIN_AFTER_LEAVE=true
+CONSUL_LOCAL_SCRIPT_CHECKS=true
+CONSUL_DISABLE_UPDATE_CHECK=true
+
+# =============================================================================
+# DISCOVERY SETTINGS
+# =============================================================================
+DISCOVERY_BACKEND=consul
+SERVICE_TTL=60
+HEALTH_CHECK_INTERVAL=30
+DEREGISTER_CRITICAL_AFTER=90s
+
+# =============================================================================
+# ENVOY SIDECAR CONFIGURATION
+# =============================================================================
+ENVOY_ADMIN_PORT=9901
+ENVOY_PROXY_PORT=15001
+ENVOY_CONFIG_PATH=/app/envoy-configs
+ENVOY_LOG_LEVEL=info
+ENVOY_CLUSTER_NAME=lucid-service-mesh
+ENVOY_NODE_ID=service-mesh-sidecar
+ENVOY_ADMIN_BIND_ADDR=0.0.0.0
+ENVOY_LISTENER_BIND_ADDR=0.0.0.0
+ENVOY_UPSTREAM_HOST=127.0.0.1
+ENVOY_UPSTREAM_PORT=8080
+ENVOY_CONNECT_TIMEOUT=5s
+ENVOY_ROUTE_TIMEOUT=30s
+ENVOY_LB_POLICY=ROUND_ROBIN
+ENVOY_RETRY_ON=connect-failure,refused-stream,unavailable,cancelled,retriable-4xx,reset
+ENVOY_NUM_RETRIES=3
+ENVOY_PER_TRY_TIMEOUT=10s
+ENVOY_HEALTH_CHECK_PATH=/health
+ENVOY_HEALTH_CHECK_INTERVAL=10s
+ENVOY_HEALTH_CHECK_TIMEOUT=5s
+ENVOY_UNHEALTHY_THRESHOLD=3
+ENVOY_HEALTHY_THRESHOLD=2
+ENVOY_MAX_CONNECTIONS=1000
+ENVOY_MAX_PENDING_REQUESTS=1000
+ENVOY_MAX_REQUESTS=1000
+ENVOY_MAX_RETRIES=3
+ENVOY_CONNECTION_LIMIT=10000
+ENVOY_GLOBAL_MAX_CONNECTIONS=50000
+
+# =============================================================================
+# mTLS / CERTIFICATE CONFIGURATION
+# =============================================================================
+MTLS_ENABLED=true
+MTLS_MODE=STRICT
+MTLS_DEFAULT_MODE=STRICT
+MTLS_PERMISSIVE_MODE=PERMISSIVE
+MTLS_MIN_PROTOCOL=TLSv1_2
+MTLS_PERMISSIVE_MIN_PROTOCOL=TLSv1_2
+CERT_VALIDITY_DAYS=90
+CA_VALIDITY_DAYS=365
+CERT_KEY_SIZE=2048
+CERT_ALGORITHM=RSA
+CERT_HASH_ALGORITHM=SHA256
+CERT_AUTO_ROTATE=true
+CERT_ROTATION_THRESHOLD=30
+CERT_COUNTRY=US
+CERT_STATE=California
+CERT_LOCALITY=San Francisco
+CERT_ORGANIZATION=Lucid
+CERT_ORG_UNIT=Service Mesh
+CA_COMMON_NAME=Lucid CA
+CERT_SAN_DNS_SUFFIX=.lucid.local
+CERTIFICATES_PATH=/app/certificates
+CA_CERT_PATH=/app/certificates/ca.crt
+CA_KEY_PATH=/app/certificates/ca.key
+TLS_MIN_PROTOCOL=TLSv1.2
+TLS_MAX_PROTOCOL=TLSv1.3
+TLS_CIPHER_1=TLS_AES_256_GCM_SHA384
+TLS_CIPHER_2=TLS_AES_128_GCM_SHA256
+TLS_CIPHER_3=TLS_CHACHA20_POLY1305_SHA256
+TLS_CIPHER_4=ECDHE-RSA-AES256-GCM-SHA384
+TLS_CIPHER_5=ECDHE-RSA-AES128-GCM-SHA256
+ECDH_CURVE_1=X25519
+ECDH_CURVE_2=P-256
+ECDH_CURVE_3=P-384
+
+# =============================================================================
+# NETWORKING CONFIGURATION
+# =============================================================================
+DEFAULT_TIMEOUT=30
+RETRY_ATTEMPTS=3
+RETRY_DELAY=1
+CIRCUIT_BREAKER_ENABLED=true
+CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+CIRCUIT_BREAKER_RECOVERY_TIMEOUT=30
+CIRCUIT_BREAKER_HALF_OPEN_REQUESTS=3
+LOAD_BALANCING_POLICY=ROUND_ROBIN
+LB_HEALTH_CHECK_INTERVAL=10
+
+# Network
+LUCID_PI_NETWORK=lucid-pi-network
+LUCID_PI_SUBNET=172.20.0.0/16
+LUCID_PI_GATEWAY=172.20.0.1
+NETWORK_DRIVER=bridge
+IPAM_DRIVER=default
+
+# DNS
+DNS_ENABLED=true
+DNS_DOMAIN=lucid.local
+DNS_UPSTREAM_1=8.8.8.8
+DNS_UPSTREAM_2=8.8.4.4
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_OUTPUT=stdout
+LOG_FILE_PATH=/app/logs/service-mesh.log
+LOG_MAX_SIZE_MB=100
+LOG_MAX_BACKUPS=5
+DEBUG=false
+
+# =============================================================================
+# METRICS CONFIGURATION
+# =============================================================================
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# RETRY POLICIES
+# =============================================================================
+RETRY_MAX_ATTEMPTS=3
+RETRY_BACKOFF_MULTIPLIER=2
+RETRY_INITIAL_DELAY_MS=100
+RETRY_MAX_DELAY_MS=10000
+RETRY_DEFAULT_MAX_ATTEMPTS=3
+RETRY_DEFAULT_PER_TRY_TIMEOUT=10s
+RETRY_DEFAULT_BASE_INTERVAL=100ms
+RETRY_DEFAULT_MAX_INTERVAL=10s
+RETRY_CRITICAL_MAX_ATTEMPTS=5
+RETRY_CRITICAL_PER_TRY_TIMEOUT=30s
+RETRY_CRITICAL_BASE_INTERVAL=500ms
+RETRY_CRITICAL_MAX_INTERVAL=30s
+
+# =============================================================================
+# TIMEOUT POLICIES
+# =============================================================================
+CONNECT_TIMEOUT_MS=5000
+REQUEST_TIMEOUT_MS=30000
+IDLE_TIMEOUT_MS=300000
+TIMEOUT_DEFAULT_CONNECT=5s
+TIMEOUT_DEFAULT_REQUEST=30s
+TIMEOUT_DEFAULT_IDLE=300s
+TIMEOUT_DATABASE_CONNECT=10s
+TIMEOUT_DATABASE_REQUEST=60s
+TIMEOUT_DATABASE_IDLE=600s
+TIMEOUT_STREAMING_CONNECT=5s
+TIMEOUT_STREAMING_REQUEST=0s
+TIMEOUT_STREAMING_IDLE=3600s
+
+# =============================================================================
+# CIRCUIT BREAKER POLICIES
+# =============================================================================
+CB_CONSECUTIVE_FAILURES=5
+CB_INTERVAL_SECONDS=10
+CB_BASE_EJECTION_TIME=30
+CB_MAX_EJECTION_PERCENT=50
+CB_DEFAULT_GATEWAY_FAILURE=5
+CB_DEFAULT_5XX=5
+CB_DEFAULT_INTERVAL=10s
+CB_DEFAULT_EJECTION_TIME=30s
+CB_DEFAULT_MAX_EJECTION=50
+CB_STRICT_GATEWAY_FAILURE=3
+CB_STRICT_5XX=3
+CB_STRICT_INTERVAL=5s
+CB_STRICT_EJECTION_TIME=60s
+CB_STRICT_MAX_EJECTION=100
+
+# =============================================================================
+# RATE LIMITING POLICIES
+# =============================================================================
+RATE_LIMIT_DEFAULT_REQUESTS=1000
+RATE_LIMIT_DEFAULT_UNIT=MINUTE
+RATE_LIMIT_GATEWAY_REQUESTS=10000
+RATE_LIMIT_GATEWAY_UNIT=MINUTE
+RATE_LIMIT_AUTH_REQUESTS=100
+RATE_LIMIT_AUTH_UNIT=MINUTE
+
+# =============================================================================
+# LOAD BALANCING POLICIES
+# =============================================================================
+LB_DEFAULT_POLICY=ROUND_ROBIN
+LB_STICKY_POLICY=RING_HASH
+LB_STICKY_HASH_KEY=x-session-id
+LB_LEAST_CONN_POLICY=LEAST_REQUEST
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+HEALTH_CHECK_DEFAULT_PATH=/health
+HEALTH_CHECK_DEFAULT_INTERVAL=30s
+HEALTH_CHECK_DEFAULT_TIMEOUT=10s
+HEALTH_CHECK_UNHEALTHY_THRESHOLD=3
+HEALTH_CHECK_HEALTHY_THRESHOLD=2
+HEALTH_CHECK_TCP_INTERVAL=30s
+HEALTH_CHECK_TCP_TIMEOUT=10s
+HEALTH_CHECK_TCP_UNHEALTHY_THRESHOLD=3
+HEALTH_CHECK_TCP_HEALTHY_THRESHOLD=2
+HEALTH_CHECK_GRPC_INTERVAL=30s
+HEALTH_CHECK_GRPC_TIMEOUT=10s
+HEALTH_CHECK_GRPC_UNHEALTHY_THRESHOLD=3
+HEALTH_CHECK_GRPC_HEALTHY_THRESHOLD=2
+HEALTH_CHECK_GRPC_SERVICE_NAME=
+
+# =============================================================================
+# ALERTING CONFIGURATION
+# =============================================================================
+ALERTING_ENABLED=true
+ALERTING_CONSECUTIVE_FAILURES=3
+ALERTING_RECOVERY=true
+
+# =============================================================================
+# SERVICE IPs (lucid-pi-network)
+# =============================================================================
+TOR_PROXY_IP=${TOR_PROXY_IP:-tor-proxy}
+TOR_IP=${TOR_IP:-tor-proxy}
+MONGODB_IP=${MONGODB_IP:-lucid-mongobd}
+REDIS_IP=${REDIS_IP:-lucid-redis}
+ELASTICSEARCH_IP=${ELASTICSEARCH_IP:-lucid-elasticsearch}
+API_GATEWAY_IP=${API_GATEWAY_IP:-api-gateway}
+AUTH_SERVICE_IP=${AUTH_SERVICE_IP:-lucid-auth-service}
+BLOCKCHAIN_ENGINE_IP=${BLOCKCHAIN_ENGINE_IP:-blockchain-engine}
+SESSION_ANCHORING_IP=${SESSION_ANCHORING_IP:-session-anchoring}
+BLOCK_MANAGER_IP=${BLOCK_MANAGER_IP:-block-manager}
+SERVICE_MESH_CONTROLLER_IP=${SERVICE_MESH_CONTROLLER_IP:-lucid-service-mesh-controller}
+DATA_CHAIN_IP=${DATA_CHAIN_IP:-data-chain}
+
+# =============================================================================
+# SERVICE HOSTS
+# =============================================================================
+TOR_HOST=0.0.0.0
+MONGODB_HOST=0.0.0.0
+REDIS_HOST=0.0.0.0
+AUTH_HOST=0.0.0.0
+BLOCKCHAIN_ENGINE_HOST=0.0.0.0
+BLOCK_MANAGER_HOST=0.0.0.0
+DATA_CHAIN_HOST=0.0.0.0
+
+# =============================================================================
+# SERVICE PORTS
+# =============================================================================
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+TOR_DNS_PORT=9053
+MONGODB_PORT=27017
+REDIS_PORT=6379
+ELASTICSEARCH_HTTP_PORT=9200
+ELASTICSEARCH_TRANSPORT_PORT=9300
+API_GATEWAY_PORT=8080
+API_GATEWAY_HTTPS_PORT=8443
+AUTH_PORT=8084
+BLOCKCHAIN_ENGINE_PORT=8082
+SESSION_ANCHORING_PORT=8085
+BLOCK_MANAGER_PORT=8086
+DATA_CHAIN_PORT=8087
+
+# =============================================================================
+# SERVICE NAMES
+# =============================================================================
+TOR_SERVICE_NAME=tor-proxy
+MONGODB_SERVICE_NAME=lucid-mongodb
+REDIS_SERVICE_NAME=lucid-redis
+API_GATEWAY_SERVICE_NAME=api-gateway
+AUTH_SERVICE_NAME=auth-service
+BLOCKCHAIN_ENGINE_SERVICE_NAME=blockchain-engine
+SESSION_ANCHORING_SERVICE_NAME=session-anchoring
+BLOCK_MANAGER_SERVICE_NAME=block-manager
+DATA_CHAIN_SERVICE_NAME=data-chain
+SERVICE_MESH_SERVICE_NAME=service-mesh
+
+# =============================================================================
+# SERVICE HEALTH PATHS
+# =============================================================================
+API_GATEWAY_HEALTH_PATH=/health
+AUTH_HEALTH_PATH=/health
+BLOCKCHAIN_ENGINE_HEALTH_PATH=/health
+SESSION_ANCHORING_HEALTH_PATH=/health
+BLOCK_MANAGER_HEALTH_PATH=/health
+DATA_CHAIN_HEALTH_PATH=/health
+SERVICE_MESH_HEALTH_PATH=/health
+
+# =============================================================================
+# SERVICE HEALTH CHECK INTERVALS
+# =============================================================================
+API_GATEWAY_HEALTH_CHECK_INTERVAL=30s
+API_GATEWAY_HEALTH_CHECK_TIMEOUT=10s
+AUTH_HEALTH_CHECK_INTERVAL=30s
+AUTH_HEALTH_CHECK_TIMEOUT=10
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_INTERVAL=30
+BLOCKCHAIN_ENGINE_HEALTH_CHECK_TIMEOUT=10
+SESSION_ANCHORING_HEALTH_CHECK_INTERVAL=30
+SESSION_ANCHORING_HEALTH_CHECK_TIMEOUT=10
+BLOCK_MANAGER_HEALTH_CHECK_INTERVAL=30
+BLOCK_MANAGER_HEALTH_CHECK_TIMEOUT=10
+DATA_CHAIN_HEALTH_CHECK_INTERVAL=30
+DATA_CHAIN_HEALTH_CHECK_TIMEOUT=10
+MONGODB_HEALTH_CHECK_INTERVAL=30
+MONGODB_HEALTH_CHECK_TIMEOUT=10
+REDIS_HEALTH_CHECK_INTERVAL=30
+REDIS_HEALTH_CHECK_TIMEOUT=10
+TOR_HEALTH_CHECK_INTERVAL=30
+TOR_HEALTH_CHECK_TIMEOUT=10
+SERVICE_MESH_HEALTH_CHECK_INTERVAL=30
+SERVICE_MESH_HEALTH_CHECK_TIMEOUT=10
+
+# =============================================================================
+# SERVICE-SPECIFIC POLICY ASSIGNMENTS
+# =============================================================================
+API_GATEWAY_RETRY_POLICY=default
+API_GATEWAY_TIMEOUT_POLICY=default
+API_GATEWAY_CB_POLICY=default
+API_GATEWAY_RATE_LIMIT_POLICY=api_gateway
+API_GATEWAY_LB_POLICY=default
+API_GATEWAY_MTLS_POLICY=default
+API_GATEWAY_MTLS_MODE=STRICT
+API_GATEWAY_REQUIRE_CLIENT_CERT=true
+
+AUTH_RETRY_POLICY=critical_services
+AUTH_TIMEOUT_POLICY=default
+AUTH_CB_POLICY=strict
+AUTH_RATE_LIMIT_POLICY=auth_service
+AUTH_LB_POLICY=default
+AUTH_MTLS_POLICY=default
+AUTH_MTLS_MODE=STRICT
+AUTH_REQUIRE_CLIENT_CERT=true
+
+MONGODB_RETRY_POLICY=critical_services
+MONGODB_TIMEOUT_POLICY=database
+MONGODB_CB_POLICY=default
+MONGODB_LB_POLICY=default
+MONGODB_MTLS_POLICY=permissive
+MONGODB_MTLS_MODE=PERMISSIVE
+MONGODB_REQUIRE_CLIENT_CERT=false
+
+REDIS_RETRY_POLICY=default
+REDIS_TIMEOUT_POLICY=default
+REDIS_CB_POLICY=default
+REDIS_LB_POLICY=default
+REDIS_MTLS_POLICY=permissive
+REDIS_MTLS_MODE=PERMISSIVE
+REDIS_REQUIRE_CLIENT_CERT=false
+
+BLOCKCHAIN_ENGINE_RETRY_POLICY=critical_services
+BLOCKCHAIN_ENGINE_TIMEOUT_POLICY=default
+BLOCKCHAIN_ENGINE_CB_POLICY=strict
+BLOCKCHAIN_ENGINE_LB_POLICY=default
+BLOCKCHAIN_ENGINE_MTLS_POLICY=default
+BLOCKCHAIN_ENGINE_MTLS_MODE=STRICT
+BLOCKCHAIN_ENGINE_REQUIRE_CLIENT_CERT=true
+
+# =============================================================================
+# CLUSTER DESCRIPTIONS
+# =============================================================================
+FOUNDATION_CLUSTER_DESC=Foundation infrastructure services
+FOUNDATION_HEALTH_CHECK_INTERVAL=30
+CORE_CLUSTER_DESC=Core application services
+CORE_HEALTH_CHECK_INTERVAL=30
+APPLICATION_CLUSTER_DESC=Application layer services
+APPLICATION_HEALTH_CHECK_INTERVAL=30
+SUPPORT_CLUSTER_DESC=Support and monitoring services
+SUPPORT_HEALTH_CHECK_INTERVAL=60# Phase 4 Support Services Configuration
+# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# Target: Raspberry Pi 5 (192.168.0.75)
+# Services: Admin Interface, TRON Payment Services (6 services on isolated network)
+# Architecture: ARM64
+
+# =============================================================================
+# SYSTEM CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+PROJECT_NAME=Lucid
+PROJECT_VERSION=0.1.0
+ENVIRONMENT=production
+DEBUG=false
+LOG_LEVEL=INFO
+
+# =============================================================================
+# API GATEWAY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+API_GATEWAY_HOST=172.20.0.10
+API_GATEWAY_PORT=8080
+API_RATE_LIMIT=1000
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+JWT_SECRET=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+SESSION_TIMEOUT=1800
+
+# =============================================================================
+# SECURITY CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+SSL_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+
+# =============================================================================
+# BLOCKCHAIN CONFIGURATION (Required by validate-env.sh)
+# =============================================================================
+
+BLOCKCHAIN_NETWORK=lucid-mainnet
+BLOCKCHAIN_CONSENSUS=PoOT
+ANCHORING_ENABLED=true
+
+# =============================================================================
+# OPTIONAL CONFIGURATION (Optional by validate-env.sh)
+# =============================================================================
+
+# Hardware Configuration
+HARDWARE_ACCELERATION=true
+V4L2_ENABLED=true
+GPU_ENABLED=false
+
+# Monitoring Configuration
+PROMETHEUS_ENABLED=true
+GRAFANA_ENABLED=true
+HEALTH_CHECK_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+
+# Alerting Configuration
+ALERTING_ENABLED=true
+ALERT_CPU_THRESHOLD=80
+ALERT_MEMORY_THRESHOLD=85
+
+# =============================================================================
+# DISTROLESS BASE CONFIGURATION
+# =============================================================================
+
+# Distroless Base Image
+DISTROLESS_BASE_IMAGE=gcr.io/distroless/python3-debian12
+DISTROLESS_USER=65532:65532
+DISTROLESS_SHELL=/bin/false
+
+# Build Configuration
+DOCKER_BUILDKIT=1
+DOCKER_DEFAULT_PLATFORM=linux/arm64
+COMPOSE_DOCKER_CLI_BUILD=1
+
+# =============================================================================
+# NETWORK CONFIGURATION
+# =============================================================================
+
+# Main Network (Foundation + Core + Application + Blockchain)
+LUCID_MAIN_NETWORK=lucid-pi-network
+LUCID_MAIN_SUBNET=172.20.0.0/16
+LUCID_MAIN_GATEWAY=172.20.0.1
+
+# TRON Isolated Network (Payment Services)
+LUCID_TRON_NETWORK=lucid-tron-isolated
+LUCID_TRON_SUBNET=172.21.0.0/16
+LUCID_TRON_GATEWAY=172.21.0.1
+
+# =============================================================================
+# DATABASE CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+# MongoDB Configuration
+MONGODB_HOST=172.20.0.11
+MONGODB_PORT=27017
+MONGODB_DATABASE=lucid
+MONGODB_USERNAME=lucid
+MONGODB_PASSWORD=${MONGODB_PASSWORD}
+MONGODB_AUTH_SOURCE=admin
+MONGODB_RETRY_WRITES=false
+MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD}@172.20.0.11:27017/lucid?authSource=admin&retryWrites=false
+
+# Redis Configuration
+REDIS_HOST=172.20.0.12
+REDIS_PORT=6379
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_URL=redis://:${REDIS_PASSWORD}@172.20.0.12:6379
+
+# Elasticsearch Configuration
+ELASTICSEARCH_HOST=172.20.0.13
+ELASTICSEARCH_PORT=9200
+ELASTICSEARCH_USERNAME=elastic
+ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+ELASTICSEARCH_URL=http://elastic:${ELASTICSEARCH_PASSWORD}@172.20.0.13:9200
+
+# =============================================================================
+# SECURITY CONFIGURATION (Inherited from Foundation)
+# =============================================================================
+
+# JWT Configuration
+JWT_SECRET_KEY=${JWT_SECRET_KEY}
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION=3600
+
+# Encryption Configuration
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ENCRYPTION_ALGORITHM=AES-256-GCM
+
+# Tor Configuration
+TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+
+# =============================================================================
+# SUPPORT SERVICES CONFIGURATION
+# =============================================================================
+
+# Admin Interface
+ADMIN_INTERFACE_HOST=172.20.0.30
+ADMIN_INTERFACE_PORT=8083
+ADMIN_INTERFACE_URL=http://172.20.0.30:8083
+
+# TRON Payment Services (ISOLATED NETWORK)
+TRON_CLIENT_HOST=172.21.0.10
+TRON_CLIENT_PORT=8091
+TRON_CLIENT_URL=http://172.21.0.10:8091
+
+TRON_PAYOUT_ROUTER_HOST=172.21.0.11
+TRON_PAYOUT_ROUTER_PORT=8092
+TRON_PAYOUT_ROUTER_URL=http://172.21.0.11:8092
+
+TRON_WALLET_MANAGER_HOST=172.21.0.12
+TRON_WALLET_MANAGER_PORT=8093
+TRON_WALLET_MANAGER_URL=http://172.21.0.12:8093
+
+TRON_USDT_MANAGER_HOST=172.21.0.13
+TRON_USDT_MANAGER_PORT=8094
+TRON_USDT_MANAGER_URL=http://172.21.0.13:8094
+
+TRON_STAKING_HOST=172.21.0.14
+TRON_STAKING_PORT=8096
+TRON_STAKING_URL=http://172.21.0.14:8096
+
+TRON_PAYMENT_GATEWAY_HOST=172.21.0.15
+TRON_PAYMENT_GATEWAY_PORT=8097
+TRON_PAYMENT_GATEWAY_URL=http://172.21.0.15:8097
+
+# =============================================================================
+# ADMIN INTERFACE CONFIGURATION
+# =============================================================================
+
+# Admin Interface Configuration
+ADMIN_SECRET=${ADMIN_SECRET}
+ADMIN_INTERFACE_TIMEOUT=30
+ADMIN_INTERFACE_CORS_ENABLED=true
+
+# Admin Dashboard Configuration
+ADMIN_DASHBOARD_ENABLED=true
+ADMIN_DASHBOARD_PORT=8083
+ADMIN_DASHBOARD_URL=http://admin-interface:8083
+
+# Admin Monitoring Configuration
+ADMIN_MONITORING_ENABLED=true
+ADMIN_MONITORING_METRICS_ENABLED=true
+ADMIN_MONITORING_ALERT_ENABLED=true
+
+# Admin Session Management
+ADMIN_SESSION_ADMIN_ENABLED=true
+ADMIN_SESSION_TIMEOUT=3600
+ADMIN_SESSION_MAX_SESSIONS=10
+
+# Admin Blockchain Management
+ADMIN_BLOCKCHAIN_ADMIN_ENABLED=true
+ADMIN_BLOCKCHAIN_MONITORING_ENABLED=true
+ADMIN_BLOCKCHAIN_ALERT_ENABLED=true
+
+# Admin Payout Management
+ADMIN_PAYOUT_TRIGGERS_ENABLED=true
+ADMIN_PAYOUT_MONITORING_ENABLED=true
+ADMIN_PAYOUT_ALERT_ENABLED=true
+
+# =============================================================================
+# TRON BLOCKCHAIN CONFIGURATION
+# =============================================================================
+
+# TRON Network Configuration
+TRON_NETWORK=mainnet
+TRON_API_URL=https://api.trongrid.io
+TRON_PRIVATE_KEY=your_private_key_here
+TRON_ADDRESS=your_address_here
+
+# TRON Payment Configuration
+TRON_PAYMENT_SECRET=${TRON_PAYMENT_SECRET}
+TRON_PAYMENT_TIMEOUT=30
+TRON_PAYMENT_RETRY_ATTEMPTS=3
+
+# USDT Configuration
+USDT_CONTRACT_ADDRESS=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+USDT_DECIMALS=6
+USDT_MINIMUM_PAYOUT=10
+
+# TRON Gas Configuration
+TRON_GAS_LIMIT=100000
+TRON_GAS_PRICE=1000
+TRON_GAS_FEE_LIMIT=1000000
+
+# TRON Staking Configuration
+TRON_STAKING_ENABLED=true
+TRON_STAKING_MINIMUM_AMOUNT=1000
+TRON_STAKING_REWARD_RATE=0.05
+
+# =============================================================================
+# TRON PAYMENT SERVICES CONFIGURATION
+# =============================================================================
+
+# TRON Client Configuration
+TRON_CLIENT_TIMEOUT=30
+TRON_CLIENT_RETRY_ATTEMPTS=3
+TRON_CLIENT_HEALTH_CHECK_INTERVAL=60s
+
+# TRON Payout Router Configuration
+TRON_PAYOUT_ROUTER_BATCH_SIZE=100
+TRON_PAYOUT_ROUTER_TIMEOUT=30
+TRON_PAYOUT_ROUTER_RETRY_ATTEMPTS=3
+
+# TRON Wallet Manager Configuration
+TRON_WALLET_MANAGER_ENCRYPTION_ENABLED=true
+TRON_WALLET_MANAGER_BACKUP_ENABLED=true
+TRON_WALLET_MANAGER_MULTI_SIG_ENABLED=true
+
+# TRON USDT Manager Configuration
+TRON_USDT_MANAGER_BALANCE_MONITORING=true
+TRON_USDT_MANAGER_AUTO_REPLENISHMENT=true
+TRON_USDT_MANAGER_LOW_BALANCE_THRESHOLD=1000
+
+# TRON Staking Configuration
+TRON_STAKING_AUTO_STAKING=true
+TRON_STAKING_REWARD_DISTRIBUTION=true
+TRON_STAKING_COMPOUNDING_ENABLED=true
+
+# TRON Payment Gateway Configuration
+TRON_PAYMENT_GATEWAY_WEBHOOK_ENABLED=true
+TRON_PAYMENT_GATEWAY_RATE_LIMITING=true
+TRON_PAYMENT_GATEWAY_FRAUD_DETECTION=true
+
+# =============================================================================
+# NETWORK ISOLATION CONFIGURATION
+# =============================================================================
+
+# TRON Isolated Network Configuration
+TRON_ISOLATED_NETWORK=lucid-tron-isolated
+TRON_ISOLATED_SUBNET=172.21.0.0/16
+TRON_ISOLATED_GATEWAY=172.21.0.1
+
+# TRON Bridge Configuration
+TRON_BRIDGE_ENABLED=true
+TRON_BRIDGE_PORT=8098
+TRON_BRIDGE_TIMEOUT=30
+TRON_BRIDGE_ENCRYPTION_ENABLED=true
+
+# Network Security Configuration
+TRON_NETWORK_SECURITY_ENABLED=true
+TRON_NETWORK_FIREWALL_ENABLED=true
+TRON_NETWORK_ACCESS_CONTROL_ENABLED=true
+
+# =============================================================================
+# DISTROLESS RUNTIME CONFIGURATION
+# =============================================================================
+
+# Runtime Environment
+LUCID_ENV=production
+LUCID_PLATFORM=arm64
+LUCID_ARCHITECTURE=linux/arm64
+
+# Container Configuration
+CONTAINER_USER=65532
+CONTAINER_GROUP=65532
+CONTAINER_UID=65532
+CONTAINER_GID=65532
+
+# Security Options
+SECURITY_OPT_NO_NEW_PRIVILEGES=true
+SECURITY_OPT_READONLY_ROOTFS=true
+SECURITY_OPT_NO_EXEC=true
+
+# Capability Configuration
+CAP_DROP=ALL
+CAP_ADD=NET_BIND_SERVICE
+
+# =============================================================================
+# HEALTH CHECK CONFIGURATION
+# =============================================================================
+
+# Health Check Configuration
+HEALTH_CHECK_INTERVAL=30s
+HEALTH_CHECK_TIMEOUT=10s
+HEALTH_CHECK_RETRIES=3
+
+# Service Health Endpoints
+ADMIN_INTERFACE_HEALTH_URL=http://172.20.0.30:8083/health
+TRON_CLIENT_HEALTH_URL=http://172.21.0.10:8091/health
+TRON_PAYOUT_ROUTER_HEALTH_URL=http://172.21.0.11:8092/health
+TRON_WALLET_MANAGER_HEALTH_URL=http://172.21.0.12:8093/health
+TRON_USDT_MANAGER_HEALTH_URL=http://172.21.0.13:8094/health
+TRON_STAKING_HEALTH_URL=http://172.21.0.14:8096/health
+TRON_PAYMENT_GATEWAY_HEALTH_URL=http://172.21.0.15:8097/health
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Log Level
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+
+# Log Output
+LOG_OUTPUT=stdout
+LOG_FILE=/dev/stdout
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+
+# Metrics Configuration
+METRICS_ENABLED=true
+METRICS_PORT=9090
+METRICS_PATH=/metrics
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION
+# =============================================================================
+
+# Deployment Target
+DEPLOYMENT_TARGET=raspberry-pi
+DEPLOYMENT_HOST=192.168.0.75
+DEPLOYMENT_USER=pickme
+DEPLOYMENT_PATH=/mnt/myssd/Lucid/Lucid
+
+# Registry Configuration
+REGISTRY=ghcr.io
+REPOSITORY=hamigames/lucid
+IMAGE_TAG=latest-arm64
+
+# =============================================================================
+# BUILD CONFIGURATION
+# =============================================================================
+
+# Build Platform
+BUILD_PLATFORM=linux/arm64
+BUILD_ARCH=arm64
+BUILD_OS=linux
+
+# Build Arguments
+BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+BUILD_VERSION=0.1.0
+BUILD_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")# Tor Proxy Configuration
+# Generated: 2025-10-25T14:12:10Z
+
+# Tor Service Configuration
+TOR_ENABLED=true
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+TOR_HTTP_TUNNEL_PORT=8118
+TOR_DNS_PORT=5353
+
+# Tor Network Configuration
+TOR_NETWORK=mainnet
+TOR_BRIDGE_MODE=false
+TOR_OBFS4_ENABLED=true
+TOR_MEEK_ENABLED=false
+
+# Tor Authentication
+TOR_PASSWORD=yM3LdxUj5NpyCm/0OuT0GvA9mTLwxplA0bKrFGkkp34=
+TOR_HASHED_PASSWORD=
+
+# Tor Circuit Configuration
+TOR_CIRCUIT_BUILD_TIMEOUT=60
+TOR_CIRCUIT_IDLE_TIMEOUT=600
+TOR_MAX_CIRCUITS=8
+TOR_MIN_CIRCUITS=2
+
+# Tor Exit Policy
+TOR_EXIT_POLICY=reject *:25,reject *:135-139,reject *:445,reject *:563,reject *:1214,reject *:4661-4666,reject *:6346-6429,reject *:6699,reject *:6881-6999,accept *:*
+
+# Tor Logging
+TOR_LOG_LEVEL=notice
+TOR_LOG_FILE=/var/log/tor/tor.log
+TOR_LOG_ROTATE=true
+TOR_LOG_MAX_SIZE=100MB
+TOR_LOG_MAX_FILES=5
+
+# Tor Security
+TOR_SAFECOOKIE=true
+TOR_COOKIE_AUTHENTICATION=true
+TOR_COOKIE_AUTH_FILE=/var/lib/tor/control_auth_cookie
+
+# Tor Hidden Services (if needed)
+TOR_HIDDEN_SERVICES_ENABLED=false
+TOR_HIDDEN_SERVICE_DIR=/var/lib/tor/hidden_service
+TOR_HIDDEN_SERVICE_PORT=80
+
+# Tor Client Configuration
+TOR_CLIENT_ONLY=true
+TOR_DISABLE_NETWORK=false
+TOR_STRICT_NODES=false
+TOR_EXIT_NODES=
+TOR_ENTRY_NODES=
+TOR_MIDDLE_NODES=
+
+# Tor Performance
+TOR_BANDWIDTH_RATE=1MB
+TOR_BANDWIDTH_BURST=2MB
+TOR_CONNECTION_PADDING=true
+TOR_REDUCED_CIRCUIT_PADDING=false
+
+# Tor DNS
+TOR_DNS_PORT=5353
+TOR_DNS_LISTEN_ADDRESS=0.0.0.0
+TOR_DNS_CACHE_SIZE=1000
+TOR_DNS_CACHE_TTL=300
+
+# Health Check
+TOR_HEALTH_CHECK_ENABLED=true
+TOR_HEALTH_CHECK_INTERVAL=30
+TOR_HEALTH_CHECK_TIMEOUT=10﻿# TRON Payout Router Configuration
+# Environment variables for tron-payout-router service
+# Port: 8092
+# Load order: .env.foundation â†’ .env.support â†’ .env.tron-payout-router â†’ .env.secrets â†’ .env.core
+
+# Service Configuration
+SERVICE_NAME=tron-payout-router
+SERVICE_PORT=8092
+SERVICE_HOST=0.0.0.0
+PAYOUT_ROUTER_PORT=8092
+PAYOUT_ROUTER_HOST=0.0.0.0
+PAYOUT_ROUTER_URL=http://tron-payout-router:8092
+WORKERS=1
+TIMEOUT=30
+LOG_LEVEL=INFO
+DEBUG=false
+ACCESS_LOG=true
+
+# TRON Configuration
+TRON_NETWORK=mainnet
+TRON_CLIENT_URL=http://lucid-tron-client:8091
+TRON_TIMEOUT=30
+TRON_RPC_URL=https://api.trongrid.io
+TRON_RPC_URL_MAINNET=https://api.trongrid.io
+TRON_RPC_URL_SHASTA=https://api.shasta.trongrid.io
+TRON_HTTP_ENDPOINT=${TRON_HTTP_ENDPOINT}
+TRONGRID_API_KEY=${TRONGRID_API_KEY}
+TRON_API_KEY=${TRON_API_KEY}
+TRON_NODE_URL=${TRON_NODE_URL}
+
+# Payout Configuration
+PAYOUT_BATCH_SIZE=50
+PAYOUT_BATCH_INTERVAL=300
+MAX_PAYOUT_AMOUNT=1000.0
+MIN_PAYOUT_AMOUNT=0.01
+DAILY_PAYOUT_LIMIT=10000.0
+
+# MongoDB Configuration (Required)
+MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
+MONGODB_DATABASE=lucid_payments
+MONGODB_URI=${MONGODB_URI:-${MONGODB_URL}}
+
+# Redis Configuration (Required)
+REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_DATABASE=${REDIS_DATABASE:-0}
+
+# Security (from .env.secrets)
+JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY not set}
+JWT_SECRET=${JWT_SECRET_KEY}
+WALLET_ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY:?WALLET_ENCRYPTION_KEY not set}
+ENCRYPTION_KEY=${WALLET_ENCRYPTION_KEY}
+
+# TRON Credentials (if using KYC/Direct routes)
+TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY}
+TRON_ADDRESS=${TRON_ADDRESS}
+
+# CORS Configuration
+CORS_ORIGINS=${CORS_ORIGINS:-*}
+CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+CORS_HEADERS=${CORS_HEADERS:-*}
+CORS_ALLOW_CREDENTIALS=${CORS_ALLOW_CREDENTIALS:-true}
+TRUSTED_HOSTS=${TRUSTED_HOSTS:-*}
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+
+# Metrics and Monitoring
+METRICS_ENABLED=${METRICS_ENABLED:-true}
+HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-60}
+
+# Data Storage
+DATA_DIRECTORY=${DATA_DIRECTORY:-/data/payment-systems}
+TRON_DATA_DIR=${TRON_DATA_DIR:-/data/payment-systems/payout-router}
+LOG_FILE=${LOG_FILE:-/app/logs/payout-router.log}
+UID=1000
+GID=1000
+USER=vscode

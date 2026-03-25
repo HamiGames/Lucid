@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
 # Create a Tor v3 *ephemeral* onion via the ControlPort.
-# Compatible with Alpine (bash + netcat-openbsd + xxd).
+# Path: 02_network_security/tunnels/scripts/create_ephemeral_onion.sh
+# Aligns with tunnels/Dockerfile (tunnel-tools) and tor/Dockerfile.tor-proxy-02 (Tor sidecar).
 
 set -Eeuo pipefail
 
-# ---- defaults (override via flags or env) ----
-CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
-CONTROL_PORT="${CONTROL_PORT:-9051}"
-COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
-# Fallback if --ports not provided. Uses upstream service/port if envs set.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/_lib.sh"
+
+# Fallback if --ports not provided. ONION_PORTS from Dockerfile may be "80 api-gateway:8080"
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
-DEFAULT_PORT_MAP="80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}"
-
-# Optional: write result to a file (e.g. shared env)
-WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
+DEFAULT_PORT_MAP="${ONION_PORTS:-80 ${UPSTREAM_SERVICE}:${UPSTREAM_PORT}}"
 
 # ---- helpers ----
 log() { printf '[create_ephemeral_onion] %s\n' "$*"; }
@@ -22,19 +20,14 @@ die() { printf '[create_ephemeral_onion][ERROR] %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing dependency: $1"; }
 
 # Resolve a hostname to a single IPv4 address; passthrough if already an IP.
-# In containerized environments, hostnames are resolved by Docker DNS.
-# This function attempts resolution but falls back to using the hostname directly
-# if resolution tools are not available (e.g., in distroless containers).
 resolve_ip() {
   local host="$1"
-  
-  # If already an IP address, return as-is
+
   if printf '%s' "$host" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
     printf '%s' "$host"
     return 0
   fi
-  
-  # Try getent first (available in most Linux systems)
+
   if command -v getent >/dev/null 2>&1; then
     local ip
     ip=$(getent hosts "$host" 2>/dev/null | awk '{print $1; exit}')
@@ -43,8 +36,7 @@ resolve_ip() {
       return 0
     fi
   fi
-  
-  # Try nslookup as fallback
+
   if command -v nslookup >/dev/null 2>&1; then
     local ip
     ip=$(nslookup -timeout=2 "$host" 2>/dev/null | awk '/^Address: /{print $2; exit}')
@@ -53,30 +45,21 @@ resolve_ip() {
       return 0
     fi
   fi
-  
-  # If resolution tools are not available (e.g., distroless container),
-  # return the hostname as-is. Docker will resolve it at runtime.
-  # This is acceptable for container-to-container communication.
+
   log "WARNING: DNS resolution tools not available, using hostname directly: $host"
   printf '%s' "$host"
   return 0
 }
 
-# Send one control command (AUTH + CMD + QUIT); print raw reply
 ctl_send() {
   local cmd="$1"
   local cookie_hex
-  [ -r "$COOKIE_FILE" ] || die "cookie not readable: $COOKIE_FILE"
+  [[ -r "$COOKIE_FILE" ]] || die "cookie not readable: $COOKIE_FILE"
   cookie_hex="$(xxd -p "$COOKIE_FILE" | tr -d '\n')"
   printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" \
     | nc -w 5 "$CONTROL_HOST" "$CONTROL_PORT"
 }
 
-# Parse --ports into "Port=VPORT,IP:TPORT" args for ADD_ONION
-# Accepts input like:
-#   "80 lucid_api:8081"
-#   "80 127.0.0.1:8081"
-#   "80 svc:8081, 443 svc:8443"
 build_port_args() {
   local spec="$1"
   spec="$(printf '%s' "$spec" | tr ',;' ' ')"
@@ -93,11 +76,11 @@ build_port_args() {
     vport="${toks[i]}"; target="${toks[i+1]}"; i=$((i+2))
     host="${target%:*}"
     tport="${target##*:}"
-    [ -n "$host" ] || die "invalid target (no host): $target"
-    [ -n "$tport" ] || die "invalid target (no port): $target"
+    [[ -n "$host" ]] || die "invalid target (no host): $target"
+    [[ -n "$tport" ]] || die "invalid target (no port): $target"
 
     ip="$(resolve_ip "$host")"
-    [ -n "$ip" ] || die "cannot resolve host: $host"
+    [[ -n "$ip" ]] || die "cannot resolve host: $host"
     out+=("Port=${vport},${ip}:${tport}")
   done
 
@@ -115,14 +98,13 @@ while [[ $# -gt 0 ]]; do
     --write-env)    WRITE_ENV="$2";    shift 2;;
     --help|-h)
       cat <<'USAGE'
-Usage: create_ephemeral_onion.sh [--control-host 127.0.0.1] [--control-port 9051]
-                                 [--cookie-file /var/lib/tor/control_auth_cookie]
-                                 [--ports "80 lucid_api:8081[, 443 lucid_api:8443]"]
-                                 [--write-env /scripts/.onion.env]
+Usage: create_ephemeral_onion.sh [--control-host tor-proxy|127.0.0.1] [--control-port 9051]
+                                 [--cookie-file /app/var/lib/tor/control_auth_cookie]
+                                 [--ports "80 api-gateway:8080[, 443 api-gateway:8443]"]
+                                 [--write-env /app/run/lucid/onion/.onion.env]
 Notes:
- - --ports takes PAIRS: "VPORT TARGET", where TARGET is HOST:PORT. Multiple pairs can be comma/space separated.
- - HOST is resolved to an IP before calling ADD_ONION.
- - On success prints ONION=<id>.onion and writes it to --write-env if path is writable.
+ - Default paths match 02_network_security/tunnels/Dockerfile and tor/Dockerfile.tor-proxy-02.
+ - --ports: pairs VPORT TARGET (HOST:PORT). Tor ADD_ONION requires IP:PORT for targets.
 USAGE
       exit 0;;
     *)
@@ -131,13 +113,12 @@ USAGE
   esac
 done
 
-# ---- preflight ----
 need nc
 need xxd
 
-[ -n "${PORT_SPECS}" ] || PORT_SPECS="${DEFAULT_PORT_MAP}"
+[[ -n "${PORT_SPECS}" ]] || PORT_SPECS="${DEFAULT_PORT_MAP}"
 PORT_ARGS="$(build_port_args "${PORT_SPECS}")"
-[ -n "$PORT_ARGS" ] || die "no valid Port= mappings built from: ${PORT_SPECS}"
+[[ -n "$PORT_ARGS" ]] || die "no valid Port= mappings built from: ${PORT_SPECS}"
 
 log "Using ControlPort ${CONTROL_HOST}:${CONTROL_PORT}"
 log "Cookie file: ${COOKIE_FILE}"
@@ -154,14 +135,14 @@ ONION_ID="$(printf '%s\n' "$RAW" | awk -F= '/^250-ServiceID=/{print $2; exit}')"
 ONION_ADDR="${ONION_ID}.onion"
 log "Created onion: ${ONION_ADDR}"
 
-if [ -n "$WRITE_ENV" ] && [ -w "$(dirname "$WRITE_ENV")" ] 2>/dev/null; then
+if [[ -n "$WRITE_ENV" ]] && { [[ -w "$(dirname "$WRITE_ENV")" ]] || mkdir -p "$(dirname "$WRITE_ENV")" 2>/dev/null; }; then
   {
     printf 'ONION=%s\n' "$ONION_ADDR"
     PRIV="$(printf '%s\n' "$RAW" | awk -F= '/^250-PrivateKey=/{print $2; exit}')"
-    if [ -n "$PRIV" ]; then
+    if [[ -n "$PRIV" ]]; then
       printf '#HS_PRIVATE_KEY=%s\n' "$PRIV"
     fi
-  } >"$WRITE_ENV" || true
+  } >"$WRITE_ENV" 2>/dev/null || true
   log "Wrote ${WRITE_ENV}"
 fi
 

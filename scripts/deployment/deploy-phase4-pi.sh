@@ -80,7 +80,7 @@ create_tron_network() {
     
     ssh -o ConnectTimeout=300 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no -i "$PI_SSH_KEY_PATH" "$PI_USER@$PI_HOST" "
         # Create isolated TRON network
-        docker network create --driver bridge --attachable --subnet=172.25.0.0/16 --gateway=172.25.0.1 lucid-tron-isolated 2>/dev/null || true
+        docker network create --driver bridge --attachable --subnet=172.26.0.0/16 --gateway=172.26.0.1 lucid-tron-isolated 2>/dev/null || true
         
         # Verify network creation
         if docker network inspect lucid-tron-isolated >/dev/null 2>&1; then
@@ -338,7 +338,7 @@ generate_deployment_summary() {
   },
   "network_isolation": {
     "tron_network": "lucid-tron-isolated",
-    "tron_subnet": "172.25.0.0/16",
+    "tron_subnet": "172.26.0.0/16",
     "isolation_status": "verified"
   },
   "next_steps": [
@@ -367,7 +367,7 @@ EOF
     echo "  Payment Gateway: http://$PI_HOST:8097"
     echo ""
     echo "Network Isolation:"
-    echo "  TRON Network: lucid-tron-isolated (172.25.0.0/16)"
+    echo "  TRON Network: lucid-tron-isolated (172.26.0.0/16)"
     echo "  Status: Verified and isolated from main network"
 }
 

@@ -12,11 +12,11 @@ Analysis of docker-compose files across the Lucid project reveals **network conf
 
 ### Networks and Subnets
 1. **lucid-pi-network**: `172.20.0.0/16` (Gateway: 172.20.0.1) - Primary network
-2. **lucid-tron-isolated**: `172.21.0.0/16` (Gateway: 172.21.0.1) - TRON payment isolation
-3. **lucid-gui-network**: `172.22.0.0/16` (Gateway: 172.22.0.1) - GUI services
-4. **lucid-distroless-production**: `172.23.0.0/16` - Production distroless
-5. **lucid-distroless-dev**: `172.24.0.0/16` - Development distroless
-6. **lucid-multi-stage-network**: `172.25.0.0/16` - Multi-stage builds
+2. **lucid-tron-isolated**: `172.26.0.0/16` (Gateway: 172.26.0.1) - TRON payment isolation
+3. **lucid-gui-network**: `172.27.0.0/16` (Gateway: 172.27.0.1) - GUI services
+4. **lucid-distroless-production**: `172.28.0.0/16` - Production distroless
+5. **lucid-distroless-dev**: `172.29.0.0/16` - Development distroless
+6. **lucid-multi-stage-network**: `172.30.0.0/16` - Multi-stage builds
 
 ## File Alignment Status
 
@@ -24,7 +24,7 @@ Analysis of docker-compose files across the Lucid project reveals **network conf
 
 #### 1. infrastructure/docker/compose/docker-compose.yml
 - **Status:** ✅ ALIGNED
-- **Networks:** lucid-pi-network (172.20.0.0/16), lucid-tron-isolated (172.21.0.0/16), lucid-gui-network (172.22.0.0/16)
+- **Networks:** lucid-pi-network (172.20.0.0/16), lucid-tron-isolated (172.26.0.0/16), lucid-gui-network (172.27.0.0/16)
 - **Services:** All 35 distroless services configured
 - **Action:** No changes needed
 
@@ -59,9 +59,9 @@ Analysis of docker-compose files across the Lucid project reveals **network conf
 
 #### 6. infrastructure/compose/docker-compose.core.yaml
 - **Status:** ⚠️ MISALIGNED
-- **Current Network:** `lucid_core_net` with subnet `172.21.0.0/16`
+- **Current Network:** `lucid_core_net` with subnet `172.26.0.0/16`
 - **Expected:** 
-  - For blockchain services: Should use `lucid-tron-isolated` (172.21.0.0/16) ✅ CORRECT
+  - For blockchain services: Should use `lucid-tron-isolated` (172.26.0.0/16) ✅ CORRECT
   - For core services: Should use `lucid-pi-network` (172.20.0.0/16) ❌ WRONG
 - **Issue:** Network name mismatch - uses `lucid_core_net` instead of standard names
 - **Services Affected:** tor-proxy, api-server, api-gateway, tunnel-tools, server-tools
@@ -72,17 +72,17 @@ Analysis of docker-compose files across the Lucid project reveals **network conf
 
 #### 7. infrastructure/docker/on-system-chain/docker-compose.yml
 - **Status:** ⚠️ MISALIGNED
-- **Current Network:** `lucid-blockchain` with subnet `172.21.0.0/16`
-- **Expected Network:** `lucid-tron-isolated` (172.21.0.0/16)
+- **Current Network:** `lucid-blockchain` with subnet `172.26.0.0/16`
+- **Expected Network:** `lucid-tron-isolated` (172.26.0.0/16)
 - **Issue:** Network name mismatch - uses `lucid-blockchain` instead of `lucid-tron-isolated`
 - **Action Required:** Rename network to `lucid-tron-isolated`
 
 #### 8. configs/docker/multi-stage/multi-stage-development-config.yml
 - **Status:** ⚠️ MISALIGNED
-- **Current Network:** `lucid-dev` with subnet `172.25.0.0/16`
-- **Expected Network:** `lucid-distroless-dev` with subnet `172.24.0.0/16`
-- **Issue:** Wrong subnet - using multi-stage subnet (172.25.0.0/16) instead of distroless-dev (172.24.0.0/16)
-- **Action Required:** Change subnet to 172.24.0.0/16 and rename network to `lucid-distroless-dev`
+- **Current Network:** `lucid-dev` with subnet `172.30.0.0/16`
+- **Expected Network:** `lucid-distroless-dev` with subnet `172.29.0.0/16`
+- **Issue:** Wrong subnet - using multi-stage subnet (172.30.0.0/16) instead of distroless-dev (172.29.0.0/16)
+- **Action Required:** Change subnet to 172.29.0.0/16 and rename network to `lucid-distroless-dev`
 
 #### 9. configs/docker/multi-stage/multi-stage-testing-config.yml
 - **Status:** ⚠️ PARTIALLY ALIGNED
@@ -143,10 +143,10 @@ All compose files correctly use ports from path_plan.md:
 
 2. **Fix infrastructure/docker/on-system-chain/docker-compose.yml**
    - Rename network from `lucid-blockchain` to `lucid-tron-isolated`
-   - Verify subnet remains 172.21.0.0/16
+   - Verify subnet remains 172.26.0.0/16
 
 3. **Fix configs/docker/multi-stage/multi-stage-development-config.yml**
-   - Change subnet from 172.25.0.0/16 to 172.24.0.0/16
+   - Change subnet from 172.30.0.0/16 to 172.29.0.0/16
    - Rename network from `lucid-dev` to `lucid-distroless-dev`
 
 ### Medium Priority (Improvement)

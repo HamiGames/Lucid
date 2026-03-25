@@ -454,8 +454,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 EOF
         log_success "Basic Phase 4 Docker Compose file created"
     fi
@@ -707,8 +707,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 
 volumes:
   mongodb_data:

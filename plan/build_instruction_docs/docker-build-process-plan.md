@@ -22,8 +22,8 @@
 
 ## Network configs
 - **lucid-pi-network** :172.20.0.0/16 ← Main network
-- **lucid-tron-isolated** :172.21.0.0/16 ← TRON payments
-- **lucid-gui-network**: 172.22.0.0/16 ← GUI services
+- **lucid-tron-isolated** :172.26.0.0/16 ← TRON payments
+- **lucid-gui-network**: 172.27.0.0/16 ← GUI services
 
 
 

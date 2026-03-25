@@ -2,7 +2,7 @@
 
 ## Overview
 
-This step validates 6 distroless TRON containers built and deployed to isolated network (lucid-network-isolated: 172.21.0.0/16), ensuring proper container security labels and complete service isolation.
+This step validates 6 distroless TRON containers built and deployed to isolated network (lucid-network-isolated: 172.26.0.0/16), ensuring proper container security labels and complete service isolation.
 
 ## Priority: CRITICAL
 
@@ -46,7 +46,7 @@ docker images | grep tron
 ### 2. Check Deployment to Isolated Network
 
 **Check for:**
-- Deployment to lucid-network-isolated (172.21.0.0/16)
+- Deployment to lucid-network-isolated (172.26.0.0/16)
 - No deployment to main network (lucid-dev)
 - Proper network isolation
 - TRON services isolated from blockchain core
@@ -57,7 +57,7 @@ docker images | grep tron
 grep -r "lucid-network-isolated" payment-systems/tron/docker-compose.yml
 
 # Verify network subnet
-grep "172.21.0.0/16" payment-systems/tron/docker-compose.yml
+grep "172.26.0.0/16" payment-systems/tron/docker-compose.yml
 
 # Check for main network references
 grep "lucid-dev" payment-systems/tron/docker-compose.yml
@@ -165,7 +165,7 @@ docker images | grep tron
 ### Deploy to Isolated Network
 ```bash
 # Create isolated network
-docker network create --driver bridge --subnet=172.21.0.0/16 --gateway=172.21.0.1 lucid-network-isolated
+docker network create --driver bridge --subnet=172.26.0.0/16 --gateway=172.26.0.1 lucid-network-isolated
 
 # Deploy TRON services
 docker-compose -f payment-systems/tron/docker-compose.yml up -d
@@ -234,7 +234,7 @@ curl -X GET http://localhost:8096/payments/status
 ## Success Criteria
 
 - ✅ 6 distroless TRON containers built successfully
-- ✅ Deployed to isolated network (lucid-network-isolated: 172.21.0.0/16)
+- ✅ Deployed to isolated network (lucid-network-isolated: 172.26.0.0/16)
 - ✅ Container security labels properly configured
 - ✅ Ports 8091-8096 properly mapped
 - ✅ Service isolation from blockchain core verified

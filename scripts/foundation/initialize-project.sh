@@ -148,7 +148,7 @@ setup_docker_network() {
     
     # Setup isolated network for TRON payment services
     local isolated_network="${LUCID_NETWORK_ISOLATED:-lucid-network-isolated}"
-    local isolated_subnet="${LUCID_NETWORK_ISOLATED_SUBNET:-172.21.0.0/16}"
+    local isolated_subnet="${LUCID_NETWORK_ISOLATED_SUBNET:-172.26.0.0/16}"
     
     if docker network inspect "$isolated_network" &> /dev/null; then
         log_info "Isolated network $isolated_network already exists"

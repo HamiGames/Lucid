@@ -114,11 +114,11 @@
 '''
 *Network configurations:*
 1. **lucid-pi-network**: `172.20.0.0/16` (Gateway: 172.20.0.1) - Primary network
-2. **lucid-tron-isolated**: `172.21.0.0/16` (Gateway: 172.21.0.1) - TRON payment isolation
-3. **lucid-gui-network**: `172.22.0.0/16` (Gateway: 172.22.0.1) - GUI services
-4. **lucid-distroless-production**: `172.23.0.0/16` - Production distroless
-5. **lucid-distroless-dev**: `172.24.0.0/16` - Development distroless
-6. **lucid-multi-stage-network**: `172.25.0.0/16` - Multi-stage builds
+2. **lucid-tron-isolated**: `172.26.0.0/16` (Gateway: 172.26.0.1) - TRON payment isolation
+3. **lucid-gui-network**: `172.27.0.0/16` (Gateway: 172.27.0.1) - GUI services
+4. **lucid-distroless-production**: `172.28.0.0/16` - Production distroless
+5. **lucid-distroless-dev**: `172.29.0.0/16` - Development distroless
+6. **lucid-multi-stage-network**: `172.30.0.0/16` - Multi-stage builds
 
 ## **PHASE 1: FOUNDATION SERVICES**
 
@@ -191,7 +191,7 @@ name=api-gateway
 container_name=lucid-api-gateway
 image=pickme/lucid-api-gateway:latest-arm64
 network=lucid-pi-network,lucid-gui-network
-ipv4_address=172.20.0.10,172.22.0.10
+ipv4_address=172.20.0.10,172.27.0.10
 hostname=lucid-api-gateway
 ports=8080:8080,8081:8081
 api_url=http://lucid-api-gateway:8080
@@ -597,12 +597,12 @@ primary_subnet=172.20.0.0/16
 primary_gateway=172.20.0.1
 
 gui_network=lucid-gui-network
-gui_subnet=172.22.0.0/16
-gui_gateway=172.22.0.1
+gui_subnet=172.27.0.0/16
+gui_gateway=172.27.0.1
 
 tron_network=lucid-tron-isolated
-tron_subnet=172.21.0.0/16
-tron_gateway=172.21.0.1
+tron_subnet=172.26.0.0/16
+tron_gateway=172.26.0.1
 ```
 
 #### **Database Connections**
@@ -694,19 +694,19 @@ Main Network (172.20.0.0/16) - lucid-pi-network:
   - Total Services: 27 allocated IPs
   
 Secondary Networks (Available but not used in current allocation):
-  - TRON Network (172.21.0.0/16): Available for TRON isolation
-  - GUI Network (172.22.0.0/16): Available for GUI services
-  - Distroless Production (172.23.0.0/16): Available for distroless containers
-  - Distroless Dev (172.24.0.0/16): Available for development
-  - Multi-Stage Network (172.25.0.0/16): Available for multi-stage builds
+  - TRON Network (172.26.0.0/16): Available for TRON isolation
+  - GUI Network (172.27.0.0/16): Available for GUI services
+  - Distroless Production (172.28.0.0/16): Available for distroless containers
+  - Distroless Dev (172.29.0.0/16): Available for development
+  - Multi-Stage Network (172.30.0.0/16): Available for multi-stage builds
 ```
 
 ---
 
 #### **USAGE NOTES**
 
-1. **Network Isolation**: The TRON network (172.21.0.0/16) is isolated for security
-2. **GUI Access**: GUI network (172.22.0.0/16) provides admin access
+1. **Network Isolation**: The TRON network (172.26.0.0/16) is isolated for security
+2. **GUI Access**: GUI network (172.27.0.0/16) provides admin access
 3. **Main Network**: Most services run on the main network (172.20.0.0/16)
 4. **Health Checks**: All services provide `/health` endpoints
 5. **API Versioning**: All APIs use `/api/v1` prefix

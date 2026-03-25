@@ -36,7 +36,7 @@ networks:
     internal: true  # Add this
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.26.0.0/16
 ```
 
 ### 2. Distroless Base Image Non-Compliance

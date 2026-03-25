@@ -26,7 +26,7 @@ Before verification, document the expected network isolation configuration.
 ### 1. Verify lucid-network-isolated for TRON Services
 **Target**: Check TRON services are deployed to isolated network
 
-**Network**: `lucid-network-isolated` (172.21.0.0/16)
+**Network**: `lucid-network-isolated` (172.26.0.0/16)
 
 **Verification Commands**:
 ```bash
@@ -46,7 +46,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.26.0.0/16
 ```
 
 ### 2. Verify lucid-dev Network for Blockchain Core
@@ -96,7 +96,7 @@ grep -r "lucid-network-isolated\|tron" blockchain/docker-compose.yml
 ## Expected Network Configuration
 
 ### TRON Services Network (lucid-network-isolated)
-- **Subnet**: 172.21.0.0/16
+- **Subnet**: 172.26.0.0/16
 - **Services**: All TRON payment services
 - **Isolation**: Complete separation from blockchain core
 
@@ -140,7 +140,7 @@ grep -r "lucid-network-isolated" blockchain/
 ## Expected Results
 
 ### After Verification
-- [ ] TRON services deployed to lucid-network-isolated (172.21.0.0/16)
+- [ ] TRON services deployed to lucid-network-isolated (172.26.0.0/16)
 - [ ] Blockchain services deployed to lucid-dev (172.20.0.0/16)
 - [ ] No direct communication between networks
 - [ ] Complete network isolation achieved
@@ -149,10 +149,10 @@ grep -r "lucid-network-isolated" blockchain/
 ### Network Isolation Verification
 ```
 TRON Services (lucid-network-isolated):
-├── tron-client (172.21.0.2)
-├── tron-payment-service (172.21.0.3)
-├── tron-network (172.21.0.4)
-└── tron-wallets (172.21.0.5)
+├── tron-client (172.26.0.2)
+├── tron-payment-service (172.26.0.3)
+├── tron-network (172.26.0.4)
+└── tron-wallets (172.26.0.5)
 
 Blockchain Services (lucid-dev):
 ├── blockchain-engine (172.20.0.2)

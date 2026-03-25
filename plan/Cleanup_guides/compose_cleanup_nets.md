@@ -58,8 +58,8 @@ A comprehensive analysis of all Docker Compose files in the Lucid project has be
 **Issue:** Subnet misalignments with `path_plan.md` specifications
 
 **Conflicts Identified:**
-- `docker-compose.pi.yml`: `lucid-pi-network` uses `172.22.0.0/16` (should be `172.20.0.0/16`)
-- `docker-compose.dev.yml`: `lucid-dev-network` uses `172.21.0.0/16` (conflicts with `lucid-tron-isolated`)
+- `docker-compose.pi.yml`: `lucid-pi-network` uses `172.27.0.0/16` (should be `172.20.0.0/16`)
+- `docker-compose.dev.yml`: `lucid-dev-network` uses `172.26.0.0/16` (conflicts with `lucid-tron-isolated`)
 - `docker-compose.phase3.yml`: Uses generic image names instead of `pickme/lucid-*:latest-arm64`
 
 #### 3. Missing Phase 2 Core Services - CRITICAL BLOCKER
@@ -82,22 +82,22 @@ A comprehensive analysis of all Docker Compose files in the Lucid project has be
 **File:** `infrastructure/docker/compose/docker-compose.yml`  
 **Networks:**
 - `lucid-pi-network`: `172.20.0.0/16` ✅
-- `lucid-tron-isolated`: `172.21.0.0/16` ✅
-- `lucid-gui-network`: `172.22.0.0/16` ✅
+- `lucid-tron-isolated`: `172.26.0.0/16` ✅
+- `lucid-gui-network`: `172.27.0.0/16` ✅
 
 #### 2. Pi-Specific Configuration
 **File:** `docker-compose.pi.yml`  
 **Platform:** `linux/arm64` ✅  
 **Images:** `pickme/lucid-*:latest-arm64` ✅  
-**Issue:** Network subnet conflict (172.22.0.0/16 vs 172.20.0.0/16)
+**Issue:** Network subnet conflict (172.27.0.0/16 vs 172.20.0.0/16)
 
 ### 🔧 **NETWORKS REQUIRING CORRECTION**
 
 #### 1. Development Configuration
 **File:** `docker-compose.dev.yml`  
 **Issues:**
-- `lucid-dev-network`: `172.21.0.0/16` (conflicts with `lucid-tron-isolated`)
-- `lucid-payment-network`: `172.22.0.0/16` (conflicts with `lucid-gui-network`)
+- `lucid-dev-network`: `172.26.0.0/16` (conflicts with `lucid-tron-isolated`)
+- `lucid-payment-network`: `172.27.0.0/16` (conflicts with `lucid-gui-network`)
 - `lucid-payment-gateway-dev`: Inconsistent image reference
 
 #### 2. Phase 3 Configuration
@@ -239,7 +239,7 @@ A comprehensive analysis of all Docker Compose files in the Lucid project has be
 
 #### 1. Fix Network Subnet Conflicts
 **Files to Update:**
-- `docker-compose.pi.yml`: Change `lucid-pi-network` from `172.22.0.0/16` to `172.20.0.0/16`
+- `docker-compose.pi.yml`: Change `lucid-pi-network` from `172.27.0.0/16` to `172.20.0.0/16`
 - `docker-compose.dev.yml`: Fix `lucid-dev-network` and `lucid-payment-network` subnets
 - `infrastructure/compose/docker-compose.core.yaml`: Update network configurations
 
@@ -290,14 +290,14 @@ A comprehensive analysis of all Docker Compose files in the Lucid project has be
 # Current (INCORRECT)
 networks:
   lucid-pi-network:
-    subnet: 172.22.0.0/16
+    subnet: 172.27.0.0/16
 
 # Should Be (CORRECT)
 networks:
   lucid-pi-network:
     subnet: 172.20.0.0/16
   lucid-gui-network:
-    subnet: 172.22.0.0/16
+    subnet: 172.27.0.0/16
 ```
 
 #### `docker-compose.dev.yml` Fix
@@ -305,18 +305,18 @@ networks:
 # Current (INCORRECT)
 networks:
   lucid-dev-network:
-    subnet: 172.21.0.0/16  # Conflicts with lucid-tron-isolated
+    subnet: 172.26.0.0/16  # Conflicts with lucid-tron-isolated
   lucid-payment-network:
-    subnet: 172.22.0.0/16  # Conflicts with lucid-gui-network
+    subnet: 172.27.0.0/16  # Conflicts with lucid-gui-network
 
 # Should Be (CORRECT)
 networks:
   lucid-dev-network:
     subnet: 172.20.0.0/16
   lucid-tron-isolated:
-    subnet: 172.21.0.0/16
+    subnet: 172.26.0.0/16
   lucid-gui-network:
-    subnet: 172.22.0.0/16
+    subnet: 172.27.0.0/16
 ```
 
 ### 2. Standardize Image Names
@@ -348,8 +348,8 @@ grep -r "subnet:" infrastructure/compose/*.yaml
 # Verify correct subnets
 # Should show:
 # lucid-pi-network: 172.20.0.0/16
-# lucid-tron-isolated: 172.21.0.0/16
-# lucid-gui-network: 172.22.0.0/16
+# lucid-tron-isolated: 172.26.0.0/16
+# lucid-gui-network: 172.27.0.0/16
 ```
 
 ### 2. Image Naming Verification

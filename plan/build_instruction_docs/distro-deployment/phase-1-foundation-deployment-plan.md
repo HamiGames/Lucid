@@ -164,15 +164,15 @@ cd /mnt/myssd/Lucid/Lucid
 # Create 6 networks
 docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label "lucid.network=main" --label "lucid.subnet=172.20.0.0/16"
 
-docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label "lucid.network=tron-isolated" --label "lucid.subnet=172.21.0.0/16"
+docker network create lucid-tron-isolated --driver bridge --subnet 172.26.0.0/16 --gateway 172.26.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label "lucid.network=tron-isolated" --label "lucid.subnet=172.26.0.0/16"
 
-docker network create lucid-gui-network --driver bridge --subnet 172.22.0.0/16 --gateway 172.22.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label "lucid.network=gui" --label "lucid.subnet=172.22.0.0/16"
+docker network create lucid-gui-network --driver bridge --subnet 172.27.0.0/16 --gateway 172.27.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --opt com.docker.network.driver.mtu=1500 --label "lucid.network=gui" --label "lucid.subnet=172.27.0.0/16"
 
-docker network create lucid-distroless-production --driver bridge --subnet 172.23.0.0/16 --gateway 172.23.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label "lucid.network=distroless-production" --label "lucid.subnet=172.23.0.0/16"
+docker network create lucid-distroless-production --driver bridge --subnet 172.28.0.0/16 --gateway 172.28.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label "lucid.network=distroless-production" --label "lucid.subnet=172.28.0.0/16"
 
-docker network create lucid-distroless-dev --driver bridge --subnet 172.24.0.0/16 --gateway 172.24.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label "lucid.network=distroless-dev" --label "lucid.subnet=172.24.0.0/16"
+docker network create lucid-distroless-dev --driver bridge --subnet 172.29.0.0/16 --gateway 172.29.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label "lucid.network=distroless-dev" --label "lucid.subnet=172.29.0.0/16"
 
-docker network create lucid-multi-stage-network --driver bridge --subnet 172.25.0.0/16 --gateway 172.25.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label "lucid.network=multi-stage" --label "lucid.subnet=172.25.0.0/16"
+docker network create lucid-multi-stage-network --driver bridge --subnet 172.30.0.0/16 --gateway 172.30.0.1 --attachable --opt com.docker.network.bridge.enable_icc=true --opt com.docker.network.bridge.enable_ip_masquerade=true --opt com.docker.network.driver.mtu=1500 --label "lucid.network=multi-stage" --label "lucid.subnet=172.30.0.0/16"
 
 # Verify networks
 docker network ls | grep lucid

@@ -1,0 +1,533 @@
+# Lucid block + TRON payment stack — functional wiring for consensus, chain client, and TRON cluster
+# Path: infrastructure/containers/blockchain/docker-compose.block-system.yml
+#
+# Prerequisites (host):
+#   - docker networks: lucid-pi-network, lucid-tron-isolated (see infrastructure/containers/network/network.txt)
+#   - secrets in configs/environment: .env.foundation, .env.core, .env.support, .env.secrets
+#     plus TRON_PRIVATE_KEY (and related) for tron-client / tron-payment images
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/blockchain/docker-compose.block-system.yml up -d
+#
+# Flow:
+#   - block-consensus-engine ↔ lucid-blockchain-engine (8084) + Mongo/Redis/auth
+#   - tron-client, payout-router, wallet-manager share TRON URLs on lucid-pi-network + lucid-tron-isolated
+#   - tron-payment-service calls microservices via TRON_CLIENT_URL / PAYOUT_ROUTER_URL / WALLET_MANAGER_URL
+#   - tron-payment (pickme/lucid-tron-payment) is the k8s-style multi-listener bundle; optional alongside microservices
+#   - lucid-on-system-chain-client needs ON_SYSTEM_CHAIN_RPC_URL (default: lucid-on-system-chain:8545)
+
+name: lucid-block-system
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-env-block: &env-block
+  - ../../../configs/.env.master
+  - ../../../configs/environment/.env.secrets
+
+services:
+  lucid-mongodb:
+    image: ${LUCID_MONGODB_IMAGE:-pickme/lucid-mongodb:latest-arm64}
+    container_name: lucid-mongodb
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.mongodb
+      args:
+        <<: *lucid-build-args
+        DEBIAN_MULTIARCH: ${DEBIAN_MULTIARCH:-aarch64-linux-gnu}
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_MONGODB_PUBLISH_PORT:-27017}:27017"
+    volumes:
+      - lucid_block_system_mongodb_data:/data/db:rw
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-lucid}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:?set MONGO_INITDB_ROOT_PASSWORD}
+    user: "65532:65532"
+    healthcheck:
+      test: ["CMD", "/usr/bin/python3.11", "/app/usr/local/bin/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  lucid-redis:
+    image: ${LUCID_REDIS_IMAGE:-redis:7-alpine}
+    container_name: lucid-redis
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_REDIS_PUBLISH_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - lucid_block_system_redis_data:/data:rw
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  lucid-auth-service:
+    image: ${LUCID_AUTH_SERVICE_IMAGE:-pickme/lucid-auth-service:latest-arm64}
+    container_name: lucid-auth-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/auth/Dockerfile.auth-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_AUTH_PUBLISH_PORT:-8089}:8089"
+    env_file: *env-block
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8089/health', timeout=2); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-blockchain-engine:
+    image: ${LUCID_BLOCKCHAIN_ENGINE_IMAGE:-pickme/lucid-blockchain-engine:latest-arm64}
+    container_name: lucid-blockchain-engine
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.engine
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-block
+    networks:
+      lucid-pi-network:
+        aliases:
+          - blockchain-engine
+    ports:
+      - "${BLOCKCHAIN_ENGINE_PUBLISH_PORT:-8084}:8084"
+    volumes:
+      - lucid_block_system_engine_data:/app/data:rw
+      - lucid_block_system_engine_logs:/app/logs:rw
+    environment:
+      - BLOCKCHAIN_ENGINE_HOST=lucid-blockchain-engine
+      - BLOCKCHAIN_ENGINE_PORT=8084
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8084/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # block-consensus-engine (image: lucid-consensus-engine) — DNS: block-consensus-engine, lucid-consensus-engine
+  block-consensus-engine:
+    image: ${LUCID_CONSENSUS_ENGINE_IMAGE:-pickme/lucid-consensus-engine:latest-arm64}
+    container_name: lucid-consensus-engine
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.consensus-engine
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-block
+    networks:
+      lucid-pi-network:
+        aliases:
+          - lucid-consensus-engine
+          - blockchain-consensus-engine
+    ports:
+      # Host 18085 default: avoids collision with node-management:8095 (ports.txt / host-config.yml).
+      - "${CONSENSUS_ENGINE_PUBLISH_PORT:-18085}:8085"
+    environment:
+      - BLOCKCHAIN_ENGINE_PORT=8085
+      - BLOCKCHAIN_ENGINE_URL=http://block-consensus-engine:8085
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8085/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  tron-client:
+    image: ${LUCID_TRON_CLIENT_IMAGE:-pickme/lucid-tron-client:latest-arm64}
+    container_name: lucid-tron-client
+    hostname: lucid-tron-client
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    ports:
+      - "${TRON_CLIENT_PUBLISH_PORT:-8091}:8091"
+    env_file: *env-block
+    environment:
+      - SERVICE_NAME=lucid-tron-client
+      - PORT=8091
+      - HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TRON_NETWORK=${TRON_NETWORK:-shasta}
+      - TRON_MAINNET_URL=${TRON_MAINNET_URL:-https://api.trongrid.io}
+      - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:?set TRON_PRIVATE_KEY}
+    volumes:
+      - lucid_block_system_tron_client_logs:/app/logs:rw
+      - lucid_block_system_tron_client_data:/app/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8091/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.cluster=07-tron-payment"
+
+  payout-router:
+    image: ${LUCID_PAYOUT_ROUTER_IMAGE:-pickme/lucid-payout-router:latest-arm64}
+    container_name: lucid-payout-router
+    hostname: lucid-payout-router
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    ports:
+      - "${PAYOUT_ROUTER_PUBLISH_PORT:-8092}:8092"
+    env_file: *env-block
+    environment:
+      - SERVICE_NAME=lucid-payout-router
+      - PORT=8092
+      - HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URI=${REDIS_URI:-redis://lucid-redis:6379/0}
+    volumes:
+      - lucid_block_system_payout_logs:/app/logs:rw
+      - lucid_block_system_payout_data:/app/data:rw
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      tron-client:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8092/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.cluster=07-tron-payment"
+
+  wallet-manager:
+    image: ${LUCID_WALLET_MANAGER_IMAGE:-pickme/lucid-wallet-manager:latest-arm64}
+    container_name: lucid-wallet-manager
+    hostname: lucid-wallet-manager
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    ports:
+      - "${WALLET_MANAGER_PUBLISH_PORT:-8093}:8093"
+    env_file: *env-block
+    environment:
+      - SERVICE_NAME=lucid-wallet-manager
+      - PORT=8093
+      - HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URI=${REDIS_URI:-redis://lucid-redis:6379/0}
+    volumes:
+      - lucid_block_system_wallet_logs:/app/logs:rw
+      - lucid_block_system_wallet_data:/app/data:rw
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      tron-client:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8093/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.lucid.cluster=07-tron-payment"
+
+  # k8s-style TRON bundle (pickme/lucid-tron-payment) — API gateway configs may use http://tron-payment:8085
+  tron-payment:
+    image: ${LUCID_TRON_PAYMENT_BUNDLE_IMAGE:-pickme/lucid-tron-payment:latest-arm64}
+    container_name: lucid-tron-payment
+    hostname: tron-payment
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    ports:
+      # Host 18086 default: avoids collision with session-anchoring / internal 8085 listeners on shared hosts.
+      - "${TRON_PAYMENT_HTTP_PUBLISH_PORT:-18086}:8085"
+      - "${TRON_BUNDLE_CLIENT_PUBLISH:-18091}:8091"
+      - "${TRON_BUNDLE_PAYOUT_PUBLISH:-18092}:8092"
+      - "${TRON_BUNDLE_WALLET_PUBLISH:-18093}:8093"
+    env_file: *env-block
+    environment:
+      - SERVICE_NAME=tron-payment
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://lucid-payout-router:8092}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://lucid-wallet-manager:8093}
+      - TRON_NETWORK=${TRON_NETWORK:-shasta}
+      - TRON_NODE_URL=${TRON_NODE_URL:-https://api.shasta.trongrid.io}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URI=${REDIS_URI:-redis://lucid-redis:6379/0}
+      - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:?set TRON_PRIVATE_KEY}
+    volumes:
+      - lucid_block_system_tron_payment_logs:/app/logs:rw
+      - lucid_block_system_tron_payment_data:/app/data:rw
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      tron-client:
+        condition: service_started
+      payout-router:
+        condition: service_started
+      wallet-manager:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8085/health || curl -fsS http://127.0.0.1:8091/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    labels:
+      - "com.lucid.cluster=07-tron-payment"
+
+  tron-payment-service:
+    image: ${LUCID_TRON_PAYMENT_IMAGE:-pickme/lucid-tron-payment-service:latest-arm64}
+    container_name: lucid-tron-payment-service
+    hostname: lucid-tron-payment-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+      args:
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${TRON_PAYMENT_PUBLISH_PORT:-8070}:8080"
+    env_file: *env-block
+    environment:
+      - TRON_CLIENT_URL=${TRON_CLIENT_URL:-http://lucid-tron-client:8091}
+      - PAYOUT_ROUTER_URL=${PAYOUT_ROUTER_URL:-http://lucid-payout-router:8092}
+      - WALLET_MANAGER_URL=${WALLET_MANAGER_URL:-http://lucid-wallet-manager:8093}
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://lucid-blockchain-engine:8084}
+      - CONSENSUS_ENGINE_URL=${CONSENSUS_ENGINE_URL:-http://block-consensus-engine:8085}
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+      block-consensus-engine:
+        condition: service_healthy
+      tron-client:
+        condition: service_healthy
+      payout-router:
+        condition: service_healthy
+      wallet-manager:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',8080)); s.close(); exit(0 if r==0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  lucid-on-system-chain:
+    image: ${LUCID_ON_SYSTEM_CHAIN_IMAGE:-pickme/lucid:on-system-chain}
+    container_name: lucid-on-system-chain
+    hostname: lucid-on-system-chain
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${ON_SYSTEM_CHAIN_PUBLISH_PORT:-8545}:8545"
+    environment:
+      - ON_SYSTEM_CHAIN_RPC_PORT=8545
+      - ON_SYSTEM_CHAIN_NETWORK=${ON_SYSTEM_CHAIN_NETWORK:-testnet}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - lucid_block_system_on_chain_data:/app/data:rw
+    profiles:
+      - with-on-system-chain
+
+  on-system-chain-client:
+    image: ${LUCID_ON_SYSTEM_CHAIN_CLIENT_IMAGE:-pickme/lucid-on-system-chain-client:latest-arm64}
+    container_name: lucid-on-system-chain-client
+    hostname: lucid-on-system-chain-client
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
+      args:
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${ON_SYSTEM_CHAIN_CLIENT_PUBLISH_PORT:-8040}:8040"
+    env_file: *env-block
+    environment:
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - BLOCKCHAIN_ENGINE_URL=${BLOCKCHAIN_ENGINE_URL:-http://lucid-blockchain-engine:8084}
+      - CONSENSUS_ENGINE_URL=${CONSENSUS_ENGINE_URL:-http://block-consensus-engine:8085}
+      - ON_SYSTEM_CHAIN_RPC_URL=${ON_SYSTEM_CHAIN_RPC_URL:-http://lucid-on-system-chain:8545}
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+      block-consensus-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',8040)); s.close(); exit(0 if r==0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-tron-isolated:
+    external: true
+    name: lucid-tron-isolated
+
+volumes:
+  lucid_block_system_mongodb_data:
+    name: lucid-block-system-mongodb-data
+  lucid_block_system_redis_data:
+    name: lucid-block-system-redis-data
+  lucid_block_system_engine_data:
+  lucid_block_system_engine_logs:
+  lucid_block_system_tron_client_logs:
+  lucid_block_system_tron_client_data:
+  lucid_block_system_payout_logs:
+  lucid_block_system_payout_data:
+  lucid_block_system_wallet_logs:
+  lucid_block_system_wallet_data:
+  lucid_block_system_tron_payment_logs:
+  lucid_block_system_tron_payment_data:
+  lucid_block_system_on_chain_data:

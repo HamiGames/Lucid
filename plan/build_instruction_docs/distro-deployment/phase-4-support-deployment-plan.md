@@ -457,7 +457,7 @@ Phase 4 exposed ports:
 
 **TRON Network Isolation:**
 
-- All TRON services run on `lucid-tron-isolated` network (172.21.0.0/16)
+- All TRON services run on `lucid-tron-isolated` network (172.26.0.0/16)
 - Admin Interface runs on `lucid-pi-network` (172.20.0.0/16)
 - TRON Payment Gateway acts as bridge between networks
 - Direct access to TRON services only via Payment Gateway

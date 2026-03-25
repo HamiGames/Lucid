@@ -1,0 +1,2 @@
+# Node system gateway — wheels built in Dockerfile.node-system-gateway (aligned with 03_api_gateway/Dockerfile)
+pyyaml==6.0.1

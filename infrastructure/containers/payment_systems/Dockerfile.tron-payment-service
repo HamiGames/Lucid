@@ -19,6 +19,11 @@ RUN apt-get update && apt-get install -y \
 
 # Set working directory
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 # Copy requirements
 COPY payment_systems/tron/requirements.txt .
@@ -31,6 +36,10 @@ COPY payment_systems/tron/ ./src/
 FROM gcr.io/distroless/python3-debian12:nonroot
 
 # Copy Python dependencies from builder
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=builder /root/.local /app/.local
 
 # Copy application code

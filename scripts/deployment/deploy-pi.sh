@@ -224,7 +224,7 @@ SCRIPTS_DIR=/mnt/myssd/Lucid/Lucid/scripts
 
 # Network Configuration
 LUCID_NETWORK=lucid-pi
-LUCID_SUBNET=172.23.0.0/16
+LUCID_SUBNET=172.28.0.0/16
 
 # Database Configuration
 MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
@@ -542,7 +542,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
+        - subnet: 172.27.0.0/16
 
 volumes:
   mongodb_data:
@@ -567,7 +567,7 @@ CLUSTER_ID=pi-staging-cluster
 
 # Network Configuration
 LUCID_NETWORK=lucid-staging
-LUCID_SUBNET=172.22.0.0/16
+LUCID_SUBNET=172.27.0.0/16
 
 # Database Configuration
 MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
@@ -616,7 +616,7 @@ setup_pi_networking() {
     section "Setting Up Pi Networking"
     
     log "Creating lucid-staging network on Pi"
-    ssh "$PI_HOST" "docker network create lucid-staging --driver bridge --subnet 172.22.0.0/16 --attachable 2>/dev/null || echo 'Network already exists'"
+    ssh "$PI_HOST" "docker network create lucid-staging --driver bridge --subnet 172.27.0.0/16 --attachable 2>/dev/null || echo 'Network already exists'"
     
     success "✅ Pi networking configured"
 }

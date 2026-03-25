@@ -20,7 +20,7 @@
 
 **Result:**
 - All main services now use `lucid-pi-network` (172.20.0.0/16)
-- TRON services use `lucid-tron-isolated` (172.21.0.0/16)
+- TRON services use `lucid-tron-isolated` (172.26.0.0/16)
 - GUI services use both `lucid-pi-network` and `lucid-gui-network`
 - Services can now communicate across compose files
 
@@ -33,10 +33,10 @@
 ```yaml
 networks:
   lucid-pi-network:
-    ipv4_address: 172.22.0.10  # MongoDB
-    ipv4_address: 172.22.0.11  # Redis
-    ipv4_address: 172.22.0.12  # Elasticsearch
-    ipv4_address: 172.22.0.13  # Auth
+    ipv4_address: 172.27.0.10  # MongoDB
+    ipv4_address: 172.27.0.11  # Redis
+    ipv4_address: 172.27.0.12  # Elasticsearch
+    ipv4_address: 172.27.0.13  # Auth
 ```
 
 **After:**
@@ -188,8 +188,8 @@ networks:
 
 **Networks Created:**
 1. `lucid-pi-network` (172.20.0.0/16) - Main services
-2. `lucid-tron-isolated` (172.21.0.0/16) - TRON payment services
-3. `lucid-gui-network` (172.22.0.0/16) - GUI integration
+2. `lucid-tron-isolated` (172.26.0.0/16) - TRON payment services
+3. `lucid-gui-network` (172.27.0.0/16) - GUI integration
 
 **Usage:**
 ```bash
@@ -255,8 +255,8 @@ bash scripts/deployment/create-pi-networks.sh
 
 **Creates:**
 - lucid-pi-network (172.20.0.0/16)
-- lucid-tron-isolated (172.21.0.0/16)
-- lucid-gui-network (172.22.0.0/16)
+- lucid-tron-isolated (172.26.0.0/16)
+- lucid-gui-network (172.27.0.0/16)
 
 ### Step 2: Generate .env Files (ON PI)
 ```bash
@@ -491,8 +491,8 @@ attachable: true
 ```yaml
 name: lucid-tron-isolated
 driver: bridge
-subnet: 172.21.0.0/16
-gateway: 172.21.0.1
+subnet: 172.26.0.0/16
+gateway: 172.26.0.1
 attachable: true
 ```
 
@@ -510,8 +510,8 @@ attachable: true
 ```yaml
 name: lucid-gui-network
 driver: bridge
-subnet: 172.22.0.0/16
-gateway: 172.22.0.1
+subnet: 172.27.0.0/16
+gateway: 172.27.0.1
 attachable: true
 ```
 
@@ -670,8 +670,8 @@ bash scripts/deployment/create-pi-networks.sh
 
 # This creates:
 #   • lucid-pi-network (172.20.0.0/16)
-#   • lucid-tron-isolated (172.21.0.0/16)
-#   • lucid-gui-network (172.22.0.0/16)
+#   • lucid-tron-isolated (172.26.0.0/16)
+#   • lucid-gui-network (172.27.0.0/16)
 
 # ============================================
 # STEP 5: GENERATE ALL .ENV FILES

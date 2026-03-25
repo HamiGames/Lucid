@@ -52,7 +52,7 @@
   Containers for the Electron GUI and XRDP environment. The XRDP stack is split into controller, monitor, server-manager, and xrdp binaries with explicit port exposure (e.g., 3389, 8095). Each mounts GUI configuration/logs and depends on the Tor proxy for secure remote access.
 
 - **`pickme/tron-*` (or `pickme/lucid-tron-*`)**  
-  TRON blockchain payment microservices—client, payment gateway, payout router, staking, USDT manager. Distroless Python/Node containers that talk to TronGrid. Compose uses a separate TRON network `lucid-tron-isolated` (172.21.0.0/16).
+  TRON blockchain payment microservices—client, payment gateway, payout router, staking, USDT manager. Distroless Python/Node containers that talk to TronGrid. Compose uses a separate TRON network `lucid-tron-isolated` (172.26.0.0/16).
 
 ## Security & Monitoring
 

@@ -1,0 +1,2 @@
+# Admin system gateway — wheels built in Dockerfile.admin-system-gateway (aligned with 03_api_gateway)
+pyyaml==6.0.1

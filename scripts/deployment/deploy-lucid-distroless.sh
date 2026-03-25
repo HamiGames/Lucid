@@ -132,7 +132,7 @@ main() {
     # Create networks
     echo -e "${YELLOW}Creating Docker networks...${NC}"
     run_on_pi "docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1 --attachable 2>/dev/null || echo 'Network already exists'"
-    run_on_pi "docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1 --attachable 2>/dev/null || echo 'Network already exists'"
+    run_on_pi "docker network create lucid-tron-isolated --driver bridge --subnet 172.26.0.0/16 --gateway 172.26.0.1 --attachable 2>/dev/null || echo 'Network already exists'"
     echo -e "${GREEN}✅ Networks created${NC}"
     
     # Generate environment files

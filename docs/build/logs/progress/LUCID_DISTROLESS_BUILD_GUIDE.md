@@ -236,7 +236,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.26.0.0/16
 
 volumes:
   mongo_data:

@@ -23,9 +23,7 @@ x-repo-context: &repo-context
   context: ../../../
 
 x-env-chain: &env-chain
-  - ../../../configs/environment/.env.foundation
-  - ../../../configs/environment/.env.core
-  - ../../../configs/environment/.env.support
+  - ../../../configs/.env.master
   - ../../../configs/environment/.env.secrets
 
 services:

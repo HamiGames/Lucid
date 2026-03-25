@@ -111,7 +111,7 @@ LUCID_NETWORK=lucid-pi-network
 LUCID_NETWORK_SUBNET=172.20.0.0/16
 LUCID_NETWORK_GATEWAY=172.20.0.1
 LUCID_TRON_ISOLATED_NETWORK=lucid-tron-isolated
-LUCID_TRON_ISOLATED_SUBNET=172.21.0.0/16
+LUCID_TRON_ISOLATED_SUBNET=172.26.0.0/16
 
 # ============================================================================
 # SERVICE PORTS (Fixed Assignments)

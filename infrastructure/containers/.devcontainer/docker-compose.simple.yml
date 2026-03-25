@@ -1,6 +1,10 @@
 # Simplified Lucid Development Environment
 # Just the core devcontainer to test basic functionality
 
+x-lucid-env-files: &lucid-env-files
+  - ../../../configs/.env.master
+  - ../../../configs/environment/.env.secrets
+
 networks:
   lucid-dev_lucid_net:
     name: lucid-dev_lucid_net
@@ -16,6 +20,8 @@ services:
     image: lucid/dev:simple
     container_name: lucid_devcontainer_simple
     hostname: lucid-dev-simple
+
+    env_file: *lucid-env-files
     
     # Basic environment
     environment:

@@ -472,7 +472,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
+        - subnet: 172.27.0.0/16
 
 volumes:
   mongodb_data:
@@ -500,7 +500,7 @@ DEPLOYMENT_ID=$DEPLOYMENT_ID
 
 # Network Configuration
 LUCID_NETWORK=lucid-staging
-LUCID_SUBNET=172.22.0.0/16
+LUCID_SUBNET=172.27.0.0/16
 
 # Database Configuration
 MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin&retryWrites=false
@@ -617,7 +617,7 @@ setup_pi_networking() {
     section "Setting Up Pi Networking"
     
     log "Creating Docker networks on Pi"
-    $SSH_CMD "docker network create lucid-staging --driver bridge --subnet 172.22.0.0/16 --attachable 2>/dev/null || echo 'Network already exists'"
+    $SSH_CMD "docker network create lucid-staging --driver bridge --subnet 172.27.0.0/16 --attachable 2>/dev/null || echo 'Network already exists'"
     
     success "✅ Pi networking configured"
 }

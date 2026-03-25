@@ -1097,8 +1097,8 @@ networks:
     internal: true  # Isolated network
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 ```
 
 ---
@@ -1281,8 +1281,8 @@ networks:
     internal: true
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 ```
 
 ### Deployment Script
@@ -1317,7 +1317,7 @@ DEBUG=false
 
 # Network Configuration
 LUCID_NETWORK_SUBNET=172.20.0.0/16
-TRON_NETWORK_SUBNET=172.21.0.0/16
+TRON_NETWORK_SUBNET=172.26.0.0/16
 EOF
 
 # Deploy in phases
@@ -1386,7 +1386,7 @@ DEBUG=false
 
 # Network Configuration
 LUCID_NETWORK_SUBNET=172.20.0.0/16
-TRON_NETWORK_SUBNET=172.21.0.0/16
+TRON_NETWORK_SUBNET=172.26.0.0/16
 
 # Rate Limiting Configuration
 RATE_LIMIT_ENABLED=true
@@ -1424,7 +1424,7 @@ DEBUG=true
 
 # Network Configuration
 LUCID_NETWORK_SUBNET=172.20.0.0/16
-TRON_NETWORK_SUBNET=172.21.0.0/16
+TRON_NETWORK_SUBNET=172.26.0.0/16
 
 # Rate Limiting Configuration
 RATE_LIMIT_ENABLED=false
@@ -1675,8 +1675,8 @@ networks:
     internal: true  # Completely isolated TRON network
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 ```
 
 ### Secrets Management

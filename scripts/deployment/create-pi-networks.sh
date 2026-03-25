@@ -25,12 +25,12 @@ MAIN_SUBNET="172.20.0.0/16"
 MAIN_GATEWAY="172.20.0.1"
 
 TRON_NETWORK="lucid-tron-isolated"
-TRON_SUBNET="172.21.0.0/16"
-TRON_GATEWAY="172.21.0.1"
+TRON_SUBNET="172.26.0.0/16"
+TRON_GATEWAY="172.26.0.1"
 
 GUI_NETWORK="lucid-gui-network"
-GUI_SUBNET="172.22.0.0/16"
-GUI_GATEWAY="172.22.0.1"
+GUI_SUBNET="172.27.0.0/16"
+GUI_GATEWAY="172.27.0.1"
 
 echo ""
 log_info "========================================"

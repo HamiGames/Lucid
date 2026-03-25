@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "description": "HTTP routes for node-system-gateway. Override upstreams via NODE_GATEWAY_UPSTREAM_<KEY>_HOST|PORT|TLS. Optional tls_upstream + tls_profile (see openssl-api.yml).",
+  "listen_bind": "0.0.0.0",
+  "listen_port": 8640,
+  "routes": [
+    {
+      "name": "admin",
+      "path_prefix": "/admin",
+      "upstream_host": "admin-system-gateway",
+      "upstream_port": 8155,
+      "strip_prefix": true
+    },
+    {
+      "name": "api",
+      "path_prefix": "/app",
+      "upstream_host": "api-gateway",
+      "upstream_port": 8080,
+      "strip_prefix": false
+    }
+  ]
+}

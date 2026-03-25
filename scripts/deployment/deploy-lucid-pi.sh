@@ -195,10 +195,10 @@ initialize_environment() {
         
         # Create networks manually
         docker network create lucid_internal --subnet 172.20.0.0/24 --internal || true
-        docker network create lucid_external --subnet 172.21.0.0/24 || true
-        docker network create lucid_blockchain --subnet 172.22.0.0/24 --internal || true
-        docker network create lucid_tor --subnet 172.23.0.0/24 || true
-        docker network create lucid_dev --subnet 172.24.0.0/24 || true
+        docker network create lucid_external --subnet 172.26.0.0/24 || true
+        docker network create lucid_blockchain --subnet 172.27.0.0/24 --internal || true
+        docker network create lucid_tor --subnet 172.28.0.0/24 || true
+        docker network create lucid_dev --subnet 172.29.0.0/24 || true
     fi
     
     return 0

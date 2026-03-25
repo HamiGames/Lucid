@@ -129,21 +129,21 @@ Create onions on-demand for wallets and runtime services:
 
 ### Core Services
 
-- **MongoDB 7** - Replica set database (172.21.0.10)
+- **MongoDB 7** - Replica set database (172.26.0.10)
 
-- **Tor Proxy** - Multi-onion controller (172.21.0.11)
+- **Tor Proxy** - Multi-onion controller (172.26.0.11)
 
-- **API Server** - FastAPI/Python service (172.21.0.12)
+- **API Server** - FastAPI/Python service (172.26.0.12)
 
-- **API Gateway** - NGINX reverse proxy (172.21.0.13)
+- **API Gateway** - NGINX reverse proxy (172.26.0.13)
 
-- **Tunnel Tools** - Network security (172.21.0.14)
+- **Tunnel Tools** - Network security (172.26.0.14)
 
-- **Server Tools** - Utilities and diagnostics (172.21.0.15)
+- **Server Tools** - Utilities and diagnostics (172.26.0.15)
 
 ### Network Architecture
 
-- **Internal Network** (`lucid_core_net`): 172.21.0.0/16 - Isolated ops plane
+- **Internal Network** (`lucid_core_net`): 172.26.0.0/16 - Isolated ops plane
 
 - **External Network** (`lucid_dev_net`): Development container connectivity
 

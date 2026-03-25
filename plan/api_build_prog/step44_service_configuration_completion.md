@@ -158,7 +158,7 @@ Successfully completed **Step 44: Service Configuration** from the BUILD_REQUIRE
 - **Security**: JWT, encryption, SSL/TLS
 - **Monitoring**: Health checks, metrics, alerting
 - **Database**: MongoDB and Redis integration
-- **Network**: Isolated network (172.21.0.0/16)
+- **Network**: Isolated network (172.26.0.0/16)
 
 ### Authentication Service
 - **Service Port**: 8089

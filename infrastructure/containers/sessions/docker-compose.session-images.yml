@@ -3,12 +3,17 @@
 
 version: "3.8"
 
+x-lucid-env-files: &lucid-env-files
+  - ../../../configs/.env.master
+  - ../../../configs/environment/.env.secrets
+
 services:
   # Session Pipeline Service
   session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64
     container_name: lucid-session-pipeline
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "8083:8083"
     environment:
@@ -43,6 +48,7 @@ services:
     image: pickme/lucid-session-recorder:latest-arm64
     container_name: session-recorder
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "8090:8090"
     environment:
@@ -85,6 +91,7 @@ services:
     image: pickme/lucid-chunk-processor:latest-arm64
     container_name: session-chunk-processor
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "8010:8010"
     environment:
@@ -119,6 +126,7 @@ services:
     image: pickme/lucid-session-storage:latest-arm64
     container_name: session-storage
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "8020:8020"
     environment:
@@ -154,6 +162,7 @@ services:
     image: pickme/lucid-session-api:latest-arm64
     container_name: session-api
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "8113:8113"
     environment:
@@ -188,6 +197,7 @@ services:
     image: pickme/lucid-session-anchoring:latest-arm64
     container_name: session-anchoring
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "8084:8084"
     environment:
@@ -222,6 +232,7 @@ services:
     image: pickme/lucid-session-pipeline-manager:latest-arm64
     container_name: session-pipeline-manager
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "7990:7990"
     environment:
@@ -256,6 +267,7 @@ services:
     image: pickme/lucid-session-management:latest-arm64
     container_name: session-management
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "9090:9090"
     environment:
@@ -290,6 +302,7 @@ services:
     image: pickme/lucid-session-systems-control:latest-arm64
     container_name: session-systems-control
     platform: linux/arm64
+    env_file: *lucid-env-files
     ports:
       - "7988:7988"
     environment:

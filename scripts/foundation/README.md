@@ -30,7 +30,7 @@ Contains all environment variables needed for Phase 1 (Foundation Setup):
 **Actions Performed**:
 - ✓ Verify Docker BuildKit enabled
 - ✓ Setup lucid-dev network (172.20.0.0/16)
-- ✓ Setup lucid-network-isolated (172.21.0.0/16) for TRON services
+- ✓ Setup lucid-network-isolated (172.26.0.0/16) for TRON services
 - ✓ Initialize Python 3.11+ environment
 - ✓ Configure git hooks and linting
 - ✓ Create required directory structure
@@ -143,7 +143,7 @@ openssl rand -base64 32
 
 ### Isolated Network
 - **Name**: `lucid-network-isolated`
-- **Subnet**: `172.21.0.0/16`
+- **Subnet**: `172.26.0.0/16`
 - **Internal**: Yes (no external access)
 - **Purpose**: TRON Payment services only (Cluster 07)
 

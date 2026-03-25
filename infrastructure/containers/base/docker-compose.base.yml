@@ -4,6 +4,10 @@
 
 version: "3.8"
 
+x-lucid-env-files: &lucid-env-files
+  - ../../../configs/.env.master
+  - ../../../configs/environment/.env.secrets
+
 services:
   python-base:
     build:
@@ -18,6 +22,8 @@ services:
     image: lucid-python-base:latest
     container_name: lucid-python-base
     hostname: lucid-python-base
+
+    env_file: *lucid-env-files
 
     environment:
       - PYTHONUNBUFFERED=1
@@ -55,6 +61,8 @@ services:
     container_name: lucid-java-base
     hostname: lucid-java-base
 
+    env_file: *lucid-env-files
+
     environment:
       - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
       - LUCID_ENV=dev
@@ -83,8 +91,8 @@ networks:
     attachable: true
     ipam:
       config:
-        - subnet: 172.24.0.0/16
-          gateway: 172.24.0.1
+        - subnet: 172.29.0.0/16
+          gateway: 172.29.0.1
 
 volumes:
   lucid-base-data:

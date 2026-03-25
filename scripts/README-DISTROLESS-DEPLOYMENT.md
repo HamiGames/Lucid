@@ -243,9 +243,9 @@ The cluster uses a dedicated Docker network:
 
 - **Network**: `lucid_core_net`
 
-- **Subnet**: `172.21.0.0/24`
+- **Subnet**: `172.26.0.0/24`
 
-- **Gateway**: `172.21.0.1`
+- **Gateway**: `172.26.0.1`
 
 ### Volume Configuration
 

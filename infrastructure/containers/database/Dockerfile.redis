@@ -23,6 +23,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_PREFER_BINARY=1
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -115,6 +120,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     REDIS_PORT=${REDIS_PORT} \
     REDIS_HOST="lucid-redis" \
     LD_LIBRARY_PATH=/app/usr/lib/redis-ldd
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=redis-builder /var/run/ /app/var/run/
 COPY --from=redis-builder /var/lib/ /app/var/lib/

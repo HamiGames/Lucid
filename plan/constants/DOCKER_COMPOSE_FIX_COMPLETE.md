@@ -18,14 +18,14 @@ Successfully updated `infrastructure/docker/compose/docker-compose.yml` with all
 
 ### TRON Isolation Network
 - **Name:** `lucid-tron-isolated`
-- **Subnet:** `172.21.0.0/16`
-- **Gateway:** `172.21.0.1`
+- **Subnet:** `172.26.0.0/16`
+- **Gateway:** `172.26.0.1`
 - **Services:** All TRON payment services
 
 ### GUI Network
 - **Name:** `lucid-gui-network`
-- **Subnet:** `172.22.0.0/16`
-- **Gateway:** `172.22.0.1`
+- **Subnet:** `172.27.0.0/16`
+- **Gateway:** `172.27.0.1`
 - **Services:** Admin Interface, GUI
 
 ## Services Configured (35 Total)
@@ -58,15 +58,15 @@ Successfully updated `infrastructure/docker/compose/docker-compose.yml` with all
 
 ### Phase 5: Support Services (7)
 21. ✅ lucid-admin-interface - IP: 172.20.0.26, Port: 8083 (Multi-network: lucid-gui-network)
-22. ✅ lucid-tron-client - IP: 172.21.0.27, Port: 8097 (TRON network)
-23. ✅ lucid-payout-router - IP: 172.21.0.28, Port: 8098 (TRON network)
-24. ✅ lucid-wallet-manager - IP: 172.21.0.29, Port: 8099 (TRON network)
-25. ✅ lucid-usdt-manager - IP: 172.21.0.30, Port: 8100 (TRON network)
-26. ✅ lucid-trx-staking - IP: 172.21.0.31, Port: 8101 (TRON network)
-27. ✅ lucid-payment-gateway - IP: 172.21.0.32, Port: 8102 (TRON network)
+22. ✅ lucid-tron-client - IP: 172.26.0.27, Port: 8097 (TRON network)
+23. ✅ lucid-payout-router - IP: 172.26.0.28, Port: 8098 (TRON network)
+24. ✅ lucid-wallet-manager - IP: 172.26.0.29, Port: 8099 (TRON network)
+25. ✅ lucid-usdt-manager - IP: 172.26.0.30, Port: 8100 (TRON network)
+26. ✅ lucid-trx-staking - IP: 172.26.0.31, Port: 8101 (TRON network)
+27. ✅ lucid-payment-gateway - IP: 172.26.0.32, Port: 8102 (TRON network)
 
 ### Phase 6: Specialized Services (5)
-28. ✅ lucid-gui - IP: 172.22.0.10, Port: 8000 (GUI network)
+28. ✅ lucid-gui - IP: 172.27.0.10, Port: 8000 (GUI network)
 29. ✅ lucid-vm - IP: 172.20.0.37, Port: 8103
 30. ✅ lucid-database - IP: 172.20.0.38, Port: 27018
 31. ✅ lucid-storage - IP: 172.20.0.39, Port: 8104
@@ -79,8 +79,8 @@ Successfully updated `infrastructure/docker/compose/docker-compose.yml` with all
 
 ### 2. Network Configuration
 - Primary network: `lucid-pi-network` (172.20.0.0/16)
-- TRON isolated network: `lucid-tron-isolated` (172.21.0.0/16)
-- GUI network: `lucid-gui-network` (172.22.0.0/16)
+- TRON isolated network: `lucid-tron-isolated` (172.26.0.0/16)
+- GUI network: `lucid-gui-network` (172.27.0.0/16)
 - Static IP addresses assigned per path_plan.md
 
 ### 3. Port Mappings
@@ -127,12 +127,12 @@ Successfully updated `infrastructure/docker/compose/docker-compose.yml` with all
 - All TRON payment services
 - Isolated from primary network
 - External TRON network access allowed
-- Subnet: 172.21.0.0/16
+- Subnet: 172.26.0.0/16
 
 ### GUI Network (lucid-gui-network)
 - Admin Interface (multi-network)
 - GUI services
-- Subnet: 172.22.0.0/16
+- Subnet: 172.27.0.0/16
 
 ## Deployment
 
@@ -176,12 +176,12 @@ Create a `.env` file with:
 
 ### From:
 - 3 services with generic images
-- Wrong network (172.23.0.0/16)
+- Wrong network (172.28.0.0/16)
 - Missing ports, environment variables, dependencies, health checks
 
 ### To:
 - 35 services with correct distroless images
-- Correct networks (172.20.0.0/16, 172.21.0.0/16, 172.22.0.0/16)
+- Correct networks (172.20.0.0/16, 172.26.0.0/16, 172.27.0.0/16)
 - Complete configuration with all required mappings
 
 ## Files Modified

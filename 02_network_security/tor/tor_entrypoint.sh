@@ -1,25 +1,32 @@
 #!/usr/bin/env bash
-# tor_entrypoint.sh — Tor Proxy Container Entrypoint v5.4.0
+# tor_entrypoint.sh — Tor Proxy Container Entrypoint
+# Aligned with: 02_network_security/tor/Dockerfile.tor-proxy-02 (SPEC-4 Stage 0, distroless).
+# Runtime: WORKDIR /app, USER debian-tor; tor at /app/usr/bin/tor; busybox at /app/bin/busybox.
 # Distroless busybox compatible.
 # No return statements — all flow control is if/else/exit.
 # All arithmetic increments use pre-increment (( ++var )) || true to survive set -e.
 #
-# Container-internal paths only — NO default Linux system paths:
-#   /run/lucid/tor/data  — Tor DataDirectory  (consensus, state, cookie)
-#   /run/lucid/tor       — Tor config dir     (torrc, hidden service dirs, tunnels)
-#   /run/lucid/tor/log   — container log dir
-#   /run/lucid/onion     — default onion service dir
-#   /run/lucid/ssl/certs — SSL certificates
-#   /run/lucid/passwd    — passwd file (for gosu)
-#   /run/lucid/group     — group file  (for gosu)
-#   /tmp/lucid/tor       — container ephemeral scratch  (cookie tmp, etc.)
-#   /opt/lucid/tor/seed  — container seed data dir      (consensus preload)
-#   /opt/lucid/tor/bin   — container executables
+# Container-internal paths (tor-proxy-02):
+#   /app/run/lucid/tor        — DataDirectory + torrc + logs (TOR_DATA_DIR)
+#   /app/run/lucid/tor/log    — Tor log dir
+#   /app/run/lucid/onion/*   — Hidden-service dirs (scaffold in Dockerfile)
+#   /app/opt/lucid/tor/seed   — Optional consensus preload (TOR_SEED_DIR)
+#   /tmp/lucid/tor            — Ephemeral scratch (cookie mirror)
+#   /app/var/lib/tor          — Legacy seed migration source (copied from builder)
 
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly SCRIPT_VERSION="5.4.0"
+# Ensure applet commands resolve (distroless has no /usr/bin/tor on default PATH alone)
+if [[ -d /app/usr/bin ]]; then
+  [[ ":${PATH:-}:" != *":/app/usr/bin:"* ]] && PATH="/app/usr/bin:${PATH:-}"
+fi
+if [[ -d /app/bin ]]; then
+  [[ ":${PATH:-}:" != *":/app/bin:"* ]] && PATH="/app/bin:${PATH:-}"
+fi
+export PATH
+
+readonly SCRIPT_VERSION="5.5.0"
 readonly COOKIE_SIZE=32
 readonly COOKIE_HEX_LENGTH=64
 
@@ -45,15 +52,15 @@ log_debug() {
 # Environment  (override via .env.* / docker-compose.*.yml)
 # =============================================================================
 # ── Container-internal runtime paths ─────────────────────────────────────────
-# ALL paths point into /opt/lib/tor (Tor DataDirectory),
-# /run/lucid/tor (config + hidden services), /tmp/lucid/tor (ephemeral scratch),
-# or /opt/lucid/tor (static assets).
-# /var/lib/tor, /var/log/tor, /run/tor, /etc/tor are Debian host paths
-# and do NOT exist in this container.
+# Paths match Dockerfile.tor-proxy-02 COPY layout under /app (image ENV may say /run/lucid/tor;
+# on-disk tree from the Dockerfile is under /app/run — normalize if the env path is missing).
 # ─────────────────────────────────────────────────────────────────────────────
-TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor}"
-TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/run/lucid/tor/}"
-TOR_LOG_DIR="${TOR_LOG_DIR:-/run/lucid/tor/log}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/app/run/lucid/tor}"
+if [[ ! -d "$TOR_DATA_DIR" ]] && [[ -d "/app/run/lucid/tor" ]]; then
+    TOR_DATA_DIR="/app/run/lucid/tor"
+fi
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/app/run/lucid/tor/}"
+TOR_LOG_DIR="${TOR_LOG_DIR:-/app/run/lucid/tor/log}"
 TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
 TORRC="${TOR_CONFIG_DIR}/torrc"
 
@@ -67,10 +74,9 @@ TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
 TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
 TOR_COOKIE_TMP="/tmp/lucid/tor/control_auth_cookie"
-BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/run/lucid/tor/bin/bootstrap-helper.sh}"
-# Seed data: preloaded consensus/certs to skip cold bootstrap.
-# Lives in /opt/lucid/tor/seed — a container-internal static asset path.
-TOR_SEED_DIR="${TOR_SEED_DIR:-/opt/lucid/tor/seed}"
+BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/app/run/lucid/tor/bin/bootstrap-helper.sh}"
+# Seed data: preloaded consensus/certs (optional volume: /app/opt/lucid/tor/seed).
+TOR_SEED_DIR="${TOR_SEED_DIR:-/app/opt/lucid/tor/seed}"
 TOR_USE_SEED="${TOR_USE_SEED:-1}"
 
 TOR_USE_BRIDGES="${TOR_USE_BRIDGES:-0}"
@@ -78,7 +84,7 @@ TOR_BRIDGES="${TOR_BRIDGES:-}"
 TOR_PLUGGABLE_TRANSPORT="${TOR_PLUGGABLE_TRANSPORT:-}"
 
 TOR_ONION_SERVICE_ENABLED="${TOR_ONION_SERVICE_ENABLED:-0}"
-TOR_ONION_SERVICE_DIR="${TOR_ONION_SERVICE_DIR:-/run/lucid/onion}"
+TOR_ONION_SERVICE_DIR="${TOR_ONION_SERVICE_DIR:-/app/run/lucid/onion}"
 TOR_ONION_SERVICE_PORT="${TOR_ONION_SERVICE_PORT:-80}"
 TOR_ONION_SERVICE_TARGET="${TOR_ONION_SERVICE_TARGET:-127.0.0.1:80}"
 
@@ -187,16 +193,21 @@ validate_cookie_file() {
 }
 
 # =============================================================================
-# Migrate legacy data (no-op if /opt/lib/tor is already populated)
+# Migrate legacy data (no-op if already populated)
 # =============================================================================
-# If a previous build placed lucid_* seed files under /var/lib/tor (the Debian
-# host default), copy them into the container's data dir before Tor starts.
+# If a previous build placed lucid_* seed files under /app/var/lib/tor (distroless
+# image) or /var/lib/tor (non-distroless), copy into TOR_DATA_DIR before Tor starts.
 # Skips .keep marker files (build-time artefacts only).
 migrate_legacy_var_lib_tor() {
-    local legacy_dir="/var/lib/tor"
+    local legacy_dir=""
+    if [[ -d /app/var/lib/tor ]]; then
+        legacy_dir="/app/var/lib/tor"
+    elif [[ -d /var/lib/tor ]]; then
+        legacy_dir="/var/lib/tor"
+    fi
 
-    if [[ ! -d "${legacy_dir}" ]]; then
-        log_debug "migrate_legacy: ${legacy_dir} does not exist — nothing to migrate"
+    if [[ -z "${legacy_dir}" ]]; then
+        log_debug "migrate_legacy: no legacy tor data directory — nothing to migrate"
         return
     fi
 
@@ -273,7 +284,6 @@ generate_control_auth_cookie_preinit() {
     local tmp_cookie="${TOR_COOKIE_TMP}"   # /tmp/lucid/tor/control_auth_cookie
 
     # All container-internal paths where a valid cookie may already exist.
-    # /var/lib/tor and /run/tor are host Debian paths — NOT present in this container.
     local -a candidates=(
         "${tmp_cookie}"
         "${TOR_COOKIE_FILE}"
@@ -765,7 +775,6 @@ wait_for_cookie() {
     fi
 
     # Container-internal candidate paths only.
-    # /var/lib/tor and /run/tor are host Debian paths — NOT present in this container.
     local -a candidates=(
         "${TOR_COOKIE_FILE}"
         "${TOR_DATA_DIR}/control_auth_cookie"
@@ -1240,7 +1249,7 @@ main() {
     log_debug "TOR_USE_SEED    = ${TOR_USE_SEED}"
     log_debug "TOR_ONION_SERVICE_ENABLED = ${TOR_ONION_SERVICE_ENABLED}"
 
-    log "--- Pre-flight: Migrate any legacy /var/lib/tor data"
+    log "--- Pre-flight: Migrate any legacy tor data (/app/var/lib/tor or /var/lib/tor)"
     migrate_legacy_var_lib_tor
 
     log "--- Step 0: Cookie failsafe preinit"

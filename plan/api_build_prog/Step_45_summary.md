@@ -64,7 +64,7 @@ Successfully completed Step 45: Docker Compose Configurations from the BUILD_REQ
   - TRON Services (6): `tron-client`, `tron-payout-router`, `tron-wallet-manager`, `tron-usdt-manager`, `tron-staking`, `tron-payment-gateway`
 - **Networks**: 
   - `lucid-dev_lucid_net` (172.20.0.0/16) for admin
-  - `lucid-network-isolated` (172.21.0.0/16) for TRON services
+  - `lucid-network-isolated` (172.26.0.0/16) for TRON services
 - **Volumes**: 14 persistent volumes for data and logs
 
 ### ✅ Master Configuration File
@@ -75,7 +75,7 @@ Successfully completed Step 45: Docker Compose Configurations from the BUILD_REQ
 - **Services**: 15 core services representing all phases
 - **Networks**: 
   - Main network: `lucid-dev_lucid_net` (172.20.0.0/16)
-  - Isolated network: `lucid-network-isolated` (172.21.0.0/16)
+  - Isolated network: `lucid-network-isolated` (172.26.0.0/16)
 - **Volumes**: 25+ persistent volumes for comprehensive data management
 
 ### ✅ Environment Configuration
@@ -104,7 +104,7 @@ Successfully completed Step 45: Docker Compose Configurations from the BUILD_REQ
   - Used by all services except TRON payment services
   - Enables inter-service communication
   - Supports service discovery and load balancing
-- **Isolated Network**: `lucid-network-isolated` (172.21.0.0/16)
+- **Isolated Network**: `lucid-network-isolated` (172.26.0.0/16)
   - Used exclusively by TRON payment services
   - Ensures payment services are isolated from blockchain core
   - Maintains security separation as per project requirements

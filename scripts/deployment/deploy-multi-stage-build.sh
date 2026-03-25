@@ -264,7 +264,7 @@ log_info "  • Multi-Stage Development - Development environment with debugging
 log_info "  • Multi-Stage Testing - Testing environment with test database (if selected)"
 log_info "  • Multi-Stage Runtime - Production runtime and monitoring (if selected)"
 echo ""
-log_info "Network: lucid-multi-stage-network (172.25.0.0/16)"
+log_info "Network: lucid-multi-stage-network (172.30.0.0/16)"
 echo ""
 log_info "Usage examples:"
 log_info "  1. Build optimized images:"

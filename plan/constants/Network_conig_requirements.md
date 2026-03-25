@@ -19,21 +19,21 @@ plan/constants/essentials.md
    - Purpose: Primary service network for all Lucid services
    - Allocated IPs: 172.20.0.10 - 172.20.0.32
 
-2. **lucid-tron-isolated** (172.21.0.0/16)
-   - Gateway: 172.21.0.1
+2. **lucid-tron-isolated** (172.26.0.0/16)
+   - Gateway: 172.26.0.1
    - Purpose: Isolated network for TRON payment services (available but currently unused in main allocation)
 
-3. **lucid-gui-network** (172.22.0.0/16)
-   - Gateway: 172.22.0.1
+3. **lucid-gui-network** (172.27.0.0/16)
+   - Gateway: 172.27.0.1
    - Purpose: GUI integration services and Electron-GUI connectivity
 
-4. **lucid-distroless-production** (172.23.0.0/16)
+4. **lucid-distroless-production** (172.28.0.0/16)
    - Purpose: Production distroless container isolation
 
-בירור **lucid-distroless-dev** (172.24.0.0/16)
+בירור **lucid-distroless-dev** (172.29.0.0/16)
    - Purpose: Development distroless container isolation
 
-6. **lucid-multi-stage-network** (172.25.0.0/16)
+6. **lucid-multi-stage-network** (172.30.0.0/16)
    - Purpose: Multi-stage build isolation
 
 ---
@@ -260,7 +260,7 @@ networks:
   lucid-pi-network:
     ipv4_address: 172.20.0.10
   lucid-gui-network:
-    ipv4_address: 172.22.0.10
+    ipv4_address: 172.27.0.10
 ```
 
 **Ports:**
@@ -1080,7 +1080,7 @@ networks:
   lucid-pi-network:
     ipv4_address: 172.20.0.25
   lucid-gui-network:
-    ipv4_address: 172.22.0.25  # Note: May vary in actual deployment
+    ipv4_address: 172.27.0.25  # Note: May vary in actual deployment
 ```
 
 **Ports:**

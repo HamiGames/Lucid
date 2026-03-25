@@ -15,7 +15,6 @@
 #   • infrastructure/containers/server/Dockerfile
 #   • infrastructure/containers/server/Dockerfile.server-manager
 
-version: "3.8"
 
 x-lucid-build-args: &lucid-build-args
   BUILD_DATE: ${BUILD_DATE:-}
@@ -24,6 +23,10 @@ x-lucid-build-args: &lucid-build-args
   TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
   BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
   PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-lucid-env-files: &lucid-env-files
+  - ../../../configs/.env.master
+  - ../../../configs/environment/.env.secrets
 
 services:
   # ---------------------------------------------------------------------------
@@ -41,6 +44,7 @@ services:
       args:
         <<: *lucid-build-args
     restart: unless-stopped
+    env_file: *lucid-env-files
     ports:
       - "${API_GATEWAY_PUBLISH_PORT:-8080}:8080"
     environment:
@@ -87,6 +91,7 @@ services:
       args:
         <<: *lucid-build-args
     restart: unless-stopped
+    env_file: *lucid-env-files
     ports:
       - "${LUCID_SERVER_CORE_PUBLISH_PORT:-8088}:8088"
     environment:
@@ -133,6 +138,7 @@ services:
       args:
         <<: *lucid-build-args
     restart: unless-stopped
+    env_file: *lucid-env-files
     ports:
       - "${LUCID_SERVER_OPERATIONS_PUBLISH_PORT:-8081}:8081"
     environment:

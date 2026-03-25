@@ -45,7 +45,7 @@ Successfully created all **3 required files** for **Step 1: Project Environment 
 LUCID_NETWORK_NAME=lucid-dev
 LUCID_NETWORK_SUBNET=172.20.0.0/16
 LUCID_NETWORK_ISOLATED=lucid-network-isolated
-LUCID_NETWORK_ISOLATED_SUBNET=172.21.0.0/16
+LUCID_NETWORK_ISOLATED_SUBNET=172.26.0.0/16
 
 # Database Configuration
 MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@mongodb:27017/lucid
@@ -93,7 +93,7 @@ DISTROLESS_JAVA_BASE=gcr.io/distroless/java17-debian12
 
 3. **Docker Network Setup**
    - Creates `lucid-dev` network (172.20.0.0/16)
-   - Creates `lucid-network-isolated` (172.21.0.0/16, internal)
+   - Creates `lucid-network-isolated` (172.26.0.0/16, internal)
    - Configures gateway addresses
    - Validates network creation
 
@@ -293,7 +293,7 @@ LUCID_NETWORK_GATEWAY=172.20.0.1
 
 # Isolated Network for TRON Payment Services
 LUCID_NETWORK_ISOLATED=lucid-network-isolated
-LUCID_NETWORK_ISOLATED_SUBNET=172.21.0.0/16
+LUCID_NETWORK_ISOLATED_SUBNET=172.26.0.0/16
 # Internal flag set during creation (no external access)
 ```
 
@@ -431,7 +431,7 @@ REDIS_PASSWORD=                      # Optional but recommended
 - Makes hooks executable
 
 ### ✅ Additional: Setup isolated network
-- Creates lucid-network-isolated (172.21.0.0/16)
+- Creates lucid-network-isolated (172.26.0.0/16)
 - Configures as internal network (no external access)
 - Validates isolation configuration
 - Prepares for TRON service isolation

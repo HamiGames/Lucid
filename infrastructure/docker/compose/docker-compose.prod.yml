@@ -854,7 +854,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.25.0.0/16
+        - subnet: 172.30.0.0/16
 
 # Volumes (Production)
 volumes:

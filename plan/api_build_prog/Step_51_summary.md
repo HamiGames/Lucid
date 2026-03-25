@@ -180,7 +180,7 @@ Successfully completed **Step 51: Raspberry Pi Staging Deployment** from the BUI
 - **Monitoring**: Pi-optimized monitoring and logging
 
 ### Network Configuration
-- **Staging Network**: `lucid-staging` network (172.22.0.0/16)
+- **Staging Network**: `lucid-staging` network (172.27.0.0/16)
 - **Service Discovery**: Internal Docker networking
 - **Health Checks**: HTTP endpoints on each service
 - **Monitoring**: Prometheus and Grafana integration

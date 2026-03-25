@@ -1,0 +1,26 @@
+# Lucid chain-to-pay gateway — TLS client policy when route.tls_upstream: true
+# Override: CHAIN_TO_PAY_SSL_CA_FILE, CHAIN_TO_PAY_SSL_CERT_FILE, CHAIN_TO_PAY_SSL_KEY_FILE
+
+api_version: 1
+
+tls_client_defaults:
+  minimum_version: TLSv1_2
+  verify_mode: CERT_REQUIRED
+  check_hostname: true
+  cafile: /app/etc/ssl/certs/ca-certificates.crt
+  certfile: ""
+  keyfile: ""
+
+tls_profiles:
+  internal_mesh:
+    minimum_version: TLSv1_2
+    verify_mode: CERT_REQUIRED
+    check_hostname: true
+    cafile: /app/etc/ssl/certs/ca-certificates.crt
+  relaxed_lab:
+    minimum_version: TLSv1_2
+    verify_mode: CERT_NONE
+    check_hostname: false
+    cafile: ""
+
+ciphers: ""

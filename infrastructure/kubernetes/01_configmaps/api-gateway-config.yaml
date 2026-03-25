@@ -16,7 +16,7 @@ data:
   
   # IP Address Configuration (per essentials.md)
   API_GATEWAY_HOST: "172.20.0.10"
-  API_GATEWAY_GUI_HOST: "172.22.0.10"
+  API_GATEWAY_GUI_HOST: "172.27.0.10"
   
   # Backend Service URLs (corrected service names)
   BLOCKCHAIN_CORE_URL: "http://lucid-blockchain-engine:8084"
@@ -56,8 +56,8 @@ data:
   LUCID_PI_SUBNET: "172.20.0.0/16"
   LUCID_PI_GATEWAY: "172.20.0.1"
   LUCID_GUI_NETWORK: "lucid-gui-network"
-  LUCID_GUI_SUBNET: "172.22.0.0/16"
-  LUCID_GUI_GATEWAY: "172.22.0.1"
+  LUCID_GUI_SUBNET: "172.27.0.0/16"
+  LUCID_GUI_GATEWAY: "172.27.0.1"
   PROJECT_ROOT: "/mnt/myssd/Lucid/Lucid"
   
   # Electron GUI Endpoint (per essentials.md)

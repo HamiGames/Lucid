@@ -8,10 +8,10 @@ set -Eeuo pipefail
 # Configuration
 TOR_CONTROL_HOST="${TOR_CONTROL_HOST:-tor-proxy}"
 TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
-TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/run/lucid/tor/control_auth_cookie}"
+TOR_COOKIE_PATH="${TOR_COOKIE_PATH:-/app/run/lucid/tor/control_auth_cookie}"
 UPSTREAM_SERVICE="${UPSTREAM_SERVICE:-api-gateway}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-8080}"
-OUTDIR="${ONION_DIR:-/run/lucid/onion}"
+OUTDIR="${ONION_DIR:-/app/run/lucid/onion}"
 DYNAMIC_DIR="$OUTDIR/dynamic"
 
 # Default values (single assignment — env vars take precedence)

@@ -479,7 +479,7 @@
 |--------------|--------|-------------|
 | `SERVICE_NAME` | STRING | Service name (tron-client) |
 | `SERVICE_PORT` | PORT | Service port (default: 8091) |
-| `SERVICE_HOST` | IP | Service IP (e.g., 172.21.0.10) |
+| `SERVICE_HOST` | IP | Service IP (e.g., 172.26.0.10) |
 | `SERVICE_URL` | URL | Full service URL |
 | `TRON_NETWORK` | STRING | TRON network (mainnet/shasta) |
 | `TRON_RPC_URL` | URL | TRON RPC endpoint |
@@ -490,7 +490,7 @@
 |--------------|--------|-------------|
 | `SERVICE_NAME` | STRING | Service name (tron-payout-router) |
 | `SERVICE_PORT` | PORT | Service port (default: 8092) |
-| `SERVICE_HOST` | IP | Service IP (e.g., 172.21.0.11) |
+| `SERVICE_HOST` | IP | Service IP (e.g., 172.26.0.11) |
 | `SERVICE_URL` | URL | Full service URL |
 | `TRON_NETWORK` | STRING | TRON network |
 | `TRON_RPC_URL` | URL | TRON RPC endpoint |
@@ -501,7 +501,7 @@
 |--------------|--------|-------------|
 | `SERVICE_NAME` | STRING | Service name (tron-wallet-manager) |
 | `SERVICE_PORT` | PORT | Service port (default: 8093) |
-| `SERVICE_HOST` | IP | Service IP (e.g., 172.21.0.12) |
+| `SERVICE_HOST` | IP | Service IP (e.g., 172.26.0.12) |
 | `SERVICE_URL` | URL | Full service URL |
 | `TRON_NETWORK` | STRING | TRON network |
 | `TRON_RPC_URL` | URL | TRON RPC endpoint |
@@ -514,7 +514,7 @@
 |--------------|--------|-------------|
 | `SERVICE_NAME` | STRING | Service name (tron-usdt-manager) |
 | `SERVICE_PORT` | PORT | Service port (default: 8094) |
-| `SERVICE_HOST` | IP | Service IP (e.g., 172.21.0.13) |
+| `SERVICE_HOST` | IP | Service IP (e.g., 172.26.0.13) |
 | `SERVICE_URL` | URL | Full service URL |
 | `TRON_NETWORK` | STRING | TRON network |
 | `TRON_RPC_URL` | URL | TRON RPC endpoint |
@@ -526,7 +526,7 @@
 |--------------|--------|-------------|
 | `SERVICE_NAME` | STRING | Service name (tron-staking) |
 | `SERVICE_PORT` | PORT | Service port (default: 8096) |
-| `SERVICE_HOST` | IP | Service IP (e.g., 172.21.0.14) |
+| `SERVICE_HOST` | IP | Service IP (e.g., 172.26.0.14) |
 | `SERVICE_URL` | URL | Full service URL |
 | `TRON_NETWORK` | STRING | TRON network |
 | `TRON_RPC_URL` | URL | TRON RPC endpoint |
@@ -539,7 +539,7 @@
 |--------------|--------|-------------|
 | `SERVICE_NAME` | STRING | Service name (tron-payment-gateway) |
 | `SERVICE_PORT` | PORT | Service port (default: 8097) |
-| `SERVICE_HOST` | IP | Service IP (e.g., 172.21.0.15) |
+| `SERVICE_HOST` | IP | Service IP (e.g., 172.26.0.15) |
 | `SERVICE_URL` | URL | Full service URL |
 | `TRON_NETWORK` | STRING | TRON network |
 | `TRON_RPC_URL` | URL | TRON RPC endpoint |
@@ -583,10 +583,10 @@
 | `LUCID_MAIN_SUBNET` | CIDR | Main subnet (172.20.0.0/16) | .env.distroless |
 | `LUCID_MAIN_GATEWAY` | IP | Main gateway IP | .env.distroless |
 | `LUCID_TRON_NETWORK` | STRING | TRON network name | .env.distroless |
-| `LUCID_TRON_SUBNET` | CIDR | TRON subnet (172.21.0.0/16) | .env.distroless |
+| `LUCID_TRON_SUBNET` | CIDR | TRON subnet (172.26.0.0/16) | .env.distroless |
 | `LUCID_TRON_GATEWAY` | IP | TRON gateway IP | .env.distroless |
 | `LUCID_GUI_NETWORK` | STRING | GUI network name | .env.distroless |
-| `LUCID_GUI_SUBNET` | CIDR | GUI subnet (172.22.0.0/16) | .env.distroless |
+| `LUCID_GUI_SUBNET` | CIDR | GUI subnet (172.27.0.0/16) | .env.distroless |
 | `LUCID_GUI_GATEWAY` | IP | GUI gateway IP | .env.distroless |
 
 ---

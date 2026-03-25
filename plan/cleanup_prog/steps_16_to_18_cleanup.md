@@ -243,7 +243,7 @@ After successful completion of Steps 16-18:
 
 ### Network Isolation Status
 - **Admin Services**: Deployed to lucid-dev network (172.20.0.0/16)
-- **TRON Services**: Isolated to lucid-network-isolated network (172.21.0.0/16)
+- **TRON Services**: Isolated to lucid-network-isolated network (172.26.0.0/16)
 - **Complete Separation**: No cross-network communication
 - **Security Compliance**: Network isolation verified
 

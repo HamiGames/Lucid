@@ -22,7 +22,7 @@
   - Cleaned up cached Python files with TRON references
 
 ### Step 3: Network Isolation Setup ✅
-- **Network Created**: `lucid-network-isolated` (172.22.0.0/16)
+- **Network Created**: `lucid-network-isolated` (172.27.0.0/16)
 - **Existing Network**: `lucid-dev` (172.20.0.0/16)
 - **Isolation Achieved**: Complete separation between blockchain core and TRON services
 

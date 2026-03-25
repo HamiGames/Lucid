@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
+# Path: 02_network_security/tunnels/scripts/tunnel_status.sh
+# Defaults: TOR_PROXY from 02_network_security/tunnels/Dockerfile
+
 set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$SCRIPT_DIR/_lib.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/_lib.sh"
 
 ONION_ARG=""
 PATH_CHECK="/gateway/health"
@@ -17,7 +22,6 @@ load_env
 ADDR="${ONION_ARG:-${ONION:-}}"
 [[ -z "$ADDR" ]] && { echo "[tunnel_status] No onion address provided or found in .env"; exit 2; }
 
-# Load Tor proxy configuration from environment
 TOR_PROXY="${TOR_PROXY:-tor-proxy:9050}"
 TOR_PROXY_HOST="${TOR_PROXY%%:*}"
 TOR_PROXY_PORT="${TOR_PROXY##*:}"

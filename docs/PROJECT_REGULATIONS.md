@@ -236,9 +236,9 @@ networks:
     ipam:
       config:
 
-        - subnet: 172.21.0.0/24
+        - subnet: 172.26.0.0/24
 
-          gateway: 172.21.0.1
+          gateway: 172.26.0.1
 
 ```yaml
 

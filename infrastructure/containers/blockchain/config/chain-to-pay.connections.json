@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "description": "HTTP routes: blockchain plane ↔ payment. Longer path_prefix matches first. Override: CHAIN_GATEWAY_UPSTREAM_<KEY>_HOST|PORT|TLS. forward_prefix rewrites path after strip (see ports.txt service names).",
+  "listen_bind": "0.0.0.0",
+  "listen_port": 8114,
+  "routes": [
+    {
+      "name": "data_chain",
+      "path_prefix": "/app/data-chain",
+      "forward_prefix": "/app",
+      "upstream_host": "data-chain",
+      "upstream_port": 8087,
+      "strip_prefix": true,
+      "tls_upstream": false
+    },
+    {
+      "name": "consensus",
+      "path_prefix": "/app/consensus",
+      "forward_prefix": "/app",
+      "upstream_host": "blockchain-consensus-engine",
+      "upstream_port": 8085,
+      "strip_prefix": true,
+      "tls_upstream": false
+    },
+    {
+      "name": "session_chunk",
+      "path_prefix": "/app/session-chunk",
+      "forward_prefix": "/app",
+      "upstream_host": "session-chunk-processor",
+      "upstream_port": 8010,
+      "strip_prefix": true,
+      "tls_upstream": false
+    },
+    {
+      "name": "payment",
+      "path_prefix": "/app",
+      "upstream_host": "tron-payment-service",
+      "upstream_port": 8080,
+      "strip_prefix": false,
+      "tls_upstream": false
+    }
+  ]
+}

@@ -80,7 +80,7 @@ PIEOF"
     
     # Setup networking on Pi
     log "Setting up Pi networking"
-    ssh "$PI_HOST" "docker network create lucid_core_net --driver bridge --subnet 172.21.0.0/16 --attachable 2>/dev/null || echo 'Network exists'"
+    ssh "$PI_HOST" "docker network create lucid_core_net --driver bridge --subnet 172.26.0.0/16 --attachable 2>/dev/null || echo 'Network exists'"
     ssh "$PI_HOST" "docker network create lucid-dev_lucid_net --driver bridge --attachable 2>/dev/null || echo 'External network created'"
     
     # Start services

@@ -170,6 +170,11 @@ RUN echo "# Lucid Development Tor Configuration" > /etc/tor/torrc && \
 # Stage 8: Final development environment
 FROM tor-config AS final
 
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /workspaces/Lucid/configs
+COPY configs/environment/.env.secrets /workspaces/Lucid/configs/.env.secrets
+COPY master-env-config.txt /workspaces/Lucid/configs/.env.master
+
 # Copy project files (will be mounted in devcontainer)
 # This ensures the container works standalone if needed
 COPY . /workspaces/Lucid/ 2>/dev/null || echo "No project files to copy"

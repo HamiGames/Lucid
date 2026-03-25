@@ -19,7 +19,7 @@ Successfully rebuilt the `cloud-init.yml` file with comprehensive Distroless sup
 
 ### ✅ **2. Docker Configuration Enhancements**
 - **Multi-platform support**: Added Docker Buildx configuration for ARM64 builds
-- **Network alignment**: Updated Docker network to `172.21.0.0/16` for Lucid compatibility
+- **Network alignment**: Updated Docker network to `172.26.0.0/16` for Lucid compatibility
 - **Enhanced logging**: Improved Docker daemon logging configuration
 - **Registry configuration**: Added proper registry authentication and image pulling
 
@@ -101,7 +101,7 @@ registry: pickme/lucid with Distroless tags
   "storage-driver": "overlay2",
   "default-address-pools": [
     {
-      "base": "172.21.0.0/16",
+      "base": "172.26.0.0/16",
       "size": 24
     }
   ],
@@ -221,7 +221,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+        - subnet: 172.26.0.0/16
 
 volumes:
   mongodb_data:
@@ -372,8 +372,8 @@ TOR_PROXY_URL=socks5://tor-proxy:9050
 ### **3. Network Configuration**
 ```bash
 # Network configuration
-LUCID_NETWORK_SUBNET=172.21.0.0/16
-LUCID_GATEWAY=172.21.0.1
+LUCID_NETWORK_SUBNET=172.26.0.0/16
+LUCID_GATEWAY=172.26.0.1
 LUCID_DNS=8.8.8.8
 ```
 

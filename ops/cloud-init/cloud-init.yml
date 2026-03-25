@@ -131,8 +131,8 @@ write_files:
       
       # Create networks (per essentials.md)
       docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1 2>/dev/null || echo 'Network exists'
-      docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1 2>/dev/null || echo 'Network exists'
-      docker network create lucid-gui-network --driver bridge --subnet 172.22.0.0/16 --gateway 172.22.0.1 2>/dev/null || echo 'Network exists'
+      docker network create lucid-tron-isolated --driver bridge --subnet 172.26.0.0/16 --gateway 172.26.0.1 2>/dev/null || echo 'Network exists'
+      docker network create lucid-gui-network --driver bridge --subnet 172.27.0.0/16 --gateway 172.27.0.1 2>/dev/null || echo 'Network exists'
       
       # Login to registry
       echo "${GITHUB_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
@@ -247,7 +247,7 @@ write_files:
       bantime = 3600
       findtime = 600
       maxretry = 3
-      ignoreip = 127.0.0.1/8 ::1 172.20.0.0/16 172.21.0.0/16 172.22.0.0/16
+      ignoreip = 127.0.0.1/8 ::1 172.20.0.0/16 172.26.0.0/16 172.27.0.0/16
       
       [sshd]
       enabled = true
@@ -282,8 +282,8 @@ write_files:
       # Allow time updates from local network (per essentials.md)
       allow 192.168.0.0/16
       allow 172.20.0.0/16
-      allow 172.21.0.0/16
-      allow 172.22.0.0/16
+      allow 172.26.0.0/16
+      allow 172.27.0.0/16
       
       # Local stratum
       local stratum 10
@@ -339,8 +339,8 @@ runcmd:
   
   # Create Docker networks (per essentials.md)
   - docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1 --attachable 2>/dev/null || echo 'Network exists'
-  - docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1 --attachable 2>/dev/null || echo 'Network exists'
-  - docker network create lucid-gui-network --driver bridge --subnet 172.22.0.0/16 --gateway 172.22.0.1 --attachable 2>/dev/null || echo 'Network exists'
+  - docker network create lucid-tron-isolated --driver bridge --subnet 172.26.0.0/16 --gateway 172.26.0.1 --attachable 2>/dev/null || echo 'Network exists'
+  - docker network create lucid-gui-network --driver bridge --subnet 172.27.0.0/16 --gateway 172.27.0.1 --attachable 2>/dev/null || echo 'Network exists'
   
   # Configure firewall for Distroless (per essentials.md ports)
   - ufw --force enable
@@ -460,8 +460,8 @@ runcmd:
         LUCID_PI_SUBNET: "172.20.0.0/16"
         LUCID_PI_GATEWAY: "172.20.0.1"
         LUCID_GUI_NETWORK: "lucid-gui-network"
-        LUCID_GUI_SUBNET: "172.22.0.0/16"
-        LUCID_GUI_GATEWAY: "172.22.0.1"
+        LUCID_GUI_SUBNET: "172.27.0.0/16"
+        LUCID_GUI_GATEWAY: "172.27.0.1"
         LUCID_PLATFORM: "arm64"
         LUCID_ENV: "production"
       
@@ -574,7 +574,7 @@ runcmd:
             HTTP_PORT: "8080"
             HTTPS_PORT: "8081"
             API_GATEWAY_HOST: "172.20.0.10"
-            API_GATEWAY_GUI_HOST: "172.22.0.10"
+            API_GATEWAY_GUI_HOST: "172.27.0.10"
             MONGODB_URI: "mongodb://lucid:lucid@lucid-mongodb:27017/lucid_gateway?authSource=admin"
             REDIS_URL: "redis://lucid-redis:6379/0"
             AUTH_SERVICE_URL: "http://lucid-auth-service:8089"
@@ -586,7 +586,7 @@ runcmd:
             lucid-pi-network:
               ipv4_address: 172.20.0.10
             lucid-gui-network:
-              ipv4_address: 172.22.0.10
+              ipv4_address: 172.27.0.10
           depends_on:
             lucid-mongodb:
               condition: service_healthy
@@ -791,7 +791,7 @@ runcmd:
             lucid-pi-network:
               ipv4_address: 172.20.0.20
             lucid-gui-network:
-              ipv4_address: 172.22.0.20
+              ipv4_address: 172.27.0.20
           ports:
             - "8087:8087"
           healthcheck:
@@ -892,7 +892,7 @@ runcmd:
             lucid-pi-network:
               ipv4_address: 172.20.0.25
             lucid-gui-network:
-              ipv4_address: 172.22.0.25
+              ipv4_address: 172.27.0.25
           ports:
             - "8095:8095"
             - "8099:8099"
@@ -1056,8 +1056,8 @@ runcmd:
           driver: bridge
           ipam:
             config:
-              - subnet: 172.22.0.0/16
-                gateway: 172.22.0.1
+              - subnet: 172.27.0.0/16
+                gateway: 172.27.0.1
       
       volumes:
         mongodb_data:

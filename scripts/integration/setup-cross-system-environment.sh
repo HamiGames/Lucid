@@ -369,12 +369,12 @@ validate_system_integration() {
     
     if ! docker network ls | grep -q "lucid-network-isolated"; then
         log_info "Creating isolated TRON network..."
-        docker network create --driver bridge --subnet 172.21.0.0/16 lucid-network-isolated
+        docker network create --driver bridge --subnet 172.26.0.0/16 lucid-network-isolated
     fi
     
     if ! docker network ls | grep -q "lucid-gui-network"; then
         log_info "Creating GUI network..."
-        docker network create --driver bridge --subnet 172.22.0.0/16 lucid-gui-network
+        docker network create --driver bridge --subnet 172.27.0.0/16 lucid-gui-network
     fi
     
     log_success "System integration validation completed"
@@ -491,8 +491,8 @@ display_summary() {
     echo ""
     echo "Docker Networks:"
     echo "  - Main network: lucid-pi-network (172.20.0.0/16)"
-    echo "  - TRON isolated: lucid-network-isolated (172.21.0.0/16)"
-    echo "  - GUI network: lucid-gui-network (172.22.0.0/16)"
+    echo "  - TRON isolated: lucid-network-isolated (172.26.0.0/16)"
+    echo "  - GUI network: lucid-gui-network (172.27.0.0/16)"
     echo ""
     echo "Generated Scripts:"
     echo "  - Deployment: $SCRIPTS_DIR/deployment/deploy-all-systems.sh"

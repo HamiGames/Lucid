@@ -45,11 +45,11 @@ Comprehensive verification of `scripts/deployment/deploy-phase1-pi.sh` complianc
 - **Deploy Script**: No network creation commands
 - **Phase 1 Plan**: Requires creation of 6 networks:
   - `lucid-pi-network` (172.20.0.0/16)
-  - `lucid-tron-isolated` (172.21.0.0/16)
-  - `lucid-gui-network` (172.22.0.0/16)
-  - `lucid-distroless-production` (172.23.0.0/16)
-  - `lucid-distroless-dev` (172.24.0.0/16)
-  - `lucid-multi-stage-network` (172.25.0.0/16)
+  - `lucid-tron-isolated` (172.26.0.0/16)
+  - `lucid-gui-network` (172.27.0.0/16)
+  - `lucid-distroless-production` (172.28.0.0/16)
+  - `lucid-distroless-dev` (172.29.0.0/16)
+  - `lucid-multi-stage-network` (172.30.0.0/16)
 - **Status**: ❌ **MISSING NETWORK CREATION**
 
 ### **6. Distroless Infrastructure Deployment**
@@ -114,19 +114,19 @@ Comprehensive verification of `scripts/deployment/deploy-phase1-pi.sh` complianc
 docker network create lucid-pi-network --driver bridge --subnet 172.20.0.0/16 --gateway 172.20.0.1
 
 # TRON isolated network  
-docker network create lucid-tron-isolated --driver bridge --subnet 172.21.0.0/16 --gateway 172.21.0.1
+docker network create lucid-tron-isolated --driver bridge --subnet 172.26.0.0/16 --gateway 172.26.0.1
 
 # GUI network
-docker network create lucid-gui-network --driver bridge --subnet 172.22.0.0/16 --gateway 172.22.0.1
+docker network create lucid-gui-network --driver bridge --subnet 172.27.0.0/16 --gateway 172.27.0.1
 
 # Distroless production network
-docker network create lucid-distroless-production --driver bridge --subnet 172.23.0.0/16 --gateway 172.23.0.1
+docker network create lucid-distroless-production --driver bridge --subnet 172.28.0.0/16 --gateway 172.28.0.1
 
 # Distroless dev network
-docker network create lucid-distroless-dev --driver bridge --subnet 172.24.0.0/16 --gateway 172.24.0.1
+docker network create lucid-distroless-dev --driver bridge --subnet 172.29.0.0/16 --gateway 172.29.0.1
 
 # Multi-stage network
-docker network create lucid-multi-stage-network --driver bridge --subnet 172.25.0.0/16 --gateway 172.25.0.1
+docker network create lucid-multi-stage-network --driver bridge --subnet 172.30.0.0/16 --gateway 172.30.0.1
 ```
 
 ### **3. Add Distroless Infrastructure Deployment**

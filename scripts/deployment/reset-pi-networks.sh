@@ -152,14 +152,14 @@ if echo "$current_subnets" | grep -q "172.20.0.0/16"; then
     echo "$current_subnets" | grep "172.20.0.0/16"
     conflicts=$((conflicts + 1))
 fi
-if echo "$current_subnets" | grep -q "172.21.0.0/16"; then
-    log_error "CONFLICT: 172.21.0.0/16 (lucid-tron-isolated) is still allocated!"
-    echo "$current_subnets" | grep "172.21.0.0/16"
+if echo "$current_subnets" | grep -q "172.26.0.0/16"; then
+    log_error "CONFLICT: 172.26.0.0/16 (lucid-tron-isolated) is still allocated!"
+    echo "$current_subnets" | grep "172.26.0.0/16"
     conflicts=$((conflicts + 1))
 fi
-if echo "$current_subnets" | grep -q "172.22.0.0/16"; then
-    log_error "CONFLICT: 172.22.0.0/16 (lucid-gui-network) is still allocated!"
-    echo "$current_subnets" | grep "172.22.0.0/16"
+if echo "$current_subnets" | grep -q "172.27.0.0/16"; then
+    log_error "CONFLICT: 172.27.0.0/16 (lucid-gui-network) is still allocated!"
+    echo "$current_subnets" | grep "172.27.0.0/16"
     conflicts=$((conflicts + 1))
 fi
 
@@ -182,12 +182,12 @@ MAIN_SUBNET="172.20.0.0/16"
 MAIN_GATEWAY="172.20.0.1"
 
 TRON_NETWORK="lucid-tron-isolated"
-TRON_SUBNET="172.21.0.0/16"
-TRON_GATEWAY="172.21.0.1"
+TRON_SUBNET="172.26.0.0/16"
+TRON_GATEWAY="172.26.0.1"
 
 GUI_NETWORK="lucid-gui-network"
-GUI_SUBNET="172.22.0.0/16"
-GUI_GATEWAY="172.22.0.1"
+GUI_SUBNET="172.27.0.0/16"
+GUI_GATEWAY="172.27.0.1"
 
 # Create Network 1: Main Network (Foundation + Core + Application + Blockchain)
 log_info "Creating: $MAIN_NETWORK ($MAIN_SUBNET)"
@@ -234,7 +234,7 @@ if docker network create "$TRON_NETWORK" \
     --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
     --opt com.docker.network.driver.mtu=1500 \
     --label "lucid.network=tron-isolated" \
-    --label "lucid.subnet=172.21.0.0/16" \
+    --label "lucid.subnet=172.26.0.0/16" \
     --label "lucid.services=tron-payment" \
     --label "lucid.isolation=payment-only" \
     --label "lucid.internet=enabled"; then
@@ -263,7 +263,7 @@ if docker network create "$GUI_NETWORK" \
     --opt com.docker.network.bridge.host_binding_ipv4=0.0.0.0 \
     --opt com.docker.network.driver.mtu=1500 \
     --label "lucid.network=gui" \
-    --label "lucid.subnet=172.22.0.0/16" \
+    --label "lucid.subnet=172.27.0.0/16" \
     --label "lucid.services=electron-gui" \
     --label "lucid.internet=enabled"; then
     

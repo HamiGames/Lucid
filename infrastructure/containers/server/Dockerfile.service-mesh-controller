@@ -28,6 +28,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_PREFER_BINARY=1
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -216,6 +221,10 @@ COPY --from=builder --chown=65532:65532 /build/admin/           /app/admin/
 COPY --from=builder --chown=65532:65532 /build/auth/            /app/auth/
 COPY --from=builder --chown=65532:65532 /build/api/             /app/api/
 COPY --from=builder --chown=65532:65532 /build/configs/         /app/configs/
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=builder --chown=65532:65532 /build/service_mesh/    /app/service_mesh/
 COPY --from=builder --chown=65532:65532 /build/sessions/        /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/src/gui/         /app/src/gui/

@@ -100,8 +100,8 @@ TRON_PAYMENT_URL: str = Field(..., env="TRON_PAYMENT_URL")        # Points to is
 ### Isolated Network (lucid-network-isolated)
 ```bash
 # Network: lucid-network-isolated
-# Subnet: 172.22.0.0/16
-# Gateway: 172.22.0.1
+# Subnet: 172.27.0.0/16
+# Gateway: 172.27.0.1
 # Purpose: TRON payment services
 # Status: ✅ OPERATIONAL
 ```
@@ -114,7 +114,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16  # Note: Actual network uses 172.22.0.0/16
+        - subnet: 172.26.0.0/16  # Note: Actual network uses 172.27.0.0/16
     labels:
       - "lucid.network=payment-isolated"
       - "lucid.phase=phase4"

@@ -53,11 +53,11 @@ The script validates all aspects of Phase 1 deployment:
 
 #### **Required Networks**
 - `lucid-pi-network` (172.20.0.0/16)
-- `lucid-tron-isolated` (172.21.0.0/16)
-- `lucid-gui-network` (172.22.0.0/16)
-- `lucid-distroless-production` (172.23.0.0/16)
-- `lucid-distroless-dev` (172.24.0.0/16)
-- `lucid-multi-stage-network` (172.25.0.0/16)
+- `lucid-tron-isolated` (172.26.0.0/16)
+- `lucid-gui-network` (172.27.0.0/16)
+- `lucid-distroless-production` (172.28.0.0/16)
+- `lucid-distroless-dev` (172.29.0.0/16)
+- `lucid-multi-stage-network` (172.30.0.0/16)
 
 #### **Foundation Services**
 - `lucid-mongodb` (Port 27017)

@@ -167,8 +167,8 @@ CAP_ADD=NET_BIND_SERVICE
 
 # Distroless Production Network
 LUCID_DISTROLESS_NETWORK=lucid-distroless-production
-LUCID_DISTROLESS_SUBNET=172.23.0.0/16
-LUCID_DISTROLESS_GATEWAY=172.23.0.1
+LUCID_DISTROLESS_SUBNET=172.28.0.0/16
+LUCID_DISTROLESS_GATEWAY=172.28.0.1
 
 # =============================================================================
 # HEALTH CHECK CONFIGURATION
@@ -293,8 +293,8 @@ VOLUME_CACHE_PATH=/tmp/cache
 
 # Network Configuration
 LUCID_DISTROLESS_NETWORK=lucid-distroless-production
-LUCID_DISTROLESS_SUBNET=172.23.0.0/16
-LUCID_DISTROLESS_GATEWAY=172.23.0.1
+LUCID_DISTROLESS_SUBNET=172.28.0.0/16
+LUCID_DISTROLESS_GATEWAY=172.28.0.1
 EOF
 
 echo -e "${GREEN}✅ distroless.env generated${NC}"
@@ -636,11 +636,11 @@ create_network() {
 
 # Create all 6 networks
 create_network "lucid-pi-network" "172.20.0.0/16" "172.20.0.1" "main"
-create_network "lucid-tron-isolated" "172.21.0.0/16" "172.21.0.1" "tron-isolated"
-create_network "lucid-gui-network" "172.22.0.0/16" "172.22.0.1" "gui"
-create_network "lucid-distroless-production" "172.23.0.0/16" "172.23.0.1" "distroless-production"
-create_network "lucid-distroless-dev" "172.24.0.0/16" "172.24.0.1" "distroless-dev"
-create_network "lucid-multi-stage-network" "172.25.0.0/16" "172.25.0.1" "multi-stage"
+create_network "lucid-tron-isolated" "172.26.0.0/16" "172.26.0.1" "tron-isolated"
+create_network "lucid-gui-network" "172.27.0.0/16" "172.27.0.1" "gui"
+create_network "lucid-distroless-production" "172.28.0.0/16" "172.28.0.1" "distroless-production"
+create_network "lucid-distroless-dev" "172.29.0.0/16" "172.29.0.1" "distroless-dev"
+create_network "lucid-multi-stage-network" "172.30.0.0/16" "172.30.0.1" "multi-stage"
 
 # Verify networks
 echo -e "${BLUE}🔍 Verifying networks...${NC}"

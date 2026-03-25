@@ -315,8 +315,8 @@ networks:
     internal: true
     ipam:
       config:
-        - subnet: 172.25.0.0/16
-          gateway: 172.25.0.1
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
   
   # Tor network - External access
   tor_network:

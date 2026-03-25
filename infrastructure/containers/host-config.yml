@@ -1,0 +1,1034 @@
+# infrastructure/containers/host-config.yml
+# Generated from repository root ports.txt + _gen_host_config.py label rules — regenerate; do not hand-edit the service list.
+
+version: '1.0'
+description: Lucid container host registry for Docker DNS hostnames, ports, and discovery URLs.
+source: ports.txt
+path: infrastructure/containers/host-config.yml
+http_path_template: http://${service_name}:${port}/app
+services:
+  main_lucid_gateway:
+    port: 8080
+    service_name: api-gateway
+    tags:
+    - api-gateway
+    - lucid-gateway
+    - main_lucid_gateway
+    http_path: http://api-gateway:8080/app
+    labels:
+      com.lucid.service: api-gateway
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8080'
+      com.lucid.plane: ops
+  lucid_server_manager:
+    port: 8081
+    service_name: lucid-server-manager
+    tags:
+    - lucid-server-manager
+    - lucid-server-operations
+    - server-operations
+    http_path: http://lucid-server-manager:8081/app
+    labels:
+      com.lucid.service: lucid-server-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8081'
+  lucid_server_core:
+    port: 8100
+    service_name: lucid-server-core
+    tags:
+    - lucid-server
+    - lucid-server-core
+    - server-system-core
+    - lucid_server
+    - lucid_server_core
+    http_path: http://lucid-server-core:8100/app
+    labels:
+      com.lucid.service: lucid-server-core
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8100'
+  lucid_auth_service:
+    port: 8089
+    service_name: lucid-auth-service
+    tags:
+    - lucid-auth-service
+    - auth-service
+    http_path: http://lucid-auth-service:8089/app
+    labels:
+      com.lucid.service: lucid-auth-service
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '8089'
+  lucid_gov:
+    port: 8108
+    service_name: lucid-gov
+    tags:
+    - lucid-gov
+    - governor
+    - lucid-governor
+    http_path: http://lucid-gov:8108/app
+    labels:
+      com.lucid.service: lucid-gov
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '8108'
+  session_system_control:
+    port: 7988
+    service_name: session-system-control
+    tags:
+    - session-system-control
+    - session-systems-control
+    http_path: http://session-system-control:7988/app
+    labels:
+      com.lucid.service: session-system-control
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '7988'
+  session_pipeline_manager:
+    port: 7990
+    service_name: session-pipeline-manager
+    tags:
+    - session-pipeline-manager
+    http_path: http://session-pipeline-manager:7990/app
+    labels:
+      com.lucid.service: session-pipeline-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '7990'
+      com.lucid.api.gateway: api-gateway
+  session_chunk_processor:
+    port: 8010
+    service_name: session-chunk-processor
+    tags:
+    - session-chunk-processor
+    - chunk-processor
+    http_path: http://session-chunk-processor:8010/app
+    labels:
+      com.lucid.service: session-chunk-processor
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '8010'
+      com.lucid.api.gateway: api-gateway
+  session_storage_service:
+    port: 8020
+    service_name: session-storage-service
+    tags:
+    - session-storage-service
+    http_path: http://session-storage-service:8020/app
+    labels:
+      com.lucid.service: session-storage-service
+      com.lucid.platform: arm64
+      com.lucid.cluster: storage
+      com.lucid.security: distroless
+      com.lucid.expose: '8020'
+  session_storage:
+    port: 8082
+    service_name: session-storage
+    tags:
+    - session-storage
+    - sessions-storage
+    http_path: http://session-storage:8082/app
+    labels:
+      com.lucid.service: session-storage
+      com.lucid.platform: arm64
+      com.lucid.cluster: storage
+      com.lucid.security: distroless
+      com.lucid.expose: '8082'
+  session_pipeline:
+    port: 8083
+    service_name: session-pipeline
+    tags:
+    - session-pipeline
+    http_path: http://session-pipeline:8083/app
+    labels:
+      com.lucid.service: session-pipeline
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '8083'
+  session_anchoring:
+    port: 8085
+    service_name: session-anchoring
+    tags:
+    - session-anchoring
+    - anchoring
+    http_path: http://session-anchoring:8085/app
+    labels:
+      com.lucid.service: session-anchoring
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8085'
+      com.lucid.api.gateway: api-gateway
+  session_recorder:
+    port: 8090
+    service_name: session-recorder
+    tags:
+    - session-recorder
+    - rdp-session-recorder
+    http_path: http://session-recorder:8090/app
+    labels:
+      com.lucid.service: session-recorder
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8090'
+  session_processor:
+    port: 8091
+    service_name: session-processor
+    tags:
+    - session-processor
+    - sessions-processor
+    http_path: http://session-processor:8091/app
+    labels:
+      com.lucid.service: session-processor
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '8091'
+  session_merkle_tree_builder:
+    port: 8092
+    service_name: session-merkle-tree-builder
+    tags:
+    - merkle-tree-builder
+    - session-merkle
+    http_path: http://session-merkle-tree-builder:8092/app
+    labels:
+      com.lucid.service: session-merkle-tree-builder
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '8092'
+  session_overlord:
+    port: 8110
+    service_name: session-overlord
+    tags:
+    - session-overlord
+    - sessions-overlord
+    http_path: http://session-overlord:8110/app
+    labels:
+      com.lucid.service: session-overlord
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '8110'
+  session_api:
+    port: 8113
+    service_name: session-api
+    tags:
+    - session-api
+    - sessions-api
+    http_path: http://session-api:8113/app
+    labels:
+      com.lucid.service: session-api
+      com.lucid.platform: arm64
+      com.lucid.cluster: processing
+      com.lucid.security: distroless
+      com.lucid.expose: '8113'
+  admin_params_registry:
+    port: 8050
+    service_name: admin-params-registry
+    tags:
+    - admin-params-registry
+    - params-registry
+    http_path: http://admin-params-registry:8050/app
+    labels:
+      com.lucid.service: admin-params-registry
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8050'
+  admin_key_rotation:
+    port: 8060
+    service_name: admin-key-rotation
+    tags:
+    - admin-key-rotation
+    - key-rotation
+    http_path: http://admin-key-rotation:8060/app
+    labels:
+      com.lucid.service: admin-key-rotation
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8060'
+  admin_governance_client:
+    port: 8070
+    service_name: admin-governance-client
+    tags:
+    - admin-governance-client
+    - governance-client
+    - gov-client
+    http_path: http://admin-governance-client:8070/app
+    labels:
+      com.lucid.service: admin-governance-client
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8070'
+  admin_ui_backend:
+    port: 8120
+    service_name: admin-ui-backend
+    tags:
+    - admin-ui-backend
+    - admin-interface
+    - admin-ui
+    - lucid-admin-interface
+    http_path: http://admin-ui-backend:8120/app
+    labels:
+      com.lucid.service: admin-ui-backend
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8120'
+  database_overlord:
+    port: 8120
+    service_name: database-overlord
+    tags:
+    - database-overlord
+    - lucid-database-overlord
+    http_path: http://database-overlord:8120/app
+    labels:
+      com.lucid.service: database-overlord
+      com.lucid.platform: arm64
+      com.lucid.cluster: database
+      com.lucid.security: distroless
+      com.lucid.expose: '8120'
+  admin_overlord:
+    port: 8140
+    service_name: admin-overlord
+    tags:
+    - admin-overlord
+    - lucid-admin-overlord
+    http_path: http://admin-overlord:8140/app
+    labels:
+      com.lucid.service: admin-overlord
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8140'
+  admin_system_gateway:
+    port: 8155
+    service_name: admin-system-gateway
+    tags:
+    - admin-system-gateway
+    - admin-gateway
+    - lucid-admin-system-gateway
+    http_path: http://admin-system-gateway:8155/health
+    labels:
+      com.lucid.service: admin-system-gateway
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8155'
+      com.lucid.tor.compatible: 'true'
+  node_management:
+    port: 8095
+    service_name: node-management
+    tags:
+    - node-management
+    - node-management-api
+    http_path: http://node-management:8095/app
+    labels:
+      com.lucid.service: node-management
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8095'
+  node_management_staging:
+    port: 8099
+    service_name: node-management-staging
+    tags:
+    - node-management-staging
+    - NODE_MANAGEMENT_STAGING_PORT
+    http_path: http://node-management-staging:8099/app
+    labels:
+      com.lucid.service: node-management-staging
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8099'
+  node_worker:
+    port: 8600
+    service_name: node-worker
+    tags:
+    - lucid-node-worker
+    - node-worker
+    - node_worker
+    http_path: http://node-worker:8600/app
+    labels:
+      com.lucid.service: node-worker
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8600'
+  node_registry:
+    port: 8610
+    service_name: node-registry
+    tags:
+    - node-registry
+    - lucid-node-registry
+    http_path: http://node-registry:8610/app
+    labels:
+      com.lucid.service: node-registry
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8610'
+  node_gov:
+    port: 8620
+    service_name: node-gov
+    tags:
+    - node-gov
+    - lucid-node-gov
+    http_path: http://node-gov:8620/app
+    labels:
+      com.lucid.service: node-gov
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8620'
+  node_utils:
+    port: 8630
+    service_name: node-utils
+    tags:
+    - node-utils
+    - lucid-node-utils
+    http_path: http://node-utils:8630/app
+    labels:
+      com.lucid.service: node-utils
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8630'
+  node_overlord:
+    port: 8130
+    service_name: node-overlord
+    tags:
+    - node-overlord
+    - node-command
+    - node-system-core
+    http_path: http://node-overlord:8130/app
+    labels:
+      com.lucid.service: node-overlord
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8130'
+  blockchain_engine:
+    port: 8084
+    service_name: blockchain-engine
+    tags:
+    - blockchain-engine
+    - lucid-blockchain-engine
+    http_path: http://blockchain-engine:8084/app
+    labels:
+      com.lucid.service: blockchain-engine
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8084'
+  blockchain_consensus_engine:
+    port: 8085
+    service_name: blockchain-consensus-engine
+    tags:
+    - consensus-engine
+    - blockchain-consensus
+    http_path: http://blockchain-consensus-engine:8085/app
+    labels:
+      com.lucid.service: blockchain-consensus-engine
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8085'
+  block_manager:
+    port: 8086
+    service_name: block-manager
+    tags:
+    - block-manager
+    - blockchain-block-manager
+    http_path: http://block-manager:8086/app
+    labels:
+      com.lucid.service: block-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8086'
+  data_chain:
+    port: 8087
+    service_name: data-chain
+    tags:
+    - data-chain
+    - lucid-data-chain
+    http_path: http://data-chain:8087/app
+    labels:
+      com.lucid.service: data-chain
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8087'
+  tron_node_client:
+    port: 8030
+    service_name: tron-node-client
+    tags:
+    - tron-node-client
+    http_path: http://tron-node-client:8030/app
+    labels:
+      com.lucid.service: tron-node-client
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8030'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  on_system_chain_client:
+    port: 8040
+    service_name: on-system-chain-client
+    tags:
+    - on-system-chain-client
+    http_path: http://on-system-chain-client:8040/app
+    labels:
+      com.lucid.service: on-system-chain-client
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8040'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  tron_payment_service:
+    port: 8080
+    service_name: tron-payment-service
+    tags:
+    - tron-payment
+    - tron-payment-service
+    http_path: http://tron-payment-service:8080/app
+    labels:
+      com.lucid.service: tron-payment-service
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8080'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  tron_client:
+    port: 8091
+    service_name: tron-client
+    tags:
+    - tron-client
+    - tron-client-primary
+    http_path: http://tron-client:8091/app
+    labels:
+      com.lucid.service: tron-client
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8091'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  tron_client_aux:
+    port: 8101
+    service_name: tron-client-aux
+    tags:
+    - tron-client-admin
+    - tron-secondary-port
+    http_path: http://tron-client-aux:8101/app
+    labels:
+      com.lucid.service: tron-client-aux
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8101'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  payout_router:
+    port: 8092
+    service_name: payout-router
+    tags:
+    - payout-router
+    - tron-payout-router
+    http_path: http://payout-router:8092/app
+    labels:
+      com.lucid.service: payout-router
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8092'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  wallet_manager:
+    port: 8093
+    service_name: wallet-manager
+    tags:
+    - wallet-manager
+    - lucid-wallet
+    http_path: http://wallet-manager:8093/app
+    labels:
+      com.lucid.service: wallet-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8093'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  usdt_manager:
+    port: 8094
+    service_name: usdt-manager
+    tags:
+    - usdt-manager
+    - tron-usdt-manager
+    http_path: http://usdt-manager:8094/app
+    labels:
+      com.lucid.service: usdt-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: payment
+      com.lucid.security: distroless
+      com.lucid.expose: '8094'
+      com.lucid.plane: support
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  rdp_server_manager_yml:
+    port: 8001
+    service_name: rdp-server-manager
+    tags:
+    - rdp-server-manager
+    - config-port-rdp-services-yml
+    http_path: http://rdp-server-manager:8001/app
+    labels:
+      com.lucid.service: rdp-server-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8001'
+  rdp_server_manager:
+    port: 8090
+    service_name: rdp-server-manager-http
+    tags:
+    - rdp-server-manager
+    - lucid-rdp-server-manager
+    - Dockerfile-rdp-server-manager
+    http_path: http://rdp-server-manager-http:8090/app
+    labels:
+      com.lucid.service: rdp-server-manager-http
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8090'
+  rdp_session_controller:
+    port: 8101
+    service_name: rdp-session-controller
+    tags:
+    - rdp-session-controller
+    - session-controller
+    - lucid-rdp-session-controller
+    http_path: http://rdp-session-controller:8101/app
+    labels:
+      com.lucid.service: rdp-session-controller
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8101'
+  rdp_resource_monitor:
+    port: 8201
+    service_name: rdp-resource-monitor
+    tags:
+    - rdp-resource-monitor
+    - resource-monitor
+    - lucid-resource-monitor
+    http_path: http://rdp-resource-monitor:8201/app
+    labels:
+      com.lucid.service: rdp-resource-monitor
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8201'
+  lucid_xrdp:
+    port: 8250
+    service_name: lucid-xrdp
+    tags:
+    - lucid-xrdp
+    - xrdp-api
+    http_path: http://lucid-xrdp:8250/app
+    labels:
+      com.lucid.service: lucid-xrdp
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8250'
+  xrdp_desktop:
+    port: 3389
+    service_name: xrdp-rdp
+    tags:
+    - xrdp
+    - rdp-desktop
+    - XRDP_PORT
+    http_path: http://xrdp-rdp:3389/app
+    labels:
+      com.lucid.service: xrdp-rdp
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '3389'
+  xrdp_sesman:
+    port: 3350
+    service_name: xrdp-sesman
+    tags:
+    - xrdp-sesman
+    - XRDP_SESMAN_PORT
+    http_path: http://xrdp-sesman:3350/app
+    labels:
+      com.lucid.service: xrdp-sesman
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '3350'
+  lucid_service_mesh_controller:
+    port: 8500
+    service_name: lucid-service-mesh-controller
+    tags:
+    - lucid-service-mesh-controller
+    - service-mesh
+    - lucid-consul
+    http_path: http://lucid-service-mesh-controller:8500/app
+    labels:
+      com.lucid.service: lucid-service-mesh-controller
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8500'
+  consul_dns:
+    port: 8501
+    service_name: consul-dns
+    tags:
+    - consul-dns
+    http_path: http://consul-dns:8501/app
+    labels:
+      com.lucid.service: consul-dns
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8501'
+  consul_grpc:
+    port: 8502
+    service_name: consul-grpc
+    tags:
+    - consul-grpc
+    http_path: http://consul-grpc:8502/app
+    labels:
+      com.lucid.service: consul-grpc
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8502'
+  consul_lan_serf:
+    port: 8600
+    service_name: consul-lan-serf
+    tags:
+    - consul-serf
+    - mesh-serf
+    http_path: http://consul-lan-serf:8600/app
+    labels:
+      com.lucid.service: consul-lan-serf
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8600'
+  service_mesh_http:
+    port: 8088
+    service_name: service-mesh-http-health
+    tags:
+    - service-mesh-http
+    - mesh-healthcheck
+    - HEALTHCHECK_PORT
+    http_path: http://service-mesh-http-health:8088/app
+    labels:
+      com.lucid.service: service-mesh-http-health
+      com.lucid.platform: arm64
+      com.lucid.cluster: core
+      com.lucid.security: distroless
+      com.lucid.expose: '8088'
+  gui_docker_manager:
+    port: 8098
+    service_name: gui-docker-manager
+    tags:
+    - gui-docker-manager
+    - lucid-gui-docker-manager
+    http_path: http://gui-docker-manager:8098/app
+    labels:
+      com.lucid.service: gui-docker-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: gui-integration
+      com.lucid.security: distroless
+      com.lucid.expose: '8098'
+      com.lucid.tor.compatible: 'true'
+      com.lucid.phase: gui
+  gui_api_bridge:
+    port: 8102
+    service_name: gui-api-bridge
+    tags:
+    - gui-api-bridge
+    - gui_api_bridge
+    http_path: http://gui-api-bridge:8102/app
+    labels:
+      com.lucid.service: gui-api-bridge
+      com.lucid.platform: arm64
+      com.lucid.cluster: gui-integration
+      com.lucid.security: distroless
+      com.lucid.expose: '8102'
+      com.lucid.tor.compatible: 'true'
+      com.lucid.phase: gui
+  gui_hardware_manager:
+    port: 8099
+    service_name: gui-hardware-manager
+    tags:
+    - gui-hardware-manager
+    - GUI_HARDWARE_MANAGER_PORT
+    http_path: http://gui-hardware-manager:8099/app
+    labels:
+      com.lucid.service: gui-hardware-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: gui-integration
+      com.lucid.security: distroless
+      com.lucid.expose: '8099'
+      com.lucid.tor.compatible: 'true'
+      com.lucid.phase: gui
+  gui_tor_manager_http:
+    port: 8097
+    service_name: gui-tor-manager
+    tags:
+    - gui-tor-manager
+    - gui_tor_manager
+    http_path: http://gui-tor-manager:8097/app
+    labels:
+      com.lucid.service: gui-tor-manager
+      com.lucid.platform: arm64
+      com.lucid.cluster: gui-integration
+      com.lucid.security: distroless
+      com.lucid.expose: '8097'
+      com.lucid.tor.compatible: 'true'
+      com.lucid.phase: gui
+  tor_socks:
+    port: 9050
+    service_name: tor-socks
+    tags:
+    - tor
+    - tor-socks
+    - TOR_SOCKS_PORT
+    http_path: http://tor-socks:9050/app
+    labels:
+      com.lucid.service: tor-socks
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '9050'
+      com.lucid.tor.inherent: 'true'
+      com.lucid.tor.system: built-in
+  tor_control:
+    port: 9051
+    service_name: tor-control
+    tags:
+    - tor-control
+    - TOR_CONTROL_PORT
+    http_path: http://tor-control:9051/app
+    labels:
+      com.lucid.service: tor-control
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '9051'
+      com.lucid.tor.inherent: 'true'
+      com.lucid.tor.system: built-in
+  tunnel_tools:
+    port: 7000
+    service_name: tunnel-tools
+    tags:
+    - tunnel-tools
+    - tunnels
+    - TUNNEL_PORT
+    http_path: http://tunnel-tools:7000/app
+    labels:
+      com.lucid.service: tunnel-tools
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '7000'
+      com.lucid.plane: ops
+      com.lucid.architecture: linux/arm64
+      com.lucid.vulnerabilities: zero
+      com.lucid.tor.compatible: 'true'
+  lucid_redis:
+    port: 6379
+    service_name: lucid-redis
+    tags:
+    - lucid-redis
+    - redis
+    http_path: http://lucid-redis:6379/app
+    labels:
+      com.lucid.service: lucid-redis
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '6379'
+      com.lucid.tor.compatible: 'true'
+  lucid_elasticsearch_http:
+    port: 9200
+    service_name: lucid-elasticsearch-http
+    tags:
+    - lucid-elasticsearch
+    - elasticsearch
+    http_path: http://lucid-elasticsearch-http:9200/app
+    labels:
+      com.lucid.service: lucid-elasticsearch-http
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '9200'
+      com.lucid.tor.compatible: 'true'
+  lucid_elasticsearch_transport:
+    port: 9300
+    service_name: lucid-elasticsearch-transport
+    tags:
+    - elasticsearch-transport
+    http_path: http://lucid-elasticsearch-transport:9300/app
+    labels:
+      com.lucid.service: lucid-elasticsearch-transport
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '9300'
+      com.lucid.tor.compatible: 'true'
+  lucid_mongodb:
+    port: 27017
+    service_name: lucid-mongodb
+    tags:
+    - lucid-mongodb
+    - mongodb
+    http_path: http://lucid-mongodb:27017/app
+    labels:
+      com.lucid.service: lucid-mongodb
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '27017'
+      com.lucid.tor.compatible: 'true'
+  mongodb_monitoring:
+    port: 27018
+    service_name: mongodb-monitoring
+    tags:
+    - mongodb-monitoring
+    - MONITORING_SERVICE_PORT
+    http_path: http://mongodb-monitoring:27018/app
+    labels:
+      com.lucid.service: mongodb-monitoring
+      com.lucid.platform: arm64
+      com.lucid.cluster: foundation
+      com.lucid.security: distroless
+      com.lucid.expose: '27018'
+      com.lucid.tor.compatible: 'true'
+  lucid_system_storage:
+    port: 9900
+    service_name: lucid-system-storage
+    tags:
+    - lucid-system-storage
+    - system-storage
+    http_path: http://lucid-system-storage:9900/app
+    labels:
+      com.lucid.service: lucid-system-storage
+      com.lucid.platform: arm64
+      com.lucid.cluster: storage
+      com.lucid.security: distroless
+      com.lucid.expose: '9900'
+      com.lucid.tor.compatible: 'true'
+  vm_service:
+    port: 8107
+    service_name: vm-service
+    tags:
+    - vm-service
+    - lucid-vm
+    http_path: http://vm-service:8107/app
+    labels:
+      com.lucid.service: vm-service
+      com.lucid.platform: arm64
+      com.lucid.cluster: application
+      com.lucid.security: distroless
+      com.lucid.expose: '8107'
+  prometheus_metrics:
+    port: 9090
+    service_name: prometheus-metrics
+    tags:
+    - prometheus
+    - metrics
+    - session-management-metrics
+    http_path: http://prometheus-metrics:9090/app
+    labels:
+      com.lucid.service: prometheus-metrics
+      com.lucid.platform: arm64
+      com.lucid.cluster: monitoring
+      com.lucid.security: distroless
+      com.lucid.expose: '9090'
+  electron_gui_user:
+    port: 3001
+    service_name: electron-gui-user
+    tags:
+    - electron-user
+    - gui-user
+    http_path: http://electron-gui-user:3001/app
+    labels:
+      com.lucid.service: electron-gui-user
+      com.lucid.platform: arm64
+      com.lucid.cluster: gui-integration
+      com.lucid.security: distroless
+      com.lucid.expose: '3001'
+      com.lucid.phase: gui
+  electron_gui_node:
+    port: 3002
+    service_name: electron-gui-node
+    tags:
+    - electron-node
+    - gui-node
+    http_path: http://electron-gui-node:3002/app
+    labels:
+      com.lucid.service: electron-gui-node
+      com.lucid.platform: arm64
+      com.lucid.cluster: gui-integration
+      com.lucid.security: distroless
+      com.lucid.expose: '3002'
+      com.lucid.phase: gui
+collision_notes:
+- '8120: admin-ui-backend and database-overlord share port — use distinct service_name hostnames.'
+- '8099: node-management-staging vs gui-hardware-manager — remap host publish if co-hosted.'
+- '8090: session-recorder vs rdp-server-manager-http — remap host publish if co-hosted.'
+- '8080: api-gateway vs tron-payment-service — remap host publish if co-hosted.'
+- '8092: payout-router vs session-merkle-tree-builder — remap host publish if co-hosted.'
+- '8600: node-worker vs consul-lan-serf — remap host publish if co-hosted.'
+- '8101: rdp-session-controller vs tron-client-aux — remap host publish if co-hosted.'
+- 'RDP: rdp-services.yml may use 8001 for rdp-server-manager; Dockerfile uses 8090 (see rdp_server_manager
+  entries).'
+- http_path is a template; real HTTP paths are often /health or /api/v1/... not /app.
+- Non-HTTP services (Redis, MongoDB, Tor, RDP binary) still carry http_path for uniform templating only.
+- 'admin-system-gateway: primary discovery port 8155 (/health in http_path); optional portal listens 28080→api-gateway:8080,
+  28120→admin-ui-backend:8120, 28050→admin-params-registry:8050, 27000→lucid-tunnel-tools:7000 (defaults
+  in infrastructure/containers/admin/config/admin-system-gateway.connections.json).'

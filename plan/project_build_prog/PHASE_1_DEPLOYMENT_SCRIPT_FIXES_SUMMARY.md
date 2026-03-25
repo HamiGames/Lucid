@@ -24,11 +24,11 @@ Comprehensive fixes applied to `scripts/deployment/deploy-phase1-pi.sh` to achie
 
 **Networks Created**:
 - ✅ `lucid-pi-network` (172.20.0.0/16) - Main network
-- ✅ `lucid-tron-isolated` (172.21.0.0/16) - TRON isolated network
-- ✅ `lucid-gui-network` (172.22.0.0/16) - GUI network
-- ✅ `lucid-distroless-production` (172.23.0.0/16) - Distroless production
-- ✅ `lucid-distroless-dev` (172.24.0.0/16) - Distroless development
-- ✅ `lucid-multi-stage-network` (172.25.0.0/16) - Multi-stage network
+- ✅ `lucid-tron-isolated` (172.26.0.0/16) - TRON isolated network
+- ✅ `lucid-gui-network` (172.27.0.0/16) - GUI network
+- ✅ `lucid-distroless-production` (172.28.0.0/16) - Distroless production
+- ✅ `lucid-distroless-dev` (172.29.0.0/16) - Distroless development
+- ✅ `lucid-multi-stage-network` (172.30.0.0/16) - Multi-stage network
 
 **Features**:
 - ✅ Network verification after creation

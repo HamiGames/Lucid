@@ -106,9 +106,9 @@ The deployment includes 15+ services organized into layers:
 
 ### Network Architecture
 
-- **Network**: `lucid_core_net` (172.21.0.0/24)
+- **Network**: `lucid_core_net` (172.26.0.0/24)
 
-- **Gateway**: 172.21.0.1
+- **Gateway**: 172.26.0.1
 
 - **Internal Communication**: Service-to-service only
 

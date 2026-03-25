@@ -239,8 +239,8 @@ Lucid implements a **microservices architecture** with **phase-based deployment*
 
 #### Network Configuration
 - **Main Network**: `lucid-pi-network` (172.20.0.0/16)
-- **TRON Network**: `lucid-tron-isolated` (172.21.0.0/16)
-- **Service Mesh**: `lucid-service-mesh` (172.22.0.0/16)
+- **TRON Network**: `lucid-tron-isolated` (172.26.0.0/16)
+- **Service Mesh**: `lucid-service-mesh` (172.27.0.0/16)
 - **Development**: `lucid-dev_lucid_net` (172.20.0.0/16)
 
 #### Volume Management

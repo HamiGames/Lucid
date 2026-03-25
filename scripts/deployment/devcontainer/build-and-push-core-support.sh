@@ -259,7 +259,7 @@ $(for service in "${CORE_SERVICES[@]}"; do
 done)
 
 # 4. Create core network
-docker network create lucid_core_net --driver bridge --subnet 172.21.0.0/16 || echo "Network exists"
+docker network create lucid_core_net --driver bridge --subnet 172.26.0.0/16 || echo "Network exists"
 
 # 5. Start core support services
 docker compose -f lucid-dev.yaml up -d

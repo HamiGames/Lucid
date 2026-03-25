@@ -173,7 +173,7 @@ ENV TOR_INHERENT=true \
 - **Server Tools:** Core utility integration
 
 ### **Network Topology - VERIFIED** ✅
-- **Core Network:** `lucid_core_net` (172.21.0.0/16)
+- **Core Network:** `lucid_core_net` (172.26.0.0/16)
 - **Dev Network:** `lucid-dev_lucid_net` (external)
 - **IP Allocations:** All services have static IPs
 - **Plane Isolation:** SPEC-4 compliant separation

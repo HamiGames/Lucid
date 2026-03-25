@@ -21,6 +21,11 @@ ARG TARGETPLATFORM
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true
 
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -59,6 +64,10 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.mongodb.version="7.0" \
       com.lucid.expose="27017" \
       com.lucid.tor.compatible="true"
+
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=mongodb-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=mongodb-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=mongodb-builder /usr/bin/mongod /usr/bin/mongod
 COPY --from=mongodb-builder /usr/bin/python3 /usr/bin/python3

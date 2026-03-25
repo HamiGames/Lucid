@@ -131,8 +131,8 @@ test: ["CMD-SHELL", "/opt/lucid/scripts/health-check.sh || exit 1"]
 ```yaml
 # Internal core services network (ops plane isolation)
 lucid_core_net:
-  subnet: 172.21.0.0/16  # ✅ CORRECT
-  gateway: 172.21.0.1    # ✅ CORRECT
+  subnet: 172.26.0.0/16  # ✅ CORRECT
+  gateway: 172.26.0.1    # ✅ CORRECT
 
 # External devcontainer connectivity
 lucid_dev_net:
@@ -140,12 +140,12 @@ lucid_dev_net:
 ```
 
 ### ✅ **IP ALLOCATIONS**
-- MongoDB: 172.21.0.10 ✅
-- Tor Proxy: 172.21.0.11 ✅  
-- API Server: 172.21.0.12 ✅
-- API Gateway: 172.21.0.13 ✅
-- Tunnel Tools: 172.21.0.14 ✅
-- Server Tools: 172.21.0.15 ✅
+- MongoDB: 172.26.0.10 ✅
+- Tor Proxy: 172.26.0.11 ✅  
+- API Server: 172.26.0.12 ✅
+- API Gateway: 172.26.0.13 ✅
+- Tunnel Tools: 172.26.0.14 ✅
+- Server Tools: 172.26.0.15 ✅
 
 ---
 

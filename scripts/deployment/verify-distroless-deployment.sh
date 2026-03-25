@@ -146,11 +146,11 @@ network_checks=0
 total_networks=6
 
 check_network "lucid-pi-network" "172.20.0.0/16" "Main Network" && network_checks=$((network_checks + 1))
-check_network "lucid-tron-isolated" "172.21.0.0/16" "TRON Isolated Network" && network_checks=$((network_checks + 1))
-check_network "lucid-gui-network" "172.22.0.0/16" "GUI Network" && network_checks=$((network_checks + 1))
-check_network "lucid-distroless-production" "172.23.0.0/16" "Distroless Production Network" && network_checks=$((network_checks + 1))
-check_network "lucid-distroless-dev" "172.24.0.0/16" "Distroless Development Network" && network_checks=$((network_checks + 1))
-check_network "lucid-multi-stage-network" "172.25.0.0/16" "Multi-Stage Network" && network_checks=$((network_checks + 1))
+check_network "lucid-tron-isolated" "172.26.0.0/16" "TRON Isolated Network" && network_checks=$((network_checks + 1))
+check_network "lucid-gui-network" "172.27.0.0/16" "GUI Network" && network_checks=$((network_checks + 1))
+check_network "lucid-distroless-production" "172.28.0.0/16" "Distroless Production Network" && network_checks=$((network_checks + 1))
+check_network "lucid-distroless-dev" "172.29.0.0/16" "Distroless Development Network" && network_checks=$((network_checks + 1))
+check_network "lucid-multi-stage-network" "172.30.0.0/16" "Multi-Stage Network" && network_checks=$((network_checks + 1))
 
 echo ""
 log_info "Network verification: $network_checks/$total_networks networks correct"

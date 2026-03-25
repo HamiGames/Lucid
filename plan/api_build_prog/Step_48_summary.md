@@ -178,7 +178,7 @@ Successfully completed **Step 48: Monitoring Configuration** from the BUILD_REQU
 - **Blackbox Exporter**: External connectivity
 
 ### Network Integration
-- **Monitoring Network**: Isolated monitoring network (172.21.0.0/16)
+- **Monitoring Network**: Isolated monitoring network (172.26.0.0/16)
 - **Service Discovery**: Docker network-based service discovery
 - **Health Checks**: HTTP-based health monitoring
 - **Metrics Collection**: Prometheus-based metrics collection

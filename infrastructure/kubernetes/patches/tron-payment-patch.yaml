@@ -32,8 +32,8 @@ spec:
         - name: LUCID_TRON_ISOLATED
           value: "lucid-tron-isolated"
         - name: LUCID_TRON_SUBNET
-          value: "172.21.0.0/16"
+          value: "172.26.0.0/16"
         - name: LUCID_TRON_GATEWAY
-          value: "172.21.0.1"
+          value: "172.26.0.1"
         - name: TRON_ISOLATION_ENABLED
           value: "true"

@@ -213,8 +213,8 @@ networks:
     name: lucid-gui-network
     ipam:
       config:
-        - subnet: 172.22.0.0/16
-          gateway: 172.22.0.1
+        - subnet: 172.27.0.0/16
+          gateway: 172.27.0.1
 
 volumes:
   node-management-cache:

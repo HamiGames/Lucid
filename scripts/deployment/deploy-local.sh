@@ -158,9 +158,9 @@ initialize_environment() {
     # Create Docker networks
     log_info "Creating Docker networks..."
     docker network create lucid-dev --subnet 172.20.0.0/16 --driver bridge 2>/dev/null || true
-    docker network create lucid-internal --subnet 172.21.0.0/16 --driver bridge --internal 2>/dev/null || true
-    docker network create lucid-blockchain --subnet 172.22.0.0/16 --driver bridge 2>/dev/null || true
-    docker network create lucid-payment --subnet 172.23.0.0/16 --driver bridge 2>/dev/null || true
+    docker network create lucid-internal --subnet 172.26.0.0/16 --driver bridge --internal 2>/dev/null || true
+    docker network create lucid-blockchain --subnet 172.27.0.0/16 --driver bridge 2>/dev/null || true
+    docker network create lucid-payment --subnet 172.28.0.0/16 --driver bridge 2>/dev/null || true
     
     log_success "Environment initialized"
     return 0

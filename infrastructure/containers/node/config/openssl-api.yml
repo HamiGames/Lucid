@@ -1,0 +1,28 @@
+# Lucid Node System Gateway — OpenSSL / TLS API contract (upstream HTTPS when route.tls_upstream: true)
+# Consumed at runtime by node_system_gateway_entrypoint.py. Override paths via NODE_SYSTEM_GATEWAY_SSL_*.
+#
+# Reference: infrastructure/containers/admin/config/openssl-api.yml (same schema)
+
+api_version: 1
+
+tls_client_defaults:
+  minimum_version: TLSv1_2
+  verify_mode: CERT_REQUIRED
+  check_hostname: true
+  cafile: /app/etc/ssl/certs/ca-certificates.crt
+  certfile: ""
+  keyfile: ""
+
+tls_profiles:
+  internal_mesh:
+    minimum_version: TLSv1_2
+    verify_mode: CERT_REQUIRED
+    check_hostname: true
+    cafile: /app/etc/ssl/certs/ca-certificates.crt
+  relaxed_lab:
+    minimum_version: TLSv1_2
+    verify_mode: CERT_NONE
+    check_hostname: false
+    cafile: ""
+
+ciphers: ""

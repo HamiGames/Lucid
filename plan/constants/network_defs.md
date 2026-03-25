@@ -19,40 +19,40 @@ networks:
     driver: bridge
     ipam:
       magyar:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
     attachable: true
     
   lucid-gui-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
-          gateway: 172.22.0.1
+        - subnet: 172.27.0.0/16
+          gateway: 172.27.0.1
     attachable: true
     
   lucid-distroless调动:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.23.0.0/16
-          gateway: 172.23.0.1
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
     attachable: true
     
   lucid-distroless-dev:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.24.0.0/16
-          gateway: 172.24.0.1
+        - subnet: 172.29.0.0/16
+          gateway: 172.29.0.1
     attachable: true
     
   lucid-multi-stage-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.25.0.0/16
-          gateway: 172.25.0.1
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
     attachable: true
 ```
 
@@ -129,7 +129,7 @@ All services operate from the following deployment files:
 
 All network configurations align with:
 - ✅ `plan/constants/essentials.md` - Service definitions and IP allocations
-- ✅ Network subnet definitions (172.20.0.0/16, 172.21.0.0/16, 172.22.0.0/16)
+- ✅ Network subnet definitions (172.20.0.0/16, 172.26.0.0/16, 172.27.0.0/16)
 - ✅ Port allocations as specified in essentials.md
 - ✅ Volume paths from project root (`/mnt/myssd/Lucid/Lucid/`)
 - ✅ Environment file paths from `configs/environment/`

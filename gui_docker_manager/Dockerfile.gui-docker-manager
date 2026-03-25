@@ -104,8 +104,15 @@ RUN echo "=== Verifying marker files ===" && \
     cat /usr/local/bin/.lucid-marker && \
     echo "✅ Both marker files verified with content"
 
+RUN mkdir -p ./gui_docker_manager ./host && \
+    printf "LUCID_GUI_DOCKER_MANAGER_GUI_DOCKER_MANAGER_$(date +%s)" > ./gui_docker_manager/.keep && \
+    printf "LUCID_GUI_DOCKER_MANAGER_HOST_HOST_CONFIG_$(date +%s)" > ./host/host-config.yml.keep && \
+    chown -R 65532:65532 ./gui_docker_manager ./host
+    
+
 # Application source COPY (explicit per-directory for clarity and control)
 COPY gui_docker_manager/gui_docker_manager/ ./gui_docker_manager/
+COPY infrastructure/containers/host/host-config.yml ./host/host-config.yml
 
 # Create marker files in app directories (ensures COPY won't fail silently)
 RUN echo "LUCID_GUI_DOCKER_MANAGER_APP_$(date +%s)" > ./gui_docker_manager/.lucid-marker && \
@@ -148,22 +155,23 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     GUI_DOCKER_MANAGER_PORT=8098 \
-    GUI_DOCKER_MANAGER_HOST=0.0.0.0
+    GUI_DOCKER_MANAGER_HOST=gui-docker-manager
 
 WORKDIR /app
 
 # System directories & certificates
-COPY --from=builder --chown=65532:65532 /var/run /var/run
-COPY --from=builder --chown=65532:65532 /var/lib /var/lib
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /var/run /app/var/run
+COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 # Bake Python packages into distroless image - explicit COPY with verification
 # Copy entire Python installation directory (includes site-packages and runtime libraries)
-COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
+COPY --from=builder /usr/local/bin /app/usr/local/bin
 
 # Application layout COPY (explicit directories)
-COPY --chown=65532:65532 --from=builder /build/gui_docker_manager /app/gui_docker_manager
+COPY --chown=65532:65532 --from=builder /build/gui_docker_manager/ /app/gui_docker_manager/
+
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/usr/bin/python3.11", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; app_dirs = ['/app/gui_docker_manager']; checks = [os.path.isdir(site_packages), os.path.isfile(os.path.join(site_packages, '.lucid-marker')), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(os.path.join(site_packages, \".lucid-marker\"))}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]

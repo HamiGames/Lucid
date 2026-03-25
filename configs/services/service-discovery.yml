@@ -111,7 +111,7 @@ service_planes:
     name: "wallet"
     description: "Payment operations (TRON only)"
     network: "lucid-tron-isolated"
-    subnet: "172.21.0.0/16"
+    subnet: "172.26.0.0/16"
     isolated: true
     
     services:

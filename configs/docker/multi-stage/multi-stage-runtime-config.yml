@@ -139,8 +139,8 @@ networks:
       com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
     ipam:
       config:
-        - subnet: 172.23.0.0/16
-          gateway: 172.23.0.1
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
 
 volumes:
   lucid-production-data:

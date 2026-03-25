@@ -127,7 +127,7 @@ None - all configurations verified and path alignments confirmed.
 - **Rotation Support:** Onion rotation capabilities
 
 ### 📡 **Network Configuration**
-- **Core Network:** `lucid_core_net` (172.21.0.0/16)
+- **Core Network:** `lucid_core_net` (172.26.0.0/16)
 - **Dev Network:** `lucid-dev_lucid_net` (172.20.0.0/16)
 - **Pi Network:** SSH-based deployment (192.168.0.75)
 

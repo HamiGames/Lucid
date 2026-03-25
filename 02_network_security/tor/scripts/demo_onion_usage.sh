@@ -5,7 +5,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="/usr/local/bin"
-OUTDIR="${ONION_DIR:-/run/lucid/onion}"
+OUTDIR="${ONION_DIR:-/app/run/lucid/onion}"
 
 log() { printf '[demo] %s\n' "$*"; }
 success() { printf '[demo][✓] %s\n' "$*"; }

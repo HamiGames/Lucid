@@ -25,6 +25,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 USER root
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -115,6 +120,10 @@ ENV ES_HOME=/app/usr/share/elasticsearch \
     XPACK_SECURITY_ENABLED=false
 
 # Glibc / arch libs (from builder — matches ES image Debian)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=es-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=es-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=es-builder /export/rootfs/ /app/export/rootfs/
 
 COPY --from=es-builder --chown=65532:65532 /usr/share/elasticsearch/ /app/usr/share/elasticsearch/

@@ -119,16 +119,16 @@ bash scripts/deployment/deploy-distroless-complete.sh multi-stage
 | Network | Subnet | Purpose | Services |
 |---------|--------|---------|----------|
 | `lucid-pi-network` | 172.20.0.0/16 | Main services | Foundation, Core, Application, Admin |
-| `lucid-tron-isolated` | 172.21.0.0/16 | TRON services | TRON payment system (ISOLATED) |
-| `lucid-gui-network` | 172.22.0.0/16 | GUI services | Electron GUI integration |
+| `lucid-tron-isolated` | 172.26.0.0/16 | TRON services | TRON payment system (ISOLATED) |
+| `lucid-gui-network` | 172.27.0.0/16 | GUI services | Electron GUI integration |
 
 ### Additional Networks
 
 | Network | Subnet | Purpose | Services |
 |---------|--------|---------|----------|
-| `lucid-distroless-production` | 172.23.0.0/16 | Distroless production | Distroless runtime infrastructure |
-| `lucid-distroless-dev` | 172.24.0.0/16 | Distroless development | Development and testing |
-| `lucid-multi-stage-network` | 172.25.0.0/16 | Build infrastructure | Multi-stage builds and CI/CD |
+| `lucid-distroless-production` | 172.28.0.0/16 | Distroless production | Distroless runtime infrastructure |
+| `lucid-distroless-dev` | 172.29.0.0/16 | Distroless development | Development and testing |
+| `lucid-multi-stage-network` | 172.30.0.0/16 | Build infrastructure | Multi-stage builds and CI/CD |
 
 ## Environment Configuration
 
@@ -220,7 +220,7 @@ bash scripts/deployment/deploy-distroless-complete.sh multi-stage
 
 **Networks:**
 - Admin: `lucid-pi-network` (172.20.0.0/16)
-- TRON: `lucid-tron-isolated` (172.21.0.0/16) - ISOLATED
+- TRON: `lucid-tron-isolated` (172.26.0.0/16) - ISOLATED
 
 ## Distroless Base Infrastructure
 

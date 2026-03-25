@@ -65,13 +65,13 @@
     },
     "lucid-tron-isolated": {
       "driver": "bridge",
-      "subnet": "172.21.0.0/16",
-      "gateway": "172.21.0.1"
+      "subnet": "172.26.0.0/16",
+      "gateway": "172.26.0.1"
     },
     "lucid-gui-network": {
       "driver": "bridge",
-      "subnet": "172.22.0.0/16",
-      "gateway": "172.22.0.1"
+      "subnet": "172.27.0.0/16",
+      "gateway": "172.27.0.1"
     }
   },
   "monitoring": {

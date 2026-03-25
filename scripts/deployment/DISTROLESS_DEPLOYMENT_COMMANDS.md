@@ -203,16 +203,16 @@ GROUP_ID=65532
 
 # Network
 NETWORK_NAME=lucid-distroless-production
-SUBNET=172.23.0.0/16
-GATEWAY=172.23.0.1
+SUBNET=172.28.0.0/16
+GATEWAY=172.28.0.1
 ```
 
 ## Network Configuration
 
 ### Required Networks
-- `lucid-distroless-production` (172.23.0.0/16)
-- `lucid-distroless-dev` (172.24.0.0/16)
-- `lucid-multi-stage-network` (172.25.0.0/16)
+- `lucid-distroless-production` (172.28.0.0/16)
+- `lucid-distroless-dev` (172.29.0.0/16)
+- `lucid-multi-stage-network` (172.30.0.0/16)
 
 ### Create Networks
 ```bash

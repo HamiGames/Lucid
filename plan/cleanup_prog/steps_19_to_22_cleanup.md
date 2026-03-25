@@ -173,7 +173,7 @@ The TRON isolation cleanup for Steps 19-22 has been **COMPLETED SUCCESSFULLY**. 
 
 ### Status: ✅ COMPLETED
 
-**Purpose**: Validate 6 distroless TRON containers built and deployed to isolated network (lucid-network-isolated: 172.21.0.0/16), ensuring proper container security labels and complete service isolation.
+**Purpose**: Validate 6 distroless TRON containers built and deployed to isolated network (lucid-network-isolated: 172.26.0.0/16), ensuring proper container security labels and complete service isolation.
 
 ### Actions Performed
 
@@ -215,8 +215,8 @@ The TRON isolation cleanup for Steps 19-22 has been **COMPLETED SUCCESSFULLY**. 
   - Health check: HTTP-based health endpoint
 
 #### 2. Isolated Network Deployment Configuration
-- ✅ **Network**: `lucid-network-isolated` (172.21.0.0/16)
-- ✅ **Gateway**: 172.21.0.1
+- ✅ **Network**: `lucid-network-isolated` (172.26.0.0/16)
+- ✅ **Gateway**: 172.26.0.1
 - ✅ **Purpose**: TRON payment services isolation
 - ✅ **Labels**: `lucid.network=payment-isolated`, `lucid.phase=phase4`, `lucid.cluster=tron-payment`, `lucid.isolation=wallet-plane`
 
@@ -333,7 +333,7 @@ grep -r "payment-systems\|tron" blockchain/ --include="*.py"
 ### 3. TRON Payment Services
 - **47+ API Endpoints**: Complete TRON payment API implementation
 - **6 Distroless Containers**: Secure container deployment ready
-- **Isolated Network**: Complete network separation (172.21.0.0/16)
+- **Isolated Network**: Complete network separation (172.26.0.0/16)
 - **Service Independence**: Complete independence from blockchain core
 
 ### 4. Security Compliance

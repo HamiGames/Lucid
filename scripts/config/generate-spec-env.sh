@@ -1803,7 +1803,7 @@ DEBUG=false
 LOG_LEVEL=INFO
 
 # Network Configuration
-GUI_HOST=172.22.0.1
+GUI_HOST=172.27.0.1
 GUI_PORT=3000
 GUI_URL=http://lucid-gui:3000
 

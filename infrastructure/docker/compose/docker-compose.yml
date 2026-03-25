@@ -659,7 +659,7 @@ services:
       - tron_client_logs:/app/logs
     networks:
       lucid-tron-isolated:
-        ipv4_address: 172.21.0.27
+        ipv4_address: 172.26.0.27
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
@@ -688,11 +688,11 @@ services:
       - payout_router_logs:/app/logs
     networks:
       lucid-tron-isolated:
-        ipv4_address: 172.21.0.28
+        ipv4_address: 172.26.0.28
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.21.0.27:8097
+      - TRON_CLIENT_URL=http://172.26.0.27:8097
     depends_on:
       lucid-tron-client:
         condition: service_healthy
@@ -714,11 +714,11 @@ services:
       - wallet_manager_logs:/app/logs
     networks:
       lucid-tron-isolated:
-        ipv4_address: 172.21.0.29
+        ipv4_address: 172.26.0.29
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.21.0.27:8097
+      - TRON_CLIENT_URL=http://172.26.0.27:8097
     depends_on:
       lucid-tron-client:
         condition: service_healthy
@@ -740,7 +740,7 @@ services:
       - usdt_manager_logs:/app/logs
     networks:
       lucid-tron-isolated:
-        ipv4_address: 172.21.0.30
+        ipv4_address: 172.26.0.30
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
@@ -766,11 +766,11 @@ services:
       - trx_staking_logs:/app/logs
     networks:
       lucid-tron-isolated:
-        ipv4_address: 172.21.0.31
+        ipv4_address: 172.26.0.31
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.21.0.27:8097
+      - TRON_CLIENT_URL=http://172.26.0.27:8097
     depends_on:
       lucid-tron-client:
         condition: service_healthy
@@ -792,11 +792,11 @@ services:
       - payment_gateway_logs:/app/logs
     networks:
       lucid-tron-isolated:
-        ipv4_address: 172.21.0.32
+        ipv4_address: 172.26.0.32
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
-      - TRON_CLIENT_URL=http://172.21.0.27:8097
+      - TRON_CLIENT_URL=http://172.26.0.27:8097
     depends_on:
       lucid-tron-client:
         condition: service_healthy
@@ -822,7 +822,7 @@ services:
       - gui_logs:/app/logs
     networks:
       lucid-gui-network:
-        ipv4_address: 172.22.0.10
+        ipv4_address: 172.27.0.10
     environment:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-lucid}@172.20.0.11:27017/lucid?authSource=admin
       - REDIS_URL=redis://172.20.0.12:6379/0
@@ -935,8 +935,8 @@ networks:
     internal: false # Allow external TRON network access
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.26.0.0/16
+          gateway: 172.26.0.1
 
   # GUI Network (path_plan.md)
   lucid-gui-network:
@@ -944,8 +944,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
-          gateway: 172.22.0.1
+        - subnet: 172.27.0.0/16
+          gateway: 172.27.0.1
 
 # ============================================================================
 # VOLUMES - Complete Data Persistence

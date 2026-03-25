@@ -124,8 +124,8 @@ This document summarizes the completion of Step 50: Local Development Deployment
 - **Payment Gateway** (Port 8090 - Isolated)
 
 **Network Configuration:**
-- **lucid-dev-network**: Main development network (172.21.0.0/16)
-- **lucid-payment-network**: Isolated TRON payment network (172.22.0.0/16)
+- **lucid-dev-network**: Main development network (172.26.0.0/16)
+- **lucid-payment-network**: Isolated TRON payment network (172.27.0.0/16)
 
 **Volume Configuration:**
 - Added 20+ new volumes for all services

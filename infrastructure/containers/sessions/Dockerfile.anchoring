@@ -45,6 +45,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /build
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+RUN mkdir -p /build/configs
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+
 
 # Create placeholder files in system directories with actual content (ensures they're baked into image)
 RUN echo "LUCID_SESSION_ANCHORING_RUNTIME_DIRECTORY" > /var/run/.keep && \
@@ -123,6 +128,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
 WORKDIR /app
 
 # Copy runtime directories from builder (directory already populated with .keep files)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
 COPY --from=builder --chown=65532:65532 /var/run /app/var/run
 COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib
 

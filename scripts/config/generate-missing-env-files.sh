@@ -720,8 +720,8 @@ generate_tron_client_env() {
 # Service Configuration
 SERVICE_NAME=tron-client
 SERVICE_PORT=8091
-SERVICE_HOST=172.21.0.10
-SERVICE_URL=http://172.21.0.10:8091
+SERVICE_HOST=172.26.0.10
+SERVICE_URL=http://172.26.0.10:8091
 
 # TRON Network Configuration
 TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -748,8 +748,8 @@ generate_tron_payout_router_env() {
 # Service Configuration
 SERVICE_NAME=tron-payout-router
 SERVICE_PORT=8092
-SERVICE_HOST=172.21.0.11
-SERVICE_URL=http://172.21.0.11:8092
+SERVICE_HOST=172.26.0.11
+SERVICE_URL=http://172.26.0.11:8092
 
 # TRON Network Configuration
 TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -776,8 +776,8 @@ generate_tron_wallet_manager_env() {
 # Service Configuration
 SERVICE_NAME=tron-wallet-manager
 SERVICE_PORT=8093
-SERVICE_HOST=172.21.0.12
-SERVICE_URL=http://172.21.0.12:8093
+SERVICE_HOST=172.26.0.12
+SERVICE_URL=http://172.26.0.12:8093
 
 # TRON Network Configuration
 TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -808,8 +808,8 @@ generate_tron_usdt_manager_env() {
 # Service Configuration
 SERVICE_NAME=tron-usdt-manager
 SERVICE_PORT=8094
-SERVICE_HOST=172.21.0.13
-SERVICE_URL=http://172.21.0.13:8094
+SERVICE_HOST=172.26.0.13
+SERVICE_URL=http://172.26.0.13:8094
 
 # TRON Network Configuration
 TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -837,8 +837,8 @@ generate_tron_staking_env() {
 # Service Configuration
 SERVICE_NAME=tron-staking
 SERVICE_PORT=8096
-SERVICE_HOST=172.21.0.14
-SERVICE_URL=http://172.21.0.14:8096
+SERVICE_HOST=172.26.0.14
+SERVICE_URL=http://172.26.0.14:8096
 
 # TRON Network Configuration
 TRON_NETWORK=${TRON_NETWORK:-mainnet}
@@ -869,8 +869,8 @@ generate_tron_payment_gateway_env() {
 # Service Configuration
 SERVICE_NAME=tron-payment-gateway
 SERVICE_PORT=8097
-SERVICE_HOST=172.21.0.15
-SERVICE_URL=http://172.21.0.15:8097
+SERVICE_HOST=172.26.0.15
+SERVICE_URL=http://172.26.0.15:8097
 
 # TRON Network Configuration
 TRON_NETWORK=${TRON_NETWORK:-mainnet}
