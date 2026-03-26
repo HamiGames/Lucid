@@ -213,7 +213,7 @@ COPY --from=tor-builder /lib/aarch64-linux-gnu     /app/lib/aarch64-linux-gnu
 COPY --from=tor-builder /configs/.env.secrets /app/configs/.env.secrets
 COPY --from=tor-builder /configs/.env.master /app/configs/.env.master
 COPY --from=tor-builder /configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
-COPY --from=tor-builder /build/configs/services /app/configs/services/
+
 
 # Bring in /usr/lib to satisfy Debian dynamic deps (libselinux, libcap, etc.)
 COPY --from=tor-builder /usr/lib /app/usr/lib/
@@ -235,7 +235,6 @@ COPY --from=tor-builder --chown=root:root /opt/lucid/ /app/opt/lucid/
 # Lucid scripts and tor configuration (torrc baked into image)
 # Build context: project root, so we prefix with 02_network_security/tor/
 COPY --from=tor-builder /build/configs/services/ /app/configs/services/
-COPY --from=tor-builder /build/configs/host-config.yml /app/configs/host-config.yml
 COPY --chmod=644 02_network_security/tor/torrc                                  /app/run/lucid/tor/torrc
 COPY --chmod=755 02_network_security/tor/entrypoint.sh                          /app/run/lucid/tor/bin/entrypoint.sh
 COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh                    /app/run/lucid/tor/bin/bootstrap-helper.sh
