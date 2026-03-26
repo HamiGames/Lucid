@@ -90,52 +90,51 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
 install -d -o root -g root -m 755 /build/configs && \
 install -d -o root -g root -m 755 /configs && \
    install -d -o root -g root -m 755 /usr/local/bin && \
-   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
+   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > ./lucid/.keep && \
    install -d -o root -g root -m 755 /etc/tor && \
-   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
-   printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n'                > /run/lucid/tor/.keep && \
-   printf 'dir=run/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /run/lucid/tor/data/.keep && \
-   printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/bin/.keep && \
-   printf 'dir=run/lucid/tor/log\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/log/.keep && \
-   printf 'dir=run/lucid/tor/pid\nplatform=lucid-tor-proxy\n'            > /run/lucid/tor/pid/.keep && \
-   printf 'dir=run/lucid/ssl\nplatform=lucid-tor-proxy\n'                > /run/lucid/ssl/.keep && \
-   printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n'              > /run/lucid/onion/.keep && \
-   printf 'dir=run/lucid/onion/lucid_admin\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_admin/.keep && \
-   printf 'dir=run/lucid/onion/lucid_api\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_api/.keep && \
-   printf 'dir=run/lucid/onion/lucid_auth\nplatform=lucid-tor-proxy\n'     > /run/lucid/onion/lucid_auth/.keep && \
-   printf 'dir=run/lucid/onion/lucid_config\nplatform=lucid-tor-proxy\n'   > /run/lucid/onion/lucid_config/.keep && \
-   printf 'dir=run/lucid/onion/lucid_dev\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_dev/.keep && \
-   printf 'dir=run/lucid/onion/lucid_health\nplatform=lucid-tor-proxy\n'   > /run/lucid/onion/lucid_health/.keep && \
-   printf 'dir=run/lucid/onion/lucid_lb\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_lb/.keep && \
-   printf 'dir=run/lucid/onion/lucid_metrics\nplatform=lucid-tor-proxy\n'  > /run/lucid/onion/lucid_metrics/.keep && \
-   printf 'dir=run/lucid/onion/lucid_mgmt\nplatform=lucid-tor-proxy\n'     > /run/lucid/onion/lucid_mgmt/.keep && \
-   printf 'dir=run/lucid/onion/lucid_onion\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_onion/.keep && \
-   printf 'dir=run/lucid/onion/lucid_relay\nplatform=lucid-tor-proxy\n'    > /run/lucid/onion/lucid_relay/.keep && \
-   printf 'dir=run/lucid/onion/lucid_resolver\nplatform=lucid-tor-proxy\n' > /run/lucid/onion/lucid_resolver/.keep && \
-   printf 'dir=run/lucid/onion/lucid_rpc\nplatform=lucid-tor-proxy\n'      > /run/lucid/onion/lucid_rpc/.keep && \
-   printf 'dir=run/lucid/onion/lucid_ui\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ui/.keep && \
-   printf 'dir=run/lucid/onion/lucid_vm\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_vm/.keep && \
-   printf 'dir=run/lucid/onion/lucid_ws\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ws/.keep && \
-   printf 'dir=opt/lucid\nplatform=lucid-tor-proxy\n'                    > /opt/lucid/.keep && \
-   printf 'dir=opt/lucid/tor\nplatform=lucid-tor-proxy\n'                > /opt/lucid/tor/.keep && \
-   printf 'dir=opt/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/bin/.keep && \
-   printf 'dir=opt/lucid/tor/lib\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/lib/.keep && \
-   printf 'dir=opt/lucid/tor/config\nplatform=lucid-tor-proxy\n'         > /opt/lucid/tor/config/.keep && \
-   printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep && \
-   printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep && \
-   printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > /run/lucid/tunnels/.keep && \
-   printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep && \
-   printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep && \
-   printf 'dir=configs\nplatform=lucid-tor-proxy\n'                       > /configs/.keep
-   printf 'dir-configs/services\nplatform=lucid-tor-proxy\n'              > /configs/services/.keep
+   printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > ./run/lucid/.keep && \
+   printf 'dir=run/lucid/tor\nplatform=lucid-tor-proxy\n'                > ./lucid/tor/.keep && \
+   printf 'dir=run/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > ./lucid/tor/data/.keep && \
+   printf 'dir=run/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > ./lucid/tor/bin/.keep && \
+   printf 'dir=run/lucid/tor/log\nplatform=lucid-tor-proxy\n'            > ./lucid/tor/log/.keep && \
+   printf 'dir=run/lucid/tor/pid\nplatform=lucid-tor-proxy\n'            > ./lucid/tor/pid/.keep && \
+   printf 'dir=run/lucid/ssl\nplatform=lucid-tor-proxy\n'                > ./lucid/ssl/.keep && \
+   printf 'dir=run/lucid/onion\nplatform=lucid-tor-proxy\n'              > ./lucid/onion/.keep && \
+   printf 'dir=run/lucid/onion/lucid_admin\nplatform=lucid-tor-proxy\n'    > ./lucid/onion/lucid_admin/.keep && \
+   printf 'dir=run/lucid/onion/lucid_api\nplatform=lucid-tor-proxy\n'      > ./lucid/onion/lucid_api/.keep && \
+   printf 'dir=run/lucid/onion/lucid_auth\nplatform=lucid-tor-proxy\n'     > ./lucid/onion/lucid_auth/.keep && \
+   printf 'dir=run/lucid/onion/lucid_config\nplatform=lucid-tor-proxy\n'   > ./lucid/onion/lucid_config/.keep && \
+   printf 'dir=run/lucid/onion/lucid_dev\nplatform=lucid-tor-proxy\n'      > ./lucid/onion/lucid_dev/.keep && \
+   printf 'dir=run/lucid/onion/lucid_health\nplatform=lucid-tor-proxy\n'   > ./lucid/onion/lucid_health/.keep && \
+   printf 'dir=run/lucid/onion/lucid_lb\nplatform=lucid-tor-proxy\n'       > ./lucid/onion/lucid_lb/.keep && \
+   printf 'dir=run/lucid/onion/lucid_metrics\nplatform=lucid-tor-proxy\n'  > ./lucid/onion/lucid_metrics/.keep && \
+   printf 'dir=run/lucid/onion/lucid_mgmt\nplatform=lucid-tor-proxy\n'     > ./lucid/onion/lucid_mgmt/.keep && \
+   printf 'dir=run/lucid/onion/lucid_onion\nplatform=lucid-tor-proxy\n'    > ./lucid/onion/lucid_onion/.keep && \
+   printf 'dir=run/lucid/onion/lucid_relay\nplatform=lucid-tor-proxy\n'    > ./lucid/onion/lucid_relay/.keep && \
+   printf 'dir=run/lucid/onion/lucid_resolver\nplatform=lucid-tor-proxy\n' > ./lucid/onion/lucid_resolver/.keep && \
+   printf 'dir=run/lucid/onion/lucid_rpc\nplatform=lucid-tor-proxy\n'      > ./lucid/onion/lucid_rpc/.keep && \
+   printf 'dir=run/lucid/onion/lucid_ui\nplatform=lucid-tor-proxy\n'       > ./lucid/onion/lucid_ui/.keep && \
+   printf 'dir=run/lucid/onion/lucid_vm\nplatform=lucid-tor-proxy\n'       > ./lucid/onion/lucid_vm/.keep && \
+   printf 'dir=run/lucid/onion/lucid_ws\nplatform=lucid-tor-proxy\n'       > ./lucid/onion/lucid_ws/.keep && \
+   printf 'dir=run//opt/lucid\nplatform=lucid-tor-proxy\n'                    > ./lucid/.keep && \
+   printf 'dir=run//opt/lucid/tor\nplatform=lucid-tor-proxy\n'                > ./lucid/tor/.keep && \
+   printf 'dir=run//opt/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > ./lucid/tor/bin/.keep && \
+   printf 'dir=run//opt/lucid/tor/lib\nplatform=lucid-tor-proxy\n'            > ./lucid/tor/lib/.keep && \
+   printf 'dir=run//opt/lucid/tor/config\nplatform=lucid-tor-proxy\n'         > ./lucid/tor/config/.keep && \
+   printf 'dir=run//opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > ./lucid/tor/data/.keep && \
+   printf 'dir=run//opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > ./lucid/tor/data/.keep && \
+   printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > ./lucid/tunnels/.keep && \
+   printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > ./lucid/tunnels/scripts/.keep && \
+   printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > ./lucid/tunnels/config/.keep && \
+   printf 'dir=./configs\nplatform=lucid-tor-proxy\n'                       > ./configs/.keep && \
+   printf 'dir=./configs/services\nplatform=lucid-tor-proxy\n'              > ./configs/services/.keep
 
 
-
-COPY configs/environment/.env.secrets /configs/.env.secrets
-COPY master-env-config.txt /configs/.env.master
-COPY configs/environment/.env.tunnel-tools /configs/.env.tunnel-tools
-COPY infrastructure/containers/host-config.yml /configs/host-config.yml
-COPY infrastructure/containers/services/ /configs/services/
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.tunnel-tools ./configs/.env.tunnel-tools
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY infrastructure/containers/services/ ./configs/services/
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
