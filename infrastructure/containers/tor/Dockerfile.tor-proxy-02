@@ -86,7 +86,9 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
    install -d -o root -g root -m 755 /opt/lucid/tor/lib && \
    install -d -o root -g root -m 755 /opt/lucid/tor/config && \
    install -d -o debian-tor -g debian-tor -m 755 /opt/lucid/tor/data && \
-   install -d -o root -g root -m 755 /configs && \
+   install -d -o root -g root -m 755 /build/configs/services && \
+install -d -o root -g root -m 755 /build/configs && \
+install -d -o root -g root -m 755 /configs && \
    install -d -o root -g root -m 755 /usr/local/bin && \
    printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
    install -d -o root -g root -m 755 /etc/tor && \
@@ -125,12 +127,15 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
    printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep && \
    printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep && \
    printf 'dir=configs\nplatform=lucid-tor-proxy\n'                       > /configs/.keep
+   printf 'dir-configs/services\nplatform=lucid-tor-proxy\n'              > /configs/services/.keep
 
 
 
 COPY configs/environment/.env.secrets /configs/.env.secrets
 COPY master-env-config.txt /configs/.env.master
 COPY configs/environment/.env.tunnel-tools /configs/.env.tunnel-tools
+COPY infrastructure/containers/host-config.yml /configs/host-config.yml
+COPY infrastructure/containers/services/ /configs/services/
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
@@ -160,33 +165,34 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="9050,9051,8888" \
       com.lucid.cluster="foundation"
 
+# LUCID_HOST_CONFIG_STABLE_ID matches host-config.yml key tor_socks (avoids *KEY* ENV name — Docker SecretsUsedInArgOrEnv).
 ENV PATH=/app/run/lucid/tor/bin:/app/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/bin:/app/opt/lucid \
     LD_LIBRARY_PATH=/opt/lucid/tor/lib \
     TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
     TOR_DATA_DIR=/run/lucid/tor \
-    LUCID_HOST_CONFIG_SERVICE_KEY=tor-socks \
+    LUCID_HOST_CONFIG_STABLE_ID=tor_socks \
     LUCID_SERVICE_HOST_IP=172.20.10.64 \
     LUCID_SERVICE_HTTP_PATH=http://tor-socks:9050/app
 
 # Core binaries and helpers
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + .env.tunnel-tools (runtime under /app/configs — see also /app/configs/services)
-COPY --from=tor-builder /usr/bin/tor/        /app/usr/bin/tor
-COPY --from=tor-builder /usr/bin/obfs4proxy/  /app/usr/bin/obfs4proxy
-COPY --from=tor-builder /usr/bin/tini/        /app/usr/bin/tini
-COPY --from=tor-builder /usr/sbin/gosu/       /app/usr/sbin/gosu
-COPY --from=tor-builder /bin/bash/            /app/bin/bash
-COPY --from=tor-builder /bin/busybox/         /app/bin/busybox
-COPY --from=tor-builder /bin/mkdir/           /app/bin/mkdir
-COPY --from=tor-builder /bin/sleep/           /app/bin/sleep
-COPY --from=tor-builder /bin/tail            /app/bin/tail
-COPY --from=tor-builder /bin/chmod           /app/bin/chmod
-COPY --from=tor-builder /bin/chown           /app/bin/chown
-COPY --from=tor-builder /bin/rm              /app/bin/rm
-COPY --from=tor-builder /usr/bin/nc          /app/usr/bin/nc
-COPY --from=tor-builder /usr/bin/xxd         /app/usr/bin/xxd
-COPY --from=tor-builder /usr/bin/curl        /app/usr/bin/curl
-COPY --from=tor-builder /usr/bin/jq          /app/usr/bin/jq
+COPY --from=tor-builder /usr/bin/tor/        /app/usr/bin/tor/
+COPY --from=tor-builder /usr/bin/obfs4proxy/  /app/usr/bin/obfs4proxy/
+COPY --from=tor-builder /usr/bin/tini/        /app/usr/bin/tini/
+COPY --from=tor-builder /usr/sbin/gosu/       /app/usr/sbin/gosu/
+COPY --from=tor-builder /bin/bash/            /app/bin/bash/
+COPY --from=tor-builder /bin/busybox/         /app/bin/busybox/
+COPY --from=tor-builder /bin/mkdir/           /app/bin/mkdir/
+COPY --from=tor-builder /bin/sleep/           /app/bin/sleep/
+COPY --from=tor-builder /bin/tail/            /app/bin/tail/
+COPY --from=tor-builder /bin/chmod/           /app/bin/chmod/
+COPY --from=tor-builder /bin/chown/           /app/bin/chown/
+COPY --from=tor-builder /bin/rm/              /app/bin/rm/
+COPY --from=tor-builder /usr/bin/nc/          /app/usr/bin/nc
+COPY --from=tor-builder /usr/bin/xxd/         /app/usr/bin/xxd/
+COPY --from=tor-builder /usr/bin/curl/        /app/usr/bin/curl/
+COPY --from=tor-builder /usr/bin/jq/          /app/usr/bin/jq/
 #static assets /app/opt/lucid/tor
 # Required libraries (include systemd/selinux/cap and loader) /app/opt/lib
 COPY --from=tor-builder /lib/*/libc.so.6         /app/lib/
@@ -209,27 +215,29 @@ COPY --from=tor-builder /lib/aarch64-linux-gnu     /app/lib/aarch64-linux-gnu
 COPY --from=tor-builder /configs/.env.secrets /app/configs/.env.secrets
 COPY --from=tor-builder /configs/.env.master /app/configs/.env.master
 COPY --from=tor-builder /configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
-COPY --from=tor-builder /build/configs/services /app/configs/services
+COPY --from=tor-builder /build/configs/services /app/configs/services/
 
 # Bring in /usr/lib to satisfy Debian dynamic deps (libselinux, libcap, etc.)
-COPY --from=tor-builder /usr/lib /app/usr/lib
+COPY --from=tor-builder /usr/lib /app/usr/lib/
 
 # Ensure /etc/tor directory exists in runtime and is traversable
-COPY --from=tor-builder /etc/tor /app/etc/tor
+COPY --from=tor-builder /etc/tor /app/etc/tor/
 
 # Tor data/config and system files
-COPY --from=tor-builder /usr/share/tor                                 /app/usr/share/tor
+COPY --from=tor-builder /usr/share/tor/                                 /app/usr/share/tor/
 COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt             /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor     /app/var/lib/tor
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run             /app/run
-COPY --from=tor-builder /etc/passwd                                    /app/etc/passwd
-COPY --from=tor-builder /etc/group                                     /app/etc/group
+COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor/     /app/var/lib/tor/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run/            /app/run/
+COPY --from=tor-builder /etc/passwd/                                    /app/etc/passwd/
+COPY --from=tor-builder /etc/group/                                    /app/etc/group/
 
 # /opt/lucid/tor scaffold (static config tree + .keep markers)
-COPY --from=tor-builder --chown=root:root /opt/lucid /app/opt/lucid
+COPY --from=tor-builder --chown=root:root /opt/lucid/ /app/opt/lucid/
 
 # Lucid scripts and tor configuration (torrc baked into image)
 # Build context: project root, so we prefix with 02_network_security/tor/
+COPY --from=tor-builder /build/configs/services/ /app/configs/services/
+COPY --from=tor-builder /build/configs/host-config.yml /app/configs/host-config.yml
 COPY --chmod=644 02_network_security/tor/torrc                                  /app/run/lucid/tor/torrc
 COPY --chmod=755 02_network_security/tor/entrypoint.sh                          /app/run/lucid/tor/bin/entrypoint.sh
 COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh                    /app/run/lucid/tor/bin/bootstrap-helper.sh
