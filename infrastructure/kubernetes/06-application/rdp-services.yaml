@@ -32,10 +32,8 @@ spec:
         image: pickme/lucid-rdp-server-manager:latest-arm64
         imagePullPolicy: Always
         ports:
-        - containerPort: 8081
-          name: manager
         - containerPort: 8090
-          name: api
+          name: http
         env:
         - name: LUCID_ENV
           value: "production"
@@ -46,9 +44,9 @@ spec:
         - name: SERVICE_NAME
           value: "rdp-server-manager"
         - name: RDP_SERVER_MANAGER_PORT
-          value: "8081"
+          value: "8090"
         - name: RDP_SERVER_MANAGER_URL
-          value: "http://lucid-rdp-server-manager:8081"
+          value: "http://lucid-rdp-server-manager:8090"
         - name: RDP_SERVER_MANAGER_HOST
           value: "172.20.0.21"
         - name: MONGODB_URI
@@ -90,13 +88,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8081
+            port: 8090
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 8081
+            port: 8090
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
@@ -124,12 +122,9 @@ spec:
     app.kubernetes.io/name: rdp-server-manager
     app.kubernetes.io/component: rdp
   ports:
-  - port: 8081
-    targetPort: 8081
-    name: manager
   - port: 8090
     targetPort: 8090
-    name: api
+    name: http
   type: ClusterIP
   clusterIP: 172.20.0.21
 ---

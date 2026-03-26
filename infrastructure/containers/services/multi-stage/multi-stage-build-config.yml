@@ -1,0 +1,148 @@
+# Runtime (container): /app/configs/services/multi-stage/multi-stage-build-config.yml — see ../container-runtime-layout.yml
+# Multi-Stage Build Configuration for Lucid Project
+# Container-hosted: cache/logs/analysis use named volumes; optional Docker socket for sibling builds.
+#
+# Canonical discovery: /app/configs/host-config.yml; host_ip column: repository root service-ip.txt
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  entries:
+    main_lucid_gateway: { service_name: api-gateway, port: 8080, host_ip: 172.20.10.1, http_path: http://api-gateway:8080/app }
+    lucid_redis: { service_name: lucid-redis, port: 6379, host_ip: 172.20.10.67, http_path: http://lucid-redis:6379/app }
+    lucid_mongodb: { service_name: lucid-mongodb, port: 27017, host_ip: 172.20.10.70, http_path: http://lucid-mongodb:27017/app }
+    mongodb_monitoring: { service_name: mongodb-monitoring, port: 27018, host_ip: 172.20.10.71, http_path: http://mongodb-monitoring:27018/app }
+    prometheus_metrics: { service_name: prometheus-metrics, port: 9090, host_ip: 172.20.10.74, http_path: http://prometheus-metrics:9090/app }
+
+services:
+  # Multi-stage build orchestrator
+  build-orchestrator:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: build-orchestrator
+    environment:
+      - BUILD_PLATFORM=${BUILD_PLATFORM:-linux/amd64,linux/arm64}
+      - REGISTRY=${REGISTRY:-ghcr.io}
+      - IMAGE_NAME=${IMAGE_NAME:-lucid}
+      - VERSION=${VERSION:-latest}
+      - PUSH_IMAGES=${PUSH_IMAGES:-false}
+      - NO_CACHE=${NO_CACHE:-false}
+      - OPTIMIZE_LAYERS=${OPTIMIZE_LAYERS:-true}
+      - PARALLEL_BUILDS=${PARALLEL_BUILDS:-4}
+      - LUCID_HOST_CONFIG_REGISTRY=/app/configs/host-config.yml
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - LUCID_API_GATEWAY_HOST_IP=172.20.10.1
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+    volumes:
+      - build-cache:/cache
+      - build-logs:/logs
+      - layer-analysis:/analysis
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+    networks:
+      - lucid-multi-stage-network
+    command: >
+      sh -c "
+        echo 'Starting multi-stage build orchestrator...' &&
+        mkdir -p /cache /logs /analysis &&
+        python /app/scripts/build-multi-stage.py --orchestrate
+      "
+
+  # Layer analyzer for multi-stage builds
+  layer-analyzer:
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: layer-analyzer
+    environment:
+      - ANALYSIS_TARGET=layers
+      - OPTIMIZATION_LEVEL=aggressive
+      - GENERATE_REPORTS=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+    volumes:
+      - layer-reports:/reports
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+    networks:
+      - lucid-multi-stage-network
+    command: >
+      sh -c "
+        echo 'Starting layer analysis...' &&
+        mkdir -p /reports &&
+        python /app/scripts/analyze-layers.py --multi-stage
+      "
+
+  # Build cache optimizer
+  cache-optimizer:
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: cache-optimizer
+    environment:
+      - CACHE_OPTIMIZATION=true
+      - CACHE_STRATEGY=aggressive
+      - CLEANUP_OLD_CACHES=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+    volumes:
+      - build-cache:/cache
+      - cache-reports:/reports
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+    networks:
+      - lucid-multi-stage-network
+    command: >
+      sh -c "
+        echo 'Starting cache optimization...' &&
+        mkdir -p /reports &&
+        python /app/scripts/optimize-cache.py --multi-stage
+      "
+
+  # Multi-stage build validator
+  build-validator:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: build-validator
+    environment:
+      - VALIDATION_TARGET=multi-stage
+      - SECURITY_SCAN=true
+      - SIZE_ANALYSIS=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_PROMETHEUS_SERVICE_NAME=prometheus-metrics
+      - LUCID_PROMETHEUS_PORT=9090
+      - LUCID_PROMETHEUS_HOST_IP=172.20.10.74
+    volumes:
+      - validation-reports:/reports
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+    networks:
+      - lucid-multi-stage-network
+    command: >
+      sh -c "
+        echo 'Starting build validation...' &&
+        mkdir -p /reports &&
+        python /app/scripts/validate-build.py --multi-stage
+      "
+
+networks:
+  lucid-multi-stage-network:
+    driver: bridge
+    name: lucid-multi-stage-network
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
+
+volumes:
+  build-cache:
+    name: lucid-multi-stage-build-cache
+  build-logs:
+    name: lucid-multi-stage-build-logs
+  layer-analysis:
+    name: lucid-multi-stage-layer-analysis
+  layer-reports:
+    name: lucid-multi-stage-layer-reports
+  cache-reports:
+    name: lucid-multi-stage-cache-reports
+  validation-reports:
+    name: lucid-multi-stage-validation-reports

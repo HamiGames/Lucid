@@ -1,0 +1,216 @@
+# Runtime (container): /app/configs/services/multi-stage/multi-stage-config.yml — see ../container-runtime-layout.yml
+# Multi-Stage Docker Configuration for Lucid Project
+# Container-hosted: no host SSD paths; named volumes + in-network services. Optional bind overrides via LUCID_*.
+# Build: run from repo root or set LUCID_COMPOSE_REPO_ROOT to an absolute repo path (compose resolves context from this file's directory by default).
+#
+# Canonical discovery (generated registry — do not drift): /app/configs/host-config.yml
+# Per-service static host_ip values: repository root service-ip.txt
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    main_lucid_gateway:
+      host_config_key: main_lucid_gateway
+      port: 8080
+      host_ip: 172.20.10.1
+      service_name: api-gateway
+      http_path: http://api-gateway:8080/app
+    lucid_redis:
+      host_config_key: lucid_redis
+      port: 6379
+      host_ip: 172.20.10.67
+      service_name: lucid-redis
+      http_path: http://lucid-redis:6379/app
+    lucid_mongodb:
+      host_config_key: lucid_mongodb
+      port: 27017
+      host_ip: 172.20.10.70
+      service_name: lucid-mongodb
+      http_path: http://lucid-mongodb:27017/app
+    mongodb_monitoring:
+      host_config_key: mongodb_monitoring
+      port: 27018
+      host_ip: 172.20.10.71
+      service_name: mongodb-monitoring
+      http_path: http://mongodb-monitoring:27018/app
+    prometheus_metrics:
+      host_config_key: prometheus_metrics
+      port: 9090
+      host_ip: 172.20.10.74
+      service_name: prometheus-metrics
+      http_path: http://prometheus-metrics:9090/app
+
+services:
+  # Multi-stage base configuration
+  multi-stage-base:
+    build:
+      context: ${LUCID_COMPOSE_REPO_ROOT:-../../../../}
+      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-infrastructure/docker/multi-stage/Dockerfile.base}
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      target: runtime
+      args:
+        BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
+        BUILD_TARGET: multi-stage
+        OPTIMIZE_LAYERS: ${OPTIMIZE_LAYERS:-true}
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: multi-stage-base
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - BUILD_STAGE=runtime
+      - LUCID_HOST_CONFIG_REGISTRY=/app/configs/host-config.yml
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - LUCID_API_GATEWAY_HOST_IP=172.20.10.1
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_REDIS_URL=redis://lucid-redis:6379/0
+      - LUCID_REDIS_SERVICE_NAME=lucid-redis
+      - LUCID_REDIS_PORT=6379
+      - LUCID_REDIS_HOST_IP=172.20.10.67
+      - LUCID_MONGODB_SERVICE_NAME=lucid-mongodb
+      - LUCID_MONGODB_PORT=27017
+      - LUCID_MONGODB_HOST_IP=172.20.10.70
+      - LUCID_MONGODB_MONITORING_SERVICE_NAME=mongodb-monitoring
+      - LUCID_MONGODB_MONITORING_PORT=27018
+      - LUCID_MONGODB_MONITORING_HOST_IP=172.20.10.71
+    networks:
+      - lucid-multi-stage-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Multi-stage development configuration
+  multi-stage-dev:
+    build:
+      context: ${LUCID_COMPOSE_REPO_ROOT:-../../../../}
+      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-infrastructure/docker/multi-stage/Dockerfile.base}
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      target: development
+      args:
+        BUILD_ENVIRONMENT: development
+        BUILD_TARGET: multi-stage-dev
+        INSTALL_DEV_TOOLS: true
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: multi-stage-dev
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - BUILD_STAGE=development
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - LUCID_REDIS_URL=redis://lucid-redis:6379/0
+      - LUCID_MONGODB_SERVICE_NAME=lucid-mongodb
+      - LUCID_MONGODB_PORT=27017
+    networks:
+      - lucid-multi-stage-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - lucid-multi-stage-src:/app/src
+      - lucid-multi-stage-logs:/app/logs
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; print('dev stage healthy'); sys.exit(0)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+  # Multi-stage builder configuration
+  multi-stage-builder:
+    build:
+      context: ${LUCID_COMPOSE_REPO_ROOT:-../../../../}
+      dockerfile: ${LUCID_MULTI_STAGE_BASE_DOCKERFILE:-infrastructure/docker/multi-stage/Dockerfile.base}
+      platforms:
+        - linux/amd64
+        - linux/arm64
+      target: builder
+      args:
+        BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
+        BUILD_TARGET: multi-stage-builder
+        INSTALL_BUILD_TOOLS: true
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: multi-stage-builder
+    environment:
+      - PYTHONPATH=/app
+      - BUILD_STAGE=builder
+      - BUILD_TOOLS=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+    networks:
+      - lucid-multi-stage-network
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - build-cache:/cache
+      - build-artifacts:/artifacts
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Multi-stage builder container ready' &&
+        tail -f /dev/null
+      "
+
+networks:
+  lucid-multi-stage-network:
+    driver: bridge
+    name: lucid-multi-stage-network
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
+
+volumes:
+  lucid-multi-stage-data:
+    name: lucid-multi-stage-data
+  lucid-multi-stage-src:
+    name: lucid-multi-stage-src
+  lucid-multi-stage-logs:
+    name: lucid-multi-stage-logs
+  build-cache:
+    name: lucid-multi-stage-build-cache
+  build-artifacts:
+    name: lucid-multi-stage-build-artifacts

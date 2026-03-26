@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.5
 # LUCID KEY ROTATION — Distroless Python Service
 # Aligned with 03_api_gateway/Dockerfile (wheels, markers, /app/usr layout, tini)
+# host-config: admin-key-rotation; ops: infrastructure/containers/admin/docker-compose.admin.yml
 # Build context: repository root (.)
 # Source path in repo: admin/key_rotation/ (underscore)
 # Port: 8060
@@ -89,16 +90,42 @@ RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
     echo "installation complete"
 
+RUN printf "LUCID_KEY_ROTATION_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
+
 RUN echo "=== Verifying pip installation ===" && \
     python3.11 -c "import cryptography, pydantic, fastapi; print('key-rotation critical packages OK')" && \
     test -d /usr/local/lib/python3.11/site-packages
 
-RUN mkdir -p ./admin/key_rotation ./admin/utils && \
+RUN mkdir -p ./admin/key_rotation ./admin/utils ./infrastructure/kubernetes ./configs/operations && \
     printf "LUCID_KEY_ROTATION_PKG_$(date +%s)" > ./admin/key_rotation/.keep && \
-    touch ./admin/key_rotation/.keep
+    touch ./admin/key_rotation/.keep && \
+    printf "LUCID_KEY_ROTATION_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    touch ./infrastructure/kubernetes/.keep
 
 COPY admin/key_rotation/ ./admin/key_rotation/
 COPY admin/utils/ ./admin/utils/
+RUN mkdir -p ./host ./configs ./configs/services ./configs/blockchain ./host/sessions ./host/sessions/api && \
+    printf "LUCID_KEY_ROTATION_HOST_SESSIONS_API_$(date +%s)" > ./host/sessions/api/.keep && \
+    touch ./host/sessions/api/.keep && \
+    printf "LUCID_KEY_ROTATION_HOST_$(date +%s)" > ./host/.keep && \
+    printf "LUCID_KEY_ROTATION_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    printf "LUCID_KEY_ROTATION_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
+    printf "LUCID_KEY_ROTATION_CONFIGS_BLOCKCHAIN_$(date +%s)" > ./configs/blockchain/.keep && \
+    chown -R 65532:65532 ./host ./configs ./configs/services ./configs/blockchain ./infrastructure/kubernetes && \
+    chmod 644 ./host/.keep ./configs/.keep ./configs/services/.keep ./configs/blockchain/.keep && \
+    chown 65532:65532 ./host/.keep ./configs/.keep ./configs/services/.keep ./configs/blockchain/.keep
+
+COPY sessions/api/ ./host/sessions/api/
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/blockchain/ ./configs/blockchain/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./configs/operations/docker-compose.admin.yml
+
 COPY admin/__init__.py ./admin/__init__.py
 
 RUN test -f ./admin/key_rotation/key_rotation.py && ls -la ./admin/key_rotation/
@@ -120,9 +147,11 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="key-rotation" \
+      com.lucid.service="admin-key-rotation" \
       com.lucid.platform="arm64" \
-      com.lucid.security="distroless"
+      com.lucid.cluster="core" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8060"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -131,11 +160,24 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    KEY_ROTATION_PORT=8060
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=admin_key_rotation \
+    LUCID_SERVICE_HOST_IP=172.20.10.19 \
+    LUCID_SERVICE_HTTP_PATH=http://admin-key-rotation:8060/app \
+    KEY_ROTATION_PORT=8060 \
+    KEY_ROTATION_HOST=admin-key-rotation \
+    API_GATEWAY_HOST=api-gateway \
+    API_GATEWAY_PORT=8080 \
+    LUCID_MONGODB_SERVICE=lucid-mongodb \
+    LUCID_MONGODB_PORT=27017 \
+    LUCID_REDIS_SERVICE=lucid-redis \
+    LUCID_REDIS_PORT=6379
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+
+COPY --from=builder --chown=65532:65532 /build/host/sessions/api/ /app/host/sessions/api/
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -145,11 +187,24 @@ COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/configs/blockchain/ /app/configs/blockchain/
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.admin.yml /app/configs/operations/docker-compose.admin.yml
+
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
 
 RUN ["/app/usr/bin/python3.11", "-c", \
-    "import os; assert os.path.isfile('/app/admin/key_rotation/key_rotation.py'); print('key-rotation runtime OK')"]
+    "import os, sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, sp); \
+     m=os.path.join(sp, '.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; \
+     assert os.path.isfile('/app/host/host-config.yml'); \
+     assert os.path.isfile('/app/infrastructure/kubernetes/database-config.yaml'); \
+     assert os.path.isfile('/app/infrastructure/kubernetes/api-gateway-config.yaml'); \
+     import pymongo, motor, redis; \
+     assert os.path.isfile('/app/admin/key_rotation/key_rotation.py'); print('key-rotation runtime OK')"]
 
 EXPOSE 8060
 

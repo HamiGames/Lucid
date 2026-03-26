@@ -32,11 +32,19 @@ ENV DEBIAN_FRONTEND=noninteractive \
     npm_config_cache=/root/.npm
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+RUN mkdir -p /build/configs /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/configs/services/
 
+# Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
+RUN mkdir -p /build/tmp /build/common /build/infrastructure/kubernetes && \
+    printf "LUCID_ELECTRON_NODE_TMP_$(date +%s)" > /build/tmp/.keep
+COPY common/__init__.py /build/common/__init__.py
+COPY common/tor/ /build/common/tor/
+COPY infrastructure/kubernetes/01_configmaps/ /build/infrastructure/kubernetes/
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -80,6 +88,7 @@ RUN echo "=== Checking electron_gui/main/ ===" && \
 COPY electron_gui/renderer/node/ ./renderer/node/
 COPY electron_gui/renderer/common/ ./renderer/common/
 COPY electron_gui/shared/ ./shared/
+COPY electron_gui/assets/ ./assets/
 COPY electron_gui/configs/ ./configs/
 
 RUN echo "=== Verifying node operator source tree ===" && \
@@ -87,7 +96,10 @@ RUN echo "=== Verifying node operator source tree ===" && \
     test -d ./renderer/node && \
     test -d ./renderer/common && \
     test -d ./shared && \
+    test -d ./assets && \
     test -d ./configs && \
+    test -f ./infrastructure/kubernetes/api-gateway-config.yaml && \
+    test -f ./common/__init__.py && \
     test -f ./configs/api-services-node.conf && \
     test -f ./configs/docker.config.json && \
     test -f ./configs/env.production.json && \
@@ -116,16 +128,26 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="node-operator-interface" \
+      com.lucid.service="electron-gui-node" \
       com.lucid.platform="arm64" \
-      com.lucid.cluster="support" \
-      com.lucid.security="distroless"
+      com.lucid.cluster="gui-integration" \
+      com.lucid.security="distroless" \
+      com.lucid.hostconfig.service_name="electron-gui-node" \
+      com.lucid.hostconfig.port="3002" \
+      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
+      com.lucid.hostconfig.upstream_api_gateway_port="8080"
 
 ENV NODE_ENV=production \
     ELECTRON_GUI_PROFILE=node_operator \
     ELECTRON_GUI_NETWORK=lucid-pi-network \
-    ELECTRON_GUI_API_BASE_URL=http://172.20.0.10:8080/api/v1 \
-    ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-node.conf
+    ELECTRON_GUI_API_BASE_URL=http://api-gateway:8080/api/v1 \
+    ELECTRON_GUI_CONFIG_FILE=/app/configs/api-services-node.conf \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=electron_gui_node \
+    LUCID_SERVICE_HOST_IP=172.20.10.76 \
+    LUCID_SERVICE_HTTP_PATH=http://electron-gui-node:3002/app \
+    LUCID_API_GATEWAY_HOST=api-gateway \
+    LUCID_API_GATEWAY_PORT=8080
 
 COPY --from=builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
@@ -139,8 +161,10 @@ COPY --from=builder --chown=65532:65532 /build/configs/ ./configs/
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
 
-RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), nodeConf: fs.existsSync('/app/configs/api-services-node.conf'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json') }; if (!Object.values(checks).every(v => v)) { console.error('Verification failed:', checks); process.exit(1); } console.log('Runtime artifacts verified');"]
+RUN ["/nodejs/bin/node", "-e", "const fs = require('fs'); const checks = { buildMarker: fs.existsSync('/app/.build-marker'), packMarker: fs.existsSync('/app/.packages-marker'), dist: fs.existsSync('/app/dist'), configs: fs.existsSync('/app/configs'), hostConfig: fs.existsSync('/app/configs/host-config.yml'), nodeConf: fs.existsSync('/app/configs/api-services-node.conf'), dockerConfig: fs.existsSync('/app/configs/docker.config.json'), prodConfig: fs.existsSync('/app/configs/env.production.json'), torConfig: fs.existsSync('/app/configs/tor.config.json'), common: fs.existsSync('/app/common/__init__.py'), apiGwCm: fs.existsSync('/app/infrastructure/kubernetes/api-gateway-config.yaml') }; if (!Object.values(checks).every(v => v)) { console.error('Verification failed:', checks); process.exit(1); } console.log('Runtime artifacts verified');"]
 
 EXPOSE 3002
 

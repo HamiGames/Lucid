@@ -1,0 +1,120 @@
+# LUCID PAYMENT EXTERNALS — edge/orchestration on lucid-pi-network (+ optional local bridge)
+# Path: infrastructure/containers/payment_systems/docker-compose.payment-externals.yml
+#
+# Aligned with: ports.txt / host-config.yml
+#   (payment_system_gateway 8097, tron_relay 8098).
+# Intended as the tier other planes reach via api-gateway / node-system-gateway / admin-system-gateway
+# without attaching stacks to lucid-tron-isolated; upstreams resolve on lucid-pi-network (tron-client,
+# tron-payment-service, wallet-manager, etc. from docker-compose.payment-internal.yml or block-system).
+#
+# Secrets: infrastructure/containers/env/env.secrets.template → configs/environment/.env.secrets
+#   (REDIS_RELAY_PASSWORD, ELASTICSEARCH_RELAY_PASSWORD, JWT / payment-related keys as used by images).
+#
+# Host collision (ports.txt): 8098 tron-relay vs gui-docker-manager — set TRON_RELAY_PUBLISH_PORT / GUI_* when co-hosted.
+# 8097 payment-system-gateway vs gui-tor-manager — remap host publish if both run on one Pi.
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/payment_systems/docker-compose.payment-externals.yml up -d --build
+
+name: lucid-payment-externals
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-env-payment-ext: &env-payment-ext
+  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.secrets
+
+services:
+  payment-system-gateway:
+    image: ${LUCID_PAYMENT_GATEWAY_IMAGE:-pickme/lucid-payment-gateway:latest-arm64}
+    container_name: payment-system-gateway
+    hostname: payment-system-gateway
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.payment-gateway
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-payment-ext
+    environment:
+      SERVICE_PORT: "8097"
+      PAYMENT_GATEWAY_PORT: "8097"
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+      ADMIN_SYSTEM_GATEWAY_URL: ${ADMIN_SYSTEM_GATEWAY_URL:-http://admin-system-gateway:8155}
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      TRON_PAYMENT_SERVICE_URL: ${TRON_PAYMENT_SERVICE_URL:-http://tron-payment-service:8080}
+      TRON_NODE_CLIENT_URL: ${TRON_NODE_CLIENT_URL:-http://tron-node-client:8030}
+      WALLET_MANAGER_URL: ${WALLET_MANAGER_URL:-http://wallet-manager:8093}
+      TRON_RELAY_URL: ${TRON_RELAY_URL:-http://tron-relay:8098}
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${PAYMENT_SYSTEM_GATEWAY_PUBLISH_PORT:-8097}:8097"
+    networks:
+      - lucid-pi-network
+      - lucid-payment-external
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    labels:
+      com.lucid.service: payment-system-gateway
+      com.lucid.expose: "8097"
+      com.lucid.cluster: payment
+      com.lucid.tor.compatible: "true"
+
+  tron-relay:
+    image: ${LUCID_TRON_RELAY_IMAGE:-pickme/lucid-tron-relay:latest-arm64}
+    container_name: tron-relay
+    hostname: tron-relay
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-payment-ext
+    environment:
+      PORT: "8098"
+      HOST: "0.0.0.0"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      PAYOUT_ROUTER_URL: ${PAYOUT_ROUTER_URL:-http://payout-router:8092}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URI: ${REDIS_URI:-redis://lucid-redis:6379/0}
+    ports:
+      - "${TRON_RELAY_PUBLISH_PORT:-18098}:8098"
+    networks:
+      - lucid-pi-network
+      - lucid-payment-external
+    volumes:
+      - lucid_payment_externals_tron_relay_logs:/app/logs:rw
+    labels:
+      com.lucid.service: tron-relay
+      com.lucid.expose: "8098"
+      com.lucid.cluster: payment
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-payment-external:
+    name: lucid-payment-external
+    driver: bridge
+    attachable: true
+    labels:
+      lucid.network: payment-external
+
+volumes:
+  lucid_payment_externals_tron_relay_logs:

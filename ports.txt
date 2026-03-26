@@ -22,6 +22,7 @@ services:
     service_name: server-gateway
     tags: [lucid-server-gateway, server-gateway, server-system-gateway]
     http_path: "http://server-gateway:8080/app"
+    
 
   lucid_server_manager:
     port: 8081
@@ -29,6 +30,7 @@ services:
     service_name: lucid-server-manager
     tags: [lucid-server-manager, lucid-server-operations, server-operations]
     http_path: "http://lucid-server-manager:8081/app"
+
 
   lucid_server_core:
     port: 8100
@@ -100,7 +102,7 @@ services:
     service_name: session-recorder
     tags: [session-recorder, rdp-session-recorder]
     http_path: "http://session-recorder:8090/app"
-**session_processor:
+  session_processor:
     port: 8091
     service_name: session-processor
     tags: [session-processor, sessions-processor]
@@ -469,7 +471,7 @@ services:
 
   lucid_redis:
     port: 6379
-    image: pickme/lucid-redis:
+    image: pickme/lucid-redis:latest-arm64
     service_name: lucid-redis
     tags: [lucid-redis, redis]
     http_path: "http://lucid-redis:6379/app"

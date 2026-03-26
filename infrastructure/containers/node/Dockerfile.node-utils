@@ -92,10 +92,32 @@ RUN python3.11 -c "\
 import uvicorn, fastapi, pydantic, pydantic_settings, motor, redis, blake3, stem, socks, tronpy, pkg_resources, web3; \
 print('node-utils deps OK')"
 
-COPY node/ ./node/
+RUN mkdir -p ./node ./node/configs ./configs ./configs/services ./host ./infrastructure/kubernetes ./configs/operations && \
+    printf "LUCID_NODE_UTILS_NODE_$(date +%s)" > ./node/.keep && \
+    printf "LUCID_NODE_UTILS_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    printf "LUCID_NODE_UTILS_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
+    printf "LUCID_NODE_UTILS_HOST_$(date +%s)" > ./host/.keep && \
+    printf "LUCID_NODE_UTILS_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    printf "LUCID_NODE_UTILS_OPS_$(date +%s)" > ./configs/operations/.keep && \
+    chown -R 65532:65532 ./node ./node/configs ./configs/services ./configs ./host ./infrastructure/kubernetes ./configs/operations && \
+    chmod 644 ./node/.keep ./configs/.keep ./configs/services/.keep ./configs/.keep ./host/.keep ./infrastructure/kubernetes/.keep
 
-RUN echo "LUCID_NODE_UTILS_SOURCE_$(date +%s)" > ./node/.lucid-source-marker && \
-    chown 65532:65532 ./node/.lucid-source-marker
+COPY node/ ./node/
+COPY infrastructure/containers/node/config/ ./node/configs/
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/node/docker-compose.node-gui.yml ./configs/docker-compose.node-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./configs/docker-compose.node-data-system.yml
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./configs/docker-compose.node-sessions.yml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./configs/operations/docker-compose.node-management.yml
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/services/container-runtime-layout.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+
+
+
 
 RUN test -f ./node/main.py && test -f ./node/entrypoint.py && test -f ./node/config.py && \
     test -f ./node/openapi.yaml && test -f ./node/models.py && \
@@ -156,7 +178,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="node-utils" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="application" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.expose="8630"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -165,6 +188,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=node_utils \
+    LUCID_SERVICE_HOST_IP=172.20.10.30 \
+    LUCID_SERVICE_HTTP_PATH=http://node-utils:8630/app \
     NODE_UTILS_PORT=8630 \
     NODE_UTILS_HOST=0.0.0.0
 
@@ -185,6 +212,15 @@ COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
 COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
 COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-gui.yml /app/configs/docker-compose.node-gui.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-data-system.yml /app/configs/docker-compose.node-data-system.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-sessions.yml /app/configs/docker-compose.node-sessions.yml
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.node-management.yml /app/configs/operations/docker-compose.node-management.yml
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 

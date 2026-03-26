@@ -1,0 +1,630 @@
+# Lucid blockchain — chain creation & data-operations stack
+# Build contexts are repository root (Lucid). Compose file dir: infrastructure/containers/blockchain/
+#
+# From repo root:
+#   docker compose -f infrastructure/containers/blockchain/docker-compose.chain.yml up -d --build
+#
+# Includes: MongoDB (distroless), blockchain engine / consensus / data-chain / block-manager,
+# session path (anchoring, API, merkle, systems-control), node operator GUI, admin UI backend,
+# Redis + auth (required by APIs). Network lucid-pi-network must exist (or switch to internal bridge).
+
+name: lucid-blockchain-chain
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+# Compose file dir: infrastructure/containers/blockchain/ — three levels up = repository root (matches Dockerfile paths).
+x-repo-context: &repo-context
+  context: ../../../
+
+x-env-chain: &env-chain
+  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.secrets
+
+services:
+  lucid-mongodb:
+    image: ${LUCID_MONGODB_IMAGE:-pickme/lucid-mongodb:latest-arm64}
+    container_name: lucid-mongodb
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.mongodb
+      args:
+        <<: *lucid-build-args
+        DEBIAN_MULTIARCH: ${DEBIAN_MULTIARCH:-aarch64-linux-gnu}
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_MONGODB_PUBLISH_PORT:-27017}:27017"
+    volumes:
+      - lucid_chain_mongodb_data:/data/db:rw
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-lucid}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:?set MONGO_INITDB_ROOT_PASSWORD}
+    user: "65532:65532"
+    healthcheck:
+      test: ["CMD", "/usr/bin/python3.11", "/app/usr/local/bin/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  lucid-redis:
+    image: ${LUCID_REDIS_IMAGE:-redis:7-alpine}
+    container_name: lucid-redis
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_REDIS_PUBLISH_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - lucid_chain_redis_data:/data:rw
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  lucid-auth-service:
+    image: ${LUCID_AUTH_SERVICE_IMAGE:-pickme/lucid-auth-service:latest-arm64}
+    container_name: lucid-auth-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/auth/Dockerfile.auth-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_AUTH_PUBLISH_PORT:-8089}:8089"
+    env_file: *env-chain
+    environment:
+      - LUCID_ENV=${LUCID_ENV:-production}
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8089/health', timeout=2); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-blockchain-engine:
+    image: ${LUCID_BLOCKCHAIN_ENGINE_IMAGE:-pickme/lucid-blockchain-engine:latest-arm64}
+    container_name: lucid-blockchain-engine
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.engine
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-chain
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${BLOCKCHAIN_ENGINE_PUBLISH_PORT:-8084}:8084"
+    volumes:
+      - lucid_chain_engine_data:/app/data:rw
+      - lucid_chain_engine_logs:/app/logs:rw
+      - lucid_chain_engine_cache:/tmp/blockchain:rw
+    environment:
+      - LUCID_ENV=production
+      - LUCID_PLATFORM=arm64
+      - BLOCKCHAIN_ENGINE_HOST=lucid-blockchain-engine
+      - BLOCKCHAIN_ENGINE_PORT=8084
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8084/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-consensus-engine:
+    image: ${LUCID_CONSENSUS_ENGINE_IMAGE:-pickme/lucid-consensus-engine:latest-arm64}
+    container_name: lucid-consensus-engine
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.consensus-engine
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-chain
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${CONSENSUS_ENGINE_PUBLISH_PORT:-8095}:8085"
+    volumes:
+      - lucid_chain_consensus_data:/app/data:rw
+      - lucid_chain_consensus_logs:/app/logs:rw
+    environment:
+      - LUCID_ENV=production
+      - BLOCKCHAIN_ENGINE_PORT=8085
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-consensus-engine:8085
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8085/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-data-chain:
+    image: ${LUCID_DATA_CHAIN_IMAGE:-pickme/lucid-data-chain:latest-arm64}
+    container_name: lucid-data-chain
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.data
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-chain
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${DATA_CHAIN_PUBLISH_PORT:-8087}:8087"
+    volumes:
+      - lucid_chain_data_chain_data:/app/data:rw
+      - lucid_chain_data_chain_logs:/app/logs:rw
+      - lucid_chain_data_chain_cache:/tmp/data-chain:rw
+    environment:
+      - LUCID_ENV=production
+      - DATA_CHAIN_HOST=lucid-data-chain
+      - DATA_CHAIN_PORT=8087
+      - DATA_CHAIN_URL=http://lucid-data-chain:8087
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8087/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-block-manager:
+    image: ${LUCID_BLOCK_MANAGER_IMAGE:-pickme/lucid-block-manager:latest-arm64}
+    container_name: lucid-block-manager
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.block-manager
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-chain
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${BLOCK_MANAGER_PUBLISH_PORT:-8086}:8086"
+    volumes:
+      - lucid_chain_block_manager_data:/app/data:rw
+      - lucid_chain_block_manager_logs:/app/logs:rw
+      - lucid_chain_block_manager_cache:/tmp/blocks:rw
+    environment:
+      - LUCID_ENV=production
+      - BLOCK_MANAGER_HOST=lucid-block-manager
+      - BLOCK_MANAGER_PORT=8086
+      - BLOCK_MANAGER_URL=http://lucid-block-manager:8086
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8086/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-session-anchoring:
+    image: ${LUCID_SESSION_ANCHORING_IMAGE:-pickme/lucid-session-anchoring:latest-arm64}
+    container_name: lucid-session-anchoring
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.anchoring
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-chain
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${SESSION_ANCHORING_PUBLISH_PORT:-8085}:8085"
+    volumes:
+      - lucid_chain_session_anchoring_data:/app/data:rw
+      - lucid_chain_session_anchoring_logs:/app/logs:rw
+    environment:
+      - SESSION_ANCHORING_HOST=lucid-session-anchoring
+      - SESSION_ANCHORING_PORT=8085
+      - SESSION_ANCHORING_URL=http://lucid-session-anchoring:8085
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+      - BLOCKCHAIN_SECRET_KEY=${BLOCKCHAIN_SECRET_KEY:?BLOCKCHAIN_SECRET_KEY not set}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=128m
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',8085)); s.close(); exit(0 if r==0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  lucid-session-api:
+    image: ${LUCID_SESSION_API_IMAGE:-pickme/lucid-session-api:latest-arm64}
+    container_name: lucid-session-api
+    hostname: session-api
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.api
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${SESSION_API_PUBLISH_PORT:-8113}:8113"
+    env_file: *env-chain
+    environment:
+      - PORT=8113
+      - HOST=lucid-session-api
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(2); r=s.connect_ex(('session-api',8113)); s.close(); exit(0 if r==0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  lucid-merkle-tree-builder:
+    image: ${LUCID_MERKLE_BUILDER_IMAGE:-pickme/lucid-merkle-builder:latest-arm64}
+    container_name: lucid-merkle-tree-builder
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.merkle-tree-builder
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${MERKLE_BUILDER_PUBLISH_PORT:-8092}:8092"
+    env_file: *env-chain
+    environment:
+      - MERKLE_BUILDER_HOST=lucid-merkle-tree-builder
+      - MERKLE_BUILDER_PORT=8092
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8092/health', timeout=2).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  lucid-session-systems-control:
+    image: ${LUCID_SESSION_SYSTEMS_CONTROL_IMAGE:-pickme/lucid-session-systems-control:latest-arm64}
+    container_name: lucid-session-systems-control
+    hostname: session-systems-control
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-systems-control
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${SESSION_SYSTEMS_CONTROL_PUBLISH_PORT:-7988}:7988"
+    env_file: *env-chain
+    environment:
+      - SESSION_SYSTEMS_CONTROL_PORT=7988
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://session-systems-control:7988/health', timeout=2).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  lucid-node-interface:
+    image: ${LUCID_NODE_INTERFACE_IMAGE:-pickme/lucid-node-interface:latest-arm64}
+    container_name: lucid-node-interface
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/electron_gui/Dockerfile.node
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-1.0.0}
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${NODE_INTERFACE_PUBLISH_PORT:-3002}:3002"
+    environment:
+      - NODE_ENV=production
+      - ELECTRON_GUI_PROFILE=node_operator
+      - ELECTRON_GUI_NETWORK=lucid-pi-network
+      - ELECTRON_GUI_API_BASE_URL=${ELECTRON_GUI_API_BASE_URL:-http://lucid-blockchain-engine:8084/api/v1}
+    depends_on:
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3002/health', (r) => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  lucid-admin-ui-backend:
+    image: ${LUCID_ADMIN_UI_BACKEND_IMAGE:-pickme/lucid-admin-ui-backend:latest-arm64}
+    container_name: lucid-admin-ui-backend
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/admin/Dockerfile.admin-ui-backend
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${ADMIN_UI_BACKEND_PUBLISH_PORT:-8120}:8120"
+    env_file: *env-chain
+    environment:
+      - ADMIN_INTERFACE_PORT=8120
+      - ADMIN_INTERFACE_HOST=0.0.0.0
+      - MONGODB_URL=${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      - REDIS_URL=${REDIS_URL:-redis://lucid-redis:6379/0}
+      - API_GATEWAY_URL=${API_GATEWAY_URL:-http://api-gateway:8080}
+      - LUCID_SERVER_CORE_URL=${LUCID_SERVER_CORE_URL:-http://lucid-server-core:8088}
+      - LUCID_SERVER_OPERATIONS_URL=${LUCID_SERVER_OPERATIONS_URL:-http://lucid-server-operations:8081}
+      - BLOCKCHAIN_ENGINE_URL=http://lucid-blockchain-engine:8084
+      - AUTH_SERVICE_URL=http://lucid-auth-service:8089
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      lucid-blockchain-engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.11",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(2); r=s.connect_ex(('127.0.0.1',8120)); s.close(); exit(0 if r==0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+
+volumes:
+  lucid_chain_mongodb_data:
+    name: lucid-chain-mongodb-data
+  lucid_chain_redis_data:
+    name: lucid-chain-redis-data
+  lucid_chain_engine_data:
+  lucid_chain_engine_logs:
+  lucid_chain_engine_cache:
+  lucid_chain_consensus_data:
+  lucid_chain_consensus_logs:
+  lucid_chain_data_chain_data:
+  lucid_chain_data_chain_logs:
+  lucid_chain_data_chain_cache:
+  lucid_chain_block_manager_data:
+  lucid_chain_block_manager_logs:
+  lucid_chain_block_manager_cache:
+  lucid_chain_session_anchoring_data:
+  lucid_chain_session_anchoring_logs:

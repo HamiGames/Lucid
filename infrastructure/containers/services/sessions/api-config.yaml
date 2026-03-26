@@ -1,0 +1,188 @@
+# Runtime (container): /app/configs/services/sessions/api-config.yaml — see ../container-runtime-layout.yml
+# Lucid Session API — reference configuration (sessions/config/api-config.yaml)
+# Canonical hostname/port/host_ip: infrastructure/containers/host-config.yml (session_* keys + peers below).
+# Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml
+#
+# Compose (session-api): SERVICE_NAME=session-api, PORT=8113, HOST=session-api,
+#   PYTHONPATH=/app, volumes session_data -> /app/data/sessions, session_api_logs -> /app/logs
+# Network: lucid-session-network (bridge, name: lucid-session-network)
+#
+# Secrets/master: configs/environment/.env.secrets → /app/configs/.env.secrets;
+# master-env-config.txt → /app/configs/.env.master (see docker-compose.session-images.yml).
+# Runtime: PORT/HOST/LOG_LEVEL/DEBUG are injected by compose; MONGODB_URL, REDIS_URL, etc. from env.
+# The session API loader (sessions/api/config.py) expects flat SessionAPISettings keys when using
+# config.yaml beside config.py; this file documents the full stack shape for operators.
+
+# --- Values that mirror docker-compose.session-images.yml + host-config.yml (service-ip.txt host_ip) ---
+compose_alignment:
+  session_images_file: infrastructure/containers/sessions/docker-compose.session-images.yml
+  host_registry: infrastructure/containers/host-config.yml
+  session_api:
+    container_name: session-api
+    service_name: session-api
+    host_dns: session-api
+    port: 8113
+    host_ip: 172.20.10.17
+    health_url: http://session-api:8113/health
+    http_path: http://session-api:8113/app
+  peer_services:
+    # session_pipeline: no host_ip in host-config.yml (port 8083 only)
+    session_pipeline: { host: session-pipeline, port: 8083 }
+    session_recorder: { host: session-recorder, port: 8090, host_ip: 172.20.10.13 }
+    session_chunk_processor: { host: session-chunk-processor, port: 8010, host_ip: 172.20.10.9 }
+    session_storage_service: { host: session-storage-service, port: 8020, host_ip: 172.20.10.10 }
+    session_storage: { host: session-storage, port: 8082, host_ip: 172.20.10.11 }
+    session_anchoring: { host: session-anchoring, port: 8085, host_ip: 172.20.10.12 }
+    session_pipeline_manager: { host: session-pipeline-manager, port: 7990, host_ip: 172.20.10.8 }
+    session_overlord: { host: session-overlord, port: 8110, host_ip: 172.20.10.16 }
+    session_system_control: { host: session-system-control, port: 7988, host_ip: 172.20.10.7 }
+    session_processor: { host: session-processor, port: 8091, host_ip: 172.20.10.14 }
+    session_merkle_tree_builder: { host: session-merkle-tree-builder, port: 8092, host_ip: 172.20.10.15 }
+    main_lucid_gateway: { host: api-gateway, port: 8080, host_ip: 172.20.10.1 }
+
+# Global API Configuration (documentation / optional mirrors for tooling)
+global:
+  service_name: session-api
+  service_version: "1.0.0"
+  debug: false
+  log_level: INFO
+  # Bind in container: 0.0.0.0; compose HOST=session-api is the Docker DNS name for the service.
+  host: "0.0.0.0"
+  port: 8113
+
+api:
+  version: v1
+  base_path: /api/v1
+  cors:
+    enabled: true
+    allow_origins: []
+    allow_credentials: true
+    allow_methods: ["*"]
+    allow_headers: ["*"]
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 1000
+    burst_size: 100
+    window_seconds: 60
+    per_endpoint_limits:
+      "/api/v1/sessions":
+        requests_per_minute: 200
+        burst_size: 20
+      "/api/v1/sessions/{session_id}":
+        requests_per_minute: 100
+        burst_size: 10
+      "/api/v1/sessions/create":
+        requests_per_minute: 10
+        burst_size: 3
+
+session_management:
+  creation:
+    max_concurrent_sessions_per_user: 5
+    max_sessions_per_user: 100
+    session_timeout_seconds: 7200
+    default_retention_days: 30
+  lifecycle:
+    states:
+      - created
+      - starting
+      - recording
+      - paused
+      - stopped
+      - processing
+      - completed
+      - failed
+      - deleted
+    state_transitions:
+      - from: created
+        to: [starting, deleted]
+      - from: starting
+        to: [recording, failed]
+      - from: recording
+        to: [paused, stopped, failed]
+      - from: paused
+        to: [recording, stopped]
+      - from: stopped
+        to: [processing, deleted]
+      - from: processing
+        to: [completed, failed]
+      - from: completed
+        to: [deleted]
+      - from: failed
+        to: [deleted]
+  limits:
+    max_session_duration_hours: 24
+    max_session_size_gb: 100
+    max_chunks_per_session: 10000
+    max_concurrent_recordings: 10
+
+# Service URLs — set via environment in production (defaults match session-images compose)
+storage:
+  storage_service_url: http://session-storage-service:8020
+  chunk_storage_url: http://session-storage-service:8020
+  timeout_seconds: 30
+  retry_attempts: 3
+  retry_delay_seconds: 1
+
+pipeline:
+  pipeline_service_url: http://session-pipeline:8083
+  timeout_seconds: 60
+  retry_attempts: 3
+  auto_start_pipeline: true
+
+chunk_processor:
+  service_url: http://session-chunk-processor:8010
+
+blockchain:
+  session_anchoring_url: http://session-anchoring:8085
+  blockchain_engine_url: ""
+  auto_anchor_on_complete: true
+  anchoring_timeout_seconds: 60
+
+database:
+  mongodb_url: ""
+  redis_url: ""
+  elasticsearch_url: ""
+
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    endpoint: /metrics
+    # Same HTTP server as the API when exposed in-process
+    port: 8113
+  health_check:
+    enabled: true
+    endpoint: /health
+    interval_seconds: 30
+    timeout_seconds: 10
+  logging:
+    enabled: true
+    format: json
+    level: INFO
+    include_request_body: false
+    include_response_body: false
+
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  error_responses:
+    include_stack_trace: false
+    include_details: true
+    log_errors: true
+
+security:
+  authentication:
+    require_authentication: true
+    jwt_validation: true
+    token_expiry_seconds: 900
+  authorization:
+    require_authorization: true
+    role_based_access: true
+    allowed_roles: [USER, NODE_OPERATOR, ADMIN, SUPER_ADMIN]
+  data_privacy:
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_sensitive_data: true

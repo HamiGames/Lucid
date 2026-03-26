@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID SESSION SYSTEMS CONTROL - Distroless Python Service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Supervises session stack services listed in docker-compose.session-images.yml
 # Pattern: infrastructure/containers/sessions/Dockerfile.session-pipeline-manager + 03_api_gateway/Dockerfile
 # Image: pickme/lucid-session-systems-control:latest-arm64
@@ -98,6 +99,12 @@ RUN mkdir -p ./sessions/session_systems_control ./tmp ./wheels && \
 COPY sessions/__init__.py ./sessions/__init__.py
 COPY sessions/session_systems_control/ ./sessions/session_systems_control/
 
+RUN mkdir -p ./host
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+
 COPY <<'PY' ./tmp/verify_runtime.py
 import os
 import sys
@@ -105,6 +112,7 @@ import sys
 dirs = [
     "/app/sessions",
     "/app/sessions/session_systems_control",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -115,6 +123,10 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
+    sys.exit(1)
 print("✅ Session systems control runtime layout verified")
 PY
 
@@ -147,11 +159,17 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_system_control \
+    LUCID_SERVICE_HOST_IP=172.20.10.7 \
+    LUCID_SERVICE_HTTP_PATH=http://session-system-control:7988/app \
     SESSION_SYSTEMS_CONTROL_PORT=7988
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/

@@ -1,0 +1,268 @@
+# Runtime (container): /app/configs/services/node/node-management-config.yaml — see ../container-runtime-layout.yml
+# Lucid Node Management - Node Management Configuration
+# File: node/config/node-management-config.yaml
+#
+# Host registry alignment: infrastructure/containers/host-config.yml + repository root service-ip.txt
+#   - node_management → service_name node-management, port 8095, host_ip 172.20.10.25, http_path http://node-management:8095/app
+#   - node_management_staging → node-management-staging, port 8099, host_ip 172.20.10.26, http_path http://node-management-staging:8099/app
+# Compose + bake pattern (tor parity): infrastructure/containers/services/node/docker-compose.node-management.yml,
+#   Dockerfile (config bundle, mirrors tor-proxy-02 builder /app/configs/services layout),
+#   Dockerfile.node-management (documents canonical app build: infrastructure/containers/node/Dockerfile.node-management).
+#
+# Purpose: Node pool, PoOT, payouts, resilience, and integration defaults.
+# Priority: environment variables > this file > Pydantic defaults (see node/config.py load_config).
+# Database URLs must be supplied via env (MONGODB_URL, REDIS_URL); use empty "" below to force env-only.
+
+# -----------------------------------------------------------------------------
+# Global service
+# -----------------------------------------------------------------------------
+global:
+  service_name: "node-management"
+  service_version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  log_format: "json"
+  # Bind address inside the container
+  host: "0.0.0.0"
+  port: 8095
+  staging_port: 8099
+  # Default URL on the Docker Compose network (override with NODE_MANAGEMENT_URL)
+  node_management_url: "http://node-management:8095"
+
+# -----------------------------------------------------------------------------
+# Node registration & health (maps to NODE_* in config.py)
+# -----------------------------------------------------------------------------
+node_registration:
+  enabled: true
+  verification_required: true
+  health_check_interval_seconds: 60
+
+# -----------------------------------------------------------------------------
+# Runtime workers
+# -----------------------------------------------------------------------------
+runtime:
+  workers: 1
+
+# -----------------------------------------------------------------------------
+# Outbound HTTP / dependency resilience (maps to SERVICE_*, WORKERS overlap none)
+# -----------------------------------------------------------------------------
+error_handling:
+  # Hard cap for upstream calls (MongoDB/Redis drivers and HTTP clients)
+  service_timeout_seconds: 45
+  retry_policies:
+    max_retries: 5
+    retry_delay_seconds: 2.0
+    exponential_backoff: true
+    backoff_multiplier: 2.0
+    max_retry_delay_seconds: 60.0
+  failure_handling:
+    log_failures: true
+    notify_on_failure: false
+    queue_failed_items: true
+    retry_failed_items: true
+    max_retry_attempts: 5
+    # Dead-letter style: pause payout batch if failure rate spikes (operational guardrail)
+    circuit_breaker_failure_threshold: 10
+    circuit_breaker_cooldown_seconds: 120
+
+# -----------------------------------------------------------------------------
+# Storage (container paths; override with LUCID_* env)
+# -----------------------------------------------------------------------------
+storage:
+  data_path: "/app/data"
+  log_path: "/app/logs"
+  log_file: "/app/logs/node-management.log"
+  temp_storage_path: "/tmp/nodes"
+
+# -----------------------------------------------------------------------------
+# TRON / USDT (optional; secrets via env)
+# -----------------------------------------------------------------------------
+tron:
+  network: "mainnet"
+  api_url: "https://api.trongrid.io"
+  api_key: ""
+  usdt_contract_address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+
+# -----------------------------------------------------------------------------
+# Node pool
+# -----------------------------------------------------------------------------
+node_pool:
+  limits:
+    max_nodes_per_pool: 100
+    min_nodes_per_pool: 3
+    max_pools: 10
+  management:
+    auto_join_enabled: true
+    auto_leave_enabled: false
+    pool_health_check_interval_seconds: 300
+    pool_sync_interval_seconds: 60
+    pool_join_timeout_seconds: 60
+    # Backoff when sync fails (seconds); keeps load bounded under partial outages
+    pool_sync_error_backoff_seconds: 30
+    pool_sync_max_backoff_seconds: 300
+  selection:
+    strategy: "round_robin"
+    consider_load: true
+    consider_uptime: true
+    consider_reputation: true
+
+# -----------------------------------------------------------------------------
+# PoOT
+# -----------------------------------------------------------------------------
+poot:
+  enabled: true
+  calculation_interval_seconds: 300
+  score_threshold: 0.5
+  history_days: 30
+  challenge_validity_minutes: 15
+  proof_cache_minutes: 60
+  min_token_stake_amount: 100.0
+  max_validation_attempts: 3
+  challenge_complexity_bytes: 32
+  validation_required: true
+  factors:
+    operational_time_weight: 0.4
+    stake_amount_weight: 0.3
+    reputation_score_weight: 0.2
+    network_contribution_weight: 0.1
+  operational_time:
+    min_uptime_percentage: 0.95
+    measurement_interval_seconds: 60
+    history_retention_days: 30
+  validation:
+    enabled: true
+    validate_uptime: true
+    validate_stake: true
+    validate_reputation: true
+    validation_interval_seconds: 300
+
+# -----------------------------------------------------------------------------
+# Work credits
+# -----------------------------------------------------------------------------
+work_credits:
+  enabled: true
+  credit_earn_rate: 1.0
+  credit_decay_rate: 0.01
+  min_credits_for_validation: 100
+  max_credits: 10000
+  credit_history_days: 30
+
+# -----------------------------------------------------------------------------
+# Staking
+# -----------------------------------------------------------------------------
+staking:
+  enabled: true
+  minimum_stake_amount: 1000
+  staking_period_days: 30
+  unstaking_cooldown_days: 7
+  reward_distribution:
+    method: "proportional"
+    distribution_interval_blocks: 100
+    reward_per_block: 10
+
+# -----------------------------------------------------------------------------
+# Payouts
+# -----------------------------------------------------------------------------
+payout:
+  enabled: true
+  processing_interval_seconds: 3600
+  threshold_usdt: 10.0
+  minimum_amount_usdt: 1.0
+  maximum_amount_usdt: 10000.0
+  processing_fee_percent: 1.0
+  batch_size: 10
+  payout_method: "tron"
+  processing:
+    enabled: true
+    auto_process: true
+    require_confirmation: true
+    confirmation_blocks: 6
+  limits:
+    max_payout_amount_usdt: 10000.0
+    max_payouts_per_day: 100
+    max_payouts_per_user_per_day: 10
+  fees:
+    enabled: true
+    fee_percentage: 1.0
+    min_fee_usdt: 0.1
+    max_fee_usdt: 10.0
+
+# -----------------------------------------------------------------------------
+# Resource monitoring (operational thresholds for alerting / future autoscaler hooks)
+# -----------------------------------------------------------------------------
+resource_monitoring:
+  enabled: true
+  monitoring_interval_seconds: 30
+  resource_collection_interval_seconds: 10
+  thresholds:
+    cpu_percent: 80.0
+    memory_percent: 80.0
+    disk_percent: 85.0
+    network_bandwidth_mbps: 100.0
+  limits:
+    max_cpu_percent: 100.0
+    max_memory_mb: 2048
+    max_disk_gb: 100.0
+    max_bandwidth_mbps: 1000.0
+
+# -----------------------------------------------------------------------------
+# Database — defaults target the in-compose service names (no auth).
+# Override MONGODB_URL / REDIS_URL (and credentials) via env in production.
+# -----------------------------------------------------------------------------
+database:
+  mongodb_url: "mongodb://lucid-mongodb:27017/lucid_node_management"
+  mongodb_database: "lucid_node_management"
+  redis_url: "redis://lucid-redis:6379/0"
+
+# -----------------------------------------------------------------------------
+# External services (optional; prefer env in production)
+# -----------------------------------------------------------------------------
+# Optional integrations: set via env when services exist (keys not in NodeManagementSettings are documentation-only).
+external_services:
+  api_gateway_url: "http://api-gateway:8080"
+  blockchain_engine_url: "http://blockchain-engine:8084"
+  node_management_api_url: "http://node-management:8095/api/v1"
+  electron_gui_endpoint: "http://node-management:8095/api/v1"
+  gui_api_bridge_url: ""
+  wallet_api_url: ""
+  blockchain_secret_key: ""
+  blockchain_anchor_interval: ""
+  blockchain_anchor_timeout: ""
+  blockchain_anchor_retries: ""
+  blockchain_anchor_retry_delay: ""
+  blockchain_anchor_retry_delay_max: ""
+  session_api_url: ""
+  session_recorder_url: ""
+  session_storage_url: ""
+  session_pipeline_url: ""
+  user_db_url: ""
+
+# -----------------------------------------------------------------------------
+# Monitoring
+# -----------------------------------------------------------------------------
+monitoring:
+  enabled: true
+  metrics_enabled: true
+  metrics_port: 9090
+  health_check_interval: 30
+  health_check_enabled: true
+  prometheus_enabled: true
+  jaeger_enabled: false
+  jaeger_endpoint: null
+
+# -----------------------------------------------------------------------------
+# Security (production-hardening defaults; relax for local dev via env)
+# -----------------------------------------------------------------------------
+security:
+  production: true
+  cors_origins: "*"
+  trusted_hosts: "node-management,localhost,127.0.0.1"
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: ["NODE_OPERATOR", "ADMIN", "SUPER_ADMIN"]
+  data_privacy:
+    encrypt_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_data_in_logs: true

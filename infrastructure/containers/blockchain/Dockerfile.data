@@ -115,6 +115,9 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=data_chain \
+    LUCID_SERVICE_HOST_IP=172.20.10.36 \
+    LUCID_SERVICE_HTTP_PATH=http://data-chain:8087/app \
     DATA_CHAIN_PORT=8087 \
     DATA_CHAIN_HOST=0.0.0.0
 

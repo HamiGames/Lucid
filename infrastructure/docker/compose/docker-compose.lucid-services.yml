@@ -2,7 +2,7 @@
 # Uses pre-built pickme/lucid-* images
 # MUST RUN ON PI CONSOLE - NOT FROM WINDOWS
 
-version: '3.8'
+version: "3.8"
 
 services:
   # Foundation Services

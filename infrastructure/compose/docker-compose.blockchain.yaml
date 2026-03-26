@@ -11,9 +11,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
-      - ../configs/environment/.env.blockchain-api
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.blockchain-api
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -83,9 +83,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
-      - ../configs/environment/.env.blockchain-governance
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.blockchain-governance
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -151,8 +151,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -219,8 +219,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -287,8 +287,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -349,9 +349,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.core
-      - ../infrastructure/docker/blockchain/env/.env.blockchain-ledger
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.blockchain-ledger
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

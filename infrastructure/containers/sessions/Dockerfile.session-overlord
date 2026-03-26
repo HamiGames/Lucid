@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # infrastructure/containers/sessions/Dockerfile.session-overlord
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # LUCID SESSION OVERLORD — Distroless Python 3.11
 # Hosts templates and HTTP API for sessions env orchestration.
 # API: http://session-overlord:8110/api/v1/session/overlord
@@ -67,6 +68,10 @@ RUN mkdir -p ./configs/environment && \
 
 RUN /usr/local/bin/python3 -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import fastapi, uvicorn, yaml; print('✅ overlord deps ok')"
 
+RUN mkdir -p /build/configs/services /build/host
+COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+
 ############################
 # Stage 2 – Runtime
 ############################
@@ -92,6 +97,10 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_overlord \
+    LUCID_SERVICE_HOST_IP=172.20.10.16 \
+    LUCID_SERVICE_HTTP_PATH=http://session-overlord:8110/app \
     OVERLORD_DOMAIN=session \
     OVERLORD_HOST=0.0.0.0 \
     OVERLORD_PORT=8110 \
@@ -110,7 +119,8 @@ COPY --from=builder --chown=65532:65532 /build/overlord/configs /app/configs
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
 RUN ["/usr/bin/python3.11", "-c", "import sys; sys.path[:0]=['/usr/local/lib/python3.11/site-packages']; import fastapi, uvicorn, yaml; assert fastapi and uvicorn; print('✅ runtime deps ok')"]
 

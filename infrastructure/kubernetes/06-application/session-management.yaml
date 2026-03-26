@@ -32,7 +32,7 @@ spec:
         image: pickme/lucid-session-api:latest-arm64
         imagePullPolicy: Always
         ports:
-        - containerPort: 8087
+        - containerPort: 8113
           name: http
         env:
         - name: LUCID_ENV
@@ -44,9 +44,9 @@ spec:
         - name: SERVICE_NAME
           value: "session-api"
         - name: SESSION_API_PORT
-          value: "8087"
+          value: "8113"
         - name: SESSION_API_URL
-          value: "http://lucid-session-api:8087"
+          value: "http://lucid-session-api:8113"
         - name: SESSION_API_HOST
           value: "172.20.0.20"
         - name: MONGODB_URI
@@ -88,13 +88,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8087
+            port: 8113
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 8087
+            port: 8113
           initialDelaySeconds: 5
           periodSeconds: 5
       volumes:
@@ -122,8 +122,8 @@ spec:
     app.kubernetes.io/name: session-api
     app.kubernetes.io/component: session
   ports:
-  - port: 8087
-    targetPort: 8087
+  - port: 8113
+    targetPort: 8113
     name: http
   type: ClusterIP
   clusterIP: 172.20.0.20

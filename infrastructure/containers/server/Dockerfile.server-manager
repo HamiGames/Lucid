@@ -10,6 +10,12 @@
 #       server_manager/entrypoint.py — that service coordinates subsystem handlers.
 #
 # Runtime layout: /app handlers + /usr/local site-packages (matches server_manager/entrypoint.py)
+#
+# Registry + service fragments (host-config.yml, infrastructure/containers/services/*.yml):
+#   • host-config.yml services.lucid_server_manager — service_name lucid-server-manager, port 8081,
+#     host_ip 172.20.10.3, http_path http://lucid-server-manager:8081/app
+#   • /app/configs/services/ — container-runtime-layout, rdp-services, session-management, etc.
+#     (see infrastructure/containers/services/rdp-services.yml for /app/configs/services paths)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -35,10 +41,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+RUN mkdir -p /build/configs /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/configs/services/
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -88,6 +96,31 @@ RUN printf "LUCID_SERVER_OPERATIONS_PACKAGES_$(date +%s)" > /usr/local/lib/pytho
 
 RUN python3.11 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, cryptography, argon2, passlib; print('server-operations packages OK')"
 
+RUN mkdir -p ./service_configs/admin ./service_configs/auth ./service_configs/base ./service_configs/blockchain ./service_configs/database ./service_configs/electron_gui ./service_configs/gui ./service_configs/node ./service_configs/payment_systems ./service_configs/rdp ./service_configs/server ./service_configs/services ./service_configs/services/node ./service_configs/sessions ./service_configs/tor
+
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./service_configs/admin/docker-compose.admin.yml
+COPY infrastructure/containers/auth/docker-compose.auth.yml ./service_configs/auth/docker-compose.auth.yml
+COPY infrastructure/containers/base/docker-compose.base.yml ./service_configs/base/docker-compose.base.yml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./service_configs/blockchain/docker-compose.chain.yml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./service_configs/blockchain/docker-compose.manager.yml
+COPY infrastructure/containers/database/docker-compose.database-system.yml ./service_configs/database/docker-compose.database-system.yml
+COPY infrastructure/containers/electron_gui/docker-compose.electron-gui.yml ./service_configs/electron_gui/docker-compose.electron-gui.yml
+COPY infrastructure/containers/gui/docker-compose.gui-admin.yml ./service_configs/gui/docker-compose.gui-admin.yml
+COPY infrastructure/containers/gui/docker-compose.node-gui.yml ./service_configs/gui/docker-compose.node-gui.yml
+COPY infrastructure/containers/gui/docker-compose.user-gui.yml ./service_configs/gui/docker-compose.user-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./service_configs/node/docker-compose.node-data-system.yml
+COPY infrastructure/containers/node/docker-compose.node-gui.yml ./service_configs/node/docker-compose.node-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-images.yml ./service_configs/node/docker-compose.node-images.yml
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./service_configs/node/docker-compose.node-sessions.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml ./service_configs/payment_systems/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml ./service_configs/payment_systems/docker-compose.payment-internal.yml
+COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml ./service_configs/rdp/docker-compose.rdp-system.yml
+COPY infrastructure/containers/server/docker-compose.server-external.yml ./service_configs/server/docker-compose.server-external.yml
+COPY infrastructure/containers/server/docker-compose.server-images.yml ./service_configs/server/docker-compose.server-images.yml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./service_configs/services/node/docker-compose.node-management.yml
+COPY infrastructure/containers/sessions/docker-compose.session-images.yml ./service_configs/sessions/docker-compose.session-images.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./service_configs/tor/docker-compose.proxy-systems.yml
+
 # Handler trees: orchestration API + all server subsystems shipped in this image
 COPY RDP/server_manager/ ./server_manager/
 COPY RDP/server/ ./server/
@@ -102,17 +135,17 @@ COPY RDP/monitoring/ ./monitoring/
 COPY RDP/database/ ./database/
 COPY RDP/__init__.py ./__init__.py
 
-RUN printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./server_manager/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./server/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./session_controller/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./protocol/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./common/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./client/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./resource_monitor/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./security/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./config/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./monitoring/.lucid-source-marker && \
-    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./database/.lucid-source-marker && \
+RUN printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./server_manager/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./server/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./session_controller/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./protocol/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./common/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./client/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./resource_monitor/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./security/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./config/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./monitoring/.keep && \
+    printf "LUCID_SERVER_OPS_HANDLER_$(date +%s)" > ./database/.keep && \
     chown -R 65532:65532 ./server_manager ./server ./session_controller ./protocol ./common ./client ./resource_monitor ./security ./config ./monitoring ./database ./__init__.py
 
 RUN test -f ./server_manager/main.py && \
@@ -137,11 +170,14 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="server-operations" \
+      com.lucid.service="lucid-server-manager" \
       com.lucid.role="server-handler-orchestrator" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="core" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.expose="8081" \
+      com.lucid.hostconfig.registry_key="lucid_server_manager" \
+      com.lucid.discovery.host_ip="172.20.10.3"
 
 # LUCID_SERVER_OPERATIONS_PORT: preferred name for this image.
 # RDP_SERVER_MANAGER_PORT: retained so server_manager/entrypoint.py and legacy compose keep working.
@@ -152,16 +188,40 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_server_manager \
+    LUCID_SERVICE_HOST_IP=172.20.10.3 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-server-manager:8081/app \
+    LUCID_SERVICES_CONFIG_DIR=/app/configs/services \
     LUCID_SERVER_OPERATIONS_PORT=8081 \
     LUCID_SERVER_OPERATIONS_HOST=0.0.0.0 \
+    LUCID_SERVER_MANAGER_HOST_IP=172.20.10.3 \
     RDP_SERVER_MANAGER_PORT=8081 \
-    RDP_SERVER_MANAGER_HOST=0.0.0.0
+    RDP_SERVER_MANAGER_HOST=0.0.0.0 \
+    CONSUL_DATACENTER=lucid-dc \
+    CONSUL_BOOTSTRAP_EXPECT=1 \
+    CONSUL_UI_ENABLED=true \
+    CONSUL_CONNECT_ENABLED=true \
+    CONSUL_NODE_NAME=lucid-server-manager \
+    MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin \
+    REDIS_URL=redis://lucid-redis:6379/0 \
+    PROJECT_ROOT=/app \
+    PROJECT_NAME=Lucid \
+    PROJECT_VERSION=0.1.0 \
+    LOG_LEVEL=INFO \
+    DEBUG=false \
+    LOG_FORMAT=json \
+    LUCID_PI_NETWORK=lucid-pi-network \
+    LUCID_PI_SUBNET=172.20.0.0/16 \
+    LUCID_PI_GATEWAY=172.20.0.1
 
 WORKDIR /app
 
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host registry + services/*.yml (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
 
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
@@ -183,9 +243,25 @@ COPY --from=builder --chown=65532:65532 /build/monitoring /app/monitoring
 COPY --from=builder --chown=65532:65532 /build/database /app/database
 COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
+COPY --from=builder --chown=65532:65532 /build/service_configs/admin /app/service_configs/admin
+COPY --from=builder --chown=65532:65532 /build/service_configs/auth /app/service_configs/auth
+COPY --from=builder --chown=65532:65532 /build/service_configs/base /app/service_configs/base
+COPY --from=builder --chown=65532:65532 /build/service_configs/blockchain /app/service_configs/blockchain
+COPY --from=builder --chown=65532:65532 /build/service_configs/database /app/service_configs/database
+COPY --from=builder --chown=65532:65532 /build/service_configs/electron_gui /app/service_configs/electron_gui
+COPY --from=builder --chown=65532:65532 /build/service_configs/gui /app/service_configs/gui
+COPY --from=builder --chown=65532:65532 /build/service_configs/node /app/service_configs/node
+COPY --from=builder --chown=65532:65532 /build/service_configs/payment_systems /app/service_configs/payment_systems
+COPY --from=builder --chown=65532:65532 /build/service_configs/rdp /app/service_configs/rdp
+COPY --from=builder --chown=65532:65532 /build/service_configs/server /app/service_configs/server
+COPY --from=builder --chown=65532:65532 /build/service_configs/services /app/service_configs/services
+COPY --from=builder --chown=65532:65532 /build/service_configs/services/node /app/service_configs/services/node
+COPY --from=builder --chown=65532:65532 /build/service_configs/sessions /app/service_configs/sessions
+COPY --from=builder --chown=65532:65532 /build/service_configs/tor /app/service_configs/tor
+
 RUN ["/usr/bin/python3.11", "-c", "import os,sys; sp='/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,pydantic,pydantic_settings,motor,redis,cryptography,argon2,passlib; print('runtime packages OK')"]
 
-RUN ["/usr/bin/python3.11", "-c", "import os; paths=['/app/server_manager/entrypoint.py','/app/session_controller/main.py','/app/resource_monitor/main.py','/app/security/access_controller.py','/app/config/server-manager-config.yaml']; assert all(os.path.isfile(p) for p in paths); print('handler layout OK')"]
+RUN ["/usr/bin/python3.11", "-c", "import os; paths=['/app/server_manager/entrypoint.py','/app/session_controller/main.py','/app/resource_monitor/main.py','/app/security/access_controller.py','/app/config/server-manager-config.yaml','/app/configs/host-config.yml']; assert all(os.path.isfile(p) for p in paths); assert os.path.isdir('/app/configs/services'); assert os.path.isfile('/app/configs/services/container-runtime-layout.yml'); assert os.path.isfile('/app/configs/services/rdp-services.yml'); print('handler layout OK')"]
 
 EXPOSE 8081
 

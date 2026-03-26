@@ -2,14 +2,14 @@ Log notice stdout
 SocksPort 0.0.0.0:9050
 ControlPort 0.0.0.0:9051
 CookieAuthentication 1
-CookieAuthFile /opt/lib/tor/control_auth_cookie
+CookieAuthFile /app/var/lib/tor/control_auth_cookie
 CookieAuthFileGroupReadable 1
-DataDirectory /opt/lib/tor
+DataDirectory /app/var/lib/tor
 
 # Hidden service is disabled during foundation phase to avoid parse errors and
 # to rely on ephemeral onions created by the controller.
 # Uncomment and adjust only when the upstream is ready and reachable.
-HiddenServiceDir /opt/lib/tor/hidden_service
+HiddenServiceDir /app/var/lib/tor/hidden_service
 #HiddenServiceVersion 3
 #HiddenServicePort 80 127.0.0.1:8081
 

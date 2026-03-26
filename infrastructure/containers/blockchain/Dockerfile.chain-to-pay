@@ -109,6 +109,10 @@ COPY infrastructure/containers/blockchain/chain-to-pay/verify_runtime.py ./tmp/v
 
 COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json /build/chain/config/chain-to-pay.connections.json
 COPY infrastructure/containers/blockchain/config/openssl-api.yml /build/chain/config/openssl-api.yml
+RUN mkdir -p /build/configs/services/blockchain/config
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json /build/configs/services/blockchain/config/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/config/openssl-api.yml /build/configs/services/blockchain/config/openssl-api.yml
 COPY infrastructure/containers/blockchain/chain-to-pay/entrypoint.py /build/chain/chain_to_pay_entrypoint.py
 
 RUN chmod +x ./tmp/verify_files.py && \
@@ -146,6 +150,9 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=chain_to_pay \
+    LUCID_SERVICE_HOST_IP=172.20.10.37 \
+    LUCID_SERVICE_HTTP_PATH=http://chain-to-pay:8114/app \
     CHAIN_TO_PAY_LISTEN_PORT=8114 \
     CHAIN_TO_PAY_CONFIG=/app/chain/config/chain-to-pay.connections.json \
     CHAIN_TO_PAY_OPENSSL_API_YAML=/app/chain/config/openssl-api.yml
@@ -153,6 +160,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
 
 COPY --from=builder /root/.rustup/ /app/rust/
 COPY --from=builder /root/.cargo/ /app/cargo/

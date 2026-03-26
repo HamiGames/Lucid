@@ -1,0 +1,117 @@
+# Runtime (container): /app/configs/services/payment_services/payment-services-host-alignment.yml
+# Canonical payment-stack alignment for x-lucid deployment (merge with docker-compose.payment-internal.yml).
+# Source registry: infrastructure/containers/host-config.yml; static host_ip completes with repository root service-ip.txt
+#   for keys omitted from the generated host-config fragment (payment_system_gateway, tron_relay).
+
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  ip_source_repo_path: service-ip.txt
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
+
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    main_lucid_gateway:
+      host_config_key: main_lucid_gateway
+      service_name: api-gateway
+      port: 8080
+      host_ip: 172.20.10.1
+      http_path: http://api-gateway:8080/app
+    lucid_redis:
+      host_config_key: lucid_redis
+      service_name: lucid-redis
+      port: 6379
+      host_ip: 172.20.10.67
+      http_path: http://lucid-redis:6379/app
+    lucid_mongodb:
+      host_config_key: lucid_mongodb
+      service_name: lucid-mongodb
+      port: 27017
+      host_ip: 172.20.10.70
+      http_path: http://lucid-mongodb:27017/app
+    lucid_elasticsearch_http:
+      host_config_key: lucid_elasticsearch_http
+      service_name: lucid-elasticsearch-http
+      port: 9200
+      host_ip: 172.20.10.68
+      http_path: http://lucid-elasticsearch-http:9200/app
+    prometheus_metrics:
+      host_config_key: prometheus_metrics
+      service_name: prometheus-metrics
+      port: 9090
+      host_ip: 172.20.10.74
+      http_path: http://prometheus-metrics:9090/app
+    tron_node_client:
+      host_config_key: tron_node_client
+      service_name: tron-node-client
+      port: 8030
+      host_ip: 172.20.10.38
+      http_path: http://tron-node-client:8030/app
+    on_system_chain_client:
+      host_config_key: on_system_chain_client
+      service_name: on-system-chain-client
+      port: 8040
+      host_ip: 172.20.10.39
+      http_path: http://on-system-chain-client:8040/app
+    tron_payment_service:
+      host_config_key: tron_payment_service
+      service_name: tron-payment-service
+      port: 8080
+      host_ip: 172.20.10.40
+      http_path: http://tron-payment-service:8080/app
+    tron_client:
+      host_config_key: tron_client
+      service_name: tron-client
+      port: 8091
+      host_ip: 172.20.10.41
+      http_path: http://tron-client:8091/app
+    tron_client_aux:
+      host_config_key: tron_client_aux
+      service_name: tron-client-aux
+      port: 8101
+      host_ip: 172.20.10.42
+      http_path: http://tron-client-aux:8101/app
+    payout_router:
+      host_config_key: payout_router
+      service_name: payout-router
+      port: 8092
+      host_ip: 172.20.10.43
+      http_path: http://payout-router:8092/app
+    wallet_manager:
+      host_config_key: wallet_manager
+      service_name: wallet-manager
+      port: 8093
+      host_ip: 172.20.10.44
+      http_path: http://wallet-manager:8093/app
+    usdt_manager:
+      host_config_key: usdt_manager
+      service_name: usdt-manager
+      port: 8094
+      host_ip: 172.20.10.45
+      http_path: http://usdt-manager:8094/app
+    payment_system_gateway:
+      host_config_key: payment_system_gateway
+      service_name: payment-system-gateway
+      port: 8097
+      host_ip: 172.20.10.46
+      http_path: http://payment-system-gateway:8097/app
+    # Not yet in host-config.yml / service-ip.txt — ports from master-env-config.txt / docker-compose.payment-internal patterns
+    tron_staking:
+      host_config_key: tron_staking
+      service_name: tron-staking
+      port: 8096
+      host_ip: null
+      http_path: http://tron-staking:8096/app
+    tron_relay:
+      host_config_key: tron_relay
+      service_name: tron-relay
+      port: 8098
+      host_ip: 172.20.10.47
+      http_path: http://tron-relay:8098/app

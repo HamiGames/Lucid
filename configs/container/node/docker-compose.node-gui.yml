@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1.5
+# LUCID NODE GUI - Distroless Deployment
+# node and gui services cross interaction content
+# links node-worker to gui-api-bridge
+# links node-worker to gui-docker-manager
+# links node-worker to gui-tor-manager
+# links node-worker to gui-hardware-manager
+# uses node-network, gui-network, and pi-network
+# does not make full connection to the blockchain-network
+# is isolated from database services and server-storage

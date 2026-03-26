@@ -121,6 +121,9 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=blockchain_consensus_engine \
+    LUCID_SERVICE_HOST_IP=172.20.10.34 \
+    LUCID_SERVICE_HTTP_PATH=http://blockchain-consensus-engine:8085/app \
     BLOCKCHAIN_ENGINE_PORT=8085 \
     BLOCKCHAIN_ENGINE_HOST=0.0.0.0
 

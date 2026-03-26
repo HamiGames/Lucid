@@ -4,6 +4,8 @@
 # Build context: repository root (.)
 # Application source: payment_systems/tron/ mounted as Python package `tron` at /app/tron
 # Entry: payment_systems/tron/wallet_manager_entrypoint.py
+# host-config.yml: wallet_manager → wallet-manager:8093
+# Compose: infrastructure/containers/payment_systems/docker-compose.payment-internal.yml
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -30,10 +32,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+RUN mkdir -p /build/configs /build/host /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
+COPY infrastructure/containers/services/ /build/configs/services/
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -114,7 +120,9 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.expose="8093,8103" \
       com.lucid.env.config=".env.support,.env.tron-wallet-manager,.env.secrets,.env.foundation" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
-      com.lucid.tor.compatible="true"
+      com.lucid.tor.compatible="true" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.vulnerabilities="zero"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -123,6 +131,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=wallet_manager \
+    LUCID_SERVICE_HOST_IP=172.20.10.44 \
+    LUCID_SERVICE_HTTP_PATH=http://wallet-manager:8093/app \
     SERVICE_PORT=8093 \
     WALLET_MANAGER_PORT=8093 \
     WORKERS=1 \
@@ -143,6 +155,11 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/tron/ /app/tron/
+
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-internal.yml /app/configs/docker-compose.payment-internal.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-externals.yml /app/configs/docker-compose.payment-externals.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,tronpy; print('runtime OK')"]
 

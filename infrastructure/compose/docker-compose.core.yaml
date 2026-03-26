@@ -11,9 +11,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -75,9 +74,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -132,9 +130,8 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -198,12 +195,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tor-proxy
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -261,9 +255,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.node
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -330,9 +324,8 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -399,9 +392,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tunnel-tools
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -461,9 +454,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.node
     environment:
       - LUCID_ENV=production
       - LUCID_PLANE=ops

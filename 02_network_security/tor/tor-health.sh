@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-COOKIE="${TOR_DATA_DIR:-/run/lucid/tor}/control_auth_cookie"
+COOKIE="${TOR_DATA_DIR:-/app/run/lucid/tor}/control_auth_cookie"
 CTRL_HOST="${TOR_CONTROL_HOST:-127.0.0.1}"
 CTRL_PORT="${TOR_CONTROL_PORT:-9051}"
 # Aligned with Dockerfile.tor-proxy: primary Tor data directory (TOR_DATA_DIR set in Dockerfile ENV)
-OUTDIR="${TOR_DATA_DIR:-/run/lucid/tor}"
+OUTDIR="${TOR_DATA_DIR:-/app/run/lucid/tor}"
 
 [ -s "$COOKIE" ] || { echo "[hc] cookie missing or empty at $COOKIE"; exit 1; }
 

@@ -20,7 +20,7 @@ data:
   
   # Backend Service URLs (corrected service names)
   BLOCKCHAIN_CORE_URL: "http://lucid-blockchain-engine:8084"
-  SESSION_MANAGEMENT_URL: "http://lucid-session-api:8087"
+  SESSION_MANAGEMENT_URL: "http://lucid-session-api:8113"
   AUTH_SERVICE_URL: "http://lucid-auth-service:8089"
   TRON_PAYMENT_URL: "http://lucid-payment-gateway:8097"
   NODE_MANAGEMENT_URL: "http://lucid-node-management:8095"

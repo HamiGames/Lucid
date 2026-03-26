@@ -1,4 +1,4 @@
-# LUCID TUNNEL TOOLS - SPEC-4 Stage 0 Network Security (Distroless)
+# LUCID TUNNEL TOOLS
 # Builds pickme/lucid-tunnel-tools:latest-arm64
 # Compatible with pickme/lucid-tor-proxy:latest-arm64
 # Professional tunneling utilities for Pi deployment with distroless security
@@ -140,7 +140,10 @@ ENV PATH=/opt/lucid/tunnel/bin:/opt/bin:/opt/sbin:/bin \
     PYTHONPATH=/app/tunnel:/usr/lib/python3.11 \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=tunnel_tools \
+    LUCID_SERVICE_HOST_IP=172.20.10.66 \
+    LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app
 
 # Copy tini from builder (for proper signal handling)
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)

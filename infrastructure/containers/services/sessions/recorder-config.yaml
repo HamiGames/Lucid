@@ -1,0 +1,160 @@
+# Runtime (container): /app/configs/services/sessions/recorder-config.yaml — see ../container-runtime-layout.yml
+# Lucid Session Recorder — configuration (sessions/config/recorder-config.yaml)
+# Canonical: session_recorder — service_name session-recorder, port 8090, host_ip 172.20.10.13 — infrastructure/containers/host-config.yml (collision_notes vs rdp_server_manager).
+# Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml
+#
+# Compose (session-recorder): SERVICE_NAME=session-recorder, PORT=8090, HOST=session-recorder
+# Environment from compose:
+#   LUCID_RECORDING_PATH=/data/recordings, LUCID_CHUNK_OUTPUT_PATH=/data/chunks
+#   LUCID_HARDWARE_ACCELERATION=true, LUCID_VIDEO_CODEC=h264_v4l2m2m, LUCID_AUDIO_CODEC=opus
+#   LUCID_BITRATE=2000k, LUCID_FPS=30
+# Volumes: recording_data -> /data/recordings, chunk_data -> /data/chunks, recorder_logs -> /app/logs
+# Network: lucid-session-network
+# Secrets: /app/configs/.env.secrets + /app/configs/.env.master per compose env mounts.
+#
+# RecorderSettings / _flatten_yaml_config (sessions/recorder/config.py) override paths from
+# LUCID_RECORDING_PATH and LUCID_CHUNK_OUTPUT_PATH when set in the container.
+
+global:
+  service_name: session-recorder
+  host_config:
+    registry_path: infrastructure/containers/host-config.yml
+    host_config_key: session_recorder
+    host_ip: 172.20.10.13
+    http_path: http://session-recorder:8090/app
+  service_version: "1.0.0"
+  debug: false
+  log_level: INFO
+  recording_path: /data/recordings
+  chunk_output_path: /data/chunks
+
+recording:
+  video:
+    enabled: true
+    codec: h264_v4l2m2m
+    frame_rate: 30
+    resolution: "1920x1080"
+    bitrate: "2000k"
+    quality: high
+    hardware_acceleration: true
+    acceleration_method: v4l2m2m
+  audio:
+    enabled: true
+    codec: opus
+    sample_rate: 48000
+    channels: 2
+    bitrate: "128k"
+  display:
+    xrdp_display: ":10"
+    capture_method: x11grab
+    capture_area: fullscreen
+    cursor_capture: true
+    cursor_size: 32
+  chunk_generation:
+    enabled: true
+    chunk_size_mb: 10
+    chunk_duration_seconds: 300
+    compression_level: 6
+    compression_algorithm: gzip
+    generate_metadata: true
+    include_timestamps: true
+
+hardware_acceleration:
+  enabled: true
+  device: /dev/video10
+  encoder: h264_v4l2m2m
+  decoder: h264_v4l2m2m
+  fallback_to_software: true
+  validate_hardware: true
+
+ffmpeg:
+  path: /usr/bin/ffmpeg
+  log_level: warning
+  timeout_seconds: 30
+  max_retries: 3
+  retry_delay_seconds: 5
+  options:
+    - "-f"
+    - x11grab
+    - "-framerate"
+    - "30"
+    - "-video_size"
+    - "1920x1080"
+    - "-i"
+    - ":10"
+    - "-c:v"
+    - h264_v4l2m2m
+    - "-b:v"
+    - "2000k"
+    - "-c:a"
+    - opus
+    - "-b:a"
+    - "128k"
+    - "-f"
+    - mp4
+
+session_management:
+  max_concurrent_recordings: 10
+  session_timeout_seconds: 7200
+  auto_stop_on_idle: false
+  idle_timeout_seconds: 300
+  cleanup_interval_seconds: 3600
+
+storage:
+  recordings_path: /data/recordings
+  chunks_path: /data/chunks
+  max_storage_size_gb: 500
+  retention_days: 30
+  auto_cleanup: true
+  compression_enabled: true
+  encryption_enabled: false
+
+# Bind address / port for the recorder HTTP server (compose sets PORT=8090; use 0.0.0.0 for listen-all)
+network:
+  host: "0.0.0.0"
+  port: 8090
+
+quality_control:
+  enabled: true
+  min_quality_score: 0.7
+  validate_chunks: true
+  validate_audio_sync: true
+  validate_video_integrity: true
+  auto_adjust_quality: false
+
+monitoring:
+  enabled: true
+  metrics:
+    - recording_count
+    - recording_duration
+    - chunk_count
+    - storage_usage
+    - quality_scores
+    - error_count
+  health_check:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 10
+
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 5
+    exponential_backoff: true
+  recovery:
+    enabled: true
+    auto_recovery: true
+    recovery_timeout_seconds: 60
+    preserve_partial_recordings: true
+
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: [USER, NODE_OPERATOR, ADMIN, SUPER_ADMIN]
+  data_privacy:
+    encrypt_recordings: false
+    mask_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90

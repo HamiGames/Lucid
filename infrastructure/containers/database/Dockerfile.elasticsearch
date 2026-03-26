@@ -117,7 +117,12 @@ ENV ES_HOME=/app/usr/share/elasticsearch \
     CLUSTER_NAME=lucid-cluster \
     NODE_NAME=lucid-node \
     DISCOVERY_TYPE=single-node \
-    XPACK_SECURITY_ENABLED=false
+    XPACK_SECURITY_ENABLED=false \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_elasticsearch_http \
+    LUCID_SERVICE_HOST_IP=172.20.10.68 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-elasticsearch-http:9200/app \
+    LUCID_ELASTICSEARCH_TRANSPORT_HOST_IP=172.20.10.69 \
+    LUCID_ELASTICSEARCH_TRANSPORT_SERVICE_PATH=http://lucid-elasticsearch-transport:9300/app
 
 # Glibc / arch libs (from builder — matches ES image Debian)
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)

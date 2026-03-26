@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.5
 # LUCID PARAMS REGISTRY — Distroless Python Service
 # Aligned with 03_api_gateway/Dockerfile (wheels, markers, /app/usr layout, tini)
+# host-config: admin-params-registry; ops: infrastructure/containers/admin/docker-compose.admin.yml
 # Build context: repository root (.)
 # Port: 8050
 
@@ -87,6 +88,9 @@ RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
     echo "installation complete"
 
+RUN printf "LUCID_PARAMS_REGISTRY_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
+
 RUN echo "=== Verifying pip installation ===" && \
     python3.11 -c "import sys; assert sys.version_info[:2] == (3, 11); print('params-registry python ok')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
@@ -97,6 +101,17 @@ RUN mkdir -p ./admin/params-registry && \
     touch ./admin/params-registry/.keep
 
 COPY admin/params-registry/ ./admin/params-registry/
+
+RUN mkdir -p ./host ./configs/services ./configs/operations ./infrastructure/kubernetes && \
+    printf "LUCID_PARAMS_REGISTRY_HOST_$(date +%s)" > ./host/.keep && \
+    printf "LUCID_PARAMS_REGISTRY_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    chown -R 65532:65532 ./host ./configs/services ./configs/operations ./infrastructure/kubernetes
+
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/services/container-runtime-layout.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./configs/operations/docker-compose.admin.yml
 
 RUN test -f ./admin/params-registry/params_registry.py && ls -la ./admin/params-registry/
 
@@ -117,9 +132,11 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="params-registry" \
+      com.lucid.service="admin-params-registry" \
       com.lucid.platform="arm64" \
-      com.lucid.security="distroless"
+      com.lucid.cluster="core" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8050"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -128,7 +145,18 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    PARAMS_REGISTRY_PORT=8050
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=admin_params_registry \
+    LUCID_SERVICE_HOST_IP=172.20.10.18 \
+    LUCID_SERVICE_HTTP_PATH=http://admin-params-registry:8050/app \
+    PARAMS_REGISTRY_PORT=8050 \
+    PARAMS_REGISTRY_HOST=admin-params-registry \
+    API_GATEWAY_HOST=api-gateway \
+    API_GATEWAY_PORT=8080 \
+    LUCID_MONGODB_SERVICE=lucid-mongodb \
+    LUCID_MONGODB_PORT=27017 \
+    LUCID_REDIS_SERVICE=lucid-redis \
+    LUCID_REDIS_PORT=6379
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
@@ -143,10 +171,20 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.admin.yml /app/configs/operations/docker-compose.admin.yml
 COPY --from=builder --chown=65532:65532 /build/admin/params-registry/ /app/admin/params-registry/
 
 RUN ["/app/usr/bin/python3.11", "-c", \
-    "import os; assert os.path.isfile('/app/admin/params-registry/params_registry.py'); print('params-registry runtime OK')"]
+    "import os, sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0, sp); \
+     m=os.path.join(sp, '.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; \
+     assert os.path.isfile('/app/host/host-config.yml'); \
+     assert os.path.isfile('/app/infrastructure/kubernetes/database-config.yaml'); \
+     assert os.path.isfile('/app/infrastructure/kubernetes/api-gateway-config.yaml'); \
+     assert os.path.isfile('/app/admin/params-registry/params_registry.py'); print('params-registry runtime OK')"]
 
 EXPOSE 8050
 

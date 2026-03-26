@@ -79,6 +79,10 @@ RUN chmod +x ./database/mongodb/start_mongodb.py ./database/mongodb/healthcheck.
 COPY infrastructure/containers/database/mongod.conf ./tmp/mongod.conf
 RUN test -f ./tmp/mongod.conf
 
+RUN mkdir -p /build/configs/services/database
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/database/mongod.conf /build/configs/services/database/mongod.conf
+
 # Pack distroless layout under /build/export/app (mirrors api gateway /app layout)
 # mongo-extra must not include libc.so.6 or ld-linux-*: ENV LD_LIBRARY_PATH is shared with Python;
 # an older mongo-stage glibc in mongo-extra breaks /app/usr/bin/python3.11 on distroless (e.g. GLIBC_2.36 vs libexpat).
@@ -169,6 +173,9 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_mongodb \
+    LUCID_SERVICE_HOST_IP=172.20.10.70 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-mongodb:27017/app \
     LD_LIBRARY_PATH=/app/usr/lib/mongo-extra:/app/usr/lib/mongodb:/app/usr/lib/${DEBIAN_MULTIARCH}/mongodb \
     MONGODB_HOST=lucid-mongodb \
     MONGODB_PORT=27017 \
@@ -179,6 +186,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/

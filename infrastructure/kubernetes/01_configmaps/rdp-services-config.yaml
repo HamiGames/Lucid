@@ -11,12 +11,14 @@ data:
   SERVICE_NAME: "rdp-services"
   DEBUG: "false"
   
-  # Port Configuration (Corrected per essentials.md)
-  SERVER_MANAGER_PORT: "8081"
+  # Port Configuration (ports.txt)
+  SERVER_MANAGER_PORT: "8090"
   SERVER_MANAGER_API_PORT: "8090"
   XRDP_PORT: "3389"
-  RDP_CONTROLLER_PORT: "8092"
-  RDP_MONITOR_PORT: "8093"
+  XRDP_HTTP_API_PORT: "8250"
+  XRDP_SESMAN_PORT: "3350"
+  RDP_CONTROLLER_PORT: "8101"
+  RDP_MONITOR_PORT: "8201"
   
   # IP Address Configuration (per essentials.md)
   RDP_SERVER_MANAGER_HOST: "172.20.0.21"
@@ -25,10 +27,10 @@ data:
   RDP_MONITOR_HOST: "172.20.0.24"
   
   # Service URLs (per essentials.md)
-  RDP_SERVER_MANAGER_URL: "http://lucid-rdp-server-manager:8081"
+  RDP_SERVER_MANAGER_URL: "http://lucid-rdp-server-manager:8090"
   RDP_XRDP_URL: "http://lucid-rdp-xrdp:3389"
-  RDP_CONTROLLER_URL: "http://lucid-rdp-controller:8092"
-  RDP_MONITOR_URL: "http://lucid-rdp-monitor:8093"
+  RDP_CONTROLLER_URL: "http://lucid-rdp-controller:8101"
+  RDP_MONITOR_URL: "http://lucid-rdp-monitor:8201"
   
   # Container Names (per essentials.md)
   RDP_SERVER_MANAGER_CONTAINER: "lucid-rdp-server-manager"
@@ -63,9 +65,9 @@ data:
   AUTO_CLEANUP_ENABLED: "true"
   
   # Health Check Ports (per essentials.md)
-  SERVER_MANAGER_HEALTHCHECK_PORT: "8081"
-  RDP_CONTROLLER_HEALTHCHECK_PORT: "8092"
-  RDP_MONITOR_HEALTHCHECK_PORT: "8093"
+  SERVER_MANAGER_HEALTHCHECK_PORT: "8090"
+  RDP_CONTROLLER_HEALTHCHECK_PORT: "8101"
+  RDP_MONITOR_HEALTHCHECK_PORT: "8201"
   HEALTHCHECK_PATH: "/health"
   
   # Network Configuration (per essentials.md)

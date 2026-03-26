@@ -1,4 +1,4 @@
-# LUCID TUNNEL TOOLS - SPEC-4 Stage 0 Network Security (Distroless)
+# LUCID TUNNEL TOOLS - 
 # Builds pickme/lucid-tunnel-tools:latest-arm64
 # Compatible with pickme/lucid-tor-proxy:latest-arm64
 # Professional tunneling utilities for Pi deployment with distroless security
@@ -65,9 +65,10 @@ COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
 
+
 # Create application and data directories with proper ownership
 # Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
-RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+RUN mkdir -p /usr /usr/local usr/bin /bin /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
     printf "LUCID_API_GATEWAY_USR_$(date +%s)" > /usr/.keep && \
     touch /usr/.keep && \
     printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
@@ -80,27 +81,39 @@ RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python
     touch /usr/local/lib/python3.11/site-packages/.keep && \
     printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
     touch /usr/local/bin/.keep && \
-    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
-    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
+    printf "LUCID_API_GATEWAY_BIN_$(date +%s)" > /bin/.keep && \
+    touch /bin/.keep && \
+    printf "LUCID_API_GATEWAY_USR_BIN_$(date +%s)" > /usr/bin/.keep && \
+    touch /usr/bin/.keep && \
+    printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages /bin /usr/bin /usr/local/bin && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep /bin/.keep /usr/bin/.keep /usr/local/bin/.keep && \
     echo " Marker files created to lock in directory structure"
 
 # Copy tunnel application files
 # Build context: project root, so we prefix with 02_network_security/tunnels/
 RUN mkdir -p ./tunnels  ./tunnels/scripts ./tunnels/config && \
+    printf "LUCID_TUNNEL_TOOLS_CONFIG_$(date +%s)" > ./tunnels/config/.keep && \
+    touch ./tunnels/config/.keep && \
     printf "LUCID_TUNNEL_TOOLS_TUNNELS_$(date +%s)" > ./tunnels/.keep && \
     touch ./tunnels/.keep && \
     printf "LUCID_TUNNEL_TOOLS_SCRIPTS_$(date +%s)" > ./tunnels/scripts/.keep && \
     touch ./tunnels/scripts/.keep && \
-    printf "LUCID_TUNNEL_TOOLS_CONFIG_$(date +%s)" > ./tunnels/config/.keep && \
-    touch ./tunnels/config/.keep && \
-    chown -R 65532:65532 ./tunnels ./tunnels/scripts ./tunnels/config && \
-    chmod 644 ./tunnels/.keep ./tunnels/scripts/.keep ./tunnels/config/.keep && \
+    chown -R 65532:65532 ./tunnels ./tunnels/scripts ./tunnels/config  && \
+    chmod 644 ./tunnels/.keep ./tunnels/scripts/.keep ./tunnels/config/.keep  && \
     echo " Marker files created to lock in directory structure"
 
 COPY 02_network_security/tunnels/ ./tunnels/
 COPY 02_network_security/tunnels/scripts/ ./tunnels/scripts/
 COPY 02_network_security/tunnels/config/ ./tunnels/config/
-
+COPY configs/environment/.env.tunnel-tools ./configs/.env.tunnel-tools
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
+COPY 02_network_security/tor/torrc ./configs/torrc
+RUN mkdir -p /build/configs/services/tor
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
 RUN chmod +x ./tunnels/entrypoint.py || true && \
     chmod +x ./tunnels/__init__.py || true && \
     chmod +x ./tunnels/scripts/*.sh || true && \
@@ -157,52 +170,31 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
     PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=tunnel_tools \
+    LUCID_SERVICE_HOST_IP=172.20.10.66 \
+    LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app
 
 # Copy tini from builder (for proper signal handling)
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/torrc /app/configs/torrc
+COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/ /app/tunnels/
+COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/scripts/ /app/tunnels/scripts/
+COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/config/ /app/tunnels/config/
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
 COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
-COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tor/ /app/var/lib/tor/
-COPY --from=tunnel-builder --chown=65532:65532 /var/lib/tor/control_auth_cookie /app/var/lib/tor/control_auth_cookie
-# Copy application and data directories owned by non-root (65532:65532)
-COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/ /app/tunnels/
-COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/lib/tor /app/var/lib/tor
-COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/log/tor /app/var/log/tor
-COPY --from=tunnel-builder --chown=debian-tor:debian-tor /run/ /app/run/
-COPY --from=tunnel-builder --chown=debian-tor:debian-tor /run/lucid/onion/ /app/run/lucid/onion/
-COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/run/ /app/var/run/
-COPY --from=tunnel-builder --chown=debian-tor:debian-tor /var/lib/ /app/var/lib/
-COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin/python3.11/ /app/usr/local/bin/python3.11/
-COPY --from=tunnel-builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
-COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin/python3.11/site-packages/ /app/usr/local/bin/python3.11/site-packages/
-# Copy essential shell and utilities from builder
-COPY --from=tunnel-builder --chown=65532:65532 /bin/bash            /app/bin/bash
-COPY --from=tunnel-builder --chown=65532:65532 /bin/cat             /app/bin/cat
-COPY --from=tunnel-builder --chown=65532:65532 /bin/sh              /app/bin/sh
-COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/   /app/usr/bin/
-COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin /app/usr/local/bin
-COPY --from=tunnel-builder --chown=65532:65532 /usr/local/sbin/ /app/usr/local/sbin/
-COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/certs/ /app/etc/ssl/certs/
-COPY --from=tunnel-builder --chown=65532:65532 /usr/local/share/ /app/usr/local/share/
-COPY --from=tunnel-builder --chown=65532:65532 /usr/share/ /app/usr/share/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
 
-
-# Copy required libraries for these utilities
-COPY --from=tunnel-builder --chown=65532:65532 /lib/aarch64-linux-gnu/ /app/lib/aarch64-linux-gnu
-COPY --from=tunnel-builder --chown=65532:65532 /lib/ld-linux-aarch64.so.1/ /app/lib/ld-linux-aarch64.so.1
-COPY --from=tunnel-builder --chown=65532:65532 /usr/lib /app/usr/lib/
-# Runtime verification: Verify entrypoint exists and modules can be imported
+# Runtime verification: Verify entrypoint exists and modules can be imported (distroless base Python)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; \
-sys.path.insert(0, '/app'); \
-entrypoint_path = '/app/entrypoint.py'; \
-assert os.path.exists(entrypoint_path), f'CRITICAL: Entrypoint not found at {entrypoint_path}'; \
-assert os.path.isfile(entrypoint_path), f'CRITICAL: {entrypoint_path} is not a file'; \
-import entrypoint; \
-import tunnel_metrics; \
-import tunnel_status; \
+sys.path.insert(0, '/app/tunnels'); \
+entrypoint_path = '/app/tunnels/entrypoint.py'; \
+assert os.path.isfile(entrypoint_path), 'CRITICAL: /app/tunnels/entrypoint.py missing'; \
+import entrypoint; import tunnel_metrics; import tunnel_status; \
 print('✅ All tunnel-tools modules verified')"]
 
 
@@ -240,7 +232,7 @@ USER 65532:65532
 # Use tini for correct signal handling; run Python entrypoint directly (no shell)
 # Clear ENTRYPOINT pattern per dockerfile-design.md: tini in ENTRYPOINT, Python in CMD
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
-CMD ["/app/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
+CMD ["/usr/bin/python3.11", "/app/tunnels/entrypoint.py"]
 
 # NOTES:
 #   Configuration files are expected at:

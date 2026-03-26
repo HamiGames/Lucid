@@ -1,109 +1,169 @@
-# LUCID Database Monitoring Service - Distroless Build
-# Professional database monitoring and health check service for Pi deployment
-# Multi-stage build for distroless deployment with security hardening
+# syntax=docker/dockerfile:1.5
+# infrastructure/docker/databases/Dockerfile.database-monitoring
+# Aligned with 03_api_gateway/Dockerfile: repository-root context, python3.11 wheels, /app/usr layout, tini, distroless.
+# host-config.yml: mongodb_monitoring → service_name mongodb-monitoring, port 27018 (+ lucid-mongodb / lucid-redis for operations).
 
-# syntax=docker/dockerfile:1.7
-FROM python:3.12-slim-bookworm AS monitoring-builder
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
+ARG PYTHON_VERSION=3.11
 
-# Metadata for professional container management
-LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Database Monitoring Service for Lucid Database Services (Distroless)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="database-monitoring" \
-      org.lucid.layer="0" \
-      org.lucid.expose="8091"
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bookworm AS builder
 
-# Build-time environment
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG PYTHON_VERSION
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+WORKDIR /build
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
         build-essential \
+        gcc \
+        g++ \
+        libffi-dev \
         libssl-dev \
         pkg-config \
         curl \
-        bash \
-        git \
-        && rm -rf /var/lib/apt/lists/*
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Set working directory
+RUN printf "LUCID_DB_MONITORING_RUNTIME" > /var/run/.keep && \
+    printf "LUCID_DB_MONITORING_LIB" > /var/lib/.keep && \
+    chown -R 65532:65532 /var/run /var/lib && \
+    chmod 644 /var/run/.keep /var/lib/.keep
+
+RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
+    chown -R 65532:65532 /usr/local/lib/python3.11/site-packages /usr/local/bin
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip install --upgrade pip setuptools wheel
+
+COPY database/services/monitoring/requirements-monitoring.txt ./requirements.txt
+RUN sed -i \
+    '/^pytest/d;/^black/d;/^ruff/d;/^mypy/d;/httpx\[cli\]/d;/^pandas/d;/^numpy/d' \
+    ./requirements.txt || true
+RUN printf '\nredis>=5.0.0\n' >> ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+
+RUN printf "LUCID_DB_MONITORING_MARKER_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
+
+RUN mkdir -p ./database/services/monitoring ./host ./configs/services ./infrastructure/kubernetes ./configs/env
+
+COPY database/services/monitoring/ ./database/services/monitoring/
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/services/container-runtime-layout.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY infrastructure/docker/databases/env/database-monitoring.env ./configs/env/database-monitoring.env
+
+RUN python3.11 -c "\
+import fastapi, uvicorn, motor, pymongo, redis, httpx, prometheus_client, psutil; \
+print('database-monitoring deps ok')"
+
+RUN test -f ./database/services/monitoring/main.py
+
+############################
+# Stage 2 – Runtime (Distroless)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+
 WORKDIR /app
 
-# Copy build environment script
-COPY infrastructure/docker/databases/build-env.sh /tmp/build-env.sh
-RUN chmod +x /tmp/build-env.sh
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Execute build environment script to generate .env files
-RUN /tmp/build-env.sh
-
-# Copy requirements and install Python dependencies
-COPY ../../../database/services/monitoring/requirements-monitoring.txt /tmp/
-RUN pip install --no-cache-dir --user -r /tmp/requirements-monitoring.txt
-
-# Copy source code
-COPY database/services/monitoring/ /app/monitoring/
-
-# Create non-root user
-RUN groupadd --gid 1000 lucid && \
-    useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
-
-# Create monitoring directories
-RUN mkdir -p /data/monitoring /data/metrics /var/log/monitoring && \
-    chown -R lucid:lucid /data /var/log/monitoring
-
-# Final distroless stage
-FROM gcr.io/distroless/python3-debian12:nonroot
-
-# Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Database Monitoring Service for Lucid Database Services (Distroless Runtime)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="database-monitoring" \
-      org.lucid.layer="0" \
-      org.lucid.expose="8091"
+      org.opencontainers.image.title="Lucid Database Monitoring" \
+      org.opencontainers.image.description="MongoDB-oriented monitoring service (host-config mongodb-monitoring)" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="mongodb-monitoring" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="foundation" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="27018,9216"
 
-# Copy Python dependencies from builder
-COPY --from=monitoring-builder /root/.local /home/nonroot/.local
-
-# Copy application code
-COPY --from=monitoring-builder /app /app
-
-# Copy generated environment files
-COPY --from=monitoring-builder /tmp/infrastructure/docker/databases/env/database-monitoring.env /app/.env
-
-# Copy user and group information
-COPY --from=monitoring-builder /etc/passwd /etc/passwd
-COPY --from=monitoring-builder /etc/group /etc/group
-
-# Set working directory
-WORKDIR /app
-
-# Set Python path
-ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
-
-# Runtime environment
-ENV MONITORING_SERVICE_PORT=8091 \
-    MONGODB_URL=mongodb://lucid:lucid@lucid_mongo:27017/lucid?authSource=admin \
-    MONITORING_INTERVAL=30 \
+ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
+    PYTHONIOENCODING=utf-8 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    MONITORING_SERVICE_NAME=mongodb-monitoring \
+    MONITORING_SERVICE_PORT=27018 \
     METRICS_PORT=9216 \
-    PROMETHEUS_ENABLED=true \
-    PYTHONUNBUFFERED=1
+    MONGODB_URL=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin \
+    LUCID_MONGODB_SERVICE=lucid-mongodb \
+    LUCID_MONGODB_PORT=27017 \
+    LUCID_REDIS_SERVICE=lucid-redis \
+    LUCID_REDIS_PORT=6379 \
+    API_GATEWAY_HOST=api-gateway \
+    API_GATEWAY_PORT=8080
 
-# Create data directories
-USER nonroot
-RUN mkdir -p /data/monitoring /data/metrics /var/log/monitoring
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder /usr/bin/ /app/usr/bin/
+COPY --from=builder /usr/sbin/ /app/usr/sbin/
+COPY --from=builder /usr/bin/tini /app/usr/bin/tini
 
-# Expose monitoring service ports
-EXPOSE 8091 9216
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/database/services/monitoring/ /app/database/services/monitoring/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/env/database-monitoring.env /app/configs/env/database-monitoring.env
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD ["python3", "-c", "import requests; requests.get('http://localhost:8091/health', timeout=5)"]
+RUN ["/app/usr/bin/python3.11", "-c", \
+    "import os, sys; sys.path.insert(0, '/app/usr/local/lib/python3.11/site-packages'); \
+     assert os.path.isfile('/app/host/host-config.yml'); \
+     assert os.path.isfile('/app/infrastructure/kubernetes/database-config.yaml'); \
+     import pymongo, motor, redis; \
+     print('database-monitoring runtime ok')"]
 
-# Run the database monitoring service
-ENTRYPOINT ["python3", "/app/monitoring/main.py"]
+EXPOSE 27018 9216
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD ["/app/usr/bin/python3.11", "-c", \
+    "import urllib.request; urllib.request.urlopen('http://127.0.0.1:27018/health', timeout=5).read()"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+
+CMD ["/app/usr/bin/python3.11", "/app/database/services/monitoring/main.py"]

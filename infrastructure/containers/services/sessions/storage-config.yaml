@@ -1,0 +1,211 @@
+# Runtime (container): /app/configs/services/sessions/storage-config.yaml — see ../container-runtime-layout.yml
+# Lucid Session Storage — reference configuration (sessions/config/storage-config.yaml)
+# Canonical registry: infrastructure/containers/host-config.yml (generated; do not hand-edit registry).
+#
+# Two distinct entries in host-config:
+#   • session_storage_service → session-storage-service:8020 (172.20.10.10) — matches session-images compose primary HTTP storage API
+#   • session_storage → session-storage:8082 (172.20.10.11) — alternate registry name; add compose/service if you expose this workload
+# This file defaults to the session-images / ports.txt primary: session-storage-service on 8020.
+
+host_config_alignment:
+  registry_path: infrastructure/containers/host-config.yml
+  session_storage_service:
+    host_config_key: session_storage_service
+    service_name: session-storage-service
+    port: 8020
+    host_ip: 172.20.10.10
+    http_path: http://session-storage-service:8020/app
+  session_storage:
+    host_config_key: session_storage
+    service_name: session-storage
+    port: 8082
+    host_ip: 172.20.10.11
+    http_path: http://session-storage:8082/app
+
+global:
+  service_name: session-storage-service
+  service_version: "1.0.0"
+  debug: false
+  log_level: INFO
+  storage_backend: mongodb
+
+paths:
+  base_path: /app/data
+  sessions_path: /app/data/sessions
+  storage_path: /app/data/storage
+  chunks_path: /app/data/chunks
+  temp_path: /tmp/sessions
+  cache_path: /app/cache
+
+chunk_storage:
+  enabled: true
+  chunk_size_mb: 10
+  max_chunk_size_mb: 100
+  min_chunk_size_mb: 1
+  compression_enabled: true
+  compression_level: 6
+  compression_algorithm: gzip
+  encryption_enabled: false
+  deduplication_enabled: true
+
+session_storage:
+  enabled: true
+  max_session_size_gb: 100
+  max_session_duration_hours: 24
+  store_metadata: true
+  store_chunks: true
+  store_merkle_trees: true
+  store_proofs: true
+
+retention:
+  sessions:
+    retention_strategy: time_based
+    retention_days: 30
+    archive_after_days: 7
+    delete_after_days: 90
+  chunks:
+    retention_days: 30
+    archive_after_days: 7
+    delete_after_days: 90
+    orphan_chunk_cleanup: true
+    orphan_chunk_retention_days: 7
+  merkle_trees:
+    retention_days: 365
+    archive_after_days: 30
+    delete_after_days: -1
+  archive:
+    enabled: true
+    archive_backend: s3
+    archive_compression: true
+    archive_encryption: true
+    archive_path: /archive/sessions
+
+database:
+  mongodb:
+    url: ""
+    database: lucid_sessions
+    collections:
+      sessions: sessions
+      chunks: chunks
+      merkle_trees: merkle_trees
+      proofs: proofs
+    connection_pool_size: 20
+    write_concern: majority
+    read_concern: majority
+  redis:
+    url: ""
+    cache_ttl_seconds: 3600
+    max_cache_size_mb: 500
+  elasticsearch:
+    url: ""
+    index_prefix: lucid_sessions
+    index_retention_days: 90
+
+# HTTP bind: 0.0.0.0; Docker DNS on lucid-session-network is session-storage-service (host-config session_storage_service)
+network:
+  host: "0.0.0.0"
+  port: 8020
+  service_dns_name: session-storage-service
+
+indexing:
+  enabled: true
+  indexes:
+    - collection: sessions
+      fields: [session_id]
+      unique: true
+    - collection: sessions
+      fields: [user_id, created_at]
+    - collection: sessions
+      fields: [status, created_at]
+    - collection: sessions
+      fields: [expires_at]
+      ttl: true
+    - collection: chunks
+      fields: [chunk_id]
+      unique: true
+    - collection: chunks
+      fields: [session_id, chunk_index]
+    - collection: chunks
+      fields: [session_id, created_at]
+    - collection: chunks
+      fields: [expires_at]
+      ttl: true
+
+caching:
+  enabled: true
+  cache_backend: redis
+  cache_recent_sessions: true
+  cache_recent_chunks: true
+  cache_merkle_trees: true
+  cache_ttl_seconds: 3600
+  max_cache_size_mb: 1000
+
+performance:
+  batch_operations:
+    enabled: true
+    batch_size: 1000
+    batch_timeout_seconds: 5
+  parallel_processing:
+    enabled: true
+    max_worker_threads: 8
+    chunk_processing_threads: 4
+  connection_pooling:
+    enabled: true
+    pool_size: 20
+    max_overflow: 10
+    pool_timeout_seconds: 30
+
+cleanup:
+  enabled: true
+  cleanup_interval_hours: 6
+  cleanup_batch_size: 100
+  verify_before_delete: true
+  backup_before_delete: false
+  cleanup_tasks:
+    - name: expired_sessions
+      enabled: true
+      schedule: "0 */6 * * *"
+    - name: orphan_chunks
+      enabled: true
+      schedule: "0 2 * * *"
+    - name: old_merkle_trees
+      enabled: false
+      schedule: "0 3 * * 0"
+
+monitoring:
+  enabled: true
+  metrics:
+    - storage_size_bytes
+    - session_count
+    - chunk_count
+    - merkle_tree_count
+    - storage_operations_per_second
+    - cache_hit_rate
+    - cleanup_operations
+    - retention_operations
+  alerts:
+    storage_size_threshold_gb: 1000
+    storage_utilization_threshold_percent: 80
+    cleanup_failure_threshold: 3
+
+error_handling:
+  retry:
+    enabled: true
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  recovery:
+    auto_recovery_enabled: true
+    recovery_timeout_seconds: 60
+    verify_integrity_on_recovery: true
+
+security:
+  access_control:
+    require_authentication: true
+    require_authorization: true
+    allowed_roles: [USER, NODE_OPERATOR, ADMIN, SUPER_ADMIN]
+  data_privacy:
+    encrypt_sensitive_data: false
+    audit_log_enabled: true
+    audit_log_retention_days: 90
+    mask_data_in_logs: true

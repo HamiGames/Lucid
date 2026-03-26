@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID SESSION PIPELINE MANAGER - Distroless Python Service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # creates session-pipeline-manager service
 # Image: pickme/lucid-session-pipeline-manager:latest-arm64
 # Port: 7990
@@ -161,6 +162,12 @@ COPY sessions/config/api-config.yaml ./sessions/config/api-config.yaml
 
 COPY sessions/security/ ./sessions/security/
 
+RUN mkdir -p ./host
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+
 RUN chmod +x ./sessions/pipeline/* && \
     chmod +x ./sessions/core/* && \
     chmod +x ./sessions/processor/* && \
@@ -183,6 +190,7 @@ dirs = [
     "/app/sessions/pipeline",
     "/app/sessions/core",
     "/app/sessions/processor",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -193,6 +201,10 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
+    sys.exit(1)
 print("✅ Session pipeline manager runtime layout verified")
 PY
 
@@ -226,14 +238,18 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_pipeline_manager \
+    LUCID_SERVICE_HOST_IP=172.20.10.8 \
+    LUCID_SERVICE_HTTP_PATH=http://session-pipeline-manager:7990/app \
     SESSION_PIPELINE_MANAGER_PORT=7990
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
-COPY --from=builder --chown=65532:65532 /root/.rustup/ /app/rust/
-COPY --from=builder --chown=65532:65532 /root/.cargo/ /app/cargo/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt

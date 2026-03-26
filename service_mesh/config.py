@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     CERTIFICATES_PATH: str = "/app/certificates"
     CONFIG_PATH: str = "/app/config"
     LOGS_PATH: str = "/app/logs"
+    # Aligned with Dockerfile.server-manager + Dockerfile.service-mesh-controller
+    LUCID_HOST_CONFIG_PATH: str = "/app/configs/host-config.yml"
     
     class Config:
         env_file = ".env"

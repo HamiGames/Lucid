@@ -1,0 +1,220 @@
+# Runtime (container): /app/configs/services/sessions/pipeline-config.yaml — see ../container-runtime-layout.yml
+# Lucid Session Pipeline — reference configuration (sessions/config/pipeline-config.yaml)
+# Canonical hostname/port/host_ip: infrastructure/containers/host-config.yml (session_pipeline, session_pipeline_manager, …).
+# Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml
+#
+# Primary pipeline service (orchestration):
+#   session-pipeline — PORT=8083, HOST=session-pipeline, volumes:
+#     session_data -> /app/data/sessions, pipeline_logs -> /app/logs
+# Related controller (same compose file):
+#   session-pipeline-manager — PORT=7990, HOST=session-pipeline-manager
+#
+# Other session stack endpoints (host-config.yml + docker-compose.session-images.yml):
+#   session-chunk-processor:8010, session-storage-service:8020, session-api:8113,
+#   session-anchoring:8085, session-recorder:8090, session-overlord:8110 (compose session-management:9090 if used),
+#   session-system-control:7988, session-pipeline-manager:7990
+# Network: lucid-session-network
+
+host_config_alignment:
+  registry_path: infrastructure/containers/host-config.yml
+  session_pipeline:
+    host_config_key: session_pipeline
+    service_name: session-pipeline
+    port: 8083
+    http_path: http://session-pipeline:8083/app
+  session_pipeline_manager:
+    host_config_key: session_pipeline_manager
+    service_name: session-pipeline-manager
+    port: 7990
+    host_ip: 172.20.10.8
+    http_path: http://session-pipeline-manager:7990/app
+
+global:
+  service_name: session-pipeline
+  service_version: "1.0.0"
+  debug: false
+  log_level: INFO
+  max_concurrent_sessions: 100
+  pipeline_timeout_seconds: 300
+
+stages:
+  recorder:
+    enabled: true
+    priority: 1
+    dependencies: []
+    workers:
+      count: 2
+      buffer_size: 1000
+      timeout_seconds: 60
+      retry_count: 3
+      max_memory_mb: 1024
+    config:
+      frame_rate: 30
+      resolution: "1920x1080"
+      quality: high
+      bitrate: "2000k"
+      audio_enabled: true
+      cursor_enabled: true
+
+  chunk_generator:
+    enabled: true
+    priority: 2
+    dependencies:
+      - recorder
+    workers:
+      count: 3
+      buffer_size: 800
+      timeout_seconds: 45
+      retry_count: 3
+      max_memory_mb: 768
+    config:
+      chunk_size_mb: 10
+      chunk_overlap_bytes: 0
+      preserve_boundaries: true
+
+  compressor:
+    enabled: true
+    priority: 3
+    dependencies:
+      - chunk_generator
+    workers:
+      count: 4
+      buffer_size: 500
+      timeout_seconds: 30
+      retry_count: 3
+      max_memory_mb: 512
+    config:
+      compression_algorithm: zstd
+      compression_level: 6
+      compression_threshold_bytes: 1024
+
+  encryptor:
+    enabled: true
+    priority: 4
+    dependencies:
+      - compressor
+    workers:
+      count: 4
+      buffer_size: 500
+      timeout_seconds: 30
+      retry_count: 3
+      max_memory_mb: 512
+    config:
+      encryption_algorithm: AES-256-GCM
+      key_rotation_interval_seconds: 3600
+      key_derivation_iterations: 100000
+
+  merkle_builder:
+    enabled: true
+    priority: 5
+    dependencies:
+      - encryptor
+    workers:
+      count: 2
+      buffer_size: 300
+      timeout_seconds: 20
+      retry_count: 3
+      max_memory_mb: 256
+    config:
+      hash_algorithm: SHA256
+      tree_type: binary
+      batch_size: 100
+      include_proof_paths: true
+
+  storage:
+    enabled: true
+    priority: 6
+    dependencies:
+      - merkle_builder
+    workers:
+      count: 2
+      buffer_size: 100
+      timeout_seconds: 60
+      retry_count: 3
+      max_memory_mb: 1024
+    config:
+      storage_backend: mongodb
+      # Paths align with session-pipeline + session-api volume layout in session-images compose
+      storage_path: /app/data/sessions
+      chunk_storage_path: /app/data/chunks
+      max_storage_size_gb: 1000
+      retention_days: 30
+
+performance:
+  enable_compression: true
+  enable_encryption: true
+  enable_deduplication: true
+  parallel_processing: true
+  batch_processing: true
+  batch_size: 100
+  batch_timeout_seconds: 5
+
+quality:
+  default_quality: high
+  default_frame_rate: 30
+  default_resolution: "1920x1080"
+  quality_threshold: 0.8
+  quality_validation: true
+
+# Network: match compose environment HOST/PORT (override with SESSION_PIPELINE_* env if your stack uses them)
+network:
+  host: session-pipeline
+  port: 8083
+  grpc_port: 9087
+
+# Downstream HTTP services (session-images compose DNS names)
+integrations:
+  chunk_processor_url: http://session-chunk-processor:8010
+  session_storage_url: http://session-storage-service:8020
+  session_api_url: http://session-api:8113
+  session_anchoring_url: http://session-anchoring:8085
+
+# Database URLs must be supplied at runtime via MONGODB_URL, REDIS_URL, ELASTICSEARCH_URL (no shell interpolation in YAML)
+database:
+  mongodb_url: ""
+  redis_url: ""
+  elasticsearch_url: ""
+
+monitoring:
+  metrics_enabled: true
+  # ports.txt prometheus_metrics / master-env-config PROMETHEUS_PORT=9090
+  metrics_port: 9090
+  health_check_interval: 30
+  prometheus_enabled: true
+  jaeger_enabled: false
+  jaeger_endpoint: null
+
+error_handling:
+  retry_policies:
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+    backoff_multiplier: 2
+  failure_handling:
+    log_failures: true
+    notify_on_failure: false
+    queue_failed_items: true
+    retry_failed_items: true
+    max_retry_attempts: 5
+
+state_machine:
+  enabled: true
+  state_transitions:
+    - from: recording
+      to: chunking
+      condition: chunk_size_reached
+    - from: chunking
+      to: compressing
+      condition: chunk_ready
+    - from: compressing
+      to: encrypting
+      condition: compression_complete
+    - from: encrypting
+      to: merkle_building
+      condition: encryption_complete
+    - from: merkle_building
+      to: storing
+      condition: merkle_complete
+    - from: storing
+      to: completed
+      condition: storage_complete

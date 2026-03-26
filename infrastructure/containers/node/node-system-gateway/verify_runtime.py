@@ -49,4 +49,13 @@ if not isinstance(ydoc, dict):
     print("ERROR: openssl-api.yml must parse to a mapping", file=sys.stderr)
     sys.exit(1)
 
+for path in (
+    "/app/host/host-config.yml",
+    "/app/infrastructure/kubernetes/api-gateway-config.yaml",
+    "/app/infrastructure/kubernetes/database-config.yaml",
+):
+    if not os.path.isfile(path):
+        print(f"ERROR: {path} missing", file=sys.stderr)
+        sys.exit(1)
+
 print("node-system-gateway runtime layout OK")

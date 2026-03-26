@@ -1,0 +1,226 @@
+# LUCID DATABASE SYSTEM — foundation data plane + database-overlord + system storage
+# Path: infrastructure/containers/database/docker-compose.database-system.yml
+#
+# Aligned with: ports.txt / host-config.yml
+#   (lucid-mongodb 27017, mongodb-monitoring 27018, lucid-redis 6379,
+#    lucid-elasticsearch-http 9200 + transport 9300, database-overlord 8120, lucid-system-storage 9900).
+# Secrets: infrastructure/containers/env/env.secrets.template → configs/environment/.env.secrets
+#   (MONGODB_*, REDIS_PASSWORD, ELASTICSEARCH_PASSWORD, etc.).
+#
+# Host collision (host-config / ports.txt): database-overlord and admin-ui-backend both use internal 8120 —
+# default host publish for overlord is 28120→8120. Remap with DATABASE_OVERLORD_PUBLISH_PORT if needed.
+#
+# Prerequisites: docker network lucid-pi-network (infrastructure/containers/network/network.txt).
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/database/docker-compose.database-system.yml up -d --build
+
+name: lucid-database-system
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-env-database: &env-database
+  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.secrets
+
+services:
+  lucid-mongodb:
+    image: ${LUCID_MONGODB_IMAGE:-pickme/lucid-mongodb:latest-arm64}
+    container_name: lucid-mongodb
+    hostname: lucid-mongodb
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.mongodb
+      args:
+        <<: *lucid-build-args
+        DEBIAN_MULTIARCH: ${DEBIAN_MULTIARCH:-aarch64-linux-gnu}
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_MONGODB_PUBLISH_PORT:-27017}:27017"
+    volumes:
+      - lucid_database_system_mongodb_data:/app/data/db:rw
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?set MONGO_INITDB_ROOT_PASSWORD}
+    user: "65532:65532"
+    healthcheck:
+      test: ["CMD", "/usr/bin/python3.11", "/app/usr/local/bin/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    labels:
+      com.lucid.service: lucid-mongodb
+      com.lucid.expose: "27017"
+      com.lucid.cluster: foundation
+
+  mongodb-monitoring:
+    image: ${LUCID_MONGODB_MONITORING_IMAGE:-pickme/lucid-database:latest-arm64}
+    container_name: mongodb-monitoring
+    hostname: mongodb-monitoring
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-database
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${MONGODB_MONITORING_PUBLISH_PORT:-27018}:27018"
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+    labels:
+      com.lucid.service: mongodb-monitoring
+      com.lucid.expose: "27018"
+
+  lucid-redis:
+    image: ${LUCID_REDIS_DISTROLESS_IMAGE:-pickme/lucid-redis:latest-arm64}
+    container_name: lucid-redis
+    hostname: lucid-redis
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.redis
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_REDIS_PUBLISH_PORT:-6379}:6379"
+    volumes:
+      - lucid_database_system_redis_data:/data:rw
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.lucid.service: lucid-redis
+      com.lucid.expose: "6379"
+      com.lucid.cluster: foundation
+
+  lucid-elasticsearch:
+    image: ${LUCID_ELASTICSEARCH_IMAGE:-pickme/lucid-elasticsearch:latest-arm64}
+    container_name: lucid-elasticsearch
+    # Dockerfile HEALTHCHECK curls http://lucid-elasticsearch:9200 — hostname must match.
+    hostname: lucid-elasticsearch
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.elasticsearch
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-database
+    networks:
+      lucid-pi-network:
+        aliases:
+          - lucid-elasticsearch-http
+          - lucid-elasticsearch-transport
+    ports:
+      - "${LUCID_ELASTICSEARCH_HTTP_PUBLISH_PORT:-9200}:9200"
+      - "${LUCID_ELASTICSEARCH_TRANSPORT_PUBLISH_PORT:-9300}:9300"
+    volumes:
+      - lucid_database_system_es_data:/app/usr/share/elasticsearch/data:rw
+    labels:
+      com.lucid.service: lucid-elasticsearch-http
+      com.lucid.expose: "9200,9300"
+
+  database-overlord:
+    image: ${LUCID_DATABASE_OVERLORD_IMAGE:-pickme/lucid-database-overlord:latest-arm64}
+    container_name: database-overlord
+    hostname: database-overlord
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.database-overlord
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-database
+    environment:
+      OVERLORD_HOST: "0.0.0.0"
+      OVERLORD_PORT: "8120"
+      MONGODB_URL: ${OVERLORD_MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/?authSource=admin}
+      REDIS_URL: ${OVERLORD_REDIS_URL:-redis://lucid-redis:6379/0}
+      ELASTICSEARCH_URL: ${OVERLORD_ELASTICSEARCH_URL:-http://lucid-elasticsearch-http:9200}
+      SESSION_API_URL: ${SESSION_API_URL:-http://session-api:8113}
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+    ports:
+      - "${DATABASE_OVERLORD_PUBLISH_PORT:-28120}:8120"
+    networks:
+      - lucid-pi-network
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_started
+      lucid-elasticsearch:
+        condition: service_started
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=128m
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.lucid.service: database-overlord
+      com.lucid.expose: "8120"
+      com.lucid.cluster: database
+
+  lucid-system-storage:
+    image: ${LUCID_SYSTEM_STORAGE_IMAGE:-pickme/lucid-system-storage:latest-arm64}
+    container_name: lucid-system-storage
+    hostname: lucid-system-storage
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/storage/Dockerfile.storage
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-database
+    networks:
+      - lucid-pi-network
+    ports:
+      - "${LUCID_SYSTEM_STORAGE_PUBLISH_PORT:-9900}:9900"
+    volumes:
+      - lucid_database_system_storage_data:/app/data:rw
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.lucid.service: lucid-system-storage
+      com.lucid.expose: "9900"
+      com.lucid.cluster: storage
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+
+volumes:
+  lucid_database_system_mongodb_data:
+    name: lucid-database-system-mongodb-data
+  lucid_database_system_redis_data:
+    name: lucid-database-system-redis-data
+  lucid_database_system_es_data:
+    name: lucid-database-system-es-data
+  lucid_database_system_storage_data:
+    name: lucid-database-system-storage-data

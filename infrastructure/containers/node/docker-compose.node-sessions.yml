@@ -12,6 +12,15 @@
 
 name: lucid-node-sessions
 
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
+
 x-repo-context: &repo-context
   context: ../../../
 
@@ -24,7 +33,7 @@ x-lucid-build-args: &lucid-build-args
   PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
 
 x-env-node-session: &env-node-session
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 services:
@@ -146,7 +155,7 @@ services:
       - lucid-session-network
 
   session-storage:
-    image: ${LUCID_SESSION_STORAGE_IMAGE:-pickme/lucid-session-storage:latest-arm64}
+    image: ${LUCID_SESSION_STORAGE_IMAGE:-pickme/lucid-session-storage-service:latest-arm64}
     container_name: session-storage
     hostname: session-storage
     platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}

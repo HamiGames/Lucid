@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.5
 # LUCID PYTHON BASE - Distroless Python 3.11 base layer
 # Design aligned with 03_api_gateway/Dockerfile (stages, ARGs, markers, wheels, /app runtime, tini, USER 65532)
+# Host registry + ops: infrastructure/containers/host-config.yml, base/docker-compose.base.yml
 # Build context: repository root (e.g. from Lucid repo: docker build -f infrastructure/containers/base/Dockerfile.python-base .)
 
 ARG BUILD_DATE
@@ -124,6 +125,11 @@ PY
 
 RUN chmod 755 /build/opt/python_base_bootstrap.py
 
+RUN mkdir -p /build/host /build/configs/services /build/configs/operations
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/base/docker-compose.base.yml /build/configs/operations/docker-compose.base.yml
+
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
@@ -155,7 +161,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml
+
+# Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
@@ -171,6 +180,9 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chmod=755 /build/opt/python_base_bootstrap.py /app/opt/python_base_bootstrap.py
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 COPY --from=builder /usr/bin/tini /app/usr/bin/tini
 

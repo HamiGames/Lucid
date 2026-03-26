@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID Merkle Tree Builder - Distroless Python service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Aligned with 03_api_gateway/Dockerfile (dockerfile-design + Dockerfile-copy-pattern)
 # Image: pickme/lucid-merkle-builder:latest-arm64
 # Port: 8092 (see infrastructure/compose/docker-compose.sessions.yaml — lucid-merkle-builder)
@@ -162,7 +163,12 @@ COPY sessions/__init__.py ./sessions/__init__.py
 
 COPY blockchain/ ./blockchain/
 COPY database/ ./database/
-COPY configs/services/session-management.yml ./config/session-management.yml
+RUN mkdir -p ./host ./config
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+RUN cp -f ./configs/services/session-management.yml ./config/session-management.yml
 
 RUN test -d ./sessions/pipeline && test -d ./blockchain && test -f ./config/session-management.yml && \
     python3.11 -c "import sys; sys.path.insert(0, '/build'); import os; assert os.path.isdir('/build/sessions/processor'); print('✅ Merkle builder source tree OK')"
@@ -181,6 +187,7 @@ dirs = [
     "/app/blockchain",
     "/app/database",
     "/app/config",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -191,9 +198,13 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
-cfg = "/app/config/session-management.yml"
-if not os.path.isfile(cfg):
-    print(f"ERROR: {cfg} missing")
+for cfg in ("/app/config/session-management.yml", "/app/configs/services/session-management.yml"):
+    if not os.path.isfile(cfg) or os.path.getsize(cfg) <= 0:
+        print(f"ERROR: {cfg} missing or empty")
+        sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
     sys.exit(1)
 print("✅ Merkle tree builder runtime layout verified")
 PY
@@ -227,6 +238,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_merkle_tree_builder \
+    LUCID_SERVICE_HOST_IP=172.20.10.15 \
+    LUCID_SERVICE_HTTP_PATH=http://session-merkle-tree-builder:8092/app \
     MERKLE_PORT=8092 \
     SESSION_PROCESSOR_HOST=0.0.0.0 \
     SESSION_PROCESSOR_PORT=8092
@@ -234,9 +249,8 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
-COPY --from=builder /root/.rustup/ /app/rust/
-COPY --from=builder /root/.cargo/ /app/cargo/
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
@@ -250,6 +264,7 @@ COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
 COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
 COPY --from=builder --chown=65532:65532 /build/config/session-management.yml /app/config/session-management.yml
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os, blake3, zstandard, lz4, fastapi, uvicorn; sp='/app/usr/local/lib/python3.11/site-packages'; assert os.path.isdir(sp) and os.listdir(sp); print('✅ Runtime site-packages OK')"]
@@ -260,6 +275,7 @@ assert os.path.isdir('/app/sessions/processor'), 'sessions/processor missing'; \
 assert os.path.isfile('/app/sessions/processor/main.py'), 'processor main missing'; \
 assert os.path.isfile('/app/sessions/pipeline/merkle_tree_builder.py'), 'merkle_tree_builder.py missing'; \
 assert os.path.isfile('/app/config/session-management.yml'), 'session-management.yml missing'; \
+assert os.path.isfile('/app/configs/services/session-management.yml'), 'services/session-management.yml missing'; \
 assert os.path.isdir('/app/blockchain'), 'blockchain missing'; \
 print('✅ Merkle tree builder application paths verified')"]
 

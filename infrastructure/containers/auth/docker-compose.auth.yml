@@ -19,9 +19,19 @@
 #
 # Prerequisites:
 #   - docker network lucid-pi-network (see infrastructure/containers/network/network.txt)
-#   - configs/environment: .env.foundation, .env.core, .env.support, .env.secrets
+#   - Repo root master-env-config.txt → /app/configs/.env.master (env_file + bind on lucid-auth-service)
+#   - configs/environment/.env.secrets → /app/configs/.env.secrets
 
 name: lucid-auth
+
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
 
 x-lucid-build-args: &lucid-build-args
   BUILD_DATE: ${BUILD_DATE:-}
@@ -35,7 +45,7 @@ x-repo-context: &repo-context
   context: ../../../
 
 x-env-auth: &env-auth
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 services:
@@ -120,6 +130,8 @@ services:
     cap_add:
       - NET_BIND_SERVICE
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - lucid_auth_logs:/app/logs:rw
     depends_on:
       lucid-mongodb:

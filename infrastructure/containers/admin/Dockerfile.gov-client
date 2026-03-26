@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.5
 # LUCID GOVERNANCE CLIENT — Distroless Python Service
 # Aligned with 03_api_gateway/Dockerfile (wheels, markers, /app/usr layout, tini)
+# host-config: admin-governance-client; ops: infrastructure/containers/admin/docker-compose.admin.yml
 # Build context: repository root (.)
 # Port: 8070
 
@@ -74,7 +75,18 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     touch /build/wheels/.keep && \
     pip install --upgrade pip setuptools wheel
 
-COPY admin/governance/requirements.txt ./requirements.txt
+RUN printf '%s\n' \
+    'fastapi>=0.109.0,<0.115.0' \
+    'uvicorn[standard]>=0.27.0,<0.31.0' \
+    'pydantic>=2.5.0' \
+    'web3>=6.0.0' \
+    'cryptography>=41.0.0' \
+    'aiofiles>=23.2.0' \
+    'PyYAML>=6.0.1' \
+    'pymongo>=4.6.0' \
+    'motor>=3.3.0' \
+    'redis>=5.0.0' \
+    > ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
@@ -88,20 +100,32 @@ RUN echo "installing wheels into system python" && \
     echo "installation complete"
 
 RUN echo "=== Verifying pip installation success ===" && \
-    python3.11 -c "import fastapi, uvicorn, pydantic, web3, cryptography; print('gov-client critical packages OK')" && \
+    python3.11 -c "import fastapi, uvicorn, pydantic, web3, cryptography, pymongo, motor, redis; print('gov-client critical packages OK')" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./admin/governance ./common && \
+RUN mkdir -p ./admin/governance ./common ./infrastructure/kubernetes ./configs/operations && \
     printf "LUCID_GOV_CLIENT_ADMIN_GOV_$(date +%s)" > ./admin/governance/.keep && \
     touch ./admin/governance/.keep && \
     printf "LUCID_GOV_CLIENT_COMMON_$(date +%s)" > ./common/.keep && \
-    touch ./common/.keep
+    touch ./common/.keep && \
+    printf "LUCID_GOV_CLIENT_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    touch ./infrastructure/kubernetes/.keep
 
 COPY admin/governance/ ./admin/governance/
+COPY admin/utils/ ./admin/utils/
 COPY common/ ./common/
 
-RUN test -d ./admin/governance && ls -la ./admin/governance/
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/services/container-runtime-layout.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY infrastructure/containers/admin/docker-compose.admin.yml ./configs/operations/docker-compose.admin.yml
+
+RUN mkdir -p ./host ./configs/services && \
+    printf "LUCID_GOV_CLIENT_HOST_$(date +%s)" > ./host/.keep && \
+    chown -R 65532:65532 ./admin ./common ./host ./configs/services ./configs/operations ./infrastructure/kubernetes && \
+    test -d ./admin/governance && ls -la ./admin/governance/
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -120,10 +144,11 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="governance-client" \
-      com.lucid.plane="governance" \
+      com.lucid.service="admin-governance-client" \
       com.lucid.platform="arm64" \
-      com.lucid.security="distroless"
+      com.lucid.cluster="core" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8070"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -132,8 +157,19 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=admin_governance_client \
+    LUCID_SERVICE_HOST_IP=172.20.10.20 \
+    LUCID_SERVICE_HTTP_PATH=http://admin-governance-client:8070/app \
     GOVERNANCE_CLIENT_PORT=8070 \
-    GOVERNANCE_CLIENT_HOST=0.0.0.0
+    GOVERNANCE_CLIENT_HOST=0.0.0.0 \
+    LUCID_GOVERNANCE_SERVICE_HOST=admin-governance-client \
+    API_GATEWAY_HOST=api-gateway \
+    API_GATEWAY_PORT=8080 \
+    LUCID_MONGODB_SERVICE=lucid-mongodb \
+    LUCID_MONGODB_PORT=27017 \
+    LUCID_REDIS_SERVICE=lucid-redis \
+    LUCID_REDIS_PORT=6379
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
@@ -148,12 +184,21 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.admin.yml /app/configs/operations/docker-compose.admin.yml
 COPY --from=builder --chown=65532:65532 /build/admin/governance/ /app/admin/governance/
+COPY --from=builder --chown=65532:65532 /build/admin/utils/ /app/admin/utils/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
 
 RUN ["/app/usr/bin/python3.11", "-c", \
     "import os, sys; sys.path.insert(0, '/app/usr/local/lib/python3.11/site-packages'); \
-     assert os.path.isdir('/app/admin/governance') and os.path.isdir('/app/common'); \
+     assert os.path.isfile('/app/host/host-config.yml'); \
+     assert os.path.isfile('/app/infrastructure/kubernetes/database-config.yaml'); \
+     assert os.path.isdir('/app/admin/governance') and os.path.isdir('/app/common') and os.path.isdir('/app/common/tor'); \
+     import pymongo, motor, redis; \
      print('gov-client runtime layout OK')"]
 
 EXPOSE 8070

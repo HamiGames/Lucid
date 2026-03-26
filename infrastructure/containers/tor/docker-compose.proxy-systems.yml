@@ -2,7 +2,8 @@
 # Path: infrastructure/containers/tor/docker-compose.proxy-systems.yml
 #
 # Aligned with: ports.txt (tor_socks 9050, tor_control 9051, tunnel_tools 7000), host-config.yml,
-#   infrastructure/containers/env/env.secrets.template (TOR_CONTROL_PASSWORD, TOR_SOCKS_PASSWORD, TOR_HOST=tor-proxy).
+#   master-env-config.txt + configs/environment/.env.secrets → /app/configs/.env.master + .env.secrets (bind mounts on tor-proxy + tunnel-tools).
+# Baked reference layouts (pickme images): container-runtime-layout.yml + this compose file under /app/configs/services/.
 # tor-proxy: image pickme/lucid-tor-proxy:latest-arm64 (SOCKS + control).
 # tunnel-tools: build infrastructure/containers/tor/Dockerfile (same stack as Dockerfile.tunnels notes).
 #
@@ -10,6 +11,15 @@
 #   docker compose -f infrastructure/containers/tor/docker-compose.proxy-systems.yml up -d --build
 
 name: lucid-proxy-systems
+
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
 
 x-repo-context: &repo-context
   context: ../../../
@@ -22,7 +32,7 @@ x-lucid-build-args: &lucid-build-args
   BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
 
 x-env-proxy: &env-proxy
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 services:
@@ -79,6 +89,9 @@ services:
       - /tmp:noexec,nosuid,size=128m
     security_opt:
       - no-new-privileges:true
+    volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
     labels:
       com.lucid.service: tunnel-tools
       com.lucid.expose: "7000"

@@ -1,0 +1,177 @@
+# LUCID NODE DATA SYSTEM — node-worker + data-chain + block-manager + chain-to-pay
+# Path: infrastructure/containers/node/docker-compose.node-data-system.yml
+#
+# Aligned with: ports.txt / host-config.yml (node_worker 8600, data_chain 8087, block_manager 8086, chain_to_pay 8114),
+#   infrastructure/containers/env/env.secrets.template (BLOCKCHAIN_*, MONGODB_*, REDIS_*, TRON_PRIVATE_KEY via .env.secrets).
+# Networks: lucid-pi-network, lucid-session-network (session-api), lucid-tron-isolated (optional chain-to-pay egress).
+#
+# Expects blockchain-engine / consensus peers on lucid-pi-network (e.g. lucid-block-system stack) for URLs below.
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/node/docker-compose.node-data-system.yml up -d --build
+
+name: lucid-node-data-system
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-env-node-data: &env-node-data
+  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.secrets
+
+services:
+  # Distinct from docker-compose.node-sessions.yml node-worker (avoid duplicate hostname on lucid-pi-network).
+  node-worker-data:
+    image: ${LUCID_NODE_WORKER_IMAGE:-pickme/lucid-node-worker:latest-arm64}
+    container_name: lucid-node-data-node-worker
+    hostname: node-worker-data
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/node/Dockerfile.node-worker
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-data
+    environment:
+      NODE_MANAGEMENT_HOST: "0.0.0.0"
+      NODE_MANAGEMENT_PORT: "8600"
+      NODE_MANAGEMENT_URL: http://node-worker-data:8600
+      DATA_CHAIN_URL: ${DATA_CHAIN_URL:-http://data-chain:8087}
+      BLOCK_MANAGER_URL: ${BLOCK_MANAGER_URL:-http://block-manager:8086}
+      SESSION_API_URL: ${SESSION_API_URL:-http://session-api:8113}
+      BLOCKCHAIN_ENGINE_URL: ${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      MONGODB_URL: ${NODE_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid}
+      REDIS_URL: ${NODE_REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${NODE_DATA_NODE_WORKER_PUBLISH_PORT:-18600}:8600"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    security_opt:
+      - no-new-privileges:true
+
+  data-chain:
+    image: ${LUCID_DATA_CHAIN_IMAGE:-pickme/lucid-data-chain:latest-arm64}
+    container_name: data-chain
+    hostname: data-chain
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.data
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-data
+    environment:
+      DATA_CHAIN_PORT: "8087"
+      BLOCKCHAIN_ENGINE_URL: ${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      BLOCK_MANAGER_URL: ${BLOCK_MANAGER_URL:-http://block-manager:8086}
+      SESSION_API_URL: ${SESSION_API_URL:-http://session-api:8113}
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid}
+      REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${DATA_CHAIN_PUBLISH_PORT:-8087}:8087"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.lucid.service: data-chain
+      com.lucid.expose: "8087"
+
+  block-manager:
+    image: ${LUCID_BLOCK_MANAGER_IMAGE:-pickme/lucid-block-manager:latest-arm64}
+    container_name: block-manager
+    hostname: block-manager
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.block-manager
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-data
+    environment:
+      BLOCK_MANAGER_PORT: "8086"
+      BLOCKCHAIN_ENGINE_URL: ${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      DATA_CHAIN_URL: ${DATA_CHAIN_URL:-http://data-chain:8087}
+      SESSION_API_URL: ${SESSION_API_URL:-http://session-api:8113}
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid}
+      REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${BLOCK_MANAGER_PUBLISH_PORT:-8086}:8086"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.lucid.service: block-manager
+      com.lucid.expose: "8086"
+
+  chain-to-pay:
+    image: ${LUCID_CHAIN_TO_PAY_IMAGE:-pickme/lucid-chain-to-pay:latest-arm64}
+    container_name: chain-to-pay
+    hostname: chain-to-pay
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/blockchain/Dockerfile.chain-to-pay
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-data
+    environment:
+      CHAIN_TO_PAY_PORT: "8114"
+      TRON_PAYMENT_SERVICE_URL: ${TRON_PAYMENT_SERVICE_URL:-http://tron-payment-service:8080}
+      DATA_CHAIN_URL: ${DATA_CHAIN_URL:-http://data-chain:8087}
+      BLOCKCHAIN_ENGINE_URL: ${BLOCKCHAIN_ENGINE_URL:-http://blockchain-engine:8084}
+      SESSION_CHUNK_PROCESSOR_URL: ${SESSION_CHUNK_URL:-http://session-chunk-processor:8010}
+    ports:
+      - "${CHAIN_TO_PAY_PUBLISH_PORT:-8114}:8114"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+      - lucid-tron-isolated
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.lucid.service: chain-to-pay
+      com.lucid.expose: "8114"
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-session-network:
+    external: true
+    name: lucid-session-network
+  lucid-tron-isolated:
+    external: true
+    name: lucid-tron-isolated

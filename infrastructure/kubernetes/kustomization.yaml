@@ -194,7 +194,8 @@ configMapGenerator:
 secretGenerator:
   - name: lucid-secrets
     envs:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      # Host path: from repo root, Lucid/configs/environment/.env.secrets (container apps use /app/configs/.env.secrets via image/volume).
+      - ../../configs/environment/.env.secrets
     type: Opaque
 
 patchesJson6902:

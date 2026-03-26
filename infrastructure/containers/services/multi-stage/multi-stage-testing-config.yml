@@ -1,0 +1,188 @@
+# Runtime (container): /app/configs/services/multi-stage/multi-stage-testing-config.yml — see ../container-runtime-layout.yml
+# Multi-Stage Testing Configuration for Lucid Project
+# Container-hosted: named volumes for src/tests/logs/coverage/artifacts; no host SSD paths.
+# test-database mirrors lucid_mongodb (host-config); integration tests against core stack should target lucid-mongodb:27017.
+#
+# Canonical discovery: /app/configs/host-config.yml; host_ip column: repository root service-ip.txt
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  entries:
+    main_lucid_gateway: { service_name: api-gateway, port: 8080, host_ip: 172.20.10.1, http_path: http://api-gateway:8080/app }
+    lucid_mongodb: { service_name: lucid-mongodb, port: 27017, host_ip: 172.20.10.70 }
+    prometheus_metrics: { service_name: prometheus-metrics, port: 9090, host_ip: 172.20.10.74 }
+
+services:
+  # Multi-stage testing environment
+  test-multi-stage:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: test-multi-stage
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - TEST_MODE=true
+      - BUILD_STAGE=testing
+      - COVERAGE_ENABLED=true
+      - LUCID_HOST_CONFIG_REGISTRY=/app/configs/host-config.yml
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - LUCID_API_GATEWAY_HOST_IP=172.20.10.1
+      - LUCID_MONGODB_SERVICE_NAME=lucid-mongodb
+      - LUCID_MONGODB_PORT=27017
+      - LUCID_TEST_MONGODB_HOST=test-database
+      - LUCID_TEST_MONGODB_PORT=27017
+    networks:
+      - lucid-test
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - lucid-test-src:/app/src:ro
+      - lucid-test-tests:/app/tests:ro
+      - lucid-test-logs:/app/logs
+      - lucid-test-coverage:/app/coverage
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Starting multi-stage testing environment...' &&
+        pytest /app/tests/ -v --cov=/app/src --cov-report=html:/app/coverage
+      "
+
+  # Multi-stage build testing
+  test-build:
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: test-build
+    environment:
+      - PYTHONPATH=/app
+      - BUILD_STAGE=builder
+      - TEST_BUILD=true
+      - BUILD_VALIDATION=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+    networks:
+      - lucid-test
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - lucid-test-src:/app/src:ro
+      - lucid-test-build-tests:/app/build-tests:ro
+      - lucid-test-artifacts:/artifacts
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Starting multi-stage build testing...' &&
+        python /app/build-tests/test_build_process.py
+      "
+
+  # Test database for integration testing
+  test-database:
+    image: mongo:7.0
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: test-database
+      com.lucid.host-config.analogue: lucid_mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${TEST_DB_USER:-test_admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${TEST_DB_PASSWORD:-test_password}
+      - MONGO_INITDB_DATABASE=${TEST_DB_NAME:-lucid_test}
+      - LUCID_HOST_CONFIG_REFERENCE_SERVICE_NAME=lucid-mongodb
+      - LUCID_HOST_CONFIG_REFERENCE_PORT=27017
+      - LUCID_HOST_CONFIG_REFERENCE_HOST_IP=172.20.10.70
+    networks:
+      - lucid-test
+    restart: "no"
+    volumes:
+      - lucid-test-db-data:/data/db
+      - lucid-test-db-init:/docker-entrypoint-initdb.d:ro
+    expose:
+      - "27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # Test result aggregator
+  test-aggregator:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: test-aggregator
+    environment:
+      - PYTHONPATH=/app
+      - TEST_AGGREGATION=true
+      - REPORT_GENERATION=true
+      - LUCID_PROMETHEUS_SERVICE_NAME=prometheus-metrics
+      - LUCID_PROMETHEUS_PORT=9090
+      - LUCID_PROMETHEUS_HOST_IP=172.20.10.74
+    networks:
+      - lucid-test
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - lucid-test-logs:/logs:ro
+      - lucid-test-coverage:/coverage:ro
+      - lucid-test-reports:/reports
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    depends_on:
+      - test-multi-stage
+      - test-build
+    command: >
+      sh -c "
+        echo 'Aggregating test results...' &&
+        python /app/scripts/aggregate_test_results.py
+      "
+
+networks:
+  lucid-test:
+    driver: bridge
+    name: lucid-multi-stage-test
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+          gateway: 172.30.0.1
+
+volumes:
+  lucid-test-src:
+    name: lucid-multi-stage-test-src
+  lucid-test-tests:
+    name: lucid-multi-stage-test-tests
+  lucid-test-build-tests:
+    name: lucid-multi-stage-test-build-tests
+  lucid-test-db-data:
+    name: lucid-multi-stage-test-db-data
+  lucid-test-db-init:
+    name: lucid-multi-stage-test-db-init
+  lucid-test-logs:
+    name: lucid-multi-stage-test-logs-vol
+  lucid-test-coverage:
+    name: lucid-multi-stage-test-coverage-vol
+  lucid-test-artifacts:
+    name: lucid-multi-stage-test-artifacts-vol
+  lucid-test-reports:
+    name: lucid-multi-stage-test-reports-vol

@@ -3,6 +3,7 @@
 # Design aligned with 03_api_gateway/Dockerfile (syntax, ARGs, stage headers, markers, labels, tini, USER 65532)
 # Builder: Eclipse Temurin JDK (correct toolchain for java -version / downstream FROM)
 # Runtime: gcr.io/distroless/java17-debian12 (not Python distroless)
+# Host registry + ops: infrastructure/containers/host-config.yml, base/docker-compose.base.yml
 # Build context: repository root (no repo COPY stages yet; safe from base/ or repo root)
 
 ARG BUILD_DATE
@@ -71,7 +72,10 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.tor.compatible="true"
 
 ENV LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml
+
+# Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=jdk-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
@@ -81,6 +85,9 @@ COPY --from=jdk-builder /var/run/ /app/var/run/
 COPY --from=jdk-builder /var/lib/ /app/var/lib/
 COPY --from=jdk-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=jdk-builder /usr/bin/tini /usr/bin/tini
+COPY --from=jdk-builder /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=jdk-builder /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=jdk-builder /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 # Default: print runtime version (compose / tests often override CMD)
 USER 65532:65532

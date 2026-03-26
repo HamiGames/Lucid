@@ -1,11 +1,19 @@
 # Lucid Base Container Development Environment
 # Docker Compose for testing base distroless images
 # Supports multi-platform builds for ARM64 and AMD64
+# env_file: master-env-config.txt + configs/environment/.env.secrets (repo paths, aligned with Dockerfile.* LUCID_IMAGE_CONFIG → /app/configs/)
 
-version: "3.8"
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
 
 x-lucid-env-files: &lucid-env-files
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 services:
@@ -24,6 +32,10 @@ services:
     hostname: lucid-python-base
 
     env_file: *lucid-env-files
+
+    volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
 
     environment:
       - PYTHONUNBUFFERED=1
@@ -62,6 +74,10 @@ services:
     hostname: lucid-java-base
 
     env_file: *lucid-env-files
+
+    volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
 
     environment:
       - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64

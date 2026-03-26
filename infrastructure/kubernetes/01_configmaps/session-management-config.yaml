@@ -11,12 +11,12 @@ data:
   SERVICE_NAME: "session-management"
   DEBUG: "false"
   
-  # Port Configuration (Corrected per essentials.md)
-  PIPELINE_PORT: "8087"
+  # Port Configuration (ports.txt + docker-compose.session-images.yml)
+  PIPELINE_PORT: "8083"
   RECORDER_PORT: "8090"
-  PROCESSOR_PORT: "8091"
-  STORAGE_PORT: "8082"
-  API_PORT: "8087"
+  PROCESSOR_PORT: "8010"
+  STORAGE_PORT: "8020"
+  API_PORT: "8113"
   
   # IP Address Configuration (per essentials.md)
   SESSION_PIPELINE_HOST: "172.20.0.20"
@@ -26,11 +26,11 @@ data:
   SESSION_API_HOST: "172.20.0.20"
   
   # Service URLs (per essentials.md)
-  SESSION_PIPELINE_URL: "http://lucid-session-pipeline:8087"
+  SESSION_PIPELINE_URL: "http://lucid-session-pipeline:8083"
   SESSION_RECORDER_URL: "http://lucid-session-recorder:8090"
-  CHUNK_PROCESSOR_URL: "http://lucid-chunk-processor:8091"
-  SESSION_STORAGE_URL: "http://lucid-session-storage:8082"
-  SESSION_API_URL: "http://lucid-session-api:8087"
+  CHUNK_PROCESSOR_URL: "http://lucid-chunk-processor:8010"
+  SESSION_STORAGE_URL: "http://lucid-session-storage-service:8020"
+  SESSION_API_URL: "http://lucid-session-api:8113"
   
   # Database Configuration (with password placeholder)
   MONGODB_URI: "mongodb://lucid:{MONGODB_PASSWORD}@mongodb-service:27017/lucid_sessions?authSource=admin"
@@ -63,4 +63,4 @@ data:
   PROJECT_ROOT: "/mnt/myssd/Lucid/Lucid"
   
   # Electron GUI Endpoint (per essentials.md)
-  ELECTRON_GUI_ENDPOINT: "http://172.20.0.20:8087/api/v1"
+  ELECTRON_GUI_ENDPOINT: "http://172.20.0.20:8113/api/v1"

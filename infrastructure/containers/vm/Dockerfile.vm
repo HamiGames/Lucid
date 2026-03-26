@@ -115,7 +115,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     VM_SERVICE_PORT=8107 \
-    VM_SERVICE_HOST=0.0.0.0
+    VM_SERVICE_HOST=0.0.0.0 \
+    LUCID_HOST_CONFIG_SERVICE_KEY=vm_service \
+    LUCID_SERVICE_HOST_IP=172.20.10.73 \
+    LUCID_SERVICE_HTTP_PATH=http://vm-service:8107/app
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets

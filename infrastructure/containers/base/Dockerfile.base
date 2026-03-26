@@ -3,6 +3,7 @@
 # Build Context: . (project root)
 # Deployment: Pi console /mnt/myssd/Lucid/Lucid
 # All configuration via .env.foundation/.env.core/.env.distroless/etc.
+# Baked ops: infrastructure/containers/host-config.yml, base/docker-compose.base.yml → /app/configs/operations/
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -98,6 +99,11 @@ EOF
 
 RUN ls -la /opt/lucid-base/scripts/lucid_base_bootstrap.py
 
+RUN mkdir -p /build/host /build/configs/services /build/configs/operations
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/base/docker-compose.base.yml /build/configs/operations/docker-compose.base.yml
+
 FROM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
@@ -126,7 +132,10 @@ LABEL maintainer="Lucid Development Team" \
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages
+    PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml
+
+# Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
@@ -136,6 +145,11 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/lucid-base /opt/lucid-base
 
 WORKDIR /app
+
+COPY --from=builder /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
+
 USER 65532:65532
 
 ENTRYPOINT ["python3", "/opt/lucid-base/scripts/lucid_base_bootstrap.py"]

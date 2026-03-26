@@ -42,9 +42,9 @@ log_debug() {
 # =============================================================================
 # Environment  (override via .env.* / docker-compose.*.yml)
 # =============================================================================
-TOR_DATA_DIR="${TOR_DATA_DIR:-/run/lucid/tor}"
-TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/opt/lucid/tor/}"
-TOR_LOG_DIR="${TOR_LOG_DIR:-/var/log/tor}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/app/run/lucid/tor}"
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/app/opt/lucid/tor/}"
+TOR_LOG_DIR="${TOR_LOG_DIR:-/app/var/log/tor}"
 TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
 TORRC="${TOR_CONFIG_DIR}/torrc"
 
@@ -53,13 +53,13 @@ TOR_CONTROL_PORT="${TOR_CONTROL_PORT:-9051}"
 TOR_CONTROL_SOCKET="${TOR_CONTROL_SOCKET:-}"
 TOR_DNS_PORT="${TOR_DNS_PORT:-0}"
 TOR_TRANS_PORT="${TOR_TRANS_PORT:-0}"
-BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/run/lucid/tor/bin/bootstrap-helper.sh}"
+BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/app/run/lucid/tor/bin/bootstrap-helper.sh}"
 TOR_COOKIE_AUTH="${TOR_COOKIE_AUTH:-1}"
 TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
 TOR_COOKIE_TMP="/tmp/tor/control_auth_cookie"
 
-TOR_SEED_DIR="${TOR_SEED_DIR:-/seed/tor-data}"
+TOR_SEED_DIR="${TOR_SEED_DIR:-/app/seed/tor-data}"
 TOR_USE_SEED="${TOR_USE_SEED:-1}"
 
 TOR_USE_BRIDGES="${TOR_USE_BRIDGES:-0}"

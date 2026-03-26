@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1.5
 # LUCID SESSION API - Distroless Python service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway
+#   (services tree + host-config.yml under /app/configs/services and /app/host).
 # Aligned with 03_api_gateway/Dockerfile layout and Dockerfile-copy-pattern.md
 # Session API (lucid-session-api) — Port 8113
 # Image: pickme/lucid-session-api:latest-arm64
@@ -148,6 +150,14 @@ RUN mkdir -p ./sessions ./sessions/api ./sessions/core ./sessions/pipeline ./ses
     chown -R 65532:65532 ./sessions ./tmp ./sessions/pipeline ./sessions/core ./sessions/storage ./sessions/encryption ./sessions/recorder ./sessions/config ./sessions/integration ./sessions/security ./sessions/processor && \
     chmod 644 ./sessions/.keep ./sessions/api/.keep ./tmp/.keep ./sessions/core/.keep ./sessions/pipeline/.keep ./sessions/storage/.keep ./sessions/encryption/.keep ./sessions/recorder/.keep ./sessions/config/.keep ./sessions/integration/.keep ./sessions/security/.keep ./sessions/processor/.keep
 
+RUN mkdir -p ./host
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+
+COPY common/__init__.py ./common/__init__.py
+
 COPY sessions/api/ ./sessions/api/
 COPY sessions/core/ ./sessions/core/
 COPY sessions/storage/ ./sessions/storage/
@@ -162,18 +172,11 @@ COPY sessions/security/ ./sessions/security/
 COPY sessions/processor/ ./sessions/processor/
 COPY sessions/__init__.py ./sessions/__init__.py
 
-RUN chmod +x /sessions/* && \
-    chmod +x /sessions/api/* && \
-    chmod +x /sessions/core/* && \
-    chmod +x /sessions/storage/* && \
-    chmod +x /sessions/encryption/* && \
-    chmod +x /sessions/pipeline/* && \
-    chmod +x /sessions/recorder/* && \
-    chmod +x /sessions/config/* && \
-    chmod +x /sessions/integration/* && \
-    chmod +x /sessions/security/* && \
-    chmod +x /sessions/processor/* && \
-    chmod +x /sessions/__init__.py
+RUN chmod +x ./sessions/* 2>/dev/null || true && \
+    chmod +x ./sessions/api/* ./sessions/core/* ./sessions/storage/* ./sessions/encryption/* \
+      ./sessions/pipeline/* ./sessions/recorder/* ./sessions/config/* ./sessions/integration/* \
+      ./sessions/security/* ./sessions/processor/* 2>/dev/null || true && \
+    chmod +x ./sessions/__init__.py ./common/__init__.py 2>/dev/null || true
 
 COPY <<'PY' ./tmp/verify_runtime.py
 import os
@@ -185,6 +188,7 @@ dirs = [
     "/app/sessions/core",
     "/app/sessions/storage",
     "/app/sessions/encryption",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -195,6 +199,10 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
+    sys.exit(1)
 print("✅ Session API runtime layout verified")
 PY
 
@@ -227,15 +235,19 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_api \
+    LUCID_SERVICE_HOST_IP=172.20.10.17 \
+    LUCID_SERVICE_HTTP_PATH=http://session-api:8113/app \
     SESSION_API_PORT=8113 \
     SESSION_API_HOST=session-api
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
-COPY --from=builder /root/.rustup/        /app/rust/
-COPY --from=builder /root/.cargo/         /app/cargo/
 COPY --from=builder /var/run/             /app/var/run/
 COPY --from=builder /var/lib/             /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
@@ -243,8 +255,6 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/
 COPY --from=builder /usr/local/bin/       /app/usr/local/bin/
 COPY --from=builder /usr/bin/             /app/usr/bin/
 COPY --from=builder /usr/sbin/            /app/usr/sbin/
-COPY --from=builder --chown=65532:65532 /usr/local/sbin/ /app/usr/local/sbin/
-
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 

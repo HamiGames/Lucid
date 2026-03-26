@@ -1,0 +1,219 @@
+# Runtime (container): /app/configs/services/multi-stage/multi-stage-development-config.yml — see ../container-runtime-layout.yml
+# Multi-Stage Development Configuration for Lucid Project
+# Container-hosted: no env_file (avoids compose-time interpolation from master-env-config.txt on hosts without secrets).
+# Inject env with: docker compose --env-file <path> up, or set variables in the orchestrator / stack.
+#
+# Canonical discovery: /app/configs/host-config.yml; host_ip column: repository root service-ip.txt
+# Embedded dev-database mirrors lucid_mongodb port/DNS shape; for core stack use service_name lucid-mongodb (172.20.10.70) instead.
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  entries:
+    main_lucid_gateway: { service_name: api-gateway, port: 8080, host_ip: 172.20.10.1, http_path: http://api-gateway:8080/app }
+    lucid_redis: { service_name: lucid-redis, port: 6379, host_ip: 172.20.10.67 }
+    lucid_mongodb: { service_name: lucid-mongodb, port: 27017, host_ip: 172.20.10.70, http_path: http://lucid-mongodb:27017/app }
+
+services:
+  # Multi-stage development environment
+  dev-multi-stage:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: dev-multi-stage
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - HOT_RELOAD=true
+      - BUILD_STAGE=development
+      - DEV_TOOLS=true
+      - LUCID_HOST_CONFIG_REGISTRY=/app/configs/host-config.yml
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - LUCID_API_GATEWAY_HOST_IP=172.20.10.1
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - LUCID_REDIS_SERVICE_NAME=lucid-redis
+      - LUCID_REDIS_PORT=6379
+      # In-stack Mongo: dev-database. Core fleet: LUCID_MONGODB_* (lucid-mongodb:27017)
+      - LUCID_MONGODB_SERVICE_NAME=lucid-mongodb
+      - LUCID_MONGODB_PORT=27017
+      - LUCID_MONGODB_HOST_IP=172.20.10.70
+      - LUCID_DEV_MONGODB_HOST=dev-database
+      - LUCID_DEV_MONGODB_PORT=27017
+    networks:
+      - lucid-distroless-dev
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - lucid-dev-src:/app/src
+      - lucid-dev-logs:/app/logs
+      - lucid-dev-cache:/app/cache
+      - lucid-dev-temp:/app/temp
+      - lucid-dev-configs:/app/configs
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE  # For debugging
+      - SYS_ADMIN   # For development tools
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    command: >
+      sh -c "
+        echo 'Starting multi-stage development environment...' &&
+        python /app/src/main.py
+      "
+
+  # Multi-stage builder for development
+  dev-builder:
+    image: lucid/multi-stage-builder:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: dev-builder
+    environment:
+      - PYTHONPATH=/app
+      - BUILD_STAGE=builder
+      - DEV_BUILD=true
+      - FAST_BUILD=true
+      - DEBUG_BUILD=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+    networks:
+      - lucid-distroless-dev
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - lucid-dev-src:/app/src
+      - lucid-dev-build-cache:/cache
+      - lucid-dev-build-artifacts:/artifacts
+      - lucid-dev-build-logs:/logs
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+    cap_drop:
+      - ALL
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Multi-stage development builder ready' &&
+        tail -f /dev/null
+      "
+
+  # Development tools and utilities
+  dev-tools:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: dev-tools
+    environment:
+      - PYTHONPATH=/app
+      - DEV_TOOLS_MODE=true
+      - DEBUG_TOOLS=true
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_PROMETHEUS_SERVICE_NAME=prometheus-metrics
+      - LUCID_PROMETHEUS_PORT=9090
+      - LUCID_PROMETHEUS_HOST_IP=172.20.10.74
+    networks:
+      - lucid-distroless-dev
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    volumes:
+      - lucid-dev-src:/app/src:ro
+      - lucid-dev-logs:/app/logs
+      - lucid-dev-tools:/app/tools
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE
+      - NET_ADMIN
+      - SYS_ADMIN
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Development tools container ready' &&
+        tail -f /dev/null
+      "
+
+  # Development database for testing
+  dev-database:
+    image: mongo:7.0
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: dev-database
+      com.lucid.host-config.analogue: lucid_mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USER:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=${DB_NAME:-lucid_dev}
+      - LUCID_HOST_CONFIG_REFERENCE_SERVICE_NAME=lucid-mongodb
+      - LUCID_HOST_CONFIG_REFERENCE_PORT=27017
+      - LUCID_HOST_CONFIG_REFERENCE_HOST_IP=172.20.10.70
+    networks:
+      - lucid-distroless-dev
+    restart: unless-stopped
+    volumes:
+      - lucid-dev-db-data:/data/db
+      - lucid-dev-db-init:/docker-entrypoint-initdb.d:ro
+    expose:
+      - "27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  lucid-distroless-dev:
+    driver: bridge
+    name: lucid-distroless-dev
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+          gateway: 172.29.0.1
+
+volumes:
+  lucid-dev-src:
+    name: lucid-multi-stage-dev-src
+  lucid-dev-logs:
+    name: lucid-multi-stage-dev-logs
+  lucid-dev-cache:
+    name: lucid-multi-stage-dev-cache
+  lucid-dev-temp:
+    name: lucid-multi-stage-dev-temp
+  lucid-dev-configs:
+    name: lucid-multi-stage-dev-configs
+  lucid-dev-tools:
+    name: lucid-multi-stage-dev-tools
+  lucid-dev-build-cache:
+    name: lucid-multi-stage-dev-build-cache-vol
+  lucid-dev-build-artifacts:
+    name: lucid-multi-stage-dev-build-artifacts-vol
+  lucid-dev-build-logs:
+    name: lucid-multi-stage-dev-build-logs-vol
+  lucid-dev-db-data:
+    name: lucid-multi-stage-dev-db-data
+  lucid-dev-db-init:
+    name: lucid-multi-stage-dev-db-init

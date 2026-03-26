@@ -1,0 +1,848 @@
+# User Services Docker Compose — user-plane mesh
+# Path (repo): infrastructure/containers/user/docker-compose.user-services.yml
+# Container path note: service definitions align with /app/configs/services/*.yml (container-runtime-layout.yml).
+#
+# Required stack behavior (header spec):
+# - Mesh user-facing entry via api-gateway (api-gateway.yml; hostname api-gateway @ host-config main_lucid_gateway)
+# - Foundation: lucid-auth-service, lucid-mongodb, lucid-redis (auth-service.yml, database.yml notes)
+# - Session plane: session-storage-service, session-pipeline, session-recorder, session-processor, session-api
+#   (session-management.yml port/DNS list + host-config session_* keys)
+# - GUI → gateway: gui-api-bridge → api-gateway (gui-api-bridge.yml backend_services.api_gateway)
+# - Payments: wallet-manager + tron-payment-service (tron-payment.yml; DNS wallet-manager, tron-payment-service)
+# - RDP: rdp-server-manager-http, rdp-session-controller, rdp-resource-monitor, lucid-xrdp (+ xrdp peers per rdp-services.yml)
+#
+# Static IPv4 on lucid-pi-network — repository root service-ip.txt (service_ips.*) matches
+# infrastructure/containers/host-config.yml host_ip for the same logical service.
+# Subnet for lucid-pi-network must be 172.20.0.0/16 (gateway 172.20.0.1) per network.txt so
+# 172.20.10.1–172.20.10.76 assignments resolve on-PI.
+#
+# session-pipeline: no host_ip in host-config.yml / no key in service-ip.txt — session mesh only (lucid-session-network).
+#
+# Prerequisites (see infrastructure/containers/network/network.txt):
+#   docker network create lucid-pi-network …
+#   docker network create lucid-session-network …
+#   docker network create lucid-gui-network …
+#   docker network create lucid-tron-isolated …
+#
+# Host publish collisions (host-config.yml collision_notes): remap with env overrides —
+#   TRON_PAYMENT_SERVICE_PUBLISH_PORT (8080 vs api-gateway), RDP_SERVER_MANAGER_PUBLISH_PORT (8090 vs session-recorder),
+#   RDP_SESSION_CONTROLLER_PUBLISH_PORT vs tron-client-aux (8101), PAYOUT_ROUTER_PUBLISH_PORT if session-merkle on 8092.
+#   SESSION_PROCESSOR_PUBLISH_PORT defaults to 18091 — tron-client already uses 8091 on the host (tron + session-processor share service port 8091 in registry).
+#
+# Consul / gui-api-bridge: service-discovery.yml + gui-api-bridge.yml use lucid-service-mesh-controller:8500 —
+# run infrastructure that provides that hostname on lucid-pi-network, or adjust bridge runtime config.
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/user/docker-compose.user-services.yml up -d --build
+
+name: lucid-user-services
+
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: "1.0"
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: "http://{service_name}:{port}/app"
+  host_ip_range: "172.20.10.1–172.20.10.76"
+  in_container_path: /app/configs/host-config.yml
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-env-user: &env-user
+  - /app/configs/.env.master
+  - /app/configs/.env.secrets
+
+# service-ip.txt: main_lucid_gateway … host-config service_name api-gateway — lucid-pi-network ipv4 only here.
+x-lucid-pi-ip-api-gateway: &lucid-pi-ip-api-gateway
+  ipv4_address: 172.20.10.1
+x-lucid-pi-ip-lucid-auth-service: &lucid-pi-ip-auth
+  ipv4_address: 172.20.10.5
+x-lucid-pi-ip-session-storage-service: &lucid-pi-ip-session-storage-service
+  ipv4_address: 172.20.10.10
+x-lucid-pi-ip-session-storage: &lucid-pi-ip-session-storage
+  ipv4_address: 172.20.10.11
+x-lucid-pi-ip-session-recorder: &lucid-pi-ip-session-recorder
+  ipv4_address: 172.20.10.13
+x-lucid-pi-ip-session-processor: &lucid-pi-ip-session-processor
+  ipv4_address: 172.20.10.14
+x-lucid-pi-ip-session-api: &lucid-pi-ip-session-api
+  ipv4_address: 172.20.10.17
+x-lucid-pi-ip-tron-payment-service: &lucid-pi-ip-tron-payment-service
+  ipv4_address: 172.20.10.40
+x-lucid-pi-ip-tron-client: &lucid-pi-ip-tron-client
+  ipv4_address: 172.20.10.41
+x-lucid-pi-ip-payout-router: &lucid-pi-ip-payout-router
+  ipv4_address: 172.20.10.43
+x-lucid-pi-ip-wallet-manager: &lucid-pi-ip-wallet-manager
+  ipv4_address: 172.20.10.44
+x-lucid-pi-ip-rdp-server: &lucid-pi-ip-rdp-server
+  ipv4_address: 172.20.10.48
+x-lucid-pi-ip-rdp-server-manager: &lucid-pi-ip-rdp-server-manager
+  ipv4_address: 172.20.10.49
+x-lucid-pi-ip-rdp-session-controller: &lucid-pi-ip-rdp-session-controller
+  ipv4_address: 172.20.10.50
+x-lucid-pi-ip-rdp-resource-monitor: &lucid-pi-ip-rdp-resource-monitor
+  ipv4_address: 172.20.10.51
+x-lucid-pi-ip-lucid-xrdp: &lucid-pi-ip-lucid-xrdp
+  ipv4_address: 172.20.10.52
+x-lucid-pi-ip-xrdp-rdp: &lucid-pi-ip-xrdp-rdp
+  ipv4_address: 172.20.10.53
+x-lucid-pi-ip-xrdp-sesman: &lucid-pi-ip-xrdp-sesman
+  ipv4_address: 172.20.10.54
+x-lucid-pi-ip-gui-api-bridge: &lucid-pi-ip-gui-api-bridge
+  ipv4_address: 172.20.10.61
+x-lucid-pi-ip-lucid-redis: &lucid-pi-ip-lucid-redis
+  ipv4_address: 172.20.10.67
+x-lucid-pi-ip-lucid-mongodb: &lucid-pi-ip-lucid-mongodb
+  ipv4_address: 172.20.10.70
+
+services:
+  lucid-mongodb:
+    image: ${LUCID_MONGODB_IMAGE:-pickme/lucid-mongodb:latest-arm64}
+    container_name: lucid-mongodb
+    hostname: lucid-mongodb
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/database/Dockerfile.mongodb
+      args:
+        <<: *lucid-build-args
+        DEBIAN_MULTIARCH: ${DEBIAN_MULTIARCH:-aarch64-linux-gnu}
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-lucid-mongodb
+    ports:
+      - "${LUCID_MONGODB_PUBLISH_PORT:-27017}:27017"
+    volumes:
+      - lucid_user_services_mongodb_data:/data/db:rw
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-lucid}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?set MONGO_INITDB_ROOT_PASSWORD}
+    user: "65532:65532"
+    healthcheck:
+      test: ["CMD", "/usr/bin/python3.11", "/app/usr/local/bin/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    labels:
+      com.lucid.host_ip: "172.20.10.70"
+      com.lucid.service: lucid-mongodb
+
+  lucid-redis:
+    image: ${LUCID_REDIS_IMAGE:-redis:7-alpine}
+    container_name: lucid-redis
+    hostname: lucid-redis
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-lucid-redis
+    ports:
+      - "${LUCID_REDIS_PUBLISH_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - lucid_user_services_redis_data:/data:rw
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      com.lucid.host_ip: "172.20.10.67"
+      com.lucid.service: lucid-redis
+
+  lucid-auth-service:
+    image: ${LUCID_AUTH_SERVICE_IMAGE:-pickme/lucid-auth-service:latest-arm64}
+    container_name: lucid-auth-service
+    hostname: lucid-auth-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/auth/Dockerfile.auth-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-auth
+    ports:
+      - "${LUCID_AUTH_PUBLISH_PORT:-8089}:8089"
+    env_file: *env-user
+    environment:
+      LUCID_ENV: ${LUCID_ENV:-production}
+      AUTH_SERVICE_HOST: lucid-auth-service
+      AUTH_SERVICE_PORT: "8089"
+      AUTH_SERVICE_URL: http://lucid-auth-service:8089
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    volumes:
+      - /app/configs/.env.master:ro
+      - /app/configs/.env.secrets:ro
+      - lucid_user_services_auth_logs:/app/logs:rw
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8089/health', timeout=2); exit(0)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      com.lucid.host_ip: "172.20.10.5"
+      com.lucid.service: lucid-auth-service
+      com.lucid.cluster: foundation
+
+  session-pipeline:
+    image: ${LUCID_SESSION_PIPELINE_IMAGE:-pickme/lucid-session-pipeline:latest-arm64}
+    container_name: session-pipeline
+    hostname: session-pipeline
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-pipeline
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8083"
+      HOST: session-pipeline
+    ports:
+      - "${SESSION_PIPELINE_PUBLISH_PORT:-8083}:8083"
+    volumes:
+      - /app/configs/.env.master:ro
+      - /app/configs/.env.secrets:ro
+      - lucid_user_services_session_data:/app/data/sessions:rw
+      - lucid_user_services_pipeline_logs:/app/logs:rw
+    networks:
+      - lucid-session-network
+    labels:
+      com.lucid.service: session-pipeline
+      com.lucid.cluster: processing
+
+  session-storage:
+    image: ${LUCID_SESSION_STORAGE_IMAGE:-pickme/lucid-session-storage-service:latest-arm64}
+    container_name: session-storage
+    hostname: session-storage
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-storage-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8082"
+      HOST: session-storage
+    ports:
+      - "${SESSION_STORAGE_PUBLISH_PORT:-8082}:8082"
+    volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - lucid_user_services_storage_blob:/app/data/sessions:rw
+      - lucid_user_services_storage_logs:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-session-storage
+      lucid-session-network:
+    labels:
+      com.lucid.host_ip: "172.20.10.11"
+      com.lucid.service: session-storage
+
+  session-storage-service:
+    image: ${LUCID_SESSION_STORAGE_SVC_IMAGE:-pickme/lucid-session-storage-service:latest-arm64}
+    container_name: session-storage-service
+    hostname: session-storage-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-storage-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8020"
+      HOST: session-storage-service
+    ports:
+      - "${SESSION_STORAGE_SERVICE_PUBLISH_PORT:-8020}:8020"
+    volumes:
+      - /app/configs/.env.master:ro
+      - /app/configs/.env.secrets:ro
+      - lucid_user_services_storage_svc_data:/app/data/sessions:rw
+      - lucid_user_services_storage_svc_logs:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-session-storage-service
+      lucid-session-network:
+    labels:
+      com.lucid.host_ip: "172.20.10.10"
+      com.lucid.service: session-storage-service
+
+  session-recorder:
+    image: ${LUCID_SESSION_RECORDER_IMAGE:-pickme/lucid-session-recorder:latest-arm64}
+    container_name: session-recorder
+    hostname: session-recorder
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8090"
+      HOST: session-recorder
+    ports:
+      - "${SESSION_RECORDER_PUBLISH_PORT:-8090}:8090"
+    volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - lucid_user_services_recording_data:/data/recordings:rw
+      - lucid_user_services_chunk_data:/data/chunks:rw
+      - lucid_user_services_recorder_logs:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-session-recorder
+      lucid-session-network:
+    labels:
+      com.lucid.host_ip: "172.20.10.13"
+      com.lucid.service: session-recorder
+
+  session-processor:
+    image: ${LUCID_SESSION_PROCESSOR_IMAGE:-pickme/lucid-session-processor:latest-arm64}
+    container_name: session-processor
+    hostname: session-processor
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: sessions/Dockerfile.processor
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8091"
+      HOST: session-processor
+    ports:
+      - "${SESSION_PROCESSOR_PUBLISH_PORT:-18091}:8091"
+    volumes:
+      - /app/configs/.env.master:ro
+      - /app/configs/.env.secrets:ro
+      - lucid_user_services_processor_logs:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-session-processor
+      lucid-session-network:
+    labels:
+      com.lucid.host_ip: "172.20.10.14"
+      com.lucid.service: session-processor
+
+  session-api:
+    image: ${LUCID_SESSION_API_IMAGE:-pickme/lucid-session-api:latest-arm64}
+    container_name: session-api
+    hostname: session-api
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.api
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8113"
+      HOST: session-api
+    ports:
+      - "${SESSION_API_PUBLISH_PORT:-8113}:8113"
+    volumes:
+      - /app/configs/.env.master:ro
+      - /app/configs/.env.secrets:ro
+      - lucid_user_services_session_api_data:/app/data/sessions:rw
+      - lucid_user_services_session_api_logs:/app/logs:rw
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-session-api
+      lucid-session-network:
+    labels:
+      com.lucid.host_ip: "172.20.10.17"
+      com.lucid.service: session-api
+
+  tron-client:
+    image: ${LUCID_TRON_CLIENT_IMAGE:-pickme/lucid-tron-client:latest-arm64}
+    container_name: tron-client
+    hostname: tron-client
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8091"
+      HOST: "0.0.0.0"
+      TRON_PRIVATE_KEY: ${TRON_PRIVATE_KEY:?set TRON_PRIVATE_KEY}
+      TRON_NETWORK: ${TRON_NETWORK:-shasta}
+    ports:
+      - "${TRON_CLIENT_PUBLISH_PORT:-8091}:8091"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-tron-client
+      lucid-tron-isolated:
+    labels:
+      com.lucid.host_ip: "172.20.10.41"
+      com.lucid.service: tron-client
+    volumes:
+      - lucid_user_services_tron_client_data:/app/data:rw
+      - lucid_user_services_tron_client_logs:/app/logs:rw
+
+  payout-router:
+    image: ${LUCID_PAYOUT_ROUTER_IMAGE:-pickme/lucid-payout-router:latest-arm64}
+    container_name: payout-router
+    hostname: payout-router
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8092"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URI: ${REDIS_URI:-redis://lucid-redis:6379/0}
+    ports:
+      - "${PAYOUT_ROUTER_PUBLISH_PORT:-8092}:8092"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-payout-router
+      lucid-tron-isolated:
+    labels:
+      com.lucid.host_ip: "172.20.10.43"
+      com.lucid.service: payout-router
+    depends_on:
+      tron-client:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  wallet-manager:
+    image: ${LUCID_WALLET_MANAGER_IMAGE:-pickme/lucid-wallet-manager:latest-arm64}
+    container_name: wallet-manager
+    hostname: wallet-manager
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.wallet
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8093"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URI: ${REDIS_URI:-redis://lucid-redis:6379/0}
+    ports:
+      - "${WALLET_MANAGER_PUBLISH_PORT:-8093}:8093"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-wallet-manager
+      lucid-tron-isolated:
+    labels:
+      com.lucid.host_ip: "172.20.10.44"
+      com.lucid.service: wallet-manager
+    depends_on:
+      tron-client:
+        condition: service_started
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  tron-payment-service:
+    image: ${LUCID_TRON_PAYMENT_IMAGE:-pickme/lucid-tron-payment-service:latest-arm64}
+    container_name: tron-payment-service
+    hostname: tron-payment-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+      args:
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      PAYOUT_ROUTER_URL: ${PAYOUT_ROUTER_URL:-http://payout-router:8092}
+      WALLET_MANAGER_URL: ${WALLET_MANAGER_URL:-http://wallet-manager:8093}
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${TRON_PAYMENT_SERVICE_PUBLISH_PORT:-18080}:8080"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-tron-payment-service
+      lucid-tron-isolated:
+    labels:
+      com.lucid.host_ip: "172.20.10.40"
+      com.lucid.service: tron-payment-service
+    depends_on:
+      tron-client:
+        condition: service_started
+      payout-router:
+        condition: service_started
+      wallet-manager:
+        condition: service_started
+      lucid-auth-service:
+        condition: service_healthy
+
+  server-gateway:
+    image: ${LUCID_SERVER_GATEWAY_IMAGE:-pickme/lucid-server-gateway:latest-arm64}
+    container_name: lucid-server-gateway
+    hostname: api-gateway
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/server/Dockerfile.server-gateway
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      LUCID_ENV: ${LUCID_ENV:-production}
+      WALLET_MANAGER_URL: ${WALLET_MANAGER_URL:-http://wallet-manager:8093}
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      SESSION_API_URL: ${SESSION_API_URL:-http://session-api:8113}
+    ports:
+      - "${SERVER_GATEWAY_PUBLISH_PORT:-8080}:8080"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-api-gateway
+        aliases:
+          - server-gateway
+      lucid-session-network:
+        aliases:
+          - server-gateway
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      session-api:
+        condition: service_started
+      wallet-manager:
+        condition: service_started
+      tron-payment-service:
+        condition: service_started
+    labels:
+      com.lucid.host_ip: "172.20.10.1"
+      com.lucid.service: api-gateway
+      com.lucid.expose: "8080"
+
+  rdp-server:
+    image: ${LUCID_RDP_SERVER_IMAGE:-pickme/lucid-rdp-server:latest-arm64}
+    container_name: rdp-server
+    hostname: rdp-server
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8001"
+      MONGODB_URL: ${RDP_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+      REDIS_URL: ${RDP_REDIS_URL:-redis://lucid-redis:6379/3}
+    ports:
+      - "${RDP_SERVER_PUBLISH_PORT:-8001}:8001"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-rdp-server
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.48"
+      com.lucid.service: rdp-server
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-redis:
+        condition: service_healthy
+
+  rdp-server-manager-http:
+    image: ${LUCID_RDP_SERVER_MANAGER_IMAGE:-pickme/lucid-rdp-server-manager:latest-arm64}
+    container_name: rdp-server-manager-http
+    hostname: rdp-server-manager-http
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8090"
+      MONGODB_URL: ${RDP_MANAGER_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+    ports:
+      - "${RDP_SERVER_MANAGER_PUBLISH_PORT:-18090}:8090"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-rdp-server-manager
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.49"
+      com.lucid.service: rdp-server-manager-http
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      server-gateway:
+        condition: service_started
+      session-api:
+        condition: service_started
+
+  rdp-session-controller:
+    image: ${LUCID_RDP_SESSION_CONTROLLER_IMAGE:-pickme/lucid-rdp-session-control:latest-arm64}
+    container_name: rdp-session-controller
+    hostname: rdp-session-controller
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8101"
+      MONGODB_URL: ${RDP_CONTROLLER_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+    ports:
+      - "${RDP_SESSION_CONTROLLER_PUBLISH_PORT:-8101}:8101"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-rdp-session-controller
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.50"
+      com.lucid.service: rdp-session-controller
+    depends_on:
+      lucid-mongodb:
+        condition: service_healthy
+      lucid-auth-service:
+        condition: service_healthy
+      session-api:
+        condition: service_started
+      server-gateway:
+        condition: service_started
+
+  rdp-resource-monitor:
+    image: ${LUCID_RDP_RESOURCE_MONITOR_IMAGE:-pickme/lucid-rdp-monitor:latest-arm64}
+    container_name: rdp-resource-monitor
+    hostname: rdp-resource-monitor
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    environment:
+      PORT: "8201"
+      MONGODB_URL: ${RDP_MONITOR_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid_rdp}
+    ports:
+      - "${RDP_RESOURCE_MONITOR_PUBLISH_PORT:-8201}:8201"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-rdp-resource-monitor
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.51"
+      com.lucid.service: rdp-resource-monitor
+
+  lucid-xrdp:
+    image: ${LUCID_XRDP_IMAGE:-pickme/lucid-xrdp:latest-arm64}
+    container_name: lucid-xrdp
+    hostname: lucid-xrdp
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    ports:
+      - "${LUCID_XRDP_PUBLISH_PORT:-8250}:8250"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-lucid-xrdp
+      lucid-gui-network:
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.52"
+      com.lucid.service: lucid-xrdp
+
+  xrdp-rdp:
+    image: ${LUCID_XRDP_DESKTOP_IMAGE:-pickme/lucid-xrdp-d:latest-arm64}
+    container_name: xrdp-rdp
+    hostname: xrdp-rdp
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    ports:
+      - "${XRDP_DESKTOP_PUBLISH_PORT:-3389}:3389"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-xrdp-rdp
+      lucid-gui-network:
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.53"
+      com.lucid.service: xrdp-rdp
+
+  xrdp-sesman:
+    image: ${LUCID_XRDP_SESMAN_IMAGE:-pickme/lucid-xrdp-sesman:latest-arm64}
+    container_name: xrdp-sesman
+    hostname: xrdp-sesman
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-user
+    ports:
+      - "${XRDP_SESMAN_PUBLISH_PORT:-3350}:3350"
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-xrdp-sesman
+      lucid-rdp-internal:
+    labels:
+      com.lucid.host_ip: "172.20.10.54"
+      com.lucid.service: xrdp-sesman
+
+  gui-api-bridge:
+    image: ${LUCID_GUI_API_BRIDGE_IMAGE:-pickme/lucid-gui-api-bridge:latest-arm64}
+    container_name: lucid-gui-api-bridge
+    hostname: gui-api-bridge
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/gui/Dockerfile.gui-api-bridge
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-user
+    ports:
+      - "${GUI_API_BRIDGE_PUBLISH_PORT:-8102}:8102"
+    volumes:
+      - lucid_user_services_gui_api_logs:/app/logs:rw
+      - lucid_user_services_gui_api_data:/app/data:rw
+    networks:
+      lucid-pi-network:
+        <<: *lucid-pi-ip-gui-api-bridge
+      lucid-gui-network:
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    depends_on:
+      server-gateway:
+        condition: service_started
+      lucid-auth-service:
+        condition: service_healthy
+      session-api:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s = socket.socket(); s.settimeout(2); r = s.connect_ex(('127.0.0.1', 8102)); s.close(); exit(0 if r == 0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      com.lucid.phase: gui
+      com.lucid.host_ip: "172.20.10.61"
+      com.lucid.service: gui-api-bridge
+      com.lucid.cluster: gui-integration
+
+networks:
+  lucid-pi-network:
+    name: lucid-pi-network
+    external: true
+  lucid-session-network:
+    name: lucid-session-network
+    external: true
+  lucid-gui-network:
+    name: lucid-gui-network
+    external: true
+  lucid-tron-isolated:
+    name: lucid-tron-isolated
+    external: true
+  lucid-rdp-internal:
+    name: lucid-rdp-internal
+    driver: bridge
+    labels:
+      lucid.network: rdp-internal
+
+volumes:
+  lucid_user_services_mongodb_data:
+    name: lucid-user-services-mongodb-data
+  lucid_user_services_redis_data:
+    name: lucid-user-services-redis-data
+  lucid_user_services_auth_logs:
+    name: lucid-user-services-auth-logs
+  lucid_user_services_session_data:
+    name: lucid-user-services-session-data
+  lucid_user_services_pipeline_logs:
+    name: lucid-user-services-pipeline-logs
+  lucid_user_services_storage_blob:
+    name: lucid-user-services-storage-blob
+  lucid_user_services_storage_logs:
+    name: lucid-user-services-session-storage-logs
+  lucid_user_services_storage_svc_data:
+    name: lucid-user-services-storage-svc-data
+  lucid_user_services_storage_svc_logs:
+    name: lucid-user-services-storage-svc-logs
+  lucid_user_services_recording_data:
+    name: lucid-user-services-recording-data
+  lucid_user_services_chunk_data:
+    name: lucid-user-services-chunk-data
+  lucid_user_services_recorder_logs:
+    name: lucid-user-services-recorder-logs
+  lucid_user_services_processor_logs:
+    name: lucid-user-services-processor-logs
+  lucid_user_services_session_api_data:
+    name: lucid-user-services-session-api-data
+  lucid_user_services_session_api_logs:
+    name: lucid-user-services-session-api-logs
+  lucid_user_services_tron_client_data:
+    name: lucid-user-services-tron-client-data
+  lucid_user_services_tron_client_logs:
+    name: lucid-user-services-tron-client-logs
+  lucid_user_services_gui_api_logs:
+    name: lucid-user-services-gui-api-logs
+  lucid_user_services_gui_api_data:
+    name: lucid-user-services-gui-api-data

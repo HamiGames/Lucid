@@ -1,0 +1,202 @@
+# Runtime (container): /app/configs/services/multi-stage/multi-stage-runtime-config.yml — see ../container-runtime-layout.yml
+# Multi-Stage Runtime Configuration for Lucid Project
+# Container-hosted: no Pi bind mounts; named volumes under /app; in-stack networking only.
+# Optional host bind for production data: set LUCID_PRODUCTION_DATA_DEVICE on the daemon host.
+#
+# Canonical discovery: /app/configs/host-config.yml; host_ip column: repository root service-ip.txt
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  entries:
+    main_lucid_gateway: { service_name: api-gateway, port: 8080, host_ip: 172.20.10.1, http_path: http://api-gateway:8080/app }
+    lucid_redis: { service_name: lucid-redis, port: 6379, host_ip: 172.20.10.67 }
+    lucid_mongodb: { service_name: lucid-mongodb, port: 27017, host_ip: 172.20.10.70 }
+    mongodb_monitoring: { service_name: mongodb-monitoring, port: 27018, host_ip: 172.20.10.71 }
+    prometheus_metrics: { service_name: prometheus-metrics, port: 9090, host_ip: 172.20.10.74 }
+
+services:
+  # Multi-stage runtime environment
+  multi-stage-runtime:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: multi-stage-runtime
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BUILD_STAGE=runtime
+      - RUNTIME_MODE=production
+      - LUCID_HOST_CONFIG_REGISTRY=/app/configs/host-config.yml
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - LUCID_API_GATEWAY_HOST_IP=172.20.10.1
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - LUCID_REDIS_SERVICE_NAME=lucid-redis
+      - LUCID_REDIS_PORT=6379
+      - LUCID_REDIS_HOST_IP=172.20.10.67
+      - LUCID_MONGODB_SERVICE_NAME=lucid-mongodb
+      - LUCID_MONGODB_PORT=27017
+      - LUCID_MONGODB_HOST_IP=172.20.10.70
+    networks:
+      - lucid-distroless-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=200m
+      - /var/tmp:noexec,nosuid,size=100m
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Multi-stage development runtime
+  dev-runtime:
+    image: lucid/multi-stage-dev:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: dev-runtime
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - DEBUG_MODE=true
+      - BUILD_STAGE=development
+      - RUNTIME_MODE=development
+      - LUCID_API_GATEWAY_HTTP_PATH=http://api-gateway:8080/app
+      - LUCID_API_GATEWAY_SERVICE_NAME=api-gateway
+      - LUCID_API_GATEWAY_PORT=8080
+      - REDIS_URL=redis://lucid-redis:6379/0
+      - LUCID_MONGODB_SERVICE_NAME=lucid-mongodb
+      - LUCID_MONGODB_PORT=27017
+    networks:
+      - lucid-distroless-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Allow writes for development
+    volumes:
+      - lucid-ms-runtime-src:/app/src
+      - lucid-ms-runtime-logs:/app/logs
+      - lucid-ms-runtime-cache:/app/cache
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE  # For debugging
+    user: "1000:1000"
+    working_dir: /app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; print('dev runtime healthy'); sys.exit(0)"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Multi-stage monitoring runtime
+  monitoring-runtime:
+    image: lucid/multi-stage-base:${VERSION:-latest}
+    labels:
+      com.lucid.host-config.registry: /app/configs/host-config.yml
+      com.lucid.platform: arm64
+      com.lucid.multi-stage.role: monitoring-runtime
+    environment:
+      - PYTHONPATH=/app
+      - MONITORING_MODE=true
+      - LOG_LEVEL=INFO
+      - BUILD_STAGE=runtime
+      - RUNTIME_MODE=monitoring
+      - LUCID_PROMETHEUS_SERVICE_NAME=prometheus-metrics
+      - LUCID_PROMETHEUS_PORT=9090
+      - LUCID_PROMETHEUS_HOST_IP=172.20.10.74
+      - LUCID_PROMETHEUS_HTTP_PATH=http://prometheus-metrics:9090/app
+      - LUCID_MONGODB_MONITORING_SERVICE_NAME=mongodb-monitoring
+      - LUCID_MONGODB_MONITORING_PORT=27018
+      - LUCID_MONGODB_MONITORING_HOST_IP=172.20.10.71
+    networks:
+      - lucid-distroless-production
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    user: "1000:1000"
+    working_dir: /app
+    volumes:
+      - ${LUCID_DOCKER_SOCK:-/var/run/docker.sock}:/app/var/run/docker.sock:ro
+      - monitoring-logs:/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; print('monitoring runtime healthy'); sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+networks:
+  lucid-distroless-production:
+    driver: bridge
+    name: lucid-distroless-production
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
+
+volumes:
+  lucid-production-data:
+    name: lucid-multi-stage-production-data
+  monitoring-logs:
+    name: lucid-multi-stage-monitoring-logs
+  lucid-ms-runtime-src:
+    name: lucid-ms-runtime-src
+  lucid-ms-runtime-logs:
+    name: lucid-ms-runtime-logs
+  lucid-ms-runtime-cache:
+    name: lucid-ms-runtime-cache

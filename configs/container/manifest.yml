@@ -1,0 +1,69 @@
+# configs/container/manifest.yml
+# Compose bundles mirrored from infrastructure/containers/<area>/docker-compose*.yml
+# Service DNS names and ports must match infrastructure/containers/host-config.yml
+version: "1.0"
+host_config: infrastructure/containers/host-config.yml
+description: Lucid container-area compose mirrors for builds and service-mesh discovery hints
+areas:
+  admin:
+    files:
+      - docker-compose.admin.yml
+  auth:
+    files:
+      - docker-compose.auth.yml
+  base:
+    files:
+      - docker-compose.base.yml
+  blockchain:
+    files:
+      - docker-compose.block-system.yml
+      - docker-compose.chain.yml
+      - docker-compose.manager.yml
+  database:
+    files:
+      - docker-compose.database-system.yml
+  electron_gui:
+    files:
+      - docker-compose.electron-gui.yml
+  gui:
+    files:
+      - docker-compose.gui-admin.yml
+      - docker-compose.node-gui.yml
+      - docker-compose.user-gui.yml
+  node:
+    files:
+      - docker-compose.node-data-system.yml
+      - docker-compose.node-gui.yml
+      - docker-compose.node-images.yml
+      - docker-compose.node-sessions.yml
+  payment_systems:
+    files:
+      - docker-compose.payment-externals.yml
+      - docker-compose.payment-internal.yml
+  rdp:
+    files:
+      - docker-compose.rdp-system.yml
+  server:
+    files:
+      - docker-compose.server-external.yml
+      - docker-compose.server-images.yml
+  sessions:
+    files:
+      - docker-compose.session-images.yml
+  storage:
+    files:
+      - .keep
+  tor:
+    files:
+      - docker-compose.proxy-systems.yml
+host_config_service_mesh:
+  service_name: lucid-service-mesh-controller
+  ports:
+    primary: 8500
+    http_health: 8088
+  refs:
+    - lucid_service_mesh_controller
+    - consul_dns
+    - consul_grpc
+    - consul_lan_serf
+    - service_mesh_http

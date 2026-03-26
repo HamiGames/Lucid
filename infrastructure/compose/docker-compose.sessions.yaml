@@ -11,9 +11,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-      - ../sessions/core/.env.chunker
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.chunker
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -80,9 +80,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-      - ../sessions/encryption/.env.encryptor
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.encryptor
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -150,9 +150,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-      - ../sessions/core/.env.merkle_builder
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.merkle_builder
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -219,9 +219,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.application
-      - ../sessions/core/.env.orchestrator
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.orchestrator
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -297,8 +297,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.authentication
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.authentication
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

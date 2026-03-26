@@ -1,0 +1,294 @@
+# LUCID NODE + SESSION stack (node-worker + session plane)
+# Path: infrastructure/containers/node/docker-compose.node-sessions.yml
+#
+# Aligned with: ports.txt / host-config.yml (node_worker 8600; session_* ports as below),
+#   infrastructure/containers/env/env.secrets.template → configs/environment/.env.secrets.
+# Networks: lucid-pi-network, lucid-session-network (infrastructure/containers/network/network.txt).
+#
+# session-processor (8091) is listed in host-config but has no image line in ports.txt — add when image is defined.
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/node/docker-compose.node-sessions.yml up -d --build
+
+name: lucid-node-sessions
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+  PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+
+x-env-node-session: &env-node-session
+  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.secrets
+
+services:
+  node-worker:
+    image: ${LUCID_NODE_WORKER_IMAGE:-pickme/lucid-node-worker:latest-arm64}
+    container_name: node-worker
+    hostname: node-worker
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/node/Dockerfile.node-worker
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      NODE_MANAGEMENT_HOST: "0.0.0.0"
+      NODE_MANAGEMENT_PORT: "8600"
+      NODE_MANAGEMENT_URL: http://node-worker:8600
+      SESSION_API_URL: ${SESSION_API_URL:-http://session-api:8113}
+      SESSION_CHUNK_PROCESSOR_URL: ${SESSION_CHUNK_URL:-http://session-chunk-processor:8010}
+      SESSION_PIPELINE_URL: ${SESSION_PIPELINE_URL:-http://session-pipeline:8083}
+      MONGODB_URL: ${NODE_MONGODB_URL:-mongodb://lucid-mongodb:27017/lucid}
+      REDIS_URL: ${NODE_REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${NODE_WORKER_PUBLISH_PORT:-8600}:8600"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    security_opt:
+      - no-new-privileges:true
+
+  session-system-control:
+    image: ${LUCID_SESSION_SYSTEM_CONTROL_IMAGE:-pickme/lucid-session-controller:latest-arm64}
+    container_name: session-system-control
+    hostname: session-system-control
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-systems-control
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "7988"
+      HOST: session-system-control
+    ports:
+      - "${SESSION_SYSTEM_CONTROL_PUBLISH_PORT:-7988}:7988"
+    networks:
+      - lucid-session-network
+
+  session-pipeline-manager:
+    image: ${LUCID_SESSION_PIPELINE_MANAGER_IMAGE:-pickme/lucid-session-pipeline:latest-arm64}
+    container_name: session-pipeline-manager
+    hostname: session-pipeline-manager
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-pipeline-manager
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "7990"
+      HOST: session-pipeline-manager
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+    ports:
+      - "${SESSION_PIPELINE_MANAGER_PUBLISH_PORT:-7990}:7990"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+
+  session-chunk-processor:
+    image: ${LUCID_CHUNK_PROCESSOR_IMAGE:-pickme/lucid-chunk-processor:latest-arm64}
+    container_name: session-chunk-processor
+    hostname: session-chunk-processor
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.chunk-processor
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8010"
+      HOST: session-chunk-processor
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+    ports:
+      - "${SESSION_CHUNK_PROCESSOR_PUBLISH_PORT:-8010}:8010"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+
+  session-storage-service:
+    image: ${LUCID_SESSION_STORAGE_SVC_IMAGE:-pickme/lucid-session-storage-service:latest-arm64}
+    container_name: session-storage-service
+    hostname: session-storage-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-storage-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8020"
+      HOST: session-storage-service
+    ports:
+      - "${SESSION_STORAGE_SERVICE_PUBLISH_PORT:-8020}:8020"
+    networks:
+      - lucid-session-network
+
+  session-storage:
+    image: ${LUCID_SESSION_STORAGE_IMAGE:-pickme/lucid-session-storage-service:latest-arm64}
+    container_name: session-storage
+    hostname: session-storage
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-storage-service
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8082"
+      HOST: session-storage
+    ports:
+      - "${SESSION_STORAGE_PUBLISH_PORT:-8082}:8082"
+    networks:
+      - lucid-session-network
+
+  session-pipeline:
+    image: ${LUCID_SESSION_PIPELINE_IMAGE:-pickme/lucid-session-pipeline:latest-arm64}
+    container_name: session-pipeline
+    hostname: session-pipeline
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-pipeline
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8083"
+      HOST: session-pipeline
+    ports:
+      - "${SESSION_PIPELINE_PUBLISH_PORT:-8083}:8083"
+    networks:
+      - lucid-session-network
+
+  session-anchoring:
+    image: ${LUCID_SESSION_ANCHORING_IMAGE:-pickme/lucid-session-anchoring:latest-arm64}
+    container_name: session-anchoring
+    hostname: session-anchoring
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.anchoring
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8085"
+      HOST: session-anchoring
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+    ports:
+      - "${SESSION_ANCHORING_PUBLISH_PORT:-8085}:8085"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+
+  session-recorder:
+    image: ${LUCID_SESSION_RECORDER_IMAGE:-pickme/lucid-session-recorder:latest-arm64}
+    container_name: session-recorder
+    hostname: session-recorder
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8090"
+      HOST: session-recorder
+    ports:
+      - "${SESSION_RECORDER_PUBLISH_PORT:-8090}:8090"
+    networks:
+      - lucid-session-network
+
+  session-merkle-tree-builder:
+    image: ${LUCID_SESSION_MERKLE_IMAGE:-pickme/lucid-session-merkle-tree:latest-arm64}
+    container_name: session-merkle-tree-builder
+    hostname: session-merkle-tree-builder
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.merkle-tree-builder
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8092"
+      HOST: session-merkle-tree-builder
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-http://api-gateway:8080}
+    ports:
+      - "${SESSION_MERKLE_PUBLISH_PORT:-8092}:8092"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+
+  session-overlord:
+    image: ${LUCID_SESSION_OVERLORD_IMAGE:-pickme/lucid-session-overlord:latest-arm64}
+    container_name: session-overlord
+    hostname: session-overlord
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.session-overlord
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8110"
+      HOST: session-overlord
+    ports:
+      - "${SESSION_OVERLORD_PUBLISH_PORT:-8110}:8110"
+    networks:
+      - lucid-session-network
+
+  session-api:
+    image: ${LUCID_SESSION_API_IMAGE:-pickme/lucid-session-api:latest-arm64}
+    container_name: session-api
+    hostname: session-api
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/sessions/Dockerfile.api
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-node-session
+    environment:
+      PORT: "8113"
+      HOST: session-api
+    ports:
+      - "${SESSION_API_PUBLISH_PORT:-8113}:8113"
+    networks:
+      - lucid-pi-network
+      - lucid-session-network
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-session-network:
+    external: true
+    name: lucid-session-network

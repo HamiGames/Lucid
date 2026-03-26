@@ -25,6 +25,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+RUN mkdir -p /build/configs/services/storage
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/storage/redis.conf /build/configs/services/storage/redis.conf
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -65,6 +68,7 @@ LABEL maintainer="Lucid Development Team" \
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=redis-builder --chown=65532:65532 /build/configs/services /app/configs/services
 
 COPY --from=redis-builder /usr/local/bin/redis-server /usr/local/bin/redis-server
 COPY --from=redis-builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli
@@ -83,7 +87,10 @@ COPY --from=redis-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-c
 COPY infrastructure/containers/storage/redis.conf /etc/redis/redis.conf
 
 ENV PATH=/usr/local/bin:/usr/bin:/bin \
-    LUCID_STORAGE_VOLUME_ROLE=redis
+    LUCID_STORAGE_VOLUME_ROLE=redis \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_redis \
+    LUCID_SERVICE_HOST_IP=172.20.10.67 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-redis:6379/app
 
 WORKDIR /data
 

@@ -72,7 +72,7 @@ spec:
         - name: BLOCKCHAIN_CORE_URL
           value: "http://lucid-blockchain-engine:8084"
         - name: SESSION_MANAGEMENT_URL
-          value: "http://lucid-session-api:8087"
+          value: "http://lucid-session-api:8113"
         - name: NODE_MANAGEMENT_URL
           value: "http://lucid-node-management:8095"
         - name: TRON_PAYMENT_URL

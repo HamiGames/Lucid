@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.5
 # LUCID ADMIN SYSTEM GATEWAY — Distroless Python (aligned with 03_api_gateway/Dockerfile)
 # Portal: TCP/TLS forwards from listen ports to upstream services; openssl-api.yml + connections.json under /app/node/config.
+# host-config: admin-system-gateway (8155); ops: infrastructure/containers/admin/docker-compose.admin.yml.
 # Image: pickme/lucid-admin-system-gateway:latest-arm64
 # Build context: repository root (.)
 
@@ -115,7 +116,20 @@ COPY infrastructure/containers/admin/config/admin-system-gateway.connections.jso
 COPY infrastructure/containers/admin/admin-system-gateway/entrypoint.py /build/node/entrypoint.py
 COPY infrastructure/containers/admin/admin-system-gateway/verify_runtime.py /build/tmp/verify_runtime.py
 
-RUN chown -R 65532:65532 /build/node /build/tmp && \
+RUN mkdir -p /build/host /build/configs/services /build/configs/operations /build/infrastructure/kubernetes && \
+    printf "LUCID_ADMIN_GATEWAY_HOST_CONFIG_$(date +%s)" > /build/host/.keep && \
+    printf "LUCID_ADMIN_GATEWAY_K8S_$(date +%s)" > /build/infrastructure/kubernetes/.keep && \
+    chown -R 65532:65532 /build/host /build/configs/services /build/infrastructure/kubernetes
+
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml /build/infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml /build/infrastructure/kubernetes/api-gateway-config.yaml
+COPY infrastructure/containers/admin/docker-compose.admin.yml /build/configs/operations/docker-compose.admin.yml
+
+RUN chown -R 65532:65532 /build/host/host-config.yml /build/configs/services/container-runtime-layout.yml \
+    /build/infrastructure/kubernetes/database-config.yaml /build/infrastructure/kubernetes/api-gateway-config.yaml \
+    /build/node /build/tmp && \
     python3.11 -m py_compile /build/node/entrypoint.py /build/tmp/verify_runtime.py
 
 ############################
@@ -141,6 +155,7 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.cluster="core" \
       com.lucid.security="distroless" \
       com.lucid.expose="8155,28080,28120,28050,27000" \
+      com.lucid.tor.compatible="true" \
       com.lucid.env.config=".env.admin-system-gateway,.env.foundation,.env.secrets"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
@@ -150,9 +165,20 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=admin_system_gateway \
+    LUCID_SERVICE_HOST_IP=172.20.10.24 \
+    LUCID_SERVICE_HTTP_PATH=http://admin-system-gateway:8155/health \
     ADMIN_GATEWAY_OPENSSL_API_YAML=/app/node/config/openssl-api.yml \
     ADMIN_GATEWAY_CONNECTIONS_JSON=/app/node/config/connections.json \
-    ADMIN_GATEWAY_HEALTH_PORT=8155
+    ADMIN_GATEWAY_HEALTH_PORT=8155 \
+    ADMIN_SYSTEM_GATEWAY_HOST=admin-system-gateway \
+    API_GATEWAY_HOST=api-gateway \
+    API_GATEWAY_PORT=8080 \
+    LUCID_MONGODB_SERVICE=lucid-mongodb \
+    LUCID_MONGODB_PORT=27017 \
+    LUCID_REDIS_SERVICE=lucid-redis \
+    LUCID_REDIS_PORT=6379
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
@@ -169,6 +195,11 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.admin.yml /app/configs/operations/docker-compose.admin.yml
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 

@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID PAYMENT SYSTEM GATEWAY — Distroless Python (payment plane entry/orchestration)
+# Path: infrastructure/containers/payment_systems/Dockerfile.payment-gateway
 # Build context: repository root (.)
 # Application source: payment_systems/tron/ as package layout `tron` under /app/tron (PYTHONPATH=/app)
 # Entry: payment_systems/tron/payment_gateway_entrypoint.py (SERVICE_NAME=payment_gateway → main:app)
@@ -12,7 +13,8 @@
 #       - tron-client :8091, tron-payment-service :8080, tron-node-client :8030
 #       - wallet-manager :8093, tron-relay :8098 (compose/k8s; add to host-config if missing)
 # Image: pickme/lucid-payment-system-gateway:latest-arm64
-# Listen: SERVICE_PORT / PAYMENT_GATEWAY_PORT (default 8097, aligns with k8s lucid-payment-gateway)
+# Listen: SERVICE_PORT / PAYMENT_GATEWAY_PORT (default 8097; see host-config collision notes vs gui-tor-manager:8097)
+# Compose: infrastructure/containers/payment_systems/docker-compose.payment-externals.yml (service payment-system-gateway)
 #
 # Aligned with infrastructure/containers/payment_systems/Dockerfile.wallet and payment_systems/tron/Dockerfile.payment-gateway
 
@@ -41,10 +43,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+RUN mkdir -p /build/configs /build/host /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
+COPY infrastructure/containers/services/ /build/configs/services/
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -125,6 +131,8 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.env.config=".env.support,.env.tron-payment-gateway,.env.secrets,.env.foundation" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid" \
       com.lucid.tor.compatible="true" \
+      com.lucid.architecture="linux/arm64" \
+      com.lucid.vulnerabilities="zero" \
       com.lucid.upstream.api_gateway="api-gateway:8080" \
       com.lucid.upstream.admin_system_gateway="admin-system-gateway:8155" \
       com.lucid.upstream.tron_client="tron-client:8091" \
@@ -140,6 +148,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=payment_system_gateway \
+    LUCID_SERVICE_HOST_IP=172.20.10.46 \
+    LUCID_SERVICE_HTTP_PATH=http://payment-system-gateway:8097/app \
     SERVICE_PORT=8097 \
     PAYMENT_GATEWAY_PORT=8097 \
     SERVICE_HOST=0.0.0.0 \
@@ -171,6 +183,11 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/tron/ /app/tron/
+
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-internal.yml /app/configs/docker-compose.payment-internal.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-externals.yml /app/configs/docker-compose.payment-externals.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,tronpy; print('runtime OK')"]
 

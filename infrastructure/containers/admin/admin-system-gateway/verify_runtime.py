@@ -20,6 +20,10 @@ NODE_DIRS = [
 SUPPORT_FILES = [
     "/app/node/config/openssl-api.yml",
     "/app/node/config/connections.json",
+    "/app/host/host-config.yml",
+    "/app/configs/services/container-runtime-layout.yml",
+    "/app/infrastructure/kubernetes/database-config.yaml",
+    "/app/infrastructure/kubernetes/api-gateway-config.yaml",
 ]
 
 # Aligned with 03_api_gateway verify_runtime: wheels + var markers present

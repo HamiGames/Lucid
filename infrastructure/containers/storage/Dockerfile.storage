@@ -129,7 +129,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LUCID_STORAGE_ROOT=/var/lib/lucid/storage \
     LUCID_STORAGE_MIN_FREE_MIB=128 \
     LUCID_SYSTEM_STORAGE_PORT=9900 \
-    LUCID_SYSTEM_STORAGE_HOST=lucid-system-storage
+    LUCID_SYSTEM_STORAGE_HOST=lucid-system-storage \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_system_storage \
+    LUCID_SERVICE_HOST_IP=172.20.10.72 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-system-storage:9900/app
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets

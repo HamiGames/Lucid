@@ -29,11 +29,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
-
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -87,10 +82,29 @@ RUN python3.11 -c "\
 import uvicorn, fastapi, pydantic, pydantic_settings, motor, redis, blake3, stem, socks, tronpy, pkg_resources, web3; \
 print('node-worker deps OK')"
 
-COPY node/ ./node/
+RUN mkdir -p ./node ./node/configs ./configs ./configs/services ./host ./infrastructure/kubernetes ./configs/operations && \
+    printf "LUCID_NODE_WORKER_SOURCE_$(date +%s)" > ./node/.keep && \
+    printf "LUCID_NODE_WORKER_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    printf "LUCID_NODE_WORKER_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
+    printf "LUCID_NODE_WORKER_HOST_$(date +%s)" > ./host/.keep && \
+    printf "LUCID_NODE_WORKER_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    printf "LUCID_NODE_WORKER_OPS_$(date +%s)" > ./configs/operations/.keep && \
+    chown -R 65532:65532 ./node ./configs ./configs/services ./host ./infrastructure/kubernetes ./configs/operations && \
+    chmod 644 ./node/.keep ./configs/.keep ./configs/services/.keep ./host/.keep ./infrastructure/kubernetes/.keep ./configs/operations/.keep
 
-RUN echo "LUCID_NODE_WORKER_SOURCE_$(date +%s)" > ./node/.lucid-source-marker && \
-    chown 65532:65532 ./node/.lucid-source-marker
+COPY node/ ./node/
+RUN echo "LUCID_NODE_WORKER_SOURCE_$(date +%s)" > ./node/.keep && chown 65532:65532 ./node/.keep
+COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/services/container-runtime-layout.yml
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY configs/environment/.env.node-worker ./configs/.env.node-worker
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./configs/docker-compose.node-sessions.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./configs/docker-compose.node-data-system.yml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./configs/operations/docker-compose.node-management.yml
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
+COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
 
 RUN test -f ./node/main.py && test -f ./node/entrypoint.py && test -f ./node/config.py && \
     test -f ./node/openapi.yaml && test -f ./node/models.py && \
@@ -116,21 +130,24 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.service="node-worker" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="application" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.expose="8600"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
+    API_GATEWAY_HOST=api-gateway \
+    API_GATEWAY_PORT=8080 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=node_worker \
+    LUCID_SERVICE_HOST_IP=172.20.10.27 \
+    LUCID_SERVICE_HTTP_PATH=http://node-worker:8600/app \
     NODE_WORKER_PORT=8600 \
     NODE_WORKER_HOST=0.0.0.0
-
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -146,9 +163,21 @@ COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
 COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
 COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 
+COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/.env.node-worker /app/configs/.env.node-worker
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-sessions.yml /app/configs/docker-compose.node-sessions.yml
+COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-data-system.yml /app/configs/docker-compose.node-data-system.yml
+COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.node-management.yml /app/configs/operations/docker-compose.node-management.yml
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+
+
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,pydantic_settings,blake3,stem,socks,tronpy,pkg_resources,web3; print('runtime OK')"]
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/node/main.py'); assert os.path.getsize('/app/node/.lucid-source-marker')>0; print('layout OK')"]
+RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/node/main.py'); assert os.path.getsize('/app/node/.keep')>0; print('layout OK')"]
 
 EXPOSE 8600
 

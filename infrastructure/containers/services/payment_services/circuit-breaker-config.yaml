@@ -1,0 +1,93 @@
+# LUCID TRON Client - Circuit Breaker Configuration
+# File: payment-systems/tron/config/circuit-breaker-config.yaml
+# Purpose: Define circuit breaker settings for resilient service calls
+# Runtime (container): /app/configs/services/payment_services/circuit-breaker-config.yaml
+# x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
+x-lucid-host-config-alignment_bundle: payment-services-host-alignment.yml
+
+# Global Circuit Breaker Settings
+global:
+  enabled: true
+  default_failure_threshold: 5
+  default_recovery_timeout: 60
+  default_success_threshold: 2
+  default_half_open_max_calls: 3
+
+# TRON Network Circuit Breaker
+tron_network:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: 60
+  success_threshold: 2
+  half_open_max_calls: 3
+  name: "tron_network"
+
+# MongoDB Circuit Breaker
+mongodb:
+  enabled: true
+  failure_threshold: 3
+  recovery_timeout: 30
+  success_threshold: 2
+  half_open_max_calls: 2
+  name: "mongodb"
+
+# Redis Circuit Breaker
+redis:
+  enabled: true
+  failure_threshold: 3
+  recovery_timeout: 30
+  success_threshold: 2
+  half_open_max_calls: 2
+  name: "redis"
+
+# Transaction Broadcasting Circuit Breaker
+transaction_broadcast:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: 120
+  success_threshold: 3
+  half_open_max_calls: 3
+  name: "transaction_broadcast"
+
+# Account Info Circuit Breaker
+account_info:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: 60
+  success_threshold: 2
+  half_open_max_calls: 3
+  name: "account_info"
+
+# Balance Query Circuit Breaker
+balance_query:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: 60
+  success_threshold: 2
+  half_open_max_calls: 3
+  name: "balance_query"
+
+# Network Info Circuit Breaker
+network_info:
+  enabled: true
+  failure_threshold: 3
+  recovery_timeout: 30
+  success_threshold: 2
+  half_open_max_calls: 2
+  name: "network_info"
+
+# Monitoring
+monitoring:
+  enabled: true
+  log_state_changes: true
+  metrics_enabled: true
+  alert_on_open: true
+

@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID SESSION STORAGE SERVICE - Distroless Python Service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Aligned with 03_api_gateway/Dockerfile (dockerfile-design + Dockerfile-copy-pattern)
 # Image: pickme/lucid-session-storage-service:latest-arm64
 # Port: 8020
@@ -115,7 +116,7 @@ RUN echo "=== Verifying pip installation (session storage) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./sessions/storage ./sessions/core ./sessions/recorder ./sessions/processor ./sessions/api ./sessions/config ./sessions/integration ./sessions/security ./sessions/pipeline ./tmp ./wheels && \
+RUN mkdir -p ./sessions ./sessions/storage ./sessions/core ./sessions/recorder ./sessions/processor ./sessions/api ./sessions/config ./sessions/integration ./sessions/security ./sessions/pipeline ./sessions/encryption ./tmp ./wheels ./host && \
     printf "LUCID_SESSION_STORAGE_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
     printf "LUCID_SESSION_STORAGE_STORAGE_$(date +%s)" > ./sessions/storage/.keep && \
@@ -140,6 +141,13 @@ RUN mkdir -p ./sessions ./sessions/storage ./sessions/core ./sessions/recorder .
     touch ./sessions/security/.keep && \
     printf "LUCID_SESSION_STORAGE_PIPELINE_$(date +%s)" > ./sessions/pipeline/.keep && \
     touch ./sessions/pipeline/.keep && \
+    chown -R 65532:65532 ./sessions ./tmp ./wheels && \
+    chmod 644 ./sessions/.keep ./sessions/storage/.keep ./tmp/.keep ./sessions/core/.keep ./sessions/recorder/.keep ./sessions/encryption/.keep ./sessions/processor/.keep ./sessions/api/.keep ./sessions/config/.keep ./sessions/integration/.keep ./sessions/security/.keep ./sessions/pipeline/.keep
+
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
 
 COPY sessions/api/ ./sessions/api/
 COPY sessions/config/storage-config.yaml ./sessions/config/storage-config.yaml
@@ -189,6 +197,7 @@ import sys
 dirs = [
     "/app/sessions",
     "/app/sessions/storage",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -199,6 +208,10 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
+    sys.exit(1)
 print("✅ Session storage runtime layout verified")
 PY
 
@@ -234,14 +247,18 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_storage_service \
+    LUCID_SERVICE_HOST_IP=172.20.10.10 \
+    LUCID_SERVICE_HTTP_PATH=http://session-storage-service:8020/app \
     SESSION_STORAGE_SERVICE_PORT=8020
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
-COPY --from=builder /root/.rustup/ /app/rust/
-COPY --from=builder /root/.cargo/ /app/cargo/
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt

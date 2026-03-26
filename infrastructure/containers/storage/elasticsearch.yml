@@ -1,6 +1,8 @@
 # Elasticsearch paths for Lucid STORAGE PLANE (path.data / path.logs on mounted volumes).
 # Index templates and cluster operations are database/ops concerns.
 # Container image: lucid-storage-elasticsearch (see infrastructure/containers/storage/Dockerfile.elasticsearch)
+# Canonical ES process config path: /usr/share/elasticsearch/config/elasticsearch.yml
+# Lucid services mirror (read-only reference): /app/configs/services/storage/elasticsearch.yml — see container-runtime-layout.yml
 # Image: pickme/lucid-elasticsearch:latest-arm64
 # Network: lucid-pi-network (172.20.0.13)
 # Ports: 9200 (HTTP), 9300 (Transport)

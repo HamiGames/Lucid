@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID CHUNK PROCESSOR - Distroless Python Service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Aligned with 03_api_gateway/Dockerfile (dockerfile-design + Dockerfile-copy-pattern)
 # Image: pickme/lucid-chunk-processor:latest-arm64
 # Port: 8010
@@ -152,6 +153,12 @@ RUN echo "=== Chunk processor tree ===" && \
     ls -la ./sessions/processor/ | head -30 && \
     ls -la ./apps/chunker/ | head -20
 
+RUN mkdir -p ./host ./tmp
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+
 RUN mkdir -p ./tmp
 
 COPY <<'PY' ./tmp/verify_runtime_chunk_processor.py
@@ -164,6 +171,7 @@ dirs = [
     "/app/sessions/api",
     "/app/apps/chunker",
     "/app/apps/encryptor",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -174,6 +182,10 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
+    sys.exit(1)
 print("✅ Chunk processor runtime layout verified")
 PY
 
@@ -206,14 +218,18 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_chunk_processor \
+    LUCID_SERVICE_HOST_IP=172.20.10.9 \
+    LUCID_SERVICE_HTTP_PATH=http://session-chunk-processor:8010/app \
     CHUNK_PROCESSOR_PORT=8010
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
-COPY --from=builder /root/.rustup/ /app/rust/
-COPY --from=builder /root/.cargo/ /app/cargo/
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt

@@ -87,7 +87,10 @@ COPY --from=mongodb-builder /lib*/ld-linux-*.so.2 /lib64/
 COPY --from=mongodb-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 ENV PATH=/usr/bin:/bin \
-    LUCID_STORAGE_VOLUME_ROLE=mongodb
+    LUCID_STORAGE_VOLUME_ROLE=mongodb \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_mongodb \
+    LUCID_SERVICE_HOST_IP=172.20.10.70 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-mongodb:27017/app
 
 WORKDIR /data/db
 

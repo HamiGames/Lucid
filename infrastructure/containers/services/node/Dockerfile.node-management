@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1.5
+# Pointer: the runnable node-management distroless image is built from the canonical Dockerfile under
+#   infrastructure/containers/node/Dockerfile.node-management
+#   (repository root build context), not from this directory.
+#
+# This file exists so tooling that expects Dockerfile.node-management beside service YAML can resolve intent.
+# Compose: infrastructure/containers/services/node/docker-compose.node-management.yml
+#
+# Config bundle (baked /app/configs/services/* for tor-proxy-02 parity): Dockerfile in this directory.
+#
+# Labels below mirror host-config.yml entries node_management and node_management_staging (registry / discovery).
+
+FROM scratch
+
+LABEL com.lucid.service="node-management" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="application" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8095" \
+      com.lucid.dockerfile.canonical="infrastructure/containers/node/Dockerfile.node-management" \
+      com.lucid.staging.service="node-management-staging" \
+      com.lucid.staging.expose="8099"
+
+# Pointer image — same discovery as host-config.yml services.node_management / service-ip.txt
+ENV LUCID_HOST_CONFIG_SERVICE_KEY=node_management \
+    LUCID_SERVICE_HOST_IP=172.20.10.25 \
+    LUCID_SERVICE_HTTP_PATH=http://node-management:8095/app

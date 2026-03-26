@@ -15,7 +15,7 @@ networks:
           gateway: 172.20.0.1
 
 x-lucid-env-files: &lucid-env-files
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 volumes:
@@ -81,6 +81,16 @@ services:
         source: ../../..
         target: /mnt/myssd/Lucid
         consistency: cached
+
+      # Align with service Dockerfiles: master-env-config + secrets → /app/configs/
+      - type: bind
+        source: ../../../master-env-config.txt
+        target: /app/configs/.env.master
+        read_only: true
+      - type: bind
+        source: ../../../configs/environment/.env.secrets
+        target: /app/configs/.env.secrets
+        read_only: true
       
       # Docker socket for container building
       - type: bind

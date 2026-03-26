@@ -4,7 +4,7 @@
 # for the server plane. Build context: repository root (.).
 #
 # Role (host-config.yml alignment):
-#   • main_lucid_gateway — service_name api-gateway, port 8080, http://api-gateway:8080/app
+#   • main_lucid_gateway — service_name api-gateway, port 8080, host_ip 172.20.10.1, http://api-gateway:8080/app
 #   • User-facing clients, node-system-gateway peers, and admin-system-gateway (e.g. portal → api-gateway)
 #     reach Lucid core/session services through this gateway and published API_GATEWAY_URL patterns.
 # Image: pickme/lucid-server-gateway:latest-arm64
@@ -37,10 +37,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+RUN mkdir -p /build/configs /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/configs/services/
 
 # System packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -329,11 +331,14 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="server-gateway" \
+      com.lucid.service="api-gateway" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="core" \
       com.lucid.security="distroless" \
       com.lucid.plane="ops" \
+      com.lucid.expose="8080" \
+      com.lucid.hostconfig.registry_key="main_lucid_gateway" \
+      com.lucid.discovery.host_ip="172.20.10.1" \
       com.lucid.hostconfig.main_gateway.dns="api-gateway" \
       com.lucid.hostconfig.main_gateway.port="8080"
 
@@ -346,12 +351,18 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LC_ALL=C.UTF-8 \
     API_GATEWAY_PORT=8080 \
     API_GATEWAY_HOST=api-gateway \
-    LUCID_SERVER_GATEWAY=1
+    LUCID_SERVER_GATEWAY=1 \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_server_gateway \
+    LUCID_SERVICE_HOST_IP=172.20.10.2 \
+    LUCID_SERVICE_HTTP_PATH=http://server-gateway:8080/app
 
 # System directories & certificates
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
 
 COPY --from=builder /root/.rustup/        /app/rust/
 COPY --from=builder /root/.cargo/        /app/cargo/

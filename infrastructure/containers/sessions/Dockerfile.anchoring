@@ -1,5 +1,6 @@
 # blockchain/Dockerfile.anchoring
 # LUCID SESSION ANCHORING - SPEC-1B Implementation
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Distroless FastAPI service for Lucid session anchoring
 # Build context: repository root
 
@@ -50,6 +51,9 @@ RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
+RUN mkdir -p /build/configs/services /build/host
+COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
 
 # Create placeholder files in system directories with actual content (ensures they're baked into image)
 RUN echo "LUCID_SESSION_ANCHORING_RUNTIME_DIRECTORY" > /var/run/.keep && \
@@ -122,6 +126,10 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_anchoring \
+    LUCID_SERVICE_HOST_IP=172.20.10.12 \
+    LUCID_SERVICE_HTTP_PATH=http://session-anchoring:8085/app \
     SESSION_ANCHORING_PORT=8085 \
     SESSION_ANCHORING_HOST=session-anchoring
 
@@ -131,6 +139,8 @@ WORKDIR /app
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
 COPY --from=builder --chown=65532:65532 /var/run /app/var/run
 COPY --from=builder --chown=65532:65532 /var/lib /app/var/lib

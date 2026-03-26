@@ -1,0 +1,63 @@
+#################################################################
+# guide for the creation of a .py in the service_mesh/ directory
+# user based interactions only
+#################################################################
+
+concept:
+    - to convert posts/ requests from all networks into a Connection
+user connections: via service-mesh-controller
+    - from api-gateway (user) to session-api (join_session, create_session, lodge_session, leave),
+    - api-gateway to  database (user_id finder + user_id: account detail [read, limited-edit])
+    - api-gateway to rdp-server (Rdp application protocols + setup, read, limited-write, join, leave)
+    - api-gateway to wallet_manager -> payment_systems (recieve payments, read, limited-edit, join, leave)
+    - api-gateway to block-ledger (read-only)
+
+admin connections: via service-mesh-controller
+    - admin-system-gateway to user_* (audit, edit, investigate, join, leave)
+    - admin-system-gateway to session-api (audit, join, leave)
+    - admin-system-gateway to node_* (join, leave, read, write, edi, audit)
+    - admin-system-gateway to database-overlord (control, trigger, audit, edit, patch, join, leave)
+    - admin-system-gateway to payment-gateway (audit, edit, investigation, read, Write)
+    - admin-system-gateway to server-system-core (audit, dev, admin-control, investigate, patch)
+    - admin-system-gateway to node-system-gateway (audit, dev, patch, investigate, join, leave)
+    - admin-system-gateway to api-gateway (audit, edit, patch, investigate, join, leave)
+    - admin-system-gateway to block-ledger (read, audit)
+
+node connections: via service-mesh-controller
+    - node-system-gateway to node-database (read, write, resrtricted-edit, join, leave)
+    - node-system-gateway to block-ledger (read-only)
+    - node-system-gateway to payment-gateway (read, write, join, leave)
+    - node_user to node-pool (join, leave)
+
+node-worker connections: via service-mesh-controller
+    - node-system-gateway to session-api ( join, leave, chunk-processor, compress, inspect session-database for session_id with complete tag )
+    - node-system-gateway to block-manager (join, leave, node-worker processes)
+    - node-system-gateway to data-chain (join, leave, count, publish, create_block, transfer_session_data)
+    - node-worker to transport data from session-database to data-chain via session-api.
+    
+
+    
+objective:
+    to create a smooth trasition between requests and connections.
+    the request input to join a container need to be run via the service-mesh-controller,
+    this will allow for the lucid-auth-service to validate while connecting.
+
+output:
+    if ${user_pwd}@${user_id} is true:
+    allow access to service-mesh-controller as rdp_user (user)
+
+    if ${node_user_pwd}@${node_id} is true:
+    allow access to service-mesh-controller as node_user
+
+    if admin_user == verified: 
+    allow access to service-mesh-controller as admin_user
+
+investigate:
+    read and flag
+
+audit:
+    investigate and action
+
+edit: 
+    manual and automatic editing authorised
+

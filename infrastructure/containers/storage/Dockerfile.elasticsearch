@@ -27,6 +27,9 @@ USER root
 RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+RUN mkdir -p /build/configs/services/storage
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/storage/elasticsearch.yml /build/configs/services/storage/elasticsearch.yml
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -65,6 +68,7 @@ LABEL maintainer="Lucid Development Team" \
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=elasticsearch-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=elasticsearch-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=elasticsearch-builder --chown=65532:65532 /build/configs/services /app/configs/services
 
 COPY --from=elasticsearch-builder /usr/share/elasticsearch/ /usr/share/elasticsearch/
 
@@ -87,7 +91,10 @@ COPY --from=elasticsearch-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/ce
 COPY infrastructure/containers/storage/elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 ENV PATH=/usr/share/elasticsearch/bin:/usr/bin:/bin \
-    LUCID_STORAGE_VOLUME_ROLE=elasticsearch
+    LUCID_STORAGE_VOLUME_ROLE=elasticsearch \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_elasticsearch_http \
+    LUCID_SERVICE_HOST_IP=172.20.10.68 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-elasticsearch-http:9200/app
 
 WORKDIR /usr/share/elasticsearch
 

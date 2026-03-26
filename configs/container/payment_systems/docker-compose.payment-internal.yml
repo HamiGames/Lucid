@@ -1,0 +1,226 @@
+# LUCID PAYMENT INTERNAL — TRON microservices on lucid-tron-isolated + lucid-pi-network
+# Path: infrastructure/containers/payment_systems/docker-compose.payment-internal.yml
+#
+# Aligned with: ports.txt / host-config.yml
+#   (tron-node-client 8030, on-system-chain-client 8040, tron-payment-service 8080, tron-client 8091,
+#    tron-client-aux 8101, payout-router 8092, wallet-manager 8093, usdt-manager 8094).
+# Secrets: infrastructure/containers/env/env.secrets.template → configs/environment/.env.secrets
+#   (TRON_PRIVATE_KEY, MONGODB_PAYMENT_PASSWORD, REDIS_PAYMENT_PASSWORD, ELASTICSEARCH_PAYMENT_PASSWORD, etc.).
+#
+# Host collision notes (ports.txt): 8080 api-gateway vs tron-payment-service; 8092 payout-router vs
+#   session-merkle; 8101 rdp-session-controller vs tron-client-aux — use *_PUBLISH_PORT overrides.
+#
+# Prerequisites: lucid-pi-network, lucid-tron-isolated (infrastructure/containers/network/network.txt).
+#
+# From repository root (Lucid):
+#   docker compose -f infrastructure/containers/payment_systems/docker-compose.payment-internal.yml up -d --build
+
+name: lucid-payment-internal
+
+x-repo-context: &repo-context
+  context: ../../../
+
+x-lucid-build-args: &lucid-build-args
+  BUILD_DATE: ${BUILD_DATE:-}
+  VCS_REF: ${VCS_REF:-}
+  VERSION: ${VERSION:-1.0.0}
+  TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+  BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+
+x-env-payment: &env-payment
+  - ../../../master-env-config.txt
+  - ../../../configs/environment/.env.secrets
+
+services:
+  tron-node-client:
+    image: ${LUCID_TRON_NODE_CLIENT_IMAGE:-pickme/lucid-tron-node-client:latest-arm64}
+    container_name: tron-node-client
+    hostname: tron-node-client
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.tron-node-client
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-payment
+    ports:
+      - "${TRON_NODE_CLIENT_PUBLISH_PORT:-8030}:8030"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    labels:
+      com.lucid.service: tron-node-client
+      com.lucid.expose: "8030"
+      com.lucid.cluster: payment
+
+  on-system-chain-client:
+    image: ${LUCID_ON_SYSTEM_CHAIN_CLIENT_IMAGE:-pickme/lucid-on-system-chain-client:latest-arm64}
+    container_name: on-system-chain-client
+    hostname: on-system-chain-client
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.on-system-chain-client
+      args:
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      ON_SYSTEM_CHAIN_RPC_URL: ${ON_SYSTEM_CHAIN_RPC_URL:-http://lucid-on-system-chain:8545}
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+    ports:
+      - "${ON_SYSTEM_CHAIN_CLIENT_PUBLISH_PORT:-8040}:8040"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+
+  tron-payment-service:
+    image: ${LUCID_TRON_PAYMENT_IMAGE:-pickme/lucid-tron-payment-service:latest-arm64}
+    container_name: tron-payment-service
+    hostname: tron-payment-service
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.tron-payment-service
+      args:
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/arm64}
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      PAYOUT_ROUTER_URL: ${PAYOUT_ROUTER_URL:-http://payout-router:8092}
+      WALLET_MANAGER_URL: ${WALLET_MANAGER_URL:-http://wallet-manager:8093}
+      MONGODB_URL: ${MONGODB_URL:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URL: ${REDIS_URL:-redis://lucid-redis:6379/0}
+    ports:
+      - "${TRON_PAYMENT_SERVICE_PUBLISH_PORT:-18080}:8080"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    depends_on:
+      tron-client:
+        condition: service_started
+      payout-router:
+        condition: service_started
+      wallet-manager:
+        condition: service_started
+
+  tron-client:
+    image: ${LUCID_TRON_CLIENT_IMAGE:-pickme/lucid-tron-client:latest-arm64}
+    container_name: tron-client
+    hostname: tron-client
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      PORT: "8091"
+      HOST: "0.0.0.0"
+      TRON_PRIVATE_KEY: ${TRON_PRIVATE_KEY:?set TRON_PRIVATE_KEY}
+      TRON_NETWORK: ${TRON_NETWORK:-shasta}
+    ports:
+      - "${TRON_CLIENT_PUBLISH_PORT:-8091}:8091"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    volumes:
+      - lucid_payment_internal_tron_client_data:/app/data:rw
+      - lucid_payment_internal_tron_client_logs:/app/logs:rw
+
+  tron-client-aux:
+    image: ${LUCID_TRON_CLIENT_AUX_IMAGE:-pickme/lucid-tron-aux:latest-arm64}
+    container_name: tron-client-aux
+    hostname: tron-client-aux
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      PORT: "8101"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+    ports:
+      - "${TRON_CLIENT_AUX_PUBLISH_PORT:-8101}:8101"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    depends_on:
+      tron-client:
+        condition: service_started
+
+  payout-router:
+    image: ${LUCID_PAYOUT_ROUTER_IMAGE:-pickme/lucid-payout-router:latest-arm64}
+    container_name: payout-router
+    hostname: payout-router
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      PORT: "8092"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URI: ${REDIS_URI:-redis://lucid-redis:6379/0}
+    ports:
+      - "${PAYOUT_ROUTER_PUBLISH_PORT:-8092}:8092"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    depends_on:
+      tron-client:
+        condition: service_started
+
+  wallet-manager:
+    image: ${LUCID_WALLET_MANAGER_IMAGE:-pickme/lucid-wallet-manager:latest-arm64}
+    container_name: wallet-manager
+    hostname: wallet-manager
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}
+    build:
+      <<: *repo-context
+      dockerfile: infrastructure/containers/payment_systems/Dockerfile.wallet
+      args:
+        <<: *lucid-build-args
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      PORT: "8093"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URI: ${REDIS_URI:-redis://lucid-redis:6379/0}
+    ports:
+      - "${WALLET_MANAGER_PUBLISH_PORT:-8093}:8093"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    depends_on:
+      tron-client:
+        condition: service_started
+
+  usdt-manager:
+    image: ${LUCID_USDT_MANAGER_IMAGE:-pickme/lucid-usdt-manager:latest-arm64}
+    container_name: usdt-manager
+    hostname: usdt-manager
+    restart: unless-stopped
+    env_file: *env-payment
+    environment:
+      PORT: "8094"
+      TRON_CLIENT_URL: ${TRON_CLIENT_URL:-http://tron-client:8091}
+      WALLET_MANAGER_URL: ${WALLET_MANAGER_URL:-http://wallet-manager:8093}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://lucid:${MONGO_INITDB_ROOT_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin}
+      REDIS_URI: ${REDIS_URI:-redis://lucid-redis:6379/0}
+    ports:
+      - "${USDT_MANAGER_PUBLISH_PORT:-8094}:8094"
+    networks:
+      lucid-pi-network:
+      lucid-tron-isolated:
+    depends_on:
+      wallet-manager:
+        condition: service_started
+
+networks:
+  lucid-pi-network:
+    external: true
+    name: lucid-pi-network
+  lucid-tron-isolated:
+    external: true
+    name: lucid-tron-isolated
+
+volumes:
+  lucid_payment_internal_tron_client_data:
+  lucid_payment_internal_tron_client_logs:

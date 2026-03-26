@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5
 # LUCID SESSION PIPELINE - Distroless Python service
+# Config bake aligned with infrastructure/containers/node/Dockerfile.node-system-gateway.
 # Design aligned with 03_api_gateway/Dockerfile (ARGs, rustup, usr markers, pip wheel + install, /app runtime, tini, verify)
 # Image: pickme/lucid-session-pipeline:latest-arm64
 # Port: 8083 (SESSION_PIPELINE_PORT)
@@ -117,17 +118,20 @@ RUN echo "=== Verifying pip installation (session pipeline) ===" && \
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./configs ./tmp && \
+RUN mkdir -p ./sessions ./tmp && \
     printf "LUCID_SESSION_PIPELINE_SESSIONS_$(date +%s)" > ./sessions/.keep && \
     touch ./sessions/.keep && \
-    printf "LUCID_SESSION_PIPELINE_CONFIGS_$(date +%s)" > ./configs/.keep && \
-    touch ./configs/.keep && \
     printf "LUCID_SESSION_PIPELINE_TMP_$(date +%s)" > ./tmp/.keep && \
     touch ./tmp/.keep && \
-    chown -R 65532:65532 ./sessions ./configs ./tmp
+    chown -R 65532:65532 ./sessions ./tmp
 
 COPY sessions/ ./sessions/
-COPY configs/services/session-management.yml ./configs/session-management.yml
+RUN mkdir -p ./host
+COPY infrastructure/containers/services/ ./configs/services/
+COPY master-env-config.txt ./configs/.env.master
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY infrastructure/containers/host-config.yml ./host/host-config.yml
+RUN cp -f ./configs/services/session-management.yml ./configs/session-management.yml
 
 RUN test -f ./sessions/pipeline/main.py && test -f ./configs/session-management.yml && \
     echo "✅ Session pipeline sources present"
@@ -142,6 +146,7 @@ dirs = [
     "/app/sessions",
     "/app/sessions/pipeline",
     "/app/configs",
+    "/app/configs/services",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -152,9 +157,13 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
-cfg = "/app/configs/session-management.yml"
-if not os.path.isfile(cfg):
-    print(f"ERROR: {cfg} missing")
+for cfg in ("/app/configs/session-management.yml", "/app/configs/services/session-management.yml"):
+    if not os.path.isfile(cfg) or os.path.getsize(cfg) <= 0:
+        print(f"ERROR: {cfg} missing or empty")
+        sys.exit(1)
+layout = "/app/configs/services/container-runtime-layout.yml"
+if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
+    print(f"ERROR: {layout} missing or empty")
     sys.exit(1)
 main_py = "/app/sessions/pipeline/main.py"
 if not os.path.isfile(main_py):
@@ -192,11 +201,12 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=session_pipeline \
+    LUCID_SERVICE_HTTP_PATH=http://session-pipeline:8083/app \
     SESSION_PIPELINE_PORT=8083 \
     SESSION_PIPELINE_HOST=session-pipeline
 
-COPY --from=builder /root/.rustup/ /app/rust/
-COPY --from=builder /root/.cargo/ /app/cargo/
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
@@ -207,10 +217,12 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/configs/session-management.yml /app/configs/session-management.yml
+COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
 
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_session_pipeline.py /app/tmp/verify_runtime.py
 

@@ -70,7 +70,7 @@ spec:
           service:
             name: lucid-session-api
             port:
-              number: 8087
+              number: 8113
   - host: nodes.lucid.onion
     http:
       paths:

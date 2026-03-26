@@ -1,0 +1,175 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-02-25",
+  "lucid_container": {
+    "config_path_in_image": "/app/configs/services/service-registry.json",
+    "note": "Volume paths below are in-container; see container-runtime-layout.yml",
+    "host_registry_source": "infrastructure/containers/host-config.yml",
+    "host_ip_source": "service-ip.txt"
+  },
+  "service_registry": {
+    "gui-docker-manager": {
+      "name": "GUI Docker Manager",
+      "version": "1.0.0",
+      "port": 8098,
+      "host": "gui-docker-manager",
+      "host_ip": "172.20.10.60",
+      "protocol": "http",
+      "api_base": "/api/v1",
+      "status_endpoint": "/health",
+      "description": "Docker container and service management API",
+      "dependencies": {
+        "lucid-mongodb": {
+          "purpose": "metrics storage",
+          "critical": true,
+          "healthcheck": true
+        },
+        "lucid-redis": {
+          "purpose": "caching",
+          "critical": true,
+          "healthcheck": true
+        },
+        "api-gateway": {
+          "purpose": "routing",
+          "critical": false,
+          "healthcheck": true
+        }
+      },
+      "endpoints": {
+        "containers": "/containers",
+        "services": "/services",
+        "compose": "/compose",
+        "networks": "/networks",
+        "volumes": "/volumes",
+        "health": "/health"
+      },
+      "security": {
+        "authentication": "JWT",
+        "authorization": "RBAC",
+        "tls_enabled": false
+      }
+    },
+    "gui_api_bridge": {
+      "name": "GUI API Bridge",
+      "version": "1.0.0",
+      "port": 8102,
+      "host": "gui-api-bridge",
+      "host_ip": "172.20.10.61",
+      "protocol": "http",
+      "api_base": "/api/v1",
+      "status_endpoint": "/health",
+      "description": "API gateway and bridge for GUI services",
+      "dependencies": {
+        "api-gateway": {
+          "purpose": "backend routing",
+          "critical": true,
+          "healthcheck": true
+        },
+        "lucid-mongodb": {
+          "purpose": "data storage",
+          "critical": true,
+          "healthcheck": true
+        }
+      }
+    },
+    "gui-tor-manager": {
+      "name": "GUI Tor Manager",
+      "version": "1.0.0",
+      "port": 8097,
+      "host": "gui-tor-manager",
+      "host_ip": "172.20.10.63",
+      "protocol": "http",
+      "api_base": "/api/v1",
+      "status_endpoint": "/health",
+      "description": "Tor network management and onion address handling",
+      "dependencies": {
+        "tor-socks": {
+          "purpose": "tor socks (pickme/lucid-tor-proxy, Dockerfile.tor-proxy-02)",
+          "critical": true,
+          "healthcheck": true
+        },
+        "tor-control": {
+          "purpose": "tor control port",
+          "critical": true,
+          "healthcheck": true
+        }
+      }
+    },
+    "gui-hardware-manager": {
+      "name": "GUI Hardware Manager",
+      "version": "1.0.0",
+      "port": 8099,
+      "host": "gui-hardware-manager",
+      "host_ip": "172.20.10.62",
+      "protocol": "http",
+      "api_base": "/api/v1",
+      "status_endpoint": "/health",
+      "description": "Hardware wallet and device management",
+      "dependencies": {
+        "api-gateway": {
+          "purpose": "backend access",
+          "critical": true,
+          "healthcheck": true
+        },
+        "lucid-mongodb": {
+          "purpose": "device registry",
+          "critical": true,
+          "healthcheck": true
+        }
+      }
+    }
+  },
+  "service_groups": {
+    "foundation": {
+      "priority": 1,
+      "services": ["lucid-mongodb", "lucid-redis", "lucid-elasticsearch", "lucid-auth-service"]
+    },
+    "core": {
+      "priority": 2,
+      "services": ["api-gateway", "blockchain-engine", "service-mesh"]
+    },
+    "application": {
+      "priority": 3,
+      "services": ["lucid-session-pipeline", "lucid-node-management"]
+    },
+    "gui": {
+      "priority": 4,
+      "services": ["gui-api-bridge", "gui-docker-manager", "gui-tor-manager", "gui-hardware-manager"]
+    },
+    "support": {
+      "priority": 5,
+      "services": ["lucid-admin-interface", "lucid-tron-client"]
+    }
+  },
+  "networks": {
+    "lucid-pi-network": {
+      "type": "bridge",
+      "scope": "local",
+      "description": "Primary Lucid platform network",
+      "services": ["all"]
+    },
+    "lucid-gui-network": {
+      "type": "bridge",
+      "scope": "local",
+      "description": "GUI-specific communication network",
+      "services": ["gui"]
+    }
+  },
+  "volumes": {
+    "logs": {
+      "path": "/app/logs",
+      "driver": "local",
+      "purpose": "service logging (in-container; override via compose bind if needed)"
+    },
+    "data": {
+      "path": "/app/data",
+      "driver": "local",
+      "purpose": "service data storage (in-container)"
+    },
+    "blockchain-data": {
+      "path": "/app/data/blockchain",
+      "driver": "local",
+      "purpose": "blockchain storage (in-container)"
+    }
+  }
+}

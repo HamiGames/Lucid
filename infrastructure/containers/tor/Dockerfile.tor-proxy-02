@@ -22,6 +22,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+RUN mkdir -p /build/configs/services/tor
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       tor \
@@ -74,15 +77,16 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
    install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_ui \
    install  -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_vm \
    install -d -o debian-tor -g debian-tor -m 700 /run/lucid/onion/lucid_ws \
+   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels && \
+   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels/scripts && \
+   install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels/config && \
    install -d -o root -g root -m 755 /opt/lucid && \
    install -d -o root -g root -m 755 /opt/lucid/tor && \
    install -d -o root -g root -m 755 /opt/lucid/tor/bin && \
    install -d -o root -g root -m 755 /opt/lucid/tor/lib && \
    install -d -o root -g root -m 755 /opt/lucid/tor/config && \
    install -d -o debian-tor -g debian-tor -m 755 /opt/lucid/tor/data && \
-   install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels && \
-   install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels/scripts && \
-   install -d -o debian-tor -g debian-tor -m 755 /run/lucid/tunnels/config && \
+   install -d -o root -g root -m 755 /configs && \
    install -d -o root -g root -m 755 /usr/local/bin && \
    printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
    install -d -o root -g root -m 755 /etc/tor && \
@@ -119,7 +123,15 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
    printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep && \
    printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > /run/lucid/tunnels/.keep && \
    printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep && \
-   printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep
+   printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep && \
+   printf 'dir=configs\nplatform=lucid-tor-proxy\n'                       > /configs/.keep
+
+
+
+COPY configs/environment/.env.secrets /configs/.env.secrets
+COPY master-env-config.txt /configs/.env.master
+COPY configs/environment/.env.tunnel-tools /configs/.env.tunnel-tools
+
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
 # =============================================================================
@@ -152,13 +164,13 @@ ENV PATH=/app/run/lucid/tor/bin:/app/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/
     LD_LIBRARY_PATH=/opt/lucid/tor/lib \
     TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
-    TOR_DATA_DIR=/run/lucid/tor
+    TOR_DATA_DIR=/run/lucid/tor \
+    LUCID_HOST_CONFIG_SERVICE_KEY=tor_socks \
+    LUCID_SERVICE_HOST_IP=172.20.10.64 \
+    LUCID_SERVICE_HTTP_PATH=http://tor-socks:9050/app
 
 # Core binaries and helpers
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=tor-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=tor-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + .env.tunnel-tools (runtime under /app/configs — see also /app/configs/services)
 COPY --from=tor-builder /usr/bin/tor         /app/usr/bin/tor
 COPY --from=tor-builder /usr/bin/obfs4proxy  /app/usr/bin/obfs4proxy
 COPY --from=tor-builder /usr/bin/tini        /app/usr/bin/tini
@@ -193,6 +205,11 @@ COPY --from=tor-builder /lib/*/libcrypt.so.1     /app/lib/
 # Dynamic linker and arch-specific libs for ARM64 (required by coreutils/tor) /app/lib
 COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
 COPY --from=tor-builder /lib/aarch64-linux-gnu     /app/lib/aarch64-linux-gnu
+
+COPY --from=tor-builder /configs/.env.secrets /app/configs/.env.secrets
+COPY --from=tor-builder /configs/.env.master /app/configs/.env.master
+COPY --from=tor-builder /configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
+COPY --from=tor-builder /build/configs/services /app/configs/services
 
 # Bring in /usr/lib to satisfy Debian dynamic deps (libselinux, libcap, etc.)
 COPY --from=tor-builder /usr/lib /app/usr/lib

@@ -13,9 +13,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.support
-      - ../configs/environment/.env.tron-client
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-client
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -85,9 +85,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.support
-      - ../configs/environment/.env.tron-payout-router
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-payout-router
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -161,9 +161,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.support
-      - ../configs/environment/.env.tron-wallet-manager
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-wallet-manager
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -236,9 +236,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.support
-      - ../configs/environment/.env.tron-usdt-manager
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-usdt-manager
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -311,9 +311,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.support
-      - ../configs/environment/.env.tron-staking
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-staking
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -385,9 +385,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - ../configs/environment/.env.foundation
-      - ../configs/environment/.env.support
-      - ../configs/environment/.env.tron-payment-gateway
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-payment-gateway
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

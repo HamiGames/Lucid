@@ -2,7 +2,7 @@
 # Just the core devcontainer to test basic functionality
 
 x-lucid-env-files: &lucid-env-files
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 networks:
@@ -28,8 +28,10 @@ services:
       - PYTHONUNBUFFERED=1
       - LUCID_ENV=dev
       
-    # Mount workspace
+    # Mount workspace + same paths as Dockerfile.simple LUCID_IMAGE_CONFIG (/app/configs/)
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../:/workspaces/Lucid:cached
       
     # Network

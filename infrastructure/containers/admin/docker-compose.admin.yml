@@ -25,6 +25,15 @@
 
 name: lucid-admin-plane
 
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
+
 x-lucid-build-args: &lucid-build-args
   BUILD_DATE: ${BUILD_DATE:-}
   VCS_REF: ${VCS_REF:-}
@@ -37,7 +46,7 @@ x-repo-context: &repo-context
   context: ../../../
 
 x-env-admin: &env-admin
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 services:
@@ -53,7 +62,7 @@ services:
         <<: *lucid-build-args
     restart: unless-stopped
     env_file:
-      - ../../../configs/.env.master
+      - ../../../master-env-config.txt
       - ../../../configs/environment/.env.secrets
     networks:
       - lucid-pi-network
@@ -103,7 +112,7 @@ services:
         <<: *lucid-build-args
     restart: unless-stopped
     env_file:
-      - ../../../configs/.env.master
+      - ../../../master-env-config.txt
       - ../../../configs/environment/.env.secrets
     networks:
       - lucid-pi-network
@@ -123,7 +132,7 @@ services:
         <<: *lucid-build-args
     restart: unless-stopped
     env_file:
-      - ../../../configs/.env.master
+      - ../../../master-env-config.txt
       - ../../../configs/environment/.env.secrets
     networks:
       - lucid-pi-network
@@ -184,7 +193,7 @@ services:
         <<: *lucid-build-args
     restart: unless-stopped
     env_file:
-      - ../../../configs/.env.master
+      - ../../../master-env-config.txt
       - ../../../configs/environment/.env.secrets
     networks:
       - lucid-pi-network

@@ -1,6 +1,14 @@
 # syntax=docker/dockerfile:1.5
-# Lucid Service Mesh Controller – distroless (aligned with 03_api_gateway/Dockerfile)
-# pickme/lucid-service-mesh-controller:latest-arm64 — ports 8500,8501,8502,8600,8088; IP 172.20.0.19
+# LUCID SERVICE MESH CONTROLLER – Distroless Python (structure aligned with 03_api_gateway/Dockerfile)
+# Image: pickme/lucid-service-mesh-controller:latest-arm64
+#
+# host-config.yml (bundled listeners in this image / compose stack):
+#   lucid_service_mesh_controller — port 8500, host_ip 172.20.10.55, service_name lucid-service-mesh-controller
+#   consul_dns — 8501 / consul-dns @ 172.20.10.56
+#   consul_grpc — 8502 / consul-grpc @ 172.20.10.57
+#   consul_lan_serf — 8600 / consul-lan-serf @ 172.20.10.58
+#   service_mesh_http — 8088 / service-mesh-http-health @ 172.20.10.59
+# EXPOSE / HEALTHCHECK follow the mesh HTTP health port (8088).
 # Build context: repository root (.)
 
 ARG BUILD_DATE
@@ -19,21 +27,52 @@ ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG PYTHON_VERSION
 
-ENV DEBIAN_FRONTEND=noninteractive \
+ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
     PIP_DEFAULT_TIMEOUT=100 \
-    PIP_PREFER_BINARY=1
+    DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+
+# LUCID_IMAGE_CONFIG: secrets, master env, host registry, services catalog, container compose mirrors
+RUN mkdir -p /build/configs /build/configs/services /build/configs/container /build/tmp /build/test /build/service_configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/configs/services/
+COPY configs/container/ /build/configs/container/
 
+# Docker compose stacks from infrastructure/containers/** → /build/service_configs (mirrored subdirs; unique filenames)
+COPY infrastructure/containers/.devcontainer/docker-compose.simple.yml /build/service_configs/.devcontainer/docker-compose.simple.yml
+COPY infrastructure/containers/.devcontainer/docker-compose.dev.yml /build/service_configs/.devcontainer/docker-compose.dev.yml
+COPY infrastructure/containers/admin/docker-compose.admin.yml /build/service_configs/admin/docker-compose.admin.yml
+COPY infrastructure/containers/auth/docker-compose.auth.yml /build/service_configs/auth/docker-compose.auth.yml
+COPY infrastructure/containers/base/docker-compose.base.yml /build/service_configs/base/docker-compose.base.yml
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml /build/service_configs/blockchain/docker-compose.block-system.yml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml /build/service_configs/blockchain/docker-compose.chain.yml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml /build/service_configs/blockchain/docker-compose.manager.yml
+COPY infrastructure/containers/database/docker-compose.database-system.yml /build/service_configs/database/docker-compose.database-system.yml
+COPY infrastructure/containers/electron_gui/docker-compose.electron-gui.yml /build/service_configs/electron_gui/docker-compose.electron-gui.yml
+COPY infrastructure/containers/gui/docker-compose.gui-admin.yml /build/service_configs/gui/docker-compose.gui-admin.yml
+COPY infrastructure/containers/gui/docker-compose.node-gui.yml /build/service_configs/gui/docker-compose.node-gui.yml
+COPY infrastructure/containers/gui/docker-compose.user-gui.yml /build/service_configs/gui/docker-compose.user-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml /build/service_configs/node/docker-compose.node-data-system.yml
+COPY infrastructure/containers/node/docker-compose.node-gui.yml /build/service_configs/node/docker-compose.node-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-images.yml /build/service_configs/node/docker-compose.node-images.yml
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml /build/service_configs/node/docker-compose.node-sessions.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml /build/service_configs/payment_systems/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml /build/service_configs/payment_systems/docker-compose.payment-internal.yml
+COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml /build/service_configs/rdp/docker-compose.rdp-system.yml
+COPY infrastructure/containers/server/docker-compose.server-external.yml /build/service_configs/server/docker-compose.server-external.yml
+COPY infrastructure/containers/server/docker-compose.server-images.yml /build/service_configs/server/docker-compose.server-images.yml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml /build/service_configs/services/node/docker-compose.node-management.yml
+COPY infrastructure/containers/sessions/docker-compose.session-images.yml /build/service_configs/sessions/docker-compose.session-images.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml
 
+# System packages (tini, pip wheel toolchain, transient rustc/cargo for rustup bootstrap)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
@@ -46,45 +85,221 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libssl-dev \
         pkg-config \
         curl \
-        git \
         ca-certificates \
         tini \
         python3-wheel \
         python3-dev \
         python3-pip \
         python3-setuptools \
+        rustc \
+        cargo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN mkdir -p /root /root/.rustup /root/.cargo && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_RUST_$(date +%s)" > /root/.keep && \
+    touch /root/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_RUSTUP_$(date +%s)" > /root/.rustup/.keep && \
+    touch /root/.rustup/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CARGO_$(date +%s)" > /root/.cargo/.keep && \
+    touch /root/.cargo/.keep && \
+    chown -R 65532:65532 /root /root/.cargo /root/.rustup && \
+    chmod +x /root/.keep /root/.rustup/.keep /root/.cargo/.keep
+
+RUN apt-get remove -y rustc cargo && \
+    rm -rf /root/.cargo /root/.rustup && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+ENV PATH=/root/.cargo/bin:$PATH
+
 RUN printf "LUCID_SERVICE_MESH_CONTROLLER_RUNTIME_DIRECTORY" > /var/run/.keep && \
+    touch /var/run/.keep && \
     printf "LUCID_SERVICE_MESH_CONTROLLER_LIB_DIRECTORY" > /var/lib/.keep && \
+    touch /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
-RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_SITE_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_BIN_$(date +%s)" > /usr/local/bin/.keep && \
-    chown -R 65532:65532 /usr/local/lib/python3.11 /usr/local/bin && \
-    chmod 644 /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep
+RUN mkdir -p /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_USR_$(date +%s)" > /usr/.keep && \
+    touch /usr/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
+    touch /usr/local/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
+    touch /usr/local/lib/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_USR_LOCAL_LIB_PY311_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
+    touch /usr/local/lib/python3.11/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    touch /usr/local/lib/python3.11/site-packages/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
+    touch /usr/local/bin/.keep && \
+    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
+    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep && \
+    echo "Marker files created for FHS and Python layout"
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_BUILD_WHEELS_$(date +%s)" > ./wheels/.keep && \
+    touch /build/wheels/.keep && \
+    echo "upgrading pip setuptools wheel" && \
     pip install --upgrade pip setuptools wheel && \
-    python3.11 -m wheel version
+    echo "pip toolchain upgrade complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels: $(ls -1 /build/wheels/ | wc -l)"
 
 COPY infrastructure/service_mesh/requirements.txt ./requirements.txt
-
 RUN test -f ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+    echo "building wheels from requirements.txt" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    ls -lh /build/wheels/ | head -20 && \
+    echo "total wheels: $(ls -1 /build/wheels/ | wc -l)"
 
-RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+RUN echo "installing wheels into system Python" && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
+    echo "pip install complete"
 
-RUN python3.11 -c "import grpc, aiohttp, consul, pydantic, cryptography, yaml, fastapi, uvicorn; print('✅ service mesh deps OK')" && \
-    pip list | head -40
+RUN echo "=== Verifying pip installation ===" && \
+    python3.11 -c "import grpc, aiohttp, consul, pydantic, cryptography, yaml, fastapi, uvicorn, structlog, prometheus_client; print('✅ service mesh Python deps OK')" && \
+    test -d /usr/local/lib/python3.11/site-packages && \
+    echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
+    pip list && \
+    python3.11 -m pip show grpcio && \
+    python3.11 -m pip show cryptography && \
+    python3.11 -m pip show PyYAML && \
+    echo "=== site-packages listing ===" && \
+    ls -la /usr/local/lib/python3.11/site-packages/ | head -30
+
+# Layout markers for COPY --from=builder (distroless non-empty dirs)
+RUN mkdir -p ./controller ./sidecar ./discovery ./communication ./security \
+    ./infrastructure/service_mesh ./infrastructure/service_mesh/config \
+    ./service_mesh ./api ./admin ./auth ./common ./core ./database ./infrastructure ./node \
+    ./RDP ./tools ./utils ./wallet ./sessions ./src ./src/gui ./electron_gui ./gui ./gui_api_bridge \
+    ./payment_systems ./contracts ./rust ./cargo ./tmp ./test ./configs ./configs/services ./configs/container \
+    ./service_configs ./service_configs/.devcontainer ./service_configs/admin ./service_configs/auth ./service_configs/base \
+    ./service_configs/blockchain ./service_configs/database ./service_configs/electron_gui ./service_configs/gui ./service_configs/node \
+    ./service_configs/payment_systems ./service_configs/rdp ./service_configs/server ./service_configs/services ./service_configs/services/node \
+    ./service_configs/sessions ./service_configs/tor && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CONTROLLER_$(date +%s)" > ./controller/.keep && \
+    touch ./controller/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > ./sidecar/.keep && \
+    touch ./sidecar/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > ./discovery/.keep && \
+    touch ./discovery/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > ./communication/.keep && \
+    touch ./communication/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > ./security/.keep && \
+    touch ./security/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_INFRA_SERVICE_MESH_$(date +%s)" > ./infrastructure/service_mesh/.keep && \
+    touch ./infrastructure/service_mesh/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_INFRA_SERVICE_MESH_CONFIG_$(date +%s)" > ./infrastructure/service_mesh/config/.keep && \
+    touch ./infrastructure/service_mesh/config/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_$(date +%s)" > ./service_mesh/.keep && touch ./service_mesh/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_API_$(date +%s)" > ./api/.keep && \
+    touch ./api/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_ADMIN_$(date +%s)" > ./admin/.keep && \
+    touch ./admin/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_AUTH_$(date +%s)" > ./auth/.keep && \
+    touch ./auth/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_COMMON_$(date +%s)" > ./common/.keep && \
+    touch ./common/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CORE_$(date +%s)" > ./core/.keep && \
+    touch ./core/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_DATABASE_$(date +%s)" > ./database/.keep && \
+    touch ./database/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_INFRASTRUCTURE_$(date +%s)" > ./infrastructure/.keep && \
+    touch ./infrastructure/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_NODE_$(date +%s)" > ./node/.keep && \
+    touch ./node/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_RDP_$(date +%s)" > ./RDP/.keep && \
+    touch ./RDP/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_TOOLS_$(date +%s)" > ./tools/.keep && \
+    touch ./tools/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_UTILS_$(date +%s)" > ./utils/.keep && \
+    touch ./utils/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_WALLET_$(date +%s)" > ./wallet/.keep && \
+    touch ./wallet/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SESSIONS_$(date +%s)" > ./sessions/.keep && \
+    touch ./sessions/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SRC_$(date +%s)" > ./src/.keep && \
+    touch ./src/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SRC_GUI_$(date +%s)" > ./src/gui/.keep && \
+    touch ./src/gui/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_ELECTRON_GUI_$(date +%s)" > ./electron_gui/.keep && \
+    touch ./electron_gui/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_GUI_$(date +%s)" > ./gui/.keep && \
+    touch ./gui/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_GUI_API_BRIDGE_$(date +%s)" > ./gui_api_bridge/.keep && \
+    touch ./gui_api_bridge/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_PAYMENT_SYSTEMS_$(date +%s)" > ./payment_systems/.keep && \
+    touch ./payment_systems/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CONTRACTS_$(date +%s)" > ./contracts/.keep && \
+    touch ./contracts/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_RUST_$(date +%s)" > ./rust/.keep && \
+    touch ./rust/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CARGO_$(date +%s)" > ./cargo/.keep && \ 
+    touch ./cargo/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_TMP_$(date +%s)" > ./tmp/.keep && \
+    touch ./tmp/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_TEST_$(date +%s)" > ./test/.keep && \
+    touch ./test/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    touch ./configs/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
+    touch ./configs/services/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_CONFIGS_CONTAINER_$(date +%s)" > ./configs/container/.keep && \
+    touch ./configs/container/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_$(date +%s)" > ./service_configs/.keep && \
+    touch ./service_configs/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_DEVCONTAINER_$(date +%s)" > ./service_configs/.devcontainer/.keep && \
+    touch ./service_configs/.devcontainer/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_ADMIN_$(date +%s)" > ./service_configs/admin/.keep && \
+    touch ./service_configs/admin/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_AUTH_$(date +%s)" > ./service_configs/auth/.keep && \
+    touch ./service_configs/auth/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_BASE_$(date +%s)" > ./service_configs/base/.keep && \
+    touch ./service_configs/base/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_BLOCKCHAIN_$(date +%s)" > ./service_configs/blockchain/.keep && \
+    touch ./service_configs/blockchain/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_DATABASE_$(date +%s)" > ./service_configs/database/.keep && \
+    touch ./service_configs/database/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_ELECTRON_GUI_$(date +%s)" > ./service_configs/electron_gui/.keep && \
+    touch ./service_configs/electron_gui/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SERVICE_CONFIGS_GUI_$(date +%s)" > ./service_configs/
+    chown -R 65532:65532 ./controller ./sidecar ./discovery ./communication ./security ./infrastructure/service_mesh ./service_mesh ./api ./admin ./auth ./common ./core ./database ./infrastructure ./node ./RDP ./tools ./utils ./wallet ./sessions ./src ./src/gui ./electron_gui ./gui ./gui_api_bridge ./payment_systems ./contracts ./rust ./cargo ./tmp ./test ./configs ./configs/services ./configs/container ./service_configs ./service_configs/.devcontainer ./service_configs/admin ./service_configs/auth ./service_configs/base ./service_configs/blockchain ./service_configs/database ./service_configs/electron_gui ./service_configs/gui ./service_configs/node ./service_configs/payment_systems ./service_configs/rdp ./service_configs/server ./service_configs/services ./service_configs/services/node ./service_configs/sessions ./service_configs/tor && \
+    chmod 644 ./controller/.keep ./sidecar/.keep ./discovery/.keep ./communication/.keep ./security/.keep ./infrastructure/service_mesh/.keep ./service_mesh/.keep ./api/.keep ./admin/.keep ./auth/.keep ./common/.keep ./core/.keep ./database/.keep ./infrastructure/.keep ./node/.keep ./RDP/.keep ./tools/.keep ./utils/.keep ./wallet/.keep ./sessions/.keep ./src/.keep ./src/gui/.keep ./electron_gui/.keep ./gui/.keep ./gui_api_bridge/.keep ./payment_systems/.keep ./contracts/.keep ./rust/.keep ./cargo/.keep ./tmp/.keep ./test/.keep ./configs/.keep ./configs/services/.keep ./configs/container/.keep ./service_configs/.keep ./service_configs/.devcontainer/.keep ./service_configs/admin/.keep ./service_configs/auth/.keep ./service_configs/base/.keep ./service_configs/blockchain/.keep ./service_configs/database/.keep ./service_configs/electron_gui/.keep ./service_configs/gui/.keep ./service_configs/node/.keep ./service_configs/payment_systems/.keep ./service_configs/rdp/.keep ./service_configs/server/.keep ./service_configs/services/.keep ./service_configs/services/node/.keep ./service_configs/sessions/.keep ./service_configs/tor/.keep && \
+    echo "layout markers created"
+
+
+COPY infrastructure/service_mesh/verify_runtime.py ./tmp/verify_runtime.py
+
+COPY infrastructure/containers/admin/docker-compose.admin.yml                        ./service_configs/admin/docker-compose.admin.yml
+COPY infrastructure/containers/auth/docker-compose.auth.yml                          ./service_configs/auth/docker-compose.auth.yml
+COPY infrastructure/containers/base/docker-compose.base.yml                          ./service_configs/base/docker-compose.base.yml
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml            ./service_configs/blockchain/docker-compose.block-system.yml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml                   ./service_configs/blockchain/docker-compose.chain.yml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml                 ./service_configs/blockchain/docker-compose.manager.yml
+COPY infrastructure/containers/database/docker-compose.database-system.yml           ./service_configs/database/docker-compose.database-system.yml
+COPY infrastructure/containers/electron_gui/docker-compose.electron-gui.yml          ./service_configs/electron-gui/docker-compose.electron-gui.yml
+COPY infrastructure/containers/gui/docker-compose.gui-admin.yml                      ./service_configs/gui/docker-compose.gui-admin.yml
+COPY infrastructure/containers/gui/docker-compose.node-gui.yml                       ./service_configs/gui/docker-compose.node-gui.yml
+COPY infrastructure/containers/gui/docker-compose.user-gui.yml                       ./service_configs/gui/docker-compose.user-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml              ./service_configs/node/docker-compose.node-data-system.yml
+COPY infrastructure/containers/node/docker-compose.node-gui.yml                      ./service_configs/node/docker-compose.node-gui.yml
+COPY infrastructure/containers/node/docker-compose.node-images.yml                   ./service_configs/node/docker-compose.node-images.yml
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml                 ./service_configs/sessions/docker-compose.node-sessions.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml  ./service_configs/payment_systems/docker-compose.payment-externals.yml
+COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml   ./service_configs/payment_systems/docker-compose.payment-internal.yml
+COPY infrastructure/containers/rdp/docker-compose.rdp-system.yml                     ./service_configs/rdp/docker-compose.rdp-system.yml
+COPY infrastructure/containers/server/docker-compose.server-external.yml             ./service_configs/server/docker-compose.server-external.yml
+COPY infrastructure/containers/server/docker-compose.server-images.yml               ./service_configs/server/docker-compose.server-images.yml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml      ./service_configs/node/docker-compose.node-management.yml
+COPY infrastructure/containers/sessions/docker-compose.session-images.yml            ./service_configs/sessions/docker-compose.session-images.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml                  ./service_configs/tor/docker-compose.proxy-systems.yml
+COPY infrastructure/containers/host-config.yml                                       ./configs/host-config.yml
+COPY infrastructure/containers/user/docker-compose.user-services.yml                  ./service_configs/user/docker-compose.user-services.yml
 
 COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY infrastructure/service_mesh/entrypoint.py ./entrypoint.py
@@ -97,7 +312,6 @@ COPY infrastructure/service_mesh/test_basic.py ./test/test_basic.py
 COPY infrastructure/service_mesh/test_imports.py ./test/test_imports.py
 COPY infrastructure/service_mesh/test_controller.py ./test/test_controller.py
 
-COPY configs/services/ ./configs/services/
 COPY service_mesh/ ./service_mesh/
 COPY api/ ./api/
 COPY admin/ ./admin/
@@ -123,22 +337,33 @@ RUN test -d ./controller && test -d ./sidecar && test -d ./discovery && \
     test -d ./communication && test -d ./security && test -f ./entrypoint.py && \
     chmod +x ./entrypoint.py
 
-RUN printf "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > /build/controller/.lucid-source-marker && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > /build/sidecar/.lucid-sidecar-marker && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > /build/discovery/.lucid-discovery-marker && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > /build/communication/.lucid-communication-marker && \
-    printf "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > /build/security/.lucid-security-marker && \
-    test -f /build/controller/.lucid-source-marker && \
-    chown -R 65532:65532 /build/controller /build/sidecar /build/discovery /build/communication /build/security
+RUN printf "LUCID_SERVICE_MESH_CONTROLLER_SOURCE_$(date +%s)" > ./controller/.keep && \
+    touch ./controller/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SIDECAR_$(date +%s)" > ./sidecar/.keep && \
+    touch ./sidecar/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_DISCOVERY_$(date +%s)" > ./discovery/.keep && \
+    touch ./discovery/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_COMMUNICATION_$(date +%s)" > ./communication/.keep && \
+    touch ./communication/.keep && \
+    printf "LUCID_SERVICE_MESH_CONTROLLER_SECURITY_$(date +%s)" > ./security/.keep && \
+    touch ./security/.keep && \
+    chown -R 65532:65532 ./controller ./sidecar ./discovery ./communication ./security && \
+    chmod 644 ./controller/.keep ./sidecar/.keep ./discovery/.keep ./communication/.keep ./security/.keep && \
+    test -f ./controller/.keep && \
+    test -f ./sidecar/.keep && \
+    test -f ./discovery/.keep && \
+    test -f ./communication/.keep && \
+    test -f ./security/.keep && \
+    echo "source layout markers created"
 
 RUN python3.11 -m compileall -q \
-    /build/controller \
-    /build/sidecar \
-    /build/discovery \
-    /build/communication \
-    /build/security \
-    /build/infrastructure/service_mesh \
-    /build/entrypoint.py || (echo "compileall failed" && exit 1)
+    ./controller \
+    ./sidecar \
+    ./discovery \
+    ./communication \
+    ./security \
+    ./infrastructure/service_mesh \
+    ./entrypoint.py || (echo "compileall failed" && exit 1)
 
 RUN test -f /etc/ssl/certs/ca-certificates.crt
 
@@ -147,26 +372,26 @@ RUN test -f /etc/ssl/certs/ca-certificates.crt
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
+WORKDIR /app
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
-
-WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.title="Lucid Service Mesh Controller" \
       org.opencontainers.image.description="Distroless service mesh controller for Lucid platform" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.vendor="Lucid" \
-      org.opencontainers.image.licenses="MIT" \
-      lucid.service="service_mesh-controller" \
-      lucid.type="distroless" \
-      lucid.platform="arm64" \
-      lucid.security="hardened" \
-      phase="2" \
-      cluster="10-cross-cluster-integration"
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      com.lucid.service="lucid-service-mesh-controller" \
+      com.lucid.platform="arm64" \
+      com.lucid.cluster="core" \
+      com.lucid.security="distroless" \
+      com.lucid.expose="8500" \
+      com.lucid.hostconfig.registry_key="lucid_service_mesh_controller" \
+      com.lucid.discovery.host_ip="172.20.10.55" \
+      com.lucid.hostconfig.mesh_ports="8500:lucid-service-mesh-controller,8501:consul-dns,8502:consul-grpc,8600:consul-lan-serf,8088:service-mesh-http-health"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -178,14 +403,17 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     TZ=UTC \
     COUNTRY=US
 
-COPY --from=builder /var/run/          /app/var/run/
-COPY --from=builder /var/lib/           /app/var/lib/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt     /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /usr/local/lib/python3.11/site-packages/   /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/              /app/usr/local/bin/
+COPY --from=builder /root/.rustup/ /app/rust/
+COPY --from=builder /root/.cargo/ /app/cargo/
+COPY --from=builder /var/run/ /app/var/run/
+COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
-COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
+
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 
 RUN ["/app/usr/bin/python3.11", "-c", \
     "import os, importlib, importlib.util, sys; \
@@ -197,67 +425,98 @@ failed=[p for p in req if importlib.util.find_spec(p) is None]; \
 assert not failed, failed; \
 [importlib.import_module(p) for p in req]; \
 keep=os.path.join(sp,'.keep'); assert os.path.isfile(keep) and os.path.getsize(keep)>0, keep; \
-print('✅ runtime packages OK')"]
+print('✅ runtime site-packages OK')"]
 
-COPY --from=builder --chown=65532:65532 /build/entrypoint.py    /app/entrypoint.py
+COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/entrypoint.py /app/entrypoint.py
 COPY --from=builder --chown=65532:65532 /build/test/test_basic.py /app/test/test_basic.py
 COPY --from=builder --chown=65532:65532 /build/test/test_imports.py /app/test/test_imports.py
 COPY --from=builder --chown=65532:65532 /build/test/test_controller.py /app/test/test_controller.py
-COPY --from=builder --chown=65532:65532 /build/controller/      /app/controller/
-COPY --from=builder --chown=65532:65532 /build/sidecar/         /app/sidecar/
-COPY --from=builder --chown=65532:65532 /build/discovery/       /app/discovery/
-COPY --from=builder --chown=65532:65532 /build/communication/   /app/communication/
-COPY --from=builder --chown=65532:65532 /build/security/        /app/security/
-COPY --from=builder --chown=65532:65532 /build/wallet/          /app/wallet/
-COPY --from=builder --chown=65532:65532 /build/tools/           /app/tools/
-COPY --from=builder --chown=65532:65532 /build/utils/           /app/utils/
-COPY --from=builder --chown=65532:65532 /build/common/          /app/common/
-COPY --from=builder --chown=65532:65532 /build/core/            /app/core/
-COPY --from=builder --chown=65532:65532 /build/database/        /app/database/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/  /app/infrastructure/
-COPY --from=builder --chown=65532:65532 /build/node/            /app/node/
-COPY --from=builder --chown=65532:65532 /build/RDP/             /app/RDP/
-COPY --from=builder --chown=65532:65532 /build/admin/           /app/admin/
-COPY --from=builder --chown=65532:65532 /build/auth/            /app/auth/
-COPY --from=builder --chown=65532:65532 /build/api/             /app/api/
-COPY --from=builder --chown=65532:65532 /build/configs/         /app/configs/
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/controller/ /app/controller/
+COPY --from=builder --chown=65532:65532 /build/sidecar/ /app/sidecar/
+COPY --from=builder --chown=65532:65532 /build/discovery/ /app/discovery/
+COPY --from=builder --chown=65532:65532 /build/communication/ /app/communication/
+COPY --from=builder --chown=65532:65532 /build/security/ /app/security/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/core/ /app/core/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/ /app/infrastructure/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 
-COPY --from=builder --chown=65532:65532 /build/service_mesh/    /app/service_mesh/
-COPY --from=builder --chown=65532:65532 /build/sessions/        /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/src/gui/         /app/src/gui/
-COPY --from=builder --chown=65532:65532 /build/electron_gui/    /app/electron_gui/
-COPY --from=builder --chown=65532:65532 /build/gui/             /app/gui/
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/  /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/service_configs/admin/ /app/service_configs/admin/
+COPY --from=builder --chown=65532:65532 /build/service_configs/auth/ /app/service_configs/auth/
+COPY --from=builder --chown=65532:65532 /build/service_configs/base/ /app/service_configs/base/
+COPY --from=builder --chown=65532:65532 /build/service_configs/blockchain/ /app/service_configs/blockchain/
+COPY --from=builder --chown=65532:65532 /build/service_configs/database/ /app/service_configs/database/
+COPY --from=builder --chown=65532:65532 /build/service_configs/electron_gui/ /app/service_configs/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/service_configs/gui/ /app/service_configs/gui/
+COPY --from=builder --chown=65532:65532 /build/service_configs/node/ /app/service_configs/node/
+COPY --from=builder --chown=65532:65532 /build/service_configs/payment_systems/ /app/service_configs/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/service_configs/rdp/ /app/service_configs/rdp/
+COPY --from=builder --chown=65532:65532 /build/service_configs/server/ /app/service_configs/server/
+COPY --from=builder --chown=65532:65532 /build/service_configs/services/ /app/service_configs/services/
+COPY --from=builder --chown=65532:65532 /build/service_configs/services/node/ /app/service_configs/services/node/
+COPY --from=builder --chown=65532:65532 /build/service_configs/sessions/ /app/service_configs/sessions/
+COPY --from=builder --chown=65532:65532 /build/service_configs/tor/ /app/service_configs/tor/
+
+COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/src/gui/ /app/src/gui/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
 COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
-COPY --from=builder --chown=65532:65532 /build/contracts/       /app/contracts/
+COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
+
+COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
+
+RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
+RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]
 
 RUN ["/app/usr/bin/python3.11", "-c", \
     "import os, importlib.util, sys; \
 sys.path.insert(0, '/app/usr/local/lib/python3.11/site-packages'); \
 assert os.path.isdir('/app/controller') and os.path.isfile('/app/entrypoint.py'); \
-assert os.path.isfile('/app/controller/.lucid-source-marker'); \
+assert os.path.isfile('/app/controller/.keep'); \
 assert os.path.isfile('/app/sidecar/.lucid-sidecar-marker'); \
 assert os.path.isfile('/app/discovery/.lucid-discovery-marker'); \
 assert os.path.isfile('/app/communication/.lucid-communication-marker'); \
 assert os.path.isfile('/app/security/.lucid-security-marker'); \
 assert importlib.util.find_spec('controller.main') is not None; \
-print('✅ controller layout OK')"]
+print('✅ controller import layout OK')"]
 
 ENV LUCID_ENV=production \
     LUCID_PLATFORM=arm64 \
     LUCID_ARCHITECTURE=linux/arm64 \
-    SERVICE_NAME=service_mesh-controller \
-    CONTAINER_NAME=lucid-service_mesh-controller \
-    HOSTNAME=lucid-service_mesh-controller \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=lucid_service_mesh_controller \
+    LUCID_SERVICE_HOST_IP=172.20.10.55 \
+    LUCID_SERVICE_HTTP_PATH=http://lucid-service-mesh-controller:8500/app \
+    SERVICE_NAME=lucid-service-mesh-controller \
+    CONTAINER_NAME=lucid-service-mesh-controller \
     PORT=8500 \
     SERVICE_MESH_CONTROLLER_PORT=8500 \
+    SERVICE_MESH_CONTROLLER_HOST_IP=172.20.10.55 \
+    CONSUL_DNS_PORT=8501 \
+    CONSUL_DNS_HOST_IP=172.20.10.56 \
+    CONSUL_GRPC_PORT=8502 \
+    CONSUL_GRPC_HOST_IP=172.20.10.57 \
+    CONSUL_LAN_SERF_PORT=8600 \
+    CONSUL_LAN_SERF_HOST_IP=172.20.10.58 \
     HTTP_PORT=8088 \
     HEALTHCHECK_PORT=8088 \
+    SERVICE_MESH_HTTP_HEALTH_HOST_IP=172.20.10.59 \
     HEALTHCHECK_PATH=/health \
-    SERVICE_MESH_CONTROLLER_HOST=lucid-service-mesh-controller \
+    SERVICE_MESH_CONTROLLER_HOST=0.0.0.0 \
     SERVICE_DISCOVERY_URL=http://lucid-service-mesh-controller:8500 \
     SERVICE_MESH_ENABLED=true \
     CONSUL_PORT=8500 \
@@ -265,10 +524,10 @@ ENV LUCID_ENV=production \
     CONSUL_BOOTSTRAP_EXPECT=1 \
     CONSUL_UI_ENABLED=true \
     CONSUL_CONNECT_ENABLED=true \
-    CONSUL_NODE_NAME=lucid-service_mesh-controller \
-    MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:-changeme}@lucid-mongodb:27017/lucid?authSource=admin \
+    CONSUL_NODE_NAME=lucid-service-mesh-controller \
+    MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD}@lucid-mongodb:27017/lucid?authSource=admin \
     REDIS_URL=redis://lucid-redis:6379/0 \
-    PROJECT_ROOT=/mnt/myssd/Lucid/Lucid \
+    PROJECT_ROOT=/app \
     PROJECT_NAME=Lucid \
     PROJECT_VERSION=0.1.0 \
     LOG_LEVEL=INFO \

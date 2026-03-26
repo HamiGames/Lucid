@@ -1,14 +1,25 @@
 # Docker Compose for Lucid Session Images
-# ARM64 compatible session management services
+# Path: infrastructure/containers/sessions/docker-compose.session-images.yml
+#
+# Aligned with: ports.txt (service_name, port, image), sessions/Dockerfile.* EXPOSE/runtime PORT.
+# env_file: master-env-config.txt + configs/environment/.env.secrets (repo root paths).
+# Bind mounts: same files at /app/configs/.env.master and /app/configs/.env.secrets (LUCID_IMAGE_CONFIG).
 
-version: "3.8"
+x-lucid-host-config:
+  file: ../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  http_path_template: 'http://{service_name}:{port}/app'
+  host_ip_range: '172.20.10.1–172.20.10.76'
+  in_container_path: /app/configs/host-config.yml
 
 x-lucid-env-files: &lucid-env-files
-  - ../../../configs/.env.master
+  - ../../../master-env-config.txt
   - ../../../configs/environment/.env.secrets
 
 services:
-  # Session Pipeline Service
+  # Session pipeline worker — Dockerfile.session-pipeline EXPOSE 8083 (not in ports.txt as DNS name).
   session-pipeline:
     image: pickme/lucid-session-pipeline:latest-arm64
     container_name: lucid-session-pipeline
@@ -25,6 +36,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_data:/app/data/sessions
       - pipeline_logs:/app/logs
     networks:
@@ -43,7 +56,6 @@ services:
       retries: 3
       start_period: 5s
 
-  # Session Recorder Service
   session-recorder:
     image: pickme/lucid-session-recorder:latest-arm64
     container_name: session-recorder
@@ -67,6 +79,8 @@ services:
       - LUCID_BITRATE=2000k
       - LUCID_FPS=30
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - recording_data:/data/recordings
       - chunk_data:/data/chunks
       - recorder_logs:/app/logs
@@ -86,7 +100,6 @@ services:
       retries: 3
       start_period: 5s
 
-  # Chunk Processor Service
   session-chunk-processor:
     image: pickme/lucid-chunk-processor:latest-arm64
     container_name: session-chunk-processor
@@ -103,6 +116,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - chunk_data:/app/data/chunks
       - session_chunk_processor_logs:/app/logs
     networks:
@@ -121,23 +136,26 @@ services:
       retries: 3
       start_period: 5s
 
-  # Session Storage Service
-  session-storage:
-    image: pickme/lucid-session-storage:latest-arm64
-    container_name: session-storage
+  # ports.txt session_storage_service:8020 (Dockerfile CMD listens on 8020 only)
+  session-storage-service:
+    image: pickme/lucid-session-storage-service:latest-arm64
+    container_name: session-storage-service
+    hostname: session-storage-service
     platform: linux/arm64
     env_file: *lucid-env-files
     ports:
       - "8020:8020"
     environment:
-      - SERVICE_NAME=session-storage
+      - SERVICE_NAME=session-storage-service
       - PORT=8020
-      - HOST=session-storage
+      - HOST=session-storage-service
       - LOG_LEVEL=INFO
       - DEBUG=false
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_storage_data:/app/data/sessions
       - session_storage_data:/app/data/storage
       - session_storage_logs:/app/logs
@@ -150,14 +168,13 @@ services:
           "CMD",
           "/app/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://session-storage:8020/health')",
+          "import urllib.request; urllib.request.urlopen('http://session-storage-service:8020/health')",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
 
-  # Session API Service
   session-api:
     image: pickme/lucid-session-api:latest-arm64
     container_name: session-api
@@ -174,6 +191,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_data:/app/data/sessions
       - session_api_logs:/app/logs
     networks:
@@ -192,23 +211,25 @@ services:
       retries: 3
       start_period: 5s
 
-  # Session Anchoring Service
+  # ports.txt session_anchoring:8085; Dockerfile.anchoring EXPOSE 8085
   session-anchoring:
     image: pickme/lucid-session-anchoring:latest-arm64
     container_name: session-anchoring
     platform: linux/arm64
     env_file: *lucid-env-files
     ports:
-      - "8084:8084"
+      - "8085:8085"
     environment:
       - SERVICE_NAME=session-anchoring
-      - PORT=8084
+      - PORT=8085
       - HOST=session-anchoring
       - LOG_LEVEL=INFO
       - DEBUG=false
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_anchoring_data:/app/data/sessions
       - session_anchoring_logs:/app/logs
     networks:
@@ -220,14 +241,13 @@ services:
           "CMD",
           "/app/usr/bin/python3.11",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://session-anchoring:8084/health')",
+          "import urllib.request; urllib.request.urlopen('http://session-anchoring:8085/health')",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
 
-      #session-controller
   session-pipeline-manager:
     image: pickme/lucid-session-pipeline-manager:latest-arm64
     container_name: session-pipeline-manager
@@ -244,6 +264,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_pipeline_data:/app/data/sessions
       - session_pipeline_manager_logs:/app/logs
     networks:
@@ -262,7 +284,6 @@ services:
       retries: 3
       start_period: 5s
 
-      #session-management
   session-management:
     image: pickme/lucid-session-management:latest-arm64
     container_name: session-management
@@ -279,6 +300,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_management_data:/app/data/sessions
       - session_management_logs:/app/logs
     networks:
@@ -297,7 +320,6 @@ services:
       retries: 3
       start_period: 5s
 
-  # Session stack supervision (health matrix for all services above)
   session-systems-control:
     image: pickme/lucid-session-systems-control:latest-arm64
     container_name: session-systems-control
@@ -314,6 +336,8 @@ services:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
+      - ../../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - session_systems_control_logs:/app/logs
     networks:
       - lucid-session-network
@@ -331,13 +355,11 @@ services:
       retries: 3
       start_period: 15s
 
-# Networks
 networks:
   lucid-session-network:
     driver: bridge
     name: lucid-session-network
 
-# Volumes
 volumes:
   session_data:
     driver: local
@@ -372,3 +394,33 @@ volumes:
   session_systems_control_logs:
     driver: local
     name: lucid-session-systems-control-logs
+  session_chunk_processor_logs:
+    driver: local
+    name: lucid-session-chunk-processor-logs
+  session_storage_data:
+    driver: local
+    name: lucid-session-storage-data
+  session_storage_logs:
+    driver: local
+    name: lucid-session-storage-logs
+  session_api_logs:
+    driver: local
+    name: lucid-session-api-logs
+  session_anchoring_data:
+    driver: local
+    name: lucid-session-anchoring-data
+  session_anchoring_logs:
+    driver: local
+    name: lucid-session-anchoring-logs
+  session_pipeline_data:
+    driver: local
+    name: lucid-session-pipeline-data
+  session_pipeline_manager_logs:
+    driver: local
+    name: lucid-session-pipeline-manager-logs
+  session_management_data:
+    driver: local
+    name: lucid-session-management-data
+  session_management_logs:
+    driver: local
+    name: lucid-session-management-logs

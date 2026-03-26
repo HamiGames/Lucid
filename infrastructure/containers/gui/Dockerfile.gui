@@ -81,10 +81,19 @@ RUN ln -sf /bin/bash /bin/sh
 
 RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
 
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+RUN mkdir -p /build/configs /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/configs/services/
+
+# Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
+RUN mkdir -p /build/tmp /build/common /build/infrastructure/kubernetes && \
+    printf "LUCID_GUI_STRAP_TMP_$(date +%s)" > /build/tmp/.keep
+COPY common/__init__.py /build/common/__init__.py
+COPY common/tor/ /build/common/tor/
+COPY infrastructure/kubernetes/01_configmaps/ /build/infrastructure/kubernetes/
 
 COPY --from=strapper /tmp/strap/electron_gui-src.tar.gz ${BUNDLE_DIR}/electron_gui-src.tar.gz
 COPY --from=strapper /tmp/strap/electron_gui-node_modules.tar.gz ${BUNDLE_DIR}/electron_gui-node_modules.tar.gz
@@ -142,9 +151,15 @@ ARG STRAP_DIR=/opt/lucid/electron_gui
 ARG BUNDLE_DIR=/opt/lucid/bundles
 
 COPY --from=bundle-prep ${BUNDLE_DIR} ${BUNDLE_DIR}
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=bundle-prep --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=bundle-prep --chown=65532:65532 /build/configs/services /app/configs/services
+
+COPY --from=bundle-prep --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
+COPY --from=bundle-prep --chown=65532:65532 /build/common/tor/ /app/common/tor/
+COPY --from=bundle-prep --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
 
 COPY --from=bundle-prep ${STRAP_DIR} ${STRAP_DIR}
 COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap
@@ -171,12 +186,20 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
       com.lucid.cluster="support" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
+      com.lucid.hostconfig.upstream_api_gateway_port="8080"
 
 ENV STRAP_DIR=${STRAP_DIR} \
     BUNDLE_DIR=${BUNDLE_DIR} \
     NODE_ENV=development \
-    LUCID_PLATFORM=arm64
+    LUCID_PLATFORM=arm64 \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=gui_docker_manager \
+    LUCID_SERVICE_HOST_IP=172.20.10.60 \
+    LUCID_SERVICE_HTTP_PATH=http://gui-docker-manager:8098/app \
+    LUCID_API_GATEWAY_HOST=api-gateway \
+    LUCID_API_GATEWAY_PORT=8080
 
 WORKDIR ${STRAP_DIR}
 

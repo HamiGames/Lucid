@@ -1,14 +1,17 @@
 # infrastructure/containers/host-config.yml
 # Generated from repository root ports.txt + _gen_host_config.py label rules — regenerate; do not hand-edit the service list.
+# host_ip assignments follow repository root service-ip.txt (172.20.10.1–172.20.10.76).
 
 version: '1.0'
-description: Lucid container host registry for Docker DNS hostnames, ports, and discovery URLs.
+description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
 source: ports.txt
+ip_source: service-ip.txt
 path: infrastructure/containers/host-config.yml
 http_path_template: http://${service_name}:${port}/app
 services:
   main_lucid_gateway:
     port: 8080
+    host_ip: 172.20.10.1
     service_name: api-gateway
     tags:
     - api-gateway
@@ -24,6 +27,7 @@ services:
       com.lucid.plane: ops
   lucid_server_manager:
     port: 8081
+    host_ip: 172.20.10.3
     service_name: lucid-server-manager
     tags:
     - lucid-server-manager
@@ -38,6 +42,7 @@ services:
       com.lucid.expose: '8081'
   lucid_server_core:
     port: 8100
+    host_ip: 172.20.10.4
     service_name: lucid-server-core
     tags:
     - lucid-server
@@ -54,6 +59,7 @@ services:
       com.lucid.expose: '8100'
   lucid_auth_service:
     port: 8089
+    host_ip: 172.20.10.5
     service_name: lucid-auth-service
     tags:
     - lucid-auth-service
@@ -67,6 +73,7 @@ services:
       com.lucid.expose: '8089'
   lucid_gov:
     port: 8108
+    host_ip: 172.20.10.6
     service_name: lucid-gov
     tags:
     - lucid-gov
@@ -81,6 +88,7 @@ services:
       com.lucid.expose: '8108'
   session_system_control:
     port: 7988
+    host_ip: 172.20.10.7
     service_name: session-system-control
     tags:
     - session-system-control
@@ -94,6 +102,7 @@ services:
       com.lucid.expose: '7988'
   session_pipeline_manager:
     port: 7990
+    host_ip: 172.20.10.8
     service_name: session-pipeline-manager
     tags:
     - session-pipeline-manager
@@ -107,6 +116,7 @@ services:
       com.lucid.api.gateway: api-gateway
   session_chunk_processor:
     port: 8010
+    host_ip: 172.20.10.9
     service_name: session-chunk-processor
     tags:
     - session-chunk-processor
@@ -121,6 +131,7 @@ services:
       com.lucid.api.gateway: api-gateway
   session_storage_service:
     port: 8020
+    host_ip: 172.20.10.10
     service_name: session-storage-service
     tags:
     - session-storage-service
@@ -133,6 +144,7 @@ services:
       com.lucid.expose: '8020'
   session_storage:
     port: 8082
+    host_ip: 172.20.10.11
     service_name: session-storage
     tags:
     - session-storage
@@ -158,6 +170,7 @@ services:
       com.lucid.expose: '8083'
   session_anchoring:
     port: 8085
+    host_ip: 172.20.10.12
     service_name: session-anchoring
     tags:
     - session-anchoring
@@ -172,6 +185,7 @@ services:
       com.lucid.api.gateway: api-gateway
   session_recorder:
     port: 8090
+    host_ip: 172.20.10.13
     service_name: session-recorder
     tags:
     - session-recorder
@@ -185,6 +199,7 @@ services:
       com.lucid.expose: '8090'
   session_processor:
     port: 8091
+    host_ip: 172.20.10.14
     service_name: session-processor
     tags:
     - session-processor
@@ -198,6 +213,7 @@ services:
       com.lucid.expose: '8091'
   session_merkle_tree_builder:
     port: 8092
+    host_ip: 172.20.10.15
     service_name: session-merkle-tree-builder
     tags:
     - merkle-tree-builder
@@ -211,6 +227,7 @@ services:
       com.lucid.expose: '8092'
   session_overlord:
     port: 8110
+    host_ip: 172.20.10.16
     service_name: session-overlord
     tags:
     - session-overlord
@@ -224,6 +241,7 @@ services:
       com.lucid.expose: '8110'
   session_api:
     port: 8113
+    host_ip: 172.20.10.17
     service_name: session-api
     tags:
     - session-api
@@ -237,6 +255,7 @@ services:
       com.lucid.expose: '8113'
   admin_params_registry:
     port: 8050
+    host_ip: 172.20.10.18
     service_name: admin-params-registry
     tags:
     - admin-params-registry
@@ -250,6 +269,7 @@ services:
       com.lucid.expose: '8050'
   admin_key_rotation:
     port: 8060
+    host_ip: 172.20.10.19
     service_name: admin-key-rotation
     tags:
     - admin-key-rotation
@@ -263,6 +283,7 @@ services:
       com.lucid.expose: '8060'
   admin_governance_client:
     port: 8070
+    host_ip: 172.20.10.20
     service_name: admin-governance-client
     tags:
     - admin-governance-client
@@ -277,6 +298,7 @@ services:
       com.lucid.expose: '8070'
   admin_ui_backend:
     port: 8120
+    host_ip: 172.20.10.21
     service_name: admin-ui-backend
     tags:
     - admin-ui-backend
@@ -292,6 +314,7 @@ services:
       com.lucid.expose: '8120'
   database_overlord:
     port: 8120
+    host_ip: 172.20.10.22
     service_name: database-overlord
     tags:
     - database-overlord
@@ -305,6 +328,7 @@ services:
       com.lucid.expose: '8120'
   admin_overlord:
     port: 8140
+    host_ip: 172.20.10.23
     service_name: admin-overlord
     tags:
     - admin-overlord
@@ -318,6 +342,7 @@ services:
       com.lucid.expose: '8140'
   admin_system_gateway:
     port: 8155
+    host_ip: 172.20.10.24
     service_name: admin-system-gateway
     tags:
     - admin-system-gateway
@@ -333,6 +358,7 @@ services:
       com.lucid.tor.compatible: 'true'
   node_management:
     port: 8095
+    host_ip: 172.20.10.25
     service_name: node-management
     tags:
     - node-management
@@ -346,6 +372,7 @@ services:
       com.lucid.expose: '8095'
   node_management_staging:
     port: 8099
+    host_ip: 172.20.10.26
     service_name: node-management-staging
     tags:
     - node-management-staging
@@ -359,6 +386,7 @@ services:
       com.lucid.expose: '8099'
   node_worker:
     port: 8600
+    host_ip: 172.20.10.27
     service_name: node-worker
     tags:
     - lucid-node-worker
@@ -373,6 +401,7 @@ services:
       com.lucid.expose: '8600'
   node_registry:
     port: 8610
+    host_ip: 172.20.10.28
     service_name: node-registry
     tags:
     - node-registry
@@ -386,6 +415,7 @@ services:
       com.lucid.expose: '8610'
   node_gov:
     port: 8620
+    host_ip: 172.20.10.29
     service_name: node-gov
     tags:
     - node-gov
@@ -399,6 +429,7 @@ services:
       com.lucid.expose: '8620'
   node_utils:
     port: 8630
+    host_ip: 172.20.10.30
     service_name: node-utils
     tags:
     - node-utils
@@ -412,6 +443,7 @@ services:
       com.lucid.expose: '8630'
   node_overlord:
     port: 8130
+    host_ip: 172.20.10.32
     service_name: node-overlord
     tags:
     - node-overlord
@@ -426,6 +458,7 @@ services:
       com.lucid.expose: '8130'
   blockchain_engine:
     port: 8084
+    host_ip: 172.20.10.33
     service_name: blockchain-engine
     tags:
     - blockchain-engine
@@ -439,6 +472,7 @@ services:
       com.lucid.expose: '8084'
   blockchain_consensus_engine:
     port: 8085
+    host_ip: 172.20.10.34
     service_name: blockchain-consensus-engine
     tags:
     - consensus-engine
@@ -452,6 +486,7 @@ services:
       com.lucid.expose: '8085'
   block_manager:
     port: 8086
+    host_ip: 172.20.10.35
     service_name: block-manager
     tags:
     - block-manager
@@ -465,6 +500,7 @@ services:
       com.lucid.expose: '8086'
   data_chain:
     port: 8087
+    host_ip: 172.20.10.36
     service_name: data-chain
     tags:
     - data-chain
@@ -478,6 +514,7 @@ services:
       com.lucid.expose: '8087'
   tron_node_client:
     port: 8030
+    host_ip: 172.20.10.38
     service_name: tron-node-client
     tags:
     - tron-node-client
@@ -494,6 +531,7 @@ services:
       com.lucid.tor.compatible: 'true'
   on_system_chain_client:
     port: 8040
+    host_ip: 172.20.10.39
     service_name: on-system-chain-client
     tags:
     - on-system-chain-client
@@ -510,6 +548,7 @@ services:
       com.lucid.tor.compatible: 'true'
   tron_payment_service:
     port: 8080
+    host_ip: 172.20.10.40
     service_name: tron-payment-service
     tags:
     - tron-payment
@@ -527,6 +566,7 @@ services:
       com.lucid.tor.compatible: 'true'
   tron_client:
     port: 8091
+    host_ip: 172.20.10.41
     service_name: tron-client
     tags:
     - tron-client
@@ -544,6 +584,7 @@ services:
       com.lucid.tor.compatible: 'true'
   tron_client_aux:
     port: 8101
+    host_ip: 172.20.10.42
     service_name: tron-client-aux
     tags:
     - tron-client-admin
@@ -561,6 +602,7 @@ services:
       com.lucid.tor.compatible: 'true'
   payout_router:
     port: 8092
+    host_ip: 172.20.10.43
     service_name: payout-router
     tags:
     - payout-router
@@ -578,6 +620,7 @@ services:
       com.lucid.tor.compatible: 'true'
   wallet_manager:
     port: 8093
+    host_ip: 172.20.10.44
     service_name: wallet-manager
     tags:
     - wallet-manager
@@ -595,6 +638,7 @@ services:
       com.lucid.tor.compatible: 'true'
   usdt_manager:
     port: 8094
+    host_ip: 172.20.10.45
     service_name: usdt-manager
     tags:
     - usdt-manager
@@ -612,6 +656,7 @@ services:
       com.lucid.tor.compatible: 'true'
   rdp_server_manager_yml:
     port: 8001
+    host_ip: 172.20.10.49
     service_name: rdp-server-manager
     tags:
     - rdp-server-manager
@@ -625,6 +670,7 @@ services:
       com.lucid.expose: '8001'
   rdp_server_manager:
     port: 8090
+    host_ip: 172.20.10.49
     service_name: rdp-server-manager-http
     tags:
     - rdp-server-manager
@@ -639,6 +685,7 @@ services:
       com.lucid.expose: '8090'
   rdp_session_controller:
     port: 8101
+    host_ip: 172.20.10.50
     service_name: rdp-session-controller
     tags:
     - rdp-session-controller
@@ -653,6 +700,7 @@ services:
       com.lucid.expose: '8101'
   rdp_resource_monitor:
     port: 8201
+    host_ip: 172.20.10.51
     service_name: rdp-resource-monitor
     tags:
     - rdp-resource-monitor
@@ -667,6 +715,7 @@ services:
       com.lucid.expose: '8201'
   lucid_xrdp:
     port: 8250
+    host_ip: 172.20.10.52
     service_name: lucid-xrdp
     tags:
     - lucid-xrdp
@@ -680,6 +729,7 @@ services:
       com.lucid.expose: '8250'
   xrdp_desktop:
     port: 3389
+    host_ip: 172.20.10.53
     service_name: xrdp-rdp
     tags:
     - xrdp
@@ -694,6 +744,7 @@ services:
       com.lucid.expose: '3389'
   xrdp_sesman:
     port: 3350
+    host_ip: 172.20.10.54
     service_name: xrdp-sesman
     tags:
     - xrdp-sesman
@@ -707,6 +758,7 @@ services:
       com.lucid.expose: '3350'
   lucid_service_mesh_controller:
     port: 8500
+    host_ip: 172.20.10.55
     service_name: lucid-service-mesh-controller
     tags:
     - lucid-service-mesh-controller
@@ -721,6 +773,7 @@ services:
       com.lucid.expose: '8500'
   consul_dns:
     port: 8501
+    host_ip: 172.20.10.56
     service_name: consul-dns
     tags:
     - consul-dns
@@ -733,6 +786,7 @@ services:
       com.lucid.expose: '8501'
   consul_grpc:
     port: 8502
+    host_ip: 172.20.10.57
     service_name: consul-grpc
     tags:
     - consul-grpc
@@ -745,6 +799,7 @@ services:
       com.lucid.expose: '8502'
   consul_lan_serf:
     port: 8600
+    host_ip: 172.20.10.58
     service_name: consul-lan-serf
     tags:
     - consul-serf
@@ -758,6 +813,7 @@ services:
       com.lucid.expose: '8600'
   service_mesh_http:
     port: 8088
+    host_ip: 172.20.10.59
     service_name: service-mesh-http-health
     tags:
     - service-mesh-http
@@ -772,6 +828,7 @@ services:
       com.lucid.expose: '8088'
   gui_docker_manager:
     port: 8098
+    host_ip: 172.20.10.60
     service_name: gui-docker-manager
     tags:
     - gui-docker-manager
@@ -787,6 +844,7 @@ services:
       com.lucid.phase: gui
   gui_api_bridge:
     port: 8102
+    host_ip: 172.20.10.61
     service_name: gui-api-bridge
     tags:
     - gui-api-bridge
@@ -802,6 +860,7 @@ services:
       com.lucid.phase: gui
   gui_hardware_manager:
     port: 8099
+    host_ip: 172.20.10.62
     service_name: gui-hardware-manager
     tags:
     - gui-hardware-manager
@@ -817,6 +876,7 @@ services:
       com.lucid.phase: gui
   gui_tor_manager_http:
     port: 8097
+    host_ip: 172.20.10.63
     service_name: gui-tor-manager
     tags:
     - gui-tor-manager
@@ -832,6 +892,7 @@ services:
       com.lucid.phase: gui
   tor_socks:
     port: 9050
+    host_ip: 172.20.10.64
     service_name: tor-socks
     tags:
     - tor
@@ -848,6 +909,7 @@ services:
       com.lucid.tor.system: built-in
   tor_control:
     port: 9051
+    host_ip: 172.20.10.65
     service_name: tor-control
     tags:
     - tor-control
@@ -863,6 +925,7 @@ services:
       com.lucid.tor.system: built-in
   tunnel_tools:
     port: 7000
+    host_ip: 172.20.10.66
     service_name: tunnel-tools
     tags:
     - tunnel-tools
@@ -881,6 +944,7 @@ services:
       com.lucid.tor.compatible: 'true'
   lucid_redis:
     port: 6379
+    host_ip: 172.20.10.67
     service_name: lucid-redis
     tags:
     - lucid-redis
@@ -895,6 +959,7 @@ services:
       com.lucid.tor.compatible: 'true'
   lucid_elasticsearch_http:
     port: 9200
+    host_ip: 172.20.10.68
     service_name: lucid-elasticsearch-http
     tags:
     - lucid-elasticsearch
@@ -909,6 +974,7 @@ services:
       com.lucid.tor.compatible: 'true'
   lucid_elasticsearch_transport:
     port: 9300
+    host_ip: 172.20.10.69
     service_name: lucid-elasticsearch-transport
     tags:
     - elasticsearch-transport
@@ -922,6 +988,7 @@ services:
       com.lucid.tor.compatible: 'true'
   lucid_mongodb:
     port: 27017
+    host_ip: 172.20.10.70
     service_name: lucid-mongodb
     tags:
     - lucid-mongodb
@@ -936,6 +1003,7 @@ services:
       com.lucid.tor.compatible: 'true'
   mongodb_monitoring:
     port: 27018
+    host_ip: 172.20.10.71
     service_name: mongodb-monitoring
     tags:
     - mongodb-monitoring
@@ -950,6 +1018,7 @@ services:
       com.lucid.tor.compatible: 'true'
   lucid_system_storage:
     port: 9900
+    host_ip: 172.20.10.72
     service_name: lucid-system-storage
     tags:
     - lucid-system-storage
@@ -964,6 +1033,7 @@ services:
       com.lucid.tor.compatible: 'true'
   vm_service:
     port: 8107
+    host_ip: 172.20.10.73
     service_name: vm-service
     tags:
     - vm-service
@@ -977,6 +1047,7 @@ services:
       com.lucid.expose: '8107'
   prometheus_metrics:
     port: 9090
+    host_ip: 172.20.10.74
     service_name: prometheus-metrics
     tags:
     - prometheus
@@ -991,6 +1062,7 @@ services:
       com.lucid.expose: '9090'
   electron_gui_user:
     port: 3001
+    host_ip: 172.20.10.75
     service_name: electron-gui-user
     tags:
     - electron-user
@@ -1005,6 +1077,7 @@ services:
       com.lucid.phase: gui
   electron_gui_node:
     port: 3002
+    host_ip: 172.20.10.76
     service_name: electron-gui-node
     tags:
     - electron-node

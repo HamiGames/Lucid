@@ -11,9 +11,10 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../configs/environment/.env.openapi-gateway
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.user
+      - /app/usr/config/.env.openapi-gateway
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -77,9 +78,10 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../configs/environment/.env.openapi-server
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.user
+      - /app/usr/config/.env.openapi-server
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -145,8 +147,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.rdp-server-manager
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -212,8 +215,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.admin
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -280,9 +284,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../infrastructure/docker/blockchain/env/.env.contract-deployment
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.contract-deployment
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -347,9 +351,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../infrastructure/docker/blockchain/env/.env.contract-compiler
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.contract-compiler
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -412,9 +416,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.core
-      - ../../infrastructure/docker/blockchain/env/.env.deployment-orchestrator
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.deployment-orchestrator
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -479,8 +483,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.rdp-xrdp
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -550,9 +555,9 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - ../../configs/environment/.env.foundation
-      - ../../configs/environment/.env.support
-      - ../../configs/environment/.env.tron-relay
+      - /app/configs/.env.master
+      - /app/configs/.env.secrets
+      - /app/usr/config/.env.tron-relay
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

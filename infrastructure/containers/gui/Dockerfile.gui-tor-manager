@@ -26,11 +26,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Set working directory
 WORKDIR /build
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
+RUN mkdir -p /build/configs /build/configs/services/tor
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
-
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
 
 # System packages with cache mounts
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -70,14 +72,32 @@ RUN python3 -c "import fastapi, uvicorn, stem, httpx, pydantic, redis; print('�
     echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
     echo "✅ All packages ready for final image"
 
-# Copy application code
-COPY gui_tor_manager/gui_tor_manager ./gui_tor_manager
+# Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
+RUN mkdir -p /build/tmp /build/common /build/infrastructure/kubernetes && \
+    printf "LUCID_GUI_TOR_TMP_$(date +%s)" > /build/tmp/.keep && \
+    printf "LUCID_GUI_TOR_COMMON_$(date +%s)" > /build/common/.keep && \
+    printf "LUCID_GUI_TOR_K8S_$(date +%s)" > /build/infrastructure/kubernetes/.keep
+
+COPY common/__init__.py /build/common/__init__.py
+COPY common/tor/ /build/common/tor/
+COPY infrastructure/kubernetes/01_configmaps/ /build/infrastructure/kubernetes/
+
+# Application modules (explicit per-directory COPY)
+COPY gui_tor_manager/gui_tor_manager/*.py ./gui_tor_manager/
+COPY gui_tor_manager/gui_tor_manager/config/ ./gui_tor_manager/config/
+COPY gui_tor_manager/gui_tor_manager/routers/ ./gui_tor_manager/routers/
+COPY gui_tor_manager/gui_tor_manager/middleware/ ./gui_tor_manager/middleware/
+COPY gui_tor_manager/gui_tor_manager/services/ ./gui_tor_manager/services/
+COPY gui_tor_manager/gui_tor_manager/integration/ ./gui_tor_manager/integration/
+COPY gui_tor_manager/gui_tor_manager/utils/ ./gui_tor_manager/utils/
+COPY gui_tor_manager/gui_tor_manager/models/ ./gui_tor_manager/models/
 
 # Verify application files in builder stage
 RUN echo "=== Verifying GUI Tor Manager application files ===" && \
     test -f ./gui_tor_manager/entrypoint.py && echo "✅ entrypoint.py found" && \
     test -f ./gui_tor_manager/main.py && echo "✅ main.py found" && \
     test -f ./gui_tor_manager/config.py && echo "✅ config.py found" && \
+    test -f ./infrastructure/kubernetes/api-gateway-config.yaml && \
     python3 -c "import sys; sys.path.insert(0, './gui_tor_manager'); from main import app; print('✅ Application initialization successful in builder')" && \
     echo "All application files verified in builder stage"
 
@@ -96,9 +116,15 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      com.lucid.service="gui_tor_manager" \
+      com.lucid.service="gui-tor-manager" \
       com.lucid.platform="arm64" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.hostconfig.service_name="gui-tor-manager" \
+      com.lucid.hostconfig.port="8097" \
+      com.lucid.hostconfig.tor_socks_host="tor-socks" \
+      com.lucid.hostconfig.tor_socks_port="9050" \
+      com.lucid.hostconfig.upstream_api_gateway_host="api-gateway" \
+      com.lucid.hostconfig.upstream_api_gateway_port="8080"
 
 ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
@@ -106,12 +132,26 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=gui_tor_manager_http \
+    LUCID_SERVICE_HOST_IP=172.20.10.63 \
+    LUCID_SERVICE_HTTP_PATH=http://gui-tor-manager:8097/app \
+    LUCID_TOR_SOCKS_HOST=tor-socks \
+    LUCID_TOR_SOCKS_PORT=9050 \
+    LUCID_API_GATEWAY_HOST=api-gateway \
+    LUCID_API_GATEWAY_PORT=8080
 
 # Copy system directories and certificates
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
+# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
+
+COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
+COPY --from=builder --chown=65532:65532 /build/common/tor/ /app/common/tor/
+COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
 
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
