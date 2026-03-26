@@ -165,20 +165,20 @@ ENV PATH=/app/run/lucid/tor/bin:/app/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/
     TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
     TOR_DATA_DIR=/run/lucid/tor \
-    LUCID_HOST_CONFIG_SERVICE_KEY=tor_socks \
+    LUCID_HOST_CONFIG_SERVICE_KEY=tor-socks \
     LUCID_SERVICE_HOST_IP=172.20.10.64 \
     LUCID_SERVICE_HTTP_PATH=http://tor-socks:9050/app
 
 # Core binaries and helpers
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + .env.tunnel-tools (runtime under /app/configs — see also /app/configs/services)
-COPY --from=tor-builder /usr/bin/tor         /app/usr/bin/tor
-COPY --from=tor-builder /usr/bin/obfs4proxy  /app/usr/bin/obfs4proxy
-COPY --from=tor-builder /usr/bin/tini        /app/usr/bin/tini
-COPY --from=tor-builder /usr/sbin/gosu       /app/usr/sbin/gosu
-COPY --from=tor-builder /bin/bash            /app/bin/bash
-COPY --from=tor-builder /bin/busybox         /app/bin/busybox
-COPY --from=tor-builder /bin/mkdir           /app/bin/mkdir
-COPY --from=tor-builder /bin/sleep           /app/bin/sleep
+COPY --from=tor-builder /usr/bin/tor/        /app/usr/bin/tor
+COPY --from=tor-builder /usr/bin/obfs4proxy/  /app/usr/bin/obfs4proxy
+COPY --from=tor-builder /usr/bin/tini/        /app/usr/bin/tini
+COPY --from=tor-builder /usr/sbin/gosu/       /app/usr/sbin/gosu
+COPY --from=tor-builder /bin/bash/            /app/bin/bash
+COPY --from=tor-builder /bin/busybox/         /app/bin/busybox
+COPY --from=tor-builder /bin/mkdir/           /app/bin/mkdir
+COPY --from=tor-builder /bin/sleep/           /app/bin/sleep
 COPY --from=tor-builder /bin/tail            /app/bin/tail
 COPY --from=tor-builder /bin/chmod           /app/bin/chmod
 COPY --from=tor-builder /bin/chown           /app/bin/chown
