@@ -14,4 +14,560 @@ meta:
   - path: auth/config/endpoints.yaml
     scope: lucid-auth-service route catalog (/app prefix)
   - path: configs/integration/master-integration-config.yml
-   
+    scope: cross-system integration URLs
+  - path: configs/services/gui-hardware-manager.yml
+    scope: gui-hardware-manager service + API paths
+  - path: configs/services/session-management.yml
+    scope: session-management pipeline config
+  - path: electron_gui/configs/electron-endpoints.yml
+    scope: Electron GUI backend bases
+  - path: gui/config/gui-endpoints.yml
+    scope: GUI / desktop client bases
+  - path: infrastructure/containers/blockchain/config/blockchain-endpoints.yml
+    scope: blockchain + anchoring plane
+  - path: infrastructure/containers/blockchain/config/block-pay-endpoints.yml
+    scope: TRON / payment plane
+  - path: infrastructure/containers/services/admin-interface.yml
+    scope: admin-interface bundle
+  - path: infrastructure/containers/services/beta-sidecar.yml
+    scope: beta sidecar mesh + health probes
+  - path: infrastructure/containers/services/blockchain-core.yml
+    scope: blockchain-core bundle
+  - path: infrastructure/containers/services/gui-hardware-manager.yml
+    scope: gui-hardware-manager bundle
+  - path: infrastructure/containers/services/node-management.yml
+    scope: node-management bundle
+  - path: infrastructure/containers/services/rdp-services.yml
+    scope: RDP services bundle
+  - path: infrastructure/containers/services/service-discovery.yml
+    scope: Consul / service mesh discovery
+  - path: infrastructure/containers/services/session-management.yml
+    scope: session-management bundle
+common_http:
+  app_mount: /app
+  health_relative: /health
+  api_version_base: /app/api/v1
+  notes: Most Lucid HTTP apps expose health at {http_path host base}/health when base ends with /app; admin-system-gateway
+    host-config lists primary discovery as /health on port 8155.
+audiences:
+  super_admin:
+    description: Full admin plane + gateways
+    primary_configs:
+    - admin/config/admin-endpoints.yml
+    - infrastructure/containers/services/admin-interface.yml
+    host_registry_keys:
+    - admin_ui_backend
+    - admin_overlord
+    - admin_system_gateway
+    - admin_params_registry
+    - admin_key_rotation
+    - admin_governance_client
+    - database_overlord
+    - main_lucid_gateway
+  admin:
+    description: Operations + monitoring
+    primary_configs:
+    - admin/config/admin-endpoints.yml
+    host_registry_keys:
+    - lucid_gov
+    - prometheus_metrics
+    - lucid_service_mesh_controller
+    - service_mesh_http
+  user:
+    description: Electron / GUI clients
+    primary_configs:
+    - gui/config/gui-endpoints.yml
+    - electron_gui/configs/electron-endpoints.yml
+    host_registry_keys:
+    - gui_api_bridge
+    - gui_docker_manager
+    - gui_hardware_manager
+    - gui_tor_manager_http
+    - electron_gui_user
+    - lucid_auth_service
+    - main_lucid_gateway
+  node_operator:
+    description: Worker / pool operations
+    primary_configs:
+    - infrastructure/containers/services/node-management.yml
+    host_registry_keys:
+    - node_management
+    - node_worker
+    - node_registry
+    - node_overlord
+    - node_gov
+    - node_utils
+    - electron_gui_node
+  developer:
+    description: API + core platform
+    primary_configs:
+    - configs/integration/master-integration-config.yml
+    host_registry_keys:
+    - lucid_server_manager
+    - lucid_server_core
+    - main_lucid_gateway
+    - blockchain_engine
+  session_pipeline_ops:
+    description: Recording, chunks, storage, API
+    primary_configs:
+    - configs/services/session-management.yml
+    - infrastructure/containers/services/session-management.yml
+    host_registry_keys:
+    - session_system_control
+    - session_pipeline_manager
+    - session_chunk_processor
+    - session_storage_service
+    - session_storage
+    - session_pipeline
+    - session_anchoring
+    - session_recorder
+    - session_processor
+    - session_merkle_tree_builder
+    - session_overlord
+    - session_api
+  blockchain_plane:
+    description: lucid_blocks (no TRON in-process)
+    primary_configs:
+    - infrastructure/containers/blockchain/config/blockchain-endpoints.yml
+    - infrastructure/containers/services/blockchain-core.yml
+    host_registry_keys:
+    - blockchain_engine
+    - blockchain_consensus_engine
+    - block_manager
+    - data_chain
+  payment_plane:
+    description: Isolated TRON / wallet
+    primary_configs:
+    - infrastructure/containers/blockchain/config/block-pay-endpoints.yml
+    host_registry_keys:
+    - tron_node_client
+    - on_system_chain_client
+    - tron_payment_service
+    - tron_client
+    - tron_client_aux
+    - payout_router
+    - wallet_manager
+    - usdt_manager
+  rdp_plane:
+    description: RDP / XRDP stack
+    primary_configs:
+    - infrastructure/containers/services/rdp-services.yml
+    host_registry_keys:
+    - rdp_server_manager_yml
+    - rdp_server_manager
+    - rdp_session_controller
+    - rdp_resource_monitor
+    - lucid_xrdp
+    - xrdp_desktop
+    - xrdp_sesman
+  foundation_data:
+    description: Datastores and Tor (native protocols; http_path is templating only per host-config notes)
+    primary_configs:
+    - admin/config/admin-endpoints.yml
+    - configs/integration/master-integration-config.yml
+    host_registry_keys:
+    - lucid_mongodb
+    - lucid_redis
+    - lucid_elasticsearch_http
+    - lucid_elasticsearch_transport
+    - mongodb_monitoring
+    - lucid_system_storage
+    - tor_socks
+    - tor_control
+    - tunnel_tools
+  mesh_support:
+    description: Service discovery + sidecar
+    primary_configs:
+    - infrastructure/containers/services/service-discovery.yml
+    - infrastructure/containers/services/beta-sidecar.yml
+    host_registry_keys:
+    - lucid_service_mesh_controller
+    - consul_dns
+    - consul_grpc
+    - consul_lan_serf
+    - service_mesh_http
+  compute_other:
+    description: VM + system storage
+    host_registry_keys:
+    - vm_service
+authentication_routes:
+  config: auth/config/endpoints.yaml
+  mount: /app
+  examples:
+  - /app/health
+  - /app/auth/login
+  - /app/users/me
+  - /app/sessions
+services:
+  main_lucid_gateway:
+    service_name: api-gateway
+    port: 8080
+    http_path: http://api-gateway:8080/app
+    host_ip: 172.20.10.1
+  lucid_server_manager:
+    service_name: lucid-server-manager
+    port: 8081
+    http_path: http://lucid-server-manager:8081/app
+    host_ip: 172.20.10.3
+  lucid_server_core:
+    service_name: lucid-server-core
+    port: 8100
+    http_path: http://lucid-server-core:8100/app
+    host_ip: 172.20.10.4
+  lucid_auth_service:
+    service_name: lucid-auth-service
+    port: 8089
+    http_path: http://lucid-auth-service:8089/app
+    host_ip: 172.20.10.5
+  lucid_gov:
+    service_name: lucid-gov
+    port: 8108
+    http_path: http://lucid-gov:8108/app
+    host_ip: 172.20.10.6
+  session_system_control:
+    service_name: session-system-control
+    port: 7988
+    http_path: http://session-system-control:7988/app
+    host_ip: 172.20.10.7
+  session_pipeline_manager:
+    service_name: session-pipeline-manager
+    port: 7990
+    http_path: http://session-pipeline-manager:7990/app
+    host_ip: 172.20.10.8
+  session_chunk_processor:
+    service_name: session-chunk-processor
+    port: 8010
+    http_path: http://session-chunk-processor:8010/app
+    host_ip: 172.20.10.9
+  session_storage_service:
+    service_name: session-storage-service
+    port: 8020
+    http_path: http://session-storage-service:8020/app
+    host_ip: 172.20.10.10
+  session_storage:
+    service_name: session-storage
+    port: 8082
+    http_path: http://session-storage:8082/app
+    host_ip: 172.20.10.11
+  session_pipeline:
+    service_name: session-pipeline
+    port: 8083
+    http_path: http://session-pipeline:8083/app
+  session_anchoring:
+    service_name: session-anchoring
+    port: 8085
+    http_path: http://session-anchoring:8085/app
+    host_ip: 172.20.10.12
+  session_recorder:
+    service_name: session-recorder
+    port: 8090
+    http_path: http://session-recorder:8090/app
+    host_ip: 172.20.10.13
+  session_processor:
+    service_name: session-processor
+    port: 8091
+    http_path: http://session-processor:8091/app
+    host_ip: 172.20.10.14
+  session_merkle_tree_builder:
+    service_name: session-merkle-tree-builder
+    port: 8092
+    http_path: http://session-merkle-tree-builder:8092/app
+    host_ip: 172.20.10.15
+  session_overlord:
+    service_name: session-overlord
+    port: 8110
+    http_path: http://session-overlord:8110/app
+    host_ip: 172.20.10.16
+  session_api:
+    service_name: session-api
+    port: 8113
+    http_path: http://session-api:8113/app
+    host_ip: 172.20.10.17
+  admin_params_registry:
+    service_name: admin-params-registry
+    port: 8050
+    http_path: http://admin-params-registry:8050/app
+    host_ip: 172.20.10.18
+  admin_key_rotation:
+    service_name: admin-key-rotation
+    port: 8060
+    http_path: http://admin-key-rotation:8060/app
+    host_ip: 172.20.10.19
+  admin_governance_client:
+    service_name: admin-governance-client
+    port: 8070
+    http_path: http://admin-governance-client:8070/app
+    host_ip: 172.20.10.20
+  admin_ui_backend:
+    service_name: admin-ui-backend
+    port: 8120
+    http_path: http://admin-ui-backend:8120/app
+    host_ip: 172.20.10.21
+  database_overlord:
+    service_name: database-overlord
+    port: 8120
+    http_path: http://database-overlord:8120/app
+    host_ip: 172.20.10.22
+  admin_overlord:
+    service_name: admin-overlord
+    port: 8140
+    http_path: http://admin-overlord:8140/app
+    host_ip: 172.20.10.23
+  admin_system_gateway:
+    service_name: admin-system-gateway
+    port: 8155
+    http_path: http://admin-system-gateway:8155/health
+    host_ip: 172.20.10.24
+  node_management:
+    service_name: node-management
+    port: 8095
+    http_path: http://node-management:8095/app
+    host_ip: 172.20.10.25
+  node_management_staging:
+    service_name: node-management-staging
+    port: 8099
+    http_path: http://node-management-staging:8099/app
+    host_ip: 172.20.10.26
+  node_worker:
+    service_name: node-worker
+    port: 8600
+    http_path: http://node-worker:8600/app
+    host_ip: 172.20.10.27
+  node_registry:
+    service_name: node-registry
+    port: 8610
+    http_path: http://node-registry:8610/app
+    host_ip: 172.20.10.28
+  node_gov:
+    service_name: node-gov
+    port: 8620
+    http_path: http://node-gov:8620/app
+    host_ip: 172.20.10.29
+  node_utils:
+    service_name: node-utils
+    port: 8630
+    http_path: http://node-utils:8630/app
+    host_ip: 172.20.10.30
+  node_overlord:
+    service_name: node-overlord
+    port: 8130
+    http_path: http://node-overlord:8130/app
+    host_ip: 172.20.10.32
+  blockchain_engine:
+    service_name: blockchain-engine
+    port: 8084
+    http_path: http://blockchain-engine:8084/app
+    host_ip: 172.20.10.33
+  blockchain_consensus_engine:
+    service_name: blockchain-consensus-engine
+    port: 8085
+    http_path: http://blockchain-consensus-engine:8085/app
+    host_ip: 172.20.10.34
+  block_manager:
+    service_name: block-manager
+    port: 8086
+    http_path: http://block-manager:8086/app
+    host_ip: 172.20.10.35
+  data_chain:
+    service_name: data-chain
+    port: 8087
+    http_path: http://data-chain:8087/app
+    host_ip: 172.20.10.36
+  tron_node_client:
+    service_name: tron-node-client
+    port: 8030
+    http_path: http://tron-node-client:8030/app
+    host_ip: 172.20.10.38
+  on_system_chain_client:
+    service_name: on-system-chain-client
+    port: 8040
+    http_path: http://on-system-chain-client:8040/app
+    host_ip: 172.20.10.39
+  tron_payment_service:
+    service_name: tron-payment-service
+    port: 8080
+    http_path: http://tron-payment-service:8080/app
+    host_ip: 172.20.10.40
+  tron_client:
+    service_name: tron-client
+    port: 8091
+    http_path: http://tron-client:8091/app
+    host_ip: 172.20.10.41
+  tron_client_aux:
+    service_name: tron-client-aux
+    port: 8101
+    http_path: http://tron-client-aux:8101/app
+    host_ip: 172.20.10.42
+  payout_router:
+    service_name: payout-router
+    port: 8092
+    http_path: http://payout-router:8092/app
+    host_ip: 172.20.10.43
+  wallet_manager:
+    service_name: wallet-manager
+    port: 8093
+    http_path: http://wallet-manager:8093/app
+    host_ip: 172.20.10.44
+  usdt_manager:
+    service_name: usdt-manager
+    port: 8094
+    http_path: http://usdt-manager:8094/app
+    host_ip: 172.20.10.45
+  rdp_server_manager_yml:
+    service_name: rdp-server-manager
+    port: 8001
+    http_path: http://rdp-server-manager:8001/app
+    host_ip: 172.20.10.49
+  rdp_server_manager:
+    service_name: rdp-server-manager-http
+    port: 8090
+    http_path: http://rdp-server-manager-http:8090/app
+    host_ip: 172.20.10.49
+  rdp_session_controller:
+    service_name: rdp-session-controller
+    port: 8101
+    http_path: http://rdp-session-controller:8101/app
+    host_ip: 172.20.10.50
+  rdp_resource_monitor:
+    service_name: rdp-resource-monitor
+    port: 8201
+    http_path: http://rdp-resource-monitor:8201/app
+    host_ip: 172.20.10.51
+  lucid_xrdp:
+    service_name: lucid-xrdp
+    port: 8250
+    http_path: http://lucid-xrdp:8250/app
+    host_ip: 172.20.10.52
+  xrdp_desktop:
+    service_name: xrdp-rdp
+    port: 3389
+    http_path: http://xrdp-rdp:3389/app
+    host_ip: 172.20.10.53
+  xrdp_sesman:
+    service_name: xrdp-sesman
+    port: 3350
+    http_path: http://xrdp-sesman:3350/app
+    host_ip: 172.20.10.54
+  lucid_service_mesh_controller:
+    service_name: lucid-service-mesh-controller
+    port: 8500
+    http_path: http://lucid-service-mesh-controller:8500/app
+    host_ip: 172.20.10.55
+  consul_dns:
+    service_name: consul-dns
+    port: 8501
+    http_path: http://consul-dns:8501/app
+    host_ip: 172.20.10.56
+  consul_grpc:
+    service_name: consul-grpc
+    port: 8502
+    http_path: http://consul-grpc:8502/app
+    host_ip: 172.20.10.57
+  consul_lan_serf:
+    service_name: consul-lan-serf
+    port: 8600
+    http_path: http://consul-lan-serf:8600/app
+    host_ip: 172.20.10.58
+  service_mesh_http:
+    service_name: service-mesh-http-health
+    port: 8088
+    http_path: http://service-mesh-http-health:8088/app
+    host_ip: 172.20.10.59
+  gui_docker_manager:
+    service_name: gui-docker-manager
+    port: 8098
+    http_path: http://gui-docker-manager:8098/app
+    host_ip: 172.20.10.60
+  gui_api_bridge:
+    service_name: gui-api-bridge
+    port: 8102
+    http_path: http://gui-api-bridge:8102/app
+    host_ip: 172.20.10.61
+  gui_hardware_manager:
+    service_name: gui-hardware-manager
+    port: 8099
+    http_path: http://gui-hardware-manager:8099/app
+    host_ip: 172.20.10.62
+  gui_tor_manager_http:
+    service_name: gui-tor-manager
+    port: 8097
+    http_path: http://gui-tor-manager:8097/app
+    host_ip: 172.20.10.63
+  tor_socks:
+    service_name: tor-socks
+    port: 9050
+    http_path: http://tor-socks:9050/app
+    host_ip: 172.20.10.64
+  tor_control:
+    service_name: tor-control
+    port: 9051
+    http_path: http://tor-control:9051/app
+    host_ip: 172.20.10.65
+  tunnel_tools:
+    service_name: tunnel-tools
+    port: 7000
+    http_path: http://tunnel-tools:7000/app
+    host_ip: 172.20.10.66
+  lucid_redis:
+    service_name: lucid-redis
+    port: 6379
+    http_path: http://lucid-redis:6379/app
+    host_ip: 172.20.10.67
+  lucid_elasticsearch_http:
+    service_name: lucid-elasticsearch-http
+    port: 9200
+    http_path: http://lucid-elasticsearch-http:9200/app
+    host_ip: 172.20.10.68
+  lucid_elasticsearch_transport:
+    service_name: lucid-elasticsearch-transport
+    port: 9300
+    http_path: http://lucid-elasticsearch-transport:9300/app
+    host_ip: 172.20.10.69
+  lucid_mongodb:
+    service_name: lucid-mongodb
+    port: 27017
+    http_path: http://lucid-mongodb:27017/app
+    host_ip: 172.20.10.70
+  mongodb_monitoring:
+    service_name: mongodb-monitoring
+    port: 27018
+    http_path: http://mongodb-monitoring:27018/app
+    host_ip: 172.20.10.71
+  lucid_system_storage:
+    service_name: lucid-system-storage
+    port: 9900
+    http_path: http://lucid-system-storage:9900/app
+    host_ip: 172.20.10.72
+  vm_service:
+    service_name: vm-service
+    port: 8107
+    http_path: http://vm-service:8107/app
+    host_ip: 172.20.10.73
+  prometheus_metrics:
+    service_name: prometheus-metrics
+    port: 9090
+    http_path: http://prometheus-metrics:9090/app
+    host_ip: 172.20.10.74
+  electron_gui_user:
+    service_name: electron-gui-user
+    port: 3001
+    http_path: http://electron-gui-user:3001/app
+    host_ip: 172.20.10.75
+  electron_gui_node:
+    service_name: electron-gui-node
+    port: 3002
+    http_path: http://electron-gui-node:3002/app
+    host_ip: 172.20.10.76
+collision_notes:
+- '8120: admin-ui-backend and database-overlord share port — use distinct service_name hostnames.'
+- '8099: node-management-staging vs gui-hardware-manager — remap host publish if co-hosted.'
+- '8090: session-recorder vs rdp-server-manager-http — remap host publish if co-hosted.'
+- '8080: api-gateway vs tron-payment-service — remap host publish if co-hosted.'
+- '8092: payout-router vs session-merkle-tree-builder — remap host publish if co-hosted.'
+- '8600: node-worker vs consul-lan-serf — remap host publish if co-hosted.'
+- '8101: rdp-session-controller vs tron-client-aux — remap host publish if co-hosted.'
+- 'RDP: rdp-services.yml may use 8001 for rdp-server-manager; Dockerfile uses 8090 (see rdp_server_manager entries).'
+- http_path is a template; real HTTP paths are often /health or /api/v1/... not /app.
+- Non-HTTP services (Redis, MongoDB, Tor, RDP binary) still carry http_path for uniform templating only.
+- 'admin-system-gateway: primary discovery port 8155 (/health in http_path); optional portal listens 28080→api-gateway:8080,
+  28120→admin-ui-backend:8120, 28050→admin-params-registry:8050, 27000→lucid-tunnel-tools:7000 (defaults in infrastructure/containers/admin/config/admin-system-gateway.connections.json).'
