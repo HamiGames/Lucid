@@ -16,9 +16,11 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 # Import tunnel modules (handle import errors gracefully)
+# Same-directory modules: repo path uses 02_network_security/tunnels/ but Python
+# package names cannot start with a digit; image/runtime use /app/tunnels/.
 try:
-    from 02_network_security.tunnels.tunnel_metrics import get_metrics
-    from 02_network_security.tunnels.tunnel_status import get_status
+    from tunnel_metrics import get_metrics
+    from tunnel_status import get_status
     METRICS_AVAILABLE = True
     STATUS_AVAILABLE = True
 except ImportError:
