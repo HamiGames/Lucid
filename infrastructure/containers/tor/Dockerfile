@@ -181,7 +181,9 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_SERVICE_KEY=tunnel_tools \
+    LUCID_SERVICE_NAME=tunnel-tools \
+    LUCID_SERVICE_PORT=7000 \
+    LUCID_SERVICE_PROTOCOL=http \
     LUCID_SERVICE_HOST_IP=172.20.10.66 \
     LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app
 
