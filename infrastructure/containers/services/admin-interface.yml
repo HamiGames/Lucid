@@ -30,23 +30,29 @@ containers:
 dependencies:
   internal:
     - name: "api-gateway"
-      url: "http://api-gateway:8080"
+      url: "http://api-gateway:8080/app"
       required: true
     - name: "blockchain-engine"
-      url: "http://blockchain-engine:8084"
+      url: "http://blockchain-engine:8084/app"
       required: true
     - name: "session-anchoring"
-      url: "http://session-anchoring:8085"
+      url: "http://session-anchoring:8085/app"
       required: true
     - name: "rdp-server-manager-http"
-      url: "http://rdp-server-manager-http:8090"
+      url: "http://rdp-server-manager-http:8090/app"
       required: true
     - name: "node-management"
-      url: "http://node-management:8095"
+      url: "http://node-management:8095/app"
       required: true
     - name: "lucid-auth-service"
-      url: "http://lucid-auth-service:8089"
+      url: "http://lucid-auth-service:8089/app"
       required: true
+    - name: "admin-system-gateway"
+      url: "http://admin-system-gateway:8155/app"
+      required: false
+    - name: "gui-api-bridge"
+      url: "http://gui-api-bridge:8102/app"
+      required: false
   external:
     - name: "lucid-mongodb"
       url: "mongodb://lucid-mongodb:27017/lucid_admin"
@@ -229,8 +235,10 @@ emergency_controls:
 # API Configuration
 api:
   version: "v1"
-  base_path: "/api/v1"
+  base_path: "/app/api/v1"
   endpoints:
+    health:
+      - "GET /app/health"
     dashboard:
       - "GET /dashboard/overview"
       - "GET /dashboard/metrics"
@@ -358,7 +366,7 @@ logging:
 # Health Check Configuration
 health_check:
   admin_ui:
-    endpoint: "/api/v1/system/health"
+    endpoint: "/app/api/v1/system/health"
     interval: 30
     timeout: 10
     retries: 3
@@ -393,7 +401,7 @@ monitoring:
   prometheus:
     enabled: true
     port: 9090
-    path: "/metrics"
+    path: "/app/metrics"
   grafana:
     enabled: true
     dashboard_id: "admin-interface"

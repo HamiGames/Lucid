@@ -16,7 +16,7 @@ from pathlib import Path
 import json
 import hashlib
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Configuration from environment
 COMMON_TRUST_TIMEOUT_SECONDS = 60

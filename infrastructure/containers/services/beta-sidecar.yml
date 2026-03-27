@@ -301,7 +301,7 @@ monitoring:
   # Metrics collection
   metrics:
     enabled: true
-    endpoint: "/metrics"
+    endpoint: "/app/metrics"
     interval: 30  # seconds
     
     # Custom metrics
@@ -362,7 +362,7 @@ health_checks:
   # Sidecar health check
   sidecar:
     type: "http"
-    path: "/health"
+    path: "/app/health"
     port: 8080
     interval: 30
     timeout: 10
@@ -377,16 +377,16 @@ health_checks:
     # Health check endpoints
     endpoints:
       - name: "api-gateway"
-        url: "http://api-gateway:8080/health"
+        url: "http://api-gateway:8080/app/health"
         
       - name: "blockchain-engine"
-        url: "http://blockchain-engine:8084/health"
+        url: "http://blockchain-engine:8084/app/health"
         
       - name: "lucid-auth-service"
-        url: "http://lucid-auth-service:8089/health"
+        url: "http://lucid-auth-service:8089/app/health"
         
       - name: "tron-client"
-        url: "http://tron-client:8091/health"
+        url: "http://tron-client:8091/app/health"
         network: "lucid-tron-isolated"
 
 # Configuration Management
@@ -426,7 +426,7 @@ error_handling:
   # Error reporting
   reporting:
     enabled: true
-    endpoint: "/errors"
+    endpoint: "/app/errors"
     batch_size: 100
     flush_interval: 30  # seconds
 

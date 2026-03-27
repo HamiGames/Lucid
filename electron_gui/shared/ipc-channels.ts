@@ -137,6 +137,8 @@ export const IPCChannels = {
   DOCKER_GET_ALL_STATS: 'docker:get-all-stats',
   DOCKER_PULL_IMAGE: 'docker:pull-image',
   DOCKER_GET_IMAGES: 'docker:get-images',
+  HARDWARE_WALLET_CONNECT: 'hardware-wallet:connect',
+  HARDWARE_WALLET_SIGN: 'hardware-wallet:sign',
 } as const;
 
 export type RendererToMainChannel = ValueOf<typeof RENDERER_TO_MAIN_CHANNELS>;

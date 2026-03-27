@@ -1,0 +1,17 @@
+admin\config\admin-endpoints.yml
+auth\config\endpoints.yaml
+configs\integration\master-integration-config.yml
+configs\services\gui-hardware-manager.yml
+configs\services\session-management.yml
+electron_gui\configs\electron-endpoints.yml
+gui\config\gui-endpoints.yml
+infrastructure\containers\blockchain\config\block-pay-endpoints.yml
+infrastructure\containers\blockchain\config\blockchain-endpoints.yml
+infrastructure\containers\services\admin-interface.yml
+infrastructure\containers\services\beta-sidecar.yml
+infrastructure\containers\services\blockchain-core.yml
+infrastructure\containers\services\gui-hardware-manager.yml
+infrastructure\containers\services\node-management.yml
+infrastructure\containers\services\rdp-services.yml
+infrastructure\containers\services\service-discovery.yml
+infrastructure\containers\services\session-management.yml

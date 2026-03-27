@@ -82,28 +82,118 @@ RUN python3.11 -c "\
 import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, httpx, jwt, tronpy, requests, web3, eth_account, structlog, prometheus_client; \
 print('auth-service deps OK')"
 
-RUN mkdir -p ./auth ./configs ./configs/services ./tmp ./infrastructure/kubernetes && \
+RUN mkdir -p ./auth ./auth/config ./auth/models ./auth/utils ./auth/middleware ./auth/api ./auth/services ./configs ./configs/services ./tmp ./infrastructure/kubernetes && \
+    printf "LUCID_AUTH_SERVICE_AUTH_$(date +%s)" > ./auth/.keep && \
+    touch ./auth/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_CONFIG_$(date +%s)" > ./auth/config/.keep && \
+    touch ./auth/config/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_MODELS_$(date +%s)" > ./auth/models/.keep && \
+    touch ./auth/models/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_UTILS_$(date +%s)" > ./auth/utils/.keep && \
+    touch ./auth/utils/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_MIDDLEWARE_$(date +%s)" > ./auth/middleware/.keep && \
+    touch ./auth/middleware/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_API_$(date +%s)" > ./auth/api/.keep && \
+    touch ./auth/api/.keep && \
+    printf "LUCID_AUTH_SERVICE_AUTH_SERVICES_$(date +%s)" > ./auth/services/.keep && \
+    touch ./auth/services/.keep && \
     printf "LUCID_AUTH_SERVICE_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    touch ./configs/.keep && \
     printf "LUCID_AUTH_SERVICE_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
+    touch ./configs/services/.keep && \
+    printf "LUCID_AUTH_SERVICE_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
+    touch ./infrastructure/kubernetes/.keep && \
     chown -R 65532:65532 ./auth ./configs ./configs/services ./tmp ./infrastructure/kubernetes && \
-    chmod 644 ./configs/.keep ./configs/services/.keep
+    chmod 644 ./auth/.keep ./auth/config/.keep ./auth/models/.keep ./auth/utils/.keep ./auth/middleware/.keep ./auth/api/.keep ./auth/services/.keep ./configs/.keep ./configs/services/.keep ./infrastructure/kubernetes/.keep
 
 COPY infrastructure/containers/services/ ./configs/services/
+COPY auth/config/ ./auth/config/
+COPY auth/models/ ./auth/models/
+COPY auth/utils/ ./auth/utils/
+COPY auth/middleware/ ./auth/middleware/
+COPY auth/api/ ./auth/api/
+COPY auth/services/ ./auth/services/
+COPY infrastructure/kubernetes/ ./infrastructure/kubernetes/
+COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/auth/docker-compose.auth.yml ./configs/docker-compose.auth.yaml
 COPY master-env-config.txt ./configs/.env.master
 COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY infrastructure/containers/auth/docker-compose.auth.yml ./configs/docker-compose.auth.yml
-COPY infrastructure/kubernetes/04-auth/auth-service.yaml ./infrastructure/kubernetes/auth-service.yaml
+COPY configs/ ./configs/
+
+RUN mkdir -p ./auth ./wallet ./common ./blockchain ./tools ./service_mesh ./node ./RDP ./admin ./database ./sessions ./security ./utils ./server ./storage ./user ./user_content ./gui ./electron_gui ./gui_docker_manager ./gui_api_bridge ./gui_tor_manager ./contracts ./apps ./api ./03_api_gateway ./02_network_security ./ops ./scripts ./rdp ./schemas ./src ./vm ./wallet && \
+    printf "LUCID_AUTH_SERVICE_AUTH_$(date +%s)" > ./auth/.keep && touch ./auth/.keep && \
+    printf "LUCID_AUTH_SERVICE_WALLET_$(date +%s)" > ./wallet/.keep && touch ./wallet/.keep && \
+    printf "LUCID_AUTH_SERVICE_COMMON_$(date +%s)" > ./common/.keep && touch ./common/.keep && \
+    printf "LUCID_AUTH_SERVICE_BLOCKCHAIN_$(date +%s)" > ./blockchain/.keep && touch ./blockchain/.keep && \
+    printf "LUCID_AUTH_SERVICE_TOOLS_$(date +%s)" > ./tools/.keep && touch ./tools/.keep && \
+    printf "LUCID_AUTH_SERVICE_SERVICE_MESH_$(date +%s)" > ./service_mesh/.keep && touch ./service_mesh/.keep && \
+    printf "LUCID_AUTH_SERVICE_NODE_$(date +%s)" > ./node/.keep && touch ./node/.keep && \
+    printf "LUCID_AUTH_SERVICE_RDP_$(date +%s)" > ./RDP/.keep && touch ./RDP/.keep && \
+    printf "LUCID_AUTH_SERVICE_ADMIN_$(date +%s)" > ./admin/.keep && touch ./admin/.keep && \
+    printf "LUCID_AUTH_SERVICE_SECURITY_$(date +%s)" > ./security/.keep && touch ./security/.keep && \
+    printf "LUCID_AUTH_SERVICE_UTILS_$(date +%s)" > ./utils/.keep && touch ./utils/.keep && \
+    printf "LUCID_AUTH_SERVICE_SERVER_$(date +%s)" > ./server/.keep && touch ./server/.keep && \
+    printf "LUCID_AUTH_SERVICE_STORAGE_$(date +%s)" > ./storage/.keep && touch ./storage/.keep && \
+    printf "LUCID_AUTH_SERVICE_USER_$(date +%s)" > ./user/.keep && touch ./user/.keep && \
+    printf "LUCID_AUTH_SERVICE_USER_CONTENT_$(date +%s)" > ./user_content/.keep && touch ./user_content/.keep && \
+    printf "LUCID_AUTH_SERVICE_GUI_$(date +%s)" > ./gui/.keep && touch ./gui/.keep && \
+    printf "LUCID_AUTH_SERVICE_ELECTRON_GUI_$(date +%s)" > ./electron_gui/.keep && touch ./electron_gui/.keep && \
+    printf "LUCID_AUTH_SERVICE_GUI_DOCKER_MANAGER_$(date +%s)" > ./gui_docker_manager/.keep && touch ./gui_docker_manager/.keep && \
+    printf "LUCID_AUTH_SERVICE_GUI_API_BRIDGE_$(date +%s)" > ./gui_api_bridge/.keep && touch ./gui_api_bridge/.keep && \
+    printf "LUCID_AUTH_SERVICE_GUI_TOR_MANAGER_$(date +%s)" > ./gui_tor_manager/.keep && touch ./gui_tor_manager/.keep && \
+    printf "LUCID_AUTH_SERVICE_CONTRACTS_$(date +%s)" > ./contracts/.keep && touch ./contracts/.keep && \
+    printf "LUCID_AUTH_SERVICE_APPS_$(date +%s)" > ./apps/.keep && touch ./apps/.keep && \
+    printf "LUCID_AUTH_SERVICE_API_$(date +%s)" > ./api/.keep && touch ./api/.keep && \
+    printf "LUCID_AUTH_SERVICE_03_API_GATEWAY_$(date +%s)" > ./03_api_gateway/.keep && touch ./03_api_gateway/.keep && \
+    printf "LUCID_AUTH_SERVICE_02_NETWORK_SECURITY_$(date +%s)" > ./02_network_security/.keep && touch ./02_network_security/.keep && \
+    printf "LUCID_AUTH_SERVICE_OPS_$(date +%s)" > ./ops/.keep && touch ./ops/.keep && \
+    printf "LUCID_AUTH_SERVICE_SCRIPTS_$(date +%s)" > ./scripts/.keep && touch ./scripts/.keep && \
+    printf "LUCID_AUTH_SERVICE_RDP_$(date +%s)" > ./rdp/.keep && touch ./rdp/.keep && \
+    printf "LUCID_AUTH_SERVICE_SCHEMAS_$(date +%s)" > ./schemas/.keep && touch ./schemas/.keep && \
+    printf "LUCID_AUTH_SERVICE_SRC_$(date +%s)" > ./src/.keep && touch ./src/.keep && \
+    printf "LUCID_AUTH_SERVICE_VM_$(date +%s)" > ./vm/.keep && touch ./vm/.keep && \
+    printf "LUCID_AUTH_SERVICE_WALLET_$(date +%s)" > ./wallet/.keep && touch ./wallet/.keep && \
+    chown -R 65532:65532 ./auth ./wallet ./common ./blockchain ./tools ./service_mesh ./node ./RDP ./admin ./database ./sessions ./security ./utils ./server ./storage ./user ./user_content ./gui ./electron_gui ./gui_docker_manager ./gui_api_bridge ./gui_tor_manager ./contracts ./apps ./api ./03_api_gateway ./02_network_security ./ops ./scripts ./rdp ./schemas ./src ./vm ./wallet && \
+    chmod 644 ./auth/.keep ./wallet/.keep ./common/.keep ./blockchain/.keep ./tools/.keep ./service_mesh/.keep ./node/.keep ./RDP/.keep ./admin/.keep ./database/.keep ./sessions/.keep ./security/.keep ./utils/.keep ./server/.keep ./storage/.keep ./user/.keep ./user_content/.keep ./gui/.keep ./electron_gui/.keep ./gui_docker_manager/.keep ./gui_api_bridge/.keep ./gui_tor_manager/.keep ./contracts/.keep ./apps/.keep ./api/.keep ./03_api_gateway/.keep ./02_network_security/.keep ./ops/.keep ./scripts/.keep ./rdp/.keep ./schemas/.keep ./src/.keep ./vm/.keep ./wallet/.keep
+
 
 COPY auth/ ./auth/
 COPY wallet/ ./wallet/
+COPY common/ ./common/
+COPY blockchain/ ./blockchain/
+COPY tools/ ./tools/
+COPY service_mesh/ ./service_mesh/
+COPY node/ ./node/
+COPY RDP/ ./RDP/
+COPY admin/ ./admin/
+COPY database/ ./database/
+COPY sessions/ ./sessions/
+COPY security/ ./security/
+COPY utils/ ./utils/
+COPY server/ ./server/
+COPY storage/ ./storage/
+COPY user/ ./user/
+COPY user_content/ ./user_content/
+COPY gui/ ./gui/
+COPY electron_gui/ ./electron_gui/
+COPY gui_docker_manager/ ./gui_docker_manager/
+COPY gui_api_bridge/ ./gui_api_bridge/
+COPY gui_tor_manager/ ./gui_tor_manager/
+COPY contracts/ ./contracts/
+COPY apps/ ./apps/
+COPY api/ ./api/
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY 02_network_security/ ./02_network_security/
+COPY ops/ ./ops/
+COPY scripts/ ./scripts/
+COPY RDP/ ./rdp/
+COPY schemas/ ./schemas/
+COPY src/ ./src/
+COPY vm/ ./vm/
+COPY wallet/ ./wallet/
 
-RUN printf "LUCID_AUTH_SOURCE_$(date +%s)" > ./auth/.keep && \
-    chown -R 65532:65532 ./auth ./wallet && \
-    chmod 644 ./auth/.keep
 
-RUN test -f ./auth/main.py && test -f ./auth/config.py && \
-    echo "auth-service source OK"
-
+COPY gui_hardware_manager/ ./gui_hardware_manager/
 ############################
 # Stage 2 – Runtime (Distroless)
 ############################
@@ -161,6 +251,51 @@ COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.auth.yml /app/configs/docker-compose.auth.yml
 COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/auth-service.yaml /app/infrastructure/kubernetes/auth-service.yaml
+
+# copy all files from builder to app
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/tools/ /app/tools/
+COPY --from=builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/RDP/ /app/RDP/
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/security/ /app/security/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
+COPY --from=builder --chown=65532:65532 /build/user/ /app/user/
+COPY --from=builder --chown=65532:65532 /build/user_content/ /app/user_content/
+COPY --from=builder --chown=65532:65532 /build/gui/ /app/gui/
+COPY --from=builder --chown=65532:65532 /build/electron_gui/ /app/electron_gui/
+COPY --from=builder --chown=65532:65532 /build/gui_docker_manager/ /app/gui_docker_manager/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
+COPY --from=builder --chown=65532:65532 /build/contracts/ /app/contracts/
+COPY --from=builder --chown=65532:65532 /build/apps/ /app/apps/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
+COPY --from=builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
+COPY --from=builder --chown=65532:65532 /build/ops/ /app/ops/
+COPY --from=builder --chown=65532:65532 /build/scripts/ /app/scripts/
+COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/schemas/ /app/schemas/
+COPY --from=builder --chown=65532:65532 /build/src/ /app/src/
+COPY --from=builder --chown=65532:65532 /build/vm/ /app/vm/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+COPY --from=builder --chown=65532:65532 /build/gui_hardware_manager/ /app/gui_hardware_manager/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/models/ /app/models/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+COPY --from=builder --chown=65532:65532 /build/middleware/ /app/middleware/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/services/ /app/services/
+
+
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import fastapi,uvicorn,pydantic,cryptography,jwt; print('runtime OK')"]
 

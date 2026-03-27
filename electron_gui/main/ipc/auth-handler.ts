@@ -53,7 +53,7 @@ export function setupAuthHandlers(windowManager: WindowManager): void {
         const { token, admin, expires_at } = response.data;
         
         // Store authentication data
-        adminWindow.webContents.session.cookies.set({
+        adminWindow.window.webContents.session.cookies.set({
           url: 'http://localhost',
           name: 'lucid_admin_token',
           value: token,
@@ -112,7 +112,7 @@ export function setupAuthHandlers(windowManager: WindowManager): void {
       // Clear authentication cookies
       const adminWindow = windowManager.getWindow('admin');
       if (adminWindow) {
-        await adminWindow.webContents.session.cookies.remove('http://localhost', 'lucid_admin_token');
+        await adminWindow.window.webContents.session.cookies.remove('http://localhost', 'lucid_admin_token');
       }
 
       // Broadcast authentication status change
@@ -139,7 +139,7 @@ export function setupAuthHandlers(windowManager: WindowManager): void {
       
       if (!token) {
         return {
-          valid: false,
+          success: false,
           error: 'Token is required'
         } as AuthVerifyTokenResponse;
       }
@@ -154,7 +154,7 @@ export function setupAuthHandlers(windowManager: WindowManager): void {
         const { valid, admin, expires_at } = response.data;
         
         return {
-          valid,
+          success: !!valid,
           user: admin ? {
             id: admin.admin_id,
             email: admin.username,
@@ -164,14 +164,14 @@ export function setupAuthHandlers(windowManager: WindowManager): void {
         } as AuthVerifyTokenResponse;
       } else {
         return {
-          valid: false,
+          success: false,
           error: response.error || 'Token verification failed'
         } as AuthVerifyTokenResponse;
       }
     } catch (error) {
       console.error('Token verification error:', error);
       return {
-        valid: false,
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown verification error'
       } as AuthVerifyTokenResponse;
     }
@@ -198,7 +198,7 @@ export function setupAuthHandlers(windowManager: WindowManager): void {
         // Update authentication cookies
         const adminWindow = windowManager.getWindow('admin');
         if (adminWindow) {
-          adminWindow.webContents.session.cookies.set({
+          adminWindow.window.webContents.session.cookies.set({
             url: 'http://localhost',
             name: 'lucid_admin_token',
             value: newToken,
@@ -257,7 +257,7 @@ async function makeAuthRequest(method: string, endpoint: string, data: any): Pro
     // Get Tor proxy configuration
     const torConfig = await getTorProxyConfig();
     
-    const requestOptions = {
+    const requestOptions: RequestInit & { proxy?: typeof torConfig } = {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -266,7 +266,6 @@ async function makeAuthRequest(method: string, endpoint: string, data: any): Pro
       body: method !== 'GET' ? JSON.stringify(data) : undefined
     };
 
-    // Add proxy configuration if Tor is available
     if (torConfig) {
       requestOptions.proxy = torConfig;
     }

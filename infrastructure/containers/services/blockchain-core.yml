@@ -50,10 +50,19 @@ containers:
 dependencies:
   internal:
     - name: "api-gateway"
-      url: "http://api-gateway:8080"
+      url: "http://api-gateway:8080/app"
       required: true
     - name: "session-anchoring"
-      url: "http://session-anchoring:8085"
+      url: "http://session-anchoring:8085/app"
+      required: true
+    - name: "blockchain-consensus-engine"
+      url: "http://blockchain-consensus-engine:8085/app"
+      required: false
+    - name: "block-manager"
+      url: "http://block-manager:8086/app"
+      required: true
+    - name: "data-chain"
+      url: "http://data-chain:8087/app"
       required: true
   external:
     - name: "lucid-mongodb"
@@ -171,8 +180,10 @@ database:
 # API Configuration
 api:
   version: "v1"
-  base_path: "/api/v1"
+  base_path: "/app/api/v1"
   endpoints:
+    health:
+      - "GET /app/health"
     blockchain:
       - "GET /chain/info"
       - "GET /chain/status"
@@ -219,22 +230,22 @@ logging:
 # Health Check Configuration
 health_check:
   blockchain-engine:
-    endpoint: "/api/v1/chain/status"
+    endpoint: "/app/api/v1/chain/status"
     interval: 30
     timeout: 10
     retries: 3
   session-anchoring:
-    endpoint: "/api/v1/anchoring/status"
+    endpoint: "/app/api/v1/anchoring/status"
     interval: 30
     timeout: 10
     retries: 3
   block-manager:
-    endpoint: "/api/v1/blocks/latest"
+    endpoint: "/app/api/v1/blocks/latest"
     interval: 30
     timeout: 10
     retries: 3
   data-chain:
-    endpoint: "/api/v1/chain/info"
+    endpoint: "/app/api/v1/chain/info"
     interval: 30
     timeout: 10
     retries: 3
@@ -271,7 +282,7 @@ monitoring:
   prometheus:
     enabled: true
     port: 9090
-    path: "/metrics"
+    path: "/app/metrics"
   grafana:
     enabled: true
     dashboard_id: "blockchain-core"

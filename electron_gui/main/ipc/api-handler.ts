@@ -408,7 +408,7 @@ async function makeFileDownloadRequest(
     });
 
     return {
-      savedPath,
+      savedPath: savePath,
       fileSize,
       status: response.status,
       headers: responseHeaders

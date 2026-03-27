@@ -115,22 +115,32 @@ RUN mkdir -p /build/configs/services/tor
 COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
 COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
 RUN chmod +x ./tunnels/entrypoint.py || true && \
-    chmod +x ./tunnels/__init__.py || true && \
+    ( test -f ./tunnels/__init__.py && chmod +x ./tunnels/__init__.py ) || true && \
     chmod +x ./tunnels/scripts/*.sh || true && \
     chmod +x ./tunnels/tunnel_metrics.py || true && \
     chmod +x ./tunnels/tunnel_status.py || true && \
     chmod +x ./tunnels/scripts/*.sh || true && \
     chmod +x ./tunnels/config/* || true && \
     echo "✅ Permissions set for all files"
+
+# Pinned build artifacts: wheelhouse for supply-chain / optional offline installs (tunnel app is stdlib-first).
+RUN mkdir -p /build/wheels && \
+    python3.11 -m pip wheel --no-cache-dir \
+      -w /build/wheels \
+      "setuptools>=69.0" \
+      "wheel>=0.42.0" \
+    && echo "✅ Wheelhouse populated under /build/wheels"
+
 # Builder stage verification: Verify Python
 
 RUN python3.11 --version && \
     which python3.11 && \
     test -f ./tunnels/entrypoint.py && \
     python3.11 -m py_compile ./tunnels/entrypoint.py && \
-    python3.11 -m py_compile ./tunnels/__init__.py && \
     python3.11 -m py_compile ./tunnels/tunnel_metrics.py && \
     python3.11 -m py_compile ./tunnels/tunnel_status.py && \
+    ( test ! -f ./tunnels/__init__.py || python3.11 -m py_compile ./tunnels/__init__.py ) && \
+    test -n "$(ls -A /build/wheels 2>/dev/null)" && \
     echo "✅ Builder stage verification passed - All Python files compile successfully"
 
 # =============================================================================
@@ -188,6 +198,7 @@ COPY --from=tunnel-builder --chown=65532:65532 /build/configs/services/ /app/con
 
 COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
 COPY --from=tunnel-builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=tunnel-builder --chown=65532:65532 /build/wheels/ /app/wheels/
 
 # Runtime verification: Verify entrypoint exists and modules can be imported (distroless base Python)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; \

@@ -23,7 +23,7 @@ from .trust_nothing_engine import (
     TrustNothingEngine
 )
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # JIT Policy Configuration
 JIT_APPROVAL_TIMEOUT_SECONDS = 300  # 5 minutes

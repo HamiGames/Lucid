@@ -7,6 +7,7 @@ import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as net from 'net';
+import { EventEmitter } from 'events';
 import { TOR_CONFIG, PATHS } from '../shared/constants';
 
 export interface TorStatus {
@@ -33,7 +34,7 @@ export interface TorConfig {
   allowSingleHopExits?: boolean;
 }
 
-export class TorManager {
+export class TorManager extends EventEmitter {
   private torProcess: ChildProcess | null = null;
   private status: TorStatus;
   private config: TorConfig;
@@ -41,6 +42,7 @@ export class TorManager {
   private isInitialized = false;
 
   constructor() {
+    super();
     const dataDirectory = path.resolve(process.cwd(), TOR_CONFIG.DATA_DIR);
 
     this.config = {
@@ -120,7 +122,7 @@ export class TorManager {
 
     } catch (error) {
       this.status.status = 'error';
-      this.status.error = error.message;
+      this.status.error = error instanceof Error ? error.message : String(error);
       console.error('Failed to start Tor:', error);
       return false;
     }
@@ -154,7 +156,7 @@ export class TorManager {
             resolve();
           }, 5000);
 
-          this.torProcess.on('exit', () => {
+          this.torProcess?.on('exit', () => {
             clearTimeout(timeout);
             resolve();
           });
@@ -258,7 +260,9 @@ export class TorManager {
         console.log(`Created Tor data directory: ${this.config.dataDirectory}`);
       }
     } catch (error) {
-      throw new Error(`Failed to create Tor data directory: ${error.message}`);
+      throw new Error(
+        `Failed to create Tor data directory: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -345,7 +349,9 @@ ${this.config.allowSingleHopExits ? 'AllowSingleHopExits 1' : ''}
       console.log('Created default Tor configuration');
 
     } catch (error) {
-      throw new Error(`Failed to create Tor configuration: ${error.message}`);
+      throw new Error(
+        `Failed to create Tor configuration: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -517,5 +523,83 @@ ${this.config.allowSingleHopExits ? 'AllowSingleHopExits 1' : ''}
     await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
     
     return await this.start();
+  }
+
+  addEventListener(type: string, listener: (...args: unknown[]) => void): this {
+    return this.on(type as any, listener as any);
+  }
+
+  async getMetrics(): Promise<{
+    uptimeSeconds: number;
+    bytesRead: number;
+    bytesWritten: number;
+    circuitsBuilt: number;
+    circuitsFailed: number;
+    lastUpdated: string;
+  }> {
+    const bandwidth = await this.getBandwidth();
+    const circuits = await this.getCircuits();
+    return {
+      uptimeSeconds: process.uptime(),
+      bytesRead: bandwidth?.read ?? 0,
+      bytesWritten: bandwidth?.written ?? 0,
+      circuitsBuilt: circuits,
+      circuitsFailed: 0,
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+
+  async testConnection(options: { url: string; timeout?: number } | string): Promise<boolean> {
+    const url = typeof options === 'string' ? options : options.url;
+    const timeout = typeof options === 'string' ? 10000 : options.timeout ?? 10000;
+    try {
+      const { SocksProxyAgent } = await import('socks-proxy-agent');
+      const axios = (await import('axios')).default;
+      const agent = new SocksProxyAgent(`socks5://127.0.0.1:${this.config.socksPort}`);
+      const res = await axios.get(url, {
+        httpAgent: agent,
+        httpsAgent: agent,
+        timeout,
+        validateStatus: () => true,
+      });
+      return res.status >= 200 && res.status < 500;
+    } catch {
+      return false;
+    }
+  }
+
+  async healthCheck(): Promise<{
+    healthy: boolean;
+    responseTime?: number;
+    socksProxy?: boolean;
+    controlPort?: boolean;
+    bootstrap?: boolean;
+    circuitBuild?: boolean;
+    error?: string;
+  }> {
+    const start = Date.now();
+    try {
+      const controlOk = await this.testControlConnection();
+      const healthy = this.status.connected && controlOk;
+      return {
+        healthy,
+        responseTime: Date.now() - start,
+        socksProxy: controlOk,
+        controlPort: controlOk,
+        bootstrap: this.status.status === 'connected',
+        circuitBuild: (this.status.circuits ?? 0) > 0,
+        error: healthy ? undefined : this.status.error,
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        responseTime: Date.now() - start,
+        socksProxy: false,
+        controlPort: false,
+        bootstrap: false,
+        circuitBuild: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 }

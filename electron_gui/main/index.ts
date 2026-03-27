@@ -170,7 +170,8 @@ class LucidElectronApp {
     });
 
     ipcMain.handle(IPCChannels.DOCKER_GET_LOGS, async (event, { id, lines }) => {
-      return await this.dockerService.getContainerLogs(id, lines || 100);
+      const result = await this.dockerService.getContainerLogs(id, lines || 100);
+      return result.logs;
     });
 
     ipcMain.handle(IPCChannels.DOCKER_GET_STATS, async (event, containerId: string) => {
@@ -408,7 +409,6 @@ class LucidElectronApp {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          enableRemoteModule: false,
           preload: path.join(__dirname, 'preload.js'),
           webSecurity: true,
           allowRunningInsecureContent: false
@@ -755,56 +755,6 @@ class LucidElectronApp {
         timestamp: new Date().toISOString(),
       });
     });
-  }
-
-  // =====================================================================
-  // API Request Handling
-  // =====================================================================
-
-  private async makeDirectRequest(request: any): Promise<any> {
-    // Implement direct HTTP request for development
-    console.log('Making direct request:', request.url);
-    
-    // Placeholder implementation
-    return {
-      success: true,
-      data: { message: 'Direct request placeholder' },
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  // =====================================================================
-  // Hardware Wallet Management (Legacy)
-  // =====================================================================
-
-  private async connectLedgerWallet(): Promise<any> {
-    // Implement Ledger wallet connection
-    return {
-      success: true,
-      walletType: 'ledger',
-      address: 'ledger_address_placeholder',
-      connected: true
-    };
-  }
-
-  private async connectTrezorWallet(): Promise<any> {
-    // Implement Trezor wallet connection
-    return {
-      success: true,
-      walletType: 'trezor',
-      address: 'trezor_address_placeholder',
-      connected: true
-    };
-  }
-
-  private async connectKeepKeyWallet(): Promise<any> {
-    // Implement KeepKey wallet connection
-    return {
-      success: true,
-      walletType: 'keepkey',
-      address: 'keepkey_address_placeholder',
-      connected: true
-    };
   }
 
   // Public methods for window management

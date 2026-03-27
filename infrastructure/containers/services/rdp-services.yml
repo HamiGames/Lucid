@@ -79,14 +79,20 @@ containers:
 dependencies:
   internal:
     - name: "api-gateway"
-      url: "http://api-gateway:8080"
+      url: "http://api-gateway:8080/app"
       required: true
     - name: "session-api"
-      url: "http://session-api:8113"
+      url: "http://session-api:8113/app"
       required: true
     - name: "lucid-auth-service"
-      url: "http://lucid-auth-service:8089"
+      url: "http://lucid-auth-service:8089/app"
       required: true
+    - name: "rdp-server-manager"
+      url: "http://rdp-server-manager:8001/app"
+      required: false
+    - name: "lucid-xrdp"
+      url: "http://lucid-xrdp:8250/app"
+      required: false
   external:
     - name: "lucid-mongodb"
       url: "mongodb://lucid-mongodb:27017/lucid_rdp"
@@ -193,8 +199,10 @@ rdp-resource-monitor:
 # API Configuration
 api:
   version: "v1"
-  base_path: "/api/v1"
+  base_path: "/app/api/v1"
   endpoints:
+    health:
+      - "GET /app/health"
     servers:
       - "POST /servers"
       - "GET /servers"
@@ -310,22 +318,22 @@ logging:
 # Health Check Configuration
 health_check:
   rdp-server-manager:
-    endpoint: "/api/v1/servers/health"
+    endpoint: "/app/api/v1/servers/health"
     interval: 30
     timeout: 10
     retries: 3
   lucid-xrdp:
-    endpoint: "/api/v1/xrdp/health"
+    endpoint: "/app/api/v1/xrdp/health"
     interval: 30
     timeout: 10
     retries: 3
   rdp-session-controller:
-    endpoint: "/api/v1/sessions/health"
+    endpoint: "/app/api/v1/sessions/health"
     interval: 30
     timeout: 10
     retries: 3
   rdp-resource-monitor:
-    endpoint: "/api/v1/monitoring/health"
+    endpoint: "/app/api/v1/monitoring/health"
     interval: 30
     timeout: 10
     retries: 3
@@ -351,7 +359,7 @@ monitoring:
   prometheus:
     enabled: true
     port: 9090
-    path: "/metrics"
+    path: "/app/metrics"
   grafana:
     enabled: true
     dashboard_id: "rdp-services"

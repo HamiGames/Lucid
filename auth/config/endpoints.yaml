@@ -2,13 +2,14 @@
 # File: auth/config/endpoints.yaml
 # Purpose: Customizable endpoint configuration for authentication service
 # All endpoints can be enabled/disabled and customized via this file
+# Container HTTP mount: /app/* (infrastructure/containers/host-config.yml http_path_template)
 
 # Endpoint Groups
 endpoints:
   # System Endpoints
   health:
     enabled: true
-    path: "/health"
+    path: "/app/health"
     methods: ["GET"]
     description: "Health check endpoint for Docker healthcheck"
     rate_limit: null  # No rate limit for health checks
@@ -16,7 +17,7 @@ endpoints:
     
   meta:
     enabled: true
-    path: "/meta/info"
+    path: "/app/meta/info"
     methods: ["GET"]
     description: "Service metadata and information"
     rate_limit: 60  # 60 requests per minute
@@ -24,7 +25,7 @@ endpoints:
     
   root:
     enabled: true
-    path: "/"
+    path: "/app/"
     methods: ["GET"]
     description: "API root endpoint"
     rate_limit: 60
@@ -33,7 +34,7 @@ endpoints:
   # Authentication Endpoints
   auth:
     enabled: true
-    path: "/auth"
+    path: "/app/auth"
     methods: ["POST"]
     description: "Authentication endpoints group"
     rate_limit: 30  # 30 requests per minute
@@ -41,7 +42,7 @@ endpoints:
     sub_endpoints:
       register:
         enabled: true
-        path: "/auth/register"
+        path: "/app/auth/register"
         methods: ["POST"]
         description: "Register new user"
         rate_limit: 10  # 10 registrations per minute
@@ -49,7 +50,7 @@ endpoints:
         
       login:
         enabled: true
-        path: "/auth/login"
+        path: "/app/auth/login"
         methods: ["POST"]
         description: "Login with TRON signature"
         rate_limit: 20  # 20 login attempts per minute
@@ -57,7 +58,7 @@ endpoints:
         
       refresh:
         enabled: true
-        path: "/auth/refresh"
+        path: "/app/auth/refresh"
         methods: ["POST"]
         description: "Refresh access token"
         rate_limit: 30
@@ -65,7 +66,7 @@ endpoints:
         
       logout:
         enabled: true
-        path: "/auth/logout"
+        path: "/app/auth/logout"
         methods: ["POST"]
         description: "Logout and revoke session"
         rate_limit: 30
@@ -73,7 +74,7 @@ endpoints:
         
       verify:
         enabled: true
-        path: "/auth/verify"
+        path: "/app/auth/verify"
         methods: ["POST"]
         description: "Verify JWT token validity"
         rate_limit: 60
@@ -82,7 +83,7 @@ endpoints:
   # User Management Endpoints
   users:
     enabled: true
-    path: "/users"
+    path: "/app/users"
     methods: ["GET", "PUT"]
     description: "User management endpoints"
     rate_limit: 100  # 100 requests per minute
@@ -90,7 +91,7 @@ endpoints:
     sub_endpoints:
       get_current:
         enabled: true
-        path: "/users/me"
+        path: "/app/users/me"
         methods: ["GET"]
         description: "Get current authenticated user"
         rate_limit: 60
@@ -98,7 +99,7 @@ endpoints:
         
       get_by_id:
         enabled: true
-        path: "/users/{user_id}"
+        path: "/app/users/{user_id}"
         methods: ["GET"]
         description: "Get user by ID"
         rate_limit: 60
@@ -106,7 +107,7 @@ endpoints:
         
       update:
         enabled: true
-        path: "/users/{user_id}"
+        path: "/app/users/{user_id}"
         methods: ["PUT"]
         description: "Update user profile"
         rate_limit: 30
@@ -115,7 +116,7 @@ endpoints:
   # Session Management Endpoints
   sessions:
     enabled: true
-    path: "/sessions"
+    path: "/app/sessions"
     methods: ["GET", "DELETE"]
     description: "Session management endpoints"
     rate_limit: 100
@@ -123,7 +124,7 @@ endpoints:
     sub_endpoints:
       list:
         enabled: true
-        path: "/sessions"
+        path: "/app/sessions"
         methods: ["GET"]
         description: "List all active sessions for current user"
         rate_limit: 60
@@ -131,7 +132,7 @@ endpoints:
         
       get_by_id:
         enabled: true
-        path: "/sessions/{session_id}"
+        path: "/app/sessions/{session_id}"
         methods: ["GET"]
         description: "Get session by ID"
         rate_limit: 60
@@ -139,7 +140,7 @@ endpoints:
         
       revoke:
         enabled: true
-        path: "/sessions/{session_id}"
+        path: "/app/sessions/{session_id}"
         methods: ["DELETE"]
         description: "Revoke specific session"
         rate_limit: 30
@@ -147,7 +148,7 @@ endpoints:
         
       revoke_all:
         enabled: true
-        path: "/sessions"
+        path: "/app/sessions"
         methods: ["DELETE"]
         description: "Revoke all sessions for current user"
         rate_limit: 10  # Limit revoke all operations
@@ -156,7 +157,7 @@ endpoints:
   # Hardware Wallet Endpoints
   hardware_wallet:
     enabled: true
-    path: "/hw"
+    path: "/app/hw"
     methods: ["POST", "GET", "DELETE"]
     description: "Hardware wallet integration endpoints"
     rate_limit: 60
@@ -164,7 +165,7 @@ endpoints:
     sub_endpoints:
       connect:
         enabled: true
-        path: "/hw/connect"
+        path: "/app/hw/connect"
         methods: ["POST"]
         description: "Connect hardware wallet (Ledger, Trezor, KeepKey)"
         rate_limit: 10
@@ -172,7 +173,7 @@ endpoints:
         
       sign:
         enabled: true
-        path: "/hw/sign"
+        path: "/app/hw/sign"
         methods: ["POST"]
         description: "Sign message with hardware wallet"
         rate_limit: 30
@@ -180,7 +181,7 @@ endpoints:
         
       status:
         enabled: true
-        path: "/hw/status/{wallet_id}"
+        path: "/app/hw/status/{wallet_id}"
         methods: ["GET"]
         description: "Get hardware wallet connection status"
         rate_limit: 60
@@ -188,7 +189,7 @@ endpoints:
         
       disconnect:
         enabled: true
-        path: "/hw/disconnect/{wallet_id}"
+        path: "/app/hw/disconnect/{wallet_id}"
         methods: ["POST"]
         description: "Disconnect hardware wallet"
         rate_limit: 30
@@ -197,7 +198,7 @@ endpoints:
   # Service Orchestration Endpoints
   orchestration:
     enabled: false  # Disabled by default - requires ENABLE_SERVICE_ORCHESTRATION=true
-    path: "/orchestrate"
+    path: "/app/orchestrate"
     methods: ["GET", "POST", "DELETE"]
     description: "Service orchestration endpoints (spawning, cloning, managing services)"
     rate_limit: 10  # Limit orchestration operations
@@ -206,7 +207,7 @@ endpoints:
     sub_endpoints:
       spawn_mongodb_clone:
         enabled: false
-        path: "/orchestrate/mongodb/clone"
+        path: "/app/orchestrate/mongodb/clone"
         methods: ["POST"]
         description: "Spawn MongoDB clone instance for a node"
         rate_limit: 5  # Very limited - resource intensive
@@ -215,7 +216,7 @@ endpoints:
         
       list_mongodb_clones:
         enabled: false
-        path: "/orchestrate/mongodb/clones"
+        path: "/app/orchestrate/mongodb/clones"
         methods: ["GET"]
         description: "List all MongoDB clones"
         rate_limit: 30
@@ -224,7 +225,7 @@ endpoints:
         
       get_mongodb_clone:
         enabled: false
-        path: "/orchestrate/mongodb/clones/{node_id}"
+        path: "/app/orchestrate/mongodb/clones/{node_id}"
         methods: ["GET"]
         description: "Get MongoDB clone information for a node"
         rate_limit: 30
@@ -233,7 +234,7 @@ endpoints:
         
       remove_mongodb_clone:
         enabled: false
-        path: "/orchestrate/mongodb/clones/{node_id}"
+        path: "/app/orchestrate/mongodb/clones/{node_id}"
         methods: ["DELETE"]
         description: "Remove MongoDB clone for a node"
         rate_limit: 10
@@ -242,7 +243,7 @@ endpoints:
         
       check_mongodb_clone_health:
         enabled: false
-        path: "/orchestrate/mongodb/clones/{node_id}/health"
+        path: "/app/orchestrate/mongodb/clones/{node_id}/health"
         methods: ["GET"]
         description: "Check health of MongoDB clone"
         rate_limit: 60
@@ -251,7 +252,7 @@ endpoints:
         
       list_spawned_services:
         enabled: false
-        path: "/orchestrate/services/spawned"
+        path: "/app/orchestrate/services/spawned"
         methods: ["GET"]
         description: "List all spawned services"
         rate_limit: 30
@@ -260,7 +261,7 @@ endpoints:
         
       get_service_status:
         enabled: false
-        path: "/orchestrate/services/{service_id}/status"
+        path: "/app/orchestrate/services/{service_id}/status"
         methods: ["GET"]
         description: "Get status of a spawned service"
         rate_limit: 60
@@ -269,7 +270,7 @@ endpoints:
         
       remove_service:
         enabled: false
-        path: "/orchestrate/services/{service_id}"
+        path: "/app/orchestrate/services/{service_id}"
         methods: ["DELETE"]
         description: "Remove a spawned service"
         rate_limit: 10

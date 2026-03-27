@@ -15,12 +15,19 @@ service:
   description: "Lucid Session Management - Session recording and processing pipeline"
   cluster_id: "03-session-management-cluster"
   
-# Port Configuration
+# Port Configuration (host-config.yml session_* registry)
 ports:
+  session_system_control: 7988
   session_pipeline_manager: 7990
-  session_recorder: 8090
-  chunk_processor: 8010
+  session_chunk_processor: 8010
   session_storage_service: 8020
+  session_storage: 8082
+  session_pipeline: 8083
+  session_anchoring: 8085
+  session_recorder: 8090
+  session_processor: 8091
+  session_merkle_tree_builder: 8092
+  session_overlord: 8110
   session_api: 8113
 
 # Container Configuration
@@ -55,14 +62,38 @@ containers:
 dependencies:
   internal:
     - name: "api-gateway"
-      url: "http://api-gateway:8080"
+      url: "http://api-gateway:8080/app"
       required: true
     - name: "blockchain-engine"
-      url: "http://blockchain-engine:8084"
+      url: "http://blockchain-engine:8084/app"
       required: true
     - name: "rdp-server-manager-http"
-      url: "http://rdp-server-manager-http:8090"
+      url: "http://rdp-server-manager-http:8090/app"
       required: true
+    - name: "session-pipeline-manager"
+      url: "http://session-pipeline-manager:7990/app"
+      required: true
+    - name: "session-chunk-processor"
+      url: "http://session-chunk-processor:8010/app"
+      required: true
+    - name: "session-storage-service"
+      url: "http://session-storage-service:8020/app"
+      required: true
+    - name: "session-storage"
+      url: "http://session-storage:8082/app"
+      required: false
+    - name: "session-system-control"
+      url: "http://session-system-control:7988/app"
+      required: false
+    - name: "session-processor"
+      url: "http://session-processor:8091/app"
+      required: false
+    - name: "session-merkle-tree-builder"
+      url: "http://session-merkle-tree-builder:8092/app"
+      required: false
+    - name: "session-overlord"
+      url: "http://session-overlord:8110/app"
+      required: false
   external:
     - name: "lucid-mongodb"
       url: "mongodb://lucid-mongodb:27017/lucid_sessions"
@@ -139,7 +170,7 @@ session_storage:
   metadata_storage: "mongodb"
   indexing:
     enabled: true
-    elasticsearch_url: "http://lucid-elasticsearch-http:9200"
+    elasticsearch_url: "http://lucid-elasticsearch-http:9200/app"
     index_name: "lucid_sessions"
   backup:
     enabled: true
@@ -150,8 +181,10 @@ session_storage:
 # API Configuration
 api:
   version: "v1"
-  base_path: "/api/v1"
+  base_path: "/app/api/v1"
   endpoints:
+    health:
+      - "GET /app/health"
     sessions:
       - "POST /sessions"
       - "GET /sessions"
@@ -252,27 +285,27 @@ logging:
 # Health Check Configuration
 health_check:
   pipeline_manager:
-    endpoint: "/api/v1/pipeline/status"
+    endpoint: "/app/api/v1/pipeline/status"
     interval: 30
     timeout: 10
     retries: 3
   session_recorder:
-    endpoint: "/api/v1/sessions/health"
+    endpoint: "/app/api/v1/sessions/health"
     interval: 30
     timeout: 10
     retries: 3
   chunk_processor:
-    endpoint: "/api/v1/processing/health"
+    endpoint: "/app/api/v1/processing/health"
     interval: 30
     timeout: 10
     retries: 3
   session_storage:
-    endpoint: "/api/v1/storage/status"
+    endpoint: "/app/api/v1/storage/status"
     interval: 30
     timeout: 10
     retries: 3
   session_api:
-    endpoint: "/api/v1/sessions/health"
+    endpoint: "/app/api/v1/sessions/health"
     interval: 30
     timeout: 10
     retries: 3
@@ -298,7 +331,7 @@ monitoring:
   prometheus:
     enabled: true
     port: 9090
-    path: "/metrics"
+    path: "/app/metrics"
   grafana:
     enabled: true
     dashboard_id: "session-management"
@@ -378,10 +411,17 @@ validation:
     - "ports.session_pipeline_manager"
     - "containers.pipeline_manager.base_image"
   port_ranges:
+    session_system_control: [7988, 7999]
     session_pipeline_manager: [7990, 8999]
     session_recorder: [8090, 8999]
-    chunk_processor: [8010, 8999]
+    session_chunk_processor: [8010, 8999]
     session_storage_service: [8020, 8999]
+    session_storage: [8082, 8999]
+    session_pipeline: [8083, 8999]
+    session_anchoring: [8085, 8999]
+    session_processor: [8091, 8999]
+    session_merkle_tree_builder: [8092, 8999]
+    session_overlord: [8110, 8999]
     session_api: [8113, 8999]
   resource_limits:
     cpu_max: "8"

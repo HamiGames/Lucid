@@ -127,9 +127,10 @@ cross_system_communication:
   # GUI to API Communication
   gui_to_api:
     enabled: true
-    primary_endpoint: "http://localhost:8097"  # GUI API Bridge
+    primary_endpoint: "http://gui-api-bridge:8102/app"  # host-config gui_api_bridge
     fallback_endpoints:
-      - "http://localhost:8080"  # Direct API Gateway
+      - "http://gui-tor-manager:8097/app"
+      - "http://api-gateway:8080/app"
     
     authentication:
       method: "JWT"
@@ -150,7 +151,7 @@ cross_system_communication:
   # GUI to Docker Communication
   gui_to_docker:
     enabled: true
-    primary_endpoint: "http://localhost:8098"  # GUI Docker Manager
+    primary_endpoint: "http://gui-docker-manager:8098/app"
     docker_host: "unix:///var/run/docker.sock"
     
     authentication:
@@ -320,7 +321,7 @@ data_integration:
         - "pub/sub"
     
     elasticsearch:
-      connection_string: "http://lucid-elasticsearch:9200"
+      connection_string: "http://lucid-elasticsearch-http:9200/app"
       use_cases:
         - "full_text_search"
         - "log_aggregation"
@@ -366,7 +367,7 @@ monitoring_integration:
     
     prometheus:
       enabled: true
-      endpoint: "http://localhost:9090/metrics"
+      endpoint: "http://prometheus-metrics:9090/app/metrics"
       scrape_interval: 30
       retention: "7d"
     
@@ -406,7 +407,7 @@ monitoring_integration:
     log_aggregation:
       enabled: true
       backend: "elasticsearch"
-      endpoint: "http://lucid-elasticsearch:9200"
+      endpoint: "http://lucid-elasticsearch-http:9200/app"
       index_pattern: "lucid-logs-*"
   
   # Alerting

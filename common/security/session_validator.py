@@ -25,7 +25,7 @@ from .trust_nothing_engine import (
     TrustNothingEngine
 )
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Session Validation Configuration
 SESSION_VALIDATION_TIMEOUT_SECONDS = 300  # 5 minutes

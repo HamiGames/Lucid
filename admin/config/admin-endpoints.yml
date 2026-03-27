@@ -1,0 +1,504 @@
+# admin/config/admin-endpoints.yml
+#
+# Host registry: infrastructure/containers/host-config.yml (container: /app/configs/host-config.yml)
+# http_path_template: http://${service_name}:${port}/app
+
+version: "1.0"
+
+meta:
+  host_config_path: infrastructure/containers/host-config.yml
+  host_config_container_path: /app/configs/host-config.yml
+  services_config_root: /app/configs/services
+  admin_interface_bundle: /app/configs/services/admin-interface.yml
+  http_path_template: http://${service_name}:${port}/app
+  description: >
+    Admin-plane HTTP bases. base_url ends with /app; health_path is relative to base_url.
+
+admin_system_gateway:
+  host_registry_key: admin_system_gateway
+  service_name: admin-system-gateway
+  port: 8155
+  host_ip: 172.20.10.24
+  base_url: http://admin-system-gateway:8155/app
+  health_path: /health
+
+admin_ui_backend:
+  host_registry_key: admin_ui_backend
+  service_name: admin-ui-backend
+  port: 8120
+  host_ip: 172.20.10.21
+  base_url: http://admin-ui-backend:8120/app
+  health_path: /health
+  bundle_relative: admin-interface.yml
+
+admin_overlord:
+  host_registry_key: admin_overlord
+  service_name: admin-overlord
+  port: 8140
+  host_ip: 172.20.10.23
+  base_url: http://admin-overlord:8140/app
+  health_path: /health
+
+admin_params_registry:
+  host_registry_key: admin_params_registry
+  service_name: admin-params-registry
+  port: 8050
+  host_ip: 172.20.10.18
+  base_url: http://admin-params-registry:8050/app
+  health_path: /health
+
+admin_key_rotation:
+  host_registry_key: admin_key_rotation
+  service_name: admin-key-rotation
+  port: 8060
+  host_ip: 172.20.10.19
+  base_url: http://admin-key-rotation:8060/app
+  health_path: /health
+
+admin_governance_client:
+  host_registry_key: admin_governance_client
+  service_name: admin-governance-client
+  port: 8070
+  host_ip: 172.20.10.20
+  base_url: http://admin-governance-client:8070/app
+  health_path: /health
+
+api_gateway:
+  host_registry_key: main_lucid_gateway
+  service_name: api-gateway
+  port: 8080
+  host_ip: 172.20.10.1
+  base_url: http://api-gateway:8080/app
+  health_path: /health
+  bundle_relative: api-gateway.yml
+
+lucid_server_manager:
+  host_registry_key: lucid_server_manager
+  service_name: lucid-server-manager
+  port: 8081
+  host_ip: 172.20.10.3
+  base_url: http://lucid-server-manager:8081/app
+  health_path: /health
+
+lucid_server_core:
+  host_registry_key: lucid_server_core
+  service_name: lucid-server-core
+  port: 8100
+  host_ip: 172.20.10.4
+  base_url: http://lucid-server-core:8100/app
+  health_path: /health
+
+lucid_auth_service:
+  host_registry_key: lucid_auth_service
+  service_name: lucid-auth-service
+  port: 8089
+  host_ip: 172.20.10.5
+  base_url: http://lucid-auth-service:8089/app
+  health_path: /health
+  bundle_relative: auth-service.yml
+
+lucid_gov:
+  host_registry_key: lucid_gov
+  service_name: lucid-gov
+  port: 8108
+  host_ip: 172.20.10.6
+  base_url: http://lucid-gov:8108/app
+  health_path: /health
+
+blockchain_engine:
+  host_registry_key: blockchain_engine
+  service_name: blockchain-engine
+  port: 8084
+  host_ip: 172.20.10.33
+  base_url: http://blockchain-engine:8084/app
+  health_path: /health
+  bundle_relative: blockchain-core.yml
+
+blockchain_consensus_engine:
+  host_registry_key: blockchain_consensus_engine
+  service_name: blockchain-consensus-engine
+  port: 8085
+  host_ip: 172.20.10.34
+  base_url: http://blockchain-consensus-engine:8085/app
+  health_path: /health
+
+block_manager:
+  host_registry_key: block_manager
+  service_name: block-manager
+  port: 8086
+  host_ip: 172.20.10.35
+  base_url: http://block-manager:8086/app
+  health_path: /health
+
+data_chain:
+  host_registry_key: data_chain
+  service_name: data-chain
+  port: 8087
+  host_ip: 172.20.10.36
+  base_url: http://data-chain:8087/app
+  health_path: /health
+
+session_anchoring:
+  host_registry_key: session_anchoring
+  service_name: session-anchoring
+  port: 8085
+  host_ip: 172.20.10.12
+  base_url: http://session-anchoring:8085/app
+  health_path: /health
+
+session_management:
+  host_registry_key: session_pipeline
+  service_name: session-pipeline
+  port: 8083
+  host_ip: null
+  base_url: http://session-pipeline:8083/app
+  health_path: /health
+  bundle_relative: session-management.yml
+
+session_system_control:
+  host_registry_key: session_system_control
+  service_name: session-system-control
+  port: 7988
+  host_ip: 172.20.10.7
+  base_url: http://session-system-control:7988/app
+  health_path: /health
+
+session_pipeline_manager:
+  host_registry_key: session_pipeline_manager
+  service_name: session-pipeline-manager
+  port: 7990
+  host_ip: 172.20.10.8
+  base_url: http://session-pipeline-manager:7990/app
+  health_path: /health
+
+session_chunk_processor:
+  host_registry_key: session_chunk_processor
+  service_name: session-chunk-processor
+  port: 8010
+  host_ip: 172.20.10.9
+  base_url: http://session-chunk-processor:8010/app
+  health_path: /health
+
+session_storage_service:
+  host_registry_key: session_storage_service
+  service_name: session-storage-service
+  port: 8020
+  host_ip: 172.20.10.10
+  base_url: http://session-storage-service:8020/app
+  health_path: /health
+
+session_storage:
+  host_registry_key: session_storage
+  service_name: session-storage
+  port: 8082
+  host_ip: 172.20.10.11
+  base_url: http://session-storage:8082/app
+  health_path: /health
+
+session_recorder:
+  host_registry_key: session_recorder
+  service_name: session-recorder
+  port: 8090
+  host_ip: 172.20.10.13
+  base_url: http://session-recorder:8090/app
+  health_path: /health
+
+session_processor:
+  host_registry_key: session_processor
+  service_name: session-processor
+  port: 8091
+  host_ip: 172.20.10.14
+  base_url: http://session-processor:8091/app
+  health_path: /health
+
+session_merkle_tree_builder:
+  host_registry_key: session_merkle_tree_builder
+  service_name: session-merkle-tree-builder
+  port: 8092
+  host_ip: 172.20.10.15
+  base_url: http://session-merkle-tree-builder:8092/app
+  health_path: /health
+
+session_overlord:
+  host_registry_key: session_overlord
+  service_name: session-overlord
+  port: 8110
+  host_ip: 172.20.10.16
+  base_url: http://session-overlord:8110/app
+  health_path: /health
+
+session_api:
+  host_registry_key: session_api
+  service_name: session-api
+  port: 8113
+  host_ip: 172.20.10.17
+  base_url: http://session-api:8113/app
+  health_path: /health
+
+node_management:
+  host_registry_key: node_management
+  service_name: node-management
+  port: 8095
+  host_ip: 172.20.10.25
+  base_url: http://node-management:8095/app
+  health_path: /health
+
+node_management_staging:
+  host_registry_key: node_management_staging
+  service_name: node-management-staging
+  port: 8099
+  host_ip: 172.20.10.26
+  base_url: http://node-management-staging:8099/app
+  health_path: /health
+
+node_worker:
+  host_registry_key: node_worker
+  service_name: node-worker
+  port: 8600
+  host_ip: 172.20.10.27
+  base_url: http://node-worker:8600/app
+  health_path: /health
+
+node_registry:
+  host_registry_key: node_registry
+  service_name: node-registry
+  port: 8610
+  host_ip: 172.20.10.28
+  base_url: http://node-registry:8610/app
+  health_path: /health
+
+node_gov:
+  host_registry_key: node_gov
+  service_name: node-gov
+  port: 8620
+  host_ip: 172.20.10.29
+  base_url: http://node-gov:8620/app
+  health_path: /health
+
+node_utils:
+  host_registry_key: node_utils
+  service_name: node-utils
+  port: 8630
+  host_ip: 172.20.10.30
+  base_url: http://node-utils:8630/app
+  health_path: /health
+
+node_overlord:
+  host_registry_key: node_overlord
+  service_name: node-overlord
+  port: 8130
+  host_ip: 172.20.10.32
+  base_url: http://node-overlord:8130/app
+  health_path: /health
+
+gui_api_bridge:
+  host_registry_key: gui_api_bridge
+  service_name: gui-api-bridge
+  port: 8102
+  host_ip: 172.20.10.61
+  base_url: http://gui-api-bridge:8102/app
+  health_path: /health
+  bundle_relative: gui-api-bridge.yml
+
+gui_docker_manager:
+  host_registry_key: gui_docker_manager
+  service_name: gui-docker-manager
+  port: 8098
+  host_ip: 172.20.10.60
+  base_url: http://gui-docker-manager:8098/app
+  health_path: /health
+
+gui_hardware_manager:
+  host_registry_key: gui_hardware_manager
+  service_name: gui-hardware-manager
+  port: 8099
+  host_ip: 172.20.10.62
+  base_url: http://gui-hardware-manager:8099/app
+  health_path: /health
+
+gui_tor_manager:
+  host_registry_key: gui_tor_manager_http
+  service_name: gui-tor-manager
+  port: 8097
+  host_ip: 172.20.10.63
+  base_url: http://gui-tor-manager:8097/app
+  health_path: /health
+
+database_overlord:
+  host_registry_key: database_overlord
+  service_name: database-overlord
+  port: 8120
+  host_ip: 172.20.10.22
+  base_url: http://database-overlord:8120/app
+  health_path: /health
+
+lucid_mongodb:
+  host_registry_key: lucid_mongodb
+  service_name: lucid-mongodb
+  port: 27017
+  host_ip: 172.20.10.70
+  connection_url: mongodb://lucid-mongodb:27017/lucid_admin
+
+lucid_redis:
+  host_registry_key: lucid_redis
+  service_name: lucid-redis
+  port: 6379
+  host_ip: 172.20.10.67
+  connection_url: redis://lucid-redis:6379/5
+
+lucid_elasticsearch_http:
+  host_registry_key: lucid_elasticsearch_http
+  service_name: lucid-elasticsearch-http
+  port: 9200
+  host_ip: 172.20.10.68
+  base_url: http://lucid-elasticsearch-http:9200/app
+
+lucid_elasticsearch_transport:
+  host_registry_key: lucid_elasticsearch_transport
+  service_name: lucid-elasticsearch-transport
+  port: 9300
+  host_ip: 172.20.10.69
+  base_url: http://lucid-elasticsearch-transport:9300/app
+
+payout_router:
+  host_registry_key: payout_router
+  service_name: payout-router
+  port: 8092
+  host_ip: 172.20.10.43
+  base_url: http://payout-router:8092/app
+  health_path: /health
+  bundle_relative: payment_services/payout-router-config.yaml
+
+tron_payment_service:
+  host_registry_key: tron_payment_service
+  service_name: tron-payment-service
+  port: 8080
+  host_ip: 172.20.10.40
+  base_url: http://tron-payment-service:8080/app
+  health_path: /health
+  bundle_relative: tron-payment.yml
+
+tron_client:
+  host_registry_key: tron_client
+  service_name: tron-client
+  port: 8091
+  host_ip: 172.20.10.41
+  base_url: http://tron-client:8091/app
+  health_path: /health
+
+tron_client_aux:
+  host_registry_key: tron_client_aux
+  service_name: tron-client-aux
+  port: 8101
+  host_ip: 172.20.10.42
+  base_url: http://tron-client-aux:8101/app
+  health_path: /health
+
+wallet_manager:
+  host_registry_key: wallet_manager
+  service_name: wallet-manager
+  port: 8093
+  host_ip: 172.20.10.44
+  base_url: http://wallet-manager:8093/app
+  health_path: /health
+
+usdt_manager:
+  host_registry_key: usdt_manager
+  service_name: usdt-manager
+  port: 8094
+  host_ip: 172.20.10.45
+  base_url: http://usdt-manager:8094/app
+  health_path: /health
+
+tron_node_client:
+  host_registry_key: tron_node_client
+  service_name: tron-node-client
+  port: 8030
+  host_ip: 172.20.10.38
+  base_url: http://tron-node-client:8030/app
+  health_path: /health
+
+on_system_chain_client:
+  host_registry_key: on_system_chain_client
+  service_name: on-system-chain-client
+  port: 8040
+  host_ip: 172.20.10.39
+  base_url: http://on-system-chain-client:8040/app
+  health_path: /health
+
+tor_socks:
+  host_registry_key: tor_socks
+  service_name: tor-socks
+  port: 9050
+  host_ip: 172.20.10.64
+  base_url: http://tor-socks:9050/app
+
+tor_control:
+  host_registry_key: tor_control
+  service_name: tor-control
+  port: 9051
+  host_ip: 172.20.10.65
+  base_url: http://tor-control:9051/app
+
+tunnel_tools:
+  host_registry_key: tunnel_tools
+  service_name: tunnel-tools
+  port: 7000
+  host_ip: 172.20.10.66
+  base_url: http://tunnel-tools:7000/app
+  health_path: /health
+
+prometheus_metrics:
+  host_registry_key: prometheus_metrics
+  service_name: prometheus-metrics
+  port: 9090
+  host_ip: 172.20.10.74
+  base_url: http://prometheus-metrics:9090/app
+  health_path: /health
+
+service_mesh_controller:
+  host_registry_key: lucid_service_mesh_controller
+  service_name: lucid-service-mesh-controller
+  port: 8500
+  host_ip: 172.20.10.55
+  base_url: http://lucid-service-mesh-controller:8500/app
+  health_path: /health
+  bundle_relative: service_mesh/service-mesh.yaml
+
+consul_dns:
+  host_registry_key: consul_dns
+  service_name: consul-dns
+  port: 8501
+  host_ip: 172.20.10.56
+  base_url: http://consul-dns:8501/app
+
+consul_grpc:
+  host_registry_key: consul_grpc
+  service_name: consul-grpc
+  port: 8502
+  host_ip: 172.20.10.57
+  base_url: http://consul-grpc:8502/app
+
+service_mesh_http_health:
+  host_registry_key: service_mesh_http
+  service_name: service-mesh-http-health
+  port: 8088
+  host_ip: 172.20.10.59
+  base_url: http://service-mesh-http-health:8088/app
+  health_path: /health
+
+vm_service:
+  host_registry_key: vm_service
+  service_name: vm-service
+  port: 8107
+  host_ip: 172.20.10.73
+  base_url: http://vm-service:8107/app
+  health_path: /health
+
+lucid_system_storage:
+  host_registry_key: lucid_system_storage
+  service_name: lucid-system-storage
+  port: 9900
+  host_ip: 172.20.10.72
+  base_url: http://lucid-system-storage:9900/app
+  health_path: /health

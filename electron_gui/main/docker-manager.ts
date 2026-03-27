@@ -124,7 +124,7 @@ export class DockerManager extends EventEmitter {
       const result = await this.executeSshCommand('docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}\t{{.CreatedAt}}\t{{.Size}}"');
       
       if (!result.success) {
-        throw new Error(`Failed to get services: ${result.error}`);
+        throw new Error(`Failed to get services: ${result.stderr}`);
       }
 
       const services = this.parseDockerPsOutput(result.stdout);
@@ -244,7 +244,7 @@ export class DockerManager extends EventEmitter {
       const result = await this.executeSshCommand('docker-compose ps --format json');
       
       if (!result.success) {
-        throw new Error(`Failed to get compose services: ${result.error}`);
+        throw new Error(`Failed to get compose services: ${result.stderr}`);
       }
 
       const services = JSON.parse(result.stdout);

@@ -1,0 +1,90 @@
+# infrastructure/containers/blockchain/config/block-pay-endpoints.yml
+# Payment / TRON plane — host-config.yml wallet cluster
+# HTTP path template: http://${service_name}:${port}/app
+# Related: block-pay.yml, chain-to-pay.connections.json (container: /app/blockchain/config/)
+
+version: "1.0"
+
+meta:
+  host_config_path: infrastructure/containers/host-config.yml
+  host_config_container_path: /app/configs/host-config.yml
+  http_path_template: http://${service_name}:${port}/app
+
+services:
+  tron_node_client:
+    host_registry_key: tron_node_client
+    service_name: tron-node-client
+    port: 8030
+    host_ip: 172.20.10.38
+    base_url: http://tron-node-client:8030/app
+    health_path: /health
+
+  on_system_chain_client:
+    host_registry_key: on_system_chain_client
+    service_name: on-system-chain-client
+    port: 8040
+    host_ip: 172.20.10.39
+    base_url: http://on-system-chain-client:8040/app
+    health_path: /health
+
+  tron_payment_service:
+    host_registry_key: tron_payment_service
+    service_name: tron-payment-service
+    port: 8080
+    host_ip: 172.20.10.40
+    base_url: http://tron-payment-service:8080/app
+    health_path: /health
+
+  tron_client:
+    host_registry_key: tron_client
+    service_name: tron-client
+    port: 8091
+    host_ip: 172.20.10.41
+    base_url: http://tron-client:8091/app
+    health_path: /health
+
+  tron_client_aux:
+    host_registry_key: tron_client_aux
+    service_name: tron-client-aux
+    port: 8101
+    host_ip: 172.20.10.42
+    base_url: http://tron-client-aux:8101/app
+    health_path: /health
+
+  payout_router:
+    host_registry_key: payout_router
+    service_name: payout-router
+    port: 8092
+    host_ip: 172.20.10.43
+    base_url: http://payout-router:8092/app
+    health_path: /health
+
+  wallet_manager:
+    host_registry_key: wallet_manager
+    service_name: wallet-manager
+    port: 8093
+    host_ip: 172.20.10.44
+    base_url: http://wallet-manager:8093/app
+    health_path: /health
+
+  usdt_manager:
+    host_registry_key: usdt_manager
+    service_name: usdt-manager
+    port: 8094
+    host_ip: 172.20.10.45
+    base_url: http://usdt-manager:8094/app
+    health_path: /health
+
+endpoints:
+  common:
+    - "GET /app/health"
+    - "GET /app/api/v1/status"
+  payment:
+    - "POST /app/api/v1/payments"
+    - "GET /app/api/v1/payments/{id}"
+    - "POST /app/api/v1/payouts"
+    - "GET /app/api/v1/wallets"
+  tron:
+    - "POST /app/api/v1/tron/transaction"
+    - "GET /app/api/v1/tron/balance"
+    - "POST /app/api/v1/tron/broadcast"

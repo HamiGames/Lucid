@@ -24,6 +24,24 @@ import {
   TorCircuitMessage
 } from '../../shared/ipc-channels';
 
+export function torBootstrapProgress(status: import('../tor-manager').TorStatus): number {
+  if (status.status === 'connected') return 100;
+  if (status.status === 'starting') return 50;
+  return 0;
+}
+
+export function mapTorStatusForIpc(status: import('../tor-manager').TorStatus): TorGetStatusResponse {
+  return {
+    connected: status.connected,
+    connecting: status.status === 'starting',
+    bootstrapProgress: torBootstrapProgress(status),
+    circuits: [],
+    proxyPort: status.socksPort,
+    controlPort: status.controlPort,
+    error: status.error,
+  };
+}
+
 export function setupTorHandlers(torManager: TorManager, windowManager: WindowManager): void {
   console.log('Setting up Tor IPC handlers...');
 
@@ -36,13 +54,14 @@ export function setupTorHandlers(torManager: TorManager, windowManager: WindowMa
       await torManager.start();
       
       // Get status after start
-      const status = await torManager.getStatus();
+      const status = torManager.getStatus();
       
       // Broadcast status update
       broadcastTorStatus(windowManager, {
-        status: status.connected ? 'connected' : 'connecting',
-        progress: status.bootstrapProgress,
-        circuits: status.circuits.length
+        status: status.connected ? 'connected' : status.status === 'starting' ? 'connecting' : 'disconnected',
+        progress: torBootstrapProgress(status),
+        circuits: status.circuits ?? 0,
+        proxyPort: status.socksPort,
       });
 
       return {
@@ -103,13 +122,14 @@ export function setupTorHandlers(torManager: TorManager, windowManager: WindowMa
       await torManager.restart();
       
       // Get status after restart
-      const status = await torManager.getStatus();
+      const status = torManager.getStatus();
       
       // Broadcast status update
       broadcastTorStatus(windowManager, {
-        status: status.connected ? 'connected' : 'connecting',
-        progress: status.bootstrapProgress,
-        circuits: status.circuits.length
+        status: status.connected ? 'connected' : status.status === 'starting' ? 'connecting' : 'disconnected',
+        progress: torBootstrapProgress(status),
+        circuits: status.circuits ?? 0,
+        proxyPort: status.socksPort,
       });
 
       return {
@@ -137,28 +157,19 @@ export function setupTorHandlers(torManager: TorManager, windowManager: WindowMa
   // Get Tor status handler
   ipcMain.handle(RENDERER_TO_MAIN_CHANNELS.TOR_GET_STATUS, async (event) => {
     try {
-      const status = await torManager.getStatus();
+      const status = torManager.getStatus();
       
-      return {
-        connected: status.connected,
-        bootstrapProgress: status.bootstrapProgress,
-        circuits: status.circuits.map(circuit => ({
-          id: circuit.id,
-          status: circuit.status,
-          path: circuit.path,
-          age: circuit.age
-        })),
-        proxyPort: status.proxyPort,
-        error: status.error
-      } as TorGetStatusResponse;
+      return mapTorStatusForIpc(status);
     } catch (error) {
       console.error('Tor get status error:', error);
       
       return {
         connected: false,
+        connecting: false,
         bootstrapProgress: 0,
         circuits: [],
         proxyPort: 0,
+        controlPort: 0,
         error: error instanceof Error ? error.message : 'Unknown status error'
       } as TorGetStatusResponse;
     }
@@ -170,23 +181,23 @@ export function setupTorHandlers(torManager: TorManager, windowManager: WindowMa
       const metrics = await torManager.getMetrics();
       
       return {
+        uptimeSeconds: metrics.uptimeSeconds ?? 0,
         bytesRead: metrics.bytesRead || 0,
         bytesWritten: metrics.bytesWritten || 0,
         circuitsBuilt: metrics.circuitsBuilt || 0,
         circuitsFailed: metrics.circuitsFailed || 0,
-        bootstrapTime: metrics.bootstrapTime || 0,
-        uptime: metrics.uptime || 0
+        lastUpdated: metrics.lastUpdated ?? new Date().toISOString(),
       } as TorGetMetricsResponse;
     } catch (error) {
       console.error('Tor get metrics error:', error);
       
       return {
+        uptimeSeconds: 0,
         bytesRead: 0,
         bytesWritten: 0,
         circuitsBuilt: 0,
         circuitsFailed: 0,
-        bootstrapTime: 0,
-        uptime: 0
+        lastUpdated: new Date().toISOString(),
       } as TorGetMetricsResponse;
     }
   });
@@ -271,19 +282,27 @@ export function setupTorHandlers(torManager: TorManager, windowManager: WindowMa
 // Setup Tor event listeners for real-time status updates
 function setupTorEventListeners(torManager: TorManager, windowManager: WindowManager): void {
   // Listen for Tor status changes
-  torManager.addEventListener('statusChanged', (status) => {
+  torManager.addEventListener('statusChanged', (...args: unknown[]) => {
+    const status = args[0] as import('../tor-manager').TorStatus;
     const message: TorStatusMessage = {
-      status: status.connected ? 'connected' : status.connecting ? 'connecting' : 'disconnected',
-      progress: status.bootstrapProgress,
+      status: status.connected
+        ? 'connected'
+        : status.status === 'starting'
+          ? 'connecting'
+          : 'disconnected',
+      progress: torBootstrapProgress(status),
       error: status.error,
-      circuits: status.circuits.length
+      circuits: status.circuits ?? 0,
+      proxyPort: status.socksPort,
     };
     
     broadcastTorStatus(windowManager, message);
   });
 
   // Listen for Tor connection changes
-  torManager.addEventListener('connectionChanged', (connected, error) => {
+  torManager.addEventListener('connectionChanged', (...args: unknown[]) => {
+    const connected = args[0] as boolean;
+    const error = args[1] as string | undefined;
     const message: TorConnectionMessage = {
       connected,
       timestamp: new Date().toISOString(),
@@ -294,7 +313,10 @@ function setupTorEventListeners(torManager: TorManager, windowManager: WindowMan
   });
 
   // Listen for Tor bootstrap progress updates
-  torManager.addEventListener('bootstrapProgress', (progress, summary, warning) => {
+  torManager.addEventListener('bootstrapProgress', (...args: unknown[]) => {
+    const progress = args[0] as number;
+    const summary = args[1] as string | undefined;
+    const warning = args[2] as string | undefined;
     const message: TorBootstrapMessage = {
       progress,
       summary,
@@ -305,10 +327,16 @@ function setupTorEventListeners(torManager: TorManager, windowManager: WindowMan
   });
 
   // Listen for Tor circuit updates
-  torManager.addEventListener('circuitUpdate', (circuit) => {
+  torManager.addEventListener('circuitUpdate', (...args: unknown[]) => {
+    const circuit = args[0] as {
+      id: string;
+      status: TorCircuitMessage['status'];
+      path: string[];
+      age: number;
+    };
     const message: TorCircuitMessage = {
       circuitId: circuit.id,
-      status: circuit.status as any,
+      status: circuit.status,
       path: circuit.path,
       age: circuit.age
     };
@@ -317,15 +345,17 @@ function setupTorEventListeners(torManager: TorManager, windowManager: WindowMan
   });
 
   // Listen for Tor errors
-  torManager.addEventListener('error', (error) => {
-    console.error('Tor error event:', error);
+  torManager.addEventListener('error', (...args: unknown[]) => {
+    const error = args[0];
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Tor error event:', err);
     
     // Broadcast error to all windows
     windowManager.broadcastToAllWindows(MAIN_TO_RENDERER_CHANNELS.ERROR_OCCURRED, {
       code: 'TOR_ERROR',
-      message: error.message || 'Unknown Tor error',
+      message: err.message || 'Unknown Tor error',
       details: error,
-      stack: error.stack,
+      stack: err.stack,
       timestamp: new Date().toISOString()
     });
   });

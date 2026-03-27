@@ -1,0 +1,82 @@
+# infrastructure/containers/blockchain/config/blockchain-endpoints.yml
+# Host registry: infrastructure/containers/host-config.yml
+# HTTP path template: http://${service_name}:${port}/app
+# OpenAPI: /app/blockchain/config/open-api.yml (container layout)
+# Chain↔pay: /app/blockchain/config/chain-to-pay.connections.json
+
+version: "1.0"
+
+meta:
+  host_config_path: infrastructure/containers/host-config.yml
+  host_config_container_path: /app/configs/host-config.yml
+  http_path_template: http://${service_name}:${port}/app
+
+services:
+  blockchain_engine:
+    host_registry_key: blockchain_engine
+    service_name: blockchain-engine
+    port: 8084
+    host_ip: 172.20.10.33
+    base_url: http://blockchain-engine:8084/app
+    health_path: /health
+    api_prefix: /app/api/v1
+
+  blockchain_consensus_engine:
+    host_registry_key: blockchain_consensus_engine
+    service_name: blockchain-consensus-engine
+    port: 8085
+    host_ip: 172.20.10.34
+    base_url: http://blockchain-consensus-engine:8085/app
+    health_path: /health
+    api_prefix: /app/api/v1
+
+  block_manager:
+    host_registry_key: block_manager
+    service_name: block-manager
+    port: 8086
+    host_ip: 172.20.10.35
+    base_url: http://block-manager:8086/app
+    health_path: /health
+    api_prefix: /app/api/v1
+
+  data_chain:
+    host_registry_key: data_chain
+    service_name: data-chain
+    port: 8087
+    host_ip: 172.20.10.36
+    base_url: http://data-chain:8087/app
+    health_path: /health
+    api_prefix: /app/api/v1
+
+  session_anchoring:
+    host_registry_key: session_anchoring
+    service_name: session-anchoring
+    port: 8085
+    host_ip: 172.20.10.12
+    base_url: http://session-anchoring:8085/app
+    health_path: /health
+    note: "Port 8085 collides with blockchain-consensus-engine on single host; use DNS service_name."
+
+endpoints:
+  chain:
+    - "GET /app/api/v1/chain/info"
+    - "GET /app/api/v1/chain/status"
+    - "GET /app/api/v1/chain/height"
+  blocks:
+    - "GET /app/api/v1/blocks"
+    - "GET /app/api/v1/blocks/{block_id}"
+    - "POST /app/api/v1/blocks/validate"
+  transactions:
+    - "POST /app/api/v1/transactions"
+    - "GET /app/api/v1/transactions/{tx_id}"
+  anchoring:
+    - "POST /app/api/v1/anchoring/session"
+    - "GET /app/api/v1/anchoring/status"
+  consensus:
+    - "GET /app/api/v1/consensus/status"
+    - "POST /app/api/v1/consensus/vote"
+  merkle:
+    - "POST /app/api/v1/merkle/build"
+    - "POST /app/api/v1/merkle/verify"
+  health:
+    - "GET /app/health"

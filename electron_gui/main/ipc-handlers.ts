@@ -5,6 +5,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { WindowManager } from './window-manager';
 import { TorManager } from './tor-manager';
 import { DockerService } from './docker-service';
+import { mapTorStatusForIpc, torBootstrapProgress } from './ipc/tor-handler';
 import {
   RENDERER_TO_MAIN_CHANNELS,
   MAIN_TO_RENDERER_CHANNELS,
@@ -113,19 +114,8 @@ function setupTorHandlers(torManager: TorManager, windowManager: WindowManager):
   // Tor get status
   ipcMain.handle(RENDERER_TO_MAIN_CHANNELS.TOR_GET_STATUS, async (event, data) => {
     try {
-      const status = await torManager.getStatus();
-      return {
-        connected: status.is_connected,
-        bootstrapProgress: status.bootstrap_progress,
-        circuits: status.circuits.map(circuit => ({
-          id: circuit.id,
-          status: circuit.status,
-          path: circuit.path,
-          age: circuit.age,
-        })),
-        proxyPort: status.proxy_port,
-        error: status.error,
-      };
+      const status = torManager.getStatus();
+      return mapTorStatusForIpc(status);
     } catch (error) {
       console.error('Tor get status error:', error);
       return { error: error instanceof Error ? error.message : String(error) };
@@ -288,7 +278,7 @@ function setupDockerHandlers(dockerService: DockerService, windowManager: Window
   // Docker get service status
   ipcMain.handle(RENDERER_TO_MAIN_CHANNELS.DOCKER_GET_SERVICE_STATUS, async (event, data) => {
     try {
-      const status = await dockerService.getServiceStatus();
+      const status = await dockerService.getOrchestratedServiceStatus();
       return status;
     } catch (error) {
       console.error('Docker get service status error:', error);
@@ -299,8 +289,12 @@ function setupDockerHandlers(dockerService: DockerService, windowManager: Window
   // Docker get container logs
   ipcMain.handle(RENDERER_TO_MAIN_CHANNELS.DOCKER_GET_CONTAINER_LOGS, async (event, data) => {
     try {
-      const logs = await dockerService.getContainerLogs(data.containerId, data.lines, data.follow);
-      return logs;
+      const { logs, error } = await dockerService.getContainerLogs(
+        data.containerId,
+        data.lines,
+        data.follow
+      );
+      return { logs, error };
     } catch (error) {
       console.error('Docker get container logs error:', error);
       return { error: error instanceof Error ? error.message : String(error) };
@@ -430,7 +424,8 @@ function setupConfigHandlers(windowManager: WindowManager): void {
       const configUpdate: ConfigUpdatedMessage = {
         key: data.key,
         value: data.value,
-        timestamp: new Date().toISOString(),
+        scope: 'system',
+        updatedAt: new Date().toISOString(),
       };
       
       broadcastConfigUpdated(windowManager, configUpdate);
@@ -503,7 +498,7 @@ function setupBidirectionalHandlers(windowManager: WindowManager): void {
     try {
       const targetWindow = windowManager.getWindow(data.targetWindow);
       if (targetWindow) {
-        targetWindow.webContents.send(data.channel, data.data);
+        targetWindow.window.webContents.send(data.channel, data.data);
         return { success: true };
       }
       return { success: false, error: 'Target window not found' };
@@ -526,11 +521,17 @@ function setupBidirectionalHandlers(windowManager: WindowManager): void {
 }
 
 // Broadcast helper functions
-function broadcastTorStatus(windowManager: WindowManager, status: any): void {
+function broadcastTorStatus(windowManager: WindowManager, status: import('./tor-manager').TorStatus): void {
   const message: TorStatusMessage = {
-    status: status.status,
-    progress: status.bootstrap_progress,
-    circuits: status.circuits?.length || 0,
+    status: status.connected
+      ? 'connected'
+      : status.status === 'starting'
+        ? 'connecting'
+        : 'disconnected',
+    progress: torBootstrapProgress(status),
+    circuits: status.circuits ?? 0,
+    proxyPort: status.socksPort,
+    error: status.error,
   };
   
   windowManager.broadcastToAllWindows(MAIN_TO_RENDERER_CHANNELS.TOR_STATUS_UPDATE, message);

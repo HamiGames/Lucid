@@ -18,7 +18,8 @@ service:
 port:
   host: "gui-hardware-manager"
   port: 8099
-  url: "http://gui-hardware-manager:8099"
+  host_ip: 172.20.10.62
+  url: "http://gui-hardware-manager:8099/app"
 
 # Database Configuration
 database:
@@ -27,9 +28,9 @@ database:
 
 # Integration Service URLs
 integration:
-  api_gateway_url: "http://api-gateway:8080"
-  auth_service_url: "http://lucid-auth-service:8089"
-  gui_api_bridge_url: "http://gui-api-bridge:8102"
+  api_gateway_url: "http://api-gateway:8080/app"
+  auth_service_url: "http://lucid-auth-service:8089/app"
+  gui_api_bridge_url: "http://gui-api-bridge:8102/app"
 
 # Hardware Wallet Configuration
 hardware-wallets:
@@ -119,71 +120,71 @@ monitoring:
   metrics_enabled: true
   health_check_interval: 60  # seconds
   health_check_endpoints:
-    - "/health"
-    - "/api/v1/hardware/status"
+    - "/app/health"
+    - "/app/api/v1/hardware/status"
 
 # API Endpoints
 api:
   version: "v1"
-  base_path: "/api/v1"
+  base_path: "/app/api/v1"
   endpoints:
     health:
-      path: "/health"
+      path: "/app/health"
       method: "GET"
       description: "Health check endpoint"
     
     devices:
-      path: "/hardware/devices"
+      path: "/app/api/v1/hardware/devices"
       method: "GET"
       description: "List connected hardware devices"
     
     device_info:
-      path: "/hardware/devices/{id}"
+      path: "/app/api/v1/hardware/devices/{id}"
       method: "GET"
       description: "Get device information"
     
     wallets:
-      path: "/hardware/wallets"
+      path: "/app/api/v1/hardware/wallets"
       method: "GET"
       description: "List wallet connections"
     
     wallet_connect:
-      path: "/hardware/wallets"
+      path: "/app/api/v1/hardware/wallets"
       method: "POST"
       description: "Connect to hardware wallet"
     
     wallet-disconnect:
-      path: "/hardware/wallets/{id}"
+      path: "/app/api/v1/hardware/wallets/{id}"
       method: "DELETE"
       description: "Disconnect from hardware wallet"
     
     sign_transaction:
-      path: "/hardware/sign"
+      path: "/app/api/v1/hardware/sign"
       method: "POST"
       description: "Sign transaction with hardware wallet"
     
     sign_status:
-      path: "/hardware/sign/{tx_id}"
+      path: "/app/api/v1/hardware/sign/{tx_id}"
       method: "GET"
       description: "Get signature status"
     
     ledger_version:
-      path: "/ledger/version"
+      path: "/app/api/v1/ledger/version"
       method: "GET"
       description: "Get Ledger app version"
     
     trezor_version:
-      path: "/trezor/version"
+      path: "/app/api/v1/trezor/version"
       method: "GET"
       description: "Get Trezor version"
     
     keepkey_version:
-      path: "/keepkey/version"
+      path: "/app/api/v1/keepkey/version"
       method: "GET"
       description: "Get KeepKey version"
     
     hardware_events:
-      path: "/ws/hardware/events"
+      path: "/app/ws/hardware/events"
       method: "WS"
       description: "WebSocket for hardware device events"
 

@@ -4,6 +4,8 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import { EventEmitter } from 'events';
+import type { DockerServiceState, DockerServiceStatus } from '../shared/ipc-channels';
 import * as net from 'net';
 
 export interface ContainerInfo {
@@ -52,15 +54,149 @@ export interface SSHConfig {
   password?: string;
 }
 
-export class DockerService {
+export class DockerService extends EventEmitter {
   private status: DockerStatus;
   private sshConfig: SSHConfig | null = null;
   private isConnected = false;
 
   constructor() {
+    super();
     this.status = {
       connected: false
     };
+  }
+
+  private containerToServiceState(c: ContainerInfo): DockerServiceState {
+    let st: DockerServiceStatus = 'stopped';
+    if (c.status === 'running') st = 'running';
+    else if (c.status === 'restarting') st = 'starting';
+    else if (c.status === 'dead') st = 'error';
+
+    return {
+      service: c.name,
+      displayName: c.name,
+      image: c.image,
+      level: 'core',
+      plane: 'core',
+      status: st,
+      containerId: c.id,
+      ports: c.ports,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async startServices(
+    services: string[],
+    _level?: string
+  ): Promise<{ success: boolean; started: string[]; failed: Array<{ service: string; error: string }> }> {
+    const started: string[] = [];
+    const failed: Array<{ service: string; error: string }> = [];
+    for (const name of services) {
+      try {
+        const ok = await this.startContainer(name);
+        if (ok) started.push(name);
+        else failed.push({ service: name, error: 'docker start failed' });
+      } catch (e) {
+        failed.push({
+          service: name,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    return { success: failed.length === 0, started, failed };
+  }
+
+  async stopServices(
+    services: string[]
+  ): Promise<{ success: boolean; stopped: string[]; failed: Array<{ service: string; error: string }> }> {
+    const stopped: string[] = [];
+    const failed: Array<{ service: string; error: string }> = [];
+    for (const name of services) {
+      try {
+        const ok = await this.stopContainer(name);
+        if (ok) stopped.push(name);
+        else failed.push({ service: name, error: 'docker stop failed' });
+      } catch (e) {
+        failed.push({
+          service: name,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    return { success: failed.length === 0, stopped, failed };
+  }
+
+  async restartServices(
+    services: string[]
+  ): Promise<{ success: boolean; started: string[]; failed: Array<{ service: string; error: string }> }> {
+    const started: string[] = [];
+    const failed: Array<{ service: string; error: string }> = [];
+    for (const name of services) {
+      try {
+        const ok = await this.restartContainer(name);
+        if (ok) started.push(name);
+        else failed.push({ service: name, error: 'docker restart failed' });
+      } catch (e) {
+        failed.push({
+          service: name,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    return { success: failed.length === 0, started, failed };
+  }
+
+  async getOrchestratedServiceStatus(): Promise<{ services: DockerServiceState[]; generatedAt: string }> {
+    const containers = await this.getContainers();
+    return {
+      services: containers.map((c) => this.containerToServiceState(c)),
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async findServiceStateByName(serviceName: string): Promise<DockerServiceState | null> {
+    const containers = await this.getContainers();
+    const c = containers.find((x) => x.name === serviceName || x.id === serviceName);
+    return c ? this.containerToServiceState(c) : null;
+  }
+
+  async execCommand(
+    containerId: string,
+    command: string[],
+    workingDir?: string,
+    env?: Record<string, string>
+  ): Promise<{
+    success: boolean;
+    output: string;
+    error?: string;
+    exitCode: number;
+  }> {
+    try {
+      if (!this.isConnected) {
+        throw new Error('Docker service not connected');
+      }
+      const wdFlag = workingDir ? `-w ${workingDir} ` : '';
+      const envPrefix = env
+        ? Object.entries(env)
+            .map(([k, v]) => `-e ${k}=${JSON.stringify(v)}`)
+            .join(' ') + ' '
+        : '';
+      const inner = command.map((p) => JSON.stringify(p)).join(' ');
+      const full = `docker exec ${wdFlag}${envPrefix}${containerId} ${inner}`;
+      const output = await this.executeDockerCommand(full);
+      return {
+        success: true,
+        output,
+        exitCode: 0,
+      };
+    } catch (e) {
+      return {
+        success: false,
+        output: '',
+        error: e instanceof Error ? e.message : String(e),
+        exitCode: -1,
+      };
+    }
   }
 
   async initialize(): Promise<void> {
@@ -113,7 +249,7 @@ export class DockerService {
 
     } catch (error) {
       console.error('Failed to connect to Docker via SSH:', error);
-      this.status.error = error.message;
+      this.status.error = error instanceof Error ? error.message : String(error);
       return false;
     }
   }
@@ -226,7 +362,11 @@ export class DockerService {
     }
   }
 
-  async getContainerLogs(containerId: string, lines: number = 100): Promise<string[]> {
+  async getContainerLogs(
+    containerId: string,
+    lines: number = 100,
+    _follow: boolean = false
+  ): Promise<{ logs: string[]; error?: string }> {
     try {
       if (!this.isConnected) {
         throw new Error('Docker service not connected');
@@ -234,12 +374,16 @@ export class DockerService {
 
       const command = `docker logs --tail ${lines} ${containerId}`;
       const output = await this.executeDockerCommand(command);
-      
-      return output.split('\n').filter(line => line.trim() !== '');
 
+      return {
+        logs: output.split('\n').filter((line) => line.trim() !== ''),
+      };
     } catch (error) {
       console.error(`Failed to get logs for container ${containerId}:`, error);
-      throw error;
+      return {
+        logs: [],
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 

@@ -1,0 +1,17 @@
+# infrastructure/containers/services/master-endpoint.yml
+# Aggregates endpoint-file-list.txt sources; registry aligned to host-config.yml.
+
+version: '1.0'
+description: 'Master endpoint index: aggregates endpoint-file-list sources; service registry mirrors infrastructure/containers/host-config.yml.'
+meta:
+  host_config_path: infrastructure/containers/host-config.yml
+  host_config_container_path: /app/configs/host-config.yml
+  http_path_template: http://${service_name}:${port}/app
+  master_index_path: infrastructure/containers/services/master-endpoint.yml
+  endpoint_source_files:
+  - path: admin/config/admin-endpoints.yml
+    scope: admin-plane HTTP bases, cross-service
+  - path: auth/config/endpoints.yaml
+    scope: lucid-auth-service route catalog (/app prefix)
+  - path: configs/integration/master-integration-config.yml
+   

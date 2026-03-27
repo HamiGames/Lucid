@@ -1,0 +1,103 @@
+# gui_api_bridge/config/gui-bridge-entrypoints.yml
+#
+# Container layout: host registry at /app/configs/host-config.yml; bundled service
+# definitions under /app/configs/services/ (see infrastructure/containers/services/
+# and container-runtime-layout.yml). Local dev: LUCID_HOST_CONFIG_PATH and
+# LUCID_GUI_API_BRIDGE_SERVICE_CONFIG_DIR point at repo paths if needed.
+
+version: "1.0"
+
+meta:
+  host_config_path: /app/configs/host-config.yml
+  services_config_root: /app/configs/services
+  bridge_service_bundle: /app/configs/services/gui-api-bridge.yml
+  description: >
+    HTTP/WebSocket entrypoints for gui-api-bridge and static upstream map aligned
+    with Docker DNS service_name values from host-config.yml.
+
+# This service (host-config key gui_api_bridge → service_name gui-api-bridge:8102)
+self:
+  host_registry_key: gui_api_bridge
+  service_name: gui-api-bridge
+  internal_base_url: http://gui-api-bridge:8102
+  api:
+    version: v1
+    base_path: /api/v1
+  websocket:
+    path: /ws
+
+# Optional bundled YAMLs under /app/configs/services/ (relative = image layout)
+service_bundles:
+  bridge: gui-api-bridge.yml
+  api_gateway: api-gateway.yml
+  auth: auth-service.yml
+  admin_interface: admin-interface.yml
+  session_management: session-management.yml
+
+# Upstreams the bridge proxies to (service_name:port match host-config)
+upstream:
+  api_gateway:
+    host_registry_key: main_lucid_gateway
+    service_name: api-gateway
+    base_url: http://api-gateway:8080
+    health_path: /health
+  blockchain_engine:
+    host_registry_key: blockchain_engine
+    service_name: blockchain-engine
+    base_url: http://blockchain-engine:8084
+    health_path: /health
+  auth_service:
+    host_registry_key: lucid_auth_service
+    service_name: lucid-auth-service
+    base_url: http://lucid-auth-service:8089
+    health_path: /health
+  session_api:
+    host_registry_key: session_api
+    service_name: session-api
+    base_url: http://session-api:8113
+    health_path: /health
+  node_management:
+    host_registry_key: node_management
+    service_name: node-management
+    base_url: http://node-management:8095
+    health_path: /health
+  admin_ui_backend:
+    host_registry_key: admin_ui_backend
+    service_name: admin-ui-backend
+    base_url: http://admin-ui-backend:8120
+    health_path: /health
+  tron_client:
+    host_registry_key: tron_client
+    service_name: tron-client
+    base_url: http://tron-client:8091
+    health_path: /health
+
+# Route prefixes (mirrors infrastructure/containers/services/gui-api-bridge.yml routing)
+routing_profiles:
+  user:
+    prefix: /api/v1/user
+    upstreams:
+      - auth_service
+      - session_api
+      - api_gateway
+  developer:
+    prefix: /api/v1/developer
+    upstreams:
+      - auth_service
+      - session_api
+      - blockchain_engine
+      - api_gateway
+  node:
+    prefix: /api/v1/node
+    upstreams:
+      - auth_service
+      - node_management
+      - api_gateway
+  admin:
+    prefix: /api/v1/admin
+    upstreams:
+      - auth_service
+      - admin_ui_backend
+      - blockchain_engine
+      - node_management
+      - api_gateway

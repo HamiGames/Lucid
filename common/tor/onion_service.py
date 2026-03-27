@@ -129,7 +129,7 @@ class OnionService:
     
     def __init__(self, trust_engine: Optional[TrustNothingEngine] = None):
         self.trust_engine = trust_engine or TrustNothingEngine()
-        self.logger = logging.get_logger(__name__)
+        self.logger = logging.getLogger(__name__)
         
         # Service state
         self.services: Dict[str, OnionServiceInfo] = {}

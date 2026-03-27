@@ -21,6 +21,17 @@ import {
   DockerHealthMessage
 } from '../../shared/ipc-channels';
 
+function broadcastDockerServiceStatus(
+  windowManager: WindowManager,
+  status: Omit<DockerServiceMessage, 'timestamp'>
+): void {
+  const message: DockerServiceMessage = {
+    ...status,
+    timestamp: new Date().toISOString(),
+  };
+  windowManager.broadcastToAllWindows(MAIN_TO_RENDERER_CHANNELS.DOCKER_SERVICE_STATUS, message);
+}
+
 export function setupDockerHandlers(dockerService: DockerService, windowManager: WindowManager): void {
   console.log('Setting up Docker IPC handlers...');
 
@@ -37,7 +48,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
       // Broadcast service status updates
       if (result.started.length > 0) {
         for (const serviceName of result.started) {
-          const serviceStatus = dockerService.getServiceStatus(serviceName);
+          const serviceStatus = await dockerService.findServiceStateByName(serviceName);
           if (serviceStatus) {
             broadcastDockerServiceStatus(windowManager, {
               service: serviceName,
@@ -63,8 +74,8 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
       return {
         success: result.success,
         started: result.started,
-        failed: result.failed
-      } as DockerStartServicesResponse;
+        failed: result.failed,
+      } as unknown as DockerStartServicesResponse;
     } catch (error) {
       console.error('Docker start services error:', error);
       
@@ -75,7 +86,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
           service: 'unknown',
           error: error instanceof Error ? error.message : 'Unknown start error'
         }]
-      } as DockerStartServicesResponse;
+      } as unknown as DockerStartServicesResponse;
     }
   });
 
@@ -114,7 +125,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
         success: result.success,
         stopped: result.stopped,
         failed: result.failed
-      } as DockerStopServicesResponse;
+      } as unknown as DockerStopServicesResponse;
     } catch (error) {
       console.error('Docker stop services error:', error);
       
@@ -125,7 +136,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
           service: 'unknown',
           error: error instanceof Error ? error.message : 'Unknown stop error'
         }]
-      } as DockerStopServicesResponse;
+      } as unknown as DockerStopServicesResponse;
     }
   });
 
@@ -140,7 +151,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
       // Broadcast service status updates
       if (result.started.length > 0) {
         for (const serviceName of result.started) {
-          const serviceStatus = dockerService.getServiceStatus(serviceName);
+          const serviceStatus = await dockerService.findServiceStateByName(serviceName);
           if (serviceStatus) {
             broadcastDockerServiceStatus(windowManager, {
               service: serviceName,
@@ -167,7 +178,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
         success: result.success,
         started: result.started,
         failed: result.failed
-      } as DockerStartServicesResponse;
+      } as unknown as DockerStartServicesResponse;
     } catch (error) {
       console.error('Docker restart services error:', error);
       
@@ -178,7 +189,7 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
           service: 'unknown',
           error: error instanceof Error ? error.message : 'Unknown restart error'
         }]
-      } as DockerStartServicesResponse;
+      } as unknown as DockerStartServicesResponse;
     }
   });
 
@@ -188,24 +199,14 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
       console.log(`Getting Docker service status${serviceName ? ` for: ${serviceName}` : ' for all services'}`);
       
       // Get service status using DockerService
-      const result = await dockerService.getServiceStatus();
-      
-      return {
-        services: result.services.map(service => ({
-          name: service.name,
-          status: service.status,
-          containerId: service.containerId,
-          image: service.image,
-          ports: service.ports,
-          health: service.health,
-          uptime: service.uptime
-        }))
-      } as DockerGetServiceStatusResponse;
+      const result = await dockerService.getOrchestratedServiceStatus();
+      return result as DockerGetServiceStatusResponse;
     } catch (error) {
       console.error('Docker get service status error:', error);
       
       return {
-        services: []
+        services: [],
+        generatedAt: new Date().toISOString(),
       } as DockerGetServiceStatusResponse;
     }
   });
@@ -221,15 +222,19 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
       const result = await dockerService.getContainerLogs(containerId, lines, follow);
       
       return {
+        containerId,
         logs: result.logs,
-        error: result.error
+        error: result.error,
+        generatedAt: new Date().toISOString(),
       } as DockerGetContainerLogsResponse;
     } catch (error) {
       console.error('Docker get container logs error:', error);
       
       return {
+        containerId: request.containerId,
         logs: [],
-        error: error instanceof Error ? error.message : 'Unknown logs error'
+        error: error instanceof Error ? error.message : 'Unknown logs error',
+        generatedAt: new Date().toISOString(),
       } as DockerGetContainerLogsResponse;
     }
   });
@@ -241,23 +246,31 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
       
       console.log(`Executing command in Docker container: ${containerId}, command: ${command.join(' ')}`);
       
+      const startedAt = new Date().toISOString();
       // Execute command using DockerService
       const result = await dockerService.execCommand(containerId, command, workingDir, env);
       
       return {
         success: result.success,
+        containerId,
         output: result.output,
         error: result.error,
-        exitCode: result.exitCode
+        exitCode: result.exitCode,
+        startedAt,
+        finishedAt: new Date().toISOString(),
       } as DockerExecCommandResponse;
     } catch (error) {
       console.error('Docker exec command error:', error);
       
+      const finishedAt = new Date().toISOString();
       return {
         success: false,
+        containerId: request.containerId,
         output: '',
         error: error instanceof Error ? error.message : 'Unknown exec error',
-        exitCode: -1
+        exitCode: -1,
+        startedAt: finishedAt,
+        finishedAt,
       } as DockerExecCommandResponse;
     }
   });
@@ -272,14 +285,12 @@ export function setupDockerHandlers(dockerService: DockerService, windowManager:
 function setupDockerEventListeners(dockerService: DockerService, windowManager: WindowManager): void {
   // Listen for service status changes
   dockerService.on('serviceStatusChanged', (service, status, containerId, error) => {
-    const message: DockerServiceMessage = {
+    broadcastDockerServiceStatus(windowManager, {
       service,
       status,
       containerId,
-      error
-    };
-    
-    broadcastDockerServiceStatus(windowManager, message);
+      error,
+    });
   });
 
   // Listen for container updates
@@ -290,7 +301,8 @@ function setupDockerEventListeners(dockerService: DockerService, windowManager: 
       name: containerInfo.name,
       image: containerInfo.image,
       ports: containerInfo.ports,
-      health: containerInfo.health as any
+      health: containerInfo.health as any,
+      updatedAt: new Date().toISOString(),
     };
     
     windowManager.broadcastToAllWindows(MAIN_TO_RENDERER_CHANNELS.DOCKER_CONTAINER_UPDATE, message);
@@ -310,23 +322,19 @@ function setupDockerEventListeners(dockerService: DockerService, windowManager: 
   });
 
   // Listen for Docker errors
-  dockerService.on('error', (error) => {
-    console.error('Docker error event:', error);
+  dockerService.on('error', (err) => {
+    console.error('Docker error event:', err);
+    const error = err instanceof Error ? err : new Error(String(err));
     
     // Broadcast error to all windows
     windowManager.broadcastToAllWindows(MAIN_TO_RENDERER_CHANNELS.ERROR_OCCURRED, {
       code: 'DOCKER_ERROR',
       message: error.message || 'Unknown Docker error',
-      details: error,
+      details: err,
       stack: error.stack,
       timestamp: new Date().toISOString()
     });
   });
-}
-
-// Helper function to broadcast Docker service status updates
-function broadcastDockerServiceStatus(windowManager: WindowManager, status: DockerServiceMessage): void {
-  windowManager.broadcastToAllWindows(MAIN_TO_RENDERER_CHANNELS.DOCKER_SERVICE_STATUS, status);
 }
 
 // Export helper functions for use by other modules

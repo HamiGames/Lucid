@@ -13,6 +13,8 @@ service_discovery:
   version: "1.0.0"
   description: "Service discovery configuration for Lucid multi-system architecture"
   last_updated: "2025-01-10T19:08:00Z"
+  host_config_path: infrastructure/containers/host-config.yml
+  http_path_template: http://${service_name}:${port}/app
 
 # Discovery Backend Configuration
 discovery_backend:
@@ -57,7 +59,7 @@ service_registration:
     # HTTP health check
     http:
       enabled: true
-      path: "/health"
+      path: "/app/health"
       expected_status: 200
       
     # TCP health check
@@ -88,12 +90,12 @@ service_planes:
       - name: "admin-ui-backend"
         port: 8120
         tags: ["admin-ui-backend", "admin-interface", "lucid-admin-interface", "admin", "management", "ops"]
-        health_check: "/health"
+        health_check: "/app/health"
         
       - name: "gui-docker-manager"
         port: 8098
         tags: ["gui-docker-manager", "lucid-gui-docker-manager", "docker", "management", "gui-manager", "ops"]
-        health_check: "/health"
+        health_check: "/app/health"
 
   # Chain Plane
   chain_plane:
@@ -106,12 +108,27 @@ service_planes:
       - name: "blockchain-engine"
         port: 8084
         tags: ["blockchain-engine", "lucid-blockchain-engine", "blockchain", "consensus", "chain"]
-        health_check: "/health"
+        health_check: "/app/health"
         
       - name: "api-gateway"
         port: 8080
         tags: ["api-gateway", "lucid-api-gateway", "gateway", "api", "chain"]
-        health_check: "/health"
+        health_check: "/app/health"
+
+      - name: "session-pipeline"
+        port: 8083
+        tags: ["session-pipeline", "session-management", "chain"]
+        health_check: "/app/health"
+
+      - name: "node-management"
+        port: 8095
+        tags: ["node-management", "lucid-node-management", "application"]
+        health_check: "/app/health"
+
+      - name: "session-api"
+        port: 8113
+        tags: ["session-api", "sessions-api", "processing"]
+        health_check: "/app/health"
 
   # Wallet Plane (Isolated)
   wallet_plane:
@@ -125,27 +142,27 @@ service_planes:
       - name: "tron-payment-service"
         port: 8080
         tags: ["tron-payment-service", "tron-payment", "payment", "wallet"]
-        health_check: "/health"
+        health_check: "/app/health"
 
       - name: "tron-client"
         port: 8091
         tags: ["tron-client", "lucid-tron-client", "tron", "payment", "wallet"]
-        health_check: "/health"
+        health_check: "/app/health"
         
       - name: "payout-router"
         port: 8092
         tags: ["payout-router", "lucid-payout-router", "tron", "payout", "wallet"]
-        health_check: "/health"
+        health_check: "/app/health"
         
       - name: "wallet-manager"
         port: 8093
         tags: ["wallet-manager", "lucid-wallet-manager", "tron", "wallet", "wallet"]
-        health_check: "/health"
+        health_check: "/app/health"
         
       - name: "usdt-manager"
         port: 8094
         tags: ["tron", "usdt", "wallet"]
-        health_check: "/health"
+        health_check: "/app/health"
 
   # GUI Plane
   gui_plane:
@@ -158,17 +175,17 @@ service_planes:
       - name: "gui-api-bridge"
         port: 8102
         tags: ["gui-api-bridge", "lucid-gui-api-bridge", "gui", "api-bridge", "integration"]
-        health_check: "/health"
+        health_check: "/app/health"
         
       - name: "gui-tor-manager"
         port: 8097
         tags: ["gui-tor-manager", "lucid-gui-tor-manager", "gui", "tor", "privacy"]
-        health_check: "/health"
+        health_check: "/app/health"
 
       - name: "gui-hardware-manager"
         port: 8099
         tags: ["gui-hardware-manager", "lucid-gui-hardware-manager", "gui", "hardware-manager", "security"]
-        health_check: "/health"
+        health_check: "/app/health"
 
   tor_operations:
     name: "tor"
@@ -179,11 +196,11 @@ service_planes:
       - name: "tor-socks"
         port: 9050
         tags: ["tor-socks", "tor", "tor-proxy", "tor-operations", "socks5"]
-        health_check: "/health"
+        health_check: "/app/health"
       - name: "tor-control"
         port: 9051
         tags: ["tor-control", "tor", "tor-proxy", "tor-operations"]
-        health_check: "/health"
+        health_check: "/app/health"
 
 # Service Mesh Configuration
 service_mesh:
@@ -322,28 +339,28 @@ health_checks:
   services:
     api-gateway:
       type: "http"
-      path: "/health"
+      path: "/app/health"
       expected_status: 200
       interval: 30
       timeout: 10
       
     blockchain-engine:
       type: "http"
-      path: "/health"
+      path: "/app/health"
       expected_status: 200
       interval: 30
       timeout: 10
       
     lucid-auth-service:
       type: "http"
-      path: "/health"
+      path: "/app/health"
       expected_status: 200
       interval: 30
       timeout: 10
       
     tron-client:
       type: "http"
-      path: "/health"
+      path: "/app/health"
       expected_status: 200
       interval: 30
       timeout: 10
@@ -356,14 +373,14 @@ monitoring:
   # Metrics collection
   metrics:
     enabled: true
-    endpoint: "/metrics"
+    endpoint: "/app/metrics"
     interval: 30  # seconds
     
     # Prometheus metrics
     prometheus:
       enabled: true
       port: 9090
-      path: "/metrics"
+      path: "/app/metrics"
       
   # Logging
   logging:

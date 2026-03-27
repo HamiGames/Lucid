@@ -59,7 +59,6 @@ export class WindowManager {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          enableRemoteModule: false,
           preload: path.join(__dirname, 'preload.js'),
           webSecurity: true,
           allowRunningInsecureContent: false
@@ -215,6 +214,14 @@ export class WindowManager {
 
   getWindow(windowId: string): GUIWindow | undefined {
     return this.windows.get(windowId);
+  }
+
+  broadcastToAllWindows(channel: string, data: unknown): void {
+    for (const gui of this.windows.values()) {
+      if (!gui.window.isDestroyed()) {
+        gui.window.webContents.send(channel, data);
+      }
+    }
   }
 
   getAllWindows(): GUIWindow[] {

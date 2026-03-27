@@ -1,0 +1,153 @@
+# electron_gui/configs/electron-endpoints.yml
+# Container runtime paths use /app/*; host registry: infrastructure/containers/host-config.yml
+# Load via electron_gui utils / container: /app/electron-gui/utils/load_host_config.py
+
+version: "1.0"
+
+meta:
+  host_config_path: infrastructure/containers/host-config.yml
+  host_config_container_path: /app/configs/host-config.yml
+  http_path_template: http://${service_name}:${port}/app
+  description: Electron GUI ↔ backend bases (Docker DNS). base_url ends with /app.
+
+endpoints:
+  api_gateway:
+    host_registry_key: main_lucid_gateway
+    service_name: api-gateway
+    port: 8080
+    host_ip: 172.20.10.1
+    base_url: http://api-gateway:8080/app
+    health_path: /health
+
+  gui_api_bridge:
+    host_registry_key: gui_api_bridge
+    service_name: gui-api-bridge
+    port: 8102
+    host_ip: 172.20.10.61
+    base_url: http://gui-api-bridge:8102/app
+    health_path: /health
+
+  gui_docker_manager:
+    host_registry_key: gui_docker_manager
+    service_name: gui-docker-manager
+    port: 8098
+    host_ip: 172.20.10.60
+    base_url: http://gui-docker-manager:8098/app
+    health_path: /health
+
+  gui_hardware_manager:
+    host_registry_key: gui_hardware_manager
+    service_name: gui-hardware-manager
+    port: 8099
+    host_ip: 172.20.10.62
+    base_url: http://gui-hardware-manager:8099/app
+    health_path: /health
+
+  gui_tor_manager:
+    host_registry_key: gui_tor_manager_http
+    service_name: gui-tor-manager
+    port: 8097
+    host_ip: 172.20.10.63
+    base_url: http://gui-tor-manager:8097/app
+    health_path: /health
+
+  lucid_auth_service:
+    host_registry_key: lucid_auth_service
+    service_name: lucid-auth-service
+    port: 8089
+    host_ip: 172.20.10.5
+    base_url: http://lucid-auth-service:8089/app
+    health_path: /health
+
+  admin_system_gateway:
+    host_registry_key: admin_system_gateway
+    service_name: admin-system-gateway
+    port: 8155
+    host_ip: 172.20.10.24
+    base_url: http://admin-system-gateway:8155/app
+    health_path: /health
+
+  admin_ui_backend:
+    host_registry_key: admin_ui_backend
+    service_name: admin-ui-backend
+    port: 8120
+    host_ip: 172.20.10.21
+    base_url: http://admin-ui-backend:8120/app
+    health_path: /health
+
+  session_api:
+    host_registry_key: session_api
+    service_name: session-api
+    port: 8113
+    host_ip: 172.20.10.17
+    base_url: http://session-api:8113/app
+    health_path: /health
+
+  session_pipeline:
+    host_registry_key: session_pipeline
+    service_name: session-pipeline
+    port: 8083
+    base_url: http://session-pipeline:8083/app
+    health_path: /health
+
+  node_management:
+    host_registry_key: node_management
+    service_name: node-management
+    port: 8095
+    host_ip: 172.20.10.25
+    base_url: http://node-management:8095/app
+    health_path: /health
+
+  blockchain_engine:
+    host_registry_key: blockchain_engine
+    service_name: blockchain-engine
+    port: 8084
+    host_ip: 172.20.10.33
+    base_url: http://blockchain-engine:8084/app
+    health_path: /health
+
+  electron_gui_user:
+    host_registry_key: electron_gui_user
+    service_name: electron-gui-user
+    port: 3001
+    host_ip: 172.20.10.75
+    base_url: http://electron-gui-user:3001/app
+
+  electron_gui_node:
+    host_registry_key: electron_gui_node
+    service_name: electron-gui-node
+    port: 3002
+    host_ip: 172.20.10.76
+    base_url: http://electron-gui-node:3002/app
+
+  tron_client:
+    host_registry_key: tron_client
+    service_name: tron-client
+    port: 8091
+    host_ip: 172.20.10.41
+    base_url: http://tron-client:8091/app
+    health_path: /health
+
+  tron_payment_service:
+    host_registry_key: tron_payment_service
+    service_name: tron-payment-service
+    port: 8080
+    host_ip: 172.20.10.40
+    base_url: http://tron-payment-service:8080/app
+    health_path: /health
+
+  wallet_manager:
+    host_registry_key: wallet_manager
+    service_name: wallet-manager
+    port: 8093
+    host_ip: 172.20.10.44
+    base_url: http://wallet-manager:8093/app
+    health_path: /health
+
+  tunnel_tools:
+    host_registry_key: tunnel_tools
+    service_name: tunnel-tools
+    port: 7000
+    host_ip: 172.20.10.66
+    base_url: http://tunnel-tools:7000/app
+    health_path: /health
