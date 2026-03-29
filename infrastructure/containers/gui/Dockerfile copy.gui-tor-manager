@@ -29,8 +29,11 @@ WORKDIR /build
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
 RUN mkdir -p /build/configs /build/service_configs/tor
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
 COPY infrastructure/containers/services/ /build/service_configs/
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml

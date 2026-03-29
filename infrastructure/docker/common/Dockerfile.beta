@@ -1,177 +1,170 @@
-# LUCID RDP Beta Sidecar - Tor Runtime & Plane Separation
-# Based on SPEC-4: Stage 0 - Common & Base
-# Provides: Tor v3 HS, per-plane onion services, discovery, ACLs
+# LUCID RDP Beta sidecar — Tor + plane hooks (Debian 12 multi-stage)
+# SPEC-4 oriented: per-plane onion layout; build context: repository root (.)
 #
-# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
-# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
-# Path equivalences: x-files-listing.txt (repository root)
+# Stage 1 (builder): apt, pip wheels, betactl
+# Stage 2 (runtime): LABEL/ENV, runtime tor stack via apt, COPY --from=builder for betactl + wheels
 
-FROM alpine:3.20 AS base
+# syntax=docker/dockerfile:1.5
 
-# Install Tor and required tools
-RUN apk add --no-cache \
-    tor \
-    curl \
-    jq \
-    bash \
-    openssl \
-    socat \
-    netcat-openbsd \
-    bind-tools \
-    ca-certificates \
-    && mkdir -p /run/lucid/onion \
-    && mkdir -p /var/lib/tor \
-    && mkdir -p /var/log/tor \
-    && chown -R tor:tor /var/lib/tor /var/log/tor
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0-beta
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
-# Create beta control script
-FROM base AS betactl
+# =============================================================================
+# Stage 1 – Builder: tooling, wheelhouse, betactl script
+# =============================================================================
+FROM --platform=$TARGETPLATFORM debian:12-slim AS builder
 
-COPY <<EOF /usr/local/bin/betactl
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        jq \
+        openssl \
+        procps \
+        python3-pip \
+        python3-setuptools \
+        python3-venv \
+        python3-wheel \
+        socat \
+        netcat-openbsd \
+        dnsutils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip3 install --break-system-packages --upgrade pip setuptools wheel && \
+    pip3 wheel --no-cache-dir --wheel-dir /build/wheels \
+        "pip>=24.0" \
+        "setuptools>=69.0" \
+        "wheel>=0.42.0"
+
+RUN cat > /usr/local/bin/betactl <<'BETACTL'
 #!/bin/bash
-# Beta sidecar control script per SPEC-4
+# Beta sidecar control script (Debian tor package user: debian-tor)
 
 set -euo pipefail
 
-PLANES=\${BETA_PLANES:-"ops,chain,wallet"}
-CLUSTER_ID=\${BETA_CLUSTER_ID:-"dev"}
-TOR_CONTROL_PASSWORD=\${TOR_CONTROL_PASSWORD:-""}
+PLANES=${BETA_PLANES:-"ops,chain,wallet"}
+CLUSTER_ID=${BETA_CLUSTER_ID:-"dev"}
+TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD:-""}
 
-# Health check function
 health() {
-    # Check Tor process
     if ! pgrep -x tor > /dev/null; then
         echo "ERROR: Tor process not running"
         exit 1
     fi
-    
-    # Check SOCKS proxy
     if ! nc -z 127.0.0.1 9050; then
         echo "ERROR: Tor SOCKS proxy not available"
         exit 1
     fi
-    
-    # Check control port
     if ! nc -z 127.0.0.1 9051; then
         echo "ERROR: Tor control port not available"
         exit 1
     fi
-    
     echo "✅ Beta sidecar healthy"
     return 0
 }
 
-# Generate onion service keys for each plane
+plane_backend_port() {
+    case "$1" in
+        ops) echo 8080 ;;
+        chain) echo 8081 ;;
+        wallet) echo 8082 ;;
+        *) echo 8089 ;;
+    esac
+}
+
 generate_onion_keys() {
-    echo "Generating onion service keys for planes: \$PLANES"
-    
-    IFS=',' read -ra PLANE_ARRAY <<< "\$PLANES"
-    for plane in "\${PLANE_ARRAY[@]}"; do
-        plane=\$(echo "\$plane" | xargs)  # trim whitespace
-        key_dir="/run/lucid/onion/\${plane}"
-        
-        if [ ! -d "\$key_dir" ]; then
-            mkdir -p "\$key_dir"
-            
-            # Generate v3 onion service key
-            openssl genpkey -algorithm ed25519 -out "\$key_dir/private_key"
-            chmod 600 "\$key_dir/private_key"
-            chown tor:tor "\$key_dir/private_key"
-            
-            echo "Generated onion key for plane: \$plane"
+    echo "Generating onion service keys for planes: $PLANES"
+    IFS=',' read -ra PLANE_ARRAY <<< "$PLANES"
+    for plane in "${PLANE_ARRAY[@]}"; do
+        plane=$(echo "$plane" | xargs)
+        key_dir="/run/lucid/onion/${plane}"
+        if [ ! -d "$key_dir" ]; then
+            mkdir -p "$key_dir"
+            openssl genpkey -algorithm ed25519 -out "$key_dir/private_key"
+            chmod 600 "$key_dir/private_key"
+            chown debian-tor:debian-tor "$key_dir/private_key"
+            echo "Generated onion key for plane: $plane"
         fi
     done
 }
 
-# Start Tor with per-plane configuration
 start_tor() {
     echo "Starting Tor with plane configuration..."
-    
-    # Generate torrc
-    cat > /etc/tor/torrc <<TORRC_EOF
-# LUCID RDP Beta Sidecar Tor Configuration
-# SPEC-4 compliant: per-plane onion services, fail-closed
-
+    TORRC=/run/lucid/onion/beta-torrc
+    cat > "$TORRC" <<'TORRC'
+# LUCID RDP Beta — torrc (writable path for non-root debian-tor)
 DataDirectory /var/lib/tor
 ControlPort 9051
 CookieAuthentication 1
 CookieAuthFileGroupReadable 1
-
-# SOCKS proxy
 SocksPort 9050
 SocksPolicy accept 127.0.0.1/32
 SocksPolicy reject *
-
-# Disable UDP (SPEC-4: QUIC/UDP ban)
 DisableNetwork 0
 ClientRejectInternalAddresses 1
-
-# Logging
 Log notice file /var/log/tor/notices.log
 Log info file /var/log/tor/info.log
+TORRC
+    IFS=',' read -ra PLANE_ARRAY <<< "$PLANES"
+    for plane in "${PLANE_ARRAY[@]}"; do
+        plane=$(echo "$plane" | xargs)
+        port=$(plane_backend_port "$plane")
+        cat >> "$TORRC" <<PLANE_EOF
 
-# Per-plane onion services
-TORRC_EOF
-
-    # Add onion service configurations for each plane
-    IFS=',' read -ra PLANE_ARRAY <<< "\$PLANES"
-    for plane in "\${PLANE_ARRAY[@]}"; do
-        plane=\$(echo "\$plane" | xargs)
-        
-        cat >> /etc/tor/torrc <<PLANE_EOF
-
-# \$plane plane onion service
-HiddenServiceDir /run/lucid/onion/\$plane
-HiddenServicePort 80 127.0.0.1:808\${#plane}  # Unique port per plane
+# ${plane} plane onion service
+HiddenServiceDir /run/lucid/onion/${plane}
+HiddenServicePort 80 127.0.0.1:${port}
 HiddenServiceVersion 3
 PLANE_EOF
     done
-    
-    # Start Tor as daemon
-    tor -f /etc/tor/torrc &
-    TOR_PID=\$!
-    
-    # Wait for Tor to start
+    tor -f "$TORRC" &
+    TOR_PID=$!
     sleep 5
-    
-    # Verify startup
-    if ! kill -0 \$TOR_PID 2>/dev/null; then
+    if ! kill -0 "$TOR_PID" 2>/dev/null; then
         echo "ERROR: Failed to start Tor"
         exit 1
     fi
-    
-    echo "✅ Tor started successfully (PID: \$TOR_PID)"
+    echo "✅ Tor started successfully (PID: $TOR_PID)"
 }
 
-# Show onion addresses
 show_onions() {
-    echo "Onion addresses for cluster \$CLUSTER_ID:"
-    
-    IFS=',' read -ra PLANE_ARRAY <<< "\$PLANES"
-    for plane in "\${PLANE_ARRAY[@]}"; do
-        plane=\$(echo "\$plane" | xargs)
-        hostname_file="/run/lucid/onion/\$plane/hostname"
-        
-        if [ -f "\$hostname_file" ]; then
-            onion=\$(cat "\$hostname_file")
-            echo "  \$plane: \$onion"
+    echo "Onion addresses for cluster $CLUSTER_ID:"
+    IFS=',' read -ra PLANE_ARRAY <<< "$PLANES"
+    for plane in "${PLANE_ARRAY[@]}"; do
+        plane=$(echo "$plane" | xargs)
+        hostname_file="/run/lucid/onion/${plane}/hostname"
+        if [ -f "$hostname_file" ]; then
+            onion=$(cat "$hostname_file")
+            echo "  ${plane}: $onion"
         else
-            echo "  \$plane: (generating...)"
+            echo "  ${plane}: (generating...)"
         fi
     done
 }
 
-# ACL enforcement (placeholder for production)
 enforce_acls() {
-    echo "Enforcing plane ACLs..."
-    # In production, this would set up iptables rules
-    # to enforce plane separation per SPEC-4
-    
+    echo "Enforcing plane ACLs (dev placeholder)..."
     echo "✅ ACLs configured (development mode)"
 }
 
-# Main command handler
-case "\${1:-help}" in
+case "${1:-help}" in
     health)
         health
         ;;
@@ -180,39 +173,81 @@ case "\${1:-help}" in
         start_tor
         enforce_acls
         show_onions
-        wait  # Keep running
+        wait
         ;;
     show-onions)
         show_onions
         ;;
     *)
         echo "Usage: betactl {health|start|show-onions}"
-        echo "Environment:"
-        echo "  BETA_PLANES: \$PLANES"
-        echo "  BETA_CLUSTER_ID: \$CLUSTER_ID"
+        echo "Environment: BETA_PLANES BETA_CLUSTER_ID TOR_CONTROL_PASSWORD"
         exit 1
         ;;
 esac
-EOF
+BETACTL
 
-# Make executable
 RUN chmod +x /usr/local/bin/betactl
 
-# Final stage
-FROM betactl AS final
+# =============================================================================
+# Stage 2 – Runtime: tor stack + COPY --from=builder
+# =============================================================================
+FROM --platform=$TARGETPLATFORM debian:12-slim AS final
 
-# Runtime user setup
-USER tor
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0-beta
 
-# Volumes for persistent data
-VOLUME ["/run/lucid/onion", "/var/lib/tor"]
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="LUCID RDP Beta sidecar — Tor v3 HS, per-plane onions (Debian runtime)" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Beta Tor Sidecar" \
+      org.opencontainers.image.description="Tor sidecar with betactl; wheels from builder" \
+      com.lucid.plane="ops,chain,wallet" \
+      com.lucid.service="rdp-beta-sidecar" \
+      com.lucid.spec="SPEC-4" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.security="hardened-tor"
 
-# Expose Tor ports
+ENV DEBIAN_FRONTEND=noninteractive \
+    BETA_PLANES=ops,chain,wallet \
+    BETA_CLUSTER_ID=dev \
+    TOR_CONTROL_PASSWORD="" \
+    BETA_WHEEL_DIR=/opt/lucid/beta/wheels \
+    PATH=/opt/lucid/beta/wheels/bin:/usr/local/bin:/usr/bin:/bin
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        tor \
+        bash \
+        curl \
+        jq \
+        openssl \
+        socat \
+        netcat-openbsd \
+        dnsutils \
+        ca-certificates \
+        procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && mkdir -p /run/lucid/onion /var/lib/tor /var/log/tor \
+    && chown -R debian-tor:debian-tor /var/lib/tor /var/log/tor /run/lucid/onion
+
+COPY --from=builder /usr/local/bin/betactl /usr/local/bin/betactl
+COPY --from=builder /build/wheels /opt/lucid/beta/wheels
+
 EXPOSE 9050 9051
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD betactl health
+    CMD /usr/local/bin/betactl health
 
-# Default command
-CMD ["betactl", "start"]
+USER debian-tor
+
+VOLUME ["/run/lucid/onion", "/var/lib/tor"]
+
+CMD ["/usr/local/bin/betactl", "start"]

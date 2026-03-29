@@ -31,8 +31,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -258,6 +261,10 @@ COPY node/ ./node/
 COPY server/ ./server/
 
 COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
 COPY admin/ ./admin/
 COPY wallet/ ./wallet/

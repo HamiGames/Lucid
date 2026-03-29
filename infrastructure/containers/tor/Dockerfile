@@ -68,6 +68,9 @@ RUN mkdir -p ./configs && \
     echo " Marker files created to lock in directory structure"
  
 COPY configs/ ./configs/
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY master-env-config.txt ./configs/.env.master
 
@@ -81,6 +84,9 @@ COPY server/ ./server/
 COPY service_mesh/ ./service_mesh/
 
 COPY configs/environment/.env.tunnel-tools ./configs/.env.tunnel-tools
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY master-env-config.txt ./configs/.env.master
 COPY 02_network_security/tor/torrc ./configs/torrc
@@ -383,7 +389,6 @@ COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr
 COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=tunnel-builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=tunnel-builder --chown=65532:65532 /dev/null)"/ /app/dev/null)"/
-COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=tunnel-builder --chown=65532:65532 /usr/ /app/usr/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 

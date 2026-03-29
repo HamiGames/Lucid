@@ -31,6 +31,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY master-env-config.txt ./configs/.env.master
 COPY configs/ ./configs/
@@ -343,21 +346,8 @@ COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
-COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
-COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
-COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 
 COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder --chown=65532:65532 /usr/sbin/*/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/

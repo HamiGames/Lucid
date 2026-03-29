@@ -14,21 +14,49 @@ LABEL org.lucid.stage="2"
 WORKDIR /workspaces/Lucid
 
 # Install VM management tools
-RUN apt-get update && apt-get install -y \
-    qemu-kvm \
-    libvirt-daemon-system \
-    libvirt-clients \
-    bridge-utils \
-    virt-manager \
-    cloud-image-utils \
-    genisoimage \
-    python3-libvirt \
-    python3-requests \
-    python3-yaml \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc \
+      g++ \
+      libffi-dev \
+      libssl-dev \
+      pkg-config \
+      curl \
+      python3-dev \
+      python3-pip \
+      python3-setuptools \
+      python3-wheel \
+      ca-certificates \
+      tini \
+      bash \
+      jq \
+      netcat-openbsd \
+      socat \
+      xxd \
+      rustc \
+      cargo \
+      libvirt-daemon-system \
+      libvirt-clients \
+      bridge-utils \
+      virt-manager \
+      cloud-image-utils \
+      genisoimage \
+      python3-libvirt \
+      python3-requests \
+      python3-yaml \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY vm/vm_manager.py /workspaces/Lucid/vm/
-COPY vm/__init__.py /workspaces/Lucid/vm/
+# Pip + wheel toolchain (aligned with infrastructure/docker/distroless/base/Dockerfile.base)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip install --upgrade pip setuptools wheel && \
+    pip --version && \
+    python3 -m wheel version
 
 # Install Python dependencies
 COPY vm/requirements.vm.txt /workspaces/Lucid/vm/

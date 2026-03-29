@@ -90,7 +90,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_GOVERNOR_BUILD_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     touch /build/wheels/.keep && \
-    pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip setuptools wheel && \
+    pip --version && \
+    python3.11 -m wheel version
 
 COPY infrastructure/docker/common/requirements.lucid-governor.txt ./requirements.txt
 
@@ -207,6 +209,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 
 
 

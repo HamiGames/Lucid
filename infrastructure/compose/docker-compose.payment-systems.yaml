@@ -402,7 +402,7 @@ services:
 
   # Payment Gateway - Main payment processing
   lucid-payment-gateway:
-    image: pickme/lucid-payment-gateway:latest-arm64
+    image: pickme/lucid-payment-system-gateway:latest-arm64
     container_name: lucid-payment-gateway
     hostname: lucid-payment-gateway
     platform: linux/arm64

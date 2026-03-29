@@ -31,8 +31,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /build
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -69,14 +72,24 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './app' './configs' './service_configs' './app/chain_client' './configs/docker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration'; \
+    mkdir -p '.' './app' './configs' './service_configs' './app/chain_client' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh'; \
     for d in \
       '.' \
       './app' \
       './configs' \
       './service_configs' \
       './app/chain_client' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
       './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
       './service_configs/blockchain' \
       './service_configs/distroless' \
       './service_configs/logging' \
@@ -88,6 +101,30 @@ RUN set -eux; \
       './service_configs/service_mesh' \
       './service_configs/sessions' \
       './service_configs/x_lucid_cluster_calibration' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \

@@ -250,8 +250,11 @@ RUN python3.11 -c "import fastapi,uvicorn,pydantic,pydantic_settings,motor,pymon
 
 
 COPY configs/ ./configs/
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
 

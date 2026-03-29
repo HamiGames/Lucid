@@ -1,10 +1,12 @@
 # syntax=docker/dockerfile:1.5
-# LUCID JAVA BASE - Distroless Java 17 base layer
-# Design aligned with 03_api_gateway/Dockerfile (syntax, ARGs, stage headers, markers, labels, tini, USER 65532)
+# LUCID JAVA BASE — Distroless Java 17 foundation layer
+# Build context: repository root (.)
 # Builder: Eclipse Temurin JDK (correct toolchain for java -version / downstream FROM)
 # Runtime: gcr.io/distroless/java17-debian12 (not Python distroless)
-# Host registry + ops: infrastructure/containers/host-config.yml, base/docker-compose.base.yml
-# Build context: repository root (no repo COPY stages yet; safe from base/ or repo root)
+#
+# Registry: infrastructure/containers/host-config.yml (x-lucid-file-path: /app/service_configs/host-config.yml).
+# Runtime layout: infrastructure/containers/services/container-runtime-layout.yml → lucid_services_config_root: /app/service_configs
+# Mirror host registry (compat): /app/configs/host-config.yml
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -24,8 +26,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -41,11 +46,57 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './configs/docker'; \
+    mkdir -p '.' './configs' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh'; \
     for d in \
       '.' \
       './configs' \
+      './service_configs' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
       './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
@@ -57,6 +108,14 @@ RUN printf "LUCID_JAVA_BASE_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN java -version && echo "✅ JDK builder verified"
+
+RUN mkdir -p ./configs/operations
+
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY infrastructure/containers/services/ ./service_configs/
+COPY configs/docker/ ./configs/docker/
+COPY infrastructure/containers/base/docker-compose.base.yml ./service_configs/docker-compose.base.yml
 
 ############################
 # Stage 2 – Runtime (Distroless Java 17)
@@ -87,10 +146,11 @@ ARG VERSION=1.0.0
 
 LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.title="Lucid Java Base" \
-      org.opencontainers.image.description="Distroless Java 17 base layer for Lucid JVM services" \
+      org.opencontainers.image.description="Distroless Java 17 base layer for Lucid JVM services (host-config + /app/service_configs)" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.service="java-base" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="foundation" \
@@ -101,10 +161,13 @@ LABEL maintainer="Lucid Development Team" \
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
+    LUCID_SERVICES_CONFIG_DIR=/app/service_configs
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=jdk-builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=jdk-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
@@ -127,10 +190,8 @@ COPY --from=jdk-builder --chown=65532:65532 /build/configs/.env.master /app/conf
 
 COPY --from=jdk-builder /var/run/ /app/var/run/
 COPY --from=jdk-builder /var/lib/ /app/var/lib/
-COPY --from=jdk-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=jdk-builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 COPY --from=jdk-builder /usr/bin/tini /usr/bin/tini
-COPY --from=jdk-builder /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
-COPY --from=jdk-builder /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 # Default: print runtime version (compose / tests often override CMD)
 USER 65532:65532

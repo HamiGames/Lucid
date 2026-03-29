@@ -1,68 +1,116 @@
-# LUCID SERVER TOOLS - SPEC-4 Stage 0 Utilities (Distroless)
-# Professional utility container for Pi deployment with distroless security
-# Multi-platform build for ARM64 Pi and AMD64 development
+# infrastructure/docker/common/Dockerfile
+# syntax=docker/dockerfile:1.5
+# Lucid server-tools style image: Debian builder → distroless runtime (Pi-friendly multi-arch).
+# Build context: repository root (.)
 #
 # Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
-# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
-# Path equivalences: x-files-listing.txt (repository root)
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml
 
-# syntax=docker/dockerfile:1.7
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
+ARG TARGETPLATFORM=linux/arm64
+ARG BUILDPLATFORM=linux/amd64
 
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest AS server-tools-builder
+# =============================================================================
+# Stage 1 – Builder (apt, pip wheels, app trees, helper scripts)
+# =============================================================================
+FROM --platform=$TARGETPLATFORM debian:12-slim AS builder
 
-# Metadata for professional container management
-LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Server utilities for Lucid core support (Distroless)" \
-      com.lucid.plane="ops" \
-      com.lucid.service="server-tools" \
-      com.lucid.expose="none"
+ARG TARGETARCH
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 
-# Install comprehensive server utilities optimized for Pi
-RUN apk update && apk upgrade \
-    && apk add --no-cache --update \
-       # Core utilities
-       bash \
-       curl \
-       wget \
-       jq \
-       yq \
-       # Network tools
-       bind-tools \
-       netcat-openbsd \
-       socat \
-       nmap-ncat \
-       tcpdump \
-       iperf3 \
-       # Security tools
-       openssl \
-       ca-certificates \
-       gnupg \
-       # System tools
-       htop \
-       procps \
-       lsof \
-       strace \
-       # File tools
-       rsync \
-       unzip \
-       tar \
-       gzip \
-       # Database tools
-       mongodb-tools \
-       # Development tools
-       git \
-       vim \
-       nano \
-       tree \
-       # Monitoring tools
-       util-linux \
-       su-exec \
-    && apk upgrade \
-    && rm -rf /var/cache/apk/* /tmp/* /var/tmp/* \
-    && adduser -D -s /bin/bash lucid
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        curl \
+        wget \
+        jq \
+        python3 \
+        python3-venv \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
+        python3-dev \
+        dnsutils \
+        iputils-ping \
+        inetutils-traceroute \
+        netcat-openbsd \
+        socat \
+        nmap \
+        tcpdump \
+        iperf3 \
+        openssl \
+        ca-certificates \
+        gnupg \
+        htop \
+        procps \
+        lsof \
+        strace \
+        rsync \
+        unzip \
+        tar \
+        gzip \
+        git \
+        vim \
+        nano \
+        tree \
+        util-linux \
+        gosu \
+        tini \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Pip + pinned wheelhouse (offline / supply-chain friendly); yq not in bookworm main — wheel + script wrapper
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip3 install --break-system-packages --upgrade pip setuptools wheel && \
+    pip3 install --break-system-packages yq && \
+    pip3 wheel --no-cache-dir --wheel-dir /build/wheels \
+        "pip>=24.0" \
+        "setuptools>=69.0" \
+        "wheel>=0.42.0" \
+        "yq>=3.0"
+
+# MongoDB shell + database tools (arch-aware; builder TARGETARCH from BuildKit)
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        arm64) \
+            MONGOSH_URL="https://downloads.mongodb.com/compass/mongosh-2.1.5-linux-arm64.tgz"; \
+            DB_TOOLS_URL="https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian12-aarch64-100.9.4.tgz"; \
+            ;; \
+        amd64) \
+            MONGOSH_URL="https://downloads.mongodb.com/compass/mongosh-2.1.5-linux-x64.tgz"; \
+            DB_TOOLS_URL="https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian12-x86_64-100.9.4.tgz"; \
+            ;; \
+        *) \
+            echo "unsupported TARGETARCH=$TARGETARCH"; exit 1; \
+            ;; \
+    esac; \
+    curl -fsSL "$MONGOSH_URL" | tar -xzC /tmp; \
+    mv /tmp/mongosh-*/bin/* /usr/local/bin/; \
+    rm -rf /tmp/mongosh-*; \
+    curl -fsSL "$DB_TOOLS_URL" | tar -xzC /tmp; \
+    mv /tmp/mongodb-database-tools-*/bin/* /usr/local/bin/; \
+    rm -rf /tmp/mongodb-database-tools-*
+
+RUN useradd --system --create-home --shell /bin/bash lucid
+
+RUN mkdir -p /opt/lucid/tools /opt/lucid/scripts /var/log/lucid \
+    && chown -R lucid:lucid /opt/lucid /var/log/lucid
 
 WORKDIR /build
+
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -127,24 +175,16 @@ RUN set -eux; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+
 COPY tools/ ./tools/
 COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY node/config/ ./node/config/
 COPY RDP/config/ ./RDP/config/
 COPY admin/config/ ./admin/config/
 
+COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
 
-# Create utility directories
-RUN mkdir -p /opt/lucid/tools /opt/lucid/scripts /var/log/lucid \
-    && chown -R lucid:lucid /opt/lucid /var/log/lucid
-
-# Install MongoDB shell (mongosh) for database operations
-RUN curl -fsSL https://downloads.mongodb.com/compass/mongosh-1.10.6-linux-x64.tgz \
-    | tar -xzC /tmp \
-    && mv /tmp/mongosh-*/bin/* /usr/local/bin/ \
-    && rm -rf /tmp/mongosh-*
-
-# Create utility scripts for core support operations
 RUN cat > /opt/lucid/scripts/health-check.sh <<'EOF' && chmod +x /opt/lucid/scripts/health-check.sh
 #!/bin/bash
 # Comprehensive health check for core support services
@@ -153,28 +193,24 @@ set -euo pipefail
 echo "[health-check] Lucid Core Support Health Check"
 echo "============================================"
 
-# Check Tor proxy
 if curl -fsS --max-time 5 --socks5 tor-proxy:9050 http://check.torproject.org >/dev/null 2>&1; then
     echo "✅ Tor proxy: HEALTHY"
 else
     echo "❌ Tor proxy: UNHEALTHY"
 fi
 
-# Check MongoDB
-if mongosh --quiet --eval "db.runCommand({ ping: 1 })" "$MONGO_URL" >/dev/null 2>&1; then
+if mongosh --quiet --eval "db.runCommand({ ping: 1 })" "${MONGO_URL:-mongodb://localhost:27017}" >/dev/null 2>&1; then
     echo "✅ MongoDB: HEALTHY"
 else
     echo "❌ MongoDB: UNHEALTHY"
 fi
 
-# Check API Gateway
 if curl -fsS --max-time 5 http://lucid_api_gateway:8080/health >/dev/null 2>&1; then
     echo "✅ API Gateway: HEALTHY"
 else
     echo "❌ API Gateway: UNHEALTHY"
 fi
 
-# Check API Server
 if curl -fsS --max-time 5 http://lucid_api:8081/health >/dev/null 2>&1; then
     echo "✅ API Server: HEALTHY"
 else
@@ -186,7 +222,6 @@ EOF
 
 RUN cat > /opt/lucid/scripts/network-test.sh <<'EOF' && chmod +x /opt/lucid/scripts/network-test.sh
 #!/bin/bash
-# Network connectivity test for core support services
 set -euo pipefail
 
 echo "[network-test] Core Support Network Test"
@@ -197,7 +232,7 @@ services=("tor-proxy:9050" "lucid_mongo:27017" "lucid_api_gateway:8080" "lucid_a
 for service in "${services[@]}"; do
     host=$(echo "$service" | cut -d: -f1)
     port=$(echo "$service" | cut -d: -f2)
-    
+
     if nc -z "$host" "$port" 2>/dev/null; then
         echo "✅ $service: REACHABLE"
     else
@@ -210,7 +245,6 @@ EOF
 
 RUN cat > /opt/lucid/scripts/db-backup.sh <<'EOF' && chmod +x /opt/lucid/scripts/db-backup.sh
 #!/bin/bash
-# MongoDB backup utility for core support
 set -euo pipefail
 
 BACKUP_DIR="/var/log/lucid/backups"
@@ -220,150 +254,93 @@ BACKUP_FILE="lucid_backup_${TIMESTAMP}.gz"
 echo "[db-backup] Starting MongoDB backup..."
 mkdir -p "$BACKUP_DIR"
 
-if mongodump --uri="$MONGO_URL" --archive="$BACKUP_DIR/$BACKUP_FILE" --gzip; then
+if mongodump --uri="${MONGO_URL:-mongodb://localhost:27017}" --archive="$BACKUP_DIR/$BACKUP_FILE" --gzip; then
     echo "✅ Backup completed: $BACKUP_DIR/$BACKUP_FILE"
-    # Keep only last 5 backups
-    ls -t "$BACKUP_DIR"/lucid_backup_*.gz | tail -n +6 | xargs -r rm
+    ls -t "$BACKUP_DIR"/lucid_backup_*.gz 2>/dev/null | tail -n +6 | xargs -r rm -f
 else
     echo "❌ Backup failed"
     exit 1
 fi
 EOF
 
-# Create startup script
 RUN cat > /usr/local/bin/server-tools-start.sh <<'EOF' && chmod +x /usr/local/bin/server-tools-start.sh
 #!/bin/bash
 set -euo pipefail
 
 echo "[server-tools] Lucid Server Tools starting..."
-echo "[server-tools] Environment: $LUCID_ENV"
-echo "[server-tools] Tools directory: $TOOLS_DIR"
-echo "[server-tools] Scripts directory: $SCRIPTS_DIR"
+echo "[server-tools] Environment: ${LUCID_ENV:-dev}"
+echo "[server-tools] Tools directory: ${TOOLS_DIR:-/opt/lucid/tools}"
+echo "[server-tools] Scripts directory: ${SCRIPTS_DIR:-/opt/lucid/scripts}"
 
-# Wait for core services to be ready
 echo "[server-tools] Waiting for core services..."
 sleep 10
 
-# Run initial health check
 echo "[server-tools] Running initial health check..."
-if /opt/lucid/scripts/health-check.sh; then
-    echo "[server-tools] Core services are healthy"
-else
-    echo "[server-tools] Some core services are not healthy (this is normal during startup)"
-fi
+/opt/lucid/scripts/health-check.sh || true
 
-echo "[server-tools] Server tools ready. Available utilities:"
-echo "  - health-check.sh: Check core support service health"
-echo "  - network-test.sh: Test network connectivity"
-echo "  - db-backup.sh: Backup MongoDB database"
-echo "  - mongosh: MongoDB shell"
-echo "  - curl, wget, jq: HTTP/API testing"
-echo "  - nc, socat: Network debugging"
-echo "  - openssl: Certificate/crypto operations"
+echo "[server-tools] Server tools ready."
 
-# Keep container running
 exec tail -f /dev/null
 EOF
 
-# Stage 2: Distroless runtime with utilities
+RUN chown -R lucid:lucid /opt/lucid/scripts /var/log/lucid
+
+# =============================================================================
+# Stage 2 – Distroless runtime (COPY --from=builder)
+# =============================================================================
 FROM gcr.io/distroless/base-debian12:latest
 
-# Copy all system utilities
-COPY --from=server-tools-builder /bin/bash /bin/bash
-COPY --from=server-tools-builder /usr/bin/curl /usr/bin/curl
-COPY --from=server-tools-builder /usr/bin/wget /usr/bin/wget
-COPY --from=server-tools-builder /usr/bin/jq /usr/bin/jq
-COPY --from=server-tools-builder /usr/bin/yq /usr/bin/yq
-COPY --from=server-tools-builder /usr/bin/nslookup /usr/bin/nslookup
-COPY --from=server-tools-builder /usr/bin/nc /usr/bin/nc
-COPY --from=server-tools-builder /usr/bin/socat /usr/bin/socat
-COPY --from=server-tools-builder /usr/bin/openssl /usr/bin/openssl
-COPY --from=server-tools-builder /usr/bin/rsync /usr/bin/rsync
-COPY --from=server-tools-builder /usr/bin/unzip /usr/bin/unzip
-COPY --from=server-tools-builder /bin/tar /bin/tar
-COPY --from=server-tools-builder /bin/gzip /bin/gzip
-COPY --from=server-tools-builder /usr/bin/tini /usr/bin/tini
-COPY --from=server-tools-builder /usr/bin/git /usr/bin/git
-COPY --from=server-tools-builder /usr/bin/vim /usr/bin/vim
-COPY --from=server-tools-builder /usr/bin/tree /usr/bin/tree
-COPY --from=server-tools-builder /usr/local/bin/mongosh /usr/local/bin/mongosh
-COPY --from=server-tools-builder /usr/bin/mongodump /usr/bin/mongodump
-COPY --from=server-tools-builder /sbin/su-exec /sbin/su-exec
-COPY --from=server-tools-builder /usr/bin/tail /usr/bin/tail
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=1.0.0
 
-# Copy required dynamic libraries (architecture-specific)
-COPY --from=server-tools-builder /lib/*-linux-*/libc.so.6 /lib/
-COPY --from=server-tools-builder /lib/*-linux-*/libssl.so.3 /lib/
-COPY --from=server-tools-builder /lib/*-linux-*/libcrypto.so.3 /lib/
-COPY --from=server-tools-builder /lib/*-linux-*/libz.so.1 /lib/
-COPY --from=server-tools-builder /lib/*-linux-*/liblzma.so.5 /lib/
-COPY --from=server-tools-builder /lib/*-linux-*/libzstd.so.1 /lib/
-COPY --from=server-tools-builder /lib*/ld-linux-*.so.2 /lib64/
+LABEL maintainer="Lucid Development Team" \
+      version="${VERSION}" \
+      description="Server utilities for Lucid core support (distroless Debian 12)" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.title="Lucid Server Tools (common)" \
+      org.opencontainers.image.description="Diagnostics and maintenance toolbox; COPY --from=builder" \
+      com.lucid.plane="ops" \
+      com.lucid.service="server-tools" \
+      com.lucid.expose="none" \
+      com.lucid.security="distroless" \
+      com.lucid.tor.compatible="true" \
+      com.lucid.env.config=".env.foundation,.env.core,.env.support,.env.server-tools"
 
-# Copy user and group information
-COPY --from=server-tools-builder /etc/passwd /etc/passwd
-COPY --from=server-tools-builder /etc/group /etc/group
+ENV PATH=/opt/lucid/scripts:/opt/lucid/tools:/usr/local/bin:/usr/bin:/bin \
+    LUCID_ENV=dev \
+    TOOLS_DIR=/opt/lucid/tools \
+    SCRIPTS_DIR=/opt/lucid/scripts \
+    LOG_DIR=/var/log/lucid \
+    SERVER_TOOLS_HOME=/opt/lucid \
+    SERVER_TOOLS_LOG_DIR=/opt/lucid/logs \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Copy CA certificates
-COPY --from=server-tools-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Runtime support: full userland slices from builder (dynamic libs resolved)
+COPY --from=builder /bin/bash /bin/bash
+COPY --from=builder /usr/bin /usr/bin
+COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /lib /lib
+COPY --from=builder /opt/lucid /opt/lucid
+COPY --from=builder --chown=lucid:lucid /build/wheels/ /opt/lucid/tools/wheels/
+COPY --from=builder --chown=lucid:lucid /build/infrastructure/service_mesh/ /opt/lucid/tools/infrastructure/service_mesh/
+COPY --from=builder --chown=lucid:lucid /build/tools/ /opt/lucid/tools/repo-tools/
+COPY --from=builder --chown=lucid:lucid /build/node/config/ /opt/lucid/tools/node/config/
+COPY --from=builder --chown=lucid:lucid /build/RDP/config/ /opt/lucid/tools/RDP/config/
+COPY --from=builder --chown=lucid:lucid /build/admin/config/ /opt/lucid/tools/admin/config/
 
-# Copy utility directories and scripts
-COPY --from=server-tools-builder --chown=lucid:lucid /opt/lucid /opt/lucid
-COPY --from=server-tools-builder --chown=lucid:lucid /var/log/lucid /var/log/lucid
-COPY --from=server-tools-builder --chmod=755 /usr/local/bin/server-tools-start.sh /usr/local/bin/server-tools-start.sh
-COPY --from=server-tools-builder --chown=lucid:lucid build/wheels/ /opt/lucid/tools/wheels/
-COPY --from=server-tools-builder --chown=lucid:lucid /build/infrastructure/service_mesh/ /opt/lucid/tools/infrastructure/service_mesh/
-COPY --from=server-tools-builder --chown=65532:65532 /build/tools/ /opt/lucid/tools/
-COPY --from=server-tools-builder --chown=lucid:lucid /build/node/config/ /opt/lucid/tools/node/config/
-COPY --from=server-tools-builder --chown=lucid:lucid /build/RDP/config/ /opt/lucid/tools/RDP/config/
-COPY --from=server-tools-builder --chown=lucid:lucid /build/admin/config/ /opt/lucid/tools/admin/config/
-# Environment variables for configuration
-ENV LUCID_ENV=dev \
-    TOOLS_DIR="/opt/lucid/tools" \
-    SCRIPTS_DIR="/opt/lucid/scripts" \
-    LOG_DIR="/var/log/lucid" \
-    PATH="/opt/lucid/scripts:/opt/lucid/tools:$PATH"
-FROM gcr.io/distroless/nodejs18-debian11:latest as js-builder
+COPY --chmod=755 infrastructure/docker/common/server-tools-bootstrap.sh /usr/local/bin/server-tools-bootstrap
+COPY --chmod=755 infrastructure/docker/common/service-mesh-bootstrap.sh /usr/local/bin/service-mesh-bootstrap
 
-COPY ../../../database/services/init_collections.js ./database/services/init_collections.js
-COPY ../../../database/schemas/ ./database/schemas/
-COPY --from=js-builder --chown=65532:65532 /lib/libz.so.1 /lib/libz.so.1
-COPY --from=js-builder --chown=65532:65532 /lib/libssl.so.3 /lib/libssl.so.3
-COPY --from=js-builder --chown=65532:65532 /lib/libcrypto.so.3 /lib/libcrypto.so.3
-COPY --from=js-builder --chown=65532:65532 /lib/libevent-2.1.so.7 /lib/libevent-2.1.so.7
-COPY --from=js-builder --chown=65532:65532 /lib/libzstd.so.1 /lib/libzstd.so.1
-COPY --from=js-builder --chown=65532:65532 /lib/liblzma.so.5 /lib/liblzma.so.5
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-COPY --from=js-builder --chown=65532:65532 /bin/bash /bin/bash
-COPY --from=js-builder --chown=65532:65532 /bin/busybox /bin/busybox
-COPY --from=js-builder --chown=65532:65532 /bin/mkdir /bin/mkdir
-COPY --from=js-builder --chown=65532:65532 /sbin/busybox /sbin/busybox
-COPY --from=js-builder --chown=65532:65532 /sbin/sh /sbin/sh
-COPY --from=js-builder --chown=65532:65532 /sbin/ls /sbin/ls
-COPY --from=js-builder --chown=65532:65532 /sbin/rm /sbin/rm
-COPY --from=js-builder --chown=65532:65532 /sbin/mv /sbin/mv
-COPY --from=js-builder --chown=65532:65532 /sbin/cp /sbin/cp
-COPY --from=js-builder --chown=65532:65532 /sbin/ln /sbin/ln
-COPY --from=js-builder --chown=65532:65532 /sbin/chmod /sbin/chmod
-COPY --from=js-builder --chown=65532:65532 /usr/bin/tini /usr/bin/tini
-COPY --from=js-builder --chown=65532:65532 /lib64/* /lib64/
-COPY --from=js-builder --chown=65532:65532 /etc/passwd /etc/passwd
-COPY --from=js-builder --chown=65532:65532 /etc/group /etc/group
-COPY --from=js-builder --chown=65532:65532 /etc/ssl/ /etc/ssl/
-COPY --from=js-builder --chown=65532:65532 /bin/sed /bin/sed
-COPY --from=js-builder --chown=65532:65532 /bin/awk /bin/awk
-COPY --from=js-builder --chown=65532:65532 /bin/sed /bin/sed
-COPY --from=js-builder --chown=65532:65532 /usr/lib/ /usr/lib/
-
-
-
-
-COPY --from=js-builder /build/database/services/init_collections.js /opt/lucid/tools/database/services/init_collections.js
-COPY --from=js-builder /build/database/schemas/ /opt/lucid/tools/database/schemas/
-COPY --from=js-builder --chown=65532:65532 /usr/bin/tini /opt/lucid/run/lucid/bin/tini
-COPY --from=server-tools-builder --chown=65532:65532 /usr/bin/tini /opt/lucid/usr/bin/tini
-
-# Security and runtime configuration
-USER lucid
+USER lucid:lucid
 WORKDIR /opt/lucid
+
 ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["/usr/local/bin/server-tools-start.sh"]

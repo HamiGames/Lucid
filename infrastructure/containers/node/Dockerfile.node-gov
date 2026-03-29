@@ -30,8 +30,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -78,13 +81,23 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './node' './service_configs' './configs/docker' './node/api' './node/config' './node/configs' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './node/service_configs/blockchain' './node/service_configs/distroless' './node/service_configs/logging' './node/service_configs/multi-stage' './node/service_configs/node' './node/service_configs/payment_services' './node/service_configs/rdp' './node/service_configs/security' './node/service_configs/service_mesh' './node/service_configs/sessions' './node/service_configs/x_lucid_cluster_calibration'; \
+    mkdir -p '.' './configs' './node' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/api' './node/config' './node/configs' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/service_configs' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './node/service_configs/blockchain' './node/service_configs/distroless' './node/service_configs/logging' './node/service_configs/multi-stage' './node/service_configs/node' './node/service_configs/payment_services' './node/service_configs/rdp' './node/service_configs/security' './node/service_configs/service_mesh' './node/service_configs/sessions' './node/service_configs/x_lucid_cluster_calibration'; \
     for d in \
       '.' \
       './configs' \
       './node' \
       './service_configs' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
       './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
       './node/api' \
       './node/config' \
       './node/configs' \
@@ -107,6 +120,30 @@ RUN set -eux; \
       './node/tor' \
       './node/validation' \
       './node/worker' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
       './node/service_configs/blockchain' \
       './node/service_configs/distroless' \
       './node/service_configs/logging' \

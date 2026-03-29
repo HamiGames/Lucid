@@ -93,8 +93,11 @@ RUN ln -sf /bin/bash /bin/sh
 RUN mkdir -p "${BUNDLE_DIR}" "${STRAP_DIR}"
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
 COPY infrastructure/containers/services/ /build/service_configs/
 

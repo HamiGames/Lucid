@@ -10,45 +10,55 @@
 FROM python:3.11-slim AS role-manager-builder
 
 # Metadata for professional container management
-LABEL maintainer="Lucid Development Team" \
-      version="1.0.0-distroless" \
-      description="Role Manager for Lucid SPEC-1C Role-Based Access Control (Distroless)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="role-manager" \
-      org.lucid.layer="1" \
-      org.lucid.expose="8102"
 
 # Build-time environment for dependency installation
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies and authentication tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-        bash \
-        tini \
-        ca-certificates \
-        netcat-traditional \
-        jq \
-        gosu \
-        # Authentication dependencies
-        python3-dev \
-        python3-jwt \
-        python3-passlib \
-        # Security tools
-        openssl \
-        mongodb-clients \
-    && rm -rf /var/lib/apt/lists/* \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc \
+      g++ \
+      libffi-dev \
+      libssl-dev \
+      pkg-config \
+      curl \
+      python3-dev \
+      python3-pip \
+      python3-setuptools \
+      python3-wheel \
+      ca-certificates \
+      tini \
+      bash \
+      jq \
+      netcat-openbsd \
+      socat \
+      xxd \
+      rustc \
+      cargo \
     && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && groupadd --gid 1000 lucid \
     && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
 
 # Set up application directory
 WORKDIR /app
 RUN chown -R lucid:lucid /app
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip install --upgrade pip setuptools wheel && \
+    pip --version && \
+    python3 -m wheel version
 
 # Install Python dependencies for role management
 RUN pip install --no-cache-dir \
@@ -254,11 +264,17 @@ FROM gcr.io/distroless/python3-debian12:nonroot
 # Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \
       version="1.0.0-distroless" \
-      description="Role Manager for Lucid SPEC-1C Role-Based Access Control (Distroless Runtime)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="role-manager" \
-      org.lucid.layer="1" \
-      org.lucid.expose="8102"
+      description="Role Manager for Lucid SPEC-1C Role-Based Access Control (Distroless)" \
+      com.lucid.plane="ops" \
+      com.lucid.service="wallet-role-manager" \
+      com.lucid.layer="1" \
+      com.lucid.expose="8102" \
+      org.opencontainers.image.title="Lucid Role Manager" \
+      org.opencontainers.image.description="Distroless role manager service for Lucid project" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
+
 
 COPY --from=role-manager-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=role-manager-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
@@ -316,6 +332,7 @@ COPY --from=role-manager-builder --chown=65532:65532 /build/service_mesh/ /app/s
 COPY --from=role-manager-builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=role-manager-builder --chown=65532:65532 /build/wallet/ /app/wallet/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 
 
 

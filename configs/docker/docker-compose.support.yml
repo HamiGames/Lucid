@@ -74,7 +74,7 @@ services:
         condition: service_healthy
 
   tron-payout-router:
-    image: pickme/lucid-tron-payout-router:latest-arm64
+    image: pickme/lucid-payout-router:latest-arm64
     container_name: tron-payout-router
     hostname: tron-payout-router
     restart: ${CONTAINER_RESTART:-unless-stopped}
@@ -319,7 +319,7 @@ services:
         condition: service_healthy
 
   tron-payment-gateway:
-    image: pickme/lucid-tron-payment-gateway:latest-arm64
+    image: pickme/lucid-payment-system-gateway:latest-arm64
     container_name: tron-payment-gateway
     hostname: tron-payment-gateway
     restart: ${CONTAINER_RESTART:-unless-stopped}
@@ -356,9 +356,9 @@ services:
       test:
         [
           "CMD",
-          "/opt/venv/bin/python3",
+          "/app/usr/bin/python3.11",
           "-c",
-          "import os; import urllib.request; port = os.getenv('PAYMENT_GATEWAY_PORT'); urllib.request.urlopen(f'http://127.0.0.1:{port}/health').read(); exit(0)",
+          "import os,urllib.request; p=os.getenv('SERVICE_PORT',os.getenv('PAYMENT_GATEWAY_PORT','8097')); urllib.request.urlopen(f'http://127.0.0.1:{p}/health',timeout=5).read()",
         ]
       interval: ${HEALTH_CHECK_INTERVAL:-30s}
       timeout: ${HEALTH_CHECK_TIMEOUT:-10s}

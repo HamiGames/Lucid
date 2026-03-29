@@ -24,4 +24,19 @@
 # not the runtime location of this config subtree.
 #
 # Host-side stack entrypoints (repo-relative paths under configs/docker/):
-#   Listed in configs_docker_compose_yml below. Run fr
+#   Listed in configs_docker_compose_yml below. Run from configs/docker with e.g.
+#   docker compose -f docker-compose.<stack>.yml up — align service_name / ports with
+#   infrastructure/containers/host-config.yml and this service_configs tree.
+# =============================================================================
+
+lucid_services_config_root: /app/service_configs
+
+# Docker Compose files under configs/docker/ (orchestration on build/target host; not under lucid_services_config_root unless COPY'd explicitly).
+configs_docker_compose_yml:
+  - configs/docker/docker-compose.all.yml
+  - configs/docker/docker-compose.application.yml
+  - configs/docker/docker-compose.core.yml
+  - configs/docker/docker-compose.foundation.yml
+  - configs/docker/docker-compose.foundation-02.yml
+  - configs/docker/docker-compose.gui-integration.yml
+  - configs/docker/docker-compose.support.yml

@@ -14,13 +14,29 @@ LABEL org.lucid.stage="2"
 WORKDIR /workspaces/Lucid
 
 # Install orchestration tools
-RUN apt-get update && apt-get install -y \
-    python3-kubernetes \
-    python3-prometheus-client \
-    python3-grafana-api \
-    curl \
-    jq \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+      python3-kubernetes \
+      python3-prometheus-client \
+      python3-grafana-api \
+      python3-pip \
+      python3-setuptools \
+      python3-wheel \
+      python3-dev \
+      curl \
+      jq \
+      ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip install --upgrade pip setuptools wheel && \
+    pip --version && \
+    python3 -m wheel version
 
 COPY vm/__init__.py /workspaces/Lucid/vm/
 

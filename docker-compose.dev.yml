@@ -173,7 +173,7 @@ services:
 
   # Storage Service (Development)
   lucid-storage-dev:
-    image: pickme/lucid-session-storage:latest-arm64
+    image: pickme/lucid-session-storage-service:latest-arm64
     container_name: lucid-storage-dev
     restart: unless-stopped
     env_file:
@@ -561,7 +561,7 @@ services:
 
   # Payment Gateway Service (Development - Isolated)
   lucid-payment-gateway-dev:
-    image: pickme/lucid-payment-gateway:latest-arm64
+    image: pickme/lucid-payment-system-gateway:latest-arm64
     container_name: lucid-payment-gateway-dev
     restart: unless-stopped
     platform: linux/arm64

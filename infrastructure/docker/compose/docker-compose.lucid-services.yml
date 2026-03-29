@@ -271,12 +271,13 @@ services:
       retries: 3
 
   lucid-session-storage:
-    image: pickme/lucid-session-storage:latest-arm64
+    image: pickme/lucid-session-storage-service:latest-arm64
     container_name: lucid-session-storage
+    hostname: session-storage-service
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8092:8092"
+      - "8020:8020"
     networks:
       - lucid-pi-network
     depends_on:
@@ -284,9 +285,16 @@ services:
       - lucid-redis
     environment:
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URL=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URL=redis://lucid-redis:6379/0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8092/health"]
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/health', timeout=5).read()",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -539,12 +547,12 @@ services:
       retries: 3
 
   lucid-payment-gateway:
-    image: pickme/lucid-payment-gateway:latest-arm64
+    image: pickme/lucid-payment-system-gateway:latest-arm64
     container_name: lucid-payment-gateway
     restart: unless-stopped
     platform: linux/arm64
     ports:
-      - "8103:8103"
+      - "8097:8097"
     networks:
       - lucid-pi-network
     depends_on:
@@ -552,9 +560,18 @@ services:
       - lucid-redis
     environment:
       - MONGODB_URI=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
+      - MONGODB_URL=mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URL=redis://lucid-redis:6379/0
+      - SERVICE_PORT=8097
+      - PAYMENT_GATEWAY_PORT=8097
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8103/health"]
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import os,urllib.request; p=os.getenv('SERVICE_PORT',os.getenv('PAYMENT_GATEWAY_PORT','8097')); urllib.request.urlopen(f'http://127.0.0.1:{p}/health',timeout=5).read()",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

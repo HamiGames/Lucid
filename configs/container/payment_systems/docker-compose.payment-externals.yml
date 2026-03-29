@@ -35,7 +35,7 @@ x-env-payment-ext: &env-payment-ext
 
 services:
   payment-system-gateway:
-    image: ${LUCID_PAYMENT_GATEWAY_IMAGE:-pickme/lucid-payment-gateway:latest-arm64}
+    image: ${LUCID_PAYMENT_GATEWAY_IMAGE:-pickme/lucid-payment-system-gateway:latest-arm64}
     container_name: payment-system-gateway
     hostname: payment-system-gateway
     platform: ${DOCKER_DEFAULT_PLATFORM:-linux/arm64}

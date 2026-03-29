@@ -761,7 +761,7 @@ runcmd:
           <<: *common-deploy
       
         lucid-session-storage:
-          image: pickme/lucid-session-storage:latest-arm64
+          image: pickme/lucid-session-storage-service:latest-arm64
           container_name: lucid-session-storage
           hostname: lucid-session-storage
           environment:
@@ -1026,7 +1026,7 @@ runcmd:
           <<: *common-deploy
       
         lucid-payment-gateway:
-          image: pickme/lucid-payment-gateway:latest-arm64
+          image: pickme/lucid-payment-system-gateway:latest-arm64
           container_name: lucid-payment-gateway
           hostname: lucid-payment-gateway
           environment:

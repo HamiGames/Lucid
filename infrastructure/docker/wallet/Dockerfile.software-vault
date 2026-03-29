@@ -22,47 +22,54 @@ LABEL maintainer="Lucid Development Team" \
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PREFER_BINARY=1 \
+    DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies and cryptographic tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-        ca-certificates \
-        netcat-traditional \
-        jq \
-        gosu \
-        bash \
-        tini \
-        python3-dev \
-        python3-cryptography \
-        python3-argon2 \
-        # Security tools
-        openssl \
-        gpg \
-        # Random number generation
-        haveged \
-    && rm -rf /var/lib/apt/lists/* \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc \
+      g++ \
+      libffi-dev \
+      libssl-dev \
+      pkg-config \
+      curl \
+      python3-dev \
+      python3-pip \
+      python3-setuptools \
+      python3-wheel \
+      ca-certificates \
+      tini \
+      bash \
+      jq \
+      netcat-openbsd \
+      socat \
+      xxd \
+      rustc \
+      cargo \
     && apt-get clean \
-    && groupadd --gid 1000 lucid \
-    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Set up application directory (match runtime COPY --from=vault-builder /app)
 WORKDIR /app
 
-# Install Python dependencies for software vault
-RUN pip install --no-cache-dir \
-        "uvicorn[standard]>=0.24.0" \
-        "fastapi>=0.104.0" \
-        "pydantic>=2.0.0" \
-        "httpx>=0.25.0" \
-        "cryptography>=41.0.0" \
-        "argon2-cffi>=21.3.0" \
-        "structlog>=23.2.0" \
-        "python-dotenv>=1.0.0" \
-        "websockets>=11.0.0"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
-# Copy application code
+RUN groupadd --gid 1000 lucid \
+    && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
+
+RUN chown -R lucid:lucid /app
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    pip install --upgrade pip setuptools wheel && \
+    pip --version && \
+    python3 -m wheel version
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
@@ -225,6 +232,20 @@ RUN set -eux; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
+
+# Install Python dependencies for software vault
+RUN pip install --no-cache-dir \
+        "uvicorn[standard]>=0.24.0" \
+        "fastapi>=0.104.0" \
+        "pydantic>=2.0.0" \
+        "httpx>=0.25.0" \
+        "cryptography>=41.0.0" \
+        "argon2-cffi>=21.3.0" \
+        "structlog>=23.2.0" \
+        "python-dotenv>=1.0.0" \
+        "websockets>=11.0.0"
+
+# Copy application code
 COPY wallet/ ./wallet/
 COPY auth/ ./auth/
 COPY sessions/ ./sessions/

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Search ``infrastructure/containers/**/Dockerfile*`` for ``RUN … apt-get install`` blocks (same shape as
+Search ``infrastructure/containers/**/Dockerfile*`` and ``infrastructure/docker/**/Dockerfile*`` for ``RUN … apt-get install`` blocks (same shape as
 ``infrastructure/containers/blockchain/Dockerfile.chain-to-pay`` lines **65–86**: cache mounts + package list)
 and for **other** RUN lines that create FHS paths (e.g. ``printf … > /var/run/.keep``, ``mkdir -p /usr/local/bin``),
 then print **recommended directories** on the builder image to ``COPY`` into a distroless runtime under
@@ -80,7 +80,7 @@ RUN_HELP_BANNER = f"""\
 ================================================================================
 lib_search_and_inject.py - recommended FHS directories for distroless COPY
 ================================================================================
-  Reads:  each Dockerfile under --containers-root (default: infrastructure/containers)
+  Reads:  each Dockerfile under --containers-root (default: infrastructure/containers and infrastructure/docker)
   Models: apt-get install package lists in RUN blocks, like {APT_RUN_REFERENCE}
           plus non-apt RUN lines (mkdir, printf >, touch, chown, chmod) that touch absolute FHS paths.
   Output: merged builder paths (e.g. /usr/bin/, /var/run/, /usr/local/bin/) -> COPY under /app/...
@@ -188,27 +188,25 @@ def resolve_path_from_repo(path: Path, repo_root: Path) -> Path:
     return (repo_root / p).resolve()
 
 
-def discover_dockerfiles(containers_root: Path) -> list[Path]:
+def discover_dockerfiles(containers_roots: list[Path]) -> list[Path]:
     """
-    Collect ``Dockerfile``, ``Dockerfile.*``, and ``dockerfile.*`` under ``containers_root``.
-
-    Uses both ``Dockerfile*`` and ``dockerfile*`` globs so lowercase names are found on
-    case-sensitive filesystems (``rglob("Dockerfile*")`` alone misses ``dockerfile.admin-overlord``).
+    Collect Dockerfile* and dockerfile* under multiple containers_roots.
+    Merges results and dedupes.
     """
     seen: set[Path] = set()
     out: list[Path] = []
-    for pattern in ("Dockerfile*", "dockerfile*"):
-        for p in containers_root.rglob(pattern):
-            if p.is_dir():
-                continue
-            key = p.resolve()
-            if key in seen:
-                continue
-            name = p.name
-            if name == "Dockerfile" or name.startswith("Dockerfile.") or name.startswith("dockerfile."):
-                seen.add(key)
-                out.append(p)
-    return sorted(out)
+    for containers_root in containers_roots:
+        if not containers_root.is_dir():
+            continue
+        for pattern in ("Dockerfile*", "dockerfile*"):
+            for p in containers_root.rglob(pattern):
+                if p.is_file() and not p.name.startswith("."):
+                    key = p.resolve()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    out.append(p)
+    return sorted(out, key=lambda x: str(x).lower())
 
 
 def split_build_stages_lines(lines: list[str]) -> list[tuple[int, int]]:
@@ -951,7 +949,7 @@ def dedupe_stage_minus2_build_app_copy_all_dockerfiles(
     """
     rr = repo_root or repo_root_from_here()
     results: list[dict[str, object]] = []
-    for path in discover_dockerfiles(containers_root):
+    for path in discover_dockerfiles([containers_root]):
         try:
             rel_file = str(path.resolve().relative_to(rr))
         except ValueError:
@@ -1038,7 +1036,7 @@ def collect_stage_minus2_copy_from_all_dockerfiles(
     """
     rr = repo_root or repo_root_from_here()
     results: list[dict[str, object]] = []
-    for path in discover_dockerfiles(containers_root):
+    for path in discover_dockerfiles([containers_root]):
         try:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError as e:
@@ -1356,7 +1354,10 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
 
 def main() -> int:
     root = repo_root_from_here()
-    default_containers = root / "infrastructure" / "containers"
+    default_scan_roots = [
+        root / "infrastructure" / "containers",
+        root / "infrastructure" / "docker",
+    ]
 
     ap = argparse.ArgumentParser(
         description=(
@@ -1378,10 +1379,12 @@ Examples (repo root):
     )
     ap.add_argument(
         "--containers-root",
+        action="append",
         type=Path,
-        default=default_containers,
+        dest="containers_roots",
+        metavar="DIR",
         help=(
-            "Scan tree (default: infrastructure/containers under repo root). "
+            "Scan tree (repeatable; default: infrastructure/containers and infrastructure/docker). "
             "Relative paths are resolved from the repository root, not the shell cwd."
         ),
     )
@@ -1391,7 +1394,7 @@ Examples (repo root):
         default=None,
         help=(
             "Process a single Dockerfile path (like inject). Relative paths are from the repository root. "
-            "Default is all Dockerfiles under --containers-root."
+            "Default is all Dockerfiles under the default scan roots (or paths from --containers-root)."
         ),
     )
     ap.add_argument(
@@ -1490,7 +1493,11 @@ Examples (repo root):
             file=sys.stderr,
         )
 
-    containers_root = resolve_path_from_repo(args.containers_root, root)
+    if args.containers_roots:
+        containers_roots = [resolve_path_from_repo(p, root) for p in args.containers_roots]
+    else:
+        containers_roots = list(default_scan_roots)
+
     if args.only is not None:
         one = resolve_path_from_repo(args.only, root)
         if not one.is_file():
@@ -1498,10 +1505,14 @@ Examples (repo root):
             return 1
         dockerfiles = [one]
     else:
-        if not containers_root.is_dir():
-            print(f"error: containers root not found: {containers_root}", file=sys.stderr)
+        if not any(r.is_dir() for r in containers_roots):
+            print(
+                "error: no scan root directory exists: "
+                + ", ".join(str(r) for r in containers_roots),
+                file=sys.stderr,
+            )
             return 1
-        dockerfiles = discover_dockerfiles(containers_root)
+        dockerfiles = discover_dockerfiles(containers_roots)
 
     workers = resolve_job_workers(args.jobs, len(dockerfiles))
     results: list[dict] = []

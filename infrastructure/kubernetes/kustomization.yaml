@@ -125,7 +125,7 @@ images:
     newTag: latest-arm64
   - name: pickme/lucid-chunk-processor
     newTag: latest-arm64
-  - name: pickme/lucid-session-storage
+  - name: pickme/lucid-session-storage-service
     newTag: latest-arm64
   - name: pickme/lucid-session-api
     newTag: latest-arm64
@@ -151,7 +151,7 @@ images:
     newTag: latest-arm64
   - name: pickme/lucid-trx-staking
     newTag: latest-arm64
-  - name: pickme/lucid-payment-gateway
+  - name: pickme/lucid-payment-system-gateway
     newTag: latest-arm64
   - name: pickme/lucid-auth-service
     newTag: latest-arm64

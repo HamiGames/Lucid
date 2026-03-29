@@ -1,9 +1,10 @@
-# LUCID DISTROLESS BASE IMAGE - SPEC-1B
-# Base distroless environment for Lucid ARM64 services with tor bootstrap utilities
-# Build Context: . (project root)
-# Deployment: Pi console /mnt/myssd/Lucid/Lucid
-# All configuration via .env.foundation/.env.core/.env.distroless/etc.
-# Baked ops: infrastructure/containers/host-config.yml, base/docker-compose.base.yml → /app/configs/operations/
+# syntax=docker/dockerfile:1.5
+# LUCID DISTROLESS BASE — pickme/lucid-base:latest-arm64 (foundation / strap image)
+# Build context: repository root (.)
+#
+# Registry: infrastructure/containers/host-config.yml (x-lucid-file-path: /app/service_configs/host-config.yml).
+# Runtime layout: infrastructure/containers/services/container-runtime-layout.yml → lucid_services_config_root: /app/service_configs
+# Mirror host registry (compat): /app/configs/host-config.yml
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -12,7 +13,10 @@ ARG TARGETPLATFORM=linux/arm64
 ARG BUILDPLATFORM=linux/amd64
 ARG PYTHON_VERSION=3.11
 
-FROM python:${PYTHON_VERSION}-slim-bookworm AS builder
+############################
+# Stage 1 – Builder
+############################
+FROM --platform=$TARGETPLATFORM python:${PYTHON_VERSION}-slim-bookworm AS builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
@@ -42,36 +46,89 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-WORKDIR /opt
+WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
-
+COPY configs/ ./configs/
+RUN rm -rf ./configs/environment && \
+    echo ".env.* files removed"
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
 RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip wheel setuptools
 
-COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requirements-minimal.txt
 
+# LUCID_PIP_WHEELS_BEGIN
+# requirements: ./requirements-minimal.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_BASE_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
 
+COPY infrastructure/containers/base/requirements-minimal.txt ./requirements-minimal.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --prefer-binary -r requirements-minimal.txt
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements-minimal.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_PIP_WHEELS_END
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --no-cache-dir --prefer-binary -r requirements-minimal.txt
 # LUCID_X_FILES_SKELETON_BEGIN
 # Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
 RUN set -eux; \
-    mkdir -p '.' './configs' './configs/docker'; \
+    mkdir -p '.' './configs' './service_configs' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh'; \
     for d in \
       '.' \
       './configs' \
+      './service_configs' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
       './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
     ; do \
       printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
       touch "$d/.keep"; \
     done
 # LUCID_X_FILES_SKELETON_END
 
-RUN mkdir -p /opt/lucid-base/scripts
+
+RUN mkdir -p /opt/lucid-base/scripts ./configs/operations
 
 RUN cat <<'EOF' > /opt/lucid-base/scripts/lucid_base_bootstrap.py
 #!/usr/bin/env python3
@@ -114,28 +171,38 @@ EOF
 
 RUN ls -la /opt/lucid-base/scripts/lucid_base_bootstrap.py
 
-COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
-COPY infrastructure/containers/base/docker-compose.base.yml /build/configs/operations/docker-compose.base.yml
+# Canonical registry + packaged service YAML (container-runtime-layout.yml policy)
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY infrastructure/containers/services/ ./service_configs/
+COPY configs/docker/ ./configs/docker/
+COPY infrastructure/containers/base/docker-compose.base.yml ./configs/operations/docker-compose.base.yml
 
-FROM gcr.io/distroless/python3-debian12:latest
+############################
+# Stage 2 – Runtime (Distroless Python)
+############################
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
 
+WORKDIR /app
+
 LABEL maintainer="Lucid Development Team" \
       version="${VERSION}" \
-      description="Lucid distroless base runtime with tor spin-up tooling" \
+      description="Lucid distroless base runtime with tor-compatible bootstrap" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Lucid Distroless Base" \
-      org.opencontainers.image.description="Base runtime for Lucid services with tor bootstrap utilities" \
+      org.opencontainers.image.description="Base runtime for Lucid services (host-config.yml + /app/service_configs per container-runtime-layout.yml)" \
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.plane="ops" \
       com.lucid.service="base-runtime" \
       com.lucid.platform="arm64" \
       com.lucid.architecture="linux/arm64" \
+      com.lucid.cluster="foundation" \
       com.lucid.security="distroless" \
       com.lucid.vulnerabilities="zero" \
       com.lucid.tor.bootstrap="true" \
@@ -143,58 +210,35 @@ LABEL maintainer="Lucid Development Team" \
       com.lucid.env.config=".env.foundation,.env.core,.env.distroless" \
       com.lucid.deployment.path="/mnt/myssd/Lucid/Lucid"
 
+# lucid_services_config_root (container-runtime-layout.yml); x-lucid-file-path in host-config.yml
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
-    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
+    LUCID_SERVICES_CONFIG_DIR=/app/service_configs
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
-COPY --from=builder --chown=65532:65532 /opt/lucid-base/scripts/ /app/opt/lucid-base/scripts/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-
-
-
-# Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
-
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/lucid-base /opt/lucid-base
-
-WORKDIR /app
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-COPY --from=builder /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
-COPY --from=builder /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 USER 65532:65532
 

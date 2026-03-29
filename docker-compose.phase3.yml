@@ -90,19 +90,18 @@ services:
       timeout: 10s
       retries: 3
 
-  # Session Storage
+  # Session Storage (Dockerfile.session-storage-service — in-container 8020)
   session-storage:
-    image: pickme/lucid-session-storage:latest-arm64
+    image: pickme/lucid-session-storage-service:latest-arm64
     platform: linux/arm64
     container_name: lucid-session-storage
+    hostname: session-storage-service
     ports:
-      - "8086:8086"
+      - "8020:8020"
     environment:
-      - SERVICE_NAME=lucid-session-storage
-      - PORT=8086
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
+      - SERVICE_NAME=lucid-session-storage-service
+      - MONGODB_URL=mongodb://mongodb:27017/lucid
+      - REDIS_URL=redis://redis:6379/0
       - MONGODB_URI=mongodb://mongodb:27017/lucid
       - REDIS_URI=redis://redis:6379/0
     depends_on:
@@ -114,7 +113,13 @@ services:
     volumes:
       - session_data:/data/sessions
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/health', timeout=5).read()",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

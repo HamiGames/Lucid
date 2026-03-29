@@ -499,21 +499,19 @@ services:
       - "com.lucid.service=chunk-processor"
       - "com.lucid.cluster=03-session-management"
 
-  # Session Storage Service
+  # Session Storage Service (infrastructure/containers/sessions/Dockerfile.session-storage-service — listen 8020)
   session-storage:
-    image: pickme/lucid-session-storage:latest-arm64
+    image: pickme/lucid-session-storage-service:latest-arm64
     container_name: lucid-session-storage
+    hostname: session-storage-service
     restart: unless-stopped
     ports:
-      - "8082:8082"
+      - "8020:8020"
     environment:
-      - SERVICE_NAME=lucid-session-storage
-      - PORT=8082
-      - HOST=0.0.0.0
-      - LOG_LEVEL=INFO
-      - DEBUG=false
-      - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
-      - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
+      - SERVICE_NAME=lucid-session-storage-service
+      - SESSION_STORAGE_SERVICE_PORT=8020
+      - MONGODB_URL=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-storage:/app/logs
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-storage:/app/data
@@ -525,7 +523,13 @@ services:
       lucid-redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "/app/usr/bin/python3.11",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8020/health', timeout=5).read()",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -982,7 +986,7 @@ services:
 
   # Payment Gateway Service
   payment-gateway:
-    image: pickme/lucid-payment-gateway:latest-arm64
+    image: pickme/lucid-payment-system-gateway:latest-arm64
     container_name: lucid-payment-gateway
     restart: unless-stopped
     ports:

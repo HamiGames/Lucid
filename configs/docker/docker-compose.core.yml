@@ -56,7 +56,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/app/usr/bin/python3.11",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5).read(); exit(0)",
         ]
@@ -124,7 +124,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/app/usr/bin/python3.11",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8084/health', timeout=5).read(); exit(0)",
         ]
@@ -147,7 +147,7 @@ services:
         condition: service_healthy
 
   service-mesh:
-    image: pickme/lucid-service-mesh:latest-arm64
+    image: pickme/lucid-service-mesh-controller:latest-arm64
     container_name: service-mesh
     restart: unless-stopped
     env_file:
@@ -189,7 +189,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/app/usr/bin/python3.11",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8088/health', timeout=5).read(); exit(0)",
         ]
@@ -251,7 +251,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/app/usr/bin/python3.11",
           "-c",
           "import sys; sys.argv = ['data-health.py', 'session-anchoring']; exec(open('/tmp/data-health.py').read())",
         ]
@@ -317,7 +317,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/app/usr/bin/python3.11",
           "-c",
           "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('127.0.0.1', 8086)); s.close(); exit(0 if result == 0 else 1)",
         ]
@@ -381,7 +381,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3.11",
+          "/app/usr/bin/python3.11",
           "-c",
           "import os, urllib.request, sys; port = os.getenv('DATA_CHAIN_PORT', '8087'); url = 'http://127.0.0.1:' + str(port) + '/health'; urllib.request.urlopen(url, timeout=10).read(); sys.exit(0)",
         ]
@@ -460,7 +460,7 @@ services:
       test:
         [
           "CMD",
-          "/usr/bin/python3",
+          "/usr/bin/python3.11",
           "-c",
           "import socket; s=socket.socket(); s.connect(('tor-proxy', 9051)); s.close(); exit(0)",
         ]
