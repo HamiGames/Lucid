@@ -12,8 +12,6 @@
  * @file electron_gui/main/connection-validator.ts
  */
 
-/// <reference types="node" />
-
 import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
@@ -372,13 +370,8 @@ export class ConnectionValidator {
         const code = axiosCode(error);
 
         if (code === 'ECONNABORTED' || msg.toLowerCase().includes('timeout')) {
-          return {
-            name,
-            endpoint,
-            status: 'timeout',
-            responseTime,
-            error: 'Connection timeout',
-          };
+          lastError = 'Connection timeout';
+          continue;
         }
         if (code === 'ECONNREFUSED') {
           return {
@@ -393,11 +386,14 @@ export class ConnectionValidator {
       }
     }
 
+    const responseTime = Date.now() - startTime;
+    const timedOut = lastError === 'Connection timeout';
+
     return {
       name,
       endpoint,
-      status: 'failed',
-      responseTime: Date.now() - startTime,
+      status: timedOut ? 'timeout' : 'failed',
+      responseTime,
       error: lastError,
     };
   }

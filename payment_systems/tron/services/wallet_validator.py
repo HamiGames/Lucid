@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/wallet_validator.py
+x-lucid-file-path: /app/payment_systems/tron/services/wallet_validator.py
+x-lucid-file-type: python
+
 Wallet Validation Service
 Validates wallet addresses, private keys, and transaction data
 """

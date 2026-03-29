@@ -1,4 +1,8 @@
 """
+File: /app/auth/middleware/audit_log.py
+x-lucid-file-path: /app/auth/middleware/audit_log.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Audit Log Middleware
 Logs all authentication-related events for security and compliance
 """

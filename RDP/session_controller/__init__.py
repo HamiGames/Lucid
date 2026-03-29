@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/__init__.py
+x-lucid-file-path: /app/RDP/session_controller/__init__.py
+x-lucid-file-type: python
+
 Lucid RDP Session Controller Service
 Cluster: RDP Session Management
 Port: 8092

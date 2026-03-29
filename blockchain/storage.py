@@ -1,5 +1,11 @@
 # Path: blockchain/storage.py
 
+"""
+File: /app/blockchain/storage.py
+x-lucid-file-path: /app/blockchain/storage.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 from typing import Optional, Any
 
@@ -9,9 +15,10 @@ from pymongo.errors import PyMongoError
 
 class Storage:
     """
+
     Storage helper for blockchain blocks.
     Avoid truthiness checks on Motor DB (it defines __bool__ returning int).
-    """
+"""
 
     def __init__(self, db: Optional[AsyncIOMotorDatabase] = None) -> None:
         self._db: Optional[AsyncIOMotorDatabase] = db

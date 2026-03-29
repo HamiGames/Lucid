@@ -1,6 +1,8 @@
 """
 GUI API Bridge Service Logic
-File: gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py
+File: /app/gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py
+x-lucid-file-type: python
 Main service orchestration for API routing and backend integration
 """
 

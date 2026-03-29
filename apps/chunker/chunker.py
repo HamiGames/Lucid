@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/chunker/chunker.py
+x-lucid-file-path: /app/apps/chunker/chunker.py
+x-lucid-file-type: python
+
 Lucid RDP Chunker Service
 Handles data chunking, compression, and processing for session recordings
 """

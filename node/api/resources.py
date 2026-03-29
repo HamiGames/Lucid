@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/api/resources.py
+x-lucid-file-path: /app/node/api/resources.py
+x-lucid-file-type: python
+
 Resource monitoring API endpoints for Lucid system.
 
 This module provides REST API endpoints for:

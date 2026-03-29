@@ -1,5 +1,11 @@
 # Path: vm/vm_manager.py
 
+"""
+File: /app/vm/vm_manager.py
+x-lucid-file-path: /app/vm/vm_manager.py
+x-lucid-file-type: python
+"""
+
 import asyncio
 import logging
 import docker

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/chain_client/__init__.py
+x-lucid-file-path: /app/blockchain/chain_client/__init__.py
+x-lucid-file-type: python
+
 Blockchain Chain Client Module
 Manages session manifests, merkle trees, and blockchain anchoring
 
 REBUILT: Updated for dual-chain architecture with On-System Chain as primary.
 """
+
+
 
 from .manifest_manager import (
     ManifestManager,

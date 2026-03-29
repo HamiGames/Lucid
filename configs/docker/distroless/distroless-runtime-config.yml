@@ -1,4 +1,9 @@
-version: '3.8'
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   distroless-runtime:
@@ -24,7 +29,7 @@ services:
       - /tmp:noexec,nosuid,size=200m
       - /var/tmp:noexec,nosuid,size=100m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/distroless-runtime:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/distroless-runtime:/app/logs:rw
       - distroless-runtime-cache:/tmp/runtime
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
@@ -59,7 +64,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/minimal-runtime:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/minimal-runtime:/app/logs:rw
       - minimal-runtime-cache:/tmp/runtime
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
@@ -97,7 +102,7 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/arm64-runtime:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/arm64-runtime:/app/logs:rw
       - arm64-runtime-cache:/tmp/runtime
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]

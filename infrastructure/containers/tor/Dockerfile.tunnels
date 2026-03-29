@@ -58,8 +58,21 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tunnel-nonroot || true
 
 WORKDIR /app/tunnel
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml /app/tunnel/service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -145,7 +158,6 @@ ENV PATH=/opt/lucid/tunnel/bin:/opt/bin:/opt/sbin:/bin \
     LUCID_SERVICE_HOST_IP=172.20.10.66 \
     LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app
 
-# Copy tini from builder (for proper signal handling)
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -153,7 +165,6 @@ COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.master /app/c
 COPY --from=tunnel-builder /usr/bin/tini /opt/bin/tini
 
 # =============================================================================
-# Copy runtime directory structure from builder
 # /run/lucid/tunnel  — Primary tunnel data directory (tunnel-tools own data)
 # /run/lucid/tunnels — Cross-container shared tree (mirrors tor-proxy scaffold)
 # /tmp/lucid/tunnel  — Ephemeral scratch/logs
@@ -166,7 +177,6 @@ COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnel   /run/lucid/tu
 COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnels  /run/lucid/tunnels
 COPY --from=tunnel-builder --chown=65532:65532 /tmp/lucid/tunnel   /tmp/lucid/tunnel
 
-# Copy essential shell and utilities to /opt/bin and /opt/sbin
 COPY --from=tunnel-builder /bin/bash            /bin/bash
 COPY --from=tunnel-builder /bin/cat             /bin/cat
 COPY --from=tunnel-builder /bin/sh              /bin/sh
@@ -177,7 +187,6 @@ COPY --from=tunnel-builder /usr/bin/socat       /opt/bin/socat
 COPY --from=tunnel-builder /usr/bin/xxd         /opt/bin/xxd
 COPY --from=tunnel-builder /usr/bin/timeout     /opt/bin/timeout
 
-# Copy required libraries to /opt/lib (aligned with Dockerfile.tor-proxy)
 COPY --from=tunnel-builder /lib/aarch64-linux-gnu        /lib/aarch64-linux-gnu
 COPY --from=tunnel-builder /lib/ld-linux-aarch64.so.1    /lib/ld-linux-aarch64.so.1
 COPY --from=tunnel-builder /usr/lib                      /opt/lib

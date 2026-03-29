@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/scripts/data-health.py
+x-lucid-file-path: /app/blockchain/scripts/data-health.py
+x-lucid-file-type: python
+
 Data Health Check Script for Session-Anchoring and Data-Chain Services
 Provides comprehensive health checking that bypasses basic socket checks
 and verifies actual service operational status via HTTP endpoints.
@@ -13,6 +17,8 @@ Exit Codes:
     0 - All services healthy
     1 - Service unhealthy or error
 """
+
+
 
 import sys
 import os

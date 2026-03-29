@@ -1,5 +1,11 @@
 ﻿# Path: wallet/wallet_manager.py
 
+"""
+File: /app/wallet/wallet_manager.py
+x-lucid-file-path: /app/wallet/wallet_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 import logging

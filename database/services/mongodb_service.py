@@ -1,4 +1,8 @@
 """
+File: /app/database/services/mongodb_service.py
+x-lucid-file-path: /app/database/services/mongodb_service.py
+x-lucid-file-type: python
+
 MongoDB Service for Lucid Database Infrastructure
 Provides MongoDB operations, connection management, and database administration.
 

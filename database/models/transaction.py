@@ -1,4 +1,8 @@
 """
+File: /app/database/models/transaction.py
+x-lucid-file-path: /app/database/models/transaction.py
+x-lucid-file-type: python
+
 Transaction Data Models
 
 Pydantic models for blockchain transaction entities (lucid_blocks).

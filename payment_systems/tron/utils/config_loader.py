@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/config_loader.py
+x-lucid-file-path: /app/payment_systems/tron/utils/config_loader.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Configuration Loader Module
 YAML/JSON configuration file loader with environment variable override
 Following architecture patterns from build/docs/

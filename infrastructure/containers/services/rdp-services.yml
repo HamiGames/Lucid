@@ -1,5 +1,5 @@
-# Runtime (container): /app/configs/services/rdp-services.yml — see container-runtime-layout.yml
-# Per-service YAML fragments: /app/configs/services/rdp/*.yaml (e.g. server-manager-config.yaml, xrdp-config.yaml)
+# Runtime (container): /app/service_configs/rdp-services.yml — see container-runtime-layout.yml
+# Per-service YAML fragments: /app/service_configs/rdp/*.yaml (e.g. server-manager-config.yaml, xrdp-config.yaml)
 # RDP Services Configuration
 # Cluster: 04-RDP-SERVICES
 # Service: RDP Server Management and Session Control

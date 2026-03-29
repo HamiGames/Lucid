@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/utils/security.py
+x-lucid-file-path: /app/03_api_gateway/utils/security.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Security Utilities
 Security and cryptography utilities.
 
-File: 03_api_gateway/utils/security.py
 Lines: ~260
 Purpose: Security utilities
 Dependencies: cryptography, hashlib

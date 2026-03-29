@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/middleware/logging.py
+x-lucid-file-path: /app/blockchain/api/app/middleware/logging.py
+x-lucid-file-type: python
+
 Logging Middleware
 
 This module contains request logging middleware for the Blockchain API.
 Handles request/response logging, performance monitoring, and error tracking.
 """
+
+
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware

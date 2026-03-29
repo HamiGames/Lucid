@@ -1,7 +1,9 @@
 """
-Database Connection Management
+File: /app/03_api_gateway/api/app/database/connection.py
+x-lucid-file-path: /app/03_api_gateway/api/app/database/connection.py
+x-lucid-file-type: python
 
-File: 03_api_gateway/api/app/database/connection.py
+Database Connection Management
 Purpose: MongoDB and Redis connection initialization and management
 Includes tor-proxy bootstrap wait sequence before attempting connections
 """
@@ -21,7 +23,9 @@ import socket
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 import redis.asyncio as redis  # pyright: ignore[reportMissingImports]
+from api.app.config import get_settings
 
+settings = get_settings(__name__)
 
 
 # Global database clients

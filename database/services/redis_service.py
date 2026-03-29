@@ -1,4 +1,8 @@
 """
+File: /app/database/services/redis_service.py
+x-lucid-file-path: /app/database/services/redis_service.py
+x-lucid-file-type: python
+
 Redis Service for Lucid Database Infrastructure
 Provides Redis operations, caching, session management, and pub/sub functionality.
 

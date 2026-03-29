@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/containers.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/containers.py
+x-lucid-file-type: python
+
 Container Management Routers
-File: gui_docker_manager/gui_docker_manager/routers/containers.py
 """
 
 import logging

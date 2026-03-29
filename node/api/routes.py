@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/api/routes.py
+x-lucid-file-path: /app/node/api/routes.py
+x-lucid-file-type: python
+
 Main API router for Lucid Node Management system.
 
 This module sets up the FastAPI application and mounts all sub-routers

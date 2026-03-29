@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/trust.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/trust.py
+x-lucid-file-type: python
+
 Trust Policy Endpoints Module
 
 Handles trust policy operations including:

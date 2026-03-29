@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/api/app/errors.py
+x-lucid-file-path: /app/blockchain/api/app/errors.py
+x-lucid-file-type: python
+
 Error Handling Module
 
 This module defines custom exceptions and error handling utilities
 for the Blockchain API. Implements blockchain-specific error codes
 as specified in the OpenAPI 3.0 specification.
 """
+
+
 
 from typing import Dict, Any, Optional
 from fastapi import HTTPException, status

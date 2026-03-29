@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/admin-interface.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/admin-interface.yml — see container-runtime-layout.yml
 # Admin Interface Service Configuration
 # Cluster: 06-ADMIN-INTERFACE
 # Service: Admin Dashboard and System Management

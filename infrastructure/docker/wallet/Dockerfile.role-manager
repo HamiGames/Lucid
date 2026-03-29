@@ -1,6 +1,10 @@
 # LUCID ROLE MANAGER - SPEC-1C Role-Based Access Control (Distroless)
 # Professional role-based access control for Pi deployment
 # Multi-platform build for ARM64 Pi and AMD64 development
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 # syntax=docker/dockerfile:1.7
 FROM python:3.11-slim AS role-manager-builder
@@ -24,6 +28,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
+        bash \
+        tini \
         ca-certificates \
         netcat-traditional \
         jq \
@@ -34,8 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-passlib \
         # Security tools
         openssl \
-        # Database support
-        sqlite3 \
+        mongodb-clients \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && groupadd --gid 1000 lucid \
@@ -59,9 +64,181 @@ RUN pip install --no-cache-dir \
         "websockets>=11.0.0"
 
 # Copy application code
-COPY wallet/ /app/wallet/
-COPY auth/ /app/auth/
-COPY sessions/ /app/sessions/
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './03_api_gateway' './auth' './common' './configs' './node' './server' './service_configs' './service_mesh' './sessions' './wallet' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/security' './service_mesh/sidecar' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './wallet/security' './wallet/walletd' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/docs/swagger' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './03_api_gateway/api/app/db/models'; \
+    for d in \
+      '.' \
+      './03_api_gateway' \
+      './auth' \
+      './common' \
+      './configs' \
+      './node' \
+      './server' \
+      './service_configs' \
+      './service_mesh' \
+      './sessions' \
+      './wallet' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './auth/api' \
+      './auth/config' \
+      './auth/docs' \
+      './auth/middleware' \
+      './auth/models' \
+      './auth/services' \
+      './auth/utils' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './wallet/security' \
+      './wallet/walletd' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './03_api_gateway/api/app/db/models' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+COPY wallet/ ./wallet/
+COPY auth/ ./auth/
+COPY sessions/ ./sessions/
+COPY configs/ ./configs/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY master-env-config.txt ./configs/.env.master
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY server/ ./server/
+COPY node/ ./node/
+COPY common/ ./common/
+COPY service_mesh/ ./service_mesh/
 
 # Create role management directories
 RUN mkdir -p /opt/lucid/roles /opt/lucid/permissions /data/roles /tmp/roles \
@@ -83,12 +260,10 @@ LABEL maintainer="Lucid Development Team" \
       org.lucid.layer="1" \
       org.lucid.expose="8102"
 
-# Copy Python installation and packages from builder
 COPY --from=role-manager-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=role-manager-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
 COPY --from=role-manager-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-# Copy authentication tools
 COPY --from=role-manager-builder /usr/bin/openssl /usr/bin/openssl
 COPY --from=role-manager-builder /usr/bin/sqlite3 /usr/bin/sqlite3
 COPY --from=role-manager-builder /usr/bin/curl /usr/bin/curl
@@ -96,7 +271,6 @@ COPY --from=role-manager-builder /bin/nc /bin/nc
 COPY --from=role-manager-builder /usr/bin/jq /usr/bin/jq
 COPY --from=role-manager-builder /usr/sbin/gosu /usr/sbin/gosu
 
-# Copy required dynamic libraries (architecture-specific)
 COPY --from=role-manager-builder /lib/*-linux-*/libc.so.6 /lib/
 COPY --from=role-manager-builder /lib/*-linux-*/libssl.so.3 /lib/
 COPY --from=role-manager-builder /lib/*-linux-*/libcrypto.so.3 /lib/
@@ -105,14 +279,11 @@ COPY --from=role-manager-builder /lib/*-linux-*/liblzma.so.5 /lib/
 COPY --from=role-manager-builder /lib/*-linux-*/libzstd.so.1 /lib/
 COPY --from=role-manager-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy user and group information
 COPY --from=role-manager-builder /etc/passwd /etc/passwd
 COPY --from=role-manager-builder /etc/group /etc/group
 
-# Copy CA certificates
 COPY --from=role-manager-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy application with proper ownership
 COPY --from=role-manager-builder --chown=role_user:role_user /app /app
 COPY --from=role-manager-builder --chown=role_user:role_user /data /data
 COPY --from=role-manager-builder --chown=role_user:role_user /tmp/roles /tmp/roles
@@ -122,6 +293,8 @@ COPY --from=role-manager-builder --chown=role_user:role_user /opt/lucid /opt/luc
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
     ROLES_PATH=/opt/lucid/roles \
     PERMISSIONS_PATH=/opt/lucid/permissions \
     XDG_RUNTIME_DIR=/tmp/roles \
@@ -130,6 +303,27 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     JWT_EXPIRATION_HOURS=24 \
     PASSWORD_HASH_ROUNDS=12 \
     MAX_LOGIN_ATTEMPTS=5
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=role-manager-builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
+COPY --from=role-manager-builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=role-manager-builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=role-manager-builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=role-manager-builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=role-manager-builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=role-manager-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=role-manager-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+COPY --from=role-manager-builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=role-manager-builder --chown=65532:65532 /build/wallet/ /app/wallet/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+
+
+
+
+
+
+
 
 # Security and runtime configuration
 EXPOSE 8102

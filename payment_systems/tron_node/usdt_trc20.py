@@ -2,6 +2,12 @@
 # Lucid RDP USDT-TRC20 Operations - TRON USDT token operations
 # Based on LUCID-STRICT requirements per Spec-1c and R-MUST-015
 
+"""
+File: /app/payment_systems/tron_node/usdt_trc20.py
+x-lucid-file-path: /app/payment_systems/tron_node/usdt_trc20.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

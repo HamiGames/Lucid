@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/api/app/schemas/users.py
+x-lucid-file-path: /app/03_api_gateway/api/app/schemas/users.py
+x-lucid-file-type: python
+"""
+
 from pydantic import BaseModel, EmailStr, Field
 from typing import List
 from datetime import datetime

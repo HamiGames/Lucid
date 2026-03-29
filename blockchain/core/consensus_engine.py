@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/core/consensus_engine.py
+x-lucid-file-path: /app/blockchain/core/consensus_engine.py
+x-lucid-file-type: python
+
 LUCID Blockchain Consensus Engine - SPEC-1B Implementation
 Proof-of-Observation-Time (PoOT) consensus mechanism
 """
+
+
 
 import asyncio
 import logging

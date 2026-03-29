@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/middleware/rate_limit.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/middleware/rate_limit.py
+x-lucid-file-type: python
+
 Rate Limiting Middleware for GUI Tor Manager
 Implements basic rate limiting to prevent abuse
 """

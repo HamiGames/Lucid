@@ -2,6 +2,10 @@
 # Development and operational tools for the Lucid RDP platform
 
 """
+File: /app/tools/__init__.py
+x-lucid-file-path: /app/tools/__init__.py
+x-lucid-file-type: python
+
 Tools package for Lucid RDP.
 Contains build tools, development utilities, and operational tools.
 """

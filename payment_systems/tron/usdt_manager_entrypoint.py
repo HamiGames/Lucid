@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/payment_systems/tron/usdt_manager_entrypoint.py
+x-lucid-file-path: /app/payment_systems/tron/usdt_manager_entrypoint.py
+x-lucid-file-type: python
+
 USDT Manager Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 """

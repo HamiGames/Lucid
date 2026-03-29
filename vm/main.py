@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/vm/main.py
+x-lucid-file-path: /app/vm/main.py
+x-lucid-file-type: python
+
 Lucid VM Management Service
 Manages lightweight VM instances using Docker containers.
 """

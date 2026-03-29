@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/tron_client.py
+x-lucid-file-path: /app/payment_systems/tron/services/tron_client.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Network Client Service
 TRON network connectivity and transaction management
 Distroless container: lucid-tron-client:latest

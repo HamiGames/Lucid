@@ -1,5 +1,8 @@
 # Path: gui/admin/payouts_manager.py
 """
+file: /app/gui/admin/payouts_manager.py
+x-lucid-file-path: /app/gui/admin/payouts_manager.py
+x-lucid-file-type: python
 TRON payout management interface for Lucid RDP GUI.
 Provides TRON blockchain payout operations, wallet management, and transaction monitoring.
 """

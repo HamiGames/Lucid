@@ -1,6 +1,8 @@
 """
 FastAPI Application for GUI API Bridge Service
 File: gui_api_bridge/gui_api_bridge/main.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/main.py
+x-lucid-file-type: python
 Pattern: Follow sessions/api/main.py and 03_api_gateway/api/app/main.py patterns
 """
 

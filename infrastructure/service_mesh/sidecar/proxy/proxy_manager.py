@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/sidecar/proxy/proxy_manager.py
+x-lucid-file-path: /app/service_mesh/sidecar/proxy/proxy_manager.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - Sidecar Proxy Manager
 Manages Envoy sidecar proxy lifecycle and configuration.
 
-File: infrastructure/service_mesh/sidecar/proxy/proxy_manager.py
 Lines: ~350
 Purpose: Proxy management
 Dependencies: asyncio, subprocess, yaml

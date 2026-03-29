@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/staking.py
+x-lucid-file-path: /app/payment_systems/tron/api/staking.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Staking API
 TRX staking operations and management
 Distroless container: lucid-tron-payment-service:latest

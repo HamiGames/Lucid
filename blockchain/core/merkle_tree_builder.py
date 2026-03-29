@@ -3,6 +3,12 @@
 # Builds and validates Merkle trees for session chunks and transactions
 # Based on BUILD_REQUIREMENTS_GUIDE.md Step 11 and blockchain cluster specifications
 
+"""
+File: /app/blockchain/core/merkle_tree_builder.py
+x-lucid-file-path: /app/blockchain/core/merkle_tree_builder.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -35,7 +41,10 @@ INTERNAL_PREFIX = b"internal:" # Prefix for internal nodes
 
 @dataclass
 class MerkleNode:
-    """Represents a node in the Merkle tree"""
+    """
+
+Represents a node in the Merkle tree
+"""
     hash: str
     left: Optional['MerkleNode'] = None
     right: Optional['MerkleNode'] = None

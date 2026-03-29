@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/services/monitoring/main.py
+x-lucid-file-path: /app/database/services/monitoring/main.py
+x-lucid-file-type: python
+
 LUCID Database Monitoring Service
 LUCID-STRICT Layer 0 Core Infrastructure
 Professional database monitoring and health check service for Pi deployment

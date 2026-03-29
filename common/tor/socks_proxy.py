@@ -1,4 +1,8 @@
 """
+File: /app/common/tor/socks_proxy.py
+x-lucid-file-path: /app/common/tor/socks_proxy.py
+x-lucid-file-type: python
+
 SOCKS proxy management for Lucid RDP.
 
 This module provides comprehensive SOCKS proxy management, connection pooling,

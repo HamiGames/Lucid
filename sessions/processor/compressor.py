@@ -3,6 +3,12 @@
 # Professional data compression with Zstd algorithm for session data
 # Multi-platform support for ARM64 Pi and AMD64 development
 
+"""
+File: /app/sessions/processor/compressor.py
+x-lucid-file-path: /app/sessions/processor/compressor.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

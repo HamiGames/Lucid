@@ -1,10 +1,15 @@
-"""Derive blockchain runtime targets from Lucid host-config.
+"""
+File: /app/blockchain/utils/set_host_config.py
+x-lucid-file-path: /app/blockchain/utils/set_host_config.py
+x-lucid-file-type: python
 
+Derive blockchain runtime targets from Lucid host-config.
 Read-only alignment with /app/configs/host-config.yml (repository:
 infrastructure/containers/host-config.yml). Does not rewrite host-config.
 Optional blockchain-config.yaml via LUCID_BLOCKCHAIN_CONFIG.
-File: blockchain/utils/set_host_config.py
 """
+
+
 
 from __future__ import annotations
 
@@ -20,8 +25,7 @@ from common.load_host_config import (
     load_yaml_file,
     merge_config_layers,
 )
-
-try:
+try: 
     from blockchain.config.yaml_loader import load_yaml_config
 except ImportError:  # pragma: no cover
     load_yaml_config = None  # type: ignore

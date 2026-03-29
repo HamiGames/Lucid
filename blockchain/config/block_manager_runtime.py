@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/config/block_manager_runtime.py
+x-lucid-file-path: /app/blockchain/config/block_manager_runtime.py
+x-lucid-file-type: python
+
 Block Manager Runtime Configuration Helper
 Provides runtime utilities for loading and applying block-manager configuration.
 """
+
+
 
 from __future__ import annotations
 

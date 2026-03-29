@@ -1,6 +1,9 @@
 """
+File: /app/admin/utils/__init__.py
+x-lucid-file-path: /app/admin/utils/__init__.py
+x-lucid-file-type: python
+
 Admin Utilities
 
-File: admin/utils/__init__.py
 Purpose: Utility functions and helper modules
 """

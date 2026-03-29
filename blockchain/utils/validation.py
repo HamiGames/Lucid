@@ -3,6 +3,12 @@
 # Provides validation functions for blockchain data structures
 # Based on BUILD_REQUIREMENTS_GUIDE.md Step 11 and blockchain cluster specifications
 
+"""
+File: /app/blockchain/utils/validation.py
+x-lucid-file-path: /app/blockchain/utils/validation.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import re
@@ -27,7 +33,10 @@ MIN_TIMESTAMP_DRIFT = timedelta(minutes=-5)  # 5 minutes in past
 MAX_TIMESTAMP_DRIFT = timedelta(minutes=5)   # 5 minutes in future
 
 class ValidationSeverity(Enum):
-    """Validation error severity levels"""
+    """
+
+Validation error severity levels
+"""
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"

@@ -1,4 +1,8 @@
 """
+File: /app/auth/session_manager.py
+x-lucid-file-path: /app/auth/session_manager.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Session Manager
 Handles JWT token generation, validation, and session management
 """

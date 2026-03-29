@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/database/repositories/block_repository.py
+x-lucid-file-path: /app/blockchain/api/app/database/repositories/block_repository.py
+x-lucid-file-type: python
+
 Block Repository
 Handles database operations for blockchain blocks.
 """
+
+
 
 import logging
 from typing import List, Optional, Dict, Any

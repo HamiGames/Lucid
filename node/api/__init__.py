@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/api/__init__.py
+x-lucid-file-path: /app/node/api/__init__.py
+x-lucid-file-type: python
+
 Lucid Node Management API Package
 
 This package provides REST API endpoints for:

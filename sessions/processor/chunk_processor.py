@@ -1,4 +1,8 @@
 """
+File: /app/sessions/processor/chunk_processor.py
+x-lucid-file-path: /app/sessions/processor/chunk_processor.py
+x-lucid-file-type: python
+
 Chunk Processor Service
 Handles concurrent processing of session chunks with encryption and Merkle tree building.
 

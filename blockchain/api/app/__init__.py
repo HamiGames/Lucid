@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/__init__.py
+x-lucid-file-type: python
+
 Blockchain API Application Package
 
 This package contains the complete Blockchain API implementation.
@@ -25,6 +29,8 @@ Architecture:
 - Performance monitoring
 - Scalable and maintainable code
 """
+
+
 
 __version__ = "1.0.0"
 __author__ = "Lucid Blockchain Team"

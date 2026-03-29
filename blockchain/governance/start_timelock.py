@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/governance/start_timelock.py
+x-lucid-file-path: /app/blockchain/governance/start_timelock.py
+x-lucid-file-type: python
+
 Timelock Governance Service Startup Script
 
 This script starts the timelock governance service with proper configuration
@@ -11,6 +15,8 @@ Usage:
 Author: Lucid RDP Team
 Version: 1.0.0
 """
+
+
 
 import asyncio
 import argparse

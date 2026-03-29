@@ -3,6 +3,12 @@
 # Implements task proof collection and verification for consensus
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/node/consensus/task_proofs.py
+x-lucid-file-path: /app/node/consensus/task_proofs.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

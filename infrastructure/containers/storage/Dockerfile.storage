@@ -31,9 +31,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -42,6 +42,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -79,6 +80,174 @@ COPY storage/requirements.storage.txt ./requirements.storage.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.storage.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './common' './configs' './database' './src' './storage' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './service_configs/x_lucid_cluster_calibration' './src/api' './src/blockchain' './src/common' './src/core' './src/database' './src/gui' './src/lucid_rdp.egg-info' './src/node' './src/rdp' './src/sessions' './src/storage' './src/user' './src/user_content' './src/vm' './storage/backups' './storage/cache' './storage/data' './database/services/backup' './database/services/migration' './database/services/monitoring' './src/api/db' './src/api/middleware' './src/api/routes' './src/api/schemas' './src/api/scripts' './src/api/services' './src/api/utils' './src/blockchain/api' './src/blockchain/core' './src/blockchain/governance' './src/blockchain/payment_systems' './src/common/governance' './src/common/security' './src/common/server_tools' './src/common/tor' './src/core/config' './src/core/networking' './src/core/security' './src/core/telemetry' './src/core/utils' './src/core/widgets' './src/database/adapters' './src/database/config' './src/database/docs' './src/database/models' './src/database/scripts' './src/database/services' './src/database/utils' './src/gui/admin' './src/gui/build' './src/gui/config' './src/gui/docs' './src/gui/node' './src/gui/requirements' './src/gui/resources' './src/gui/shared' './src/gui/tests' './src/gui/user' './src/node/consensus' './src/node/dht_crdt' './src/node/economy' './src/node/governance' './src/node/pools' './src/node/registration' './src/node/shards' './src/node/sync' './src/node/tor' './src/node/validation' './src/node/worker' './src/rdp/build' './src/rdp/client' './src/rdp/config' './src/rdp/docs' './src/rdp/protocol' './src/rdp/recorder' './src/rdp/security' './src/rdp/server' './src/rdp/tests' './src/rdp/utils' './src/sessions/core' './src/sessions/encryption' './src/sessions/integration' './src/sessions/management' './src/sessions/pipeline' './src/sessions/processor' './src/sessions/recorder' './src/sessions/security' './src/user_content/client' './src/user_content/gui' './src/user_content/wallet' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './src/api/db/models' './src/blockchain/api/routes' './src/blockchain/api/schemas' './src/blockchain/api/services' './src/database/services/backup' './src/database/services/collections' './src/database/services/consensus' './src/database/services/migration' './src/database/services/monitoring' './src/database/services/performance' './src/database/services/restore' './src/database/services/sharding' './src/gui/build/installer_scripts' './src/gui/build/pyinstaller_specs' './src/gui/build/signing_scripts' './src/gui/config/themes' './src/gui/config/torrc_templates' './src/gui/resources/fonts' './src/gui/resources/icons' './src/gui/resources/terms' './src/gui/tests/integration' './src/gui/tests/test_admin' './src/gui/tests/test_core' './src/gui/tests/test_node' './src/gui/tests/test_user' './src/rdp/build/configs' './src/rdp/build/docker' './src/rdp/build/scripts' './src/rdp/tests/integration' './src/rdp/tests/test_client' './src/rdp/tests/test_protocol' './src/rdp/tests/test_recorder' './src/rdp/tests/test_security' './src/rdp/tests/test_server' './src/gui/resources/fonts/monospace' './src/gui/resources/fonts/roboto' './src/gui/resources/icons/status_icons'; \
+    for d in \
+      '.' \
+      './common' \
+      './configs' \
+      './database' \
+      './src' \
+      './storage' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './src/api' \
+      './src/blockchain' \
+      './src/common' \
+      './src/core' \
+      './src/database' \
+      './src/gui' \
+      './src/lucid_rdp.egg-info' \
+      './src/node' \
+      './src/rdp' \
+      './src/sessions' \
+      './src/storage' \
+      './src/user' \
+      './src/user_content' \
+      './src/vm' \
+      './storage/backups' \
+      './storage/cache' \
+      './storage/data' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './src/api/db' \
+      './src/api/middleware' \
+      './src/api/routes' \
+      './src/api/schemas' \
+      './src/api/scripts' \
+      './src/api/services' \
+      './src/api/utils' \
+      './src/blockchain/api' \
+      './src/blockchain/core' \
+      './src/blockchain/governance' \
+      './src/blockchain/payment_systems' \
+      './src/common/governance' \
+      './src/common/security' \
+      './src/common/server_tools' \
+      './src/common/tor' \
+      './src/core/config' \
+      './src/core/networking' \
+      './src/core/security' \
+      './src/core/telemetry' \
+      './src/core/utils' \
+      './src/core/widgets' \
+      './src/database/adapters' \
+      './src/database/config' \
+      './src/database/docs' \
+      './src/database/models' \
+      './src/database/scripts' \
+      './src/database/services' \
+      './src/database/utils' \
+      './src/gui/admin' \
+      './src/gui/build' \
+      './src/gui/config' \
+      './src/gui/docs' \
+      './src/gui/node' \
+      './src/gui/requirements' \
+      './src/gui/resources' \
+      './src/gui/shared' \
+      './src/gui/tests' \
+      './src/gui/user' \
+      './src/node/consensus' \
+      './src/node/dht_crdt' \
+      './src/node/economy' \
+      './src/node/governance' \
+      './src/node/pools' \
+      './src/node/registration' \
+      './src/node/shards' \
+      './src/node/sync' \
+      './src/node/tor' \
+      './src/node/validation' \
+      './src/node/worker' \
+      './src/rdp/build' \
+      './src/rdp/client' \
+      './src/rdp/config' \
+      './src/rdp/docs' \
+      './src/rdp/protocol' \
+      './src/rdp/recorder' \
+      './src/rdp/security' \
+      './src/rdp/server' \
+      './src/rdp/tests' \
+      './src/rdp/utils' \
+      './src/sessions/core' \
+      './src/sessions/encryption' \
+      './src/sessions/integration' \
+      './src/sessions/management' \
+      './src/sessions/pipeline' \
+      './src/sessions/processor' \
+      './src/sessions/recorder' \
+      './src/sessions/security' \
+      './src/user_content/client' \
+      './src/user_content/gui' \
+      './src/user_content/wallet' \
+      './storage/backups/configs' \
+      './storage/backups/database' \
+      './storage/backups/user-data' \
+      './storage/cache/build' \
+      './storage/cache/docker' \
+      './storage/cache/temp' \
+      './storage/data/blockchain' \
+      './storage/data/logs' \
+      './storage/data/sessions' \
+      './src/api/db/models' \
+      './src/blockchain/api/routes' \
+      './src/blockchain/api/schemas' \
+      './src/blockchain/api/services' \
+      './src/database/services/backup' \
+      './src/database/services/collections' \
+      './src/database/services/consensus' \
+      './src/database/services/migration' \
+      './src/database/services/monitoring' \
+      './src/database/services/performance' \
+      './src/database/services/restore' \
+      './src/database/services/sharding' \
+      './src/gui/build/installer_scripts' \
+      './src/gui/build/pyinstaller_specs' \
+      './src/gui/build/signing_scripts' \
+      './src/gui/config/themes' \
+      './src/gui/config/torrc_templates' \
+      './src/gui/resources/fonts' \
+      './src/gui/resources/icons' \
+      './src/gui/resources/terms' \
+      './src/gui/tests/integration' \
+      './src/gui/tests/test_admin' \
+      './src/gui/tests/test_core' \
+      './src/gui/tests/test_node' \
+      './src/gui/tests/test_user' \
+      './src/rdp/build/configs' \
+      './src/rdp/build/docker' \
+      './src/rdp/build/scripts' \
+      './src/rdp/tests/integration' \
+      './src/rdp/tests/test_client' \
+      './src/rdp/tests/test_protocol' \
+      './src/rdp/tests/test_recorder' \
+      './src/rdp/tests/test_security' \
+      './src/rdp/tests/test_server' \
+      './src/gui/resources/fonts/monospace' \
+      './src/gui/resources/fonts/roboto' \
+      './src/gui/resources/icons/status_icons' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.storage.txt
@@ -100,6 +269,22 @@ RUN python3.11 -m compileall -q ./storage ./src ./common ./database
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -133,10 +318,35 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LUCID_HOST_CONFIG_SERVICE_KEY=lucid_system_storage \
     LUCID_SERVICE_HOST_IP=172.20.10.72 \
     LUCID_SERVICE_HTTP_PATH=http://lucid-system-storage:9900/app
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/src/ /app/src/
+COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/ /app/service_configs/x_lucid_cluster_calibration/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -146,10 +356,6 @@ COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
-COPY --from=builder --chown=65532:65532 /build/src/ /app/src/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
 
 EXPOSE 9900
 

@@ -2,7 +2,7 @@
 # Optional YAML configuration for TRX staking service
 # File: payment-systems/tron/config/staking-config.yaml
 # Purpose: Define TRX staking operations, resource management, and reward distribution
-# Runtime (container): /app/configs/services/payment_services/staking-config.yaml
+# Runtime (container): /app/service_configs/payment_services/staking-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

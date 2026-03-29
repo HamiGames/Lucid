@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/manifests.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/manifests.py
+x-lucid-file-type: python
+
 Session Manifest Endpoints Module
 
 Handles session manifest operations including:

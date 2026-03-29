@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/core/crypto.py
+x-lucid-file-path: /app/blockchain/core/crypto.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -13,7 +19,10 @@ def sha256_hex(data: bytes) -> str:
 
 
 def merkle_root(hashes: Iterable[bytes]) -> bytes:
-    """Compute a simple Merkle root from an iterable of byte hashes."""
+    """
+
+Compute a simple Merkle root from an iterable of byte hashes.
+"""
     nodes: List[bytes] = list(hashes)
     if not nodes:
         return b"\x00" * 32

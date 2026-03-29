@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/node_pool_manager.py
+x-lucid-file-path: /app/node/node_pool_manager.py
+x-lucid-file-type: python
+
 Lucid Node Management - Node Pool Manager
 Handles node pool management with max 100 nodes per pool
 """

@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/wallets.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/wallets.py
+x-lucid-file-type: python
+
 Wallets Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/wallets.py
 Purpose: Wallet and payment operations proxy (TRON isolated service)
 
 Architecture Note: This router proxies to TRON payment service (isolated, NOT lucid_blocks)

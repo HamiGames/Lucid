@@ -11,7 +11,12 @@
 #it uses the host system to manage the peer's host
 #it uses the maintenance system to manage the peer's maintenance
 #it uses the data repair system to manage the peer's data repair
-""" LUCID Node Peer Discovery Module
+"""
+File: /app/node/validation/peer_discovery.py
+x-lucid-file-path: /app/node/validation/peer_discovery.py
+x-lucid-file-type: python
+
+LUCID Node Peer Discovery Module
 
 This module provides:
 - Peer discovery and network connectivity
@@ -34,8 +39,6 @@ Core Components:
 - PeerNetworkConnectivityOptimization: Peer network connectivity optimization model
 - PeerNetworkConnectivitySecurity: Peer network connectivity security model
 - PeerNetworkConnectivityPerformanceMonitoring: Peer network connectivity performance monitoring model
-
-
 """
 from __future__ import annotations
 import asyncio

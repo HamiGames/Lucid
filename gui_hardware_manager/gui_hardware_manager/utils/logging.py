@@ -1,4 +1,8 @@
 """
+File: /app/gui_hardware_manager/gui_hardware_manager/utils/logging.py
+x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/utils/logging.py
+x-lucid-file-type: python
+
 Logging utilities
 """
 

@@ -2,6 +2,12 @@
 # Lucid RDP Shard Host Creation - Distributed shard management and host assignment
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/shards/shard_host_creation.py
+x-lucid-file-path: /app/node/shards/shard_host_creation.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

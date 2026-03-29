@@ -2,7 +2,7 @@
 # Optional YAML configuration for wallet manager service
 # File: payment-systems/tron/config/wallet-manager-config.yaml
 # Purpose: Define wallet management, encryption, and backup policies
-# Runtime (container): /app/configs/services/payment_services/wallet-manager-config.yaml
+# Runtime (container): /app/service_configs/payment_services/wallet-manager-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

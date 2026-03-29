@@ -1,9 +1,12 @@
 """
+File: /app/03_api_gateway/config/load_host_config.py
+x-lucid-file-path: /app/03_api_gateway/config/load_host_config.py
+x-lucid-file-type: python
+
 Loads host config for Lucid api-gateway service.
 
 Host registry: /app/configs/host-config.yml (main_lucid_gateway -> api-gateway).
 Service overlay: api-gateway.yml under LUCID_API_GATEWAY_SERVICE_CONFIG_DIR.
-File: 03_api_gateway/config/load_host_config.py
 """
 
 from __future__ import annotations

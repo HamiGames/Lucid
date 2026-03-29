@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/exporter/exporter.py
+x-lucid-file-path: /app/apps/exporter/exporter.py
+x-lucid-file-type: python
+
 Lucid RDP Exporter
 S3 backup service for exporting session data and system backups
 """

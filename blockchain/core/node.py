@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/core/node.py
+x-lucid-file-path: /app/blockchain/core/node.py
+x-lucid-file-type: python
+"""
+
 # Path: blockchain/core/node.py
 
 from __future__ import annotations

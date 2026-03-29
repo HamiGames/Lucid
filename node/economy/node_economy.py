@@ -2,6 +2,12 @@
 # Lucid RDP Node Economy - Economic management for node operators
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/economy/node_economy.py
+x-lucid-file-path: /app/node/economy/node_economy.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

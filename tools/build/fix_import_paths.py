@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/build/fix_import_paths.py
+x-lucid-file-path: /app/tools/build/fix_import_paths.py
+x-lucid-file-type: python
+
 Lucid Import Path Validator and Fixer
 =====================================
 

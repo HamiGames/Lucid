@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/contracts/evm_client.py
+x-lucid-file-path: /app/blockchain/contracts/evm_client.py
+x-lucid-file-type: python
+
 EVM Client for On-System Chain
 Based on rebuild-blockchain-engine.md specifications
 
@@ -9,6 +13,8 @@ Implements EVM-compatible blockchain client for:
 - Transaction monitoring and status checking
 - Gas estimation and circuit breakers
 """
+
+
 
 import asyncio
 import hashlib

@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/main.py
+x-lucid-file-path: /app/03_api_gateway/api/app/main.py
+x-lucid-file-type: python
+
 API Gateway Main Application
 
-File: 03_api_gateway/api/app/main.py
 Purpose: Primary entry point for the Lucid API Gateway service.
 All routing, middleware, and service initialization happens here.
 

@@ -1,7 +1,12 @@
 # Multi-Stage Runtime Configuration for Lucid Project
 # Runtime configuration for multi-stage containers in production
 
-version: '3.8'
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   # Multi-stage runtime environment
@@ -63,9 +68,9 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
-      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
-      - /mnt/myssd/Lucid/Lucid/cache:/app/cache:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/cache:/app/cache:rw
     cap_drop:
       - ALL
     cap_add:
@@ -113,7 +118,7 @@ services:
     working_dir: /app
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /mnt/myssd/Lucid/Lucid/monitoring-logs:/logs:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/monitoring-logs:/logs:ro
     healthcheck:
       test: ["python", "-c", "import sys; print('monitoring runtime healthy'); sys.exit(0)"]
       interval: 30s
@@ -149,6 +154,6 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /mnt/myssd/Lucid/Lucid/data
+      device: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data
   monitoring-logs:
     name: lucid-multi-stage-monitoring-logs

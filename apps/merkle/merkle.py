@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/merkle/merkle.py
+x-lucid-file-path: /app/apps/merkle/merkle.py
+x-lucid-file-type: python
+
 Lucid RDP Merkle Tree Builder with BLAKE3
 High-performance Merkle tree construction for data integrity verification
 """

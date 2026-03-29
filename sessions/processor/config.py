@@ -1,4 +1,8 @@
 """
+File: /app/sessions/processor/config.py
+x-lucid-file-path: /app/sessions/processor/config.py
+x-lucid-file-type: python
+
 Configuration Module for Chunk Processor
 Manages configuration settings for the chunk processing service.
 

@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/chain_client/manifest_manager.py
+x-lucid-file-path: /app/blockchain/chain_client/manifest_manager.py
+x-lucid-file-type: python
+
 Manifest Manager for Lucid Blockchain System
 Manages session manifests, merkle trees, and blockchain anchoring
 """
+
+
 
 import asyncio
 import hashlib

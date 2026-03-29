@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/api/cluster/monitoring.py
+x-lucid-file-path: /app/api/cluster/monitoring.py
+x-lucid-file-type: python
+
 LUCID Monitoring Service - SPEC-1B Implementation
 Monitoring and metrics collection for microservices
 """

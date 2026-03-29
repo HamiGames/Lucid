@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/walletd/walletd.py
+x-lucid-file-path: /app/apps/walletd/walletd.py
+x-lucid-file-type: python
+
 Lucid RDP Wallet Daemon
 Secure key management and wallet operations
 """

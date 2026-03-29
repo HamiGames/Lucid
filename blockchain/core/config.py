@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/core/config.py
+x-lucid-file-path: /app/blockchain/core/config.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,7 +12,10 @@ from typing import Final
 
 
 def _required_env(keys: list[str]) -> str:
-    """Return first available env var from keys or raise."""
+    """
+
+Return first available env var from keys or raise.
+"""
     for k in keys:
         v = os.getenv(k)
         if v:

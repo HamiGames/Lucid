@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/sessions.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/sessions.py
+x-lucid-file-type: python
+
 Session Management Endpoints Router
 
-File: 03_api_gateway/api/app/routers/sessions.py
 Purpose: Session lifecycle management
 """
 import os

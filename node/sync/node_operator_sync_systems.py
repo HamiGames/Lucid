@@ -2,6 +2,12 @@
 # Lucid RDP Node Operator Sync Systems - Multi-operator coordination and state synchronization
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/sync/node_operator_sync_systems.py
+x-lucid-file-path: /app/node/sync/node_operator_sync_systems.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

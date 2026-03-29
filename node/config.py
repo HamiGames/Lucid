@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/config.py
+x-lucid-file-path: /app/node/config.py
+x-lucid-file-type: python
+
 Lucid Node Management Configuration Management
 Uses Pydantic Settings for environment variable validation
 """

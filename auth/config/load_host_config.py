@@ -1,8 +1,12 @@
-"""Load host config for Lucid Authentication Service.
+"""
+File: /app/auth/config/load_host_config.py
+x-lucid-file-path: /app/auth/config/load_host_config.py
+x-lucid-file-type: python
+
+Load host config for Lucid Authentication Service.
 
 Host registry: /app/configs/host-config.yml. Service overlay: auth-service.yml
 under LUCID_AUTH_SERVICE_CONFIG_DIR (/app/service_configs by default).
-File: auth/config/load_host_config.py
 """
 
 from __future__ import annotations

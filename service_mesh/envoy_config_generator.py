@@ -1,7 +1,7 @@
 """
 Envoy configuration generator for service mesh
 
-File: service_mesh/envoy_config_generator.py
+File: /app/service_mesh/envoy_config_generator.py
 """
 
 import asyncio

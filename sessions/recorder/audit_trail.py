@@ -3,6 +3,12 @@
 # Implements R-MUST-005: Session Audit Trail with actor identity, timestamps, resource access
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/sessions/recorder/audit_trail.py
+x-lucid-file-path: /app/sessions/recorder/audit_trail.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

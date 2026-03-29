@@ -29,7 +29,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -69,6 +68,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_VM_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './vm' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './vm' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
@@ -88,6 +101,22 @@ RUN test -f ./vm/main.py && test -f ./vm/vm_manager.py && echo "vm source OK"
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -119,7 +148,28 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LUCID_HOST_CONFIG_SERVICE_KEY=vm_service \
     LUCID_SERVICE_HOST_IP=172.20.10.73 \
     LUCID_SERVICE_HTTP_PATH=http://vm-service:8107/app
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/vm/ /app/vm/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -133,7 +183,6 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/vm/ /app/vm/
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import docker,fastapi; print('runtime OK')"]
 

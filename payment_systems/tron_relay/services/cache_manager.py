@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/services/cache_manager.py
+x-lucid-file-path: /app/payment_systems/tron_relay/services/cache_manager.py
+x-lucid-file-type: python
+
 LUCID TRON Relay - Cache Manager
 Manages caching of TRON blockchain data for improved performance
 

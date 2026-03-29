@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/config.py
+x-lucid-file-path: /app/RDP/session_controller/config.py
+x-lucid-file-type: python
+
 RDP Controller Configuration Management
 Uses Pydantic Settings for environment variable validation with YAML/JSON file support
 

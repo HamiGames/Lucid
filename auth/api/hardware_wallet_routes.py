@@ -1,4 +1,8 @@
 """
+File: /app/auth/api/hardware_wallet_routes.py
+x-lucid-file-path: /app/auth/api/hardware_wallet_routes.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Hardware Wallet Routes
 POST /hw/connect, POST /hw/sign, GET /hw/status
 Supports Ledger, Trezor, and KeepKey

@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/verify_files.py
+x-lucid-file-path: /app/03_api_gateway/verify_files.py
+x-lucid-file-type: python
+"""
+
 import sys
 import pathlib
 

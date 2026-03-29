@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/ops/backup/encryption_manager.py
+x-lucid-file-path: /app/tools/ops/backup/encryption_manager.py
+x-lucid-file-type: python
+
 LUCID BACKUP ENCRYPTION MANAGER - SPEC-4 Backup Encryption System
 Professional backup encryption for Pi deployment
 Multi-platform build for ARM64 Pi and AMD64 development

@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/api/app/routes/wallets.py
+x-lucid-file-path: /app/blockchain/api/app/routes/wallets.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

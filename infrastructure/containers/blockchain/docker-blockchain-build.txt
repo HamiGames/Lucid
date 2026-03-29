@@ -1,0 +1,260 @@
+================================================================================
+LUCID BLOCKCHAIN SERVICES — BUILD GUIDE (from Dockerfile.data)
+================================================================================
+Primary reference: infrastructure/containers/blockchain/Dockerfile.data
+Image (per Dockerfile): pickme/lucid-data-chain:latest-arm64
+Service role: Distroless data-chain (storage / integrity API)
+Default entry: /app/blockchain/data/api/entrypoint.py → uvicorn app chain
+Build context: repository ROOT (the Lucid top-level directory), NOT
+  infrastructure/containers/blockchain alone.
+
+--------------------------------------------------------------------------------
+1. TARGET HOST AND PLATFORM
+--------------------------------------------------------------------------------
+- Default TARGETPLATFORM: linux/arm64 (e.g. Raspberry Pi).
+- Default BUILDPLATFORM: linux/amd64 (typical Windows/CI builder).
+- Build on Windows 11 console; deploy to ARM64 as defined by build args.
+
+Suggested build (run from repo root; adjust paths for your machine):
+
+  docker buildx build --platform linux/arm64 \
+    -f infrastructure/containers/blockchain/Dockerfile.data \
+    -t pickme/lucid-data-chain:latest-arm64 \
+    --build-arg BUILD_DATE="$(Get-Date -Format o)" \
+    --build-arg VCS_REF="$(git rev-parse HEAD 2>$null)" \
+    --build-arg VERSION=1.0.0 \
+    .
+
+On PowerShell, if git is unavailable, omit VCS_REF or pass a placeholder string.
+
+Build args (must match Dockerfile ARG declarations):
+  BUILD_DATE   — OCI created label
+  VCS_REF      — git revision for labels
+  VERSION      — default 1.0.0
+  TARGETPLATFORM — default linux/arm64
+  BUILDPLATFORM  — default linux/amd64
+  PYTHON_VERSION — default 3.11 (builder base is python:3.11-slim-bookworm)
+
+--------------------------------------------------------------------------------
+2. FILES REQUIRED AT REPO ROOT (COPY failures if missing)
+--------------------------------------------------------------------------------
+These paths are relative to the build context (repo root):
+
+  configs/environment/.env.secrets
+  master-env-config.txt
+  blockchain/data/requirements.txt
+
+  blockchain/                    (entire tree; see skeleton §4)
+  03_api_gateway/                (entire tree)
+  api/
+  admin/
+  sessions/
+  node/
+  RDP/
+  database/
+  security/
+  utils/
+  server/
+  storage/
+  user/
+
+  infrastructure/containers/services/           → copied to /build/service_configs
+  infrastructure/containers/blockchain/config/chain-to-pay.connections.json
+  infrastructure/containers/blockchain/config/openssl-api.yml
+  infrastructure/containers/blockchain/config/  (remainder of config dir)
+  infrastructure/containers/blockchain/docker-compose.block-system.yml
+  infrastructure/containers/blockchain/docker-compose.chain.yml
+  infrastructure/containers/blockchain/docker-compose.manager.yml
+
+Builder maps compose files under /build/configs/ as:
+  docker-compose.block-system.yaml
+  docker-compose.chain.yaml
+  docker-compose.manager.yaml
+
+Secrets layout in image:
+  /build/configs/.env.secrets  ← from configs/environment/.env.secrets
+  /build/configs/.env.master   ← from master-env-config.txt
+
+--------------------------------------------------------------------------------
+3. BUILDER STAGE — BEHAVIOUR SUMMARY
+--------------------------------------------------------------------------------
+- Base: python:3.11-slim-bookworm (builder), TARGETPLATFORM.
+- Installs: build-essential, gcc/g++, libffi-dev, libssl-dev, pkg-config,
+  curl, ca-certificates, tini, python3 dev/pip/setuptools, then replaces
+  system rustc/cargo with rustup stable.
+- Wheel cache: pip wheel → /build/wheels, then pip install from wheels.
+- Import smoke test (builder): fastapi, uvicorn, pydantic, motor, pymongo,
+  blake3, yaml, lz4, zstandard, httpx, aiohttp.
+- Many directories under /build are pre-created with .keep markers and
+  ownership 65532:65532 before COPY, so empty trees still have correct
+  permissions after overlay.
+
+Critical runtime artifact:
+  blockchain/data/api/entrypoint.py MUST exist after COPY; runtime asserts it.
+
+--------------------------------------------------------------------------------
+4. DIRECTORY SKELETON — REPO LAYOUT EXPECTED BY DOCKERFILE.DATA
+--------------------------------------------------------------------------------
+Minimum logical tree the Dockerfile expects to COPY (your repo may contain
+more files inside these folders). Names are case-sensitive (e.g. RDP, api).
+
+  <REPO_ROOT>/
+    configs/
+      environment/
+        .env.secrets
+    master-env-config.txt
+    blockchain/
+      data/
+        requirements.txt
+        api/
+          entrypoint.py        ← required for final RUN assert and CMD
+        ...                    (other data-chain modules)
+      core/
+      config/                  (also augmented by infra COPYs below)
+      ...                      (rest of blockchain package)
+    03_api_gateway/
+      ...                      (gateway package as used by data-chain)
+    infrastructure/
+      containers/
+        services/              → service_configs in build stage
+        blockchain/
+          config/
+            chain-to-pay.connections.json
+            openssl-api.yml
+            ...                (full config directory)
+          docker-compose.block-system.yml
+          docker-compose.chain.yml
+          docker-compose.manager.yml
+    api/
+      cluster/                 (skeleton created before COPY; optional content)
+      ...
+    admin/
+      services/
+      rbac/
+      audit/
+      emergency/
+      system/
+    sessions/
+      processor/
+      storage/
+      api/
+    node/
+      worker/
+      pools/
+      resources/
+      poot/
+      payouts/
+      api/
+      models/
+      repositories/
+    RDP/
+      server-manager/
+      xrdp/
+      session-controller/
+      resource-monitor/
+    database/
+      services/
+      schemas/
+    security/
+      services/
+      rbac/
+      audit/
+      emergency/
+      system/
+    utils/
+    server/
+      services/
+      rbac/
+      audit/
+      emergency/
+      system/
+    storage/
+      services/
+      rbac/
+      audit/
+      emergency/
+      system/
+    user/
+      services/
+      rbac/
+      audit/
+      emergency/
+      system/
+
+If a top-level directory is empty, still create it (or keep minimal __init__.py
+/ placeholder) so COPY does not fail; the Dockerfile’s pre-mkdir steps partly
+guard layout but COPY still requires the source path to exist in context.
+
+--------------------------------------------------------------------------------
+5. RUNTIME STAGE (/app) — WHAT THE FINAL IMAGE CONTAINS
+--------------------------------------------------------------------------------
+Distroless: gcr.io/distroless/python3-debian12:latest
+
+Copied from builder (non-exhaustive; see Dockerfile for full list):
+  /app/configs/.env.secrets
+  /app/configs/.env.master
+  /app/03_api_gateway/
+  /app/usr/local/lib/python3.11/site-packages/
+  /app/usr/local/bin/
+  /app/usr/bin/, /app/usr/sbin/, /app/usr/local/share/
+  /app/etc/ssl/certs/ca-certificates.crt
+  /app/etc/tor/torrc and /app/etc/tor/      ← must exist on BUILDER filesystem
+  /app/etc/onion/                           ← must exist on BUILDER filesystem
+  /app/var/run/, /app/var/lib/
+  /app/wheels/
+  /app/blockchain/, /app/api/, /app/sessions/, /app/node/, /app/RDP/,
+  /app/database/, /app/security/, /app/utils/, /app/server/, /app/storage/,
+  /app/user/, /app/admin/
+
+Environment (defaults in Dockerfile):
+  PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:...
+  PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages
+  LUCID_HOST_SERVICE_NAME=data-chain
+  DATA_CHAIN_PORT=8087
+  DATA_CHAIN_HOST=0.0.0.0
+  (plus LUCID_SERVICE_HOST_IP, LUCID_SERVICE_HTTP_PATH as set in file)
+
+User: 65532:65532
+ENTRYPOINT: /app/usr/bin/tini --
+CMD: /app/usr/bin/python3.11 /app/blockchain/data/api/entrypoint.py
+EXPOSE 8087
+
+HEALTHCHECK: TCP connect to 127.0.0.1:DATA_CHAIN_PORT (default 8087).
+
+--------------------------------------------------------------------------------
+6. BUILDER PREREQUISITE: /etc/tor AND /etc/onion
+--------------------------------------------------------------------------------
+The runtime stage copies from the builder:
+  /etc/tor/torrc, /etc/tor/, /etc/onion/
+
+The stock python:3.11-slim-bookworm image does not necessarily ship these paths.
+Before `docker build` will succeed, the builder stage must create or populate
+them (e.g. RUN mkdir -p /etc/tor /etc/onion && install or COPY tor artifacts).
+If your build fails at those COPY lines, add explicit builder steps aligned
+with your Lucid Tor/onion layout (project naming: keep consistency e.g. with
+BLOCK_ONION / service mesh docs elsewhere in the repo).
+
+--------------------------------------------------------------------------------
+7. PYTHON AND PACKAGE VERIFICATION
+--------------------------------------------------------------------------------
+Builder verifies imports (see Dockerfile RUN with python3.11 -c ...).
+
+Runtime verifies:
+  - site-packages and .lucid-marker
+  - uvicorn, fastapi, blake3 import
+  - entrypoint path exists
+
+--------------------------------------------------------------------------------
+8. TROUBLESHOOTING
+--------------------------------------------------------------------------------
+- "COPY failed: file not found": path is wrong relative to repo root, or
+  directory missing in context (see §2 and §4).
+- RDP stage (Dockerfile.data): use a completed RUN (resource-monitor .keep,
+  chown/chmod) followed by a separate COPY RDP/ instruction — applied in-repo.
+- Tor/onion COPY errors: address §6.
+- ARM emulation: on AMD64 hosts, ensure buildx and QEMU are set up for arm64
+  if you build for Pi without a native ARM builder.
+
+================================================================================
+END — docker-blockchain-build.txt (blockchain-services / Dockerfile.data)
+================================================================================

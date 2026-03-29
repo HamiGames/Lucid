@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/middleware/cors.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/middleware/cors.py
+x-lucid-file-type: python
+
 CORS Middleware Configuration for GUI Tor Manager
 Enables cross-origin requests for Electron GUI
 """

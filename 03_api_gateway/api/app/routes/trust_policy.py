@@ -1,6 +1,12 @@
 # Trust Policy Router Module
 # Client-controlled session policy enforcement endpoints
 
+"""
+File: /app/03_api_gateway/api/app/routes/trust_policy.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routes/trust_policy.py
+x-lucid-file-type: python
+"""
+
 from fastapi import APIRouter, HTTPException, Depends, status
 import os
 from api.app.config import get_settings

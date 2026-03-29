@@ -3,6 +3,10 @@
 # LUCID-STRICT Layer 1 Core Infrastructure
 
 """
+File: /app/node/worker/__init__.py
+x-lucid-file-path: /app/node/worker/__init__.py
+x-lucid-file-type: python
+
 Worker module for Lucid node operations.
 
 This module provides:

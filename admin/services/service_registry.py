@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/services/service_registry.py
+x-lucid-file-path: /app/admin/services/service_registry.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Service Registry
 Step 24: Admin Container & Integration
 

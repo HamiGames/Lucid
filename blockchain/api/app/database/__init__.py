@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/database/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/database/__init__.py
+x-lucid-file-type: python
+
 Blockchain API Database Package
 Provides database connection and repository classes for blockchain data.
 """
+
+
 
 from .connection import DatabaseConnection, get_database_connection
 from .repositories.block_repository import BlockRepository

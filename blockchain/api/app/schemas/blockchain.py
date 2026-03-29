@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/blockchain.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/blockchain.py
+x-lucid-file-type: python
+
 Blockchain Schema Models
 
 This module defines Pydantic models for blockchain information API endpoints.
@@ -10,6 +14,8 @@ Models:
 - BlockHeight: Current block height information
 - NetworkInfo: Network topology and peer information
 """
+
+
 
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any

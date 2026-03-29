@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/models/__init__.py
+x-lucid-file-path: /app/payment_systems/tron/models/__init__.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Payment Models
 Data models for TRON payment operations
 Distroless container: lucid-tron-payment-service:latest

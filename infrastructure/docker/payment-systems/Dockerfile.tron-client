@@ -1,55 +1,85 @@
 # LUCID TRON Node Client - Distroless Build
 # Implements isolated TRON integration using TronWeb 6, PayoutRouterV0/KYC, USDT-TRC20 per SPEC-1b
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
+#
+# Build context: repository root (.)
+#   docker build -f infrastructure/docker/payment-systems/Dockerfile.tron-client .
 
-# Multi-stage build for distroless deployment
+# syntax=docker/dockerfile:1.5
 FROM python:3.12-slim-bookworm AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY ../../../payment_systems/tron_node/requirements.tron-client.txt /tmp/
-RUN pip install --no-cache-dir --user -r /tmp/requirements.tron-client.txt
 
-# Copy source code
-COPY payment_systems/tron_node/tron_client.py /app/
-COPY blockchain/__init__.py /app/blockchain/
-COPY payment_systems/__init__.py /app/payment_systems/
+# LUCID_PIP_WHEELS_BEGIN
+# requirements: /tmp/tron-requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    printf "LUCID_TRON_CLIENT_WHEELS_$(date +%s)" > /build/wheels/.keep && \
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel
 
-# Final distroless stage
+COPY payment_systems/tron/requirements.txt /tmp/tron-requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r /tmp/tron-requirements.txt && \
+    echo "wheel build complete" && \
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.'; \
+    for d in \
+      '.' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_PIP_WHEELS_END
+
+RUN pip install --no-cache-dir --no-index --find-links /build/wheels --no-cache-dir --user -r /tmp/tron-requirements.txt
+
+# Repo-root layout (payment_systems.tron_node.tron_client → app.config)
+COPY payment_systems/tron_node/ /app/payment_systems/tron_node/
+COPY payment_systems/__init__.py /app/payment_systems/__init__.py
+COPY app/__init__.py /app/app/__init__.py
+COPY app/config.py /app/app/config.py
+COPY blockchain/__init__.py /app/blockchain/__init__.py
+
+RUN mkdir -p /app/service_configs /app/configs
+COPY infrastructure/containers/host-config.yml /app/service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml /app/configs/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
+
 FROM gcr.io/distroless/python3-debian12:nonroot
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /home/nonroot/.local
-
-# Copy application code
-COPY --from=builder /app /app
-COPY --from=builder /build/tron_client /app/tron_client
-COPY --from=builder /build/blockchain /app/blockchain
-COPY --from=builder /build/payment_systems /app/payment_systems
-
-# Set working directory
 WORKDIR /app
 
-# Set Python path
-ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages
+ENV PYTHONPATH=/app:/home/nonroot/.local/lib/python3.12/site-packages \
+    PYTHONUNBUFFERED=1 \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-# Create data directories
-USER nonroot
-RUN mkdir -p /data/tron
 
-# Expose health check port
+COPY --from=builder /root/.local /home/nonroot/.local
+COPY --from=builder /app /app
+
 EXPOSE 8088
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD ["python", "-c", "import tron_client; print('TRON client service healthy')"]
+USER nonroot
 
-# Run the TRON client service
-ENTRYPOINT ["python3", "-m", "tron_client"]
+# tron_client.py is a library module; verify imports at startup
+ENTRYPOINT ["/usr/bin/python3", "-c", "import payment_systems.tron_node.tron_client; print('tron-client bundle ok')"]

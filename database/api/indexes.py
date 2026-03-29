@@ -1,4 +1,8 @@
 """
+File: /app/database/api/indexes.py
+x-lucid-file-path: /app/database/api/indexes.py
+x-lucid-file-type: python
+
 Database Indexes Management API
 
 Provides endpoints for managing MongoDB indexes:

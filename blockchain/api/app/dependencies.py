@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/dependencies.py
+x-lucid-file-path: /app/blockchain/api/app/dependencies.py
+x-lucid-file-type: python
+
 API Dependencies
 
 This module contains FastAPI dependencies for authentication, authorization,
@@ -10,6 +14,8 @@ Dependencies:
 - get_database: Get database connection
 - get_redis_client: Get Redis client for caching and rate limiting
 """
+
+
 
 from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/storage/session_storage.py
+x-lucid-file-path: /app/sessions/storage/session_storage.py
+x-lucid-file-type: python
+
 LUCID Session Storage Service - Step 17 Implementation
 Implements chunk persistence to filesystem and session metadata storage
 """

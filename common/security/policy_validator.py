@@ -2,6 +2,12 @@
 # Implements dynamic policy validation and JIT approval workflows
 # LUCID-STRICT Layer 1 Common Security Integration
 
+"""
+File: /app/common/security/policy_validator.py
+x-lucid-file-path: /app/common/security/policy_validator.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

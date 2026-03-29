@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/multi-stage/multi-stage-build-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/multi-stage/multi-stage-build-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Build Configuration for Lucid Project
 # Container-hosted: cache/logs/analysis use named volumes; optional Docker socket for sibling builds.
 #

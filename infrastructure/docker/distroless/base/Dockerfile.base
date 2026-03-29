@@ -3,6 +3,10 @@
 # Aligned with 03_api_gateway/Dockerfile: builder wheel flow, /app runtime layout, tini PID 1
 # Build context: repository root (.)
 # Deployment: Pi /mnt/myssd/Lucid/Lucid
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -74,11 +78,30 @@ COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requiremen
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements-minimal.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './service_configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './service_configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements-minimal.txt
 
 RUN python3.11 -c "import fastapi, uvicorn, pydantic, requests, cryptography, dotenv; print('✅ distroless base requirements OK')" && \
     pip list
+
+RUN mkdir -p /build/service_configs /build/configs
+COPY infrastructure/containers/host-config.yml /build/service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
 
 RUN mkdir -p /opt/lucid-base/scripts
 
@@ -160,7 +183,22 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONPATH=/app:/app/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+
+
+
+
+
+
+
 
 COPY --from=builder /var/run/          /app/var/run/
 COPY --from=builder /var/lib/           /app/var/lib/
@@ -171,10 +209,13 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /opt/lucid-base/       /app/opt/lucid-base/
+COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
 
 RUN ["/app/usr/bin/python3.11", "-c", \
     "import os, sys; sp='/app/usr/local/lib/python3.11/site-packages'; \
 assert os.path.isdir(sp), sp; \
+assert os.path.isfile('/app/service_configs/host-config.yml'); \
+assert os.path.isfile('/app/service_configs/container-runtime-layout.yml'); \
 import fastapi, uvicorn; \
 print('✅ distroless base runtime imports OK')"]
 

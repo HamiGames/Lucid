@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
+File: /app/admin/entrypoint.py
+x-lucid-file-path: /app/admin/entrypoint.py
+x-lucid-file-type: python
+
 Admin Interface Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 

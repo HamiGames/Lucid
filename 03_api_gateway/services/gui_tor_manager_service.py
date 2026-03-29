@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/services/gui_tor_manager_service.py
+x-lucid-file-path: /app/03_api_gateway/services/gui_tor_manager_service.py
+x-lucid-file-type: python
+
 GUI Tor Manager Service
 
-File: 03_api_gateway/services/gui_tor_manager_service.py
 Purpose: Service for handling GUI Tor Manager integration and proxy operations
 """
 

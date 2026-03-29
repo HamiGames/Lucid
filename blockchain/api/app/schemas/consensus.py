@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/consensus.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/consensus.py
+x-lucid-file-type: python
+
 Consensus Schema Models
 
 This module defines Pydantic models for consensus mechanism API endpoints.
@@ -11,6 +15,8 @@ Models:
 - ConsensusVoteResponse: Consensus vote response
 - ConsensusHistory: Consensus history
 """
+
+
 
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any

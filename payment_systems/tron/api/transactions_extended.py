@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/transactions_extended.py
+x-lucid-file-path: /app/payment_systems/tron/api/transactions_extended.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - Extended TRON Transactions API
 Additional transaction endpoints for history, receipts, and retry logic
 Distroless container: lucid-tron-client:latest

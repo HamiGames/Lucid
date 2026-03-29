@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/tor_proxy_client.py
+x-lucid-file-path: /app/payment_systems/tron/utils/tor_proxy_client.py
+x-lucid-file-type: python
+
 LUCID TRON Services - Tor Proxy HTTP Client Manager
 Configures HTTP client to route external calls through tor-proxy
 Supports both httpx and requests libraries

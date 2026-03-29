@@ -1,5 +1,11 @@
 ﻿# Path: admin/admin_manager.py
 
+"""
+File: /app/admin/system/admin_manager.py
+x-lucid-file-path: /app/admin/system/admin_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 from typing import Dict, List, Optional, Any

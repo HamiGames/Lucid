@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/recorder/main.py
+x-lucid-file-path: /app/sessions/recorder/main.py
+x-lucid-file-type: python
+
 Lucid Session Management Recorder Service
 Main entry point for the session recorder service
 """

@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/routers/proxy.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/routers/proxy.py
+x-lucid-file-type: python
+
 Proxy Router for GUI Tor Manager
 Provides endpoints for SOCKS proxy management and testing
 """

@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/gui-docker-manager-service-groups.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/gui-docker-manager-service-groups.yml — see container-runtime-layout.yml
 # =============================================================================
 # LUCID GUI Docker Manager Service - Service Groups Configuration
 # =============================================================================

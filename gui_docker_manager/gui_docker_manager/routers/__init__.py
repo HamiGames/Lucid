@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/__init__.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/__init__.py
+x-lucid-file-type: python
+
 Routers for Docker Manager API
-File: gui_docker_manager/gui_docker_manager/routers/__init__.py
 """
 
 from .containers import router as containers_router

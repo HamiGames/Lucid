@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/RDP/resource_monitor/config.py
+x-lucid-file-path: /app/RDP/resource_monitor/config.py
+x-lucid-file-type: python
+
 Lucid RDP Resource Monitor Configuration
 Configuration management for RDP resource monitoring service
 """

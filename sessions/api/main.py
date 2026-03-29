@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/api/main.py
+x-lucid-file-path: /app/sessions/api/main.py
+x-lucid-file-type: python
+
 LUCID Session API Service - Main Entry Point
 Step 17 Implementation: Session Storage & API
 """

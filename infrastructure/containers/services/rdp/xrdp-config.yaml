@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/rdp/xrdp-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/rdp/xrdp-config.yaml — see ../container-runtime-layout.yml
 # Lucid XRDP - Configuration File
 # Optional YAML configuration for XRDP service
 # File: RDP/config/xrdp-config.yaml

@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/block.py
+x-lucid-file-path: /app/blockchain/block.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

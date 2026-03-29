@@ -1,6 +1,6 @@
 # LUCID TRON Relay Service Configuration
 # READ-ONLY blockchain relay and caching service
-# Runtime (container): /app/configs/services/payment_services/tron-relay-config.yaml
+# Runtime (container): /app/service_configs/payment_services/tron-relay-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

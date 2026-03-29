@@ -1,5 +1,9 @@
 # Path: storage/__init__.py
 """
+File: /app/storage/__init__.py
+x-lucid-file-path: /app/storage/__init__.py
+x-lucid-file-type: python
+
 Lucid storage package: storage plane (capacity / layout) plus optional database helpers.
 MongoVolumeManager is loaded lazily so `import storage.plane` does not require motor/pymongo.
 """

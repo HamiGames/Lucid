@@ -1,6 +1,8 @@
 """
 WebSocket Routes
-File: gui_api_bridge/gui_api_bridge/routers/websocket.py
+File: /app/gui_api_bridge/gui_api_bridge/routers/websocket.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/routers/websocket.py
+x-lucid-file-type: python
 Endpoints: /ws
 """
 

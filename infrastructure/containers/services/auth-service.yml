@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/auth-service.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/auth-service.yml — see container-runtime-layout.yml
 # Authentication Service Configuration
 # This file contains configuration for the Lucid authentication service
 # lucid_auth_service: lucid-auth-service:8089 — infrastructure/containers/host-config.yml

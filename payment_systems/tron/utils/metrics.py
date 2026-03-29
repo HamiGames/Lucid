@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/metrics.py
+x-lucid-file-path: /app/payment_systems/tron/utils/metrics.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Metrics Module
 Prometheus metrics collection and export for tron-client service
 Following architecture patterns from build/docs/

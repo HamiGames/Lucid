@@ -1,3 +1,9 @@
+"""
+File: /app/wallet/keys.py
+x-lucid-file-path: /app/wallet/keys.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import base64

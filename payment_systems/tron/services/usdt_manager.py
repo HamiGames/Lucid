@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/usdt_manager.py
+x-lucid-file-path: /app/payment_systems/tron/services/usdt_manager.py
+x-lucid-file-type: python
+
 TRON USDT Manager Service Module
 USDT token management, staking, swapping, and bridge operations
 """

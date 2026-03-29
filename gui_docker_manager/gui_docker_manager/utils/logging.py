@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/utils/logging.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/utils/logging.py
+x-lucid-file-type: python
+
 Logging Configuration
-File: gui_docker_manager/gui_docker_manager/utils/logging.py
 """
 
 import logging

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/config.py
+x-lucid-file-path: /app/blockchain/api/app/config.py
+x-lucid-file-type: python
+
 Configuration Module
 
 This module contains configuration settings for the Blockchain API.
 Includes database connections, Redis settings, and other configuration options.
 """
+
+
 
 import os
 from typing import Optional, List

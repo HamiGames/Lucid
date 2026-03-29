@@ -2,6 +2,12 @@
 # Implements secure multisig wallet management with threshold signatures
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/walletd/multisig_manager.py
+x-lucid-file-path: /app/wallet/walletd/multisig_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

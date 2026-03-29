@@ -1,8 +1,12 @@
-"""Loads host config for Lucid Electron GUI.
+"""
+File: /app/electron_gui/utils/load_host_config.py
+x-lucid-file-path: /app/electron_gui/utils/load_host_config.py
+x-lucid-file-type: python
+
+Loads host config for Lucid Electron GUI.
 
 Host registry: /app/configs/host-config.yml. Optional electron-gui.yml and
 local configs/electron-endpoints.yml (repo layout).
-File: electron_gui/utils/load_host_config.py
 """
 
 from __future__ import annotations

@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/services/onion_service.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/services/onion_service.py
+x-lucid-file-type: python
+
 Onion Service Module for GUI Tor Manager
 Encapsulates onion service management logic
 """

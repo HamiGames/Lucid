@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/service_mesh/service-mesh.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/service_mesh/service-mesh.yaml — see ../container-runtime-layout.yml
 # Lucid Service Mesh Controller - Main Configuration
 # File: service-mesh/config/service-mesh.yaml
 # Purpose: Primary configuration for service mesh controller

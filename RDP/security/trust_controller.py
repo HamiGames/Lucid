@@ -3,6 +3,12 @@
 # Manages trust relationships and security policies for RDP connections
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/RDP/security/trust_controller.py
+x-lucid-file-path: /app/RDP/security/trust_controller.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

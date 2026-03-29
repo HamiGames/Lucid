@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/session_processor_client.py
+x-lucid-file-path: /app/RDP/session_controller/integration/session_processor_client.py
+x-lucid-file-type: python
+
 Session Processor Client
 
 HTTP client for integrating with session-processor service.

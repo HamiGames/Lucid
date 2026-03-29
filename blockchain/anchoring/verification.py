@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/anchoring/verification.py
+x-lucid-file-path: /app/blockchain/anchoring/verification.py
+x-lucid-file-type: python
+
 Anchoring Verification Module
 Handles verification of anchored session manifests
 
 This module provides verification logic for session anchoring operations.
 """
+
+
 
 from __future__ import annotations
 

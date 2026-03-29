@@ -2,6 +2,10 @@
 # Distroless build for VM orchestration utilities (ARM64/Pi compatible)
 # Configuration: .env.application/.env.support (no hardcoded values)
 # Source alignment: plan/constants/, image-directory.csv entry pickme/lucid-vm:latest-arm64
+#
+# Layout registry: infrastructure/containers/host-config.yml → runtime /opt/app/service_configs/host-config.yml (this image uses WORKDIR /opt/app)
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (default lucid_services_config_root: /app/service_configs; override via LUCID_SERVICES_CONFIG_ROOT)
+# Path equivalences: x-files-listing.txt (repository root)
 
 # =============================================================================
 # BUILD ARGUMENTS
@@ -52,13 +56,31 @@ RUN python -m venv /opt/venv
 
 # Install Python dependencies into venv
 COPY vm/requirements.vm.txt ./requirements.vm.txt
+
+
 RUN --mount=type=cache,target=/root/.cache/pip \
-    /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links ./wheels --no-cache-dir --upgrade pip \
     && /opt/venv/bin/pip install --no-cache-dir -r requirements.vm.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.'; \
+    for d in \
+      '.' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 # Copy VM service source
 COPY vm/ /opt/app/vm/
 COPY vm/main.py /opt/app/main.py
+
+RUN mkdir -p /opt/app/service_configs /opt/app/configs
+COPY infrastructure/containers/host-config.yml /opt/app/service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml /opt/app/configs/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /opt/app/service_configs/container-runtime-layout.yml
 
 # =============================================================================
 # STAGE 2: Runtime - Distroless Python base
@@ -90,11 +112,12 @@ LABEL maintainer="Lucid Development Team" \
 ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/opt/app
+    PYTHONPATH=/opt/app \
+    LUCID_HOST_CONFIG_PATH=/opt/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/opt/app/service_configs
 
 WORKDIR /opt/app
 
-# Copy virtual environment and application from builder
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/app /opt/app
 

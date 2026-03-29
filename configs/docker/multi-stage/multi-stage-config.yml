@@ -1,18 +1,23 @@
 # Multi-Stage Docker Configuration for Lucid Project
 # Configuration for building and deploying multi-stage images
 
-version: '3.8'
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   # Multi-stage base configuration
   multi-stage-base:
     build:
-      context: ../../infrastructure/docker/multi-stage
-      dockerfile: Dockerfile.base
+      # Build context: repository root (matches infrastructure/containers/base/Dockerfile.base).
+      context: ../../../
+      dockerfile: infrastructure/containers/base/Dockerfile.base
       platforms:
         - linux/amd64
         - linux/arm64
-      target: runtime
       args:
         BUILD_ENVIRONMENT: ${BUILD_ENVIRONMENT:-production}
         BUILD_TARGET: multi-stage
@@ -42,12 +47,12 @@ services:
   # Multi-stage development configuration
   multi-stage-dev:
     build:
-      context: ../../infrastructure/docker/multi-stage
-      dockerfile: Dockerfile.base
+      context: ../../../
+      dockerfile: infrastructure/containers/base/Dockerfile.base
       platforms:
         - linux/amd64
         - linux/arm64
-      target: development
+      target: builder
       args:
         BUILD_ENVIRONMENT: development
         BUILD_TARGET: multi-stage-dev
@@ -67,8 +72,8 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
-      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs:/app/logs:rw
     cap_drop:
       - ALL
     user: "1000:1000"
@@ -83,8 +88,8 @@ services:
   # Multi-stage builder configuration
   multi-stage-builder:
     build:
-      context: ../../infrastructure/docker/multi-stage
-      dockerfile: Dockerfile.base
+      context: ../../../
+      dockerfile: infrastructure/containers/base/Dockerfile.base
       platforms:
         - linux/amd64
         - linux/arm64
@@ -105,8 +110,8 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - /mnt/myssd/Lucid/Lucid/build-cache:/cache
-      - /mnt/myssd/Lucid/Lucid/build-artifacts:/artifacts
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-cache:/cache
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-artifacts:/artifacts
     cap_drop:
       - ALL
     user: "1000:1000"

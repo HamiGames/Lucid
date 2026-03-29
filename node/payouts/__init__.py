@@ -1,4 +1,9 @@
-""" LUCID Node Payouts Module
+"""
+File: /app/node/payouts/__init__.py
+x-lucid-file-path: /app/node/payouts/__init__.py
+x-lucid-file-type: python
+
+LUCID Node Payouts Module
 Payouts module for Lucid node operations.
 
 This module provides:

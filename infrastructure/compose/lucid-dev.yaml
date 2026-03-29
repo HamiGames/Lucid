@@ -2,6 +2,15 @@
 # Professional Docker Compose for Core Support Services ONLY with Pre-built Distroless Images
 # SPEC-4 compliant: Stage 0 Common & Base with plane isolation
 # Dual-network architecture: core services isolated, external connectivity maintained
+# Paths in this file are relative to: infrastructure/compose/
+# master-env-config.txt is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
+# configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
+# Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
+# Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
+# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
+# Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
+
 
 # SPEC-4 Stage 0 Environment Template (ops plane)
 x-lucid-env: &lucid-env
@@ -61,7 +70,7 @@ x-lucid-common: &lucid-common
   # Dual network membership: internal core + external devcontainer
   networks:
     - lucid_core_net
-    - lucid-dev_lucid_net
+    - lucid_dev_net
 
 # SPEC-4 Stage 0 Network Topology with Plane Isolation
 networks:
@@ -163,6 +172,8 @@ services:
   lucid_mongo:
     <<: *lucid-common
     container_name: lucid_mongo
+    env_file:
+      - ../../configs/environment/.env.secrets
     image: mongo:7
     platform: linux/amd64  # Pi compatible ARM64/AMD64 multi-arch
     command: [
@@ -181,13 +192,18 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: lucid
       MONGO_INITDB_DATABASE: lucid
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - mongo_data:/data/db
       - mongo_config:/data/configdb
     networks:
       lucid_core_net:
         aliases: [mongo, lucid_mongo, mongodb]
         ipv4_address: 172.26.0.10
-      lucid-dev_lucid_net: {}  # External connectivity
+      lucid_dev_net: {}  # External connectivity
     healthcheck:
       test: [
         "CMD-SHELL", 
@@ -217,6 +233,8 @@ services:
   # =============================================================================
   tor-proxy:
     <<: *lucid-common
+    env_file:
+      - ../../configs/environment/.env.secrets
     container_name: tor-proxy
     image: pickme/lucid:tor-proxy:latest
     pull_policy: always
@@ -234,6 +252,11 @@ services:
       - "9050:9050"   # SOCKS5 proxy port
       - "9051:9051"   # Control port
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - tor_data:/var/lib/tor
       - tor_config:/etc/tor
       - onion_state:/run/lucid/onion
@@ -243,7 +266,7 @@ services:
       lucid_core_net:
         aliases: [tor, tor-proxy, torproxy]
         ipv4_address: 172.26.0.11
-      lucid-dev_lucid_net: {}  # External connectivity
+      lucid_dev_net: {}  # External connectivity
     expose: ["8888", "9050", "9051"]
     healthcheck:
       test: ["CMD-SHELL", "/usr/local/bin/tor-health || exit 1"]
@@ -280,6 +303,8 @@ services:
     container_name: lucid_api
     image: pickme/lucid:api-server:latest
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.secrets
     environment:
       <<: *lucid-env
       PYTHONPATH: /app
@@ -287,16 +312,20 @@ services:
       API_PORT: "8081"
       UVICORN_WORKERS: "1"  # Single worker for Pi resource constraints
     volumes:
+      # App tree first; config overlays after so /app bind does not hide /app/configs.
       - onion_state:/run/lucid/onion:ro
-      # Development bind mount for Pi mount path
       - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
     ports:
       - "8081:8081"  # External devcontainer access
     networks:
       lucid_core_net:
         aliases: [api, lucid_api, api-server]
         ipv4_address: 172.26.0.12
-      lucid-dev_lucid_net: {}  # External connectivity
+      lucid_dev_net: {}  # External connectivity
     depends_on:
       lucid_mongo:
         condition: service_healthy
@@ -332,6 +361,8 @@ services:
     container_name: lucid_api_gateway
     image: pickme/lucid:api-gateway:latest
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.secrets
     environment:
       <<: *lucid-env
       API_UPSTREAM: "lucid_api:8081"
@@ -340,13 +371,17 @@ services:
       NGINX_WORKER_CONNECTIONS: "1024"
     volumes:
       - onion_state:/run/lucid/onion:ro
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
     ports:
       - "8080:8080"  # External devcontainer access
     networks:
       lucid_core_net:
         aliases: [gateway, lucid_gateway, api-gateway]
         ipv4_address: 172.26.0.13
-      lucid-dev_lucid_net: {}  # External connectivity
+      lucid_dev_net: {}  # External connectivity
     depends_on:
       lucid_api:
         condition: service_healthy
@@ -378,19 +413,26 @@ services:
     container_name: lucid_tunnel_tools
     image: pickme/lucid:tunnel-tools:latest
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.secrets
     environment:
       <<: *lucid-env
       TUNNEL_PORT: "7000"
       TUNNEL_MODE: "client"
     expose: ["7000"]  # Internal ops plane only
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - onion_state:/run/lucid/onion
       - tunnel_data:/var/lib/tunnel
     networks:
       lucid_core_net:
         aliases: [tunnel, tunnel-tools, tunnels]
         ipv4_address: 172.26.0.14
-      lucid-dev_lucid_net: {}  # External connectivity
+      lucid_dev_net: {}  # External connectivity
     depends_on:
       tor-proxy:
         condition: service_healthy
@@ -424,13 +466,15 @@ services:
     container_name: lucid_server_tools
     image: pickme/lucid:server-tools:latest
     pull_policy: always
+    env_file:
+      - ../../configs/environment/.env.secrets
     environment:
       <<: *lucid-env
     networks:
       lucid_core_net:
         aliases: [server-tools, utils, lucid-utils]
         ipv4_address: 172.26.0.15
-      lucid-dev_lucid_net: {}  # External connectivity
+      lucid_dev_net: {}  # External connectivity
     depends_on:
       tor-proxy:
         condition: service_healthy
@@ -439,6 +483,11 @@ services:
       lucid_api:
         condition: service_healthy
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - onion_state:/run/lucid/onion:ro
       - tunnel_data:/var/lib/tunnel:ro
     command:

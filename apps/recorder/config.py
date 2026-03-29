@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/config.py
+x-lucid-file-path: /app/apps/recorder/config.py
+x-lucid-file-type: python
+
 Configuration Module for Lucid RDP Recorder
 """
 

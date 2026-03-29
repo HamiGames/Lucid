@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/manager/service.py
+x-lucid-file-path: /app/blockchain/manager/service.py
+x-lucid-file-type: python
+
 Block Manager Service
 Core service for block management operations
 
 This service integrates with the blockchain core to provide
 block management functionality for the Lucid RDP system.
 """
+
+
 
 from __future__ import annotations
 

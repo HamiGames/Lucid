@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/usdt_manager_main.py
+x-lucid-file-path: /app/payment_systems/tron/usdt_manager_main.py
+x-lucid-file-type: python
+
 LUCID TRON USDT Manager Service - Main Entry Point
 Dedicated container: tron-usdt-manager
 Port: 8094

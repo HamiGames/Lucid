@@ -1,4 +1,8 @@
 """
+File: /app/node/consensus/uptime_beacon.py
+x-lucid-file-path: /app/node/consensus/uptime_beacon.py
+x-lucid-file-type: python
+
 LUCID Node Consensus - Uptime Beacon System
 Implements uptime monitoring and beacon generation for PoOT consensus
 Distroless container: pickme/lucid:node-worker:latest

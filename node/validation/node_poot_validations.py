@@ -2,6 +2,12 @@
 # Lucid RDP Node pOot Validations - Specialized Proof of Ownership of Token validation
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/validation/node_poot_validations.py
+x-lucid-file-path: /app/node/validation/node_poot_validations.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

@@ -2,7 +2,7 @@
 # Optional YAML configuration for TRON client service
 # File: payment-systems/tron/config/tron-client-config.yaml
 # Purpose: Define TRON network connectivity, transaction management, and account operations
-# Runtime (container): /app/configs/services/payment_services/tron-client-config.yaml
+# Runtime (container): /app/service_configs/payment_services/tron-client-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

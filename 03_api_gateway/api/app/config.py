@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/config.py
+x-lucid-file-path: /app/03_api_gateway/api/app/config.py
+x-lucid-file-type: python
+
 Configuration Management
 
-File: 03_api_gateway/api/app/config.py
 Purpose: Centralized configuration for the API Gateway service using Pydantic settings.
 
 Architecture Notes:

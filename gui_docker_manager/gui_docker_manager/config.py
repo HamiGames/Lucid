@@ -1,7 +1,10 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/config.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/config.py
+x-lucid-file-type: python
+
 GUI Docker Manager Configuration Management
 Uses Pydantic Settings for environment variable validation
-File: gui_docker_manager/gui_docker_manager/config.py
 """
 
 import os

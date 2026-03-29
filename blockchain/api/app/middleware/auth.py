@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/middleware/auth.py
+x-lucid-file-path: /app/blockchain/api/app/middleware/auth.py
+x-lucid-file-type: python
+
 Authentication Middleware
 
 This module contains authentication middleware for the Blockchain API.
 Handles JWT token verification, API key validation, and user authentication.
 """
+
+
 
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware

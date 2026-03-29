@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/payout_manager.py
+x-lucid-file-path: /app/node/payout_manager.py
+x-lucid-file-type: python
+
 Lucid Node Management - Payout Manager
 Handles payout processing with 10 USDT threshold
 """

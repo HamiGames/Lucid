@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/models/common.py
+x-lucid-file-path: /app/03_api_gateway/models/common.py
+x-lucid-file-type: python
+
 Common Data Models
 
 Shared models used across multiple endpoint categories including:

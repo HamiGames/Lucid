@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/build/validate_project_paths.py
+x-lucid-file-path: /app/tools/build/validate_project_paths.py
+x-lucid-file-type: python
+
 Lucid Project Path Validation Tool - Genius Level
 Comprehensive validation of all imports, file paths, and references.
 Excludes virtual environments and external dependencies.

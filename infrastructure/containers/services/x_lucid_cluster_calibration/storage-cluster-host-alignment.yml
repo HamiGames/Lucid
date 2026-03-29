@@ -1,0 +1,145 @@
+# Runtime (container): /app/service_configs/x_lucid_cluster_calibration/storage-cluster-host-alignment.yml
+# Canonical storage cluster alignment: host-config.yml + x-files-listing.txt (merge with docker-compose for this stack).
+x-lucid-calibration:
+  cluster: storage
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files_listing: x-files-listing.txt
+  description: Host registry + x-lucid file paths for storage cluster (merge with docker-compose fragments for this stack).
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  ip_source_repo_path: service-ip.txt
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  in_container_path: /app/configs/host-config.yml
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    lucid_system_storage:
+      host_config_key: lucid_system_storage
+      service_name: lucid-system-storage
+      port: 9900
+      host_ip: 172.20.10.72
+      http_path: http://lucid-system-storage:9900/app
+    session_storage:
+      host_config_key: session_storage
+      service_name: session-storage
+      port: 8082
+      host_ip: 172.20.10.11
+      http_path: http://session-storage:8082/app
+    session_storage_service:
+      host_config_key: session_storage_service
+      service_name: session-storage-service
+      port: 8020
+      host_ip: 172.20.10.10
+      http_path: http://session-storage-service:8020/app
+x-lucid-x-files-calibration:
+  cluster: storage
+  filter_app_prefixes:
+  - storage
+  - sessions
+  - user_content
+  x_lucid_file_paths:
+  - /app/sessions/__init__.py
+  - /app/sessions/api/__init__.py
+  - /app/sessions/api/config.py
+  - /app/sessions/api/entrypoint.py
+  - /app/sessions/api/integration/__init__.py
+  - /app/sessions/api/integration/rdp_controller_client.py
+  - /app/sessions/api/main.py
+  - /app/sessions/api/routes.py
+  - /app/sessions/api/session_api.py
+  - /app/sessions/chunk_manager.py
+  - /app/sessions/core/__init__.py
+  - /app/sessions/core/chunker.py
+  - /app/sessions/core/logging.py
+  - /app/sessions/core/merkle_builder.py
+  - /app/sessions/core/session_generator.py
+  - /app/sessions/core/session_orchestrator.py
+  - /app/sessions/encryption/__init__.py
+  - /app/sessions/encryption/encryptor.py
+  - /app/sessions/encryption_manager.py
+  - /app/sessions/integration/__init__.py
+  - /app/sessions/integration/blockchain_client.py
+  - /app/sessions/manifest_anchor.py
+  - /app/sessions/pipeline/__init__.py
+  - /app/sessions/pipeline/chunk_processor.py
+  - /app/sessions/pipeline/config.py
+  - /app/sessions/pipeline/entrypoint.py
+  - /app/sessions/pipeline/integration/__init__.py
+  - /app/sessions/pipeline/integration/api_gateway_client.py
+  - /app/sessions/pipeline/integration/auth_service_client.py
+  - /app/sessions/pipeline/integration/blockchain_engine_client.py
+  - /app/sessions/pipeline/integration/integration_manager.py
+  - /app/sessions/pipeline/integration/node_manager_client.py
+  - /app/sessions/pipeline/integration/service_base.py
+  - /app/sessions/pipeline/main.py
+  - /app/sessions/pipeline/merkle_tree_builder.py
+  - /app/sessions/pipeline/pipeline_manager.py
+  - /app/sessions/pipeline/session_pipeline_manager.py
+  - /app/sessions/pipeline/state_machine.py
+  - /app/sessions/pipeline/test_step15_validation.py
+  - /app/sessions/processor/__init__.py
+  - /app/sessions/processor/chunk_processor.py
+  - /app/sessions/processor/compressor.py
+  - /app/sessions/processor/config.py
+  - /app/sessions/processor/encryption.py
+  - /app/sessions/processor/entrypoint.py
+  - /app/sessions/processor/integration/__init__.py
+  - /app/sessions/processor/integration/integration_manager.py
+  - /app/sessions/processor/integration/service_base.py
+  - /app/sessions/processor/integration/session_pipeline_client.py
+  - /app/sessions/processor/integration/session_storage_client.py
+  - /app/sessions/processor/main.py
+  - /app/sessions/processor/merkle_builder.py
+  - /app/sessions/processor/session_manifest.py
+  - /app/sessions/processor/test_validation.py
+  - /app/sessions/recorder/__init__.py
+  - /app/sessions/recorder/audit_trail.py
+  - /app/sessions/recorder/chunk_generator.py
+  - /app/sessions/recorder/compression.py
+  - /app/sessions/recorder/config.py
+  - /app/sessions/recorder/entrypoint.py
+  - /app/sessions/recorder/integration/__init__.py
+  - /app/sessions/recorder/integration/integration_manager.py
+  - /app/sessions/recorder/integration/service_base.py
+  - /app/sessions/recorder/integration/session_pipeline_client.py
+  - /app/sessions/recorder/integration/session_storage_client.py
+  - /app/sessions/recorder/keystroke_monitor.py
+  - /app/sessions/recorder/main.py
+  - /app/sessions/recorder/resource_monitor.py
+  - /app/sessions/recorder/session_recorder.py
+  - /app/sessions/recorder/video_capture.py
+  - /app/sessions/recorder/window_focus_monitor.py
+  - /app/sessions/security/__init__.py
+  - /app/sessions/security/input_controller.py
+  - /app/sessions/security/policy_enforcer.py
+  - /app/sessions/session_systems_control/__init__.py
+  - /app/sessions/session_systems_control/main.py
+  - /app/sessions/storage/__init__.py
+  - /app/sessions/storage/chunk_store.py
+  - /app/sessions/storage/config.py
+  - /app/sessions/storage/entrypoint.py
+  - /app/sessions/storage/main.py
+  - /app/sessions/storage/session_storage.py
+  - /app/sessions/storage/session_storage_service.py
+  - /app/storage/__init__.py
+  - /app/storage/main.py
+  - /app/storage/mongodb_volume.py
+  - /app/storage/plane.py
+  - /app/user_content/__init__.py
+  - /app/user_content/auth/__init__.py
+  - /app/user_content/backup/__init__.py
+  - /app/user_content/client/__init__.py
+  - /app/user_content/client/user_client.py
+  - /app/user_content/gui/__init__.py
+  - /app/user_content/main.py
+  - /app/user_content/notifications/__init__.py
+  - /app/user_content/profile/__init__.py
+  - /app/user_content/settings/__init__.py
+  - /app/user_content/wallet/__init__.py
+  - /app/user_content/wallet/user_wallet.py

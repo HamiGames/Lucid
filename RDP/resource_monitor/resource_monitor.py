@@ -1,4 +1,8 @@
 """
+File: /app/RDP/resource_monitor/resource_monitor.py
+x-lucid-file-path: /app/RDP/resource_monitor/resource_monitor.py
+x-lucid-file-type: python
+
 RDP Resource Monitor - Resource Monitoring Service
 
 This module provides resource monitoring functionality for RDP sessions,

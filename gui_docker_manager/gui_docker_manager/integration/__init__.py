@@ -1,6 +1,11 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/integration/__init__.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/integration/__init__.py
+x-lucid-file-type: python
+
 Integration modules for Docker Manager
-File: gui_docker_manager/gui_docker_manager/integration/__init__.py
+Lucid Docker Manager Integration Modules
+Provides core integration services for Docker Manager.
 """
 
 from .service_base import ServiceClientBase, ServiceError, ServiceTimeoutError

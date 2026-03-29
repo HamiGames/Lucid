@@ -2,6 +2,12 @@
 # Implements comprehensive session validation, integrity checking, and security monitoring
 # LUCID-STRICT Layer 1 Common Security Integration
 
+"""
+File: /app/common/security/session_validator.py
+x-lucid-file-path: /app/common/security/session_validator.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

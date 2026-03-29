@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/gui-api-bridge.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/gui-api-bridge.yml — see container-runtime-layout.yml
 # GUI API Bridge Service Configuration
 # Bridges Electron GUI with backend API services
 # Implements service discovery and API routing

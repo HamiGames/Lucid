@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/controller/policy_engine.py
+x-lucid-file-path: /app/service_mesh/controller/policy_engine.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Policy Engine
 Enforces service mesh policies and security rules.
 
-File: infrastructure/service_mesh/controller/policy_engine.py
 Lines: ~280
 Purpose: Policy enforcement
 Dependencies: asyncio, consul, envoy

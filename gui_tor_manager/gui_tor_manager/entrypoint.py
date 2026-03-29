@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/gui_tor_manager/gui_tor_manager/entrypoint.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/entrypoint.py
+x-lucid-file-type: python
+
 GUI Tor Manager Entrypoint
 Entry point for the GUI Tor Manager service
 Reads environment variables and starts uvicorn server

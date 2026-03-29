@@ -1,4 +1,8 @@
 """
+File: /app/auth/middleware/auth_middleware.py
+x-lucid-file-path: /app/auth/middleware/auth_middleware.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Authentication Middleware
 JWT token validation middleware
 """

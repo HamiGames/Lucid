@@ -1,6 +1,12 @@
 # Path: storage/mongodb_volume.py
 # Database-layer helper (sharding / indexes). Storage plane only ensures volume capacity and layout.
 
+"""
+File: /app/storage/mongodb_volume.py
+x-lucid-file-path: /app/storage/mongodb_volume.py
+x-lucid-file-type: python
+"""
+
 import asyncio
 import logging
 from typing import Dict, List, Optional

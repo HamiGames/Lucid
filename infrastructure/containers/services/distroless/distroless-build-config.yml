@@ -1,5 +1,5 @@
-# Runtime (container): /app/configs/services/distroless/distroless-build-config.yml — see ../container-runtime-layout.yml
-# Compose: run on host; env_file/bind paths may be host-relative unless you mount this tree at /app/configs/services/.
+# Runtime (container): /app/service_configs/distroless/distroless-build-config.yml — see ../container-runtime-layout.yml
+# Compose: run on host; env_file/bind paths may be host-relative unless you mount this tree at /app/service_configs/.
 # Service hostname/port/host_ip: /app/configs/host-config.yml (static IPs: repository root service-ip.txt)
 x-lucid-env-files: &lucid-env-files
   - /app/configs/.env.secrets

@@ -2,6 +2,12 @@
 # Lucid PoOT Calculator - Proof of Output Time score calculation
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/poot/poot_calculator.py
+x-lucid-file-path: /app/node/poot/poot_calculator.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

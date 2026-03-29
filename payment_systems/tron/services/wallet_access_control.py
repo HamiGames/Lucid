@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/wallet_access_control.py
+x-lucid-file-path: /app/payment_systems/tron/services/wallet_access_control.py
+x-lucid-file-type: python
+
 Wallet Access Control Service
 Manages RBAC and permissions for wallet operations
 """

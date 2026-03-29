@@ -1,4 +1,8 @@
 """
+File: /app/RDP/server_manager/config.py
+x-lucid-file-path: /app/RDP/server_manager/config.py
+x-lucid-file-type: python
+
 RDP Server Manager Configuration Management
 Uses Pydantic Settings for environment variable validation
 """

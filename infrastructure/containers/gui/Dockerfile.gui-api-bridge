@@ -34,11 +34,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-RUN mkdir -p /build/configs /build/configs/services
+RUN mkdir -p /build/configs /build/service_configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/services/ /build/service_configs/
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -47,6 +47,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -81,6 +82,52 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     echo "building wheels" && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
     echo "wheel build complete"
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './common' './configs' './gui_api_bridge' './service_configs' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/docker' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/integration' './gui_api_bridge/middleware' './gui_api_bridge/models' './gui_api_bridge/routers' './gui_api_bridge/services' './gui_api_bridge/utils' './gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils'; \
+    for d in \
+      '.' \
+      './common' \
+      './configs' \
+      './gui_api_bridge' \
+      './service_configs' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/docker' \
+      './gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge' \
+      './gui_api_bridge/integration' \
+      './gui_api_bridge/middleware' \
+      './gui_api_bridge/models' \
+      './gui_api_bridge/routers' \
+      './gui_api_bridge/services' \
+      './gui_api_bridge/utils' \
+      './gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './gui_api_bridge/gui_api_bridge/integration' \
+      './gui_api_bridge/gui_api_bridge/middleware' \
+      './gui_api_bridge/gui_api_bridge/models' \
+      './gui_api_bridge/gui_api_bridge/routers' \
+      './gui_api_bridge/gui_api_bridge/services' \
+      './gui_api_bridge/gui_api_bridge/utils' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
     echo "pip install complete"
@@ -94,17 +141,17 @@ RUN echo "LUCID_GUI_API_BRIDGE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11
     chmod 644 /usr/local/lib/python3.11/site-packages/.lucid-marker /usr/local/bin/.lucid-marker
 
 # Container directory layout (03_api_gateway/Dockerfile): tmp, common/tor, kubernetes configmaps
-RUN mkdir -p /build/tmp /build/common /build/infrastructure/kubernetes && \
+RUN mkdir -p /build/tmp /build/common /build/kubernetes && \
     printf "LUCID_GUI_API_BRIDGE_TMP_$(date +%s)" > /build/tmp/.keep && \
     printf "LUCID_GUI_API_BRIDGE_COMMON_$(date +%s)" > /build/common/.keep && \
-    printf "LUCID_GUI_API_BRIDGE_K8S_$(date +%s)" > /build/infrastructure/kubernetes/.keep
+    printf "LUCID_GUI_API_BRIDGE_K8S_$(date +%s)" > /build/configs/.keep
 
 COPY common/__init__.py /build/common/__init__.py
 COPY common/tor/ /build/common/tor/
-COPY infrastructure/kubernetes/01_configmaps/ /build/infrastructure/kubernetes/
+COPY service_configs/kubernetes/01_configmaps/ /build/configs/
 
 # Application modules (explicit per-directory COPY)
-COPY gui_api_bridge/gui_api_bridge/*.py ./gui_api_bridge/
+COPY gui_api_bridge/gui_api_bridge/ ./gui_api_bridge/
 COPY gui_api_bridge/gui_api_bridge/config/ ./gui_api_bridge/config/
 COPY gui_api_bridge/gui_api_bridge/routers/ ./gui_api_bridge/routers/
 COPY gui_api_bridge/gui_api_bridge/middleware/ ./gui_api_bridge/middleware/
@@ -122,7 +169,7 @@ RUN echo "=== Verifying gui_api_bridge sources ===" && \
     test -d ./gui_api_bridge/services && \
     test -d ./gui_api_bridge/middleware && \
     test -f ./common/__init__.py && \
-    test -f ./infrastructure/kubernetes/api-gateway-config.yaml && \
+    test -f ./configs/api-gateway-config.yaml && \
     PYTHONPATH=/build python3.11 -c "from gui_api_bridge.main import app; print('import OK')"
 
 COPY <<'PY' /build/tmp/verify_runtime_gui_api_bridge.py
@@ -137,13 +184,13 @@ def main() -> int:
         "/app/gui_api_bridge/main.py",
         "/app/configs/host-config.yml",
         "/app/common/__init__.py",
-        "/app/infrastructure/kubernetes/api-gateway-config.yaml",
+        "/build/configs/api-gateway-config.yaml",
     ]
     req_dirs = [
         "/app/usr/local/lib/python3.11/site-packages",
         "/app/gui_api_bridge",
         "/app/common/tor",
-        "/app/configs/services",
+        "/app/service_configs",
     ]
     missing = [p for p in req_files if not os.path.isfile(p)]
     missing += [p for p in req_dirs if not os.path.isdir(p)]
@@ -202,12 +249,34 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LUCID_SERVICE_HTTP_PATH=http://gui-api-bridge:8102/app \
     LUCID_API_GATEWAY_HOST=api-gateway \
     LUCID_API_GATEWAY_PORT=8080
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
+COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_configs
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -218,10 +287,8 @@ COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder /usr/bin/ /app/usr/bin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/ /app/common/tor/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime_gui_api_bridge.py /app/tmp/verify_runtime_gui_api_bridge.py
 
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime_gui_api_bridge.py"]

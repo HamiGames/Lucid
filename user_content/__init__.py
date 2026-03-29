@@ -2,6 +2,12 @@
 # All modules related to operations used by standard users
 
 # Only import existing modules
+"""
+File: /app/user_content/__init__.py
+x-lucid-file-path: /app/user_content/__init__.py
+x-lucid-file-type: python
+"""
+
 try:
     from .client import *
 except ImportError:

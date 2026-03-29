@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/gui.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/gui.py
+x-lucid-file-type: python
+
 GUI API Bridge Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/gui.py
 Purpose: Proxy endpoints to gui_api_bridge service for Electron GUI integration
 
 Architecture Note: This router proxies to gui_api_bridge service (isolated GUI integration)

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/chunker.py
+x-lucid-file-path: /app/apps/recorder/chunker.py
+x-lucid-file-type: python
+
 Chunk Processor Module for Lucid RDP Recorder
 Handles video/audio chunking and compression
 """

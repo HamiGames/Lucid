@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/models/common.py
+x-lucid-file-path: /app/blockchain/api/app/models/common.py
+x-lucid-file-type: python
+
 Common Data Models
 Shared Pydantic models used across blockchain API components.
 """
+
+
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Generic, TypeVar

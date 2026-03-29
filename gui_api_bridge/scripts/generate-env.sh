@@ -1,6 +1,8 @@
 #!/bin/bash
 # GUI API Bridge Environment Generator
-# File: gui_api_bridge/scripts/generate-env.sh
+# File: /app/gui_api_bridge/gui_api_bridge/scripts/generate-env.sh
+# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/generate-env.sh
+# x-lucid-file-type: bash
 # Purpose: Generate environment configuration for GUI API Bridge
 # Aligned with 03-api-gateway patterns
 # No hardcoded values - all generated from environment or defaults

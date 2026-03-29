@@ -1,9 +1,13 @@
 """
+File: /app/service_mesh/controller/http_server.py
+x-lucid-file-path: /app/service_mesh/controller/http_server.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 HTTP Server for Service Mesh Controller
 Provides health, status, metrics, and service discovery endpoints
 Connects to services across all clusters: foundation, core, application, support, base
 
-File: infrastructure/service_mesh/controller/http_server.py
 Purpose: HTTP API for service mesh controller
 Dependencies: fastapi, uvicorn, asyncio, logging
 """
@@ -21,7 +25,7 @@ try:
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
-    logger = logging.get_logger(__name__)
+    logger = logging.getLogger(__name__)
     logger.warning("FastAPI not available - HTTP server will not start")
 
 logger = logging.getLogger(__name__)

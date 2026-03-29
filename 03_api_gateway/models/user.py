@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/models/user.py
+x-lucid-file-path: /app/03_api_gateway/models/user.py
+x-lucid-file-type: python
+
 User Data Models
 
 Models for user management operations including:

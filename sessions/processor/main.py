@@ -1,4 +1,8 @@
 """
+File: /app/sessions/processor/main.py
+x-lucid-file-path: /app/sessions/processor/main.py
+x-lucid-file-type: python
+
 Chunk Processor Service Main Entry Point
 FastAPI application for the chunk processing service.
 

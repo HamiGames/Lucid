@@ -1,6 +1,9 @@
 """
 Base Service Client for Backend Integration
-File: gui_api_bridge/gui_api_bridge/integration/service_base.py
+File: /app/gui_api_bridge/gui_api_bridge/integration/service_base.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/integration/service_base.py
+x-lucid-file-type: python
+
 Pattern: Follow sessions/pipeline/integration/ structure
 """
 

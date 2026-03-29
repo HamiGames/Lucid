@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/anchoring/manifest.py
+x-lucid-file-path: /app/blockchain/anchoring/manifest.py
+x-lucid-file-type: python
+
 Manifest Builder Module
 Handles construction and validation of session manifests
 
 This module provides utilities for building and validating session manifests
 for blockchain anchoring.
 """
+
+
 
 from __future__ import annotations
 

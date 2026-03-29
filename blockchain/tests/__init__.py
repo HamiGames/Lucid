@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/tests/__init__.py
+x-lucid-file-path: /app/blockchain/tests/__init__.py
+x-lucid-file-type: python
+
 Blockchain Tests
 Unit and integration tests for blockchain components
 
@@ -9,6 +13,8 @@ This module provides tests for:
 - Smart contract interfaces
 - EVM client functionality
 """
+
+
 
 from .test_poot_consensus import TestPoOTConsensus
 from .test_work_credits import TestWorkCredits

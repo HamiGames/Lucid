@@ -1,6 +1,12 @@
 # Session Management Schemas
 # Comprehensive data models for session lifecycle, manifests, and trust policies
 
+"""
+File: /app/03_api_gateway/api/app/schemas/sessions.py
+x-lucid-file-path: /app/03_api_gateway/api/app/schemas/sessions.py
+x-lucid-file-type: python
+"""
+
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime

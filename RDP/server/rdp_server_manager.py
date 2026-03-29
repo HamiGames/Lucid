@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/RDP/server/rdp_server_manager.py
+x-lucid-file-path: /app/RDP/server/rdp_server_manager.py
+x-lucid-file-type: python
+
 LUCID RDP Server Manager - SPEC-1B Implementation
 Manages RDP server instances and session hosting
 """

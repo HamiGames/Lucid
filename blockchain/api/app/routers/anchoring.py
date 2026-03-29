@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/anchoring.py
+x-lucid-file-path: /app/blockchain/api/app/routers/anchoring.py
+x-lucid-file-type: python
+
 Anchoring Router
 
 This module contains the session anchoring endpoints.
 Implements the OpenAPI 3.0 specification for session manifest anchoring.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List

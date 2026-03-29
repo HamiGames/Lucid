@@ -3,6 +3,12 @@
 # Professional session manifest generation with blockchain anchoring
 # Multi-platform support for ARM64 Pi and AMD64 development
 
+"""
+File: /app/sessions/processor/session_manifest.py
+x-lucid-file-path: /app/sessions/processor/session_manifest.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

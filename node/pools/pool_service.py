@@ -2,6 +2,12 @@
 # Lucid Pool Service - Pool management and coordination
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/pools/pool_service.py
+x-lucid-file-path: /app/node/pools/pool_service.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

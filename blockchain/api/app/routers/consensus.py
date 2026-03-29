@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/consensus.py
+x-lucid-file-path: /app/blockchain/api/app/routers/consensus.py
+x-lucid-file-type: python
+
 Consensus Router
 
 This module contains the consensus mechanism endpoints.
 Implements the OpenAPI 3.0 specification for PoOT consensus operations.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional

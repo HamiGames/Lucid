@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/models/consensus.py
+x-lucid-file-path: /app/blockchain/api/app/models/consensus.py
+x-lucid-file-type: python
+
 Consensus Data Models
 Pydantic models for PoOT consensus, voting, and validator operations.
 """
+
+
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/encryptor.py
+x-lucid-file-path: /app/apps/recorder/encryptor.py
+x-lucid-file-type: python
+
 Session Encryptor Module for Lucid RDP Recorder
 Provides encryption for session data using libsodium
 """

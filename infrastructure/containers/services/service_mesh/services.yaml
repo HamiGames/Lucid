@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/service_mesh/services.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/service_mesh/services.yaml — see ../container-runtime-layout.yml
 # Lucid Service Mesh - Service Registry Configuration
 # File: service-mesh/config/services.yaml
 # Purpose: Pre-defined service configurations for auto-registration

@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/discovery/dns_resolver.py
+x-lucid-file-path: /app/service_mesh/discovery/dns_resolver.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - DNS Resolver
 DNS resolution for service discovery.
 
-File: infrastructure/service_mesh/discovery/dns_resolver.py
 Lines: ~200
 Purpose: DNS resolution
 Dependencies: asyncio, aiodns

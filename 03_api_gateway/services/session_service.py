@@ -2,6 +2,12 @@
 # Business logic integration between API routes and session pipeline
 
 
+"""
+File: /app/03_api_gateway/services/session_service.py
+x-lucid-file-path: /app/03_api_gateway/services/session_service.py
+x-lucid-file-type: python
+"""
+
 import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import datetime

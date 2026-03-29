@@ -1,4 +1,8 @@
 """
+File: /app/sessions/storage/__init__.py
+x-lucid-file-path: /app/sessions/storage/__init__.py
+x-lucid-file-type: python
+
 Lucid Session Storage Service
 Cluster: Session Storage
 Port: 8020 (session-images compose; override with PORT / SESSION_STORAGE_PORT)
@@ -12,7 +16,6 @@ Features:
 - Redis caching for performance
 - FastAPI-based storage API
 path: ..storage
-file: sessions/storage/__init__.py
 the storage calls the sessions storage
 """
 

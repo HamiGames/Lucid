@@ -1,5 +1,11 @@
 # Path: node/work_credits.py
 
+"""
+File: /app/node/work_credits.py
+x-lucid-file-path: /app/node/work_credits.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 import logging

@@ -1,4 +1,8 @@
 """
+File: /app/database/services/volume_service.py
+x-lucid-file-path: /app/database/services/volume_service.py
+x-lucid-file-type: python
+
 Volume Service for Lucid Database Infrastructure
 Provides volume management, monitoring, and optimization for database storage.
 

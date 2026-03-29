@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/sessions/api-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/sessions/api-config.yaml — see ../container-runtime-layout.yml
 # Lucid Session API — reference configuration (sessions/config/api-config.yaml)
 # Canonical hostname/port/host_ip: infrastructure/containers/host-config.yml (session_* keys + peers below).
 # Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml

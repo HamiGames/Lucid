@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/meta.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/meta.py
+x-lucid-file-type: python
+
 Meta Endpoints Router
 
-File: 03_api_gateway/api/app/routers/meta.py
 Purpose: Service metadata, health checks, and version information
 """
 import os 

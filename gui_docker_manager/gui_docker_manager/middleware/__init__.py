@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/middleware/__init__.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/middleware/__init__.py
+x-lucid-file-type: python
+
 Middleware for Docker Manager API
-File: gui_docker_manager/gui_docker_manager/middleware/__init__.py
 """
 
 from .auth import auth_middleware

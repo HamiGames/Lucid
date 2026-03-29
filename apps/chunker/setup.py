@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/chunker/setup.py
+x-lucid-file-path: /app/apps/chunker/setup.py
+x-lucid-file-type: python
+
 Setup script for native chunker extension
 """
 

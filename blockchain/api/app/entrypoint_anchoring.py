@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
+File: /app/blockchain/api/app/entrypoint_anchoring.py
+x-lucid-file-path: /app/blockchain/api/app/entrypoint_anchoring.py
+x-lucid-file-type: python
+
 Session Anchoring Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 
@@ -8,6 +11,9 @@ This script serves as the entrypoint for the session-anchoring container,
 providing clean startup with environment variable configuration.
 No hardcoded values - all configuration from environment variables.
 """
+
+# -*- coding: utf-8 -*-
+
 
 import os
 import sys

@@ -1,11 +1,14 @@
-"""Load host config for Lucid Admin services.
+"""
+File: /app/admin/config/load_host_config.py
+x-lucid-file-path: /app/admin/config/load_host_config.py
+x-lucid-file-type: python
+
+Load host config for Lucid Admin services.
 
 Host registry: ``/app/configs/host-config.yml`` (``LUCID_HOST_CONFIG_PATH``).
 Service overlay YAMLs live under ``/app/configs/services/*`` by default
 (``LUCID_ADMIN_SERVICE_CONFIG_DIR``); default file is ``admin-interface.yml``
 (``LUCID_ADMIN_SERVICE_YML``). See infrastructure/containers/services/container-runtime-layout.yml.
-
-File: admin/config/load_host_config.py
 """
 
 from __future__ import annotations

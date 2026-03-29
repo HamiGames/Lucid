@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/session_pipeline_manager.py
+x-lucid-file-path: /app/sessions/pipeline/session_pipeline_manager.py
+x-lucid-file-type: python
+
 LUCID Session Pipeline Manager - SPEC-1B Implementation
 Session lifecycle management with 6-state pipeline
 """

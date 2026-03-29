@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/services/proxy_service.py
+x-lucid-file-path: /app/03_api_gateway/services/proxy_service.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Proxy Service
 Handles proxying requests to backend services with circuit breaker pattern.
 
-File: 03_api_gateway/services/proxy_service.py
 Lines: ~300
 Purpose: Backend service proxy with circuit breaker
 Dependencies: aiohttp, Circuit Breaker

@@ -2,6 +2,15 @@
 # Phase 4: Integration Services (OpenAPI, RDP, Admin UI, Contract Deployment)
 # Aligned with essentials.md Phase 3 and service-ip-configuration.md
 # Project Root: /mnt/myssd/Lucid/Lucid/
+# Paths in this file are relative to: infrastructure/compose/
+# master-env-config.txt is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
+# configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
+# Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
+# Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
+# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
+# Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
+
 
 services:
   lucid-openapi-gateway:
@@ -11,10 +20,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.user
-      - /app/usr/config/.env.openapi-gateway
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -36,6 +42,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/openapi-gateway:/app/logs:rw
       - openapi-gateway-cache:/tmp/gateway
@@ -78,10 +89,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.user
-      - /app/usr/config/.env.openapi-server
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -103,6 +111,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/openapi-server:/app/logs:rw
       - openapi-server-cache:/tmp/server
@@ -147,9 +160,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.rdp-server-manager
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -172,6 +183,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
       - /mnt/myssd/Lucid/Lucid/data/rdp-recordings:/data/recordings:rw
       - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs:rw
@@ -215,9 +231,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.admin
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -240,6 +254,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs:rw
       - admin-interface-cache:/tmp/admin
     networks:
@@ -284,9 +303,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.contract-deployment
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -309,6 +326,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/contracts:/data/contracts:rw
       - /mnt/myssd/Lucid/Lucid/logs/contract-deployment:/app/logs:rw
       - contract-deployment-cache:/tmp/deployment
@@ -351,9 +373,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.contract-compiler
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -374,6 +394,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/contracts:/data/contracts:rw
       - /mnt/myssd/Lucid/Lucid/logs/contract-compiler:/app/logs:rw
       - contract-compiler-cache:/tmp/compilation
@@ -416,9 +441,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.deployment-orchestrator
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -440,6 +463,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/logs/deployment-orchestrator:/app/logs:rw
       - deployment-orchestrator-cache:/tmp/orchestration
     networks:
@@ -483,9 +511,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.rdp-xrdp
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -507,6 +533,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/rdp-sessions:/data/sessions:rw
       - /mnt/myssd/Lucid/Lucid/data/rdp-recordings:/data/recordings:rw
       - /mnt/myssd/Lucid/Lucid/logs/xrdp:/app/logs:rw
@@ -555,9 +586,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-relay
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -621,6 +650,11 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/tron-relay:/data/tron-relay:rw
       - /mnt/myssd/Lucid/Lucid/data/cache/tron-relay:/data/cache:rw
       - /mnt/myssd/Lucid/Lucid/logs/tron-relay:/app/logs:rw
@@ -721,16 +755,6 @@ networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
   lucid-tron-isolated:
     external: true
     name: lucid-tron-isolated
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.26.0.0/16
-          gateway: 172.26.0.1

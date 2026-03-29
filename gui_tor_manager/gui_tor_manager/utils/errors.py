@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/utils/errors.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/utils/errors.py
+x-lucid-file-type: python
+
 Error Handling and Custom Exceptions for GUI Tor Manager
 """
 

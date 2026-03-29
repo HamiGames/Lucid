@@ -31,7 +31,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -40,10 +39,24 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
-        build-essential gcc g++ libffi-dev libssl-dev pkg-config \
-        curl ca-certificates tini \
-        python3-wheel python3-dev python3-pip python3-setuptools \
-        rustc cargo \
+        build-essential \
+        bash \
+        gcc \
+        g++ \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        curl\ 
+        ca-certificates \
+        tini \
+        python3-wheel \
+        python3-dev \
+        python3-pip \
+        python3-setuptools \
+        rustc \
+        cargo \
+        bash \
+
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN mkdir -p /root /root/.rustup /root/.cargo && \
@@ -81,6 +94,152 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_LUCID_GOV_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './admin' './auth' './blockchain' './common' './configs' './node' './server' './service_configs' './wallet' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './blockchain/anchoring' './blockchain/api' './blockchain/chain-to-pay' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './wallet/security' './wallet/walletd' './admin/ui/static' './admin/ui/templates' './blockchain/api/app' './blockchain/data/api' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './admin/ui/static/css' './admin/ui/static/js' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/api/app/database/repositories'; \
+    for d in \
+      '.' \
+      './admin' \
+      './auth' \
+      './blockchain' \
+      './common' \
+      './configs' \
+      './node' \
+      './server' \
+      './service_configs' \
+      './wallet' \
+      './admin/admin_ui' \
+      './admin/api' \
+      './admin/audit' \
+      './admin/config' \
+      './admin/emergency' \
+      './admin/governance' \
+      './admin/key_rotation' \
+      './admin/over_lord' \
+      './admin/rbac' \
+      './admin/services' \
+      './admin/system' \
+      './admin/ui' \
+      './admin/utils' \
+      './auth/api' \
+      './auth/config' \
+      './auth/docs' \
+      './auth/middleware' \
+      './auth/models' \
+      './auth/services' \
+      './auth/utils' \
+      './blockchain/anchoring' \
+      './blockchain/api' \
+      './blockchain/chain-to-pay' \
+      './blockchain/chain_client' \
+      './blockchain/config' \
+      './blockchain/contracts' \
+      './blockchain/core' \
+      './blockchain/data' \
+      './blockchain/deployment' \
+      './blockchain/docs' \
+      './blockchain/evm' \
+      './blockchain/governance' \
+      './blockchain/manager' \
+      './blockchain/on_system_chain' \
+      './blockchain/scripts' \
+      './blockchain/tests' \
+      './blockchain/utils' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './wallet/security' \
+      './wallet/walletd' \
+      './admin/ui/static' \
+      './admin/ui/templates' \
+      './blockchain/api/app' \
+      './blockchain/data/api' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
+      './admin/ui/static/css' \
+      './admin/ui/static/js' \
+      './blockchain/api/app/crypto' \
+      './blockchain/api/app/database' \
+      './blockchain/api/app/db' \
+      './blockchain/api/app/middleware' \
+      './blockchain/api/app/models' \
+      './blockchain/api/app/repo' \
+      './blockchain/api/app/routers' \
+      './blockchain/api/app/routes' \
+      './blockchain/api/app/schemas' \
+      './blockchain/api/app/services' \
+      './blockchain/api/app/database/repositories' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
@@ -90,15 +249,17 @@ RUN printf "LUCID_LUCID_GOV_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/si
 
 RUN python3.11 -c "import jwt, cryptography, motor, pymongo; print('lucid-gov deps OK')"
 
-RUN mkdir -p ./configs ./configs/services ./common ./governance ./voting ./parameters ./tmp && \
-    printf "LUCID_LUCID_GOV_CONFIGS_$(date +%s)" > ./configs/.keep && \
-    printf "LUCID_LUCID_GOV_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
-    chown -R 65532:65532 ./configs ./configs/services ./common ./governance ./voting ./parameters ./tmp && \
-    chmod 644 ./configs/.keep ./configs/services/.keep
 
-COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
 
 COPY common/ ./common/
+COPY node/ ./node/
+COPY server/ ./server/
+
+COPY configs/ ./configs/
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
+COPY admin/ ./admin/
 COPY wallet/ ./wallet/
 COPY auth/ ./auth/
 COPY blockchain/ ./blockchain/
@@ -115,7 +276,6 @@ RUN test -f ./common/governance/lucid_governor.py && echo "lucid-gov source OK"
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
-
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
@@ -153,6 +313,38 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     EXECUTION_DELAY_SECONDS=172800 \
     GOVERNOR_PORT=8108 \
     LUCID_GOV_HOST=0.0.0.0
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /app-dirs/ /app/app-dirs/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -166,14 +358,11 @@ COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
 COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
 COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/wallet/ /app/wallet/
-COPY --from=builder --chown=65532:65532 /build/auth/ /app/auth/
-COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
 
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import jwt,cryptography,motor,pymongo; print('runtime OK')"]
 

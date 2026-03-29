@@ -1,6 +1,12 @@
 # Unit tests for sessions router
 # Tests session lifecycle management endpoints
 
+"""
+File: /app/03_api_gateway/api/tests/test_sessions_router.py
+x-lucid-file-path: /app/03_api_gateway/api/tests/test_sessions_router.py
+x-lucid-file-type: python
+"""
+
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch

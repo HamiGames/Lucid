@@ -1,4 +1,8 @@
 """
+File: /app/auth/config.py
+x-lucid-file-path: /app/auth/config.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Configuration
 Cluster 09: Authentication
 """

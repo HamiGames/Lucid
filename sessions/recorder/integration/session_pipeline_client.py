@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/recorder/integration/session_pipeline_client.py
+x-lucid-file-path: /app/sessions/recorder/integration/session_pipeline_client.py
+x-lucid-file-type: python
+
 Session Pipeline Integration Client
 Handles interaction with session-pipeline service for pipeline orchestration
 """

@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/multi-stage/multi-stage-development-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/multi-stage/multi-stage-development-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Development Configuration for Lucid Project
 # Container-hosted: no env_file (avoids compose-time interpolation from master-env-config.txt on hosts without secrets).
 # Inject env with: docker compose --env-file <path> up, or set variables in the orchestrator / stack.

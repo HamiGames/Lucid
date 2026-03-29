@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/encryptor/native_encryptor.py
+x-lucid-file-path: /app/apps/encryptor/native_encryptor.py
+x-lucid-file-type: python
+
 Native Encryptor Module for Lucid RDP
 High-performance encryption using native libsodium bindings
 """

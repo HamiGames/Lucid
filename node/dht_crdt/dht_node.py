@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/dht_crdt/dht_node.py
+x-lucid-file-path: /app/node/dht_crdt/dht_node.py
+x-lucid-file-type: python
+
 LUCID DHT/CRDT Node - SPEC-1B Implementation
 Distributed hash table, conflict-free replicated data, peer discovery, gossip protocol
 """

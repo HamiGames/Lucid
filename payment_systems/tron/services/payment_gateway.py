@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/payment_gateway.py
+x-lucid-file-path: /app/payment_systems/tron/services/payment_gateway.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - Payment Gateway Service
 Payment processing and gateway operations for TRON payments
 Distroless container: lucid-payment-gateway:latest

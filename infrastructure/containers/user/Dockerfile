@@ -29,9 +29,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # Host registry + service fragments (infrastructure/containers/host-config.yml → main_lucid_gateway)
-RUN mkdir -p /build/host /build/configs/services
-COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
-COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
+COPY infrastructure/containers/services/ /build/service_configs/
 # System packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -39,6 +38,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -116,6 +116,73 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     echo "wheel build complete" && \
     ls -lh /build/wheels/ | head -20 && \
     echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './api' './common' './config' './configs' './database' './endpoints' './models' './service_configs' './services' './tmp' './utils' './api/app' './api/cluster' './api/lucid_api.egg-info' './api/tests' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/services' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './api/app/database' './api/app/db' './api/app/middleware' './api/app/models' './api/app/routers' './api/app/routes' './api/app/schemas' './api/app/scripts' './api/app/security' './api/app/services' './api/app/utils' './api/tests/integration' './database/services/backup' './database/services/migration' './database/services/monitoring' './api/app/db/models'; \
+    for d in \
+      '.' \
+      './api' \
+      './common' \
+      './config' \
+      './configs' \
+      './database' \
+      './endpoints' \
+      './models' \
+      './service_configs' \
+      './services' \
+      './tmp' \
+      './utils' \
+      './api/app' \
+      './api/cluster' \
+      './api/lucid_api.egg-info' \
+      './api/tests' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/services' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './api/app/database' \
+      './api/app/db' \
+      './api/app/middleware' \
+      './api/app/models' \
+      './api/app/routers' \
+      './api/app/routes' \
+      './api/app/schemas' \
+      './api/app/scripts' \
+      './api/app/security' \
+      './api/app/services' \
+      './api/app/utils' \
+      './api/tests/integration' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './api/app/db/models' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 # Step 2: Install wheels into system Python
 RUN echo "installing wheels into system python" && \
@@ -142,77 +209,6 @@ RUN echo "=== Verifying pip installation success ===" && \
     echo "directories found in site-packages" 
 
 # Verify marker files exist with content (critical for distroless COPY)
-RUN mkdir -p ./api ./api/app ./api/app/db ./api/app/services ./api/app/db && \
-    mkdir -p ./api/app/db/models ./api/app/schemas ./api/app/routers ./api/app/middleware && \
-    mkdir -p ./api/app/utils ./api/app/models ./api/app/routes ./api/app/database ./api/app/scripts && \
-    mkdir -p ./api/app/security ./infrastructure ./infrastructure/kubernetes ./common ./common/tor && \
-    mkdir -p ./config ./endpoints ./config ./services ./models ./database ./utils ./scripts ./tmp ./rust ./cargo && \
-    printf "LUCID_API_GATEWAY_API_$(date +%s)" > ./api/.keep && \
-    touch ./api/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_$(date +%s)" > ./api/app/.keep && \
-    touch ./api/app/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_SERVICES_$(date +%s)" > ./api/app/services/.keep && \
-    touch ./api/.keep ./api/app/.keep ./api/app/services/.keep && \
-    echo "api/.keep, api/app/.keep, api/app/services/.keep created" && \
-    printf "LUCID_API_GATEWAY_API_APP_ROUTERS_$(date +%s)" > ./api/app/routers/.keep && \
-    touch ./api/app/routers/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_UTILS_$(date +%s)" > ./api/app/utils/.keep && \
-    touch ./api/app/utils/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_MIDDLEWARE_$(date +%s)" > ./api/app/middleware/.keep && \
-    touch ./api/app/middleware/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_DATABASE_$(date +%s)" > ./api/app/database/.keep && \
-    touch ./api/app/database/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_SCRIPTS_$(date +%s)" > ./api/app/scripts/.keep && \
-    touch ./api/app/scripts/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_MODELS_$(date +%s)" > ./api/app/models/.keep && \
-    touch ./api/app/models/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_ROUTES_$(date +%s)" > ./api/app/routes/.keep && \
-    touch ./api/app/routes/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_SCHEMAS_$(date +%s)" > ./api/app/schemas/.keep && \
-    touch ./api/app/schemas/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_SECURITY_$(date +%s)" > ./api/app/security/.keep && \
-    touch ./api/app/security/.keep && \
-    echo "api/app/routers/.keep, api/app/utils/.keep, api/app/middleware/.keep, api/app/database/.keep, api/app/scripts/.keep, api/app/models/.keep, api/app/routes/.keep, api/app/security/.keep created" && \
-    printf "LUCID_API_GATEWAY_INFRAStrUCTURE_$(date +%s)" > ./infrastructure/.keep && \
-    touch ./infrastructure/.keep && \
-    printf "LUCID_API_GATEWAY_INFRAStrUCTURE_KUBERNETES_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
-    touch ./infrastructure/kubernetes/.keep && \
-    touch ./infrastructure/.keep ./infrastructure/kubernetes/.keep && \
-    echo "infrastructure/kubernetes/.keep created" && \
-    printf "LUCID_COMMON_$(date +%s)" > ./common/.keep && \
-    touch ./common/.keep && \
-    printf "LUCID_API_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
-    touch ./common/tor/.keep && \
-    printf "LUCID_API_GATEWAY_TMP_$(date +%s)" > ./tmp/.keep && \
-    touch ./tmp/.keep && \
-    printf "LUCID_API_GATEWAY_RUST_$(date +%s)" > ./rust/.keep && \
-    touch ./rust/.keep && \
-    echo "rust/.keep created" && \
-    echo "common/.keep, common/tor/.keep created" && \
-    echo "common directories created" && \
-    printf "LUCID_API_GATEWAY_API_APP_DB_$(date +%s)" > ./api/app/db/.keep && \
-    touch ./api/app/db/.keep && \
-    printf "LUCID_API_GATEWAY_API_APP_DB_MODELS_$(date +%s)" > ./api/app/db/models/.keep && \
-    touch ./api/app/db/models/.keep && \
-    echo "api/app/db/.keep, api/app/db/models/.keep created" && \  
-    printf "LUCID_API_GATEWAY_UTILS_$(date +%s)" > ./utils/.keep && \
-    touch ./utils/.keep && \
-    printf "LUCID_API_GATEWAY_SERVICES_$(date +%s)" > ./services/.keep && \
-    touch ./services/.keep && \
-    printf "LUCID_API_GATEWAY_CONFIG_$(date +%s)" > ./config/.keep && \
-    touch ./config/.keep && \
-    printf "LUCID_API_GATEWAY_SCRIPTS_$(date +%s)" > ./scripts/.keep && \
-    touch ./scripts/.keep && \
-    printf "LUCID_API_GATEWAY_ENDPOINTS_$(date +%s)" > ./endpoints/.keep && \
-    touch ./endpoints/.keep && \
-    printf "LUCID_API_GATEWAY_MODELS_$(date +%s)" > ./models/.keep && \
-    touch ./models/.keep && \
-    printf "LUCID_API_GATEWAY_DATABASE_$(date +%s)" > ./database/.keep && \
-    touch ./database/.keep && \
-    printf "LUCID_API_GATEWAY_CARGO_$(date +%s)" > ./cargo/.keep && \
-    touch ./cargo/.keep && \
-    echo "utils/.keep, scripts/.keep, config/.keep, endpoints/.keep, models/.keep, database/.keep, services/.keep created" && \
-    echo "ALL Container directories created"
     
 # Application source COPY (only directories that exist with content)
 COPY 03_api_gateway/verify_files.py ./tmp/verify_files.py
@@ -241,7 +237,7 @@ RUN echo "=== Checking if api/ was copied ===" && \
     ls -la /build/api/* && \
     echo "api/ was copied"
 COPY 03_api_gateway/utils/ ./utils/
-COPY infrastructure/kubernetes/01_configmaps/ ./infrastructure/kubernetes/
+COPY service_configs/kubernetes/01_configmaps/ ./configs/
 COPY 03_api_gateway/api/app/ ./api/app/
 RUN echo "=== Checking if api/app/ was copied ===" && \
     ls -la ./api/app/* && \
@@ -309,8 +305,23 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
 
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -337,14 +348,44 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=main_lucid_gateway \
-    LUCID_SERVICES_CONFIG_DIR=/app/configs/services \
+    LUCID_SERVICES_CONFIG_DIR=/app/service_configs \
     LUCID_SERVICE_NAME=api-gateway \
     LUCID_SERVICE_HOST_IP=172.20.10.1 \
     LUCID_SERVICE_HTTP_PATH=http://api-gateway:8080/app \
     API_GATEWAY_PORT=8080 \
     API_GATEWAY_HOST=api-gateway
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/endpoints/ /app/endpoints/
+COPY --from=builder --chown=65532:65532 /build/models/ /app/models/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/services/ /app/services/
+COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 # System directories & certificates
 COPY --from=builder /root/.rustup/        /app/rust/
@@ -361,22 +402,20 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 
 # Bake Python packages into distroless image - explicit COPY with verification
-# Copy entire Python installation directory (includes site-packages and runtime libraries)
 COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py         /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/         /app/common/tor/
 #kubernetes configmaps
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml     /app/infrastructure/kubernetes/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/api-gateway-config.yaml /app/configs/api-gateway-config.yaml
 COPY --from=builder --chown=65532:65532 /build/api/app/            /app/api/app/
 COPY --from=builder --chown=65532:65532 /build/api/app/middleware/ /app/api/app/middleware/
 COPY --from=builder --chown=65532:65532 /build/api/app/utils/ /app/api/app/utils/
-COPY --from=builder --chown=65532:65532 /build/api/app/schemas/ /app/api/app/schemas
+COPY --from=builder --chown=65532:65532 /build/api/app/schemas/ /app/api/app/schemas/
 COPY --from=builder --chown=65532:65532 /build/api/app/models/ /app/api/app/models/
 COPY --from=builder --chown=65532:65532 /build/api/app/services/ /app/api/app/services/
 COPY --from=builder --chown=65532:65532 /build/api/app/db/ /app/api/app/db/
 COPY --from=builder --chown=65532:65532 /build/api/app/db/models/ /app/api/app/db/models/
 
-COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
 
 COPY --from=builder --chown=65532:65532 /build/api/app/routers/  /app/api/app/routers/
 COPY --from=builder --chown=65532:65532 /build/api/app/database/ /app/api/app/database/
@@ -385,11 +424,6 @@ COPY --from=builder --chown=65532:65532 /build/api/app/routes/          /app/api
 
 # api level directories
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
-COPY --from=builder --chown=65532:65532 /build/services/            /app/services/
-COPY --from=builder --chown=65532:65532 /build/database/            /app/database/
-COPY --from=builder --chown=65532:65532 /build/models/              /app/models/
-COPY --from=builder --chown=65532:65532 /build/config/              /app/config/
-COPY --from=builder --chown=65532:65532 /build/endpoints/           /app/endpoints/
 
 RUN ["/app/usr/bin/python3.11", "/app/tmp/verify_runtime.py"]
 RUN ["rm", "-f", "/app/tmp/verify_runtime.py"]

@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/payment_gateway.py
+x-lucid-file-path: /app/payment_systems/tron/api/payment_gateway.py
+x-lucid-file-type: python
+
 TRON Payment Gateway API - Payment Processing and Gateway Operations
 Handles payment processing, routing, reconciliation, and webhook management
 """

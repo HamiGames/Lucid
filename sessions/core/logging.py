@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/core/logging.py
+x-lucid-file-path: /app/sessions/core/logging.py
+x-lucid-file-type: python
+
 Logging utilities for Lucid Session services
 Provides standardized logging setup and logger access
 """

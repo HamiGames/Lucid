@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/events.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/events.py
+x-lucid-file-type: python
+
 Real-time Event Streaming Router
-File: gui_docker_manager/gui_docker_manager/routers/events.py
 
 WebSocket endpoint for real-time Docker event streaming.
 """

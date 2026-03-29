@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/integration/service_base.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/integration/service_base.py
+x-lucid-file-type: python
+
 Base Service Client for GUI Tor Manager
 Provides common functionality for all backend service clients
 """

@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/data/api/dependencies.py
+x-lucid-file-path: /app/blockchain/data/api/dependencies.py
+x-lucid-file-type: python
+
 Data Chain API Dependencies
 Dependency injection functions for FastAPI routes
 """
+
+
 
 from __future__ import annotations
 

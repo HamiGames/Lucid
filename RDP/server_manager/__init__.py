@@ -1,4 +1,8 @@
 """
+File: /app/RDP/server_manager/__init__.py
+x-lucid-file-path: /app/RDP/server_manager/__init__.py
+x-lucid-file-type: python
+
 Lucid RDP Server Manager Service
 Cluster: RDP Server Management
 Port: 8090

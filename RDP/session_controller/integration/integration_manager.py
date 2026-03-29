@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/integration_manager.py
+x-lucid-file-path: /app/RDP/session_controller/integration/integration_manager.py
+x-lucid-file-type: python
+
 Integration Manager for RDP Session Controller
 
 Manages initialization and lifecycle of integration clients for

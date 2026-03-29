@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/poot_calculator.py
+x-lucid-file-path: /app/node/poot_calculator.py
+x-lucid-file-type: python
+
 Lucid Node Management - PoOT (Proof of Ownership of Token) Calculator
 Implements PoOT calculation for node ownership verification
 """

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/payment_systems/tron_relay/main.py
+x-lucid-file-path: /app/payment_systems/tron_relay/main.py
+x-lucid-file-type: python
+
 LUCID TRON Relay - Main Entry Point
 Read-only TRON network relay for distributed caching and verification
 

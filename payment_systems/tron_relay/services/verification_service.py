@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/services/verification_service.py
+x-lucid-file-path: /app/payment_systems/tron_relay/services/verification_service.py
+x-lucid-file-type: python
+
 LUCID TRON Relay - Verification Service
 Provides transaction verification and validation services
 

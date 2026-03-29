@@ -22,7 +22,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -40,6 +39,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && dpkg --configure -a --force-unsafe-io --no-triggers 2>/dev/null || true \
     && rm -rf /var/lib/dpkg/triggers/* 2>/dev/null || true
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 ############################
 # Stage 2: distroless runtime (capacity at /data/db)

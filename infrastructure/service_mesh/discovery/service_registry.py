@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/discovery/service_registry.py
+x-lucid-file-path: /app/service_mesh/discovery/service_registry.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - Service Registry
 Service registration and discovery management.
 
-File: infrastructure/service_mesh/discovery/service_registry.py
 Lines: ~280
 Purpose: Service registration
 Dependencies: consul_client, asyncio

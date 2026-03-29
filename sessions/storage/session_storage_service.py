@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/storage/session_storage_service.py
+x-lucid-file-path: /app/sessions/storage/session_storage_service.py
+x-lucid-file-type: python
+
 LUCID Session Storage Service - SPEC-1B Implementation
 Handles session data storage with MongoDB integration and compression
 """

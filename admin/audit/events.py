@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/audit/events.py
+x-lucid-file-path: /app/admin/audit/events.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Audit Events
 Step 24: Admin Container & Integration
 

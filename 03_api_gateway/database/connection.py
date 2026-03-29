@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/database/connection.py
+x-lucid-file-path: /app/03_api_gateway/database/connection.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Database Connection
 MongoDB connection with connection pooling.
 
-File: 03_api_gateway/database/connection.py
 Lines: ~100
 Purpose: MongoDB connection
 Dependencies: motor (async MongoDB)
@@ -19,11 +22,15 @@ try:
     from api.app.utils.logging import get_logger, setup_logging
     logger = get_logger("LOG_LEVEL", "INFO")
     settings = get_settings()
-    setup_logging(settings) 
+    setup_logging(settings)
     import logging
     logger = logging.getLogger("LOG_LEVEL")
     settings = get_settings()
-    
+except Exception:
+    import logging
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
+
 # Global database client and database
 _client: Optional[AsyncIOMotorClient] = None
 _database: Optional[AsyncIOMotorDatabase] = None

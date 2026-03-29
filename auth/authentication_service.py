@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/auth/authentication_service.py
+x-lucid-file-path: /app/auth/authentication_service.py
+x-lucid-file-type: python
+
 Lucid Authentication Service
 Provides user authentication, hardware wallet integration, and session management
 """

@@ -1,5 +1,8 @@
-# Path: gui/admin/bootstrap_wizard.py
+
 """
+file: /app/gui/admin/bootstrap_wizard.py
+x-lucid-file-path: /app/gui/admin/bootstrap_wizard.py
+x-lucid-file-type: python
 Enhanced bootstrap wizard for Lucid RDP appliance initial setup and provisioning.
 Provides step-by-step wizard interface with validation, progress tracking, and advanced configuration options.
 """

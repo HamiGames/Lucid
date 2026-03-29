@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/audit/logger.py
+x-lucid-file-path: /app/admin/audit/logger.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Audit Logging System
 Step 23: Admin Backend APIs Implementation
 

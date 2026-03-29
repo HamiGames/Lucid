@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/ops/ota/signature_verifier.py
+x-lucid-file-path: /app/tools/ops/ota/signature_verifier.py
+x-lucid-file-type: python
+
 LUCID SIGNATURE VERIFIER - SPEC-4 Release Signature Verification
 Professional release signature verification for Pi deployment
 Multi-platform build for ARM64 Pi and AMD64 development

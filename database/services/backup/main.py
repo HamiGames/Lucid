@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/services/backup/main.py
+x-lucid-file-path: /app/database/services/backup/main.py
+x-lucid-file-type: python
+
 LUCID Database Backup Service
 LUCID-STRICT Layer 0 Core Infrastructure
 Professional database backup and restore service for Pi deployment

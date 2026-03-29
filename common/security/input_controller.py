@@ -2,6 +2,12 @@
 # Implements comprehensive input validation, clipboard security, and file transfer controls
 # LUCID-STRICT Layer 1 Common Security Integration
 
+"""
+File: /app/common/security/input_controller.py
+x-lucid-file-path: /app/common/security/input_controller.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

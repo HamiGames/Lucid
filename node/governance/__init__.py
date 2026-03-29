@@ -3,6 +3,10 @@
 # LUCID-STRICT Layer 1 Core Infrastructure
 
 """
+File: /app/node/governance/__init__.py
+x-lucid-file-path: /app/node/governance/__init__.py
+x-lucid-file-type: python
+
 Governance module for Lucid node operations.
 
 This module provides:

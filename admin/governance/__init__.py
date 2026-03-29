@@ -1,6 +1,10 @@
-""" Admin Governance
+"""
+File: /app/admin/governance/__init__.py
+x-lucid-file-path: /app/admin/governance/__init__.py
+x-lucid-file-type: python
 
-File: admin/governance/__init__.py
+Admin Governance
+
 Purpose: Governance module for the Lucid admin interface
 """
 

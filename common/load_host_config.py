@@ -1,4 +1,9 @@
-"""Loads host config for Lucid common services.
+"""
+File: /app/common/load_host_config.py
+x-lucid-file-path: /app/common/load_host_config.py
+x-lucid-file-type: python
+
+Loads host config for Lucid common services.
 
 Aligns with infrastructure/containers/host-config.yml (mounted at
 /app/configs/host-config.yml in container images). See also

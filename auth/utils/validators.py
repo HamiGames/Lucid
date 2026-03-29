@@ -1,4 +1,8 @@
 """
+File: /app/auth/utils/validators.py
+x-lucid-file-path: /app/auth/utils/validators.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Input Validators
 """
 

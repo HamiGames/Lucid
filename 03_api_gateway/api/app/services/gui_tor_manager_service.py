@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/api/app/services/gui_tor_manager_service.py
+x-lucid-file-path: /app/03_api_gateway/api/app/services/gui_tor_manager_service.py
+x-lucid-file-type: python
+"""
+
 f"""
 GUI Tor Manager Service
 Path: ..03_api_gateway.api.app.services.gui_tor_manager_service.py

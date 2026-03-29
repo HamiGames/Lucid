@@ -2,6 +2,12 @@
 # Lucid RDP Node Registration Protocol - Secure node onboarding and verification
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/registration/node_registration_protocol.py
+x-lucid-file-path: /app/node/registration/node_registration_protocol.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

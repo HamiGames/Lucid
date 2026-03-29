@@ -1,4 +1,8 @@
 """
+File: /app/node/tor/onion_service.py
+x-lucid-file-path: /app/node/tor/onion_service.py
+x-lucid-file-type: python
+
 LUCID Node Tor - Onion Service Creation and Management
 Handles dynamic .onion address creation, key management, and service lifecycle
 Distroless container: pickme/lucid:node-worker:latest

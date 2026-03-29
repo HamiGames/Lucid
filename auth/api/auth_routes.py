@@ -1,4 +1,8 @@
 """
+File: /app/auth/api/auth_routes.py
+x-lucid-file-path: /app/auth/api/auth_routes.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Authentication Routes
 POST /auth/login, /auth/register, /auth/refresh, /auth/logout
 """

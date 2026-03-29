@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/services/container_service.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/services/container_service.py
+x-lucid-file-type: python
+
 Container Service Business Logic
-File: gui_docker_manager/gui_docker_manager/services/container_service.py
 """
 
 import logging

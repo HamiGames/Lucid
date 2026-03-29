@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/config/block_manager_config.py
+x-lucid-file-path: /app/blockchain/config/block_manager_config.py
+x-lucid-file-type: python
+
 Block Manager Configuration Loader
 Loads and validates block-manager configuration from YAML with environment variable support.
 """
+
+
 
 from __future__ import annotations
 

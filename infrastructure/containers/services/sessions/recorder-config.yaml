@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/sessions/recorder-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/sessions/recorder-config.yaml — see ../container-runtime-layout.yml
 # Lucid Session Recorder — configuration (sessions/config/recorder-config.yaml)
 # Canonical: session_recorder — service_name session-recorder, port 8090, host_ip 172.20.10.13 — infrastructure/containers/host-config.yml (collision_notes vs rdp_server_manager).
 # Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml

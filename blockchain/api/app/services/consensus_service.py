@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/services/consensus_service.py
+x-lucid-file-path: /app/blockchain/api/app/services/consensus_service.py
+x-lucid-file-type: python
+
 Consensus Service
 
 This service handles consensus mechanism operations.
 Implements business logic for PoOT (Proof of Observation Time) consensus.
 """
+
+
 
 from typing import Dict, Any, List, Optional
 import logging

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/rate_limiter.py
+x-lucid-file-path: /app/blockchain/api/app/rate_limiter.py
+x-lucid-file-type: python
+
 Rate Limiter Module
 
 This module contains rate limiting utilities for the Blockchain API.
 Implements token bucket and sliding window rate limiting algorithms.
 """
+
+
 
 import logging
 import time

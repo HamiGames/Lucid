@@ -1,4 +1,8 @@
 """
+File: /app/database/repositories/user_repository.py
+x-lucid-file-path: /app/database/repositories/user_repository.py
+x-lucid-file-type: python
+
 User Repository
 
 Repository pattern implementation for user data access.

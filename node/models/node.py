@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/models/node.py
+x-lucid-file-path: /app/node/models/node.py
+x-lucid-file-type: python
+
 Node data models for Lucid system.
 
 This module provides Pydantic models for:

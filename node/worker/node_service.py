@@ -2,6 +2,12 @@
 # Lucid Node Service - Node lifecycle management
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/worker/node_service.py
+x-lucid-file-path: /app/node/worker/node_service.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

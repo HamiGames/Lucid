@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/security/sbom-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/security/sbom-config.yml — see ../container-runtime-layout.yml
 # Lucid API - SBOM Configuration
 # Configuration for Software Bill of Materials generation
 #

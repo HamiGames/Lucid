@@ -1,4 +1,8 @@
 """
+File: /app/node/consensus/work_credits.py
+x-lucid-file-path: /app/node/consensus/work_credits.py
+x-lucid-file-type: python
+
 LUCID Node Consensus - Work Credits Calculation
 Implements Proof of Operational Tasks (PoOT) work credits system
 Distroless container: pickme/lucid:node-worker:latest

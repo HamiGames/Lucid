@@ -1,6 +1,8 @@
 """
 URL Validation Utilities
-File: gui_api_bridge/gui_api_bridge/utils/validation.py
+File: /app/gui_api_bridge/gui_api_bridge/utils/validation.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/utils/validation.py
+x-lucid-file-type: python
 """
 
 import logging

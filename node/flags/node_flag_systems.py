@@ -2,6 +2,12 @@
 # Lucid RDP Node Flag Systems - Comprehensive node status flags and operational state management
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/flags/node_flag_systems.py
+x-lucid-file-path: /app/node/flags/node_flag_systems.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

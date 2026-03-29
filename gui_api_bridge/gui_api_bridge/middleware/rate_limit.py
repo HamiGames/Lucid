@@ -1,6 +1,9 @@
 """
 Rate Limiting Middleware for GUI API Bridge
-File: gui_api_bridge/gui_api_bridge/middleware/rate_limit.py
+File: /app/gui_api_bridge/gui_api_bridge/middleware/rate_limit.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/middleware/rate_limit.py
+x-lucid-file-type: python
+
 """
 
 import logging

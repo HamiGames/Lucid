@@ -1,8 +1,11 @@
 """
+File: /app/auth/api/endpoint_config.py
+x-lucid-file-path: /app/auth/api/endpoint_config.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Endpoint Configuration Manager
 Manages customizable HTTP endpoint configuration from YAML files
 
-File: auth/api/endpoint_config.py
 Purpose: Load and manage endpoint configuration for customizable HTTP endpoints
 Dependencies: yaml, pathlib, typing
 """

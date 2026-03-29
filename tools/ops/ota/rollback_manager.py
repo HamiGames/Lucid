@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/ops/ota/rollback_manager.py
+x-lucid-file-path: /app/tools/ops/ota/rollback_manager.py
+x-lucid-file-type: python
+
 LUCID ROLLBACK MANAGER - SPEC-4 Rollback Functionality
 Professional rollback management for Pi deployment
 Multi-platform build for ARM64 Pi and AMD64 development

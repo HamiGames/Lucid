@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/models/pool.py
+x-lucid-file-path: /app/node/models/pool.py
+x-lucid-file-type: python
+
 Pool data models for Lucid system.
 
 This module provides Pydantic models for:

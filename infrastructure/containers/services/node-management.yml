@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/node-management.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/node-management.yml — see container-runtime-layout.yml
 # Node Management Service Configuration
 # Cluster: 05-NODE-MANAGEMENT
 # Service: Worker Node Management and PoOT Operations

@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/config.py
+x-lucid-file-path: /app/blockchain/config.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,7 +13,10 @@ from typing import Final
 
 @dataclass(frozen=True)
 class ChainConfig:
-    """Network/runtime configuration for the Lucid chain."""
+    """
+
+Network/runtime configuration for the Lucid chain.
+"""
 
     network_id: str = os.getenv("LUCID_NETWORK_ID", "lucid-dev")
     block_time_secs: int = int(os.getenv("LUCID_BLOCK_TIME", "5"))

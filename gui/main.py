@@ -1,5 +1,9 @@
 """ Main entry point for Lucid GUI services 
 
+file: /app/gui/main.py
+x-lucid-file-path: /app/gui/main.py
+x-lucid-file-type: python
+
 about this script:
 - this script is the main entry point for the Lucid GUI service
 - triggers the use of /app/gui/config/config.py for the GUI services

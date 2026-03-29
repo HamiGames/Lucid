@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/services/transaction_service.py
+x-lucid-file-path: /app/blockchain/api/app/services/transaction_service.py
+x-lucid-file-type: python
+
 Transaction Service
 
 This service handles transaction processing and management operations.
 Implements business logic for transaction submission, validation, and retrieval.
 """
+
+
 
 from typing import Dict, Any, List, Optional
 import logging

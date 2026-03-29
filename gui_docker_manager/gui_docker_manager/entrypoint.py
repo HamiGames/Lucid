@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/gui_docker_manager/gui_docker_manager/entrypoint.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/entrypoint.py
+x-lucid-file-type: python
+
 GUI Docker Manager Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
-File: gui_docker_manager/gui_docker_manager/entrypoint.py
 
 This script serves as the entrypoint for the gui_docker_manager container,
 providing clean startup with environment variable configuration.

@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/discovery/consul_client.py
+x-lucid-file-path: /app/service_mesh/discovery/consul_client.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - Consul Client
 Consul integration for service discovery.
 
-File: infrastructure/service_mesh/discovery/consul_client.py
 Lines: ~300
 Purpose: Consul integration
 Dependencies: consul, asyncio

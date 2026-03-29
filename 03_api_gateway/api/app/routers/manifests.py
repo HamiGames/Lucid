@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/manifests.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/manifests.py
+x-lucid-file-type: python
+
 Manifest Endpoints Router
 
-File: 03_api_gateway/api/app/routers/manifests.py
 Purpose: Session manifest operations
 """
 

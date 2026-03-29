@@ -2,6 +2,10 @@
 #!/usr/bin/env python3
 
 """
+File: /app/admin/api/dashboard.py
+x-lucid-file-path: /app/admin/api/dashboard.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Dashboard API
 Step 23: Admin Backend APIs Implementation
 

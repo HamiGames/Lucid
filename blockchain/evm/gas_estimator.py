@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/evm/gas_estimator.py
+x-lucid-file-path: /app/blockchain/evm/gas_estimator.py
+x-lucid-file-type: python
+
 Gas Estimator for EVM Transactions
 Based on rebuild-blockchain-engine.md specifications
 
@@ -9,6 +13,8 @@ Provides gas estimation for On-System Chain transactions:
 - Dynamic gas price calculation
 - Transaction cost optimization
 """
+
+
 
 import asyncio
 import logging

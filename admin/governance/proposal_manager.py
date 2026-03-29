@@ -3,6 +3,12 @@
 # Handles governance proposals, voting, and decision making
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/admin/governance/proposal_manager.py
+x-lucid-file-path: /app/admin/governance/proposal_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

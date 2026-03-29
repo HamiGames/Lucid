@@ -3,6 +3,12 @@
 # Implements R-MUST-003: Remote Desktop Host Support with Wayland compatibility
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/recorder/wayland_integration.py
+x-lucid-file-path: /app/RDP/recorder/wayland_integration.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

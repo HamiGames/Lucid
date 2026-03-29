@@ -1,5 +1,11 @@
 ﻿# Path: user/user_manager.py
 
+"""
+File: /app/user/user_manager.py
+x-lucid-file-path: /app/user/user_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 import logging

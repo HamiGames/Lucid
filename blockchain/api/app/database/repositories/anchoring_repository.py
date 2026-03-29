@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/database/repositories/anchoring_repository.py
+x-lucid-file-path: /app/blockchain/api/app/database/repositories/anchoring_repository.py
+x-lucid-file-type: python
+
 Anchoring Repository
 Handles database operations for session anchoring records.
 """
+
+
 
 import logging
 from typing import List, Optional, Dict, Any

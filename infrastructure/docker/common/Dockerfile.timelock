@@ -1,6 +1,10 @@
 # LUCID TIMELOCK - SPEC-3 Timelock Implementation (Distroless)
 # Professional timelock implementation for Pi deployment
 # Multi-platform build for ARM64 Pi and AMD64 development
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 # syntax=docker/dockerfile:1.7
 FROM python:3.11-slim AS timelock-builder
@@ -66,6 +70,11 @@ COPY wallet/ /app/wallet/
 COPY auth/ /app/auth/
 COPY blockchain/ /app/blockchain/
 
+RUN mkdir -p /app/service_configs /app/configs
+COPY infrastructure/containers/host-config.yml /app/service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml /app/configs/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
+
 # Create timelock directories
 RUN mkdir -p /opt/lucid/governance/timelock /opt/lucid/governance/queues /data/timelock /tmp/timelock \
     && chown -R lucid:lucid /opt/lucid /data /tmp/timelock
@@ -86,12 +95,10 @@ LABEL maintainer="Lucid Development Team" \
       org.lucid.layer="3" \
       org.lucid.expose="8109"
 
-# Copy Python installation and packages from builder
 COPY --from=timelock-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=timelock-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
 COPY --from=timelock-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-# Copy timelock and system tools
 COPY --from=timelock-builder /usr/bin/openssl /usr/bin/openssl
 COPY --from=timelock-builder /usr/bin/sqlite3 /usr/bin/sqlite3
 COPY --from=timelock-builder /usr/bin/dateutils /usr/bin/dateutils
@@ -100,7 +107,6 @@ COPY --from=timelock-builder /bin/nc /bin/nc
 COPY --from=timelock-builder /usr/bin/jq /usr/bin/jq
 COPY --from=timelock-builder /usr/sbin/gosu /usr/sbin/gosu
 
-# Copy required dynamic libraries (architecture-specific)
 COPY --from=timelock-builder /lib/*-linux-*/libc.so.6 /lib/
 COPY --from=timelock-builder /lib/*-linux-*/libssl.so.3 /lib/
 COPY --from=timelock-builder /lib/*-linux-*/libcrypto.so.3 /lib/
@@ -109,14 +115,11 @@ COPY --from=timelock-builder /lib/*-linux-*/liblzma.so.5 /lib/
 COPY --from=timelock-builder /lib/*-linux-*/libzstd.so.1 /lib/
 COPY --from=timelock-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy user and group information
 COPY --from=timelock-builder /etc/passwd /etc/passwd
 COPY --from=timelock-builder /etc/group /etc/group
 
-# Copy CA certificates
 COPY --from=timelock-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy application with proper ownership
 COPY --from=timelock-builder --chown=timelock_user:timelock_user /app /app
 COPY --from=timelock-builder --chown=timelock_user:timelock_user /data /data
 COPY --from=timelock-builder --chown=timelock_user:timelock_user /tmp/timelock /tmp/timelock
@@ -133,7 +136,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MAX_DELAY_SECONDS=2592000 \
     GRACE_PERIOD_SECONDS=1296000 \
     EXECUTION_TIMEOUT_SECONDS=604800 \
-    MAX_QUEUE_SIZE=1000
+    MAX_QUEUE_SIZE=1000 \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+
+
+
+
+
+
+
 
 # Security and runtime configuration
 EXPOSE 8109

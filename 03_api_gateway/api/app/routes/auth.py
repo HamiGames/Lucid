@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/api/app/routes/auth.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routes/auth.py
+x-lucid-file-type: python
+"""
+
 from fastapi import APIRouter, HTTPException
 from starlette.status import HTTP_501_NOT_IMPLEMENTED
 

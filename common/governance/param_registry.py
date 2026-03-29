@@ -3,6 +3,12 @@
 # Implements parameter management for governance-controlled system parameters
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/common/governance/param_registry.py
+x-lucid-file-path: /app/common/governance/param_registry.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

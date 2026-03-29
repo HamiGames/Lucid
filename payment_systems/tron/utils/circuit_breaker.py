@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/circuit_breaker.py
+x-lucid-file-path: /app/payment_systems/tron/utils/circuit_breaker.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Circuit Breaker Module
 Circuit breaker pattern implementation for resilient service calls
 Following architecture patterns from build/docs/

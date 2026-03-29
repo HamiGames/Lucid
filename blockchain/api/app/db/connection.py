@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/api/app/db/connection.py
+x-lucid-file-path: /app/blockchain/api/app/db/connection.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import logging
@@ -25,7 +31,10 @@ def _get_client() -> AsyncIOMotorClient:
 
 
 def get_db_sync() -> AsyncIOMotorDatabase:
-    """Synchronous accessor (not an async dep), useful for modules needing db at import-time."""
+    """
+
+Synchronous accessor (not an async dep), useful for modules needing db at import-time.
+"""
     global _db
     if _db is None:
         _get_client()

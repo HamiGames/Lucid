@@ -2,6 +2,15 @@
 # Phase 1: Core Support Services (MongoDB, Tor, API Gateway, API Server, Tools)
 # Aligned with essentials.md and path_plan.md Phase 1 & 2
 # Project Root: /mnt/myssd/Lucid/Lucid/
+# Paths in this file are relative to: infrastructure/compose/
+# master-env-config.txt is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
+# configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
+# Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
+# Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
+# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
+# Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
+
 
 services:
   lucid-mongodb:
@@ -11,8 +20,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -24,6 +32,11 @@ services:
       - MONGODB_HOST=172.20.0.11
       - MONGODB_PORT=27017
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db:rw
       - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
       - mongo_config:/data/configdb
@@ -74,8 +87,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -85,6 +97,11 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/redis:/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
     networks:
@@ -130,8 +147,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -144,6 +160,11 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms256m -Xmx256m
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data:rw
       - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
     networks:
@@ -195,9 +216,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tor-proxy
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -208,6 +227,11 @@ services:
       - ONION_COUNT=5
       - TOR_DATA_DIR=/var/lib/tor
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:rw
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:rw
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
@@ -255,9 +279,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.node
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -272,6 +294,11 @@ services:
       - TOR_CONTROL_PORT=9051
       - ONION_DIR=/run/lucid/onion
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/api-server:/app/logs:rw
     networks:
@@ -324,8 +351,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -341,6 +367,11 @@ services:
       - RATE_LIMIT_PER_MINUTE=1000
       - CORS_ALLOWED_ORIGINS=*
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
     networks:
@@ -392,9 +423,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tunnel-tools
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -405,6 +434,11 @@ services:
       - ONION_DIR=/run/lucid/onion
       - COOKIE_FILE_SHARED=/run/lucid/onion/control_auth_cookie
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:rw
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
       - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
@@ -454,9 +488,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.node
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLANE=ops
@@ -465,6 +497,11 @@ services:
       - ONION_DIR=/run/lucid/onion
       - TUNNEL_DATA_DIR=/var/lib/tunnel
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:ro
       - /mnt/myssd/Lucid/Lucid/logs/server-tools:/app/logs:rw

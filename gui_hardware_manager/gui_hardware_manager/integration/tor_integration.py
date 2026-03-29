@@ -1,4 +1,8 @@
 """
+File: /app/gui_hardware_manager/gui_hardware_manager/integration/tor_integration.py
+x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/integration/tor_integration.py
+x-lucid-file-type: python
+
 Tor Proxy Integration Module for GUI Hardware Manager
 Handles communication with tor-proxy service for onion address management
 and anonymous transaction routing

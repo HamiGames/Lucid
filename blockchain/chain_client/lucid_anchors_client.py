@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/chain_client/lucid_anchors_client.py
+x-lucid-file-path: /app/blockchain/chain_client/lucid_anchors_client.py
+x-lucid-file-type: python
+"""
+
 # LUCID Anchors Client - Session Anchoring System
 # Implements comprehensive session anchoring and manifest management
 # LUCID-STRICT Layer 2 Service Integration

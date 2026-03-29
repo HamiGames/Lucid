@@ -1,6 +1,12 @@
 # LUCID Wallet Security Module
 # Comprehensive security components for wallet operations
 
+"""
+File: /app/wallet/security/__init__.py
+x-lucid-file-path: /app/wallet/security/__init__.py
+x-lucid-file-type: python
+"""
+
 from .trust_nothing_engine import (
     TrustNothingEngine,
     TrustLevel,

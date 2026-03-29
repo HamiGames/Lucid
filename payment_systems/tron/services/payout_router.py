@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/payout_router.py
+x-lucid-file-path: /app/payment_systems/tron/services/payout_router.py
+x-lucid-file-type: python
+
 TRON Payout Router Service Module
 Core payout routing logic and management
 """

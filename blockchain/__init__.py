@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/__init__.py
+x-lucid-file-path: /app/blockchain/__init__.py
+x-lucid-file-type: python
+
 LUCID Blockchain Components - Blockchain Architecture (lucid_blocks)
 REBUILT: On-System Data Chain (primary) + Isolated payment service
 
@@ -7,6 +11,8 @@ Based on Spec-1a, Spec-1b, and Spec-1c requirements.
 - Payment services: Isolated in payment_systems/ directory
 - PoOT Consensus: Runs on On-System Chain
 """
+
+
 
 # Core blockchain components (using factory functions to avoid dependency issues)
 from .core import (

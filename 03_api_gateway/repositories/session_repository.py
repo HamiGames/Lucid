@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/repositories/session_repository.py
+x-lucid-file-path: /app/03_api_gateway/repositories/session_repository.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Session Repository
 Data access layer for session operations.
 
-File: 03_api_gateway/repositories/session_repository.py
 Lines: ~120
 Purpose: Session data access
 Dependencies: motor

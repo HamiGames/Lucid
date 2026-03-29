@@ -1,9 +1,12 @@
 """
+File: /app/service_mesh/communication/grpc_client.py
+x-lucid-file-path: /app/service_mesh/communication/grpc_client.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - gRPC Client
 gRPC client for service mesh communication.
 
-File: infrastructure/service_mesh/communication/grpc_client.py
-Lines: ~250
 Purpose: gRPC client
 Dependencies: grpc, asyncio
 """
@@ -12,7 +15,8 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional, Callable
 from datetime import datetime
-from grpc import aio, grpc
+import grpc
+from grpc import aio
 
 
 logger = logging.getLogger(__name__)

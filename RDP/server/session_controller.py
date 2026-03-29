@@ -3,6 +3,12 @@
 # Implements R-MUST-003: Remote Desktop Host Support with session orchestration
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/server/session_controller.py
+x-lucid-file-path: /app/RDP/server/session_controller.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

@@ -1,4 +1,9 @@
-"""Lucid RDP Node Work Credits - Specialized Work Credits Calculation
+"""
+File: /app/node/validation/work_credits.py
+x-lucid-file-path: /app/node/validation/work_credits.py
+x-lucid-file-type: python
+
+Lucid RDP Node Work Credits - Specialized Work Credits Calculation
 parameters for work credits calculations
 Based on LUCID-STRICT requirements per Spec-1b
 

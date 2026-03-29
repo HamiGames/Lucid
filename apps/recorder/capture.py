@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/capture.py
+x-lucid-file-path: /app/apps/recorder/capture.py
+x-lucid-file-type: python
+
 Screen and Audio Capture Module for Lucid RDP Recorder
 Provides hardware-accelerated capture for Raspberry Pi 5
 """

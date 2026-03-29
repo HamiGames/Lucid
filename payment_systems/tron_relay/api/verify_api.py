@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/api/verify_api.py
+x-lucid-file-path: /app/payment_systems/tron_relay/api/verify_api.py
+x-lucid-file-type: python
+
 LUCID TRON Relay - Verification API Endpoints
 Transaction verification and validation endpoints
 """

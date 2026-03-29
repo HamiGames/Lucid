@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/utils/validation.py
+x-lucid-file-path: /app/03_api_gateway/utils/validation.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Validation Utilities
 Input validation and sanitization.
 
-File: 03_api_gateway/utils/validation.py
 Lines: ~240
 Purpose: Input validation
 Dependencies: Pydantic, re

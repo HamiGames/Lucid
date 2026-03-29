@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/emergency/controls.py
+x-lucid-file-path: /app/admin/emergency/controls.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Emergency Controls
 Step 23: Admin Backend APIs Implementation
 

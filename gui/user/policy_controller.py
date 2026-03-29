@@ -1,5 +1,8 @@
 # Path: gui/user/policy_controller.py
 """
+file: /app/gui/user/policy_controller.py
+x-lucid-file-path: /app/gui/user/policy_controller.py
+x-lucid-file-type: python
 Client-side policy enforcement for Lucid RDP GUI.
 Provides policy validation, enforcement, and compliance monitoring for RDP sessions.
 """

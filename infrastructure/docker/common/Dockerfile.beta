@@ -1,6 +1,10 @@
 # LUCID RDP Beta Sidecar - Tor Runtime & Plane Separation
 # Based on SPEC-4: Stage 0 - Common & Base
 # Provides: Tor v3 HS, per-plane onion services, discovery, ACLs
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 FROM alpine:3.20 AS base
 

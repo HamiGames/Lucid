@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/RDP/xrdp/config.py
+x-lucid-file-path: /app/RDP/xrdp/config.py
+x-lucid-file-type: python
+
 Lucid XRDP Configuration Management
 Configuration management for XRDP service
 """

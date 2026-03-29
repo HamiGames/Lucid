@@ -1,0 +1,209 @@
+# Runtime (container): /app/service_configs/x_lucid_cluster_calibration/foundation-cluster-host-alignment.yml
+# Canonical foundation cluster alignment: host-config.yml + x-files-listing.txt (merge with docker-compose for this stack).
+x-lucid-calibration:
+  cluster: foundation
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files_listing: x-files-listing.txt
+  description: Host registry + x-lucid file paths for foundation cluster (merge with docker-compose fragments for this stack).
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  ip_source_repo_path: service-ip.txt
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  in_container_path: /app/configs/host-config.yml
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    lucid_auth_service:
+      host_config_key: lucid_auth_service
+      service_name: lucid-auth-service
+      port: 8089
+      host_ip: 172.20.10.5
+      http_path: http://lucid-auth-service:8089/app
+    lucid_elasticsearch_http:
+      host_config_key: lucid_elasticsearch_http
+      service_name: lucid-elasticsearch-http
+      port: 9200
+      host_ip: 172.20.10.68
+      http_path: http://lucid-elasticsearch-http:9200/app
+    lucid_elasticsearch_transport:
+      host_config_key: lucid_elasticsearch_transport
+      service_name: lucid-elasticsearch-transport
+      port: 9300
+      host_ip: 172.20.10.69
+      http_path: http://lucid-elasticsearch-transport:9300/app
+    lucid_gov:
+      host_config_key: lucid_gov
+      service_name: lucid-gov
+      port: 8108
+      host_ip: 172.20.10.6
+      http_path: http://lucid-gov:8108/app
+    lucid_mongodb:
+      host_config_key: lucid_mongodb
+      service_name: lucid-mongodb
+      port: 27017
+      host_ip: 172.20.10.70
+      http_path: http://lucid-mongodb:27017/app
+    lucid_redis:
+      host_config_key: lucid_redis
+      service_name: lucid-redis
+      port: 6379
+      host_ip: 172.20.10.67
+      http_path: http://lucid-redis:6379/app
+    mongodb_monitoring:
+      host_config_key: mongodb_monitoring
+      service_name: mongodb-monitoring
+      port: 27018
+      host_ip: 172.20.10.71
+      http_path: http://mongodb-monitoring:27018/app
+    tor_control:
+      host_config_key: tor_control
+      service_name: tor-control
+      port: 9051
+      host_ip: 172.20.10.65
+      http_path: http://tor-control:9051/app
+    tor_socks:
+      host_config_key: tor_socks
+      service_name: tor-socks
+      port: 9050
+      host_ip: 172.20.10.64
+      http_path: http://tor-socks:9050/app
+    tunnel_tools:
+      host_config_key: tunnel_tools
+      service_name: tunnel-tools
+      port: 7000
+      host_ip: 172.20.10.66
+      http_path: http://tunnel-tools:7000/app
+x-lucid-x-files-calibration:
+  cluster: foundation
+  filter_app_prefixes:
+  - 02_network_security
+  - auth
+  - gui_tor_manager
+  - storage
+  - database
+  x_lucid_file_paths:
+  - /app/02_network_security/__init__.py
+  - /app/02_network_security/tunnels/entrypoint.py
+  - /app/02_network_security/tunnels/load_host_config.py
+  - /app/02_network_security/tunnels/tunnel_metrics.py
+  - /app/02_network_security/tunnels/tunnel_status.py
+  - /app/auth/__init__.py
+  - /app/auth/api/__init__.py
+  - /app/auth/api/auth_routes.py
+  - /app/auth/api/endpoint_config.py
+  - /app/auth/api/hardware_wallet_routes.py
+  - /app/auth/api/orchestration_routes.py
+  - /app/auth/api/session_routes.py
+  - /app/auth/api/user_routes.py
+  - /app/auth/authentication_service.py
+  - /app/auth/config.py
+  - /app/auth/config/load_host_config.py
+  - /app/auth/hardware_wallet.py
+  - /app/auth/healthcheck.py
+  - /app/auth/http_server.py
+  - /app/auth/main.py
+  - /app/auth/middleware/__init__.py
+  - /app/auth/middleware/audit_log.py
+  - /app/auth/middleware/auth_middleware.py
+  - /app/auth/middleware/rate_limit.py
+  - /app/auth/models/__init__.py
+  - /app/auth/models/hardware_wallet.py
+  - /app/auth/models/permissions.py
+  - /app/auth/models/session.py
+  - /app/auth/models/user.py
+  - /app/auth/permissions.py
+  - /app/auth/services/__init__.py
+  - /app/auth/services/mongodb_clone.py
+  - /app/auth/services/orchestrator.py
+  - /app/auth/session_manager.py
+  - /app/auth/user_manager.py
+  - /app/auth/utils/__init__.py
+  - /app/auth/utils/crypto.py
+  - /app/auth/utils/exceptions.py
+  - /app/auth/utils/jwt_handler.py
+  - /app/auth/utils/validators.py
+  - /app/auth/verify_runtime.py
+  - /app/database/__init__.py
+  - /app/database/api/__init__.py
+  - /app/database/api/backups.py
+  - /app/database/api/cache.py
+  - /app/database/api/collections.py
+  - /app/database/api/database_health.py
+  - /app/database/api/database_stats.py
+  - /app/database/api/indexes.py
+  - /app/database/api/search.py
+  - /app/database/api/volumes.py
+  - /app/database/config/load_host_config.py
+  - /app/database/elasticsearch/healthcheck.py
+  - /app/database/elasticsearch/start-elasticsearch.py
+  - /app/database/models/__init__.py
+  - /app/database/models/block.py
+  - /app/database/models/session.py
+  - /app/database/models/transaction.py
+  - /app/database/models/trust_policy.py
+  - /app/database/models/user.py
+  - /app/database/models/wallet.py
+  - /app/database/mongodb/__init__.py
+  - /app/database/mongodb/healthcheck.py
+  - /app/database/mongodb/start_mongodb.py
+  - /app/database/redis/__init__.py
+  - /app/database/redis/healthcheck.py
+  - /app/database/redis/start-redis.py
+  - /app/database/repositories/__init__.py
+  - /app/database/repositories/block_repository.py
+  - /app/database/repositories/session_repository.py
+  - /app/database/repositories/user_repository.py
+  - /app/database/schema/mongodb_schema.py
+  - /app/database/services/__init__.py
+  - /app/database/services/backup/__init__.py
+  - /app/database/services/backup/main.py
+  - /app/database/services/backup_service.py
+  - /app/database/services/elasticsearch_service.py
+  - /app/database/services/migration/__init__.py
+  - /app/database/services/mongodb_service.py
+  - /app/database/services/monitoring/__init__.py
+  - /app/database/services/monitoring/main.py
+  - /app/database/services/redis_service.py
+  - /app/database/services/volume_service.py
+  - /app/gui_tor_manager/gui_tor_manager/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/config.py
+  - /app/gui_tor_manager/gui_tor_manager/config/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/entrypoint.py
+  - /app/gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py
+  - /app/gui_tor_manager/gui_tor_manager/healthcheck.py
+  - /app/gui_tor_manager/gui_tor_manager/integration/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/integration/service_base.py
+  - /app/gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
+  - /app/gui_tor_manager/gui_tor_manager/main.py
+  - /app/gui_tor_manager/gui_tor_manager/middleware/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/middleware/auth.py
+  - /app/gui_tor_manager/gui_tor_manager/middleware/cors.py
+  - /app/gui_tor_manager/gui_tor_manager/middleware/logging.py
+  - /app/gui_tor_manager/gui_tor_manager/middleware/rate_limit.py
+  - /app/gui_tor_manager/gui_tor_manager/models/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/models/common.py
+  - /app/gui_tor_manager/gui_tor_manager/models/onion.py
+  - /app/gui_tor_manager/gui_tor_manager/models/tor.py
+  - /app/gui_tor_manager/gui_tor_manager/routers/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/routers/health.py
+  - /app/gui_tor_manager/gui_tor_manager/routers/onion.py
+  - /app/gui_tor_manager/gui_tor_manager/routers/proxy.py
+  - /app/gui_tor_manager/gui_tor_manager/routers/tor.py
+  - /app/gui_tor_manager/gui_tor_manager/services/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/services/onion_service.py
+  - /app/gui_tor_manager/gui_tor_manager/services/proxy_service.py
+  - /app/gui_tor_manager/gui_tor_manager/services/tor_service.py
+  - /app/gui_tor_manager/gui_tor_manager/utils/__init__.py
+  - /app/gui_tor_manager/gui_tor_manager/utils/errors.py
+  - /app/gui_tor_manager/gui_tor_manager/utils/logging.py
+  - /app/gui_tor_manager/gui_tor_manager/utils/validation.py
+  - /app/storage/__init__.py
+  - /app/storage/main.py
+  - /app/storage/mongodb_volume.py
+  - /app/storage/plane.py

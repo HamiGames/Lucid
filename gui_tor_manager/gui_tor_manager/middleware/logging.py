@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/middleware/logging.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/middleware/logging.py
+x-lucid-file-type: python
+
 Logging Middleware for GUI Tor Manager
 Logs all HTTP requests and responses in structured format
 """

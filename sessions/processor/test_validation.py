@@ -1,4 +1,8 @@
 """
+File: /app/sessions/processor/test_validation.py
+x-lucid-file-path: /app/sessions/processor/test_validation.py
+x-lucid-file-type: python
+
 Validation Test for Chunk Processor
 Tests chunk encryption and Merkle root calculation functionality.
 

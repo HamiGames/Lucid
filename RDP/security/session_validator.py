@@ -2,6 +2,12 @@
 # Implements comprehensive session validation for RDP security
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/security/session_validator.py
+x-lucid-file-path: /app/RDP/security/session_validator.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

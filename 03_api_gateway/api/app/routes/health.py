@@ -1,4 +1,10 @@
 # 03_api_gateway/api/app/routes/health.py
+"""
+File: /app/03_api_gateway/api/app/routes/health.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routes/health.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import time

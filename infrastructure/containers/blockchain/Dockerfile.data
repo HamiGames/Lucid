@@ -2,6 +2,7 @@
 # LUCID DATA CHAIN — Distroless Python (aligned with 03_api_gateway/Dockerfile)
 # Image: pickme/lucid-data-chain:latest-arm64
 # Build context: repository root (.)
+# Build guide: infrastructure/containers/blockchain/docker-blockchain-build.txt
 # Entry: blockchain/data/api/entrypoint.py → uvicorn blockchain.data.api.main:app
 
 ARG BUILD_DATE
@@ -29,17 +30,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends \
-        build-essential gcc g++ libffi-dev libssl-dev pkg-config \
+        build-essential gcc g++ libffi-dev libssl-dev libpq-dev pkg-config \
         curl ca-certificates tini \
         python3-wheel python3-dev python3-pip python3-setuptools \
         rustc cargo \
@@ -53,6 +52,12 @@ RUN apt-get remove -y rustc cargo && rm -rf /root/.cargo /root/.rustup && \
 
 ENV PATH=/root/.cargo/bin:$PATH
 
+# docker-blockchain-build.txt §6 — runtime COPY expects paths on builder
+RUN mkdir -p /etc/tor /etc/onion && \
+    printf '# Lucid placeholder torrc — replace via volume or BLOCK_ONION layout\n' > /etc/tor/torrc && \
+    chown -R 65532:65532 /etc/tor /etc/onion && \
+    chmod 644 /etc/tor/torrc
+
 RUN printf "LUCID_DATA_CHAIN_RUNTIME" > /var/run/.keep && \
     printf "LUCID_DATA_CHAIN_LIB" > /var/lib/.keep && \
     chown -R 65532:65532 /var/run /var/lib && chmod 644 /var/run/.keep /var/lib/.keep
@@ -63,28 +68,262 @@ RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY blockchain/data/requirements.txt ./requirements.txt
+COPY blockchain/block-requirements.txt ./block-requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_DATA_CHAIN_WHEELS_$(date +%s)" > /build/wheels/.keep && \
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./block-requirements.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './03_api_gateway' './admin' './api' './blockchain' './configs' './database' './node' './rdp' './security' './server' './service_configs' './sessions' './storage' './user' './utils' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './api/cluster' './blockchain/anchoring' './blockchain/api' './blockchain/chain-to-pay' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/backups' './storage/cache' './storage/data' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/docs/swagger' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './admin/ui/static' './admin/ui/templates' './blockchain/api/app' './blockchain/data/api' './database/services/backup' './database/services/migration' './database/services/monitoring' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/resource_monitor/config' './rdp/server_manager/config' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/config' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './admin/ui/static/css' './admin/ui/static/js' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './03_api_gateway/api/app/db/models' './blockchain/api/app/database/repositories'; \
+    for d in \
+      '.' \
+      './03_api_gateway' \
+      './admin' \
+      './api' \
+      './blockchain' \
+      './configs' \
+      './database' \
+      './node' \
+      './rdp' \
+      './security' \
+      './server' \
+      './service_configs' \
+      './sessions' \
+      './storage' \
+      './user' \
+      './utils' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './admin/admin_ui' \
+      './admin/api' \
+      './admin/audit' \
+      './admin/config' \
+      './admin/emergency' \
+      './admin/governance' \
+      './admin/key_rotation' \
+      './admin/over_lord' \
+      './admin/rbac' \
+      './admin/services' \
+      './admin/system' \
+      './admin/ui' \
+      './admin/utils' \
+      './api/cluster' \
+      './blockchain/anchoring' \
+      './blockchain/api' \
+      './blockchain/chain-to-pay' \
+      './blockchain/chain_client' \
+      './blockchain/config' \
+      './blockchain/contracts' \
+      './blockchain/core' \
+      './blockchain/data' \
+      './blockchain/deployment' \
+      './blockchain/docs' \
+      './blockchain/evm' \
+      './blockchain/governance' \
+      './blockchain/manager' \
+      './blockchain/on_system_chain' \
+      './blockchain/scripts' \
+      './blockchain/tests' \
+      './blockchain/utils' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './rdp/client' \
+      './rdp/common' \
+      './rdp/config' \
+      './rdp/database' \
+      './rdp/monitoring' \
+      './rdp/protocol' \
+      './rdp/recorder' \
+      './rdp/resource_monitor' \
+      './rdp/scripts' \
+      './rdp/security' \
+      './rdp/server' \
+      './rdp/server_manager' \
+      './rdp/session_controller' \
+      './rdp/xrdp' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './storage/backups' \
+      './storage/cache' \
+      './storage/data' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './admin/ui/static' \
+      './admin/ui/templates' \
+      './blockchain/api/app' \
+      './blockchain/data/api' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './rdp/common/governance' \
+      './rdp/monitoring/grafana' \
+      './rdp/resource_monitor/config' \
+      './rdp/server_manager/config' \
+      './rdp/session_controller/config' \
+      './rdp/session_controller/integration' \
+      './rdp/xrdp/config' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+      './storage/backups/configs' \
+      './storage/backups/database' \
+      './storage/backups/user-data' \
+      './storage/cache/build' \
+      './storage/cache/docker' \
+      './storage/cache/temp' \
+      './storage/data/blockchain' \
+      './storage/data/logs' \
+      './storage/data/sessions' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './admin/ui/static/css' \
+      './admin/ui/static/js' \
+      './blockchain/api/app/crypto' \
+      './blockchain/api/app/database' \
+      './blockchain/api/app/db' \
+      './blockchain/api/app/middleware' \
+      './blockchain/api/app/models' \
+      './blockchain/api/app/repo' \
+      './blockchain/api/app/routers' \
+      './blockchain/api/app/routes' \
+      './blockchain/api/app/schemas' \
+      './blockchain/api/app/services' \
+      './rdp/monitoring/grafana/dashboards' \
+      './rdp/monitoring/grafana/datasources' \
+      './03_api_gateway/api/app/db/models' \
+      './blockchain/api/app/database/repositories' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN printf "LUCID_DATA_CHAIN_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
     chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
 
 RUN python3.11 -c "import fastapi,uvicorn,pydantic,motor,pymongo,blake3,yaml,lz4,zstandard,httpx,aiohttp; print('data-chain deps OK')"
 
-COPY blockchain/__init__.py ./blockchain/__init__.py
-COPY blockchain/data ./blockchain/data
-COPY blockchain/core ./blockchain/core
-COPY blockchain/config ./blockchain/config
+COPY configs/environment/.env.secrets /build/configs/.env.secrets
+COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
-RUN test -f ./blockchain/data/api/entrypoint.py && test -f ./blockchain/data/api/main.py && \
-    echo "data-chain source OK"
+
+COPY blockchain/ ./blockchain/
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json ./blockchain/config/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
+COPY infrastructure/containers/blockchain/config/ ./blockchain/config/
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
+COPY api/ ./api/
+COPY admin/ ./admin/
+COPY sessions/ ./sessions/
+COPY node/ ./node/
+COPY RDP/ ./RDP/
+COPY database/ ./database/
+COPY security/ ./security/
+COPY utils/ ./utils/
+COPY server/ ./server/
+COPY storage/ ./storage/
+COPY user/ ./user/
+
 
 ############################
 # Stage 2 – Runtime (Distroless)
@@ -103,10 +342,13 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.service="data-chain" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="core" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.plane="ops" \
+      com.lucid.expose="8087"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -115,26 +357,80 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_SERVICE_KEY=data_chain \
+    LUCID_HOST_SERVICE_NAME=data-chain \
     LUCID_SERVICE_HOST_IP=172.20.10.36 \
     LUCID_SERVICE_HTTP_PATH=http://data-chain:8087/app \
     DATA_CHAIN_PORT=8087 \
     DATA_CHAIN_HOST=0.0.0.0
-
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-
-COPY --from=builder /var/run/ /app/var/run/
-COPY --from=builder /var/lib/ /app/var/lib/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder /usr/bin/ /app/usr/bin/
-COPY --from=builder /usr/sbin/ /app/usr/sbin/
-
-COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
 COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/security/ /app/security/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
+COPY --from=builder --chown=65532:65532 /build/user/ /app/user/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/onion/ /app/etc/onion/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /etc/tor/ /app/etc/tor/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt -> FHS paths only (not ./ or /build/ skeleton; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+
+COPY --from=builder --chown=65532:65532 /etc/tor/torrc /app/etc/tor/torrc
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
+COPY --from=builder --chown=65532:65532 /usr/local/share/ /app/usr/local/share/
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+
+COPY --from=builder --chown=65532:65532 /etc/tor/ /app/etc/tor/
+COPY --from=builder --chown=65532:65532 /etc/onion/ /app/etc/onion/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
+
+
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+
+
+
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,blake3; print('runtime OK')"]
 

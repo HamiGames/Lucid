@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_node/payout_router_v0.py
+x-lucid-file-path: /app/payment_systems/tron_node/payout_router_v0.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - PayoutRouterV0 Integration
 Non-KYC USDT payout router for end-users via TRON blockchain
 Distroless container: pickme/lucid:payment_systems:latest

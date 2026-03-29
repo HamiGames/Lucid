@@ -1,0 +1,74 @@
+# Runtime (container): /app/service_configs/x_lucid_cluster_calibration/database-cluster-host-alignment.yml
+# Canonical database cluster alignment: host-config.yml + x-files-listing.txt (merge with docker-compose for this stack).
+x-lucid-calibration:
+  cluster: database
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files_listing: x-files-listing.txt
+  description: Host registry + x-lucid file paths for database cluster (merge with docker-compose fragments for this stack).
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  ip_source_repo_path: service-ip.txt
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  in_container_path: /app/configs/host-config.yml
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    database_overlord:
+      host_config_key: database_overlord
+      service_name: database-overlord
+      port: 8120
+      host_ip: 172.20.10.22
+      http_path: http://database-overlord:8120/app
+x-lucid-x-files-calibration:
+  cluster: database
+  filter_app_prefixes:
+  - database
+  x_lucid_file_paths:
+  - /app/database/__init__.py
+  - /app/database/api/__init__.py
+  - /app/database/api/backups.py
+  - /app/database/api/cache.py
+  - /app/database/api/collections.py
+  - /app/database/api/database_health.py
+  - /app/database/api/database_stats.py
+  - /app/database/api/indexes.py
+  - /app/database/api/search.py
+  - /app/database/api/volumes.py
+  - /app/database/config/load_host_config.py
+  - /app/database/elasticsearch/healthcheck.py
+  - /app/database/elasticsearch/start-elasticsearch.py
+  - /app/database/models/__init__.py
+  - /app/database/models/block.py
+  - /app/database/models/session.py
+  - /app/database/models/transaction.py
+  - /app/database/models/trust_policy.py
+  - /app/database/models/user.py
+  - /app/database/models/wallet.py
+  - /app/database/mongodb/__init__.py
+  - /app/database/mongodb/healthcheck.py
+  - /app/database/mongodb/start_mongodb.py
+  - /app/database/redis/__init__.py
+  - /app/database/redis/healthcheck.py
+  - /app/database/redis/start-redis.py
+  - /app/database/repositories/__init__.py
+  - /app/database/repositories/block_repository.py
+  - /app/database/repositories/session_repository.py
+  - /app/database/repositories/user_repository.py
+  - /app/database/schema/mongodb_schema.py
+  - /app/database/services/__init__.py
+  - /app/database/services/backup/__init__.py
+  - /app/database/services/backup/main.py
+  - /app/database/services/backup_service.py
+  - /app/database/services/elasticsearch_service.py
+  - /app/database/services/migration/__init__.py
+  - /app/database/services/mongodb_service.py
+  - /app/database/services/monitoring/__init__.py
+  - /app/database/services/monitoring/main.py
+  - /app/database/services/redis_service.py
+  - /app/database/services/volume_service.py

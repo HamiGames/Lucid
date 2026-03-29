@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/rdp/monitor-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/rdp/monitor-config.yaml — see ../container-runtime-layout.yml
 # Lucid RDP Resource Monitor - Configuration File
 # Optional YAML configuration for RDP resource monitoring service
 # File: RDP/config/monitor-config.yaml

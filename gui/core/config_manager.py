@@ -1,5 +1,8 @@
 # Path: gui/core/config_manager.py
 """
+file: /app/gui/core/config_manager.py
+x-lucid-file-path: /app/gui/core/config_manager.py
+x-lucid-file-type: python
 Encrypted configuration management for Lucid RDP GUI.
 Provides secure storage and retrieval of configuration data with encryption.
 """

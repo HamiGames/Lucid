@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/models/staking.py
+x-lucid-file-path: /app/payment_systems/tron/models/staking.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Staking Data Models
 Pydantic models for staking operations
 Distroless container: lucid-trx-staking:latest

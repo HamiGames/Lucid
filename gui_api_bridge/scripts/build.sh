@@ -1,6 +1,8 @@
 #!/bin/bash
 # Build script for GUI API Bridge
-# File: gui_api_bridge/scripts/build.sh
+# File: /app/gui_api_bridge/gui_api_bridge/scripts/build.sh
+# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/build.sh
+# x-lucid-file-type: bash
 # Build Host: Windows 11 console
 # Target Host: Raspberry Pi
 # No hardcoded values - all from environment or defaults

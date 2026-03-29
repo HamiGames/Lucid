@@ -9,6 +9,10 @@
 #   /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
 #   /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
 #   /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 # -----------------------------------------------------------------------------
 
     ARG BUILD_DATE
@@ -122,7 +126,6 @@
         SERVER_TOOLS_HOME=/opt/lucid \
         SERVER_TOOLS_LOG_DIR=/opt/lucid/logs
     
-    # Copy toolchain, libraries, bootstrap script, user metadata, optional venv
     COPY --from=builder /bin/bash /bin/bash
     COPY --from=builder /usr/bin /usr/bin
     COPY --from=builder /usr/lib /usr/lib

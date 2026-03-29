@@ -1,4 +1,10 @@
 # 03_api_gateway/api/app/services/mongo_service.py
+"""
+File: /app/03_api_gateway/api/app/services/mongo_service.py
+x-lucid-file-path: /app/03_api_gateway/api/app/services/mongo_service.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from typing import Any

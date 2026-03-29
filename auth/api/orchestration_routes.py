@@ -1,8 +1,11 @@
 """
+File: /app/auth/api/orchestration_routes.py
+x-lucid-file-path: /app/auth/api/orchestration_routes.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Service Orchestration Routes
 API endpoints for spawning and managing services
 
-File: auth/api/orchestration_routes.py
 Purpose: HTTP endpoints for service orchestration (spawning MongoDB clones, etc.)
 Dependencies: fastapi, Request, HTTPException, orchestrator
 """

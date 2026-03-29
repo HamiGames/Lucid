@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/models/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/models/__init__.py
+x-lucid-file-type: python
+
 Blockchain API Models Package
 Provides Pydantic models for blocks, transactions, anchoring, and consensus operations.
 """
+
+
 
 from .block import Block, BlockHeader, BlockSummary, BlockInfo
 from .transaction import Transaction, TransactionSummary, TransactionStatus

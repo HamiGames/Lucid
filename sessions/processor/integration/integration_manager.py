@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/processor/integration/integration_manager.py
+x-lucid-file-path: /app/sessions/processor/integration/integration_manager.py
+x-lucid-file-type: python
+
 Integration Manager for Session Processor
 Manages initialization and lifecycle of integration clients
 """

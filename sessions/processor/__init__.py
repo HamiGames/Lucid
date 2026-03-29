@@ -1,8 +1,11 @@
 """
+File: /app/sessions/processor/__init__.py
+x-lucid-file-path: /app/sessions/processor/__init__.py
+x-lucid-file-type: python
+
 LUCID Session Processor Components
 Chunk processing, encryption, and Merkle tree building for session data
 path: ..processor
-file: sessions/processor/__init__.py
 the processor calls the sessions processor
 """
 from sessions.core import (logging, session_generator, session_orchestrator, merkle_builder)

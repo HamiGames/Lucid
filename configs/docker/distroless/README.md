@@ -1,3 +1,5 @@
+> **Lucid layout:** Canonical Dockerfiles: infrastructure/containers/**/Dockerfile* (repo-root build context). Registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml. Packaged configs: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml). Indexed in x-files-listing.txt.
+
 # Lucid Distroless Docker Configurations
 
 This directory contains Docker Compose configurations specifically designed for distroless containers in the Lucid project. These configurations are optimized for security, minimal attack surface, and production deployment.

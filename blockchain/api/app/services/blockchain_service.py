@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/services/blockchain_service.py
+x-lucid-file-path: /app/blockchain/api/app/services/blockchain_service.py
+x-lucid-file-type: python
+
 Blockchain Service
 
 This service handles blockchain information and status operations.
 Implements business logic for blockchain queries and network information.
 """
+
+
 
 from typing import Dict, Any, Optional
 import logging

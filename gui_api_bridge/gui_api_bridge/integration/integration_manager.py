@@ -1,6 +1,7 @@
 """
 Integration Manager for Backend Services
-File: gui_api_bridge/gui_api_bridge/integration/integration_manager.py
+File: /app/gui_api_bridge/gui_api_bridge/integration/integration_manager.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/integration/integration_manager.py
 Pattern: Follow sessions/pipeline/integration/ structure
 Lazy initialization of all backend service clients
 """
@@ -8,13 +9,13 @@ Lazy initialization of all backend service clients
 import logging
 from typing import Optional
 from ...gui_api_bridge.config import GuiAPIBridgeSettings
-from gui_api_bridge.gui_api_bridge.blockchain_client import BlockchainEngineClient
-from gui_api_bridge.gui_api_bridge.api_gateway_client import APIGatewayClient
-from gui_api_bridge.gui_api_bridge.auth_service_client import AuthServiceClient
-from gui_api_bridge.gui_api_bridge.session_api_client import SessionAPIClient
-from gui_api_bridge.gui_api_bridge.node_management_client import NodeManagementClient
-from gui_api_bridge.gui_api_bridge.admin_interface_client import AdminInterfaceClient
-from gui_api_bridge.gui_api_bridge.tron_client import TronClient
+from ...gui_api_bridge.integration.blockchain_client import BlockchainEngineClient
+from ...gui_api_bridge.integration.api_gateway_client import APIGatewayClient
+from ...gui_api_bridge.integration.auth_service_client import AuthServiceClient
+from ...gui_api_bridge.integration.session_api_client import SessionAPIClient
+from ...gui_api_bridge.integration.node_management_client import NodeManagementClient
+from ...gui_api_bridge.integration.admin_interface_client import AdminInterfaceClient
+from ...gui_api_bridge.integration.tron_client import TronClient
 
 logger = logging.getLogger(__name__)
 

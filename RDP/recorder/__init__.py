@@ -4,6 +4,10 @@
 # LUCID-STRICT Layer 2 Service Integration
 
 """
+File: /app/RDP/recorder/__init__.py
+x-lucid-file-path: /app/RDP/recorder/__init__.py
+x-lucid-file-type: python
+
 RDP Recorder Module
 
 This module provides session recording and monitoring functionality including:

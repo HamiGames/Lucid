@@ -1,3 +1,13 @@
+"""
+x-lucid-file-path: /app/blockchain/config/config.py
+x-lucid-file-type: python
+
+Comprehensive blockchain configuration loader.
+Loads configuration from YAML files with environment variable substitution.
+"""
+
+
+
 from __future__ import annotations
 
 from dataclasses import dataclass

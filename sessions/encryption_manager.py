@@ -1,5 +1,11 @@
 ﻿# Path: session/encryption_manager.py
 
+"""
+File: /app/sessions/encryption_manager.py
+x-lucid-file-path: /app/sessions/encryption_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import os
 import logging

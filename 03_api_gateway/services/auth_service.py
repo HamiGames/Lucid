@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/services/auth_service.py
+x-lucid-file-path: /app/03_api_gateway/services/auth_service.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Authentication Service Client
 Handles communication with Authentication Cluster (Cluster 09).
 
-File: 03_api_gateway/services/auth_service.py
 Lines: ~300
 Purpose: Authentication service integration
 Dependencies: aiohttp, PyJWT

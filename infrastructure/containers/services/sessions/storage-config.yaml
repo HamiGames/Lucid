@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/sessions/storage-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/sessions/storage-config.yaml — see ../container-runtime-layout.yml
 # Lucid Session Storage — reference configuration (sessions/config/storage-config.yaml)
 # Canonical registry: infrastructure/containers/host-config.yml (generated; do not hand-edit registry).
 #

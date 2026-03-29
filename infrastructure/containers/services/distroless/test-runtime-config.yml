@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/distroless/test-runtime-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/distroless/test-runtime-config.yml — see ../container-runtime-layout.yml
 # Compose: run on host; env_file paths must exist on the host unless you copy this tree into the image first.
 # Service hostname/port/host_ip: /app/configs/host-config.yml (static IPs: repository root service-ip.txt)
 

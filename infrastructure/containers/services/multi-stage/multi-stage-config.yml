@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/multi-stage/multi-stage-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/multi-stage/multi-stage-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Docker Configuration for Lucid Project
 # Container-hosted: no host SSD paths; named volumes + in-network services. Optional bind overrides via LUCID_*.
 # Build: run from repo root or set LUCID_COMPOSE_REPO_ROOT to an absolute repo path (compose resolves context from this file's directory by default).

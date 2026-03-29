@@ -1,10 +1,16 @@
-# Path: blockchain/blockchain_anchor.py
 """
+File: /app/blockchain/blockchain_anchor.py
+x-lucid-file-path: /app/blockchain/blockchain_anchor.py
+x-lucid-file-type: python
+
 Lucid RDP Blockchain Anchor System
 Handles session manifest anchoring to On-System Data Chain (primary)
 Based on LUCID-STRICT requirements for blockchain architecture
 REBUILT: On-System Chain as primary blockchain for session anchoring
 """
+
+# Path: blockchain/blockchain_anchor.py
+
 
 from __future__ import annotations
 

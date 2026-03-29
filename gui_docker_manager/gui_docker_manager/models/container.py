@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/container.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/container.py
+x-lucid-file-type: python
+
 Container Data Models
-File: gui_docker_manager/gui_docker_manager/models/container.py
 """
 
 from pydantic import BaseModel, Field

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/manager/synchronization.py
+x-lucid-file-path: /app/blockchain/manager/synchronization.py
+x-lucid-file-type: python
+
 Chain Synchronization Module
 Handles synchronization with blockchain engine
 
 This module provides chain synchronization functionality.
 """
+
+
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 # LUCID TRON Client - Prometheus Metrics Configuration
 # File: payment-systems/tron/config/prometheus-metrics.yaml
 # Purpose: Define Prometheus metrics for tron-client service
-# Runtime (container): /app/configs/services/payment_services/prometheus-metrics.yaml
+# Runtime (container): /app/service_configs/payment_services/prometheus-metrics.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

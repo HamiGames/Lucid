@@ -1,7 +1,10 @@
 """
+File: /app/admin/utils/logging.py
+x-lucid-file-path: /app/admin/utils/logging.py
+x-lucid-file-type: python
+
 Logging Utilities
 
-File: admin/utils/logging.py
 Purpose: Logging configuration and setup
 """
 

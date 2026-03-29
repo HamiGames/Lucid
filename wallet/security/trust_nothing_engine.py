@@ -2,6 +2,12 @@
 # Implements comprehensive zero-trust security model for wallet operations
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/security/trust_nothing_engine.py
+x-lucid-file-path: /app/wallet/security/trust_nothing_engine.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/database/connection.py
+x-lucid-file-path: /app/blockchain/api/app/database/connection.py
+x-lucid-file-type: python
+
 Database Connection Management
 Handles MongoDB connections for blockchain API.
 """
+
+
 
 import asyncio
 import logging

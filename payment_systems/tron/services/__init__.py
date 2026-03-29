@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/__init__.py
+x-lucid-file-path: /app/payment_systems/tron/services/__init__.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Payment Services
 TRON payment service modules for isolated payment operations
 """

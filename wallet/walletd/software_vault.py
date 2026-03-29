@@ -2,6 +2,12 @@
 # Implements secure software wallet storage with passphrase protection
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/walletd/software_vault.py
+x-lucid-file-path: /app/wallet/walletd/software_vault.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

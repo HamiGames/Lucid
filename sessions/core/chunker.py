@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/core/chunker.py
+x-lucid-file-path: /app/sessions/core/chunker.py
+x-lucid-file-type: python
+
 LUCID Session Chunker - SPEC-1B Implementation
 8-16MB chunking with Zstd compression (level 3)
 """

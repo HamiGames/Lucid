@@ -1,5 +1,9 @@
 # LUCID RDP VM Manager - Virtual Machine Orchestration
 # SPEC-4 Compliant: VM lifecycle management, resource allocation, isolation
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 FROM pickme/lucid:devcontainer-dind as base
 
@@ -23,7 +27,6 @@ RUN apt-get update && apt-get install -y \
     python3-yaml \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy VM management scripts
 COPY vm/vm_manager.py /workspaces/Lucid/vm/
 COPY vm/__init__.py /workspaces/Lucid/vm/
 

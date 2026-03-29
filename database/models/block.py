@@ -1,4 +1,8 @@
 """
+File: /app/database/models/block.py
+x-lucid-file-path: /app/database/models/block.py
+x-lucid-file-type: python
+
 Block Data Models
 
 Pydantic models for blockchain block entities (lucid_blocks).

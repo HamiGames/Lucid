@@ -1,5 +1,11 @@
 ﻿# Path: api/routes/node_routes.py
 
+"""
+File: /app/node/worker/node_routes.py
+x-lucid-file-path: /app/node/worker/node_routes.py
+x-lucid-file-type: python
+"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any
 import logging

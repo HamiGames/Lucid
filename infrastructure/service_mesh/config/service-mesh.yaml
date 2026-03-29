@@ -1,7 +1,7 @@
 # Lucid Service Mesh Configuration
-# File: infrastructure/service-mesh/config/service-mesh.yaml
+# File: infrastructure/service_mesh/config/service-mesh.yaml
 # Purpose: Comprehensive service mesh configuration for Lucid platform
-# This file is loaded by infrastructure/service-mesh/controller/config_manager.py
+# This file is loaded by infrastructure/service_mesh/controller/config_manager.py
 # Default path: /config/service-mesh.yaml (configurable via SERVICE_MESH_CONFIG_PATH)
 
 service_mesh:

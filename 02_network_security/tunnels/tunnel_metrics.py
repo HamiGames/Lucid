@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/02_network_security/tunnels/tunnel_metrics.py
+x-lucid-file-path: /app/02_network_security/tunnels/tunnel_metrics.py
+x-lucid-file-type: python
+
 Tunnel Tools Metrics Collection Module
 Collects and maintains operational metrics for tunnel-tools container.
 All configuration from environment variables - no hardcoded values.

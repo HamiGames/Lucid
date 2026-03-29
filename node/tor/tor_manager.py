@@ -1,4 +1,8 @@
 """
+File: /app/node/tor/tor_manager.py
+x-lucid-file-path: /app/node/tor/tor_manager.py
+x-lucid-file-type: python
+
 LUCID Node Tor - Tor Service Management
 Manages Tor proxy connections, onion services, and network routing
 Distroless container: pickme/lucid:node-worker:latest

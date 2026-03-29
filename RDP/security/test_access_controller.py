@@ -1,6 +1,12 @@
 # LUCID RDP Access Controller Tests
 # Comprehensive test suite for access control system
 
+"""
+File: /app/RDP/security/test_access_controller.py
+x-lucid-file-path: /app/RDP/security/test_access_controller.py
+x-lucid-file-type: python
+"""
+
 import asyncio
 import pytest
 from datetime import datetime, timezone, timedelta

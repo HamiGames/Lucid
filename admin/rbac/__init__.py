@@ -4,6 +4,12 @@
 # Role-Based Access Control system for the Lucid admin interface.
 # Provides comprehensive permission management and role hierarchy.
 
+"""
+File: /app/admin/rbac/__init__.py
+x-lucid-file-path: /app/admin/rbac/__init__.py
+x-lucid-file-type: python
+"""
+
 from admin.rbac.manager import (
     RBACManager, get_rbac_manager, UserRole, RolePermission, set_rbac_manager)
 from admin.rbac.roles import (

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/storage/main.py
+x-lucid-file-path: /app/storage/main.py
+x-lucid-file-type: python
+
 Lucid storage plane service — hardware-backed capacity, mount layout, and health.
 Database organisation (indexes, sharding, query access) belongs in the database layer, not here.
 """

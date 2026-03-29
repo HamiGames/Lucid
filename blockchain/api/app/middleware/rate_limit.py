@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/middleware/rate_limit.py
+x-lucid-file-path: /app/blockchain/api/app/middleware/rate_limit.py
+x-lucid-file-type: python
+
 Rate Limiting Middleware
 
 This module contains rate limiting middleware for the Blockchain API.
 Implements token bucket and sliding window rate limiting algorithms.
 """
+
+
 
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware

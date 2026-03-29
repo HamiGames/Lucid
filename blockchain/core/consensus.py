@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/core/consensus.py
+x-lucid-file-path: /app/blockchain/core/consensus.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from typing import List
@@ -7,7 +13,10 @@ from .config import DEFAULT_CONFIG
 
 
 class SimpleProposer:
-    """Simplified PoA-like proposer: batches up to max_block_txs every block_time."""
+    """
+
+Simplified PoA-like proposer: batches up to max_block_txs every block_time.
+"""
 
     def __init__(self, proposer_id: str = "dev-proposer") -> None:
         self.proposer_id = proposer_id

@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/beta-sidecar.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/beta-sidecar.yml — see container-runtime-layout.yml
 # Beta Sidecar Configuration
 # Implements Beta sidecar pattern for service isolation and security
 # Based on architecture documents and service mesh requirements

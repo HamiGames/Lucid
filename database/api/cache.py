@@ -1,4 +1,8 @@
 """
+File: /app/database/api/cache.py
+x-lucid-file-path: /app/database/api/cache.py
+x-lucid-file-type: python
+
 Database Cache Management API
 
 Provides endpoints for Redis cache operations:

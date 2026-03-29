@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/health.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/health.py
+x-lucid-file-type: python
+
 Health and Status Routers
-File: gui_docker_manager/gui_docker_manager/routers/health.py
 """
 
 import logging

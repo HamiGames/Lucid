@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/gui_docker.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/gui_docker.py
+x-lucid-file-type: python
+
 GUI Docker Manager Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/gui_docker.py
 Purpose: Proxy endpoints to gui_docker_manager service for Docker management via GUI
 
 Architecture Note: This router proxies to gui_docker_manager service

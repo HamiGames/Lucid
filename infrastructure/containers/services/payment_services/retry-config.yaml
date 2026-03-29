@@ -1,7 +1,7 @@
 # LUCID TRON Client - Retry Configuration
 # File: payment-systems/tron/config/retry-config.yaml
 # Purpose: Define retry logic with exponential backoff
-# Runtime (container): /app/configs/services/payment_services/retry-config.yaml
+# Runtime (container): /app/service_configs/payment_services/retry-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

@@ -1,4 +1,8 @@
 """
+File: /app/RDP/resource_monitor/metrics_collector.py
+x-lucid-file-path: /app/RDP/resource_monitor/metrics_collector.py
+x-lucid-file-type: python
+
 RDP Metrics Collector - Metrics Collection Service
 
 This module provides metrics collection functionality for RDP sessions,

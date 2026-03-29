@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/volume.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/volume.py
+x-lucid-file-type: python
+
 Volume Data Models
-File: gui_docker_manager/gui_docker_manager/models/volume.py
 
 Models for Docker volume management and information.
 """

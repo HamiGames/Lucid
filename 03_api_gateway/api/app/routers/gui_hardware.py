@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/gui_hardware.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/gui_hardware.py
+x-lucid-file-type: python
+
 GUI Hardware Manager Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/gui_hardware.py
 Purpose: Proxy endpoints to gui_hardware_manager service for hardware wallet management
 
 Architecture Note: This router proxies to gui_hardware_manager service

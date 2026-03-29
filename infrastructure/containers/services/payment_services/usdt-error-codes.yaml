@@ -1,7 +1,7 @@
 # Lucid TRON USDT Manager - Error Codes Configuration
 # File: payment-systems/tron/config/usdt-error-codes.yaml
 # Purpose: Define USDT manager specific error codes, recovery actions, and retry policies
-# Runtime (container): /app/configs/services/payment_services/usdt-error-codes.yaml
+# Runtime (container): /app/service_configs/payment_services/usdt-error-codes.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

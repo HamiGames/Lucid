@@ -1,4 +1,8 @@
 """
+File: /app/common/tor/tor_manager.py
+x-lucid-file-path: /app/common/tor/tor_manager.py
+x-lucid-file-type: python
+
 Tor service management for Lucid RDP.
 
 This module provides comprehensive Tor daemon lifecycle management,

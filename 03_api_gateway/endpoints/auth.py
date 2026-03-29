@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/auth.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/auth.py
+x-lucid-file-type: python
+
 Authentication Endpoints Module
 
 Handles all authentication and authorization operations including:

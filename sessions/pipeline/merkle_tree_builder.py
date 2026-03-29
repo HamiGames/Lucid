@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/merkle_tree_builder.py
+x-lucid-file-path: /app/sessions/pipeline/merkle_tree_builder.py
+x-lucid-file-type: python
+
 LUCID Merkle Tree Builder - SPEC-1B Implementation
 Builds BLAKE3 Merkle trees for session chunk integrity verification
 """

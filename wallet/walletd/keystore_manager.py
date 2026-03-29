@@ -2,6 +2,12 @@
 # Implements secure encrypted keystore with multiple encryption layers
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/walletd/keystore_manager.py
+x-lucid-file-path: /app/wallet/walletd/keystore_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

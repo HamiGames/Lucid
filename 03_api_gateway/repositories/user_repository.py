@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/repositories/user_repository.py
+x-lucid-file-path: /app/03_api_gateway/repositories/user_repository.py
+x-lucid-file-type: python
+
 Lucid API Gateway - User Repository
 Data access layer for user operations.
 
-File: 03_api_gateway/repositories/user_repository.py
 Lines: ~150
 Purpose: User data access
 Dependencies: motor

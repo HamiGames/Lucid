@@ -1,5 +1,8 @@
-# Path: blockchain/core/models.py
 """
+File: /app/blockchain/core/models.py
+x-lucid-file-path: /app/blockchain/core/models.py
+x-lucid-file-type: python
+
 Lucid Blockchain Core Data Models
 
 Defines all data structures for the blockchain architecture:
@@ -10,6 +13,9 @@ Defines all data structures for the blockchain architecture:
 
 Based on Spec-1a, Spec-1b, and Spec-1c requirements.
 """
+
+# Path: blockchain/core/models.py
+
 
 from __future__ import annotations
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/main.py
+x-lucid-file-path: /app/admin/main.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Main Application
 Step 23: Admin Backend APIs Implementation
 

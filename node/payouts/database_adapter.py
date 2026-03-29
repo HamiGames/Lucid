@@ -1,4 +1,9 @@
-""" LUCID Node Payouts Database Adapter
+"""
+File: /app/node/payouts/database_adapter.py
+x-lucid-file-path: /app/node/payouts/database_adapter.py
+x-lucid-file-type: python
+
+LUCID Node Payouts Database Adapter
 
 This module provides a database adapter for payout operations.
 
@@ -6,7 +11,6 @@ Core Components:
 - PayoutDatabaseAdapter: Database adapter for payout operations
 - PayoutDatabaseAdapter: Database adapter for payout operations
 - PayoutDatabaseAdapter: Database adapter for payout operations
-
 """
 from fastapi import APIRouter
 import logging

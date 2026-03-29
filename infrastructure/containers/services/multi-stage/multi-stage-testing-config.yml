@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/multi-stage/multi-stage-testing-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/multi-stage/multi-stage-testing-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Testing Configuration for Lucid Project
 # Container-hosted: named volumes for src/tests/logs/coverage/artifacts; no host SSD paths.
 # test-database mirrors lucid_mongodb (host-config); integration tests against core stack should target lucid-mongodb:27017.

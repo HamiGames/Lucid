@@ -1,6 +1,10 @@
 # LUCID SOFTWARE VAULT - SPEC-1C Passphrase-Protected Vault (Distroless)
 # Professional passphrase-protected vault for Pi deployment
 # Multi-platform build for ARM64 Pi and AMD64 development
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 # syntax=docker/dockerfile:1.7
 FROM python:3.11-slim AS vault-builder
@@ -8,11 +12,11 @@ FROM python:3.11-slim AS vault-builder
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
       version="1.0.0-distroless" \
-      description="Software Vault for Lucid SPEC-1C Passphrase-Protected Vault (Distroless)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="software-vault" \
-      org.lucid.layer="1" \
-      org.lucid.expose="8101"
+      description="Passphrase-Protected Vault (Distroless)" \
+      com.lucid.plane="ops" \
+      com.lucid.service="vault" \
+      com.lucid.layer="1" \
+      com.lucid.expose="8101"
 
 # Build-time environment for dependency installation
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,7 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         netcat-traditional \
         jq \
         gosu \
-        # Cryptographic dependencies
+        bash \
+        tini \
         python3-dev \
         python3-cryptography \
         python3-argon2 \
@@ -42,9 +47,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && groupadd --gid 1000 lucid \
     && useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home lucid
 
-# Set up application directory
+# Set up application directory (match runtime COPY --from=vault-builder /app)
 WORKDIR /app
-RUN chown -R lucid:lucid /app
 
 # Install Python dependencies for software vault
 RUN pip install --no-cache-dir \
@@ -59,36 +63,220 @@ RUN pip install --no-cache-dir \
         "websockets>=11.0.0"
 
 # Copy application code
-COPY wallet/ /app/wallet/
-COPY auth/ /app/auth/
-COPY sessions/ /app/sessions/
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './03_api_gateway' './auth' './common' './configs' './node' './server' './service_configs' './service_mesh' './sessions' './wallet' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './auth/api' './auth/config' './auth/docs' './auth/middleware' './auth/models' './auth/services' './auth/utils' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/security' './service_mesh/sidecar' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './wallet/security' './wallet/walletd' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/docs/swagger' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './03_api_gateway/api/app/db/models'; \
+    for d in \
+      '.' \
+      './03_api_gateway' \
+      './auth' \
+      './common' \
+      './configs' \
+      './node' \
+      './server' \
+      './service_configs' \
+      './service_mesh' \
+      './sessions' \
+      './wallet' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './auth/api' \
+      './auth/config' \
+      './auth/docs' \
+      './auth/middleware' \
+      './auth/models' \
+      './auth/services' \
+      './auth/utils' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './wallet/security' \
+      './wallet/walletd' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './03_api_gateway/api/app/db/models' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+COPY wallet/ ./wallet/
+COPY auth/ ./auth/
+COPY sessions/ ./sessions/
+COPY configs/ ./configs/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY master-env-config.txt ./configs/.env.master
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY server/ ./server/
+COPY node/ ./node/
+COPY common/ ./common/
+COPY service_mesh/ ./service_mesh/
 
 # Create vault directories
 RUN mkdir -p /opt/lucid/wallet /opt/lucid/vaults /opt/lucid/keys /data/vaults /tmp/vault \
-    && chown -R lucid:lucid /opt/lucid /data /tmp/vault
+    && chown -R 65532:65532 /opt/lucid /data /tmp/vault
 
 # Create non-root user for runtime
 RUN adduser --disabled-password --gecos '' vault_user && \
     chown -R vault_user:vault_user /app /data /tmp/vault /opt/lucid
 
 # Stage 2: Distroless runtime with Python and cryptographic dependencies
-FROM gcr.io/distroless/python3-debian12:nonroot
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 # Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \
       version="1.0.0-distroless" \
-      description="Software Vault for Lucid SPEC-1C Passphrase-Protected Vault (Distroless Runtime)" \
-      org.lucid.plane="ops" \
-      org.lucid.service="software-vault" \
-      org.lucid.layer="1" \
-      org.lucid.expose="8101"
-
-# Copy Python installation and packages from builder
+      description="Passphrase-Protected Vault (Distroless Runtime)" \
+      com.lucid.plane="ops" \
+      com.lucid.service="vault" \
+      com.lucid.layer="1" \
+      com.lucid.expose="8101"
+      
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
+    VAULT_PATH=/opt/lucid/vaults \
+    KEYS_PATH=/opt/lucid/keys \
+    WALLET_PATH=/opt/lucid/wallet \
+    XDG_RUNTIME_DIR=/app/tmp/vault \
+    VAULT_ENCRYPTION=argon2 \
+    KEY_DERIVATION_ITERATIONS=100000 \
+    VAULT_TIMEOUT=300 \
+    MAX_LOGIN_ATTEMPTS=3
+  
 COPY --from=vault-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=vault-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
 COPY --from=vault-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-# Copy cryptographic tools
 COPY --from=vault-builder /usr/bin/openssl /usr/bin/openssl
 COPY --from=vault-builder /usr/bin/gpg /usr/bin/gpg
 COPY --from=vault-builder /usr/bin/haveged /usr/bin/haveged
@@ -97,7 +285,6 @@ COPY --from=vault-builder /bin/nc /bin/nc
 COPY --from=vault-builder /usr/bin/jq /usr/bin/jq
 COPY --from=vault-builder /usr/sbin/gosu /usr/sbin/gosu
 
-# Copy required dynamic libraries (architecture-specific)
 COPY --from=vault-builder /lib/*-linux-*/libc.so.6 /lib/
 COPY --from=vault-builder /lib/*-linux-*/libssl.so.3 /lib/
 COPY --from=vault-builder /lib/*-linux-*/libcrypto.so.3 /lib/
@@ -106,36 +293,21 @@ COPY --from=vault-builder /lib/*-linux-*/liblzma.so.5 /lib/
 COPY --from=vault-builder /lib/*-linux-*/libzstd.so.1 /lib/
 COPY --from=vault-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy user and group information
 COPY --from=vault-builder /etc/passwd /etc/passwd
 COPY --from=vault-builder /etc/group /etc/group
 
-# Copy CA certificates
 COPY --from=vault-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy application with proper ownership
 COPY --from=vault-builder --chown=vault_user:vault_user /app /app
 COPY --from=vault-builder --chown=vault_user:vault_user /data /data
 COPY --from=vault-builder --chown=vault_user:vault_user /tmp/vault /tmp/vault
 COPY --from=vault-builder --chown=vault_user:vault_user /opt/lucid /opt/lucid
 
 # Runtime environment for software vault
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
-    VAULT_PATH=/opt/lucid/vaults \
-    KEYS_PATH=/opt/lucid/keys \
-    WALLET_PATH=/opt/lucid/wallet \
-    XDG_RUNTIME_DIR=/tmp/vault \
-    VAULT_ENCRYPTION=argon2 \
-    KEY_DERIVATION_ITERATIONS=100000 \
-    VAULT_TIMEOUT=300 \
-    MAX_LOGIN_ATTEMPTS=3
 
-# Security and runtime configuration
 EXPOSE 8101
 USER vault_user
-WORKDIR /app
+
 
 # Default command for software vault service
 ENTRYPOINT ["/usr/local/bin/python3.11", "/app/wallet/walletd/software_vault.py"]

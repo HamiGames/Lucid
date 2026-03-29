@@ -1,3 +1,10 @@
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
+
 name: lucid-support
 services:
   # NOTE: admin-interface moved to docker-compose.gui-integration.yml
@@ -9,12 +16,12 @@ services:
     hostname: lucid-tron-client
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-client
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-client
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
 
     networks:
       - lucid-tron-isolated
@@ -23,10 +30,10 @@ services:
       - "${TRON_CLIENT_PORT:-8091}:${TRON_CLIENT_PORT:-8091}"
       - "${TRON_CLIENT_DEBUG_PORT:-8101}:${TRON_CLIENT_DEBUG_PORT:-8101}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/tron:/data/tron:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/tron-client:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-systems:/data/payment-systems:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tron:/data/tron:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/keys:/data/keys:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tron-client:/app/logs:rw
 
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
@@ -72,12 +79,12 @@ services:
     hostname: tron-payout-router
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payout-router
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-payout-router
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
 
     networks:
       - lucid-tron-isolated
@@ -85,11 +92,11 @@ services:
     ports:
       - "${PAYOUT_ROUTER_PORT:-8092}:${PAYOUT_ROUTER_PORT:-8092}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payments:/data/payouts:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/batches:/data/batches:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payout-router:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-systems:/data/payment-systems:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payments:/data/payouts:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/batches:/data/batches:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/keys:/data/keys:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/payout-router:/app/logs:rw
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
       - no-new-privileges:true
@@ -134,12 +141,12 @@ services:
     hostname: tron-wallet-manager
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-wallet-manager
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-wallet-manager
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
 
     networks:
       - lucid-tron-isolated
@@ -147,10 +154,10 @@ services:
     ports:
       - "${WALLET_MANAGER_PORT:-8093}:${WALLET_MANAGER_PORT:-8093}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/wallets:/data/wallets:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/wallet-manager:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-systems:/data/payment-systems:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/wallets:/data/wallets:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/keys:/data/keys:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/wallet-manager:/app/logs:rw
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
       - no-new-privileges:true
@@ -195,12 +202,12 @@ services:
     hostname: tron-usdt-manager
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-usdt-manager
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-usdt-manager
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
 
     networks:
       - lucid-tron-isolated
@@ -208,10 +215,10 @@ services:
     ports:
       - "${USDT_MANAGER_PORT:-8094}:${USDT_MANAGER_PORT:-8094}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/usdt:/data/usdt:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/usdt-manager:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-systems:/data/payment-systems:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/usdt:/data/usdt:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/keys:/data/keys:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/usdt-manager:/app/logs:rw
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
       - no-new-privileges:true
@@ -256,22 +263,22 @@ services:
     hostname: tron-staking
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-staking
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-staking
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
       - lucid-pi-network
     ports:
       - "${STAKING_PORT:-8096}:${STAKING_PORT:-8096}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/staking:/data/staking:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/trx-staking:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-systems:/data/payment-systems:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/staking:/data/staking:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/keys:/data/keys:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/trx-staking:/app/logs:rw
 
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
@@ -317,22 +324,22 @@ services:
     hostname: tron-payment-gateway
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-payment-gateway
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-payment-gateway
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
       - lucid-pi-network
     ports:
       - "${PAYMENT_GATEWAY_PORT:-8097}:${PAYMENT_GATEWAY_PORT:-8097}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/payment-systems:/data/payment-systems:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/gateway:/data/gateway:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/keys:/data/keys:ro
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/payment-gateway:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-systems:/data/payment-systems:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gateway:/data/gateway:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/keys:/data/keys:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/payment-gateway:/app/logs:rw
 
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
@@ -384,21 +391,21 @@ services:
     hostname: tron-relay
     restart: ${CONTAINER_RESTART:-unless-stopped}
     env_file:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.foundation
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.support
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-relay
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.tron-proxy
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.secrets
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-relay
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tron-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
     networks:
       - lucid-tron-isolated
       - lucid-pi-network
     ports:
       - "${TRON_RELAY_PORT:-8098}:${TRON_RELAY_PORT:-8098}"
     volumes:
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/tron-relay:/data/tron-relay:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/data/cache:/data/cache:rw
-      - ${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}/logs/tron-relay:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tron-relay:/data/tron-relay:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/cache:/data/cache:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tron-relay:/app/logs:rw
     user: "${CONTAINER_USER:-65532}:${CONTAINER_GROUP:-65532}"
     security_opt:
       - no-new-privileges:true

@@ -1,6 +1,6 @@
 # LUCID TRON Payout Router Configuration
 # Extended payout routing and management service
-# Runtime (container): /app/configs/services/payment_services/payout-router-extended-config.yaml
+# Runtime (container): /app/service_configs/payment_services/payout-router-extended-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

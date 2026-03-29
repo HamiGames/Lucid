@@ -1,6 +1,13 @@
 # Lucid Service Mesh - Envoy Bootstrap Configuration
-# File: infrastructure/service-mesh/sidecar/envoy/config/bootstrap.yaml
+# File: infrastructure/service_mesh/sidecar/envoy/config/bootstrap.yaml
 # Purpose: Envoy proxy bootstrap configuration for sidecar deployment
+# x-lucid-file-id: 1234567890
+# x-lucid-file-name: bootstrap.yaml
+# x-lucid-file-path: infrastructure/service_mesh/sidecar/envoy/config/bootstrap.yaml
+# x-lucid-file-type: yaml
+# x-lucid-file-size: 100
+# x-lucid-file-hash: 1234567890
+# x-lucid-file-created: 2021-01-01
 
 admin:
   access_log_path: /tmp/admin_access.log

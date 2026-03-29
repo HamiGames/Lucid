@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/elasticsearch/healthcheck.py
+x-lucid-file-path: /app/database/elasticsearch/healthcheck.py
+x-lucid-file-type: python
+
 Elasticsearch Health Check Script for Distroless Container
 Provides health check functionality without shell access
 """

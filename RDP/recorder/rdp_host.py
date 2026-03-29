@@ -3,6 +3,12 @@
 # Implements R-MUST-003: Remote Desktop Host Support
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/recorder/rdp_host.py
+x-lucid-file-path: /app/RDP/recorder/rdp_host.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

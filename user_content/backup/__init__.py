@@ -1,5 +1,9 @@
 # Path: user_content/backup/__init__.py
 """
+File: /app/user_content/backup/__init__.py
+x-lucid-file-path: /app/user_content/backup/__init__.py
+x-lucid-file-type: python
+
 Backup and restore functionality for user content.
 Handles data backup, restore operations, and data management.
 """

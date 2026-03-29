@@ -1,5 +1,8 @@
-# Path: blockchain/core/leader_selection.py
 """
+File: /app/blockchain/core/leader_selection.py
+x-lucid-file-path: /app/blockchain/core/leader_selection.py
+x-lucid-file-type: python
+
 PoOT Leader Selection Algorithm
 
 Implements leader selection for PoOT consensus based on work credits ranking
@@ -11,6 +14,9 @@ Features:
 - Fallback leader selection
 - Density threshold enforcement
 """
+
+# Path: blockchain/core/leader_selection.py
+
 
 from __future__ import annotations
 

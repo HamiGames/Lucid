@@ -1,6 +1,8 @@
 """
 Logging Utilities
-File: gui_api_bridge/gui_api_bridge/utils/logging.py
+File: /app/gui_api_bridge/gui_api_bridge/utils/logging.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/utils/logging.py
+x-lucid-file-type: python
 """
 
 import logging

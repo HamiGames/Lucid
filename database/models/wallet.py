@@ -1,4 +1,8 @@
 """
+File: /app/database/models/wallet.py
+x-lucid-file-path: /app/database/models/wallet.py
+x-lucid-file-type: python
+
 Wallet Data Models
 
 Pydantic models for wallet entities in the Lucid system.

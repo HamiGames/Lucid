@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/anchoring.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/anchoring.py
+x-lucid-file-type: python
+
 Anchoring Schema Models
 
 This module defines Pydantic models for session anchoring API endpoints.
@@ -11,6 +15,8 @@ Models:
 - AnchoringVerificationRequest: Anchoring verification request
 - AnchoringVerificationResponse: Anchoring verification response
 """
+
+
 
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any

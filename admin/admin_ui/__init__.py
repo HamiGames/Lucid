@@ -1,4 +1,8 @@
 """
+File: /app/admin/admin_ui/__init__.py
+x-lucid-file-path: /app/admin/admin_ui/__init__.py
+x-lucid-file-type: python
+
 Path: admin/admin_ui/__init__.py
 Admin UI Module
 Admin UI package for Lucid RDP.

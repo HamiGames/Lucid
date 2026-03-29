@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/routers/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/routers/__init__.py
+x-lucid-file-type: python
+
 Routers Package
 
 This package contains all API route handlers for the Blockchain API.
@@ -13,6 +17,8 @@ Modules:
 - merkle: Merkle tree operation endpoints
 - monitoring: Monitoring and metrics endpoints
 """
+
+
 
 from . import blockchain, blocks, transactions, anchoring, consensus, merkle, monitoring
 

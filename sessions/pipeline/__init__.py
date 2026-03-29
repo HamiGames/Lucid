@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/__init__.py
+x-lucid-file-path: /app/sessions/pipeline/__init__.py
+x-lucid-file-type: python
+
 Lucid Session Pipeline Package
 Main package for session processing pipeline management
 path: ..pipeline
-file: sessions/pipeline/__init__.py
 the pipeline calls the sessions pipeline
 """
 from sessions.pipeline import (session_pipeline_manager, 

@@ -32,14 +32,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs /build/host /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
-COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
 COPY infrastructure/containers/payment_systems/docker-compose.payment-internal.yml /build/configs/docker-compose.payment-internal.yml
 COPY infrastructure/containers/payment_systems/docker-compose.payment-externals.yml /build/configs/docker-compose.payment-externals.yml
-COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/services/ /build/service_configs/
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -78,6 +77,39 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_WALLET_MANAGER_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt -r ./requirements-prod.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './service_configs' './tron' './configs/docker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './tron/api' './tron/config' './tron/models' './tron/repositories' './tron/schemas' './tron/services' './tron/utils'; \
+    for d in \
+      '.' \
+      './configs' \
+      './service_configs' \
+      './tron' \
+      './configs/docker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './tron/api' \
+      './tron/config' \
+      './tron/models' \
+      './tron/repositories' \
+      './tron/schemas' \
+      './tron/services' \
+      './tron/utils' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels \
@@ -100,6 +132,22 @@ RUN test -f ./tron/wallet_manager_entrypoint.py && test -f ./tron/wallet_manager
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -131,7 +179,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=wallet_manager \
     LUCID_SERVICE_HOST_IP=172.20.10.44 \
     LUCID_SERVICE_HTTP_PATH=http://wallet-manager:8093/app \
@@ -140,7 +188,29 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     WORKERS=1 \
     SERVICE_HOST=0.0.0.0 \
     LOG_LEVEL=INFO
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/tron/ /app/tron/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -154,12 +224,10 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/tron/ /app/tron/
 
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/payment-cluster-host-alignment.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-internal.yml /app/configs/docker-compose.payment-internal.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.payment-externals.yml /app/configs/docker-compose.payment-externals.yml
-COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,tronpy; print('runtime OK')"]
 

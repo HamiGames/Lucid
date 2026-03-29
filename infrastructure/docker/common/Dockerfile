@@ -1,6 +1,10 @@
 # LUCID SERVER TOOLS - SPEC-4 Stage 0 Utilities (Distroless)
 # Professional utility container for Pi deployment with distroless security
 # Multi-platform build for ARM64 Pi and AMD64 development
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 # syntax=docker/dockerfile:1.7
 
@@ -59,6 +63,70 @@ RUN apk update && apk upgrade \
     && adduser -D -s /bin/bash lucid
 
 WORKDIR /build
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './admin' './node' './rdp' './tools' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './rdp/client' './rdp/common' './rdp/config' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './tools/build' './tools/dev' './tools/ops' './rdp/session_controller/integration' './tools/ops/backup' './tools/ops/monitoring' './tools/ops/ota'; \
+    for d in \
+      '.' \
+      './admin' \
+      './node' \
+      './rdp' \
+      './tools' \
+      './admin/admin_ui' \
+      './admin/api' \
+      './admin/audit' \
+      './admin/config' \
+      './admin/emergency' \
+      './admin/governance' \
+      './admin/key_rotation' \
+      './admin/rbac' \
+      './admin/services' \
+      './admin/system' \
+      './admin/ui' \
+      './admin/utils' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './rdp/client' \
+      './rdp/common' \
+      './rdp/config' \
+      './rdp/protocol' \
+      './rdp/recorder' \
+      './rdp/resource_monitor' \
+      './rdp/security' \
+      './rdp/server' \
+      './rdp/server_manager' \
+      './rdp/session_controller' \
+      './rdp/xrdp' \
+      './tools/build' \
+      './tools/dev' \
+      './tools/ops' \
+      './rdp/session_controller/integration' \
+      './tools/ops/backup' \
+      './tools/ops/monitoring' \
+      './tools/ops/ota' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 COPY tools/ ./tools/
 COPY infrastructure/service_mesh/ ./infrastructure/service_mesh/
 COPY node/config/ ./node/config/

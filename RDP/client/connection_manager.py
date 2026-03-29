@@ -3,6 +3,12 @@
 # Implements R-MUST-003: Remote Desktop Host Support with connection pooling
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/client/connection_manager.py
+x-lucid-file-path: /app/RDP/client/connection_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/gui_tor_manager_service.py
+x-lucid-file-type: python
+
 GUI Tor Manager Service
 Main orchestration logic for Tor operations
 """

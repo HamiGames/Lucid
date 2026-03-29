@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/health_check.py
+x-lucid-file-path: /app/payment_systems/tron/utils/health_check.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Health Check Module
 Comprehensive health checking for service dependencies
 Following architecture patterns from build/docs/

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/api/routes.py
+x-lucid-file-path: /app/sessions/api/routes.py
+x-lucid-file-type: python
+
 LUCID Session API Routes - Step 17 Implementation
 FastAPI route definitions for session management
 """

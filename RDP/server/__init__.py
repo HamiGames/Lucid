@@ -4,6 +4,10 @@
 # LUCID-STRICT Layer 2 Service Integration
 
 """
+File: /app/RDP/server/__init__.py
+x-lucid-file-path: /app/RDP/server/__init__.py
+x-lucid-file-type: python
+
 RDP Server Module
 
 This module provides server-side RDP functionality including:

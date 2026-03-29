@@ -2,6 +2,12 @@
 # Implements comprehensive data redaction, anonymization, and privacy controls
 # LUCID-STRICT Layer 1 Common Security Integration
 
+"""
+File: /app/common/security/privacy_shield.py
+x-lucid-file-path: /app/common/security/privacy_shield.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

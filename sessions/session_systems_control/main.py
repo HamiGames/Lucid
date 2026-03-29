@@ -1,4 +1,8 @@
 """
+File: /app/sessions/session_systems_control/main.py
+x-lucid-file-path: /app/sessions/session_systems_control/main.py
+x-lucid-file-type: python
+
 Session systems control plane — aggregates /health across Lucid session stack services.
 Registry matches infrastructure/containers/sessions/docker-compose.session-images.yml.
 """

@@ -1,4 +1,8 @@
 """
+File: /app/auth/api/session_routes.py
+x-lucid-file-path: /app/auth/api/session_routes.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Session Routes
 GET /sessions, DELETE /sessions/{session_id}, etc.
 """

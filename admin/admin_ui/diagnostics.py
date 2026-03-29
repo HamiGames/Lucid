@@ -3,6 +3,12 @@
 # Provides comprehensive system health monitoring and diagnostics
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/admin/admin_ui/diagnostics.py
+x-lucid-file-path: /app/admin/admin_ui/diagnostics.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

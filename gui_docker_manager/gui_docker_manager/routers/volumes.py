@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/volumes.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/volumes.py
+x-lucid-file-type: python
+
 Volume Management Routers
-File: gui_docker_manager/gui_docker_manager/routers/volumes.py
 
 REST API endpoints for Docker volume management.
 """

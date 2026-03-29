@@ -3,6 +3,12 @@
 # Multi-platform support for ARM64 Pi and AMD64 development
 # Enhanced with chunk generation for pipeline processing
 
+"""
+File: /app/sessions/recorder/session_recorder.py
+x-lucid-file-path: /app/sessions/recorder/session_recorder.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

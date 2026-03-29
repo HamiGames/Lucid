@@ -46,7 +46,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host registry (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
@@ -58,6 +57,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -88,6 +88,39 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_SERVER_CORE_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './common' './config' './configs' './protocol' './server' './service_configs' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/docker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration'; \
+    for d in \
+      '.' \
+      './common' \
+      './config' \
+      './configs' \
+      './protocol' \
+      './server' \
+      './service_configs' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/docker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
@@ -97,17 +130,12 @@ RUN printf "LUCID_SERVER_CORE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/
 
 RUN python3.11 -c "import fastapi, uvicorn, pydantic, motor, pymongo, redis, cryptography, aiofiles, httpx, aiohttp, structlog, prometheus_client, psutil; print('server core packages OK')"
 
-RUN mkdir -p ./server ./server/configs ./configs ./configs/services && \
-    printf "LUCID_SERVER_CORE_SERVER_$(date +%s)" > ./server/.keep && \
-    printf "LUCID_SERVER_CORE_CONFIGS_$(date +%s)" > ./configs/.keep && \
-    printf "LUCID_SERVER_CORE_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
-    chown -R 65532:65532 ./server ./server/configs ./configs/services ./configs && \
-    chmod 644 ./server/.keep ./server/configs/.keep ./configs/services/.keep ./configs/.keep
 
 COPY infrastructure/containers/server/docker-compose.server-core.yml ./docker-compose.server-core.yml
 COPY infrastructure/containers/server/docker-compose.server-manager.yml ./docker-compose.server-manager.yml
 
-COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 COPY master-env-config.txt ./configs/.env.master
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY configs/environment/.env.server-core ./configs/.env.server-core
@@ -134,6 +162,22 @@ RUN test -f ./server/xrdp_integration.py && \
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -168,12 +212,36 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LUCID_HOST_CONFIG_SERVICE_KEY=lucid_server_core \
     LUCID_SERVICE_HOST_IP=172.20.10.4 \
     LUCID_SERVICE_HTTP_PATH=http://lucid-server-core:8100/app
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/protocol/ /app/protocol/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -184,23 +252,12 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=builder --chown=65532:65532 /build/protocol/ /app/protocol/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
 COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 COPY --from=builder --chown=65532:65532 /build/configs/.env.server-core /app/configs/.env.server-core
 COPY --from=builder --chown=65532:65532 /build/configs/.env.server-manager /app/configs/.env.server-manager
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.server-core.yml /app/configs/docker-compose.server-core.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.server-manager.yml /app/configs/docker-compose.server-manager.yml
-COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
-COPY --from=builder --chown=65532:65532 /build/protocol/ /app/protocol/
-COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
-COPY --from=builder --chown=65532:65532 /build/__init__.py /app/__init__.py
 
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,cryptography,aiofiles,psutil; print('runtime site-packages OK')"]

@@ -1,4 +1,8 @@
 """
+File: /app/auth/models/hardware_wallet.py
+x-lucid-file-path: /app/auth/models/hardware_wallet.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Hardware Wallet Model
 Supports Ledger, Trezor, and KeepKey
 """

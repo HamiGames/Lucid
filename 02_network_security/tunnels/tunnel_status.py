@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/02_network_security/tunnels/tunnel_status.py
+x-lucid-file-path: /app/02_network_security/tunnels/tunnel_status.py
+x-lucid-file-type: python
+
 Tunnel Tools Status Module
 Manages tunnel status information and health checks.
 All configuration from environment variables - no hardcoded values.

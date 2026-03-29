@@ -1,5 +1,9 @@
 # LUCID RDP VM Orchestrator - Multi-VM Coordination
 # SPEC-4 Compliant: VM cluster management, load balancing, failover
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 FROM pickme/lucid:devcontainer-dind as base
 
@@ -18,7 +22,6 @@ RUN apt-get update && apt-get install -y \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy orchestration scripts
 COPY vm/__init__.py /workspaces/Lucid/vm/
 
 # Install Python dependencies

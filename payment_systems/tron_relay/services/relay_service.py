@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/services/relay_service.py
+x-lucid-file-path: /app/payment_systems/tron_relay/services/relay_service.py
+x-lucid-file-type: python
+
 LUCID TRON Relay Service
 Core relay functionality for TRON network operations
 

@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/backup.py
+x-lucid-file-path: /app/payment_systems/tron/api/backup.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Wallet Backup API
 Backup and recovery operations for wallets
 Distroless container: lucid-tron-wallet-manager:latest

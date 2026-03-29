@@ -1,3 +1,10 @@
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
+
 name: lucid-foundation
 services:
   api-gateway:
@@ -5,20 +12,20 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.api-gateway
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.api-gateway
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
     networks:
       - lucid-pi-network
     ports:
       - "8080:8080"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
-      - /mnt/myssd/Lucid/Lucid/data/api-gateway/cache:/app/cache:rw
-      - /mnt/myssd/Lucid/Lucid/configs/api-gateway:/app/config:ro
-      - /mnt/myssd/Lucid/Lucid/certs/api-gateway:/certs:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/api-gateway:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/api-gateway/cache:/app/cache:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/api-gateway:/app/config:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/certs/api-gateway:/certs:ro
       - api-gateway-tmp:/tmp/api
       - onion-state:/run/lucid/onion:ro
     environment:
@@ -78,21 +85,21 @@ services:
     container_name: blockchain-engine
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-governance
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-ledger
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-sessions-data
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-api
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.blockchain-vm
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-governance
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-ledger
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-sessions-data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-api
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.blockchain-vm
     networks:
       - lucid-pi-network
     ports:
       - "8084:8084"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/blockchain-engine:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/blockchain:/app/data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/blockchain-engine:/app/logs:rw
       - blockchain-cache:/tmp/blockchain
     environment:
       - LUCID_ENV=${LUCID_ENV:-production}
@@ -144,19 +151,19 @@ services:
     container_name: service-mesh
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.service-mesh
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.service-mesh
     networks:
       - lucid-pi-network
     ports:
       - "8500:8500"
       - "8088:8088"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/app/logs:rw
-      - /mnt/myssd/Lucid/Lucid/data/service-mesh/config:/app/config:rw
-      - /mnt/myssd/Lucid/Lucid/data/service-mesh/certificates:/app/certificates:rw
-      - /mnt/myssd/Lucid/Lucid/data/service-mesh/envoy-configs:/app/envoy-configs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/service-mesh:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/config:/app/config:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/certificates:/app/certificates:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/service-mesh/envoy-configs:/app/envoy-configs:rw
       - service-mesh-cache:/tmp/mesh
     environment:
       - LUCID_ENV=production
@@ -209,19 +216,19 @@ services:
     container_name: session-anchoring
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.session-anchoring
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.session-anchoring
     networks:
       - lucid-pi-network
     ports:
       - "8085:8085"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-anchoring:/app/data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-anchoring:/app/logs:rw
       - session-anchoring-cache:/tmp/anchoring
-      - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
     environment:
       - MONGODB_URL=${MONGODB_URL:?MONGODB_URL not set}
       - REDIS_URL=${REDIS_URL:?REDIS_URL not set}
@@ -275,16 +282,16 @@ services:
     container_name: block-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
     networks:
       - lucid-pi-network
     ports:
       - "8086:8086"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/block-manager:/app/data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/block-manager:/app/logs:rw
       - block-manager-cache:/tmp/blocks
     environment:
       - LUCID_ENV=${LUCID_ENV:-production}
@@ -338,19 +345,19 @@ services:
     container_name: data-chain
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.data-chain
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.data-chain
     networks:
       - lucid-pi-network
     ports:
       - "${DATA_CHAIN_PORT:-8087}:${DATA_CHAIN_PORT:-8087}"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/data-chain:/app/data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/data-chain:/app/logs:rw
       - data-chain-cache:/tmp/chain
-      - /mnt/myssd/Lucid/Lucid/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/blockchain/scripts/data-health.py:/tmp/data-health.py:ro
     environment:
       - LUCID_ENV=${LUCID_ENV:-production}
       - LUCID_PLATFORM=${LUCID_PLATFORM:-arm64}
@@ -403,20 +410,20 @@ services:
     container_name: lucid-tunnel-tools
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tunnel-tools
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tunnel-tools
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
     networks:
       - lucid-pi-network
     ports:
       - "7000:7000"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/tor:/opt/lib/tor:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/opt/lib/tor:ro
       - onion-state:/run/lucid/onion:rw
-      - /mnt/myssd/Lucid/Lucid/data/tunnel:/opt/lib/tunnel:rw
-      - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tunnel:/opt/lib/tunnel:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tunnel-tools:/app/logs:rw
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64

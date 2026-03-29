@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/integration/api_gateway_client.py
+x-lucid-file-path: /app/sessions/pipeline/integration/api_gateway_client.py
+x-lucid-file-type: python
+
 API Gateway Integration Client
 Handles interaction with api-gateway service for routing and request coordination
 """

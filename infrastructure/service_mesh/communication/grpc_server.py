@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/communication/grpc_server.py
+x-lucid-file-path: /app/service_mesh/communication/grpc_server.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - gRPC Server
 gRPC server for service mesh communication.
 
-File: infrastructure/service_mesh/communication/grpc_server.py
 Lines: ~280
 Purpose: gRPC server
 Dependencies: grpc, asyncio

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/cache.py
+x-lucid-file-path: /app/blockchain/api/app/cache.py
+x-lucid-file-type: python
+
 Cache Module
 
 This module contains caching utilities for the Blockchain API.
 Handles Redis connections and common caching operations.
 """
+
+
 
 import logging
 import json

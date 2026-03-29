@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/models/payout.py
+x-lucid-file-path: /app/node/models/payout.py
+x-lucid-file-type: python
+
 Payout data models for Lucid system.
 
 This module provides Pydantic models for:

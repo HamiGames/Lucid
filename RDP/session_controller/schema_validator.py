@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/schema_validator.py
+x-lucid-file-path: /app/RDP/session_controller/schema_validator.py
+x-lucid-file-type: python
+
 RDP Controller Schema Validation Module
 Uses JSON schema files for request/response validation
 

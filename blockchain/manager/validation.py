@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/manager/validation.py
+x-lucid-file-path: /app/blockchain/manager/validation.py
+x-lucid-file-type: python
+
 Block Validation Module
 Handles validation of block structure and integrity
 
 This module provides validation logic for blocks.
 """
+
+
 
 from __future__ import annotations
 

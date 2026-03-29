@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/middleware/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/middleware/__init__.py
+x-lucid-file-type: python
+
 Middleware Package
 
 This package contains custom middleware for the Blockchain API.
@@ -9,6 +13,8 @@ Modules:
 - rate_limit: Rate limiting middleware
 - logging: Request/response logging middleware
 """
+
+
 
 from .auth import AuthMiddleware
 from .rate_limit import RateLimitMiddleware

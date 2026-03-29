@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/RDP/xrdp/main.py
+x-lucid-file-path: /app/RDP/xrdp/main.py
+x-lucid-file-type: python
+
 LUCID XRDP Service - Main Entry Point
 LUCID-STRICT Layer 2 Service Integration
 Multi-platform support for Pi 5 ARM64

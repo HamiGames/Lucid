@@ -1,4 +1,8 @@
 """
+File: /app/database/repositories/block_repository.py
+x-lucid-file-path: /app/database/repositories/block_repository.py
+x-lucid-file-type: python
+
 Block Repository
 
 Repository pattern implementation for blockchain block data access.

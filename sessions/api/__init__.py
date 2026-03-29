@@ -1,4 +1,8 @@
 """
+File: /app/sessions/api/__init__.py
+x-lucid-file-path: /app/sessions/api/__init__.py
+x-lucid-file-type: python
+
 Lucid Session Management API Service
 Cluster: Session Management
 Port: 8080
@@ -13,7 +17,6 @@ Features:
 - FastAPI-based REST API
 
 Path: ..api
-file: sessions/api/__init__.py
 the api calls the sessions api
 """
 from sessions.api.config import SETTINGS, CONFIG

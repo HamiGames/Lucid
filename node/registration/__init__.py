@@ -3,6 +3,10 @@
 # LUCID-STRICT Layer 1 Core Infrastructure
 
 """
+File: /app/node/registration/__init__.py
+x-lucid-file-path: /app/node/registration/__init__.py
+x-lucid-file-type: python
+
 Registration module for Lucid node operations.
 
 This module provides:

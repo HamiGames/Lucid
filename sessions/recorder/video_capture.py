@@ -3,6 +3,12 @@
 # Professional video capture with Pi 5 hardware acceleration
 # Multi-platform build for ARM64 Pi and AMD64 development
 
+"""
+File: /app/sessions/recorder/video_capture.py
+x-lucid-file-path: /app/sessions/recorder/video_capture.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

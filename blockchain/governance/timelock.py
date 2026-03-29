@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/governance/timelock.py
+x-lucid-file-path: /app/blockchain/governance/timelock.py
+x-lucid-file-type: python
+
 Lucid RDP Blockchain Governance Timelock System
 
 This module implements a timelock mechanism for governance proposals,
@@ -8,6 +12,8 @@ ensuring proper delays and security for critical system changes.
 Author: Lucid RDP Team
 Version: 1.0.0
 """
+
+
 
 import asyncio
 import hashlib

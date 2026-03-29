@@ -1,6 +1,12 @@
 # Integration tests for session lifecycle
 # End-to-end tests for session creation → anchoring flow
 
+"""
+File: /app/03_api_gateway/api/tests/integration/test_session_lifecycle.py
+x-lucid-file-path: /app/03_api_gateway/api/tests/integration/test_session_lifecycle.py
+x-lucid-file-type: python
+"""
+
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch

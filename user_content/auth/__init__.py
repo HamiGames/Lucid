@@ -1,5 +1,9 @@
 # Path: user_content/auth/__init__.py
 """
+File: /app/user_content/auth/__init__.py
+x-lucid-file-path: /app/user_content/auth/__init__.py
+x-lucid-file-type: python
+
 Authentication components for user content.
 Handles user authentication, login, logout, and session management.
 """

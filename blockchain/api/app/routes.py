@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routes.py
+x-lucid-file-path: /app/blockchain/api/app/routes.py
+x-lucid-file-type: python
+
 Routes Registration
 
 This module registers all API routers with the FastAPI application.
 Implements the OpenAPI 3.0 specification for all endpoints.
 """
+
+
 
 from fastapi import FastAPI
 from .routers import blockchain, blocks, transactions, anchoring, consensus, merkle, monitoring

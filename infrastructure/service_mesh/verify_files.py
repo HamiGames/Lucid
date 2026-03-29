@@ -1,4 +1,11 @@
-"""Builder-stage file checks for service-mesh image; extends 03_api_gateway/verify_files.py layout."""
+"""
+File: /app/service_mesh/verify_files.py
+x-lucid-file-path: /app/service_mesh/verify_files.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
+Builder-stage file checks for service-mesh image; extends 03_api_gateway/verify_files.py layout.
+"""
 import pathlib
 import sys
 

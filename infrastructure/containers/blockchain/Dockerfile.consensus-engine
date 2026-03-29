@@ -5,6 +5,7 @@
 #
 # Same application stack as the blockchain engine (api.app exposes /consensus and related routes).
 # Default port 8085 so it can run beside blockchain-engine (8084). entrypoint reads BLOCKCHAIN_ENGINE_PORT.
+# Build guide: infrastructure/containers/blockchain/docker-blockchain-build.txt
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -31,17 +32,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update --allow-releaseinfo-change && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends \
-        build-essential gcc g++ libffi-dev libssl-dev pkg-config \
+        build-essential gcc g++ libffi-dev libssl-dev libpq-dev pkg-config \
         curl ca-certificates tini \
         python3-wheel python3-dev python3-pip python3-setuptools \
         rustc cargo \
@@ -65,30 +67,248 @@ RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin && \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel
 
-COPY blockchain/requirements.txt ./requirements.txt
+COPY blockchain/block-requirements.txt ./block-requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_CONSENSUS_ENGINE_WHEELS_$(date +%s)" > /build/wheels/.keep && \
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+    touch /build/wheels/.keep && \
+    pip install --upgrade pip setuptools wheel && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./block-requirements.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"  
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './admin' './api' './blockchain' './configs' './database' './node' './payment_systems' './rdp' './security' './server' './service_configs' './sessions' './storage' './user' './utils' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './api/cluster' './blockchain/anchoring' './blockchain/api' './blockchain/chain-to-pay' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './payment_systems/payment_acceptor' './payment_systems/tron' './payment_systems/tron_node' './payment_systems/tron_relay' './payment_systems/wallet' './rdp/client' './rdp/common' './rdp/config' './rdp/database' './rdp/monitoring' './rdp/protocol' './rdp/recorder' './rdp/resource_monitor' './rdp/scripts' './rdp/security' './rdp/server' './rdp/server_manager' './rdp/session_controller' './rdp/xrdp' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './storage/backups' './storage/cache' './storage/data' './admin/ui/static' './admin/ui/templates' './blockchain/api/app' './blockchain/data/api' './database/services/backup' './database/services/migration' './database/services/monitoring' './payment_systems/tron/api' './payment_systems/tron/config' './payment_systems/tron/models' './payment_systems/tron/repositories' './payment_systems/tron/schemas' './payment_systems/tron/services' './payment_systems/tron/utils' './payment_systems/tron_relay/api' './payment_systems/tron_relay/config' './payment_systems/tron_relay/services' './rdp/common/governance' './rdp/monitoring/grafana' './rdp/resource_monitor/config' './rdp/server_manager/config' './rdp/session_controller/config' './rdp/session_controller/integration' './rdp/xrdp/config' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './storage/backups/configs' './storage/backups/database' './storage/backups/user-data' './storage/cache/build' './storage/cache/docker' './storage/cache/temp' './storage/data/blockchain' './storage/data/logs' './storage/data/sessions' './admin/ui/static/css' './admin/ui/static/js' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './rdp/monitoring/grafana/dashboards' './rdp/monitoring/grafana/datasources' './blockchain/api/app/database/repositories'; \
+    for d in \
+      '.' \
+      './admin' \
+      './api' \
+      './blockchain' \
+      './configs' \
+      './database' \
+      './node' \
+      './payment_systems' \
+      './rdp' \
+      './security' \
+      './server' \
+      './service_configs' \
+      './sessions' \
+      './storage' \
+      './user' \
+      './utils' \
+      './admin/admin_ui' \
+      './admin/api' \
+      './admin/audit' \
+      './admin/config' \
+      './admin/emergency' \
+      './admin/governance' \
+      './admin/key_rotation' \
+      './admin/over_lord' \
+      './admin/rbac' \
+      './admin/services' \
+      './admin/system' \
+      './admin/ui' \
+      './admin/utils' \
+      './api/cluster' \
+      './blockchain/anchoring' \
+      './blockchain/api' \
+      './blockchain/chain-to-pay' \
+      './blockchain/chain_client' \
+      './blockchain/config' \
+      './blockchain/contracts' \
+      './blockchain/core' \
+      './blockchain/data' \
+      './blockchain/deployment' \
+      './blockchain/docs' \
+      './blockchain/evm' \
+      './blockchain/governance' \
+      './blockchain/manager' \
+      './blockchain/on_system_chain' \
+      './blockchain/scripts' \
+      './blockchain/tests' \
+      './blockchain/utils' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './payment_systems/payment_acceptor' \
+      './payment_systems/tron' \
+      './payment_systems/tron_node' \
+      './payment_systems/tron_relay' \
+      './payment_systems/wallet' \
+      './rdp/client' \
+      './rdp/common' \
+      './rdp/config' \
+      './rdp/database' \
+      './rdp/monitoring' \
+      './rdp/protocol' \
+      './rdp/recorder' \
+      './rdp/resource_monitor' \
+      './rdp/scripts' \
+      './rdp/security' \
+      './rdp/server' \
+      './rdp/server_manager' \
+      './rdp/session_controller' \
+      './rdp/xrdp' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './storage/backups' \
+      './storage/cache' \
+      './storage/data' \
+      './admin/ui/static' \
+      './admin/ui/templates' \
+      './blockchain/api/app' \
+      './blockchain/data/api' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './payment_systems/tron/api' \
+      './payment_systems/tron/config' \
+      './payment_systems/tron/models' \
+      './payment_systems/tron/repositories' \
+      './payment_systems/tron/schemas' \
+      './payment_systems/tron/services' \
+      './payment_systems/tron/utils' \
+      './payment_systems/tron_relay/api' \
+      './payment_systems/tron_relay/config' \
+      './payment_systems/tron_relay/services' \
+      './rdp/common/governance' \
+      './rdp/monitoring/grafana' \
+      './rdp/resource_monitor/config' \
+      './rdp/server_manager/config' \
+      './rdp/session_controller/config' \
+      './rdp/session_controller/integration' \
+      './rdp/xrdp/config' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+      './storage/backups/configs' \
+      './storage/backups/database' \
+      './storage/backups/user-data' \
+      './storage/cache/build' \
+      './storage/cache/docker' \
+      './storage/cache/temp' \
+      './storage/data/blockchain' \
+      './storage/data/logs' \
+      './storage/data/sessions' \
+      './admin/ui/static/css' \
+      './admin/ui/static/js' \
+      './blockchain/api/app/crypto' \
+      './blockchain/api/app/database' \
+      './blockchain/api/app/db' \
+      './blockchain/api/app/middleware' \
+      './blockchain/api/app/models' \
+      './blockchain/api/app/repo' \
+      './blockchain/api/app/routers' \
+      './blockchain/api/app/routes' \
+      './blockchain/api/app/schemas' \
+      './blockchain/api/app/services' \
+      './rdp/monitoring/grafana/dashboards' \
+      './rdp/monitoring/grafana/datasources' \
+      './blockchain/api/app/database/repositories' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
-RUN printf "LUCID_CONSENSUS_ENGINE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
-    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-marker
+RUN printf "LUCID_CONSENSUS_ENGINE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.keep
 
 RUN python3.11 -c "import fastapi,uvicorn,pydantic,sqlalchemy,cryptography,httpx,motor,pymongo,blake3,web3,aiohttp,redis,aiofiles,yaml; print('consensus-engine deps OK')"
 
-COPY blockchain/ ./blockchain_src/
+######## STAGE 1 LOCAL COPY #########
+COPY blockchain/ ./blockchain/
+COPY payment_systems/ ./payment_systems/
+COPY infrastructure/containers/blockchain/docker-compose.block-system.yml ./configs/docker-compose.block-system.yaml
+COPY infrastructure/containers/blockchain/docker-compose.chain.yml ./configs/docker-compose.chain.yaml
+COPY infrastructure/containers/blockchain/docker-compose.manager.yml ./configs/docker-compose.manager.yaml
+COPY api/ ./api/
+COPY sessions/ ./sessions/
+COPY node/ ./node/
+COPY RDP/ ./rdp/
+COPY admin/ ./admin/
+COPY database/ ./database/
+COPY security/ ./security/
+COPY utils/ ./utils/
+COPY server/ ./server/
+COPY storage/ ./storage/
+COPY user/ ./user/
+COPY infrastructure/containers/blockchain/config/block-pay.yml ./blockchain/config/block-pay.yml
+COPY infrastructure/containers/blockchain/config/blockchain-endpoints.yml ./blockchain/config/blockchain-endpoints.yml
+COPY infrastructure/containers/blockchain/config/openssl-api.yml ./blockchain/config/openssl-api.yml
+COPY infrastructure/containers/blockchain/config/chain-to-pay.connections.json ./configs/chain-to-pay.connections.json
+COPY infrastructure/containers/blockchain/chain-to-pay/ ./blockchain/chain-to-pay/
+COPY infrastructure/containers/services/ ./service_configs/
+
+
+# Flatten blockchain/* to /build/* for PYTHONPATH layout; keep /build/blockchain for /app/blockchain (configs, endpoints, entrypoints).
 RUN set -e; \
     for d in api core utils config contracts deployment chain_client evm on_system_chain scripts tests; do \
-      cp -r "blockchain_src/$d" "./$d"; \
+      cp -r "./blockchain/$d" "./$d"; \
     done; \
-    sh -c 'cp blockchain_src/*.py ./'; \
-    rm -rf blockchain_src
+    sh -c 'cp ./blockchain/*.py ./' 2>/dev/null || true
 
-RUN mkdir -p /build/top_py && find /build -maxdepth 1 -type f -name '*.py' -exec cp {} /build/top_py/ \;
 
 RUN test -f ./api/app/entrypoint.py && test -f ./api/app/main.py && echo "consensus-engine source OK"
 
@@ -97,11 +317,13 @@ RUN test -f ./api/app/entrypoint.py && test -f ./api/app/main.py && echo "consen
 ############################
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
-WORKDIR /app
+## convert ./ == /build/
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=1.0.0
+
+WORKDIR /app
 
 LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.title="Lucid Consensus Engine" \
@@ -109,10 +331,13 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.source="https://github.com/HamiGames/Lucid" \
       com.lucid.service="consensus-engine" \
       com.lucid.platform="arm64" \
       com.lucid.cluster="core" \
-      com.lucid.security="distroless"
+      com.lucid.security="distroless" \
+      com.lucid.plane="ops" \
+      com.lucid.expose="8085"
 
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
@@ -121,42 +346,73 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_SERVICE_KEY=blockchain_consensus_engine \
+    LUCID_HOST_SERVICE_NAME=blockchain-consensus-engine \
     LUCID_SERVICE_HOST_IP=172.20.10.34 \
     LUCID_SERVICE_HTTP_PATH=http://blockchain-consensus-engine:8085/app \
     BLOCKCHAIN_ENGINE_PORT=8085 \
-    BLOCKCHAIN_ENGINE_HOST=0.0.0.0
+    BLOCKCHAIN_ENGINE_HOST=0.0.0.0 \
+    LUCID_RUNTIME_VERIFY_VARIANT=consensus
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/api/ /app/api/
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/payment_systems/ /app/payment_systems/
+COPY --from=builder --chown=65532:65532 /build/rdp/ /app/rdp/
+COPY --from=builder --chown=65532:65532 /build/security/ /app/security/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+COPY --from=builder --chown=65532:65532 /build/storage/ /app/storage/
+COPY --from=builder --chown=65532:65532 /build/user/ /app/user/
+COPY --from=builder --chown=65532:65532 /build/utils/ /app/utils/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
-COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
-COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
-COPY --from=builder /var/run/ /app/var/run/
-COPY --from=builder /var/lib/ /app/var/lib/
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /app/usr/local/bin/
-COPY --from=builder /usr/bin/ /app/usr/bin/
-COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
-COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/api /app/api
-COPY --from=builder --chown=65532:65532 /build/core /app/core
-COPY --from=builder --chown=65532:65532 /build/utils /app/utils
-COPY --from=builder --chown=65532:65532 /build/config /app/config
-COPY --from=builder --chown=65532:65532 /build/contracts /app/contracts
-COPY --from=builder --chown=65532:65532 /build/deployment /app/deployment
-COPY --from=builder --chown=65532:65532 /build/chain_client /app/chain_client
-COPY --from=builder --chown=65532:65532 /build/evm /app/evm
-COPY --from=builder --chown=65532:65532 /build/on_system_chain /app/on_system_chain
-COPY --from=builder --chown=65532:65532 /build/scripts /app/scripts
-COPY --from=builder --chown=65532:65532 /build/tests /app/tests
+
 
 COPY --from=builder --chown=65532:65532 /build/top_py/ /app/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
+COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi; print('runtime OK')"]
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 
-RUN ["/app/usr/bin/python3.11", "-c", "import os; assert os.path.isfile('/app/api/app/entrypoint.py'); print('layout OK')"]
+
+
+
+COPY infrastructure/containers/blockchain/verify_runtime.py /app/verify_runtime.py
+
+RUN ["/app/usr/bin/python3.11", "-c", "import os,sys; sp='/app/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.keep'); ok=os.path.isfile(m) or os.path.isfile(os.path.join(sp,'.lucid-marker')); assert ok; import uvicorn,fastapi; print('runtime OK')"]
+
+RUN ["/app/usr/bin/python3.11", "/app/verify_runtime.py"]
 
 EXPOSE 8085
 

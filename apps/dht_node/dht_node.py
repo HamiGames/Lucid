@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/dht_node/dht_node.py
+x-lucid-file-path: /app/apps/dht_node/dht_node.py
+x-lucid-file-type: python
+
 Lucid RDP DHT Node
 Distributed Hash Table with CRDT support for peer-to-peer networking
 """

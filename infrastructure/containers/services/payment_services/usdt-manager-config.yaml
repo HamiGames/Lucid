@@ -1,6 +1,6 @@
 # LUCID TRON USDT Manager Configuration
 # USDT token management, staking, swapping, and bridge operations
-# Runtime (container): /app/configs/services/payment_services/usdt-manager-config.yaml
+# Runtime (container): /app/service_configs/payment_services/usdt-manager-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/transactions.py
+x-lucid-file-path: /app/blockchain/api/app/routers/transactions.py
+x-lucid-file-type: python
+
 Transactions Router
 
 This module contains the transaction processing and management endpoints.
 Implements the OpenAPI 3.0 specification for transaction operations.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional

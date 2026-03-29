@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/services/gui_bridge_service.py
+x-lucid-file-path: /app/03_api_gateway/services/gui_bridge_service.py
+x-lucid-file-type: python
+
 GUI API Bridge Service
 
-File: 03_api_gateway/services/gui_bridge_service.py
 Purpose: Service for handling GUI API Bridge integration and proxy operations
 Manages communication with gui_api_bridge service for Electron GUI integration
 """

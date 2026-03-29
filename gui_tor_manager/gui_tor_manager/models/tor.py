@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/models/tor.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/models/tor.py
+x-lucid-file-type: python
+
 Tor operation models for GUI Tor Manager
 Data models for Tor status, circuits, and operations
 """

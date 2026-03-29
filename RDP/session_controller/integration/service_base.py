@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/service_base.py
+x-lucid-file-path: /app/RDP/session_controller/integration/service_base.py
+x-lucid-file-type: python
+
 Base Service Client for RDP Controller Integration Modules
 Provides common functionality for service communication with retry logic and error handling
 """

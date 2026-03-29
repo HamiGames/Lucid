@@ -1,0 +1,111 @@
+# Runtime (container): /app/service_configs/x_lucid_cluster_calibration/monitoring-cluster-host-alignment.yml
+# Canonical monitoring cluster alignment: host-config.yml + x-files-listing.txt (merge with docker-compose for this stack).
+x-lucid-calibration:
+  cluster: monitoring
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files_listing: x-files-listing.txt
+  description: Host registry + x-lucid file paths for monitoring cluster (merge with docker-compose fragments for this stack).
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  ip_source_repo_path: service-ip.txt
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  in_container_path: /app/configs/host-config.yml
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    prometheus_metrics:
+      host_config_key: prometheus_metrics
+      service_name: prometheus-metrics
+      port: 9090
+      host_ip: 172.20.10.74
+      http_path: http://prometheus-metrics:9090/app
+x-lucid-x-files-calibration:
+  cluster: monitoring
+  filter_app_prefixes:
+  - api
+  - tools
+  - RDP
+  x_lucid_file_paths:
+  - /app/api/__init__.py
+  - /app/api/cluster/__init__.py
+  - /app/api/cluster/api-gateway.py
+  - /app/api/cluster/circuit-breaker.py
+  - /app/api/cluster/load-balancer.py
+  - /app/api/cluster/monitoring.py
+  - /app/api/cluster/rate-limiter.py
+  - /app/api/cluster/service-registry.py
+  - /app/RDP/__init__.py
+  - /app/RDP/client/__init__.py
+  - /app/RDP/client/connection_manager.py
+  - /app/RDP/client/rdp_client.py
+  - /app/RDP/common/__init__.py
+  - /app/RDP/common/models.py
+  - /app/RDP/protocol/__init__.py
+  - /app/RDP/protocol/rdp_session.py
+  - /app/RDP/recorder/__init__.py
+  - /app/RDP/recorder/clipboard_handler.py
+  - /app/RDP/recorder/file_transfer_handler.py
+  - /app/RDP/recorder/rdp_host.py
+  - /app/RDP/recorder/wayland_integration.py
+  - /app/RDP/resource_monitor/__init__.py
+  - /app/RDP/resource_monitor/config.py
+  - /app/RDP/resource_monitor/entrypoint.py
+  - /app/RDP/resource_monitor/main.py
+  - /app/RDP/resource_monitor/metrics_collector.py
+  - /app/RDP/resource_monitor/resource_monitor.py
+  - /app/RDP/security/__init__.py
+  - /app/RDP/security/access_controller.py
+  - /app/RDP/security/example_usage.py
+  - /app/RDP/security/session_validator.py
+  - /app/RDP/security/test_access_controller.py
+  - /app/RDP/security/trust_controller.py
+  - /app/RDP/server/__init__.py
+  - /app/RDP/server/rdp_server_manager.py
+  - /app/RDP/server/session_controller.py
+  - /app/RDP/server/xrdp_integration.py
+  - /app/RDP/server_manager/__init__.py
+  - /app/RDP/server_manager/config.py
+  - /app/RDP/server_manager/config_manager.py
+  - /app/RDP/server_manager/entrypoint.py
+  - /app/RDP/server_manager/main.py
+  - /app/RDP/server_manager/port_manager.py
+  - /app/RDP/server_manager/server_manager.py
+  - /app/RDP/session_controller/__init__.py
+  - /app/RDP/session_controller/config.py
+  - /app/RDP/session_controller/connection_manager.py
+  - /app/RDP/session_controller/entrypoint.py
+  - /app/RDP/session_controller/integration/__init__.py
+  - /app/RDP/session_controller/integration/integration_manager.py
+  - /app/RDP/session_controller/integration/rdp_monitor_client.py
+  - /app/RDP/session_controller/integration/rdp_server_manager_client.py
+  - /app/RDP/session_controller/integration/service_base.py
+  - /app/RDP/session_controller/integration/session_processor_client.py
+  - /app/RDP/session_controller/integration/session_recorder_client.py
+  - /app/RDP/session_controller/integration/xrdp_client.py
+  - /app/RDP/session_controller/main.py
+  - /app/RDP/session_controller/schema_validator.py
+  - /app/RDP/session_controller/session_controller.py
+  - /app/RDP/xrdp/__init__.py
+  - /app/RDP/xrdp/config.py
+  - /app/RDP/xrdp/entrypoint.py
+  - /app/RDP/xrdp/main.py
+  - /app/RDP/xrdp/xrdp_config.py
+  - /app/RDP/xrdp/xrdp_service.py
+  - /app/tools/__init__.py
+  - /app/tools/dev/__init__.py
+  - /app/tools/ops/__init__.py
+  - /app/tools/ops/backup/__init__.py
+  - /app/tools/ops/backup/encryption_manager.py
+  - /app/tools/ops/monitoring/__init__.py
+  - /app/tools/ops/monitoring/system_monitor.py
+  - /app/tools/ops/ota/__init__.py
+  - /app/tools/ops/ota/rollback_manager.py
+  - /app/tools/ops/ota/signature_verifier.py
+  - /app/tools/ops/ota/update_manager.py
+  - /app/tools/ops/ota/version_manager.py

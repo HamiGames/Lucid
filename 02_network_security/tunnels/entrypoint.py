@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/02_network_security/tunnels/entrypoint.py
+x-lucid-file-path: /app/02_network_security/tunnels/entrypoint.py
+x-lucid-file-type: python
+
 Lucid Tunnel Tools entrypoint — manages ephemeral onions through pickme/lucid-tor-proxy.
 Assumes:
   * `/run/lucid/tor/control_auth_cookie` is mounted from the tor-proxy container

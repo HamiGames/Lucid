@@ -3,6 +3,12 @@
 # Implements decentralized governance for Lucid RDP network
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/common/governance/lucid_governor.py
+x-lucid-file-path: /app/common/governance/lucid_governor.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

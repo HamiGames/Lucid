@@ -1,6 +1,8 @@
 """
 Error Handling Utilities
-File: gui_api_bridge/gui_api_bridge/utils/errors.py
+File: /app/gui_api_bridge/gui_api_bridge/utils/errors.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/utils/errors.py
+x-lucid-file-type: python
 """
 
 

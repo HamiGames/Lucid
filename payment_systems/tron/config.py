@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/config.py
+x-lucid-file-path: /app/payment_systems/tron/config.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Payment Services Configuration
 Configuration management for TRON payment services
 """

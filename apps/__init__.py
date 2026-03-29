@@ -2,6 +2,10 @@
 # All applications and services for the Lucid RDP platform
 
 """
+File: /app/apps/__init__.py
+x-lucid-file-path: /app/apps/__init__.py
+x-lucid-file-type: python
+
 Apps package for Lucid RDP.
 Contains all applications, services, and utilities.
 """

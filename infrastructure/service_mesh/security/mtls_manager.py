@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/security/mtls_manager.py
+x-lucid-file-path: /app/service_mesh/security/mtls_manager.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - mTLS Manager
 Mutual TLS certificate management for service mesh.
 
-File: infrastructure/service_mesh/security/mtls_manager.py
 Lines: ~280
 Purpose: mTLS management
 Dependencies: cryptography, asyncio

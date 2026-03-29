@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/governance/spin_up_timelock.py
+x-lucid-file-path: /app/blockchain/governance/spin_up_timelock.py
+x-lucid-file-type: python
+
 Timelock Governance Spin-Up Script
 
 This script performs a complete spin-up of the timelock governance system,
@@ -9,6 +13,8 @@ blockchain system.
 Author: Lucid RDP Team
 Version: 1.0.0
 """
+
+
 
 import asyncio
 import json

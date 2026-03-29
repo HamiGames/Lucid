@@ -40,7 +40,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build/overlord
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -50,9 +49,37 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY infrastructure/containers/overlord/runtime/requirements.txt ./requirements.txt
 
+
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /root/.local/lib/python3.11/site-packages && \
-    pip install --user --no-cache-dir -r ./requirements.txt
+    pip install --no-cache-dir --no-index --find-links /build/wheels --user --no-cache-dir -r ./requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './service_configs' './templates' './configs/docker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration'; \
+    for d in \
+      '.' \
+      './configs' \
+      './service_configs' \
+      './templates' \
+      './configs/docker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN echo "LUCID_SESSION_OVERLORD_PACKAGES_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-overlord-marker && \
     chown -R 65532:65532 /root/.local
@@ -62,15 +89,11 @@ COPY infrastructure/containers/overlord/runtime/app.py ./app.py
 COPY infrastructure/containers/overlord/runtime/trigger_engine.py ./trigger_engine.py
 COPY infrastructure/containers/overlord/runtime/templates ./templates
 
-RUN mkdir -p ./configs/environment && \
-    echo "LUCID_SESSION_OVERLORD_ENV_DIR" > ./configs/environment/.keep && \
-    chown -R 65532:65532 /build/overlord
 
 RUN /usr/local/bin/python3 -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import fastapi, uvicorn, yaml; print('✅ overlord deps ok')"
 
-RUN mkdir -p /build/configs/services /build/host
-COPY infrastructure/containers/services/ /build/configs/services/
-COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
+COPY infrastructure/containers/services/ /build/service_configs/
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
 
 ############################
 # Stage 2 – Runtime
@@ -97,7 +120,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=session_overlord \
     LUCID_SERVICE_HOST_IP=172.20.10.16 \
     LUCID_SERVICE_HTTP_PATH=http://session-overlord:8110/app \
@@ -106,21 +129,54 @@ ENV PYTHONUNBUFFERED=1 \
     OVERLORD_PORT=8110 \
     OVERLORD_CONFIG_ROOT=/app/configs/environment \
     OVERLORD_TEMPLATES_ROOT=/app/templates
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/templates/ /app/templates/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder --chmod=755 /usr/bin/tini /usr/bin/tini
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 COPY --from=builder --chown=65532:65532 /build/overlord/entrypoint.py /build/overlord/app.py /build/overlord/trigger_engine.py /app/
-COPY --from=builder --chown=65532:65532 /build/overlord/templates /app/templates
-COPY --from=builder --chown=65532:65532 /build/overlord/configs /app/configs
+COPY --from=builder --chown=65532:65532 /build/overlord/templates /app/overlord/templates
+COPY --from=builder --chown=65532:65532 /build/overlord/configs /app/overlord/configs
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_configs
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
 
 RUN ["/usr/bin/python3.11", "-c", "import sys; sys.path[:0]=['/usr/local/lib/python3.11/site-packages']; import fastapi, uvicorn, yaml; assert fastapi and uvicorn; print('✅ runtime deps ok')"]
 

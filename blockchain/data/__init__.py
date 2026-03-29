@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/data/__init__.py
+x-lucid-file-path: /app/blockchain/data/__init__.py
+x-lucid-file-type: python
+
 Data Chain Service Package
 Handles data chunk management, Merkle tree construction, and integrity verification
 
 This package provides the data chain service for the Lucid blockchain system,
 managing data chunks, Merkle trees, and data integrity verification.
 """
+
+
 
 from .service import DataChainService
 from .chunk_manager import ChunkManager

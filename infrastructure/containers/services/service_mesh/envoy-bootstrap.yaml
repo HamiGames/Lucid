@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/service_mesh/envoy-bootstrap.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/service_mesh/envoy-bootstrap.yaml — see ../container-runtime-layout.yml
 # Lucid Service Mesh - Envoy Bootstrap Configuration
 # File: service-mesh/config/envoy-bootstrap.yaml
 # Purpose: Default Envoy sidecar proxy bootstrap configuration

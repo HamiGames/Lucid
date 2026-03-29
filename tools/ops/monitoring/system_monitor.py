@@ -1,9 +1,12 @@
 """
+File: /app/tools/ops/monitoring/system_monitor.py
+x-lucid-file-path: /app/tools/ops/monitoring/system_monitor.py
+x-lucid-file-type: python
+
 System monitoring for Lucid RDP.
 
 This module provides comprehensive system resource monitoring, metrics collection,
 performance tracking, and integration with the LUCID-STRICT security model.
-
 """
 
 import asyncio

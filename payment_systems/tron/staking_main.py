@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/staking_main.py
+x-lucid-file-path: /app/payment_systems/tron/staking_main.py
+x-lucid-file-type: python
+
 LUCID TRON Staking Service - Main Entry Point
 Dedicated container: tron-staking
 Port: 8096

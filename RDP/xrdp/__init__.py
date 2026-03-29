@@ -4,6 +4,10 @@
 # Distroless container implementation
 
 """
+File: /app/RDP/xrdp/__init__.py
+x-lucid-file-path: /app/RDP/xrdp/__init__.py
+x-lucid-file-type: python
+
 Lucid XRDP Service Package
 
 This package provides XRDP service management for the Lucid system,

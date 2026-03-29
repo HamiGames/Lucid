@@ -2,6 +2,12 @@
 # Implements comprehensive chunk storage, verification, and retrieval
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/blockchain/chain_client/lucid_chunk_store_client.py
+x-lucid-file-path: /app/blockchain/chain_client/lucid_chunk_store_client.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -23,7 +29,7 @@ from cryptography.hazmat.backends import default_backend
 import aiohttp
 import aiofiles
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Configuration from environment
 LUCID_CHUNK_STORE_CONTRACT_ADDRESS = "0x2345678901234567890123456789012345678901"
@@ -35,7 +41,10 @@ STORAGE_PROOF_ALGORITHM = "sha256"
 
 
 class ChunkStatus(Enum):
-    """Chunk status states"""
+    """
+
+Chunk status states
+"""
     PENDING = "pending"
     STORED = "stored"
     VERIFIED = "verified"

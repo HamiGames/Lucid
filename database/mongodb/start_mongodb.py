@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/mongodb/start_mongodb.py
+x-lucid-file-path: /app/database/mongodb/start_mongodb.py
+x-lucid-file-type: python
+
 MongoDB Distroless Startup Script
 Handles MongoDB initialization and configuration for distroless container
 CRITICAL: Automatically creates admin user on first run if users don't exist

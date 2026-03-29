@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/anchoring/storage.py
+x-lucid-file-path: /app/blockchain/anchoring/storage.py
+x-lucid-file-type: python
+
 Anchoring Storage Module
 Handles persistence of anchoring records in MongoDB
 
 This module provides storage operations for session anchoring data.
 """
+
+
 
 from __future__ import annotations
 

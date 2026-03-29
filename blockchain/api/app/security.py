@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/security.py
+x-lucid-file-path: /app/blockchain/api/app/security.py
+x-lucid-file-type: python
+
 Security Module
 
 This module contains security utilities for the Blockchain API.
 Handles JWT token operations, password hashing, and other security functions.
 """
+
+
 
 import logging
 import hashlib

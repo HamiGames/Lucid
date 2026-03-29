@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/data/api/main.py
+x-lucid-file-path: /app/blockchain/data/api/main.py
+x-lucid-file-type: python
+
 Data Chain API Main Application
 
 FastAPI application for the data chain service.
 Provides REST API endpoints for data chunk management, Merkle tree operations,
 and integrity verification.
 """
+
+
 
 from __future__ import annotations
 

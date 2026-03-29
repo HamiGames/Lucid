@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/payment_acceptor/__init__.py
+x-lucid-file-path: /app/payment_systems/payment_acceptor/__init__.py
+x-lucid-file-type: python
+
 Payment Acceptor Module for Lucid Network
 Handles payment acceptance, validation, and processing
 """

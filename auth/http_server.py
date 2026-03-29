@@ -1,9 +1,12 @@
 """
+File: /app/auth/http_server.py
+x-lucid-file-path: /app/auth/http_server.py
+x-lucid-file-type: python
+
 HTTP Server for Lucid Authentication Service
 Provides customizable HTTP endpoints for authentication, user management, sessions, and hardware wallets
 Follows the service_mesh-controller pattern for consistency across Lucid project
 
-File: auth/http_server.py
 Purpose: HTTP API server for authentication service with customizable endpoints
 Dependencies: fastapi, uvicorn, asyncio, logging, yaml
 """

@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/rdp_monitor_client.py
+x-lucid-file-path: /app/RDP/session_controller/integration/rdp_monitor_client.py
+x-lucid-file-type: python
+
 RDP Monitor Client
 
 HTTP client for integrating with rdp-monitor service.

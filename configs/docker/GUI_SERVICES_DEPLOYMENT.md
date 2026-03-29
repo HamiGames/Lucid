@@ -1,3 +1,5 @@
+> **Lucid layout:** Canonical Dockerfiles: infrastructure/containers/**/Dockerfile* (repo-root build context). Registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml. Packaged configs: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml). Indexed in x-files-listing.txt.
+
 # Docker Compose GUI Integration - Services Added
 
 **Date:** 2025-01-25  

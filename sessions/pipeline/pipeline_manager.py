@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/pipeline_manager.py
+x-lucid-file-path: /app/sessions/pipeline/pipeline_manager.py
+x-lucid-file-type: python
+
 Lucid Session Management Pipeline Manager
 Handles the complete session processing pipeline with state machine
 """

@@ -1,8 +1,12 @@
-"""Loads host config for Lucid tunnels service.
+"""
+File: /app/02_network_security/tunnels/load_host_config.py
+x-lucid-file-path: /app/02_network_security/tunnels/load_host_config.py
+x-lucid-file-type: python
+
+Loads host config for Lucid tunnels service.
 
 Emphasizes tor-socks, tor-control, tunnel-tools from host-config; env overrides
 match Dockerfile.tunnels patterns (TOR_SOCKS_HOST, TUNNEL_PORT, etc.).
-File: 02_network_security/tunnels/load_host_config.py
 """
 
 from __future__ import annotations

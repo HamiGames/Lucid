@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/services/user_service.py
+x-lucid-file-path: /app/03_api_gateway/services/user_service.py
+x-lucid-file-type: python
+
 Lucid API Gateway - User Service
 Handles user management operations.
 
-File: 03_api_gateway/services/user_service.py
 Lines: ~250
 Purpose: User management service
 Dependencies: aiohttp, models

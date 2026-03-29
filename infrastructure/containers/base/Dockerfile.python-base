@@ -29,7 +29,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -40,6 +39,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -77,6 +77,19 @@ COPY infrastructure/containers/base/requirements-minimal.txt ./requirements-mini
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements-minimal.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements-minimal.txt
 
@@ -125,9 +138,8 @@ PY
 
 RUN chmod 755 /build/opt/python_base_bootstrap.py
 
-RUN mkdir -p /build/host /build/configs/services /build/configs/operations
 COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
 COPY infrastructure/containers/base/docker-compose.base.yml /build/configs/operations/docker-compose.base.yml
 
 ############################
@@ -136,6 +148,21 @@ COPY infrastructure/containers/base/docker-compose.base.yml /build/configs/opera
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -162,7 +189,26 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 # Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
 
@@ -180,8 +226,7 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chmod=755 /build/opt/python_base_bootstrap.py /app/opt/python_base_bootstrap.py
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
 COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 COPY --from=builder /usr/bin/tini /app/usr/bin/tini

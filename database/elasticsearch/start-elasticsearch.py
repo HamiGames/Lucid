@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/elasticsearch/start-elasticsearch.py
+x-lucid-file-path: /app/database/elasticsearch/start-elasticsearch.py
+x-lucid-file-type: python
+
 Elasticsearch Distroless Startup Script
 Handles Elasticsearch initialization and configuration for distroless container
 """

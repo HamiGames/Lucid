@@ -1,9 +1,12 @@
 # Path: sessions/__init__.py
 """
+File: /app/sessions/__init__.py
+x-lucid-file-path: /app/sessions/__init__.py
+x-lucid-file-type: python
+
 Session system package for Lucid RDP.
 Handles session recording, encryption, manifest anchoring, and chunk management.
 path: .sessions
-file: sessions/__init__.py
 the sessions calls the sessions
 """
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/database_adapter.py
+x-lucid-file-path: /app/node/database_adapter.py
+x-lucid-file-type: python
+
 Lucid Node Management - Database Adapter
 Database interface for node management service
 """

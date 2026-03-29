@@ -3,6 +3,12 @@
 # Implements R-MUST-003: Remote Desktop Host Support with clipboard controls
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/recorder/clipboard_handler.py
+x-lucid-file-path: /app/RDP/recorder/clipboard_handler.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

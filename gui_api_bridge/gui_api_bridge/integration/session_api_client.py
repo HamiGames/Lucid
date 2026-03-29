@@ -1,4 +1,7 @@
-"""Session API Client"""
+"""Session API Client
+file: /app/gui_api_bridge/gui_api_bridge/integration/session_api_client.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/integration/session_api_client.py
+x-lucid-file-type: python"""
 from ...gui_api_bridge.integration.service_base import ServiceBaseClient
 
 class SessionAPIClient(ServiceBaseClient):

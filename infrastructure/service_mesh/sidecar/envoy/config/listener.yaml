@@ -1,6 +1,14 @@
 # Lucid Service Mesh - Envoy Listener Configuration
-# File: infrastructure/service-mesh/sidecar/envoy/config/listener.yaml
+# File: infrastructure/service_mesh/sidecar/envoy/config/listener.yaml
 # Purpose: Envoy listener configuration for service mesh
+# x-lucid-file-id: ??
+# x-lucid-file-name: infrastructure/service_mesh/sidecar/envoy/config/listener.yaml
+# x-lucid-file-path: infrastructure/service_mesh/sidecar/envoy/config/listener.yaml
+# x-lucid-file-type: yaml
+# x-lucid-file-size: ??
+# x-lucid-file-hash: ??
+# x-lucid-file-created: ??
+# x-lucid-file-modified: ??
 
 version_info: "1"
 resources:

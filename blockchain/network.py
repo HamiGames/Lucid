@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/network.py
+x-lucid-file-path: /app/blockchain/network.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -5,7 +11,10 @@ from typing import Callable, Awaitable, Tuple
 
 
 class PeerServer:
-    """Minimal asyncio TCP server to demonstrate P2P hooks (dev only)."""
+    """
+
+Minimal asyncio TCP server to demonstrate P2P hooks (dev only).
+"""
 
     def __init__(self, host: str = "0.0.0.0", port: int = 5050) -> None:
         self.host = host

@@ -1,4 +1,8 @@
 """
+File: /app/node/__init__.py
+x-lucid-file-path: /app/node/__init__.py
+x-lucid-file-type: python
+
 LUCID Node Components
 Complete node management system including DHT/CRDT, consensus, economy, and more.
 """

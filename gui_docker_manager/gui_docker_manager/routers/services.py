@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/services.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/services.py
+x-lucid-file-type: python
+
 Service Group Management Routers
-File: gui_docker_manager/gui_docker_manager/routers/services.py
 """
 
 import logging

@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/config.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/config.py
+x-lucid-file-type: python
+
 GUI Tor Manager Configuration
 Pydantic-based settings management following container-design.md pattern
 Environment variable validation with no hardcoding

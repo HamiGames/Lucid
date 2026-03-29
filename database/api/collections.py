@@ -1,4 +1,8 @@
 """
+File: /app/database/api/collections.py
+x-lucid-file-path: /app/database/api/collections.py
+x-lucid-file-type: python
+
 Database Collections Management API
 
 Provides endpoints for managing MongoDB collections:

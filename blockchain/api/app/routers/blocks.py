@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/blocks.py
+x-lucid-file-path: /app/blockchain/api/app/routers/blocks.py
+x-lucid-file-type: python
+
 Blocks Router
 
 This module contains the block management and validation endpoints.
 Implements the OpenAPI 3.0 specification for block operations.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional

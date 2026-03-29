@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
+File: /app/gui_docker_manager/gui_docker_manager/integration/service_base.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/integration/service_base.py
+x-lucid-file-type: python
+
 Base Service Client for Integration Modules
 Provides common functionality for service communication
-File: gui_docker_manager/gui_docker_manager/integration/service_base.py
 """
 
 import asyncio

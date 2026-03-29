@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/healthcheck.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/healthcheck.py
+x-lucid-file-type: python
+
 Health Check Logic for GUI Tor Manager
 Provides comprehensive health status of the service and its dependencies
 """

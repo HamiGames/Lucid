@@ -1,4 +1,8 @@
 """
+File: /app/database/api/volumes.py
+x-lucid-file-path: /app/database/api/volumes.py
+x-lucid-file-type: python
+
 Database Volume Management API
 
 Provides endpoints for managing storage volumes:

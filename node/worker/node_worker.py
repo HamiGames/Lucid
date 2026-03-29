@@ -2,6 +2,12 @@
 # Lucid RDP Node Worker - Core RDP session management
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/worker/node_worker.py
+x-lucid-file-path: /app/node/worker/node_worker.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

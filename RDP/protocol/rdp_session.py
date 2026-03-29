@@ -3,6 +3,12 @@
 # Implements RDP session protocol handling and management
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/RDP/protocol/rdp_session.py
+x-lucid-file-path: /app/RDP/protocol/rdp_session.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

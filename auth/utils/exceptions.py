@@ -1,4 +1,8 @@
 """
+File: /app/auth/utils/exceptions.py
+x-lucid-file-path: /app/auth/utils/exceptions.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Custom Exceptions
 """
 

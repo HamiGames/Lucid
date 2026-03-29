@@ -1,3 +1,9 @@
+"""
+File: /app/app/config.py
+x-lucid-file-path: /app/app/config.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

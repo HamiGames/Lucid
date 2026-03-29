@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/models/payment.py
+x-lucid-file-path: /app/payment_systems/tron/models/payment.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - Payment Models
 Data models and enums for payment operations
 Distroless container: lucid-payment-gateway:latest

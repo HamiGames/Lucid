@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/payouts.py
+x-lucid-file-path: /app/payment_systems/tron/api/payouts.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Payouts API
 Payout routing and management operations
 Distroless container: lucid-tron-payment-service:latest

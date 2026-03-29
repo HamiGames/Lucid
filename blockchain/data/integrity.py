@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/data/integrity.py
+x-lucid-file-path: /app/blockchain/data/integrity.py
+x-lucid-file-type: python
+
 Integrity Verifier
 Handles data integrity verification for chunks and Merkle trees
 
 This module provides integrity verification functionality including
 hash verification, checksum validation, and corruption detection.
 """
+
+
 
 from __future__ import annotations
 

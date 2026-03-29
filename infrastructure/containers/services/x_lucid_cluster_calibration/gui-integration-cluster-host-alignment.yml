@@ -1,0 +1,195 @@
+# Runtime (container): /app/service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
+# Canonical gui-integration cluster alignment: host-config.yml + x-files-listing.txt (merge with docker-compose for this stack).
+x-lucid-calibration:
+  cluster: gui-integration
+  source_host_config: infrastructure/containers/host-config.yml
+  source_x_files_listing: x-files-listing.txt
+  description: Host registry + x-lucid file paths for gui-integration cluster (merge with docker-compose fragments for this
+    stack).
+x-lucid-host-config:
+  file: ../../host-config.yml
+  repo_path: infrastructure/containers/host-config.yml
+  version: '1.0'
+  description: Lucid container host registry for Docker DNS hostnames, ports, discovery URLs, and static host IPs.
+  ip_source_repo_path: service-ip.txt
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  in_container_path: /app/configs/host-config.yml
+x-lucid-host-config-alignment:
+  registry_path: /app/configs/host-config.yml
+  http_path_template: http://{service_name}:{port}/app
+  host_ip_range: 172.20.10.1–172.20.10.76
+  entries:
+    electron_gui_node:
+      host_config_key: electron_gui_node
+      service_name: electron-gui-node
+      port: 3002
+      host_ip: 172.20.10.76
+      http_path: http://electron-gui-node:3002/app
+    electron_gui_user:
+      host_config_key: electron_gui_user
+      service_name: electron-gui-user
+      port: 3001
+      host_ip: 172.20.10.75
+      http_path: http://electron-gui-user:3001/app
+    gui_api_bridge:
+      host_config_key: gui_api_bridge
+      service_name: gui-api-bridge
+      port: 8102
+      host_ip: 172.20.10.61
+      http_path: http://gui-api-bridge:8102/app
+    gui_docker_manager:
+      host_config_key: gui_docker_manager
+      service_name: gui-docker-manager
+      port: 8098
+      host_ip: 172.20.10.60
+      http_path: http://gui-docker-manager:8098/app
+    gui_hardware_manager:
+      host_config_key: gui_hardware_manager
+      service_name: gui-hardware-manager
+      port: 8099
+      host_ip: 172.20.10.62
+      http_path: http://gui-hardware-manager:8099/app
+    gui_tor_manager_http:
+      host_config_key: gui_tor_manager_http
+      service_name: gui-tor-manager
+      port: 8097
+      host_ip: 172.20.10.63
+      http_path: http://gui-tor-manager:8097/app
+x-lucid-x-files-calibration:
+  cluster: gui-integration
+  filter_app_prefixes:
+  - electron_gui
+  - gui
+  - gui_api_bridge
+  - gui_docker_manager
+  - gui_hardware_manager
+  - user
+  x_lucid_file_paths:
+  - /app/electron_gui/__init__.py
+  - /app/electron_gui/utils/__init__.py
+  - /app/electron_gui/utils/converter.py
+  - /app/electron_gui/utils/load_host_config.py
+  - /app/gui/admin/__init__.py
+  - /app/gui/admin/backup_restore.py
+  - /app/gui/admin/bootstrap_wizard.py
+  - /app/gui/admin/diagnostics.py
+  - /app/gui/admin/key_management.py
+  - /app/gui/admin/payouts_manager.py
+  - /app/gui/config/config.py
+  - /app/gui/config/load_host_config.py
+  - /app/gui/core/config_manager.py
+  - /app/gui/core/networking.py
+  - /app/gui/core/security.py
+  - /app/gui/core/telemetry.py
+  - /app/gui/core/tor_client.py
+  - /app/gui/main.py
+  - /app/gui/user/connection_dialog.py
+  - /app/gui/user/policy_controller.py
+  - /app/gui/user/proofs_viewer.py
+  - /app/gui/user/session_manager.py
+  - /app/gui/user/settings_dialog.py
+  - /app/gui/wallet/wallet_config.py
+  - /app/gui/wallet/wallet_functions.py
+  - /app/gui/wallet/wallet_gui.py
+  - /app/gui_api_bridge/gui_api_bridge/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/config.py
+  - /app/gui_api_bridge/gui_api_bridge/entrypoint.py
+  - /app/gui_api_bridge/gui_api_bridge/gui_api_bridge_service.py
+  - /app/gui_api_bridge/gui_api_bridge/healthcheck.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/admin_interface_client.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/api_gateway_client.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/auth_service_client.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/blockchain_client.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/integration_manager.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/node_management_client.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/service_base.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/session_api_client.py
+  - /app/gui_api_bridge/gui_api_bridge/integration/tron_client.py
+  - /app/gui_api_bridge/gui_api_bridge/main.py
+  - /app/gui_api_bridge/gui_api_bridge/middleware/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/middleware/auth.py
+  - /app/gui_api_bridge/gui_api_bridge/middleware/cors.py
+  - /app/gui_api_bridge/gui_api_bridge/middleware/logging.py
+  - /app/gui_api_bridge/gui_api_bridge/middleware/rate_limit.py
+  - /app/gui_api_bridge/gui_api_bridge/models/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/models/auth.py
+  - /app/gui_api_bridge/gui_api_bridge/models/common.py
+  - /app/gui_api_bridge/gui_api_bridge/models/routing.py
+  - /app/gui_api_bridge/gui_api_bridge/routers/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/routers/admin.py
+  - /app/gui_api_bridge/gui_api_bridge/routers/developer.py
+  - /app/gui_api_bridge/gui_api_bridge/routers/node.py
+  - /app/gui_api_bridge/gui_api_bridge/routers/user.py
+  - /app/gui_api_bridge/gui_api_bridge/routers/websocket.py
+  - /app/gui_api_bridge/gui_api_bridge/services/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/services/discovery_service.py
+  - /app/gui_api_bridge/gui_api_bridge/services/routing_service.py
+  - /app/gui_api_bridge/gui_api_bridge/services/websocket_service.py
+  - /app/gui_api_bridge/gui_api_bridge/utils/__init__.py
+  - /app/gui_api_bridge/gui_api_bridge/utils/errors.py
+  - /app/gui_api_bridge/gui_api_bridge/utils/logging.py
+  - /app/gui_api_bridge/gui_api_bridge/utils/validation.py
+  - /app/gui_docker_manager/gui_docker_manager/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/config.py
+  - /app/gui_docker_manager/gui_docker_manager/docker_manager_service.py
+  - /app/gui_docker_manager/gui_docker_manager/entrypoint.py
+  - /app/gui_docker_manager/gui_docker_manager/integration/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/integration/docker_client.py
+  - /app/gui_docker_manager/gui_docker_manager/integration/service_base.py
+  - /app/gui_docker_manager/gui_docker_manager/main.py
+  - /app/gui_docker_manager/gui_docker_manager/middleware/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/middleware/auth.py
+  - /app/gui_docker_manager/gui_docker_manager/middleware/rate_limit.py
+  - /app/gui_docker_manager/gui_docker_manager/models/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/models/container.py
+  - /app/gui_docker_manager/gui_docker_manager/models/network.py
+  - /app/gui_docker_manager/gui_docker_manager/models/permissions.py
+  - /app/gui_docker_manager/gui_docker_manager/models/responses.py
+  - /app/gui_docker_manager/gui_docker_manager/models/service_group.py
+  - /app/gui_docker_manager/gui_docker_manager/models/volume.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/compose.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/containers.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/events.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/health.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/networks.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/services.py
+  - /app/gui_docker_manager/gui_docker_manager/routers/volumes.py
+  - /app/gui_docker_manager/gui_docker_manager/services/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/services/access_control_service.py
+  - /app/gui_docker_manager/gui_docker_manager/services/authentication_service.py
+  - /app/gui_docker_manager/gui_docker_manager/services/compose_service.py
+  - /app/gui_docker_manager/gui_docker_manager/services/container_service.py
+  - /app/gui_docker_manager/gui_docker_manager/services/network_service.py
+  - /app/gui_docker_manager/gui_docker_manager/services/volume_service.py
+  - /app/gui_docker_manager/gui_docker_manager/utils/__init__.py
+  - /app/gui_docker_manager/gui_docker_manager/utils/errors.py
+  - /app/gui_docker_manager/gui_docker_manager/utils/logging.py
+  - /app/gui_hardware_manager/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/config.py
+  - /app/gui_hardware_manager/gui_hardware_manager/entrypoint.py
+  - /app/gui_hardware_manager/gui_hardware_manager/healthcheck.py
+  - /app/gui_hardware_manager/gui_hardware_manager/integration/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/integration/tor_integration.py
+  - /app/gui_hardware_manager/gui_hardware_manager/main.py
+  - /app/gui_hardware_manager/gui_hardware_manager/middleware/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/middleware/auth.py
+  - /app/gui_hardware_manager/gui_hardware_manager/middleware/logging.py
+  - /app/gui_hardware_manager/gui_hardware_manager/middleware/rate_limit.py
+  - /app/gui_hardware_manager/gui_hardware_manager/models/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/routers/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/routers/devices.py
+  - /app/gui_hardware_manager/gui_hardware_manager/routers/health.py
+  - /app/gui_hardware_manager/gui_hardware_manager/routers/sign.py
+  - /app/gui_hardware_manager/gui_hardware_manager/routers/tor.py
+  - /app/gui_hardware_manager/gui_hardware_manager/routers/wallets.py
+  - /app/gui_hardware_manager/gui_hardware_manager/services/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/services/hardware_service.py
+  - /app/gui_hardware_manager/gui_hardware_manager/utils/__init__.py
+  - /app/gui_hardware_manager/gui_hardware_manager/utils/errors.py
+  - /app/gui_hardware_manager/gui_hardware_manager/utils/logging.py
+  - /app/gui_hardware_manager/gui_hardware_manager/utils/validation.py
+  - /app/user/__init__.py
+  - /app/user/user_manager.py

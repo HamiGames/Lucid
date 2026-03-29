@@ -1,4 +1,8 @@
 """
+File: /app/gui_hardware_manager/gui_hardware_manager/services/hardware_service.py
+x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/services/hardware_service.py
+x-lucid-file-type: python
+
 Hardware wallet service for managing device and wallet operations
 Handles integration with hardware wallets, tor-proxy, and other services
 """

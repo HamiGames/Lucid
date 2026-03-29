@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/tron-payment.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/tron-payment.yml — see container-runtime-layout.yml
 # TRON Payment Service Configuration
 # This file contains configuration for the TRON payment system services
 # Upstream HTTP entry: tron-payment-service:8080 (tron_payment_service @ host-config.yml); payment-system-gateway:8097

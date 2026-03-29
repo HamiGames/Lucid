@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/api/app/routes/users.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routes/users.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from typing import Dict, Optional

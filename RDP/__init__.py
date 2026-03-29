@@ -4,6 +4,10 @@
 # LUCID-STRICT Layer 2 Service Integration
 
 """
+File: /app/RDP/__init__.py
+x-lucid-file-path: /app/RDP/__init__.py
+x-lucid-file-type: python
+
 Lucid RDP Module
 
 This package provides comprehensive Remote Desktop Protocol (RDP) functionality

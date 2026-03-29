@@ -1,6 +1,10 @@
-""" Lucid Admin Interface - Audit Package
+"""
+File: /app/admin/audit/__init__.py
+x-lucid-file-path: /app/admin/audit/__init__.py
+x-lucid-file-type: python
+
+Lucid Admin Interface - Audit Package
  Step 24: Admin Container & Integration
- file: admin/audit/__init__.py
  Audit logging system for the Lucid admin interface.
  Provides comprehensive audit trail for all administrative actions.
 """

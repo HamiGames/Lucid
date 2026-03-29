@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/state_machine.py
+x-lucid-file-path: /app/sessions/pipeline/state_machine.py
+x-lucid-file-type: python
+
 Lucid Session Management Pipeline State Machine
 Handles state transitions for session processing pipelines
 """

@@ -1,4 +1,8 @@
 """
+File: /app/database/api/backups.py
+x-lucid-file-path: /app/database/api/backups.py
+x-lucid-file-type: python
+
 Database Backup Management API
 
 Provides endpoints for database backup and restore operations:

@@ -1,7 +1,7 @@
 # LUCID TRON Payout Router - Error Codes Configuration
 # File: payment-systems/tron/config/payout-error-codes.yaml
 # Purpose: Payout-specific error codes and recovery strategies
-# Runtime (container): /app/configs/services/payment_services/payout-error-codes.yaml
+# Runtime (container): /app/service_configs/payment_services/payout-error-codes.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

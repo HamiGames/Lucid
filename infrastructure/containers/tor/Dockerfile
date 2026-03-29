@@ -60,60 +60,32 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
-COPY configs/environment/.env.secrets /build/configs/.env.secrets
-COPY master-env-config.txt /build/configs/.env.master
-
-
-
-# Create application and data directories with proper ownership
-# Following Dockerfile-copy-pattern.md: create directories with marker files (actual content) before COPY
-RUN mkdir -p /usr /usr/local usr/bin /bin /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages && \
-    printf "LUCID_API_GATEWAY_USR_$(date +%s)" > /usr/.keep && \
-    touch /usr/.keep && \
-    printf "LUCID_API_GATEWAY_USR_LOCAL_$(date +%s)" > /usr/local/.keep && \
-    touch /usr/local/.keep && \
-    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_$(date +%s)" > /usr/local/lib/.keep && \
-    touch /usr/local/lib/.keep && \
-    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_$(date +%s)" > /usr/local/lib/python3.11/.keep && \
-    touch /usr/local/lib/python3.11/.keep && \
-    printf "LUCID_API_GATEWAY_USR_LOCAL_LIB_PYTHON3_11_SITE_PACKAGES_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.keep && \
-    touch /usr/local/lib/python3.11/site-packages/.keep && \
-    printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
-    touch /usr/local/bin/.keep && \
-    printf "LUCID_API_GATEWAY_BIN_$(date +%s)" > /bin/.keep && \
-    touch /bin/.keep && \
-    printf "LUCID_API_GATEWAY_USR_BIN_$(date +%s)" > /usr/bin/.keep && \
-    touch /usr/bin/.keep && \
-    printf "LUCID_API_GATEWAY_USR_LOCAL_BIN_$(date +%s)" > /usr/local/bin/.keep && \
-    touch /usr/local/bin/.keep && \
-    chown -R 65532:65532 /usr /usr/local /usr/local/lib /usr/local/bin /usr/local/lib/python3.11 /usr/local/lib/python3.11/site-packages /bin /usr/bin /usr/local/bin && \
-    chmod 644 /usr/.keep /usr/local/.keep /usr/local/lib/.keep /usr/local/lib/python3.11/.keep /usr/local/lib/python3.11/site-packages/.keep /usr/local/bin/.keep /bin/.keep /usr/bin/.keep /usr/local/bin/.keep && \
+RUN mkdir -p ./configs && \
+    printf "LUCID_TUNNEL_TOOLS_CONFIGS_$(date +%s)" > ./configs/.keep && \
+    touch ./configs/.keep && \
+    chown -R 65532:65532 ./configs && \
+    chmod 644 ./configs/.keep && \
     echo " Marker files created to lock in directory structure"
+ 
+COPY configs/ ./configs/
+COPY configs/environment/.env.secrets ./configs/.env.secrets
+COPY master-env-config.txt ./configs/.env.master
 
-# Copy tunnel application files
-# Build context: project root, so we prefix with 02_network_security/tunnels/
-RUN mkdir -p ./tunnels  ./tunnels/scripts ./tunnels/config && \
-    printf "LUCID_TUNNEL_TOOLS_CONFIG_$(date +%s)" > ./tunnels/config/.keep && \
-    touch ./tunnels/config/.keep && \
-    printf "LUCID_TUNNEL_TOOLS_TUNNELS_$(date +%s)" > ./tunnels/.keep && \
-    touch ./tunnels/.keep && \
-    printf "LUCID_TUNNEL_TOOLS_SCRIPTS_$(date +%s)" > ./tunnels/scripts/.keep && \
-    touch ./tunnels/scripts/.keep && \
-    chown -R 65532:65532 ./tunnels ./tunnels/scripts ./tunnels/config  && \
-    chmod 644 ./tunnels/.keep ./tunnels/scripts/.keep ./tunnels/config/.keep  && \
-    echo " Marker files created to lock in directory structure"
+COPY infrastructure/containers/services/ ./service_configs/
+COPY 02_network_security/ ./02_network_security/
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY sessions/api-gateway/ ./sessions/api-gateway/
+COPY gui_api_bridge/ ./gui_api_bridge/
+COPY server/ ./server/
 
-COPY 02_network_security/tunnels/ ./tunnels/
-COPY 02_network_security/tunnels/scripts/ ./tunnels/scripts/
-COPY 02_network_security/tunnels/config/ ./tunnels/config/
+COPY service_mesh/ ./service_mesh/
+
 COPY configs/environment/.env.tunnel-tools ./configs/.env.tunnel-tools
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY master-env-config.txt ./configs/.env.master
 COPY 02_network_security/tor/torrc ./configs/torrc
-RUN mkdir -p /build/configs/services/tor
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/container-runtime-layout.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml ./configs/docker-compose.proxy-systems.yml
 RUN chmod +x ./tunnels/entrypoint.py || true && \
     ( test -f ./tunnels/__init__.py && chmod +x ./tunnels/__init__.py ) || true && \
     chmod +x ./tunnels/scripts/*.sh || true && \
@@ -130,6 +102,147 @@ RUN mkdir -p /build/wheels && \
       "setuptools>=69.0" \
       "wheel>=0.42.0" \
     && echo "✅ Wheelhouse populated under /build/wheels"
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './02_network_security' './03_api_gateway' './configs' './gui_api_bridge' './server' './service_configs' './service_mesh' './sessions' './02_network_security/docs' './02_network_security/tor' './02_network_security/tunnels' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './configs/torrc' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/scripts' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/security' './service_mesh/sidecar' './sessions/api' './sessions/api-gateway' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './02_network_security/tor/scripts' './02_network_security/tunnels/config' './02_network_security/tunnels/scripts' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/docs/swagger' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './gui_api_bridge/gui_api_bridge/config' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/integration' './sessions/recorder/integration' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './03_api_gateway/api/app/db/models'; \
+    for d in \
+      '.' \
+      './02_network_security' \
+      './03_api_gateway' \
+      './configs' \
+      './gui_api_bridge' \
+      './server' \
+      './service_configs' \
+      './service_mesh' \
+      './sessions' \
+      './02_network_security/docs' \
+      './02_network_security/tor' \
+      './02_network_security/tunnels' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './configs/torrc' \
+      './gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge' \
+      './gui_api_bridge/scripts' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './sessions/api' \
+      './sessions/api-gateway' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './02_network_security/tor/scripts' \
+      './02_network_security/tunnels/config' \
+      './02_network_security/tunnels/scripts' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
+      './gui_api_bridge/gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge/integration' \
+      './gui_api_bridge/gui_api_bridge/middleware' \
+      './gui_api_bridge/gui_api_bridge/models' \
+      './gui_api_bridge/gui_api_bridge/routers' \
+      './gui_api_bridge/gui_api_bridge/services' \
+      './gui_api_bridge/gui_api_bridge/utils' \
+      './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/integration' \
+      './sessions/recorder/integration' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './03_api_gateway/api/app/db/models' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 # Builder stage verification: Verify Python
 
@@ -146,7 +259,7 @@ RUN python3.11 --version && \
 # =============================================================================
 # STAGE 2: Distroless Runtime with Python3 (Debian 12)
 # =============================================================================
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
+FROM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
 
@@ -187,20 +300,48 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin \
     LUCID_SERVICE_HOST_IP=172.20.10.66 \
     LUCID_SERVICE_HTTP_PATH=http://tunnel-tools:7000/app
 
-# Copy tini from builder (for proper signal handling)
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
 COPY --from=tunnel-builder --chown=65532:65532 /build/configs/torrc /app/configs/torrc
-COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/ /app/tunnels/
-COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/scripts/ /app/tunnels/scripts/
-COPY --from=tunnel-builder --chown=65532:65532 /build/tunnels/config/ /app/tunnels/config/
-COPY --from=tunnel-builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=tunnel-builder --chown=65532:65532 /build/02_network_security/tunnels/scripts/ /app/02_network_security/tunnels/scripts/
+COPY --from=tunnel-builder --chown=65532:65532 /build/02_network_security/tunnels/config/ /app/02_network_security/tunnels/config/
 
-COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/tini /app/usr/bin/tini
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=tunnel-builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /var/run/ /app/var/run/
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/onion/ /app/run/lucid/onion/
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnel/ /app/run/lucid/tunnel/
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tunnels/ /app/run/lucid/tunnels/
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tor/ /app/run/lucid/tor/
+COPY --from=tunnel-builder --chown=65532:65532 /run/lucid/tor/lucid_admin/ /app/run/lucid/tor/lucid_admin/
+
+COPY --from=tunnel-builder --chown=65532:65532 /run/ /app/run/
+COPY --from=tunnel-builder --chown=65532:65532 /tmp/ /app/tmp/
+COPY --from=tunnel-builder --chown=65532:65532 /etc/ /app/etc/
+COPY --from=tunnel-builder --chown=65532:65532 /lib/ /app/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/ /app/usr/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/share/ /app/usr/share/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/local/share/ /app/usr/local/share/
+COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/certs/ /app/etc/ssl/certs/
+COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=tunnel-builder --chown=65532:65532 /etc/passwd /app/etc/passwd
+COPY --from=tunnel-builder --chown=65532:65532 /etc/group /app/etc/group
+COPY --from=tunnel-builder --chown=65532:65532 /etc/hosts /app/etc/hosts
+COPY --from=tunnel-builder --chown=65532:65532 /etc/hostname /app/etc/hostname
+COPY --from=tunnel-builder --chown=65532:65532 /etc/resolv.conf /app/etc/resolv.conf
+COPY --from=tunnel-builder --chown=65532:65532 /etc/hosts.allow /app/etc/hosts.allow
+COPY --from=tunnel-builder --chown=65532:65532 /etc/hosts.deny /app/etc/hosts.deny
+COPY --from=tunnel-builder --chown=65532:65532 /etc/motd /app/etc/motd
+COPY --from=tunnel-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=tunnel-builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
 COPY --from=tunnel-builder --chown=65532:65532 /build/wheels/ /app/wheels/
+COPY --from=tunnel-builder --chown=65532:65532 /build/
+
+
+
 
 # Runtime verification: Verify entrypoint exists and modules can be imported (distroless base Python)
 RUN ["/usr/bin/python3.11", "-c", "import os, sys; \
@@ -213,15 +354,41 @@ print('✅ All tunnel-tools modules verified')"]
 
 ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
-    COOKIE_FILE=/app/var/lib/tor/control_auth_cookie \
+    COOKIE_FILE=/app/run/lucid/tor/control_auth_cookie \
     ONION_PORTS="80 api-gateway:8080" \
-    WRITE_ENV=/app/run/lucid/onion/.onion.env \
+    WRITE_ENV=/app/run/lucid/tunnels/.onion.env \
     ROTATE_INTERVAL=0 \
     TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
     TOR_PROXY=tor-proxy:9050 \
     LUCID_ENV=production \
     LUCID_PLATFORM=arm64
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=tunnel-builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
+COPY --from=tunnel-builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
+COPY --from=tunnel-builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=tunnel-builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=tunnel-builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=tunnel-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=tunnel-builder --chown=65532:65532 /build/service_mesh/ /app/service_mesh/
+COPY --from=tunnel-builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=tunnel-builder --chown=65532:65532 /bin/ /app/bin/
+COPY --from=tunnel-builder --chown=65532:65532 /dev/null)"/ /app/dev/null)"/
+COPY --from=tunnel-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=tunnel-builder --chown=65532:65532 /usr/ /app/usr/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 # Health check: control port reachability (matches distroless capabilities)
 # Uses CONTROL_HOST and CONTROL_PORT environment variables (aligned with tor-proxy service)

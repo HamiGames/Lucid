@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/connection_pool.py
+x-lucid-file-path: /app/payment_systems/tron/utils/connection_pool.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Connection Pool Module
 HTTP connection pool management for TRON network requests
 Following architecture patterns from build/docs/

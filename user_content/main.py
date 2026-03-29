@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/user_content/main.py
+x-lucid-file-path: /app/user_content/main.py
+x-lucid-file-type: python
+
 Lucid User Content Service
 Manages user content, profiles, and client interactions.
 """

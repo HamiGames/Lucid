@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/storage/config.py
+x-lucid-file-path: /app/sessions/storage/config.py
+x-lucid-file-type: python
+
 Lucid Session Storage Configuration
 Configuration management for session storage service
 """

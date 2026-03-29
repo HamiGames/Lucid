@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/api/poot.py
+x-lucid-file-path: /app/node/api/poot.py
+x-lucid-file-type: python
+
 PoOT (Proof of Output) validation API endpoints for Lucid system.
 
 This module provides REST API endpoints for:

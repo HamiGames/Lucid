@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/access_control.py
+x-lucid-file-path: /app/payment_systems/tron/api/access_control.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Wallet Access Control API
 RBAC and permissions management for wallets
 Distroless container: lucid-tron-wallet-manager:latest

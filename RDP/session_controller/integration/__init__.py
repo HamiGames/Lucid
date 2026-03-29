@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/__init__.py
+x-lucid-file-path: /app/RDP/session_controller/integration/__init__.py
+x-lucid-file-type: python
+
 RDP Session Controller Integration Clients
 
 This module provides HTTP clients for integrating with session-recorder,

@@ -1,4 +1,8 @@
 """
+File: /app/common/tor/onion_service.py
+x-lucid-file-path: /app/common/tor/onion_service.py
+x-lucid-file-type: python
+
 Onion service management for Lucid RDP.
 
 This module provides comprehensive .onion service creation, management,

@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/services/compose_service.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/services/compose_service.py
+x-lucid-file-type: python
+
 Docker Compose Service Business Logic
-File: gui_docker_manager/gui_docker_manager/services/compose_service.py
 """
 
 import logging

@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/__init__.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/__init__.py
+x-lucid-file-type: python
+
 API Gateway Endpoints Package
 
 This package contains all endpoint implementations for the Lucid API Gateway.
@@ -16,6 +20,5 @@ Endpoint Categories:
 
 All endpoints follow RESTful conventions and return standardized responses.
 Path: ..endpoints
-file: 03_api_gateway/endpoints/__init__.py
 the endpoints calls the api gateway endpoints
 """

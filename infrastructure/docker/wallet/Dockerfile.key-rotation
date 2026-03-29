@@ -1,6 +1,10 @@
 # LUCID KEY ROTATION - SPEC-1C Key Rotation System (Distroless)
 # Professional key rotation system for Pi deployment
 # Multi-platform build for ARM64 Pi and AMD64 development
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 # syntax=docker/dockerfile:1.7
 FROM python:3.11-slim AS key-rotation-builder
@@ -8,7 +12,7 @@ FROM python:3.11-slim AS key-rotation-builder
 # Metadata for professional container management
 LABEL maintainer="Lucid Development Team" \
       version="1.0.0-distroless" \
-      description="Key Rotation for Lucid SPEC-1C Key Rotation System (Distroless)" \
+      description="Key Rotation System (Distroless)" \
       org.lucid.plane="ops" \
       org.lucid.service="key-rotation" \
       org.lucid.layer="1" \
@@ -58,14 +62,156 @@ RUN pip install --no-cache-dir \
         "python-dotenv>=1.0.0" \
         "websockets>=11.0.0"
 
+
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './03_api_gateway' './common' './configs' './node' './server' './service_configs' './service_mesh' './03_api_gateway/api' './03_api_gateway/certs' './03_api_gateway/config' './03_api_gateway/database' './03_api_gateway/docs' './03_api_gateway/endpoints' './03_api_gateway/gateway' './03_api_gateway/legacy' './03_api_gateway/logs' './03_api_gateway/middleware' './03_api_gateway/models' './03_api_gateway/repositories' './03_api_gateway/scripts' './03_api_gateway/services' './03_api_gateway/utils' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/.ssh' './configs/container' './configs/database' './configs/docker' './configs/environment' './configs/integration' './configs/logging' './configs/pi' './configs/secrets' './configs/security' './configs/tor' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './service_mesh/communication' './service_mesh/config' './service_mesh/controller' './service_mesh/discovery' './service_mesh/security' './service_mesh/sidecar' './03_api_gateway/api/app' './03_api_gateway/api/lucid_api.egg-info' './03_api_gateway/api/tests' './03_api_gateway/docs/swagger' './03_api_gateway/legacy/api' './03_api_gateway/legacy/gateway' './configs/container/admin' './configs/container/auth' './configs/container/base' './configs/container/blockchain' './configs/container/database' './configs/container/electron_gui' './configs/container/gui' './configs/container/node' './configs/container/payment_systems' './configs/container/rdp' './configs/container/server' './configs/container/sessions' './configs/container/storage' './configs/container/tor' './configs/database/elasticsearch' './configs/database/redis' './configs/docker/distroless' './configs/docker/docs' './configs/docker/multi-stage' './configs/environment/development' './configs/environment/pi' './configs/environment/production' './configs/environment/staging' './configs/pi/ssh' './service_mesh/sidecar/envoy' './service_mesh/sidecar/proxy' './03_api_gateway/api/app/database' './03_api_gateway/api/app/db' './03_api_gateway/api/app/middleware' './03_api_gateway/api/app/models' './03_api_gateway/api/app/routers' './03_api_gateway/api/app/routes' './03_api_gateway/api/app/schemas' './03_api_gateway/api/app/scripts' './03_api_gateway/api/app/security' './03_api_gateway/api/app/services' './03_api_gateway/api/app/utils' './03_api_gateway/api/tests/integration' './03_api_gateway/docs/swagger/dist' './03_api_gateway/api/app/db/models'; \
+    for d in \
+      '.' \
+      './03_api_gateway' \
+      './common' \
+      './configs' \
+      './node' \
+      './server' \
+      './service_configs' \
+      './service_mesh' \
+      './03_api_gateway/api' \
+      './03_api_gateway/certs' \
+      './03_api_gateway/config' \
+      './03_api_gateway/database' \
+      './03_api_gateway/docs' \
+      './03_api_gateway/endpoints' \
+      './03_api_gateway/gateway' \
+      './03_api_gateway/legacy' \
+      './03_api_gateway/logs' \
+      './03_api_gateway/middleware' \
+      './03_api_gateway/models' \
+      './03_api_gateway/repositories' \
+      './03_api_gateway/scripts' \
+      './03_api_gateway/services' \
+      './03_api_gateway/utils' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/.ssh' \
+      './configs/container' \
+      './configs/database' \
+      './configs/docker' \
+      './configs/environment' \
+      './configs/integration' \
+      './configs/logging' \
+      './configs/pi' \
+      './configs/secrets' \
+      './configs/security' \
+      './configs/tor' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_mesh/communication' \
+      './service_mesh/config' \
+      './service_mesh/controller' \
+      './service_mesh/discovery' \
+      './service_mesh/security' \
+      './service_mesh/sidecar' \
+      './03_api_gateway/api/app' \
+      './03_api_gateway/api/lucid_api.egg-info' \
+      './03_api_gateway/api/tests' \
+      './03_api_gateway/docs/swagger' \
+      './03_api_gateway/legacy/api' \
+      './03_api_gateway/legacy/gateway' \
+      './configs/container/admin' \
+      './configs/container/auth' \
+      './configs/container/base' \
+      './configs/container/blockchain' \
+      './configs/container/database' \
+      './configs/container/electron_gui' \
+      './configs/container/gui' \
+      './configs/container/node' \
+      './configs/container/payment_systems' \
+      './configs/container/rdp' \
+      './configs/container/server' \
+      './configs/container/sessions' \
+      './configs/container/storage' \
+      './configs/container/tor' \
+      './configs/database/elasticsearch' \
+      './configs/database/redis' \
+      './configs/docker/distroless' \
+      './configs/docker/docs' \
+      './configs/docker/multi-stage' \
+      './configs/environment/development' \
+      './configs/environment/pi' \
+      './configs/environment/production' \
+      './configs/environment/staging' \
+      './configs/pi/ssh' \
+      './service_mesh/sidecar/envoy' \
+      './service_mesh/sidecar/proxy' \
+      './03_api_gateway/api/app/database' \
+      './03_api_gateway/api/app/db' \
+      './03_api_gateway/api/app/middleware' \
+      './03_api_gateway/api/app/models' \
+      './03_api_gateway/api/app/routers' \
+      './03_api_gateway/api/app/routes' \
+      './03_api_gateway/api/app/schemas' \
+      './03_api_gateway/api/app/scripts' \
+      './03_api_gateway/api/app/security' \
+      './03_api_gateway/api/app/services' \
+      './03_api_gateway/api/app/utils' \
+      './03_api_gateway/api/tests/integration' \
+      './03_api_gateway/docs/swagger/dist' \
+      './03_api_gateway/api/app/db/models' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
+COPY configs/ ./configs/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY master-env-config.txt ./configs/.env.master
+COPY 03_api_gateway/ ./03_api_gateway/
+COPY server/ ./server/
+COPY node/ ./node/
 # Copy application code
 COPY wallet/ /app/wallet/
 COPY auth/ /app/auth/
 COPY sessions/ /app/sessions/
+COPY common/ ./common/
+COPY service_mesh/ ./service_mesh/
 
 # Create key rotation directories
-RUN mkdir -p /opt/lucid/keys/active /opt/lucid/keys/rotated /opt/lucid/keys/backup /data/keys /tmp/keyrotation \
-    && chown -R lucid:lucid /opt/lucid /data /tmp/keyrotation
+RUN mkdir -p ./data/keys ./tmp/keyrotation \
+    && chown -R 65532:65532 ./data ./tmp/keyrotation
 
 # Create non-root user for runtime
 RUN adduser --disabled-password --gecos '' keyrotation_user && \
@@ -77,18 +223,32 @@ FROM gcr.io/distroless/python3-debian12:nonroot
 # Metadata for runtime container
 LABEL maintainer="Lucid Development Team" \
       version="1.0.0-distroless" \
-      description="Key Rotation for Lucid SPEC-1C Key Rotation System (Distroless Runtime)" \
+      description="Key Rotation System (Distroless Runtime)" \
       org.lucid.plane="ops" \
       org.lucid.service="key-rotation" \
       org.lucid.layer="1" \
       org.lucid.expose="8103"
 
-# Copy Python installation and packages from builder
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
+    LUCID_DOCKER_COMPOSE_PATH=/app/configs/docker/docker-compose.all.yml \
+    ACTIVE_KEYS_PATH=/app/data/keys/active \
+    ROTATED_KEYS_PATH=/app/data/keys/rotated \
+    BACKUP_KEYS_PATH=/app/data/keys/backup \
+    XDG_RUNTIME_DIR=/app/tmp/keyrotation \
+    KEY_ROTATION_INTERVAL=86400 \
+    KEY_LIFETIME_DAYS=90 \
+    BACKUP_RETENTION_DAYS=365 \
+    KEY_SIZE_BITS=4096 \
+    KEY_ALGORITHM=RSA
+
 COPY --from=key-rotation-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=key-rotation-builder /usr/local/bin/python3.11 /usr/local/bin/python3.11
 COPY --from=key-rotation-builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-# Copy key management tools
 COPY --from=key-rotation-builder /usr/bin/openssl /usr/bin/openssl
 COPY --from=key-rotation-builder /usr/bin/gpg /usr/bin/gpg
 COPY --from=key-rotation-builder /usr/bin/ssh-keygen /usr/bin/ssh-keygen
@@ -97,7 +257,6 @@ COPY --from=key-rotation-builder /bin/nc /bin/nc
 COPY --from=key-rotation-builder /usr/bin/jq /usr/bin/jq
 COPY --from=key-rotation-builder /usr/sbin/gosu /usr/sbin/gosu
 
-# Copy required dynamic libraries (architecture-specific)
 COPY --from=key-rotation-builder /lib/*-linux-*/libc.so.6 /lib/
 COPY --from=key-rotation-builder /lib/*-linux-*/libssl.so.3 /lib/
 COPY --from=key-rotation-builder /lib/*-linux-*/libcrypto.so.3 /lib/
@@ -106,37 +265,27 @@ COPY --from=key-rotation-builder /lib/*-linux-*/liblzma.so.5 /lib/
 COPY --from=key-rotation-builder /lib/*-linux-*/libzstd.so.1 /lib/
 COPY --from=key-rotation-builder /lib*/ld-linux-*.so.2 /lib64/
 
-# Copy user and group information
 COPY --from=key-rotation-builder /etc/passwd /etc/passwd
 COPY --from=key-rotation-builder /etc/group /etc/group
 
-# Copy CA certificates
 COPY --from=key-rotation-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy application with proper ownership
 COPY --from=key-rotation-builder --chown=keyrotation_user:keyrotation_user /app /app
 COPY --from=key-rotation-builder --chown=keyrotation_user:keyrotation_user /data /data
 COPY --from=key-rotation-builder --chown=keyrotation_user:keyrotation_user /tmp/keyrotation /tmp/keyrotation
 COPY --from=key-rotation-builder --chown=keyrotation_user:keyrotation_user /opt/lucid /opt/lucid
 
 # Runtime environment for key rotation
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
-    ACTIVE_KEYS_PATH=/opt/lucid/keys/active \
-    ROTATED_KEYS_PATH=/opt/lucid/keys/rotated \
-    BACKUP_KEYS_PATH=/opt/lucid/keys/backup \
-    XDG_RUNTIME_DIR=/tmp/keyrotation \
-    KEY_ROTATION_INTERVAL=86400 \
-    KEY_LIFETIME_DAYS=90 \
-    BACKUP_RETENTION_DAYS=365 \
-    KEY_SIZE_BITS=4096 \
-    KEY_ALGORITHM=RSA
+
+
+
+
+
 
 # Security and runtime configuration
 EXPOSE 8103
-USER keyrotation_user
-WORKDIR /app
+USER 65532:65532
+
 
 # Default command for key rotation service
 ENTRYPOINT ["/usr/local/bin/python3.11", "/app/wallet/walletd/key_rotation.py"]

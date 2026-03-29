@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/utils/logging.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/utils/logging.py
+x-lucid-file-type: python
+
 Structured Logging Utilities for GUI Tor Manager
 Provides JSON-formatted logging following lucid standards
 """

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/utils.py
+x-lucid-file-path: /app/blockchain/api/app/utils.py
+x-lucid-file-type: python
+
 Utility Functions
 
 This module contains utility functions used throughout the Blockchain API.
 Includes validation helpers, formatting functions, and common operations.
 """
+
+
 
 import hashlib
 import json

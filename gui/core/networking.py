@@ -1,5 +1,8 @@
 # Path: gui/core/networking.py
 """
+file: /app/gui/core/networking.py
+x-lucid-file-path: /app/gui/core/networking.py
+x-lucid-file-type: python
 HTTP client with .onion enforcement for Lucid RDP GUI.
 Provides secure networking with Tor-only connectivity and certificate pinning.
 """

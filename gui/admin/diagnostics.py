@@ -1,5 +1,8 @@
-# Path: gui/admin/diagnostics.py
+# Path: gui/
 """
+file: /app/gui/admin/diagnostics.py
+x-lucid-file-path: /app/gui/admin/diagnostics.py
+x-lucid-file-type: python
 System diagnostics and health monitoring interface for Lucid RDP GUI.
 Provides comprehensive system health checks, performance monitoring, and diagnostic tools.
 """

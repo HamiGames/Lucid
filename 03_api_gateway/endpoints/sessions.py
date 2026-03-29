@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/sessions.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/sessions.py
+x-lucid-file-type: python
+
 Session Management Endpoints Module
 
 Handles session lifecycle operations including:

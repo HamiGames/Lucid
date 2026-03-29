@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/api/cluster/circuit-breaker.py
+x-lucid-file-path: /app/api/cluster/circuit-breaker.py
+x-lucid-file-type: python
+
 LUCID Circuit Breaker - SPEC-1B Implementation
 Circuit breaker pattern for service resilience
 """

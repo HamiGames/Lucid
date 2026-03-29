@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/RDP/session_controller/entrypoint.py
+x-lucid-file-path: /app/RDP/session_controller/entrypoint.py
+x-lucid-file-type: python
+
 RDP Controller Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 

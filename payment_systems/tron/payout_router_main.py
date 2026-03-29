@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/payout_router_main.py
+x-lucid-file-path: /app/payment_systems/tron/payout_router_main.py
+x-lucid-file-type: python
+
 LUCID TRON Payout Router Service - Main Entry Point
 Dedicated container: tron-payout-router
 Port: 8092

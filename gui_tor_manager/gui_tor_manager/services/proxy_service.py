@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/services/proxy_service.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/services/proxy_service.py
+x-lucid-file-type: python
+
 Proxy Service Module for GUI Tor Manager
 Encapsulates SOCKS proxy management logic
 """

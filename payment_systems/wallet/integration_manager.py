@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/wallet/integration_manager.py
+x-lucid-file-path: /app/payment_systems/wallet/integration_manager.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - Wallet Integration Manager
 Unified wallet integration and management system for payment operations
 Distroless container: pickme/lucid:payment_systems:latest

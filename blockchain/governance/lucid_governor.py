@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/governance/lucid_governor.py
+x-lucid-file-path: /app/blockchain/governance/lucid_governor.py
+x-lucid-file-type: python
+
 LUCID Blockchain Governance System - Lucid Governor
 Comprehensive governance system for blockchain parameter management and protocol upgrades
 Based on LUCID-STRICT requirements per Spec-1c and blockchain governance patterns
 """
+
+
 
 from __future__ import annotations
 

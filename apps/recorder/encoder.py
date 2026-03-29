@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/encoder.py
+x-lucid-file-path: /app/apps/recorder/encoder.py
+x-lucid-file-type: python
+
 Hardware Encoder Module for Lucid RDP Recorder
 Provides hardware-accelerated encoding for Raspberry Pi 5
 """

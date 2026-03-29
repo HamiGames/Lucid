@@ -2,6 +2,12 @@
 # Implements automated and manual key rotation for wallet security
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/walletd/key_rotation.py
+x-lucid-file-path: /app/wallet/walletd/key_rotation.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

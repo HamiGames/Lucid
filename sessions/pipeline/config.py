@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/config.py
+x-lucid-file-path: /app/sessions/pipeline/config.py
+x-lucid-file-type: python
+
 Lucid Session Management Pipeline Configuration
 Configuration management for session processing pipelines
 """

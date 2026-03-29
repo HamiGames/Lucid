@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/models/common.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/models/common.py
+x-lucid-file-type: python
+
 Common Pydantic models for GUI Tor Manager
 Error responses, pagination, common data structures
 """

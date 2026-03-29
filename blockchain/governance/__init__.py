@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/governance/__init__.py
+x-lucid-file-path: /app/blockchain/governance/__init__.py
+x-lucid-file-type: python
+
 Lucid RDP Blockchain Governance Module
 
 This module provides governance functionality for the Lucid RDP blockchain system,
@@ -13,6 +17,8 @@ Components:
 Author: Lucid RDP Team
 Version: 1.0.0
 """
+
+
 
 from .timelock import (
     TimelockGovernance,

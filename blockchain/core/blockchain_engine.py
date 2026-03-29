@@ -3,6 +3,12 @@
 # Based on Spec-1a, Spec-1b, and Spec-1c requirements
 # REBUILT: On-System Data Chain as primary blockchain for session anchoring
 
+"""
+File: /app/blockchain/core/blockchain_engine.py
+x-lucid-file-path: /app/blockchain/core/blockchain_engine.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -52,7 +58,10 @@ BASE_MB_PER_SESSION = 5  # 5MB base unit
 # =============================================================================
 
 def _required_env(keys: list[str]) -> str:
-    """Return first available env var from keys or raise."""
+    """
+
+Return first available env var from keys or raise.
+"""
     for k in keys:
         v = os.getenv(k)
         if v:

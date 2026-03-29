@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/chunker/native_chunker.py
+x-lucid-file-path: /app/apps/chunker/native_chunker.py
+x-lucid-file-type: python
+
 Native Chunker Addon for Lucid RDP
 Provides high-performance chunking using native C extensions
 """

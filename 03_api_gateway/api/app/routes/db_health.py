@@ -1,5 +1,11 @@
 # Path: 03_api_gateway/api/app/routes/db_health.py
 
+"""
+File: /app/03_api_gateway/api/app/routes/db_health.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routes/db_health.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

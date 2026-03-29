@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/integration/integration_manager.py
+x-lucid-file-path: /app/sessions/pipeline/integration/integration_manager.py
+x-lucid-file-type: python
+
 Integration Manager
 Manages initialization and lifecycle of all integration clients
 """

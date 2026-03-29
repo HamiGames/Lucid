@@ -30,7 +30,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -75,6 +74,55 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /build/wheels && \
     printf "LUCID_NODE_SYSTEM_GATEWAY_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './node' './service_configs' './tmp' './configs/docker' './node/api' './node/config' './node/configs' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './service_configs/node/config'; \
+    for d in \
+      '.' \
+      './configs' \
+      './node' \
+      './service_configs' \
+      './tmp' \
+      './configs/docker' \
+      './node/api' \
+      './node/config' \
+      './node/configs' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './service_configs/node/config' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
@@ -84,39 +132,28 @@ RUN printf "LUCID_NODE_SYSTEM_GATEWAY_PACKAGES_$(date +%s)" > /usr/local/lib/pyt
 
 RUN python3.11 -c "import yaml; yaml.safe_load('x: 1'); print('PyYAML OK')"
 
-RUN mkdir -p ./node ./node/config ./node/configs ./configs ./configs/services ./configs/operations ./host ./tmp ./infrastructure/kubernetes && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_NODE_$(date +%s)" > ./node/.keep && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_NODE_CONFIG_$(date +%s)" > ./node/config/.keep && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_CONFIGS_$(date +%s)" > ./configs/.keep && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_CONFIGS_SERVICES_$(date +%s)" > ./configs/services/.keep && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_CONFIGS_OPS_$(date +%s)" > ./configs/operations/.keep && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_HOST_$(date +%s)" > ./host/.keep && \
-    printf "LUCID_NODE_SYSTEM_GATEWAY_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
-    chown -R 65532:65532 ./node ./node/config ./node/configs ./configs ./configs/services ./configs/operations ./configs ./host ./tmp ./infrastructure/kubernetes && \
-    chmod 644 ./node/.keep ./node/config/.keep ./configs/.keep ./configs/services/.keep ./configs/operations/.keep ./host/.keep ./infrastructure/kubernetes/.keep
 
 COPY node/ ./node/
 COPY infrastructure/containers/node/config/ ./node/configs/
-COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/services/ ./service_configs/
 COPY master-env-config.txt ./configs/.env.master
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY infrastructure/containers/node/docker-compose.node-gui.yml ./configs/docker-compose.node-gui.yml
 COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./configs/docker-compose.node-data-system.yml
 COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./configs/docker-compose.node-sessions.yml
-COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./configs/operations/docker-compose.node-management.yml
-COPY infrastructure/containers/host-config.yml ./host/host-config.yml
-COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
-COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./service_configs/docker-compose.node-management.yml
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY service_configs/kubernetes/01_configmaps/database-config.yaml ./configs/database-config.yaml
+COPY service_configs/kubernetes/01_configmaps/api-gateway-config.yaml ./configs/api-gateway-config.yaml
 
 COPY infrastructure/containers/node/node-system-gateway/verify_files.py ./tmp/verify_files.py
 COPY infrastructure/containers/node/node-system-gateway/verify_runtime.py ./tmp/verify_runtime.py
 
 COPY infrastructure/containers/node/config/node-system-gateway.connections.json /build/node/config/node-system-gateway.connections.json
 COPY infrastructure/containers/node/config/openssl-api.yml /build/node/config/openssl-api.yml
-RUN mkdir -p /build/configs/services/node/config
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
-COPY infrastructure/containers/node/config/node-system-gateway.connections.json /build/configs/services/node/config/node-system-gateway.connections.json
-COPY infrastructure/containers/node/config/openssl-api.yml /build/configs/services/node/config/openssl-api.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
+COPY infrastructure/containers/node/config/node-system-gateway.connections.json /build/service_configs/node/config/node-system-gateway.connections.json
+COPY infrastructure/containers/node/config/openssl-api.yml /build/service_configs/node/config/openssl-api.yml
 COPY infrastructure/containers/node/node-system-gateway/entrypoint.py /build/node/node_system_gateway_entrypoint.py
 
 RUN chmod +x ./tmp/verify_files.py && \
@@ -130,6 +167,22 @@ RUN chmod +x ./tmp/verify_files.py && \
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -156,14 +209,38 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=node_system_gateway \
     LUCID_SERVICE_HOST_IP=172.20.10.31 \
     LUCID_SERVICE_HTTP_PATH=http://node-system-gateway:8640/app \
     NODE_SYSTEM_GATEWAY_LISTEN_PORT=8640 \
     NODE_SYSTEM_GATEWAY_CONFIG=/app/node/config/node-system-gateway.connections.json \
     NODE_SYSTEM_GATEWAY_OPENSSL_API_YAML=/app/node/config/openssl-api.yml
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/tmp/ /app/tmp/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /app-dirs/ /app/app-dirs/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -180,16 +257,13 @@ COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
 COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
 COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
-COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-gui.yml /app/configs/docker-compose.node-gui.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-data-system.yml /app/configs/docker-compose.node-data-system.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-sessions.yml /app/configs/docker-compose.node-sessions.yml
 COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.node-management.yml /app/configs/operations/docker-compose.node-management.yml
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
-COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
+COPY --from=builder --chown=65532:65532 /build/configs/database-config.yaml /app/configs/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/api-gateway-config.yaml /app/configs/api-gateway-config.yaml
 
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 

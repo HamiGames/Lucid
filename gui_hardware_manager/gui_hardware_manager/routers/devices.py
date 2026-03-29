@@ -1,4 +1,8 @@
 """
+File: /app/gui_hardware_manager/gui_hardware_manager/routers/devices.py
+x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/routers/devices.py
+x-lucid-file-type: python
+
 Hardware device management endpoints
 """
 

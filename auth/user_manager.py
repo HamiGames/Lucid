@@ -2,6 +2,12 @@
 # User Management and Role-Based Access Control for Lucid RDP
 # Implements user profiles, permissions, and session ownership verification
 
+"""
+File: /app/auth/user_manager.py
+x-lucid-file-path: /app/auth/user_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import logging

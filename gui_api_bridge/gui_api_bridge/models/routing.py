@@ -1,6 +1,9 @@
 """
-Routing Models
-File: gui_api_bridge/gui_api_bridge/models/routing.py
+    Routing Models
+    File: /app/gui_api_bridge/gui_api_bridge/models/routing.py
+    x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/models/routing.py
+    x-lucid-file-type: python
+
 """
 
 from pydantic import BaseModel

@@ -1,5 +1,8 @@
 # Path: gui/admin/key_management.py
 """
+file: /app/gui/admin/key_management.py
+x-lucid-file-path: /app/gui/admin/key_management.py
+x-lucid-file-type: python
 Key management interface for Lucid RDP GUI.
 Provides key rotation, backup, and recovery operations for cryptographic keys.
 """

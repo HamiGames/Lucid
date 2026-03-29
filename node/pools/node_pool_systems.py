@@ -2,6 +2,12 @@
 # Lucid RDP Node Pool Systems - Comprehensive pool management for coordinated node operations
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/pools/node_pool_systems.py
+x-lucid-file-path: /app/node/pools/node_pool_systems.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

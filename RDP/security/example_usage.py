@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/RDP/security/example_usage.py
+x-lucid-file-path: /app/RDP/security/example_usage.py
+x-lucid-file-type: python
+
 LUCID RDP Access Controller - Example Usage
 Demonstrates how to use the access control system for RDP sessions
 """

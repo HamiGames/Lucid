@@ -24,7 +24,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -39,6 +38,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         tini \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN printf "LUCID_JAVA_BASE_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_JAVA_BASE_LIB_DIRECTORY" > /var/lib/.keep && \
@@ -52,6 +64,22 @@ RUN java -version && echo "✅ JDK builder verified"
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/java17-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -73,7 +101,23 @@ LABEL maintainer="Lucid Development Team" \
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=jdk-builder --chown=65532:65532 /build/configs/ /app/configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=jdk-builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=jdk-builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=jdk-builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=jdk-builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=jdk-builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 # Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
 
@@ -85,8 +129,7 @@ COPY --from=jdk-builder /var/run/ /app/var/run/
 COPY --from=jdk-builder /var/lib/ /app/var/lib/
 COPY --from=jdk-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=jdk-builder /usr/bin/tini /usr/bin/tini
-COPY --from=jdk-builder /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=jdk-builder /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=jdk-builder /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
 COPY --from=jdk-builder /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 # Default: print runtime version (compose / tests often override CMD)

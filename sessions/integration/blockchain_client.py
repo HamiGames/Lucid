@@ -4,6 +4,12 @@
 # Professional blockchain integration for session anchoring and verification
 # Multi-platform support for ARM64 Pi and AMD64 development
 
+"""
+File: /app/sessions/integration/blockchain_client.py
+x-lucid-file-path: /app/sessions/integration/blockchain_client.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

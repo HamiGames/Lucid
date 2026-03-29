@@ -2,6 +2,12 @@
 # Implements comprehensive role-based access control for wallet operations
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/walletd/role_manager.py
+x-lucid-file-path: /app/wallet/walletd/role_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

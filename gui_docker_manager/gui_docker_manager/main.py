@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
+File: /app/gui_docker_manager/gui_docker_manager/main.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/main.py
+x-lucid-file-type: python
+
 LUCID GUI Docker Manager Service - Main Entry Point
-File: gui_docker_manager/gui_docker_manager/main.py
 """
 
 import asyncio

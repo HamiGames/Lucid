@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/payment_systems/tron/tron_payment_service.py
+x-lucid-file-path: /app/payment_systems/tron/tron_payment_service.py
+x-lucid-file-type: python
+
 LUCID TRON Payment Service - SPEC-1B Implementation
 Isolated TRON payment system with complete separation from blockchain core
 """

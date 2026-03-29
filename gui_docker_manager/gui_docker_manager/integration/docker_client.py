@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/integration/docker_client.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/integration/docker_client.py
+x-lucid-file-type: python
+
 Async Docker Client for Container Management
-File: gui_docker_manager/gui_docker_manager/integration/docker_client.py
 """
 
 import asyncio

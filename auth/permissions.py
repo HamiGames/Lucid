@@ -1,4 +1,8 @@
 """
+File: /app/auth/permissions.py
+x-lucid-file-path: /app/auth/permissions.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - RBAC (Role-Based Access Control)
 4 Roles: USER, NODE_OPERATOR, ADMIN, SUPER_ADMIN
 """

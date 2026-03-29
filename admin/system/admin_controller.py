@@ -2,6 +2,12 @@
 # Lucid RDP Admin System - Comprehensive administrative control and governance
 # Based on LUCID-STRICT requirements from Build_guide_docs
 
+"""
+File: /app/admin/system/admin_controller.py
+x-lucid-file-path: /app/admin/system/admin_controller.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

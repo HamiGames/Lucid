@@ -1,6 +1,12 @@
 # Sessions Router Module
 # Core session lifecycle management endpoints
 
+"""
+File: /app/03_api_gateway/api/app/routes/sessions.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routes/sessions.py
+x-lucid-file-type: python
+"""
+
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from typing import List, Optional
 from datetime import datetime

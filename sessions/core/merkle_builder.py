@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/core/merkle_builder.py
+x-lucid-file-path: /app/sessions/core/merkle_builder.py
+x-lucid-file-type: python
+
 LUCID Merkle Tree Builder - SPEC-1B Implementation
 BLAKE3 Merkle tree construction for session integrity
 """

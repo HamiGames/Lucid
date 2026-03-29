@@ -3,6 +3,10 @@
 # LUCID-STRICT Layer 1 Core Infrastructure
 
 """
+File: /app/node/consensus/__init__.py
+x-lucid-file-path: /app/node/consensus/__init__.py
+x-lucid-file-type: python
+
 Consensus module for Lucid node operations.
 
 This module provides:

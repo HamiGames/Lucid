@@ -1,4 +1,8 @@
 """
+File: /app/tools/ops/ota/__init__.py
+x-lucid-file-path: /app/tools/ops/ota/__init__.py
+x-lucid-file-type: python
+
 Over-The-Air (OTA) update management module for Lucid RDP.
 
 This module provides comprehensive OTA update capabilities including:
@@ -10,7 +14,6 @@ This module provides comprehensive OTA update capabilities including:
 Components:
 - VersionManager: Version tracking and update management
 path: ..tools.ops.ota
-file: tools/ops/ota/__init__.py
 the ota calls the ota
 """
 

@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/trust.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/trust.py
+x-lucid-file-type: python
+
 Trust Policy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/trust.py
 Purpose: Trust policy management
 """
 

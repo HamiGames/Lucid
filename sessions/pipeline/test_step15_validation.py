@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/test_step15_validation.py
+x-lucid-file-path: /app/sessions/pipeline/test_step15_validation.py
+x-lucid-file-type: python
+
 Step 15 Validation Test
 Tests that session pipeline progresses through all 6 states as required
 """

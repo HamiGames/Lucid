@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/core/network.py
+x-lucid-file-path: /app/blockchain/core/network.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os
@@ -6,7 +12,10 @@ from typing import Callable, Awaitable, Tuple, Optional
 
 
 class PeerServer:
-    """Minimal asyncio TCP server to demonstrate P2P hooks (dev only)."""
+    """
+
+Minimal asyncio TCP server to demonstrate P2P hooks (dev only).
+"""
 
     def __init__(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
         # Use environment variables for host and port, with defaults

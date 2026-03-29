@@ -2,7 +2,7 @@
 # Optional YAML configuration for payout router service
 # File: payment-systems/tron/config/payout-router-config.yaml
 # Purpose: Define payout routing, processing, and batch management
-# Runtime (container): /app/configs/services/payment_services/payout-router-config.yaml
+# Runtime (container): /app/service_configs/payment_services/payout-router-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

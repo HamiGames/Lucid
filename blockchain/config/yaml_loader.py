@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/config/yaml_loader.py
+x-lucid-file-path: /app/blockchain/config/yaml_loader.py
+x-lucid-file-type: python
+
 YAML Configuration Loader with Environment Variable Support
 Loads YAML configuration files and substitutes environment variables.
 
@@ -8,6 +12,8 @@ Supports:
 - Type conversion (int, float, bool, str)
 - Required vs optional environment variables
 """
+
+
 
 from __future__ import annotations
 

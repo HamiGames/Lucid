@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/auth/verify_runtime.py
+x-lucid-file-path: /app/auth/verify_runtime.py
+x-lucid-file-type: python
+
 Lucid Auth Service - Runtime Verification Script
 Verifies all source files, imports, and package structure in distroless runtime
 """

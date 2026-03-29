@@ -1,4 +1,8 @@
 """
+File: /app/database/models/user.py
+x-lucid-file-path: /app/database/models/user.py
+x-lucid-file-type: python
+
 User Data Models
 
 Pydantic models for user entities in the Lucid system.

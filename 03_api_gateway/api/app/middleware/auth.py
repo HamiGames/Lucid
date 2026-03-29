@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/middleware/auth.py
+x-lucid-file-path: /app/03_api_gateway/api/app/middleware/auth.py
+x-lucid-file-type: python
+
 Authentication Middleware
 
-File: 03_api_gateway/api/app/middleware/auth.py
 Purpose: Handles JWT token validation and user authentication for protected endpoints.
 All configuration from environment variables via app.config.
 """

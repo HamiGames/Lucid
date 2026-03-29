@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/gui-hardware-manager.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/gui-hardware-manager.yml — see container-runtime-layout.yml
 # GUI Hardware Manager Service Configuration
 # Manages hardware wallets (Ledger, Trezor, KeepKey) for Lucid Electron GUI
 # Listen: gui-hardware-manager:8099 (gui_hardware_manager @ host-config.yml; collision_notes vs node_management_staging — remap publish)

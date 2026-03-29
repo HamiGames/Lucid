@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/services/merkle_service.py
+x-lucid-file-path: /app/blockchain/api/app/services/merkle_service.py
+x-lucid-file-type: python
+
 Merkle Service
 
 This service handles Merkle tree operations and validation.
 Implements business logic for Merkle tree building, verification, and validation.
 """
+
+
 
 from typing import Dict, Any, List, Optional
 import logging

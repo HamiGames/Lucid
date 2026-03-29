@@ -3,24 +3,25 @@
 #
 # Policy: *.yml, *.yaml, *.json, *.conf in this tree are packaged for containers.
 # Default in-image (or bind-mount target) root:
-#   /app/configs/services/<path relative to this directory>
+#   /app/service_configs/<path relative to this directory>
 #
 # Examples:
-#   logging/fluentd.conf              -> /app/configs/services/logging/fluentd.conf
-#   sessions/api-config.yaml          -> /app/configs/services/sessions/api-config.yaml
-#   service_mesh/consul.json          -> /app/configs/services/service_mesh/consul.json
+#   logging/fluentd.conf              -> /app/service_configs/logging/fluentd.conf
+#   sessions/api-config.yaml          -> /app/service_configs/sessions/api-config.yaml
+#   service_mesh/consul.json          -> /app/service_configs/service_mesh/consul.json
 #   (consul.json is machine-readable for Consul; do not add non-Consul keys — path is by convention only.)
 #
 # Service hostname, port, static host_ip (repository root service-ip.txt), and http_path template (generated): infrastructure/containers/host-config.yml
 # Payment TRON stack: x-lucid alignment bundle payment_services/payment-services-host-alignment.yml (pairs with docker-compose.payment-internal.yml).
+# Per com.lucid.cluster groups: x_lucid_cluster_calibration/*-cluster-host-alignment.yml (host-config.yml + x-files-listing.txt; regenerate via infrastructure/containers/_gen_x_lucid_cluster_calibration.py).
 # When editing *.yml / *.yaml / *.json / *.conf here, keep Docker DNS service_name and ports consistent with that registry (e.g. lucid-mongodb, lucid-redis, api-gateway).
 #
 # Dockerfiles typically:
-#   COPY infrastructure/containers/services/ /app/configs/services/
+#   COPY infrastructure/containers/services/ /app/service_configs/
 #
 # Compose fragments in this tree may still use HOST paths (e.g. Pi /mnt/...) only for
 # bind-mounting logs, caches, or env files at `docker compose` time; those LHS paths are
 # not the runtime location of this config subtree.
-# =============================================================================
-
-lucid_services_config_root: /app/configs/services
+#
+# Host-side stack entrypoints (repo-relative paths under configs/docker/):
+#   Listed in configs_docker_compose_yml below. Run fr

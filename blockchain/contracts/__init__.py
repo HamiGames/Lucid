@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/contracts/__init__.py
+x-lucid-file-path: /app/blockchain/contracts/__init__.py
+x-lucid-file-type: python
+
 Lucid Blockchain Smart Contracts
 On-System Chain contract interfaces and implementations
 
@@ -7,6 +11,8 @@ This module provides interfaces for:
 - LucidChunkStore: Encrypted chunk metadata storage
 - EVM-compatible contract interactions
 """
+
+
 
 from .lucid_anchors import LucidAnchorsInterface, LucidAnchorsContract
 from .lucid_chunk_store import LucidChunkStoreInterface, LucidChunkStoreContract

@@ -1,4 +1,8 @@
 """
+File: /app/database/api/database_health.py
+x-lucid-file-path: /app/database/api/database_health.py
+x-lucid-file-type: python
+
 Database Health Check API
 
 Provides health check endpoints for all database services:

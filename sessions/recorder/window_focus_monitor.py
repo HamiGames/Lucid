@@ -3,6 +3,12 @@
 # Implements R-MUST-005: Session Audit Trail with window focus metadata
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/sessions/recorder/window_focus_monitor.py
+x-lucid-file-path: /app/sessions/recorder/window_focus_monitor.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import sys
 import asyncio

@@ -27,12 +27,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set working directory
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-RUN mkdir -p /build/configs /build/configs/services/tor
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/configs/services/
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
+COPY infrastructure/containers/services/ /build/service_configs/
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml
 
 # System packages with cache mounts
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -41,6 +41,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         libssl-dev \
         libffi-dev \
     && apt-get clean \
@@ -55,9 +56,58 @@ RUN echo "LUCID_GUI_TOR_MANAGER_RUNTIME_DIRECTORY" > /var/run/.keep && \
 COPY gui_tor_manager/requirements.txt ./requirements.txt
 
 # Install Python dependencies with pip caching
+
+
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --no-index --find-links /build/wheels --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './common' './configs' './gui_tor_manager' './service_configs' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/docker' './gui_tor_manager/config' './gui_tor_manager/gui_tor_manager' './gui_tor_manager/integration' './gui_tor_manager/middleware' './gui_tor_manager/models' './gui_tor_manager/routers' './gui_tor_manager/services' './gui_tor_manager/utils' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './gui_tor_manager/gui_tor_manager/config' './gui_tor_manager/gui_tor_manager/integration' './gui_tor_manager/gui_tor_manager/middleware' './gui_tor_manager/gui_tor_manager/models' './gui_tor_manager/gui_tor_manager/routers' './gui_tor_manager/gui_tor_manager/services' './gui_tor_manager/gui_tor_manager/utils'; \
+    for d in \
+      '.' \
+      './common' \
+      './configs' \
+      './gui_tor_manager' \
+      './service_configs' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/docker' \
+      './gui_tor_manager/config' \
+      './gui_tor_manager/gui_tor_manager' \
+      './gui_tor_manager/integration' \
+      './gui_tor_manager/middleware' \
+      './gui_tor_manager/models' \
+      './gui_tor_manager/routers' \
+      './gui_tor_manager/services' \
+      './gui_tor_manager/utils' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/tor' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './gui_tor_manager/gui_tor_manager/config' \
+      './gui_tor_manager/gui_tor_manager/integration' \
+      './gui_tor_manager/gui_tor_manager/middleware' \
+      './gui_tor_manager/gui_tor_manager/models' \
+      './gui_tor_manager/gui_tor_manager/routers' \
+      './gui_tor_manager/gui_tor_manager/services' \
+      './gui_tor_manager/gui_tor_manager/utils' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 # Create marker files with actual content to lock in directory structure (per Dockerfile-copy-pattern.md)
 RUN echo "LUCID_GUI_TOR_MANAGER_PACKAGES_INSTALLED_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-marker && \
@@ -73,14 +123,10 @@ RUN python3 -c "import fastapi, uvicorn, stem, httpx, pydantic, redis; print('�
     echo "✅ All packages ready for final image"
 
 # Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
-RUN mkdir -p /build/tmp /build/common /build/infrastructure/kubernetes && \
-    printf "LUCID_GUI_TOR_TMP_$(date +%s)" > /build/tmp/.keep && \
-    printf "LUCID_GUI_TOR_COMMON_$(date +%s)" > /build/common/.keep && \
-    printf "LUCID_GUI_TOR_K8S_$(date +%s)" > /build/infrastructure/kubernetes/.keep
 
 COPY common/__init__.py /build/common/__init__.py
 COPY common/tor/ /build/common/tor/
-COPY infrastructure/kubernetes/01_configmaps/ /build/infrastructure/kubernetes/
+COPY service_configs/kubernetes/01_configmaps/ /build/configs/
 
 # Application modules (explicit per-directory COPY)
 COPY gui_tor_manager/gui_tor_manager/*.py ./gui_tor_manager/
@@ -97,7 +143,7 @@ RUN echo "=== Verifying GUI Tor Manager application files ===" && \
     test -f ./gui_tor_manager/entrypoint.py && echo "✅ entrypoint.py found" && \
     test -f ./gui_tor_manager/main.py && echo "✅ main.py found" && \
     test -f ./gui_tor_manager/config.py && echo "✅ config.py found" && \
-    test -f ./infrastructure/kubernetes/api-gateway-config.yaml && \
+    test -f ./configs/api-gateway-config.yaml && \
     python3 -c "import sys; sys.path.insert(0, './gui_tor_manager'); from main import app; print('✅ Application initialization successful in builder')" && \
     echo "All application files verified in builder stage"
 
@@ -142,30 +188,43 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LUCID_API_GATEWAY_HOST=api-gateway \
     LUCID_API_GATEWAY_PORT=8080
 
-# Copy system directories and certificates
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/gui-integration-cluster-host-alignment.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_configs
 
 COPY --from=builder --chown=65532:65532 /build/common/__init__.py /app/common/__init__.py
 COPY --from=builder --chown=65532:65532 /build/common/tor/ /app/common/tor/
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/ /app/infrastructure/kubernetes/
 
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy Python packages
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
 COPY --chown=65532:65532 --from=builder /build/gui_tor_manager /app/gui_tor_manager
 
 # Set Python path
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Verify packages were properly copied to runtime stage (distroless-compatible - no shell)
 RUN ["/usr/bin/python3.11", "-c", "import os; site_packages = '/usr/local/lib/python3.11/site-packages'; app_dirs = ['/app/gui_tor_manager']; checks = [os.path.isdir(site_packages), os.path.isfile(os.path.join(site_packages, '.lucid-marker')), os.path.isdir('/usr/local/bin'), os.path.isfile('/usr/local/bin/.lucid-marker')] + [os.path.isdir(d) for d in app_dirs]; assert all(checks), f'Verification failed: site_packages={os.path.isdir(site_packages)}, marker={os.path.isfile(os.path.join(site_packages, \".lucid-marker\"))}, bin={os.path.isdir(\"/usr/local/bin\")}, bin_marker={os.path.isfile(\"/usr/local/bin/.lucid-marker\")}, app_dirs={[os.path.isdir(d) for d in app_dirs]}'; print('✅ All package and application directories verified in runtime stage')"]
@@ -175,6 +234,29 @@ ENV PORT=8097 \
     HOST=0.0.0.0 \
     LOG_LEVEL=INFO \
     DEBUG=false
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/gui_tor_manager/ /app/gui_tor_manager/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 # Expose port
 EXPOSE 8097

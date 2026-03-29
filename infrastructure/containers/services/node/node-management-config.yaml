@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/node/node-management-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/node/node-management-config.yaml — see ../container-runtime-layout.yml
 # Lucid Node Management - Node Management Configuration
 # File: node/config/node-management-config.yaml
 #
@@ -6,7 +6,7 @@
 #   - node_management → service_name node-management, port 8095, host_ip 172.20.10.25, http_path http://node-management:8095/app
 #   - node_management_staging → node-management-staging, port 8099, host_ip 172.20.10.26, http_path http://node-management-staging:8099/app
 # Compose + bake pattern (tor parity): infrastructure/containers/services/node/docker-compose.node-management.yml,
-#   Dockerfile (config bundle, mirrors tor-proxy-02 builder /app/configs/services layout),
+#   Dockerfile (config bundle, mirrors tor-proxy-02 builder /app/service_configs layout),
 #   Dockerfile.node-management (documents canonical app build: infrastructure/containers/node/Dockerfile.node-management).
 #
 # Purpose: Node pool, PoOT, payouts, resilience, and integration defaults.

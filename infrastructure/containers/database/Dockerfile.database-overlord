@@ -39,9 +39,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build/overlord
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/database-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/database-cluster-host-alignment.yml
 
 
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -49,21 +49,119 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY infrastructure/containers/overlord/runtime/requirements.txt ./requirements.txt
 
+
+
 RUN --mount=type=cache,target=/root/.cache/pip \
     mkdir -p /root/.local/lib/python3.11/site-packages && \
-    pip install --user --no-cache-dir -r ./requirements.txt
+    pip install --no-cache-dir --no-index --find-links /build/wheels --user --no-cache-dir -r ./requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './admin' './configs' './database' './gui_api_bridge' './over_lord' './server' './service_configs' './sessions' './admin/admin_ui' './admin/api' './admin/audit' './admin/config' './admin/emergency' './admin/governance' './admin/key_rotation' './admin/over_lord' './admin/rbac' './admin/services' './admin/system' './admin/ui' './admin/utils' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './gui_api_bridge/config' './gui_api_bridge/gui_api_bridge' './gui_api_bridge/scripts' './over_lord/runtime' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './admin/ui/static' './admin/ui/templates' './database/services/backup' './database/services/migration' './database/services/monitoring' './gui_api_bridge/gui_api_bridge/config' './gui_api_bridge/gui_api_bridge/integration' './gui_api_bridge/gui_api_bridge/middleware' './gui_api_bridge/gui_api_bridge/models' './gui_api_bridge/gui_api_bridge/routers' './gui_api_bridge/gui_api_bridge/services' './gui_api_bridge/gui_api_bridge/utils' './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' './over_lord/runtime/templates' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './admin/ui/static/css' './admin/ui/static/js'; \
+    for d in \
+      '.' \
+      './admin' \
+      './configs' \
+      './database' \
+      './gui_api_bridge' \
+      './over_lord' \
+      './server' \
+      './service_configs' \
+      './sessions' \
+      './admin/admin_ui' \
+      './admin/api' \
+      './admin/audit' \
+      './admin/config' \
+      './admin/emergency' \
+      './admin/governance' \
+      './admin/key_rotation' \
+      './admin/over_lord' \
+      './admin/rbac' \
+      './admin/services' \
+      './admin/system' \
+      './admin/ui' \
+      './admin/utils' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge' \
+      './gui_api_bridge/scripts' \
+      './over_lord/runtime' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './admin/ui/static' \
+      './admin/ui/templates' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './gui_api_bridge/gui_api_bridge/config' \
+      './gui_api_bridge/gui_api_bridge/integration' \
+      './gui_api_bridge/gui_api_bridge/middleware' \
+      './gui_api_bridge/gui_api_bridge/models' \
+      './gui_api_bridge/gui_api_bridge/routers' \
+      './gui_api_bridge/gui_api_bridge/services' \
+      './gui_api_bridge/gui_api_bridge/utils' \
+      './gui_api_bridge/gui_api_bridge/{config,middleware,routers,services,integration,models,utils}' \
+      './over_lord/runtime/templates' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+      './admin/ui/static/css' \
+      './admin/ui/static/js' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN echo "LUCID_DATABASE_OVERLORD_PACKAGES_$(date +%s)" > /root/.local/lib/python3.11/site-packages/.lucid-overlord-marker && \
     chown -R 65532:65532 /root/.local
 
-COPY infrastructure/containers/overlord/runtime/entrypoint.py ./entrypoint.py
-COPY infrastructure/containers/overlord/runtime/app.py ./app.py
-COPY infrastructure/containers/overlord/runtime/trigger_engine.py ./trigger_engine.py
-COPY infrastructure/containers/overlord/runtime/templates ./templates
+COPY infrastructure/containers/overlord/ ./over_lord/
+COPY database/ ./database/
+COPY gui_api_bridge/ ./gui_api_bridge/
+COPY infrastructure/containers/services/ ./service_configs/
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/ ./service_configs/x_lucid_cluster_calibration/
+COPY admin/ ./admin/
+COPY sessions/ ./sessions/
+COPY server/ ./server/
 
-RUN mkdir -p ./configs/environment && \
-    echo "LUCID_DATABASE_OVERLORD_ENV_DIR" > ./configs/environment/.keep && \
-    chown -R 65532:65532 /build/overlord
+
 
 RUN /usr/local/bin/python3 -c "import sys; sys.path.insert(0, '/root/.local/lib/python3.11/site-packages'); import fastapi, uvicorn, yaml; print('✅ overlord deps ok')"
 
@@ -100,19 +198,58 @@ ENV PYTHONUNBUFFERED=1 \
     OVERLORD_PORT=8120 \
     OVERLORD_CONFIG_ROOT=/app/configs/environment \
     OVERLORD_TEMPLATES_ROOT=/app/templates
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/gui_api_bridge/ /app/gui_api_bridge/
+COPY --from=builder --chown=65532:65532 /build/over_lord/ /app/over_lord/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder --chmod=755 /usr/bin/tini /usr/bin/tini
 COPY --from=builder --chown=65532:65532 /root/.local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder --chown=65532:65532 /root/.local/bin /usr/local/bin
 COPY --from=builder --chown=65532:65532 /build/overlord/entrypoint.py /build/overlord/app.py /build/overlord/trigger_engine.py /app/
-COPY --from=builder --chown=65532:65532 /build/overlord/templates /app/templates
-COPY --from=builder --chown=65532:65532 /build/overlord/configs /app/configs
+COPY --from=builder --chown=65532:65532 /build/overlord/templates /app/overlord/templates
+COPY --from=builder --chown=65532:65532 /build/overlord/configs /app/overlord/configs
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/database-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/database-cluster-host-alignment.yml
 
 
 RUN ["/usr/bin/python3.11", "-c", "import sys; sys.path[:0]=['/usr/local/lib/python3.11/site-packages']; import fastapi, uvicorn, yaml; assert fastapi and uvicorn; print('✅ runtime deps ok')"]

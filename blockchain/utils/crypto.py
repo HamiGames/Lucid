@@ -3,6 +3,12 @@
 # Provides cryptographic functions for the lucid_blocks blockchain
 # Based on BUILD_REQUIREMENTS_GUIDE.md Step 11 and blockchain cluster specifications
 
+"""
+File: /app/blockchain/utils/crypto.py
+x-lucid-file-path: /app/blockchain/utils/crypto.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -34,7 +40,10 @@ NONCE_LENGTH = 12
 TAG_LENGTH = 16
 
 class HashAlgorithm(Enum):
-    """Supported hash algorithms"""
+    """
+
+Supported hash algorithms
+"""
     BLAKE3 = "blake3"
     SHA256 = "sha256"
     SHA3_256 = "sha3_256"

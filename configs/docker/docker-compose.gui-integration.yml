@@ -2,6 +2,13 @@
 # Integrates Electron GUI with Docker backend services
 # Step 33: GUI Environment Configuration from lucid-container-build-plan.plan.md
 
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
+
 name: lucid-gui-integration
 services:
   # ===========================================
@@ -14,17 +21,17 @@ services:
     container_name: lucid-gui-api-bridge
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-api-bridge
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-api-bridge
     ports:
       - "8102:8102"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/gui-api-bridge:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/gui-api-bridge:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-api-bridge:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-api-bridge:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network
@@ -65,18 +72,18 @@ services:
     container_name: lucid-gui-docker-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-docker-manager
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-docker-manager
     ports:
       - "8098:8098"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /mnt/myssd/Lucid/Lucid/logs/gui-docker-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/gui-docker-manager:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-docker-manager:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-docker-manager:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network
@@ -120,17 +127,17 @@ services:
     container_name: lucid-gui-tor-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-tor-manager
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-tor-manager
     ports:
       - "8097:8097"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/tor:/app/tor-data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/gui-tor-manager:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/app/tor-data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-tor-manager:/app/logs:rw
       - onion-state:/run/lucid/onion:ro # ADDED: Read onion state from tor-proxy
     networks:
       - lucid-gui-network
@@ -170,17 +177,17 @@ services:
     container_name: lucid-gui-hardware-manager
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui-hardware-manager
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui-hardware-manager
     ports:
       - "8099:8099"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/gui-hardware-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/gui-hardware-manager:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-hardware-manager:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui-hardware-manager:/app/data
       # Writable tmpfs for USB device access (environment-aware path)
       - /run/usb-devices:/run/usb:rw
     networks:
@@ -237,18 +244,18 @@ services:
     container_name: lucid-admin-interface
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.admin-interface
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.admin-interface
     ports:
       - "8120:8120"
       - "8100:8100"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/admin-interface:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/admin-interface:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network
@@ -283,17 +290,17 @@ services:
     container_name: lucid-user-interface
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.user-interface
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.user-interface
     ports:
       - "3001:3001"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/user-interface:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/user-interface:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/user-interface:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/user-interface:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network
@@ -328,17 +335,17 @@ services:
     container_name: lucid-node-interface
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.gui
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.node-interface
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.gui
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.node-interface
     ports:
       - "3002:3002"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/node-interface:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/node-interface:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/node-interface:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/node-interface:/app/data
     networks:
       - lucid-pi-network
       - lucid-gui-network

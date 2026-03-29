@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/api/cluster/rate-limiter.py
+x-lucid-file-path: /app/api/cluster/rate-limiter.py
+x-lucid-file-type: python
+
 LUCID Rate Limiter - SPEC-1B Implementation
 Rate limiting for API endpoints and services
 """

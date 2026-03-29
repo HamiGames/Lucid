@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/api/cache_api.py
+x-lucid-file-path: /app/payment_systems/tron_relay/api/cache_api.py
+x-lucid-file-type: python
+
 LUCID TRON Relay - Cache API Endpoints
 Cached TRON blockchain data endpoints
 """

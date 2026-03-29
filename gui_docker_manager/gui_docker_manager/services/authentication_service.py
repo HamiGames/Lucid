@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/services/authentication_service.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/services/authentication_service.py
+x-lucid-file-type: python
+
 Authentication Service - JWT Token Validation and User Authentication
-File: gui_docker_manager/gui_docker_manager/services/authentication_service.py
 
 Provides JWT token validation, user extraction, and role-based access control.
 Integrates with FastAPI dependency injection for easy reuse across routes.

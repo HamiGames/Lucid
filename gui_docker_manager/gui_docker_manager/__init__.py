@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/__init__.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/__init__.py
+x-lucid-file-type: python
+
 GUI Docker Manager Service Package
-File: gui_docker_manager/gui_docker_manager/__init__.py
 """
 
 __version__ = "1.0.0"

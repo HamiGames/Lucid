@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/transaction.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/transaction.py
+x-lucid-file-type: python
+
 Transaction Schema Models
 
 This module defines Pydantic models for transaction-related API endpoints.
@@ -10,6 +14,8 @@ Models:
 - TransactionDetails: Detailed transaction information
 - TransactionListResponse: List of transactions
 """
+
+
 
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict

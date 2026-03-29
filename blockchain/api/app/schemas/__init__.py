@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/__init__.py
+x-lucid-file-type: python
+
 Schema Models Package
 
 This package contains all Pydantic models for the Blockchain API.
@@ -12,6 +16,8 @@ Modules:
 - consensus: Consensus mechanism models
 - merkle: Merkle tree operation models
 """
+
+
 
 from .blockchain import BlockchainInfo, BlockchainStatus, BlockHeight, NetworkInfo
 from .block import (

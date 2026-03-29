@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/sessions/pipeline-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/sessions/pipeline-config.yaml — see ../container-runtime-layout.yml
 # Lucid Session Pipeline — reference configuration (sessions/config/pipeline-config.yaml)
 # Canonical hostname/port/host_ip: infrastructure/containers/host-config.yml (session_pipeline, session_pipeline_manager, …).
 # Aligned with: infrastructure/containers/sessions/docker-compose.session-images.yml

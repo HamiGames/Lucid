@@ -3,6 +3,12 @@
 # Multi-platform support for Pi 5 ARM64
 # Hardened container implementation with security best practices
 
+"""
+File: /app/RDP/xrdp/xrdp_service.py
+x-lucid-file-path: /app/RDP/xrdp/xrdp_service.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

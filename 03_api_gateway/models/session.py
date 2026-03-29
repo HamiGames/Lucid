@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/models/session.py
+x-lucid-file-path: /app/03_api_gateway/models/session.py
+x-lucid-file-type: python
+
 Session Data Models
 
 Models for session management operations including:

@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/networks.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/networks.py
+x-lucid-file-type: python
+
 Network Management Routers
-File: gui_docker_manager/gui_docker_manager/routers/networks.py
 
 REST API endpoints for Docker network management.
 """

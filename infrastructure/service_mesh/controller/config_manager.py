@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/controller/config_manager.py
+x-lucid-file-path: /app/service_mesh/controller/config_manager.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Configuration Manager
 Manages service mesh configuration and dynamic updates.
 
-File: infrastructure/service_mesh/controller/config_manager.py
 Lines: ~300
 Purpose: Configuration management
 Dependencies: asyncio, yaml, consul

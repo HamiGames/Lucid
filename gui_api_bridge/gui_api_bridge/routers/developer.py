@@ -1,6 +1,9 @@
 """
 Developer API Routes
-File: gui_api_bridge/gui_api_bridge/routers/developer.py
+File: /app/gui_api_bridge/gui_api_bridge/routers/developer.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/routers/developer.py
+x-lucid-file-type: python
+
 Endpoints: /api/v1/developer
 Allowed methods: GET, POST, PUT, DELETE
 """

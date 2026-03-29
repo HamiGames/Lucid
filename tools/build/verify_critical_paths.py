@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/build/verify_critical_paths.py
+x-lucid-file-path: /app/tools/build/verify_critical_paths.py
+x-lucid-file-type: python
+
 Critical Path Verification for Lucid Devcontainer
 Focus on essential paths that could break devcontainer rebuild.
 """

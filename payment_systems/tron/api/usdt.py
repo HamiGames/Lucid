@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/usdt.py
+x-lucid-file-path: /app/payment_systems/tron/api/usdt.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - USDT-TRC20 API
 USDT-TRC20 token operations and management
 Distroless container: lucid-tron-payment-service:latest

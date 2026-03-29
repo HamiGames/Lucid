@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/logging_config.py
+x-lucid-file-path: /app/payment_systems/tron/utils/logging_config.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Structured Logging Configuration
 Structured JSON logging setup for tron-client service
 Following architecture patterns from build/docs/

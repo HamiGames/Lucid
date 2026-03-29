@@ -1,4 +1,8 @@
 """
+File: /app/RDP/common/__init__.py
+x-lucid-file-path: /app/RDP/common/__init__.py
+x-lucid-file-type: python
+
 RDP Common Module - Shared Components
 
 This module provides shared data models and utilities used across RDP services.

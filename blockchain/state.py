@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/state.py
+x-lucid-file-path: /app/blockchain/state.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -7,7 +13,10 @@ from .transaction import Transaction
 
 
 class State:
-    """In-memory account state for dev. Persisted snapshots handled by storage layer."""
+    """
+
+In-memory account state for dev. Persisted snapshots handled by storage layer.
+"""
 
     def __init__(self) -> None:
         self._balances: Dict[str, int] = defaultdict(int)

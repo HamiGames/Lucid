@@ -104,6 +104,18 @@ RUN pip config set global.timeout 60 && \
 
 # Copy and install Python requirements in stages for better caching
 COPY infrastructure/containers/infrastructure/containers/.devcontainer/requirements-dev.txt /tmp/requirements-dev.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './pyproject.toml not found, skipping'; \
+    for d in \
+      '.' \
+      './pyproject.toml not found, skipping' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 COPY pyproject.toml /tmp/pyproject.toml 2>/dev/null || echo "pyproject.toml not found, skipping"
 
 # Install Python dependencies with retries and fallbacks
@@ -175,7 +187,6 @@ RUN mkdir -p /workspaces/Lucid/configs
 COPY configs/environment/.env.secrets /workspaces/Lucid/configs/.env.secrets
 COPY master-env-config.txt /workspaces/Lucid/configs/.env.master
 
-# Copy project files (will be mounted in devcontainer)
 # This ensures the container works standalone if needed
 COPY . /workspaces/Lucid/ 2>/dev/null || echo "No project files to copy"
 

@@ -1,8 +1,10 @@
 # Session Service Layer
 # Business logic integration between API routes and session pipeline
 """
+File: /app/03_api_gateway/api/app/services/session_service.py
+x-lucid-file-path: /app/03_api_gateway/api/app/services/session_service.py
+x-lucid-file-type: python
 
-File: 03_api_gateway/api/app/services/session_service.py
 Purpose: Service for handling session management and lifecycle
 Architecture Notes:
 - Integrates with PipelineManager for lifecycle management

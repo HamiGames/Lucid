@@ -1,8 +1,11 @@
 """
+File: /app/sessions/integration/__init__.py
+x-lucid-file-path: /app/sessions/integration/__init__.py
+x-lucid-file-type: python
+
 LUCID Session Integration Components
 Blockchain integration and external service connections
 path: ..integration
-file: sessions/integration/__init__.py
 the integration calls the sessions integration
 """
 

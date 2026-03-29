@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/sessions/processor/entrypoint.py
+x-lucid-file-path: /app/sessions/processor/entrypoint.py
+x-lucid-file-type: python
+
 Session Processor Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 

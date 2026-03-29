@@ -1,7 +1,9 @@
 #!/bin/bash
 # ========================================================================
 # Lucid GUI API Bridge - OS Detector & Linux Runtime Enforcer
-# File: gui_api_bridge/scripts/os-detector-linux-enforcer.sh
+# File: /app/gui_api_bridge/gui_api_bridge/scripts/os-detector-linux-enforcer.sh
+# x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/scripts/os-detector-linux-enforcer.sh
+# x-lucid-file-type: bash
 # Purpose: Detect user OS and ensure Linux background system is running
 # Target: Windows (WSL2/Docker), macOS, Linux, Raspberry Pi
 # ========================================================================

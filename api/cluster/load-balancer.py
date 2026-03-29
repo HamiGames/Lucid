@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/api/cluster/load-balancer.py
+x-lucid-file-path: /app/api/cluster/load-balancer.py
+x-lucid-file-type: python
+
 LUCID Load Balancer - SPEC-1B Implementation
 Load balancing and health checking for microservices
 """

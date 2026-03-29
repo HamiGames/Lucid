@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/schema/mongodb_schema.py
+x-lucid-file-path: /app/database/schema/mongodb_schema.py
+x-lucid-file-type: python
+
 LUCID MongoDB Database Schema - SPEC-1B Implementation
 Database schema initialization and validation for Lucid system
 """

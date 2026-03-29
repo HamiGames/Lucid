@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/xrdp_client.py
+x-lucid-file-path: /app/RDP/session_controller/integration/xrdp_client.py
+x-lucid-file-type: python
+
 XRDP Service Client
 
 HTTP client for integrating with rdp-xrdp service.

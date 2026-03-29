@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/session_controller.py
+x-lucid-file-path: /app/RDP/session_controller/session_controller.py
+x-lucid-file-type: python
+
 RDP Session Controller - Session Management Service
 
 This module provides session management functionality for RDP connections,

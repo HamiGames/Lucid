@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/models/transaction.py
+x-lucid-file-path: /app/blockchain/api/app/models/transaction.py
+x-lucid-file-type: python
+
 Transaction Data Models
 Pydantic models for blockchain transactions and related structures.
 """
+
+
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional

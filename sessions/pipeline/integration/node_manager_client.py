@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/integration/node_manager_client.py
+x-lucid-file-path: /app/sessions/pipeline/integration/node_manager_client.py
+x-lucid-file-type: python
+
 Node Management Integration Client
 Handles interaction with node-management service for node coordination
 """

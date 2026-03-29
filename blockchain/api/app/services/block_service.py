@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/services/block_service.py
+x-lucid-file-path: /app/blockchain/api/app/services/block_service.py
+x-lucid-file-type: python
+
 Block Service
 
 This service handles block management and validation operations.
 Implements business logic for block queries, validation, and retrieval.
 """
+
+
 
 from typing import Dict, Any, List, Optional
 import logging

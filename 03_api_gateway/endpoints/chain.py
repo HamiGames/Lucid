@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/chain.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/chain.py
+x-lucid-file-type: python
+
 Blockchain Proxy Endpoints Module
 
 Provides proxy endpoints for blockchain operations via Cluster 02 (Blockchain Core).

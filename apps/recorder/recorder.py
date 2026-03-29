@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/recorder.py
+x-lucid-file-path: /app/apps/recorder/recorder.py
+x-lucid-file-type: python
+
 Lucid RDP Session Recorder
 Captures and processes remote desktop sessions with hardware-accelerated encoding
 """

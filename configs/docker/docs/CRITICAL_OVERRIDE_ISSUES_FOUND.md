@@ -1,3 +1,5 @@
+> **Lucid layout:** Canonical Dockerfiles: infrastructure/containers/**/Dockerfile* (repo-root build context). Registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml. Packaged configs: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml). Indexed in x-files-listing.txt.
+
 # CRITICAL Override and Configuration Issues Found
 
 **Analysis Date:** $(date)  

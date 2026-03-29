@@ -1,4 +1,8 @@
 """
+File: /app/auth/models/__init__.py
+x-lucid-file-path: /app/auth/models/__init__.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Data Models Package
 """
 

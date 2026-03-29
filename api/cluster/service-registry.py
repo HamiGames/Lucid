@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/api/cluster/service-registry.py
+x-lucid-file-path: /app/api/cluster/service-registry.py
+x-lucid-file-type: python
+
 LUCID Service Registry - SPEC-1B Implementation
 Service discovery and registration for microservices
 """

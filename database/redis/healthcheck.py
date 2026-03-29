@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/redis/healthcheck.py
+x-lucid-file-path: /app/database/redis/healthcheck.py
+x-lucid-file-type: python
+
 Redis Health Check Script for Distroless Container
 FIXED: Uses REDIS_PASSWORD from environment variables (no hardcoded passwords)
 """

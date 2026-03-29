@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/__init__.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/__init__.py
+x-lucid-file-type: python
+
 Data models for Docker Manager
-File: gui_docker_manager/gui_docker_manager/models/__init__.py
 """
 
 from .container import ContainerState, ContainerStats, ContainerInfo

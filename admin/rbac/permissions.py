@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/rbac/permissions.py
+x-lucid-file-path: /app/admin/rbac/permissions.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - RBAC Permissions
 Step 24: Admin Container & Integration
 

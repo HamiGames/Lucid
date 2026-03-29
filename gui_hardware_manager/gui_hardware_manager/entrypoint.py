@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/gui_hardware_manager/gui_hardware_manager/entrypoint.py
+x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/entrypoint.py
+x-lucid-file-type: python
+
 GUI Hardware Manager Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 Reads configuration from environment variables

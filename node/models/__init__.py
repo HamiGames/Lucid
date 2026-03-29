@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/models/__init__.py
+x-lucid-file-path: /app/node/models/__init__.py
+x-lucid-file-type: python
+
 Lucid Node Management Data Models Package
 
 This package provides Pydantic models for:

@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/data/chunk_manager.py
+x-lucid-file-path: /app/blockchain/data/chunk_manager.py
+x-lucid-file-type: python
+
 Chunk Manager
 Handles data chunk creation, storage, and retrieval operations
 
 This module manages data chunks for the data chain service, including
 chunk creation, splitting, storage, and retrieval operations.
 """
+
+
 
 from __future__ import annotations
 

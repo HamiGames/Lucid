@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/gui-docker-manager.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/gui-docker-manager.yml — see container-runtime-layout.yml
 # GUI Docker Manager Service Configuration
 # Manages Docker containers from Electron GUI
 # Implements access control based on user roles

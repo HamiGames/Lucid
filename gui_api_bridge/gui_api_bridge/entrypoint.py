@@ -7,6 +7,9 @@ UTF-8 encoded entrypoint script for distroless container
 This script serves as the entrypoint for the gui_api_bridge container,
 providing clean startup with environment variable configuration.
 No hardcoded values - all configuration from environment variables.
+file: /app/gui_api_bridge/gui_api_bridge/entrypoint.py
+x-lucid-file-path: /app/gui_api_bridge/gui_api_bridge/entrypoint.py
+x-lucid-file-type: python
 """
 
 import os

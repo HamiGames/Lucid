@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/wallet/__init__.py
+x-lucid-file-path: /app/payment_systems/wallet/__init__.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - Wallet Module
 Unified wallet integration and management system for payment operations
 

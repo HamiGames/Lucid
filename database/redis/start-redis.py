@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/redis/start-redis.py
+x-lucid-file-path: /app/database/redis/start-redis.py
+x-lucid-file-type: python
+
 Redis Distroless Startup Script
 Handles Redis initialization and configuration for distroless container
 FIXED: Uses REDIS_PASSWORD from environment variables (no hardcoded passwords)

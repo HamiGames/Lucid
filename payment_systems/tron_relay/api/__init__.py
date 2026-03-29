@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/api/__init__.py
+x-lucid-file-path: /app/payment_systems/tron_relay/api/__init__.py
+x-lucid-file-type: python
+
 LUCID TRON Relay API
 Read-only API endpoints for TRON network operations
 """

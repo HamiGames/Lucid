@@ -1,6 +1,10 @@
 # infrastructure/docker/distroless/gui/Dockerfile.gui
 # Lucid Electron GUI strap image – prepares a full GUI bundle that can be unpacked
 # and rebuilt on the Pi (with the correct .env files) before producing a runtime image.
+#
+# Layout registry: infrastructure/containers/host-config.yml → canonical runtime /app/service_configs/host-config.yml
+# Service config root: infrastructure/containers/services/container-runtime-layout.yml (lucid_services_config_root: /app/service_configs)
+# Path equivalences: x-files-listing.txt (repository root)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -20,6 +24,17 @@ ARG NPM_INSTALL_FLAGS
 WORKDIR /work/electron_gui
 
 # Install dependencies (dev deps optional via NPM_INSTALL_FLAGS)
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.'; \
+    for d in \
+      '.' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 COPY electron_gui/package*.json ./
 RUN npm install ${NPM_INSTALL_FLAGS}
 
@@ -131,7 +146,6 @@ ARG VERSION
 ARG STRAP_DIR
 ARG BUNDLE_DIR
 
-# Copy the strap artifacts, script, and required binaries/libs from bundle-prep
 COPY --from=bundle-prep "${BUNDLE_DIR}" "${BUNDLE_DIR}"
 COPY --from=bundle-prep "${STRAP_DIR}" "${STRAP_DIR}"
 COPY --from=bundle-prep /usr/local/bin/lucid-gui-strap /usr/local/bin/lucid-gui-strap

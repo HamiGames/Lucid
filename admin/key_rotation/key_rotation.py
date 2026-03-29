@@ -1,4 +1,10 @@
-""" Key Rotation for Lucid SPEC-1C Key Rotation System """
+"""
+File: /app/admin/key_rotation/key_rotation.py
+x-lucid-file-path: /app/admin/key_rotation/key_rotation.py
+x-lucid-file-type: python
+
+Key Rotation for Lucid SPEC-1C Key Rotation System
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/services/__init__.py
+x-lucid-file-path: /app/blockchain/api/app/services/__init__.py
+x-lucid-file-type: python
+
 Services Package
 
 This package contains service classes for the Blockchain API.
@@ -12,6 +16,8 @@ Modules:
 - consensus_service: Consensus mechanism
 - merkle_service: Merkle tree operations
 """
+
+
 
 from .blockchain_service import BlockchainService
 from .block_service import BlockService

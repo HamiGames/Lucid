@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/chunk_processor.py
+x-lucid-file-path: /app/sessions/pipeline/chunk_processor.py
+x-lucid-file-type: python
+
 LUCID Chunk Processor - SPEC-1B Implementation
 Handles session chunk processing with compression and encryption
 """

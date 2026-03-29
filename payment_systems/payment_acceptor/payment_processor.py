@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/payment_acceptor/payment_processor.py
+x-lucid-file-path: /app/payment_systems/payment_acceptor/payment_processor.py
+x-lucid-file-type: python
+
 Payment Processor Module for Lucid Network
 Handles payment processing, routing, and settlement
 """

@@ -1,4 +1,8 @@
 """
+File: /app/database/models/__init__.py
+x-lucid-file-path: /app/database/models/__init__.py
+x-lucid-file-type: python
+
 Database Data Models Package
 
 Pydantic models for Lucid database entities:

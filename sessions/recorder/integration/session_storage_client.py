@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/recorder/integration/session_storage_client.py
+x-lucid-file-path: /app/sessions/recorder/integration/session_storage_client.py
+x-lucid-file-type: python
+
 Session Storage Integration Client
 Handles interaction with session-storage service for chunk persistence
 """

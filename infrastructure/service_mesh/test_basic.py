@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
+File: /app/service_mesh/test_basic.py
+x-lucid-file-path: /app/service_mesh/test_basic.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Basic smoke test for service mesh controller without external dependencies.
-File: infrastructure/service_mesh/test_basic.py
 Purpose: Basic functionality test
 """
 

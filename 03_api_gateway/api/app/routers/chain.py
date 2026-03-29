@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/chain.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/chain.py
+x-lucid-file-type: python
+
 Chain Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/chain.py
 Purpose: Blockchain operations proxy (lucid_blocks)
 
 Architecture Note: This router proxies to lucid_blocks (on-chain blockchain system)

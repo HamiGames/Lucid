@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/recorder/integration/integration_manager.py
+x-lucid-file-path: /app/sessions/recorder/integration/integration_manager.py
+x-lucid-file-type: python
+
 Integration Manager for Session Recorder
 Manages initialization and lifecycle of integration clients
 """

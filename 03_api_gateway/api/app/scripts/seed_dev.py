@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/api/app/scripts/seed_dev.py
+x-lucid-file-path: /app/03_api_gateway/api/app/scripts/seed_dev.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

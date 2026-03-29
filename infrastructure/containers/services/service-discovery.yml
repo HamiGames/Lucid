@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/service-discovery.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/service-discovery.yml — see container-runtime-layout.yml
 # Service Discovery Configuration
 # Implements service discovery and registration for cross-system communication
 # Based on Beta sidecar pattern from architecture documents

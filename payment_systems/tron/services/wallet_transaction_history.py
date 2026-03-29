@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/wallet_transaction_history.py
+x-lucid-file-path: /app/payment_systems/tron/services/wallet_transaction_history.py
+x-lucid-file-type: python
+
 Wallet Transaction History Service
 Tracks and manages transaction history for wallets
 """

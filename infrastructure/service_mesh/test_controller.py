@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
+File: /app/service_mesh/test_controller.py
+x-lucid-file-path: /app/service_mesh/test_controller.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Test script to verify service mesh controller functionality.
-File: infrastructure/service_mesh/test_controller.py
 Purpose: Smoke test for service mesh controller components
 """
 

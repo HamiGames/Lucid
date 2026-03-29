@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/integration/tor_proxy_client.py
+x-lucid-file-type: python
+
 Tor Proxy Client for GUI Tor Manager
 Client for communicating with tor-proxy service using Tor control protocol
 Uses stem library for Tor control protocol interactions

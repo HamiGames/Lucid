@@ -1,6 +1,12 @@
 # Path: 03_api_gateway/api/app/utils/logger.py
 # Structured logging via stdlib; JSON-friendly format. :contentReference[oaicite:6]{index=6}
 
+"""
+File: /app/03_api_gateway/api/app/utils/logger.py
+x-lucid-file-path: /app/03_api_gateway/api/app/utils/logger.py
+x-lucid-file-type: python
+"""
+
 import json
 import os
 import sys

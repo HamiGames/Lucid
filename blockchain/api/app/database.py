@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/database.py
+x-lucid-file-path: /app/blockchain/api/app/database.py
+x-lucid-file-type: python
+
 Database Module
 
 This module contains database connection and operation utilities
 for the Blockchain API. Handles MongoDB connections and common operations.
 """
+
+
 
 import logging
 from typing import Optional, Dict, Any, List

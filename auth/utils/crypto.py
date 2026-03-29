@@ -1,4 +1,8 @@
 """
+File: /app/auth/utils/crypto.py
+x-lucid-file-path: /app/auth/utils/crypto.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Cryptographic Utilities
 TRON signature verification and password hashing
 """

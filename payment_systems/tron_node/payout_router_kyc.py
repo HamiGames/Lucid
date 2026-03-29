@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_node/payout_router_kyc.py
+x-lucid-file-path: /app/payment_systems/tron_node/payout_router_kyc.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - PayoutRouterKYC Integration
 KYC-gated USDT payout router for node-workers with compliance signatures
 Distroless container: pickme/lucid:payment_systems:latest

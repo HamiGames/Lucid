@@ -1,8 +1,11 @@
 
 """
+File: /app/03_api_gateway/api/app/models/common.py
+x-lucid-file-path: /app/03_api_gateway/api/app/models/common.py
+x-lucid-file-type: python
+
 Common Models
 
-File: 03_api_gateway/api/app/models/common.py
 Purpose: Shared data models used across the application
 """
 

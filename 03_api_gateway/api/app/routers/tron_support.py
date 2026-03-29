@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/tron_support.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/tron_support.py
+x-lucid-file-type: python
+
 TRON Support Services Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/tron_support.py
 Purpose: Proxy endpoints to TRON support services (payout router, wallet manager, USDT manager)
 
 Architecture Note: Proxies to isolated TRON payment system services

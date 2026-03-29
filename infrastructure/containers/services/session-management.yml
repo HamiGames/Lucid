@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/session-management.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/session-management.yml — see container-runtime-layout.yml
 # Session Management Service Configuration
 # Cluster: 03-SESSION-MANAGEMENT
 # Service: Session Management Pipeline

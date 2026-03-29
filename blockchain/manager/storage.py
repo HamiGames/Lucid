@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/manager/storage.py
+x-lucid-file-path: /app/blockchain/manager/storage.py
+x-lucid-file-type: python
+
 Block Storage Module
 Handles persistence of blocks in MongoDB and file system
 
 This module provides storage operations for block data.
 """
+
+
 
 from __future__ import annotations
 

@@ -42,8 +42,8 @@ log_debug() {
 # =============================================================================
 # Environment  (override via .env.* / docker-compose.*.yml)
 # =============================================================================
-TOR_DATA_DIR="${TOR_DATA_DIR:-/app/run/lucid/tor}"
-TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/app/opt/lucid/tor/}"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/app/var/lib/tor}"
+TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/app/run/lucid/tor/}"
 TOR_LOG_DIR="${TOR_LOG_DIR:-/app/var/log/tor}"
 TOR_LOG_FILE="${TOR_LOG_DIR}/tor.log"
 TORRC="${TOR_CONFIG_DIR}/torrc"

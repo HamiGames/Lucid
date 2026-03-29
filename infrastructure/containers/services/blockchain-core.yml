@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/blockchain-core.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/blockchain-core.yml — see container-runtime-layout.yml
 # Blockchain Core Service Configuration
 # Cluster: 02-BLOCKCHAIN-CORE
 # Service: lucid_blocks Blockchain System

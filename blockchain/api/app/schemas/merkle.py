@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/merkle.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/merkle.py
+x-lucid-file-type: python
+
 Merkle Tree Schema Models
 
 This module defines Pydantic models for Merkle tree API endpoints.
@@ -11,6 +15,8 @@ Models:
 - MerkleProofVerificationRequest: Merkle proof verification request
 - MerkleProofVerificationResponse: Merkle proof verification response
 """
+
+
 
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/logging_config.py
+x-lucid-file-path: /app/blockchain/api/app/logging_config.py
+x-lucid-file-type: python
+
 Logging Configuration Module
 
 This module contains logging configuration and utilities for the Blockchain API.
 Handles structured logging, log formatting, and log levels.
 """
+
+
 
 import logging
 import logging.config

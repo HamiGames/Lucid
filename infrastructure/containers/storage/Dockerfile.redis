@@ -22,12 +22,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
-RUN mkdir -p /build/configs/services/storage
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
-COPY infrastructure/containers/storage/redis.conf /build/configs/services/storage/redis.conf
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
+COPY infrastructure/containers/storage/redis.conf /build/service_configs/storage/redis.conf
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -40,6 +38,21 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         tini \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './service_configs' './configs/docker' './service_configs/storage'; \
+    for d in \
+      '.' \
+      './configs' \
+      './service_configs' \
+      './configs/docker' \
+      './service_configs/storage' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 ############################
 # Stage 2: distroless runtime (capacity at /data)
@@ -68,7 +81,7 @@ LABEL maintainer="Lucid Development Team" \
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=redis-builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=redis-builder --chown=65532:65532 /build/configs/services /app/configs/services
+COPY --from=redis-builder --chown=65532:65532 /build/service_configs /app/service_configs
 
 COPY --from=redis-builder /usr/local/bin/redis-server /usr/local/bin/redis-server
 COPY --from=redis-builder /usr/local/bin/redis-cli /usr/local/bin/redis-cli

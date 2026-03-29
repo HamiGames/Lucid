@@ -2,6 +2,12 @@
 # Lucid RDP Shard Host Management - Ongoing operations and maintenance for distributed storage hosts
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/shards/shard_host_management.py
+x-lucid-file-path: /app/node/shards/shard_host_management.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

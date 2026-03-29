@@ -1,3 +1,9 @@
+"""
+File: /app/03_api_gateway/api/app/scripts/ensure_indexes.py
+x-lucid-file-path: /app/03_api_gateway/api/app/scripts/ensure_indexes.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from collections import OrderedDict

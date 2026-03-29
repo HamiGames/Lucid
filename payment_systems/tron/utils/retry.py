@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/retry.py
+x-lucid-file-path: /app/payment_systems/tron/utils/retry.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Retry Module
 Retry logic with exponential backoff and jitter
 Following architecture patterns from build/docs/

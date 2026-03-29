@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/api/config.py
+x-lucid-file-path: /app/sessions/api/config.py
+x-lucid-file-type: python
+
 Lucid Session API Configuration
 Configuration management for session API service
 """

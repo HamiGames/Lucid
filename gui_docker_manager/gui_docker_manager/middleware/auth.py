@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/middleware/auth.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/middleware/auth.py
+x-lucid-file-type: python
+
 Authentication Middleware
-File: gui_docker_manager/gui_docker_manager/middleware/auth.py
 
 Validates JWT tokens from Authorization header and validates user permissions.
 Adds authenticated user to request state for downstream access.

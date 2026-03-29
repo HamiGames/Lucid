@@ -1,6 +1,15 @@
 # Lucid Service Mesh - Envoy Cluster Configuration
-# File: infrastructure/service-mesh/sidecar/envoy/config/cluster.yaml
+# File: infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml
 # Purpose: Envoy cluster configuration for service mesh
+# x-lucid-file-id: ??
+# x-lucid-file-name: infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml
+# x-lucid-file-path: infrastructure/service_mesh/sidecar/envoy/config/cluster.yaml
+# x-lucid-file-type: yaml
+# x-lucid-file-size: ??
+# x-lucid-file-hash: ??
+# x-lucid-file-created: ??
+# x-lucid-file-modified: ??
+# Upstream hostnames and ports align with infrastructure/containers/host-config.yml (service_name + port).
 
 resources:
 - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -72,7 +81,7 @@ resources:
       - endpoint:
           address:
             socket_address:
-              address: service-mesh-controller
+              address: lucid-service-mesh-controller
               port_value: 8600
 
 - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -87,7 +96,7 @@ resources:
       - endpoint:
           address:
             socket_address:
-              address: consul
+              address: lucid-service-mesh-controller
               port_value: 8500
 
 - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -117,7 +126,7 @@ resources:
       - endpoint:
           address:
             socket_address:
-              address: blockchain-core
+              address: blockchain-engine
               port_value: 8084
 
 - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -132,7 +141,7 @@ resources:
       - endpoint:
           address:
             socket_address:
-              address: session-management
+              address: session-anchoring
               port_value: 8085
 
 - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -172,8 +181,8 @@ resources:
       - endpoint:
           address:
             socket_address:
-              address: auth-service
-              port_value: 8086
+              address: lucid-auth-service
+              port_value: 8089
 
 - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
   name: health_check_cluster

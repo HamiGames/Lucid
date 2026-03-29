@@ -3,6 +3,12 @@
 # Implements R-MUST-005: Session Audit Trail with keystroke metadata
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/sessions/recorder/keystroke_monitor.py
+x-lucid-file-path: /app/sessions/recorder/keystroke_monitor.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

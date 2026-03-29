@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/multi-stage/multi-stage-runtime-config.yml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/multi-stage/multi-stage-runtime-config.yml — see ../container-runtime-layout.yml
 # Multi-Stage Runtime Configuration for Lucid Project
 # Container-hosted: no Pi bind mounts; named volumes under /app; in-stack networking only.
 # Optional host bind for production data: set LUCID_PRODUCTION_DATA_DEVICE on the daemon host.

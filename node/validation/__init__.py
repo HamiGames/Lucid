@@ -3,6 +3,10 @@
 # LUCID-STRICT Layer 1 Core Infrastructure
 
 """
+File: /app/node/validation/__init__.py
+x-lucid-file-path: /app/node/validation/__init__.py
+x-lucid-file-type: python
+
 Validation module for Lucid node operations.
 
 This module provides:

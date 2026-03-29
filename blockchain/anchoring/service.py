@@ -1,10 +1,16 @@
 """
+File: /app/blockchain/anchoring/service.py
+x-lucid-file-path: /app/blockchain/anchoring/service.py
+x-lucid-file-type: python
+
 Session Anchoring Service
 Core service for anchoring session manifests to On-System Data Chain
 
 This service integrates with the blockchain anchor system to provide
 session anchoring functionality for the Lucid RDP system.
 """
+
+
 
 from __future__ import annotations
 

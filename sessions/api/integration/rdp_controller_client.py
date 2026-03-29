@@ -1,4 +1,8 @@
 """
+File: /app/sessions/api/integration/rdp_controller_client.py
+x-lucid-file-path: /app/sessions/api/integration/rdp_controller_client.py
+x-lucid-file-type: python
+
 RDP Controller Client
 
 HTTP client for integrating with rdp-controller service.

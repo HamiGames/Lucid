@@ -1,8 +1,11 @@
 """
+File: /app/auth/services/orchestrator.py
+x-lucid-file-path: /app/auth/services/orchestrator.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - Service Orchestrator
 Manages Docker container orchestration and service spawning
 
-File: auth/services/orchestrator.py
 Purpose: Orchestrate Docker containers and spawn clone services
 Dependencies: docker (optional), httpx, asyncio, logging
 """

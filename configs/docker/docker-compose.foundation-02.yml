@@ -1,3 +1,10 @@
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
+
 name: lucid-foundation
 services:
   # =============================================================================
@@ -9,9 +16,9 @@ services:
     container_name: tor-proxy
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
     networks:
       - lucid-pi-network
     ports:
@@ -23,9 +30,9 @@ services:
     command: ["/run/lucid/tor/bin/entrypoint.sh"]
     volumes:
       # ✅ UPDATED: Changed from /var/lib/tor → /run/lucid/tor (distroless compatible)
-      - /mnt/myssd/Lucid/Lucid/data/tor:/run/lucid/tor:rw
-      - /mnt/myssd/Lucid/Lucid/logs/tor:/tmp/lucid/tor:rw
-      - /mnt/myssd/Lucid/Lucid/02-network-security/tor/scripts:/opt/lucid/tor/bin:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/run/lucid/tor:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tor:/tmp/lucid/tor:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/02-network-security/tor/scripts:/opt/lucid/tor/bin:ro
       - tor-config:/run/lucid/tor:rw
       - tor-logs:/run/lucid/tor/log:rw
       - tor-state:/run/lucid/tor:rw
@@ -47,10 +54,10 @@ services:
     container_name: lucid-server-tools
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.server-tools
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.server-tools
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
     depends_on:
       tor-proxy:
         condition: service_started
@@ -60,7 +67,7 @@ services:
       - lucid-pi-network
     volumes:
       # ✅ UPDATED: Path aligned with Dockerfile tunnel-tools structure
-      - /mnt/myssd/Lucid/Lucid/logs/server-tools:/tmp/lucid/tunnel:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/server-tools:/tmp/lucid/tunnel:rw
     healthcheck:
       # ✅ UPDATED: Uses /opt/bin/python3.11 (aligned with our changes)
       test: ["CMD", "/opt/bin/python3.11", "-c", "import sys; sys.exit(0)"]
@@ -82,10 +89,10 @@ services:
     container_name: lucid-service-mesh-controller
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
     environment:
       # ✅ UPDATED: PYTHONPATH reflects new /app/service-mesh-controller structure
       - PYTHONPATH=/app/service-mesh-controller:/opt/lib/python3.11/site-packages
@@ -94,8 +101,8 @@ services:
       - lucid-pi-network
     volumes:
       # ✅ UPDATED: Logs path aligned with structure
-      - /mnt/myssd/Lucid/Lucid/logs/service-mesh:/tmp/lucid/service-mesh:rw
-      - /mnt/myssd/Lucid/Lucid/infrastructure/service-mesh/config:/config:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/service-mesh:/tmp/lucid/service-mesh:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/infrastructure/service-mesh/config:/config:ro
     depends_on:
       tor-proxy:
         condition: service_started
@@ -113,9 +120,9 @@ services:
     container_name: lucid-mongodb
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME:-lucid}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:?MONGODB_PASSWORD not set}
@@ -139,8 +146,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=200m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db:rw
-      - /mnt/myssd/Lucid/Lucid/logs/mongodb:/var/log/mongodb:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/mongodb:/data/db:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/mongodb:/var/log/mongodb:rw
       - mongodb-cache:/var/cache/mongodb
     healthcheck:
       # ✅ UPDATED: Uses /opt/bin/python3.11
@@ -164,9 +171,9 @@ services:
     container_name: lucid-redis
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
@@ -184,8 +191,8 @@ services:
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/redis:/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/redis:/var/log/redis:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/redis:/data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/redis:/var/log/redis:rw
       - redis-cache:/var/cache/redis
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD not set}
@@ -207,9 +214,9 @@ services:
     container_name: lucid-elasticsearch
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
     ports:
       - "${ELASTICSEARCH_HTTP_PORT:-9200}:${ELASTICSEARCH_HTTP_PORT:-9200}"
       - "${ELASTICSEARCH_TRANSPORT_PORT:-9300}:${ELASTICSEARCH_TRANSPORT_PORT:-9300}"
@@ -231,8 +238,8 @@ services:
     tmpfs:
       - /tmp:size=200m
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data:rw
-      - /mnt/myssd/Lucid/Lucid/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/elasticsearch:/usr/share/elasticsearch/data:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/elasticsearch:/usr/share/elasticsearch/logs:rw
       - elasticsearch-cache:/tmp/elasticsearch
     healthcheck:
       test:
@@ -255,11 +262,11 @@ services:
     container_name: lucid-auth-service
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.tor-proxy
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.authentication
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.distroless
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.tor-proxy
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.authentication
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.distroless
     networks:
       - lucid-pi-network
     ports:
@@ -303,7 +310,7 @@ services:
       - /tmp:noexec,nosuid,size=100m
     volumes:
       # ✅ UPDATED: Logs path aligned
-      - /mnt/myssd/Lucid/Lucid/logs/auth:/tmp/lucid/auth:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/auth:/tmp/lucid/auth:rw
       - auth-cache:/tmp/auth
     healthcheck:
       # ✅ UPDATED: Uses /opt/bin/python3.11

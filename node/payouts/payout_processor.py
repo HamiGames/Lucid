@@ -2,6 +2,12 @@
 # Lucid Payout Processor - Payout processing and TRON integration
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/payouts/payout_processor.py
+x-lucid-file-path: /app/node/payouts/payout_processor.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

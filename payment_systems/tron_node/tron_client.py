@@ -1,3 +1,9 @@
+"""
+File: /app/payment_systems/tron_node/tron_client.py
+x-lucid-file-path: /app/payment_systems/tron_node/tron_client.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import logging

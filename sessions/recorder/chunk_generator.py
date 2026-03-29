@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/recorder/chunk_generator.py
+x-lucid-file-path: /app/sessions/recorder/chunk_generator.py
+x-lucid-file-type: python
+
 Lucid Session Management Chunk Generator
 Generates 10MB chunks from session recordings with compression
 """

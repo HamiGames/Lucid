@@ -1,4 +1,8 @@
 """
+File: /app/admin/admin_ui/provisioning_manager.py
+x-lucid-file-path: /app/admin/admin_ui/provisioning_manager.py
+x-lucid-file-type: python
+
 LUCID Admin UI - System Provisioning Manager
 Manages node provisioning, resource allocation, and system configuration
 Distroless container: pickme/lucid:admin-ui:latest

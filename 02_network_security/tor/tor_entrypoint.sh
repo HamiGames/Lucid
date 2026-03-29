@@ -7,12 +7,12 @@
 # All arithmetic increments use pre-increment (( ++var )) || true to survive set -e.
 #
 # Container-internal paths (tor-proxy-02):
-#   /app/run/lucid/tor        — DataDirectory + torrc + logs (TOR_DATA_DIR)
-#   /app/run/lucid/tor/log    — Tor log dir
-#   /app/run/lucid/onion/*   — Hidden-service dirs (scaffold in Dockerfile)
-#   /app/opt/lucid/tor/seed   — Optional consensus preload (TOR_SEED_DIR)
+#   /app/var/lib/tor          — Tor DataDirectory, control cookie, HS keys (matches torrc DataDirectory)
+#   /app/run/lucid/tor        — torrc, scripts, logs (TOR_CONFIG_DIR / layout)
+#   /app/run/lucid/tor/log    — Tor log dir (when used by entrypoint)
+#   /app/run/lucid/onion/*    — Optional scaffold (not Tor HS key storage; real HS dirs live under DataDirectory)
+#   /app/var/lib/tor/seed     — Optional consensus preload (TOR_SEED_DIR)
 #   /tmp/lucid/tor            — Ephemeral scratch (cookie mirror)
-#   /app/var/lib/tor          — Legacy seed migration source (copied from builder)
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -55,9 +55,9 @@ log_debug() {
 # Paths match Dockerfile.tor-proxy-02 COPY layout under /app (image ENV may say /run/lucid/tor;
 # on-disk tree from the Dockerfile is under /app/run — normalize if the env path is missing).
 # ─────────────────────────────────────────────────────────────────────────────
-TOR_DATA_DIR="${TOR_DATA_DIR:-/app/run/lucid/tor}"
-if [[ ! -d "$TOR_DATA_DIR" ]] && [[ -d "/app/run/lucid/tor" ]]; then
-    TOR_DATA_DIR="/app/run/lucid/tor"
+TOR_DATA_DIR="${TOR_DATA_DIR:-/app/var/lib/tor}"
+if [[ ! -d "$TOR_DATA_DIR" ]] && [[ -d "/app/var/lib/tor" ]]; then
+    TOR_DATA_DIR="/app/var/lib/tor"
 fi
 TOR_CONFIG_DIR="${TOR_CONFIG_DIR:-/app/run/lucid/tor/}"
 TOR_LOG_DIR="${TOR_LOG_DIR:-/app/run/lucid/tor/log}"
@@ -75,8 +75,8 @@ TOR_COOKIE_FILE="${TOR_COOKIE_FILE:-${TOR_DATA_DIR}/control_auth_cookie}"
 TOR_COOKIE_TARGETS="${TOR_COOKIE_TARGETS:-}"
 TOR_COOKIE_TMP="/tmp/lucid/tor/control_auth_cookie"
 BOOTSTRAP_HELPER="${BOOTSTRAP_HELPER:-/app/run/lucid/tor/bin/bootstrap-helper.sh}"
-# Seed data: preloaded consensus/certs (optional volume: /app/opt/lucid/tor/seed).
-TOR_SEED_DIR="${TOR_SEED_DIR:-/app/opt/lucid/tor/seed}"
+# Seed data: preloaded consensus/certs (optional volume: /app/var/lib/tor/seed).
+TOR_SEED_DIR="${TOR_SEED_DIR:-/app/var/lib/tor/seed}"
 TOR_USE_SEED="${TOR_USE_SEED:-1}"
 
 TOR_USE_BRIDGES="${TOR_USE_BRIDGES:-0}"
@@ -422,7 +422,7 @@ generate_control_auth_cookie_preinit() {
 # =============================================================================
 # Breaks the bootstrap catch-22: Tor cannot validate a consensus without
 # cached-certs, and cannot fetch cached-certs without a valid consensus.
-# Preloading both from /opt/lucid/tor/seed (container-internal) lets Tor
+# Preloading both from /app/var/lib/tor/seed (container-internal) lets Tor
 # validate immediately on start.
 # Onion subdirs are copied to preserve the Ed25519 keypair (stable .onion addr).
 preload_tor_data() {

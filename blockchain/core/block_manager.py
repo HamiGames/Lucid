@@ -3,6 +3,12 @@
 # Handles block creation, validation, storage and retrieval
 # Based on BUILD_REQUIREMENTS_GUIDE.md Step 11 and blockchain cluster specifications
 
+"""
+File: /app/blockchain/core/block_manager.py
+x-lucid-file-path: /app/blockchain/core/block_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -34,7 +40,10 @@ GENESIS_BLOCK_HEIGHT = 0         # Genesis block height
 
 @dataclass
 class BlockValidationResult:
-    """Result of block validation"""
+    """
+
+Result of block validation
+"""
     is_valid: bool
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)

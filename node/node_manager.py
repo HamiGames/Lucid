@@ -1,5 +1,11 @@
 # Path: node/node_manager.py
 
+"""
+File: /app/node/node_manager.py
+x-lucid-file-path: /app/node/node_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 import logging

@@ -2,6 +2,12 @@
 # Professional admin interface for session management and blockchain operations
 # Multi-platform support for ARM64 Pi and AMD64 development
 
+"""
+File: /app/admin/ui/admin_ui.py
+x-lucid-file-path: /app/admin/ui/admin_ui.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

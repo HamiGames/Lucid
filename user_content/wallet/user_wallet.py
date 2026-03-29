@@ -2,6 +2,12 @@
 # Lucid RDP User Wallet - TRON wallet integration for users
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/user_content/wallet/user_wallet.py
+x-lucid-file-path: /app/user_content/wallet/user_wallet.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

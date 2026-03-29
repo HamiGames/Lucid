@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/connection_manager.py
+x-lucid-file-path: /app/RDP/session_controller/connection_manager.py
+x-lucid-file-type: python
+
 RDP Connection Manager - Connection Management Service
 
 This module manages RDP connections, including connection creation,

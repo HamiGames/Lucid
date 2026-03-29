@@ -2,6 +2,12 @@
 # Implements trust-nothing access control for RDP sessions
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/RDP/security/access_controller.py
+x-lucid-file-path: /app/RDP/security/access_controller.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

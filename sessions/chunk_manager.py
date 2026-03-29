@@ -1,5 +1,11 @@
 # Path: session/chunk_manager.py
 
+"""
+File: /app/sessions/chunk_manager.py
+x-lucid-file-path: /app/sessions/chunk_manager.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 

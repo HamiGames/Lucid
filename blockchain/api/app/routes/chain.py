@@ -1,3 +1,9 @@
+"""
+File: /app/blockchain/api/app/routes/chain.py
+x-lucid-file-path: /app/blockchain/api/app/routes/chain.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 from fastapi import APIRouter
@@ -8,9 +14,10 @@ router = APIRouter(prefix="/chain", tags=["chain"])
 @router.get("/info")
 def chain_info():
     """
+
     Get blockchain information for the On-System Data Chain.
     Returns basic chain information for the primary blockchain.
-    """
+"""
     return {
         "network": "lucid_blocks",
         "chain_type": "on_system_data_chain",

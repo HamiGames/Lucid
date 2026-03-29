@@ -1,5 +1,8 @@
-# Path: blockchain/core/poot_consensus.py
 """
+File: /app/blockchain/core/poot_consensus.py
+x-lucid-file-path: /app/blockchain/core/poot_consensus.py
+x-lucid-file-type: python
+
 PoOT (Proof of Operational Tasks) Consensus Engine
 
 Implements the complete PoOT consensus mechanism for Lucid blockchain
@@ -12,6 +15,9 @@ Features:
 - Slot progression and timing
 - Consensus state management
 """
+
+# Path: blockchain/core/poot_consensus.py
+
 
 from __future__ import annotations
 

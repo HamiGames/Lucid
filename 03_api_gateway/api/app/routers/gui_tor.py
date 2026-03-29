@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/routers/gui_tor.py
+x-lucid-file-path: /app/03_api_gateway/api/app/routers/gui_tor.py
+x-lucid-file-type: python
+
 GUI Tor Manager Proxy Endpoints Router
 
-File: 03_api_gateway/api/app/routers/gui_tor.py
 Purpose: Proxy endpoints to gui_tor_manager service for Tor management via GUI
 
 Architecture Note: This router proxies to gui_tor_manager service

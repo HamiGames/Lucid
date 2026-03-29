@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/core/session_orchestrator.py
+x-lucid-file-path: /app/sessions/core/session_orchestrator.py
+x-lucid-file-type: python
+
 LUCID Session Orchestrator - SPEC-1B Implementation
 Coordinates session pipeline: chunker → encryptor → merkle → blockchain anchor
 """

@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/responses.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/responses.py
+x-lucid-file-type: python
+
 Response Models for API Responses
-File: gui_docker_manager/gui_docker_manager/models/responses.py
 
 Pydantic models for standardized API responses across all endpoints.
 """

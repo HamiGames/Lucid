@@ -4,6 +4,10 @@
 # LUCID-STRICT Layer 2 Service Integration
 
 """
+File: /app/RDP/security/__init__.py
+x-lucid-file-path: /app/RDP/security/__init__.py
+x-lucid-file-type: python
+
 Lucid RDP Security Module
 
 This module provides comprehensive security functionality for RDP sessions including:

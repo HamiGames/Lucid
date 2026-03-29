@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/middleware/logging.py
+x-lucid-file-path: /app/03_api_gateway/api/app/middleware/logging.py
+x-lucid-file-type: python
+
 Logging Middleware
 
-File: 03_api_gateway/api/app/middleware/logging.py
 Purpose: Request/response logging with correlation IDs.
 All configuration from environment variables via app.config.
 """

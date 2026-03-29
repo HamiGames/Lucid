@@ -2,6 +2,12 @@
 # LUCID-STRICT Layer 2 Service Integration
 # Multi-platform support for Pi 5 ARM64
 
+"""
+File: /app/blockchain/deployment/contract_deployment.py
+x-lucid-file-path: /app/blockchain/deployment/contract_deployment.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -42,7 +48,10 @@ DEPLOYMENT_LOG_PATH = Path(os.getenv("DEPLOYMENT_LOG_PATH", "/data/logs"))
 
 
 class DeploymentStatus(Enum):
-    """Contract deployment status states"""
+    """
+
+Contract deployment status states
+"""
     PENDING = "pending"
     COMPILING = "compiling"
     DEPLOYING = "deploying"

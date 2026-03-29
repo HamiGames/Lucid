@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/contracts/lucid_anchors.py
+x-lucid-file-path: /app/blockchain/contracts/lucid_anchors.py
+x-lucid-file-type: python
+
 LucidAnchors Smart Contract Interface
 Based on rebuild-blockchain-engine.md specifications
 
@@ -8,6 +12,8 @@ Implements On-System Chain session manifest anchoring:
 - Gas-efficient event-based anchoring
 - Session verification and proof generation
 """
+
+
 
 import asyncio
 import hashlib

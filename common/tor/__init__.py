@@ -1,4 +1,8 @@
 """
+File: /app/common/tor/__init__.py
+x-lucid-file-path: /app/common/tor/__init__.py
+x-lucid-file-type: python
+
 Tor service management module for Lucid RDP.
 
 This module provides comprehensive Tor service management including:

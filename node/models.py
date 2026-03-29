@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/models.py
+x-lucid-file-path: /app/node/models.py
+x-lucid-file-type: python
+
 Lucid Node Management - Data Models
 Pydantic models for node management service
 """

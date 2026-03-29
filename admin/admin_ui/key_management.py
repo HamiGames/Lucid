@@ -3,6 +3,12 @@
 # Provides secure key rotation and management capabilities
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/admin/admin_ui/key_management.py
+x-lucid-file-path: /app/admin/admin_ui/key_management.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

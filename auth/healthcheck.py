@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/auth/healthcheck.py
+x-lucid-file-path: /app/auth/healthcheck.py
+x-lucid-file-type: python
+
 Authentication Service Health Check Script for Distroless Container
 Provides health check functionality without shell access
 """

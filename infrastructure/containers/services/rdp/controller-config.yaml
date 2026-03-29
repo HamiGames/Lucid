@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/rdp/controller-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/rdp/controller-config.yaml — see ../container-runtime-layout.yml
 # Lucid RDP Controller - Configuration File
 # Optional YAML configuration for RDP session controller
 # File: RDP/config/controller-config.yaml

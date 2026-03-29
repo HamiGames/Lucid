@@ -1,4 +1,8 @@
 """
+File: /app/database/services/elasticsearch_service.py
+x-lucid-file-path: /app/database/services/elasticsearch_service.py
+x-lucid-file-type: python
+
 Elasticsearch Service for Lucid Database Infrastructure
 Provides Elasticsearch operations, search functionality, and analytics.
 

@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/routers/compose.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/routers/compose.py
+x-lucid-file-type: python
+
 Docker Compose Management Routers
-File: gui_docker_manager/gui_docker_manager/routers/compose.py
 """
 
 import logging

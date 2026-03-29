@@ -14,8 +14,8 @@
 # Registry + service fragments (host-config.yml, infrastructure/containers/services/*.yml):
 #   • host-config.yml services.lucid_server_manager — service_name lucid-server-manager, port 8081,
 #     host_ip 172.20.10.3, http_path http://lucid-server-manager:8081/app
-#   • /app/configs/services/ — container-runtime-layout, rdp-services, session-management, etc.
-#     (see infrastructure/containers/services/rdp-services.yml for /app/configs/services paths)
+#   • /app/service_configs/ — container-runtime-layout, rdp-services, session-management, etc.
+#     (see infrastructure/containers/services/rdp-services.yml for /app/service_configs paths)
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -42,11 +42,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-RUN mkdir -p /build/configs /build/configs/services
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
 COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/configs/services/
+COPY infrastructure/containers/services/ /build/service_configs/
 
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -55,6 +55,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -86,6 +87,75 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     printf "LUCID_SERVER_OPERATIONS_WHEELS_$(date +%s)" > /build/wheels/.keep && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.server-manager.txt && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.security.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './client' './common' './config' './configs' './database' './monitoring' './protocol' './resource_monitor' './security' './server' './server_manager' './service_configs' './session_controller' './common/governance' './common/security' './common/server-tools' './common/tor' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/services' './monitoring/grafana' './resource_monitor/config' './server_manager/config' './service_configs/admin' './service_configs/auth' './service_configs/base' './service_configs/blockchain' './service_configs/database' './service_configs/distroless' './service_configs/electron_gui' './service_configs/gui' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/payment_systems' './service_configs/rdp' './service_configs/security' './service_configs/server' './service_configs/service_mesh' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration' './session_controller/config' './session_controller/integration' './database/services/backup' './database/services/migration' './database/services/monitoring' './monitoring/grafana/dashboards' './monitoring/grafana/datasources' './service_configs/services/node'; \
+    for d in \
+      '.' \
+      './client' \
+      './common' \
+      './config' \
+      './configs' \
+      './database' \
+      './monitoring' \
+      './protocol' \
+      './resource_monitor' \
+      './security' \
+      './server' \
+      './server_manager' \
+      './service_configs' \
+      './session_controller' \
+      './common/governance' \
+      './common/security' \
+      './common/server-tools' \
+      './common/tor' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/services' \
+      './monitoring/grafana' \
+      './resource_monitor/config' \
+      './server_manager/config' \
+      './service_configs/admin' \
+      './service_configs/auth' \
+      './service_configs/base' \
+      './service_configs/blockchain' \
+      './service_configs/database' \
+      './service_configs/distroless' \
+      './service_configs/electron_gui' \
+      './service_configs/gui' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/payment_systems' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/server' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/tor' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './session_controller/config' \
+      './session_controller/integration' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './monitoring/grafana/dashboards' \
+      './monitoring/grafana/datasources' \
+      './service_configs/services/node' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.server-manager.txt && \
@@ -96,7 +166,6 @@ RUN printf "LUCID_SERVER_OPERATIONS_PACKAGES_$(date +%s)" > /usr/local/lib/pytho
 
 RUN python3.11 -c "import fastapi, uvicorn, pydantic, pydantic_settings, motor, redis, cryptography, argon2, passlib; print('server-operations packages OK')"
 
-RUN mkdir -p ./service_configs/admin ./service_configs/auth ./service_configs/base ./service_configs/blockchain ./service_configs/database ./service_configs/electron_gui ./service_configs/gui ./service_configs/node ./service_configs/payment_systems ./service_configs/rdp ./service_configs/server ./service_configs/services ./service_configs/services/node ./service_configs/sessions ./service_configs/tor
 
 COPY infrastructure/containers/admin/docker-compose.admin.yml ./service_configs/admin/docker-compose.admin.yml
 COPY infrastructure/containers/auth/docker-compose.auth.yml ./service_configs/auth/docker-compose.auth.yml
@@ -192,7 +261,7 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LUCID_HOST_CONFIG_SERVICE_KEY=lucid_server_manager \
     LUCID_SERVICE_HOST_IP=172.20.10.3 \
     LUCID_SERVICE_HTTP_PATH=http://lucid-server-manager:8081/app \
-    LUCID_SERVICES_CONFIG_DIR=/app/configs/services \
+    LUCID_SERVICES_CONFIG_DIR=/app/service_configs \
     LUCID_SERVER_OPERATIONS_PORT=8081 \
     LUCID_SERVER_OPERATIONS_HOST=0.0.0.0 \
     LUCID_SERVER_MANAGER_HOST_IP=172.20.10.3 \
@@ -214,14 +283,48 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LUCID_PI_NETWORK=lucid-pi-network \
     LUCID_PI_SUBNET=172.20.0.0/16 \
     LUCID_PI_GATEWAY=172.20.0.1
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/client/ /app/client/
+COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
+COPY --from=builder --chown=65532:65532 /build/config/ /app/config/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/monitoring/ /app/monitoring/
+COPY --from=builder --chown=65532:65532 /build/protocol/ /app/protocol/
+COPY --from=builder --chown=65532:65532 /build/resource_monitor/ /app/resource_monitor/
+COPY --from=builder --chown=65532:65532 /build/security/ /app/security/
+COPY --from=builder --chown=65532:65532 /build/server/ /app/server/
+COPY --from=builder --chown=65532:65532 /build/server_manager/ /app/server_manager/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/session_controller/ /app/session_controller/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 WORKDIR /app
-
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host registry + services/*.yml (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
 COPY --from=builder --chown=65532:65532 /build/configs/host-config.yml /app/configs/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/configs/services /app/configs/services
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_configs
 
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
@@ -261,7 +364,7 @@ COPY --from=builder --chown=65532:65532 /build/service_configs/tor /app/service_
 
 RUN ["/usr/bin/python3.11", "-c", "import os,sys; sp='/usr/local/lib/python3.11/site-packages'; sys.path.insert(0,sp); assert os.path.isdir(sp); m=os.path.join(sp,'.lucid-marker'); assert os.path.isfile(m) and os.path.getsize(m)>0; import uvicorn,fastapi,pydantic,pydantic_settings,motor,redis,cryptography,argon2,passlib; print('runtime packages OK')"]
 
-RUN ["/usr/bin/python3.11", "-c", "import os; paths=['/app/server_manager/entrypoint.py','/app/session_controller/main.py','/app/resource_monitor/main.py','/app/security/access_controller.py','/app/config/server-manager-config.yaml','/app/configs/host-config.yml']; assert all(os.path.isfile(p) for p in paths); assert os.path.isdir('/app/configs/services'); assert os.path.isfile('/app/configs/services/container-runtime-layout.yml'); assert os.path.isfile('/app/configs/services/rdp-services.yml'); print('handler layout OK')"]
+RUN ["/usr/bin/python3.11", "-c", "import os; paths=['/app/server_manager/entrypoint.py','/app/session_controller/main.py','/app/resource_monitor/main.py','/app/security/access_controller.py','/app/config/server-manager-config.yaml','/app/configs/host-config.yml']; assert all(os.path.isfile(p) for p in paths); assert os.path.isdir('/app/service_configs'); assert os.path.isfile('/app/service_configs/container-runtime-layout.yml'); assert os.path.isfile('/app/service_configs/rdp-services.yml'); print('handler layout OK')"]
 
 EXPOSE 8081
 

@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_relay/config.py
+x-lucid-file-path: /app/payment_systems/tron_relay/config.py
+x-lucid-file-type: python
+
 LUCID TRON Relay - Configuration
 Read-only TRON network relay for distributed caching and verification
 NO PRIVATE KEY ACCESS - This service is read-only

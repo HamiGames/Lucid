@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/tools/build/test_all_node_systems_fixed.py
+x-lucid-file-path: /app/tools/build/test_all_node_systems_fixed.py
+x-lucid-file-type: python
+
 Fixed comprehensive test script to start up and validate all main node systems.
 This will detect runtime errors and integration issues.
 """

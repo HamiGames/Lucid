@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/api/blockchain.py
+x-lucid-file-path: /app/admin/api/blockchain.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Blockchain Management API
 Step 23: Admin Backend APIs Implementation
 

@@ -1,4 +1,8 @@
 """
+File: /app/database/api/database_stats.py
+x-lucid-file-path: /app/database/api/database_stats.py
+x-lucid-file-type: python
+
 Database Statistics API
 
 Provides statistics and metrics endpoints for all database services:

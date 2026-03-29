@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/wallet_recovery.py
+x-lucid-file-path: /app/payment_systems/tron/services/wallet_recovery.py
+x-lucid-file-type: python
+
 Wallet Recovery Service
 Handles wallet recovery mechanisms including seed phrase and backup recovery
 """

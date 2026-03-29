@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/evm/transaction_monitor.py
+x-lucid-file-path: /app/blockchain/evm/transaction_monitor.py
+x-lucid-file-type: python
+
 Transaction Monitor for EVM Transactions
 Based on rebuild-blockchain-engine.md specifications
 
@@ -9,6 +13,8 @@ Provides transaction monitoring for On-System Chain:
 - Failed transaction handling
 - Transaction timeout management
 """
+
+
 
 import asyncio
 import logging

@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/audit.py
+x-lucid-file-path: /app/payment_systems/tron/api/audit.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Wallet Audit API
 Audit logging and security event tracking
 Distroless container: lucid-tron-wallet-manager:latest

@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/services/anchoring_service.py
+x-lucid-file-path: /app/blockchain/api/app/services/anchoring_service.py
+x-lucid-file-type: python
+
 Anchoring Service
 
 This service handles session anchoring operations.
 Implements business logic for anchoring session manifests to the blockchain.
 """
+
+
 
 from typing import Dict, Any, Optional
 import logging

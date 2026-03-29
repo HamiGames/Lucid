@@ -1,5 +1,11 @@
 # Path: node/peer_discovery.py
 
+"""
+File: /app/node/peer_discovery.py
+x-lucid-file-path: /app/node/peer_discovery.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 import asyncio
 import logging

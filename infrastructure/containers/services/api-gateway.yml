@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/api-gateway.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/api-gateway.yml — see container-runtime-layout.yml
 # API Gateway Service Configuration
 # Cluster: 01-API-GATEWAY
 # Service: API Gateway Cluster

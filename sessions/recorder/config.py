@@ -1,4 +1,8 @@
 """
+File: /app/sessions/recorder/config.py
+x-lucid-file-path: /app/sessions/recorder/config.py
+x-lucid-file-type: python
+
 Configuration Module for Session Recorder
 Manages configuration settings for the session recording service.
 

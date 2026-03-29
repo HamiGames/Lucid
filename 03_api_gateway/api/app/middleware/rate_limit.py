@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/middleware/rate_limit.py
+x-lucid-file-path: /app/03_api_gateway/api/app/middleware/rate_limit.py
+x-lucid-file-type: python
+
 Rate Limiting Middleware
 
-File: 03_api_gateway/api/app/middleware/rate_limit.py
 Purpose: Implements tiered rate limiting for different endpoint types and user roles.
 All configuration from environment variables via app.config.
 """

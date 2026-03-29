@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/payment_gateway_main.py
+x-lucid-file-path: /app/payment_systems/tron/payment_gateway_main.py
+x-lucid-file-type: python
+
 LUCID TRON Payment Gateway Service - Main Entry Point
 Dedicated container: tron-payment-gateway
 Port: 8097

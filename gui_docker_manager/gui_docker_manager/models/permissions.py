@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/permissions.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/permissions.py
+x-lucid-file-type: python
+
 Permission and Role Data Models
-File: gui_docker_manager/gui_docker_manager/models/permissions.py
 """
 
 from pydantic import BaseModel, Field

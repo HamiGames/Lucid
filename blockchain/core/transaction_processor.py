@@ -3,6 +3,12 @@
 # Handles transaction processing, validation, and mempool management
 # Based on BUILD_REQUIREMENTS_GUIDE.md Step 11 and blockchain cluster specifications
 
+"""
+File: /app/blockchain/core/transaction_processor.py
+x-lucid-file-path: /app/blockchain/core/transaction_processor.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -34,7 +40,10 @@ TRANSACTION_TIMEOUT_HOURS = 24            # Transaction timeout in hours
 
 @dataclass
 class TransactionValidationResult:
-    """Result of transaction validation"""
+    """
+
+Result of transaction validation
+"""
     is_valid: bool
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)

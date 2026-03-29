@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_node/fee_calculator.py
+x-lucid-file-path: /app/payment_systems/tron_node/fee_calculator.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Fee Calculator
 Comprehensive TRON fee estimation and optimization system
 Distroless container: pickme/lucid:payment_systems:latest

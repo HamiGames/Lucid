@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/services/gui_docker_manager_service.py
+x-lucid-file-path: /app/03_api_gateway/services/gui_docker_manager_service.py
+x-lucid-file-type: python
+
 GUI Docker Manager Service
 
-File: 03_api_gateway/services/gui_docker_manager_service.py
 Purpose: Service for handling GUI Docker Manager integration and proxy operations
 """
 

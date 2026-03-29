@@ -2,6 +2,12 @@
 # Lucid RDP Session ID Generator - Secure session identifier generation
 # Based on LUCID-STRICT requirements per R-MUST-012
 
+"""
+File: /app/sessions/core/session_generator.py
+x-lucid-file-path: /app/sessions/core/session_generator.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import secrets

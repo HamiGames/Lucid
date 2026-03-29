@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron_node/payout_manager.py
+x-lucid-file-path: /app/payment_systems/tron_node/payout_manager.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - PayoutManager Orchestration
 Unified payout orchestration and management system
 Distroless container: pickme/lucid:payment_systems:latest

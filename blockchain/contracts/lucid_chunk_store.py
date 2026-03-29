@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/contracts/lucid_chunk_store.py
+x-lucid-file-path: /app/blockchain/contracts/lucid_chunk_store.py
+x-lucid-file-type: python
+
 LucidChunkStore Smart Contract Interface
 Based on rebuild-blockchain-engine.md specifications
 
@@ -9,6 +13,8 @@ Implements On-System Chain encrypted chunk metadata storage:
 - verifyChunkStorage(chunkId)
 - Gas-efficient chunk metadata management
 """
+
+
 
 import asyncio
 import hashlib

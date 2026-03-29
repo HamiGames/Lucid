@@ -2,6 +2,12 @@
 # Hardware Wallet Integration for Lucid RDP Authentication
 # Supports Ledger, Trezor, and KeepKey hardware wallets for enhanced security
 
+"""
+File: /app/auth/hardware_wallet.py
+x-lucid-file-path: /app/auth/hardware_wallet.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import logging

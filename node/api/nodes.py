@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/api/nodes.py
+x-lucid-file-path: /app/node/api/nodes.py
+x-lucid-file-type: python
+
 Node management API endpoints for Lucid system.
 
 This module provides REST API endpoints for:

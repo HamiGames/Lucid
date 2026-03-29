@@ -1,8 +1,12 @@
-"""Loads host config for Lucid database services.
+"""
+File: /app/database/config/load_host_config.py
+x-lucid-file-path: /app/database/config/load_host_config.py
+x-lucid-file-type: python
+
+Loads host config for Lucid database services.
 
 Aligns with host-config keys: lucid_mongodb, lucid_redis, main_lucid_gateway, etc.
 Service overlay: database.yml under LUCID_DATABASE_SERVICE_CONFIG_DIR.
-File: database/config/load_host_config.py
 """
 
 from __future__ import annotations

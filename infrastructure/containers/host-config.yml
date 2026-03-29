@@ -7,6 +7,7 @@ description: Lucid container host registry for Docker DNS hostnames, ports, disc
 source: ports.txt
 ip_source: service-ip.txt
 path: infrastructure/containers/host-config.yml
+x-lucid-file-path: /app/service_configs/host-config.yml
 http_path_template: http://${service_name}:${port}/app
 services:
   main_lucid_gateway:

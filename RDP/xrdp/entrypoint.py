@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/RDP/xrdp/entrypoint.py
+x-lucid-file-path: /app/RDP/xrdp/entrypoint.py
+x-lucid-file-type: python
+
 RDP XRDP Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 

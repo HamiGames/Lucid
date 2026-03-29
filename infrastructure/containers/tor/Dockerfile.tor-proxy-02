@@ -1,6 +1,10 @@
-# LUCID TOR PROXY - SPEC-4 Stage 0 Beta Sidecar
-# Distroless Tor proxy for Lucid (ARM64), aligned with project spin-up
-# Build Context: project root (same as tunnel-tools)
+# syntax=docker/dockerfile:1.5
+# LUCID TOR PROXY — pickme/lucid-tor-proxy:latest-arm64 (SPEC-4 / distroless)
+# Build context: repository root (aligned with infrastructure/containers/tor/Dockerfile tunnel-tools + infrastructure/containers/user/Dockerfile).
+#
+# Registry: infrastructure/containers/host-config.yml → tor_socks (service_name tor-socks, port 9050, http_path template).
+# Runtime layout: infrastructure/containers/services/container-runtime-layout.yml → lucid_services_config_root: /app/service_configs
+# Canonical host registry file in-image: /app/service_configs/host-config.yml (x-lucid-file-path in host-config.yml); mirror at /app/configs/host-config.yml.
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -11,20 +15,45 @@ ARG BUILDPLATFORM=linux/amd64
 # =============================================================================
 # STAGE 1: Tor System Builder (Debian 12 with full Tor installation)
 # =============================================================================
-FROM debian:12-slim AS tor-builder
+FROM --platform=$TARGETPLATFORM debian:12-slim AS tor-builder
 
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+WORKDIR /build
+
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './service_configs' './configs/docker' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/tor' './service_configs/x_lucid_cluster_calibration'; \
+    for d in \
+      '.' \
+      './configs' \
+      './service_configs' \
+      './configs/docker' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/tor' \
+      './service_configs/x_lucid_cluster_calibration' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
-RUN mkdir -p /build/configs/services/tor
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
-COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/configs/services/tor/docker-compose.proxy-systems.yml
+COPY infrastructure/containers/tor/docker-compose.proxy-systems.yml /build/service_configs/tor/docker-compose.proxy-systems.yml
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       tor \
@@ -47,9 +76,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && adduser --disabled-password --shell /bin/bash --gecos "" lucid \
     && adduser --system --no-create-home --uid 65532 --gid 65532 --group tor-nonroot || true
 
+# Dynamic linker + libc triplet + healthcheck helpers for distroless runtime (multi-arch; builder matches TARGETPLATFORM).
+RUN mkdir -p /tor-export/dynamic /tor-export/bin && \
+    set -eux; \
+    for f in /lib/ld-linux-*.so.*; do [ -f "$f" ] && cp -a "$f" /tor-export/dynamic/ || true; done; \
+    for f in /lib64/ld-linux*.so.*; do [ -f "$f" ] && cp -a "$f" /tor-export/dynamic/ || true; done; \
+    for triplet in aarch64-linux-gnu x86_64-linux-gnu arm-linux-gnueabihf i386-linux-gnu; do \
+      if [ -d "/lib/$triplet" ]; then cp -a "/lib/$triplet" /tor-export/dynamic/; fi; \
+    done; \
+    cp -a /bin/busybox /tor-export/bin/; \
+    if [ -x /bin/nc ]; then cp -a /bin/nc /tor-export/bin/nc; \
+    elif [ -x /usr/bin/nc ]; then cp -a /usr/bin/nc /tor-export/bin/nc; \
+    elif nc_path="$(command -v nc 2>/dev/null)" && [ -n "$nc_path" ] && [ -x "$nc_path" ]; then cp -a "$nc_path" /tor-export/bin/nc; \
+    else echo "tor-export: nc not found (install netcat-openbsd)" >&2; exit 1; fi
+
 # =============================================================================
-# Directory scaffold — /run/lucid (runtime) + /opt/lucid/tor (static/config)
-# All dirs get .keep markers so COPY in Stage 2 carries them into distroless
+# Directory scaffold — /run/lucid (scripts, torrc, logs) + /var/lib/tor (Tor DataDirectory & HS dirs)
+# Tor authoritative state lives under /var/lib/tor (image: /app/var/lib/tor) per torrc DataDirectory.
+# Optional hidden-service dir names match typical Pi deployments (lucid_*, myservice).
 # =============================================================================
 RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
    install  -d -o debian-tor -g debian-tor -m 755 /run \
@@ -80,16 +124,18 @@ RUN install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor \
    install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels && \
    install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels/scripts && \
    install -d -o debian-tor -g debian-tor -m 700 /run/lucid/tunnels/config && \
-   install -d -o root -g root -m 755 /opt/lucid && \
-   install -d -o root -g root -m 755 /opt/lucid/tor && \
-   install -d -o root -g root -m 755 /opt/lucid/tor/bin && \
-   install -d -o root -g root -m 755 /opt/lucid/tor/lib && \
-   install -d -o root -g root -m 755 /opt/lucid/tor/config && \
-   install -d -o debian-tor -g debian-tor -m 755 /opt/lucid/tor/data && \
-   install -d -o root -g root -m 755 /build/configs/services && \
-install -d -o root -g root -m 755 /build/configs && \
-install -d -o root -g root -m 755 /configs && \
-install -d -o root -g root -m 755 /configs/services && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_admin && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_blockchain && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_dev && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_node && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_portal && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_server && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/lucid_vm && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/myservice && \
+   install -d -o debian-tor -g debian-tor -m 700 /var/lib/tor/hidden_service && \
+   install -d -o debian-tor -g debian-tor -m 755 /var/lib/tor/seed && \
+   install -d -o root -g root -m 755 /build/service_configs && \
+   install -d -o root -g root -m 755 /build/configs && \
    install -d -o root -g root -m 755 /usr/local/bin && \
    install -d -o root -g root -m 755 /etc/tor && \
    printf 'dir=run/lucid\nplatform=lucid-tor-proxy\n'                    > /run/lucid/.keep && \
@@ -116,29 +162,35 @@ install -d -o root -g root -m 755 /configs/services && \
    printf 'dir=run/lucid/onion/lucid_ui\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ui/.keep && \
    printf 'dir=run/lucid/onion/lucid_vm\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_vm/.keep && \
    printf 'dir=run/lucid/onion/lucid_ws\nplatform=lucid-tor-proxy\n'       > /run/lucid/onion/lucid_ws/.keep && \
-   printf 'dir=opt/lucid\nplatform=lucid-tor-proxy\n'                    > /opt/lucid/.keep && \
-   printf 'dir=opt/lucid/tor\nplatform=lucid-tor-proxy\n'                > /opt/lucid/tor/.keep && \
-   printf 'dir=opt/lucid/tor/bin\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/bin/.keep && \
-   printf 'dir=opt/lucid/tor/lib\nplatform=lucid-tor-proxy\n'            > /opt/lucid/tor/lib/.keep && \
-   printf 'dir=opt/lucid/tor/config\nplatform=lucid-tor-proxy\n'         > /opt/lucid/tor/config/.keep && \
-   printf 'dir=opt/lucid/tor/data\nplatform=lucid-tor-proxy\n'           > /opt/lucid/tor/data/.keep && \
+   printf 'dir=var/lib/tor\nplatform=lucid-tor-proxy\n'                  > /var/lib/tor/.keep && \
+   printf 'dir=var/lib/tor/lucid_admin\nplatform=lucid-tor-proxy\n'      > /var/lib/tor/lucid_admin/.keep && \
+   printf 'dir=var/lib/tor/lucid_blockchain\nplatform=lucid-tor-proxy\n' > /var/lib/tor/lucid_blockchain/.keep && \
+   printf 'dir=var/lib/tor/lucid_dev\nplatform=lucid-tor-proxy\n'        > /var/lib/tor/lucid_dev/.keep && \
+   printf 'dir=var/lib/tor/lucid_node\nplatform=lucid-tor-proxy\n'       > /var/lib/tor/lucid_node/.keep && \
+   printf 'dir=var/lib/tor/lucid_portal\nplatform=lucid-tor-proxy\n'     > /var/lib/tor/lucid_portal/.keep && \
+   printf 'dir=var/lib/tor/lucid_server\nplatform=lucid-tor-proxy\n'     > /var/lib/tor/lucid_server/.keep && \
+   printf 'dir=var/lib/tor/lucid_vm\nplatform=lucid-tor-proxy\n'         > /var/lib/tor/lucid_vm/.keep && \
+   printf 'dir=var/lib/tor/myservice\nplatform=lucid-tor-proxy\n'        > /var/lib/tor/myservice/.keep && \
+   printf 'dir=var/lib/tor/hidden_service\nplatform=lucid-tor-proxy\n'   > /var/lib/tor/hidden_service/.keep && \
+   printf 'dir=var/lib/tor/seed\nplatform=lucid-tor-proxy\n'             > /var/lib/tor/seed/.keep && \
    printf 'dir=run/lucid/tunnels\nplatform=lucid-tor-proxy\n'            > /run/lucid/tunnels/.keep && \
    printf 'dir=run/lucid/tunnels/scripts\nplatform=lucid-tor-proxy\n'    > /run/lucid/tunnels/scripts/.keep && \
    printf 'dir=run/lucid/tunnels/config\nplatform=lucid-tor-proxy\n'     > /run/lucid/tunnels/config/.keep && \
-   printf 'dir=./configs\nplatform=lucid-tor-proxy\n'                       > /configs/.keep && \
-   printf 'dir=./configs/services\nplatform=lucid-tor-proxy\n'              > /configs/services/.keep
+   printf 'dir=build/configs\nplatform=lucid-tor-proxy\n'                > /build/configs/.keep && \
+   printf 'dir=build/service_configs\nplatform=lucid-tor-proxy\n'        > /build/service_configs/.keep
 
 
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY configs/environment/.env.tunnel-tools ./configs/.env.tunnel-tools
-COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
-COPY infrastructure/containers/services/ ./configs/services/
+COPY configs/environment/.env.tunnel-tools /build/configs/.env.tunnel-tools
+COPY infrastructure/containers/services/ /build/service_configs/
+COPY infrastructure/containers/host-config.yml /build/service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
 
 # =============================================================================
 # STAGE 2: Distroless Runtime with Inherent Tor System
 # =============================================================================
-FROM gcr.io/distroless/base-debian12:latest
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/base-debian12:latest
+
+WORKDIR /app
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -150,49 +202,50 @@ LABEL maintainer="Lucid Development Team" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.title="Lucid Tor Proxy" \
-      org.opencontainers.image.description="Distroless Tor proxy for Lucid project" \
-      com.lucid.plane="ops" \
-      com.lucid.service="tor-proxy" \
+      org.opencontainers.image.title="Lucid Tor SOCKS proxy" \
+      org.opencontainers.image.description="Distroless Tor proxy for Lucid (host-config.yml: tor_socks → tor-socks)" \
+      com.lucid.service="tor-socks" \
       com.lucid.platform="arm64" \
-      com.lucid.architecture="linux/arm64" \
+      com.lucid.cluster="foundation" \
       com.lucid.security="distroless" \
-      com.lucid.vulnerabilities="zero" \
+      com.lucid.expose="9050" \
       com.lucid.tor.inherent="true" \
-      com.lucid.tor.system="built-in" \
-      com.lucid.expose="9050,9051,8888" \
-      com.lucid.cluster="foundation"
+      com.lucid.tor.system="built-in"
 
-# LUCID_HOST_CONFIG_STABLE_ID matches host-config.yml key tor_socks (avoids *KEY* ENV name — Docker SecretsUsedInArgOrEnv).
-ENV PATH=/app/run/lucid/tor/bin:/app/opt/lucid/tor/bin:/usr/local/bin:/usr/bin:/bin:/app/opt/lucid \
-    LD_LIBRARY_PATH=/opt/lucid/tor/lib \
+# tor_socks in host-config.yml; lucid_services_config_root in container-runtime-layout.yml (/app/service_configs).
+# LUCID_HOST_CONFIG_STABLE_ID matches host-config key tor_socks (avoids *KEY* in ENV — Docker SecretsUsedInArgOrEnv).
+ENV PATH=/app/run/lucid/tor/bin:/app/usr/bin:/usr/local/bin:/usr/bin:/bin \
+    LD_LIBRARY_PATH=/app/lib \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     TOR_SOCKS_PORT=9050 \
     TOR_CONTROL_PORT=9051 \
-    TOR_DATA_DIR=/run/lucid/tor \
+    TOR_CONTROL_HOST=127.0.0.1 \
+    TOR_DATA_DIR=/app/var/lib/tor \
     LUCID_HOST_CONFIG_STABLE_ID=tor_socks \
+    LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
+    LUCID_HOST_CONFIG_SERVICE_KEY=tor_socks \
+    LUCID_SERVICES_CONFIG_ROOT=/app/service_configs \
+    LUCID_SERVICES_CONFIG_DIR=/app/service_configs \
+    LUCID_SERVICE_NAME=tor-socks \
+    LUCID_SERVICE_PORT=9050 \
     LUCID_SERVICE_HOST_IP=172.20.10.64 \
     LUCID_SERVICE_HTTP_PATH=http://tor-socks:9050/app
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=tor-builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=tor-builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
-# Core binaries and helpers
-# LUCID_IMAGE_CONFIG: .env.secrets + .env.master + .env.tunnel-tools (runtime under /app/configs — see also /app/configs/services)
-COPY --from=tor-builder /usr/bin/tor/        /app/usr/bin/tor/
-COPY --from=tor-builder /usr/bin/obfs4proxy/  /app/usr/bin/obfs4proxy/
-COPY --from=tor-builder /usr/bin/tini/        /app/usr/bin/tini/
-COPY --from=tor-builder /usr/sbin/gosu/       /app/usr/sbin/gosu/
-COPY --from=tor-builder /bin/bash/            /app/bin/bash/
-COPY --from=tor-builder /bin/busybox/         /app/bin/busybox/
-COPY --from=tor-builder /bin/mkdir/           /app/bin/mkdir/
-COPY --from=tor-builder /bin/sleep/           /app/bin/sleep/
-COPY --from=tor-builder /bin/tail/            /app/bin/tail/
-COPY --from=tor-builder /bin/chmod/           /app/bin/chmod/
-COPY --from=tor-builder /bin/chown/           /app/bin/chown/
-COPY --from=tor-builder /bin/rm/              /app/bin/rm/
-COPY --from=tor-builder /usr/bin/nc/          /app/usr/bin/nc
-COPY --from=tor-builder /usr/bin/xxd/         /app/usr/bin/xxd/
-COPY --from=tor-builder /usr/bin/curl/        /app/usr/bin/curl/
-COPY --from=tor-builder /usr/bin/jq/          /app/usr/bin/jq/
-#static assets /app/opt/lucid/tor
-# Required libraries (include systemd/selinux/cap and loader) /app/opt/lib
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS under /app (lib_search_and_inject.py).
+COPY --from=tor-builder --chown=debian-tor /etc/ssl/ /app/etc/ssl/
+COPY --from=tor-builder --chown=debian-tor /etc/tor/ /app/etc/tor/
+COPY --from=tor-builder --chown=debian-tor /run/lucid/ /app/run/lucid/
+COPY --from=tor-builder --chown=debian-tor /usr/bin/ /app/usr/bin/
+COPY --from=tor-builder --chown=debian-tor /var/lib/tor/ /app/var/lib/tor/
+
+# Required libraries (systemd/selinux/cap, etc.) + exported dynamic linker / libc triplet (multi-arch)
 COPY --from=tor-builder /lib/*/libc.so.6         /app/lib/
 COPY --from=tor-builder /lib/*/libcrypto.so.3    /app/lib/
 COPY --from=tor-builder /lib/*/libssl.so.3       /app/lib/
@@ -206,56 +259,47 @@ COPY --from=tor-builder /lib/*/libselinux.so.1   /app/lib/
 COPY --from=tor-builder /lib/*/libcap.so.2       /app/lib/
 COPY --from=tor-builder /lib/*/libnsl.so.1       /app/lib/
 COPY --from=tor-builder /lib/*/libcrypt.so.1     /app/lib/
-# Dynamic linker and arch-specific libs for ARM64 (required by coreutils/tor) /app/lib
-COPY --from=tor-builder /lib/ld-linux-aarch64.so.1 /app/lib/ld-linux-aarch64.so.1
-COPY --from=tor-builder /lib/aarch64-linux-gnu     /app/lib/aarch64-linux-gnu
+COPY --from=tor-builder /tor-export/dynamic/ /app/lib/
 
-COPY --from=tor-builder /configs/.env.secrets /app/configs/.env.secrets
-COPY --from=tor-builder /configs/.env.master /app/configs/.env.master
-COPY --from=tor-builder /configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
+COPY --from=tor-builder /build/configs/.env.secrets /app/configs/.env.secrets
+COPY --from=tor-builder /build/configs/.env.master /app/configs/.env.master
+COPY --from=tor-builder /build/configs/.env.tunnel-tools /app/configs/.env.tunnel-tools
 
+COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib /app/usr/lib/
 
-# Bring in /usr/lib to satisfy Debian dynamic deps (libselinux, libcap, etc.)
-COPY --from=tor-builder /usr/lib /app/usr/lib/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/share/tor/ /app/usr/share/tor/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run/ /app/run/
+# Image-root nss database for USER debian-tor + mirror under /app/etc (user/Dockerfile FHS pattern)
+COPY --from=tor-builder /etc/passwd /etc/passwd
+COPY --from=tor-builder /etc/group /etc/group
+COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/passwd /app/etc/passwd
+COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/group /app/etc/group
 
-# Ensure /etc/tor directory exists in runtime and is traversable
-COPY --from=tor-builder /etc/tor /app/etc/tor/
+# tor-health.sh expects /bin/busybox and nc on PATH or under /bin (see 02_network_security/tor/tor-health.sh)
+COPY --from=tor-builder /tor-export/bin/busybox /bin/busybox
+COPY --from=tor-builder /tor-export/bin/nc /bin/nc
 
-# Tor data/config and system files
-COPY --from=tor-builder /usr/share/tor/                                 /app/usr/share/tor/
-COPY --from=tor-builder /etc/ssl/certs/ca-certificates.crt             /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor/     /app/var/lib/tor/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /run/            /app/run/
-COPY --from=tor-builder /etc/passwd/                                    /app/etc/passwd/
-COPY --from=tor-builder /etc/group/                                    /app/etc/group/
+COPY --chmod=644 02_network_security/tor/torrc /app/run/lucid/tor/torrc
+COPY --chmod=755 02_network_security/tor/entrypoint.sh /app/run/lucid/tor/bin/entrypoint.sh
+COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/run/lucid/tor/bin/bootstrap-helper.sh
+COPY --chmod=755 02_network_security/tor/tor_entrypoint.sh /app/run/lucid/tor/bin/tor_entrypoint.sh
+COPY --chmod=755 02_network_security/tor/t_entrypoint.sh /app/run/lucid/tor/bin/t_entrypoint.sh
+COPY --chmod=755 02_network_security/tor/tor-health.sh /app/run/lucid/tor/bin/tor-health.sh
+COPY --chmod=755 02_network_security/tor/tor-show-onion.sh /app/run/lucid/tor/bin/tor-show-onion.sh
+COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/run/lucid/tor/bin/create-ephemeral-onion.sh
+# Tunnel tools cross-container config (infrastructure/containers/tor/Dockerfile tunnel-tools interop)
+COPY --chmod=755 02_network_security/tunnels/scripts/ /app/run/lucid/tunnels/scripts/
+COPY --chmod=644 02_network_security/tunnels/config/ /app/run/lucid/tunnels/config/
 
-# /opt/lucid/tor scaffold (static config tree + .keep markers)
-COPY --from=tor-builder --chown=root:root /opt/lucid/ /app/opt/lucid/
+USER debian-tor
 
-# Lucid scripts and tor configuration (torrc baked into image)
-# Build context: project root, so we prefix with 02_network_security/tor/
-COPY --from=tor-builder /build/configs/services/ /app/configs/services/
-COPY --chmod=644 02_network_security/tor/torrc                                  /app/run/lucid/tor/torrc
-COPY --chmod=755 02_network_security/tor/entrypoint.sh                          /app/run/lucid/tor/bin/entrypoint.sh
-COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh                    /app/run/lucid/tor/bin/bootstrap-helper.sh
-COPY --chmod=755 02_network_security/tor/tor_entrypoint.sh                      /app/run/lucid/tor/bin/tor_entrypoint.sh
-COPY --chmod=755 02_network_security/tor/t_entrypoint.sh                        /app/run/lucid/tor/bin/t_entrypoint.sh
-COPY --chmod=755 02_network_security/tor/tor-health.sh                          /app/run/lucid/tor/bin/tor-health.sh
-COPY --chmod=755 02_network_security/tor/tor-show-onion.sh                      /app/run/lucid/tor/bin/tor-show-onion.sh
-COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh      /app/run/lucid/tor/bin/create-ephemeral-onion.sh
-# Tunnel tools cross-container config (lucid-tunnel-tools interop)
-COPY --chmod=755 02_network_security/tunnels/scripts/                      /app/run/lucid/tunnels/scripts/
-COPY --chmod=644 02_network_security/tunnels/config/                       /app/run/lucid/tunnels/config/
-# Healthcheck uses /bin/bash copied above
-HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
-  CMD ["/app/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
-
-# Expose ports (SOCKS, Control, optional HTTP)
+# Expose ports (SOCKS, control, optional HTTP) — ports match host-config.yml tor_socks / tor_control
 EXPOSE 9050 9051 8888
 
-# Run as debian-tor (present from builder /etc/passwd)
-USER debian-tor
-WORKDIR /app
+HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
+  CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
 
-ENTRYPOINT ["/app/bin/tini", "--"]
-
+# tini + bash paths match Debian (/usr/bin); same ENTRYPOINT pattern as user/Dockerfile + tor/Dockerfile (tunnel-tools)
+ENTRYPOINT ["/app/usr/bin/tini", "--"]
+CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor_entrypoint.sh"]

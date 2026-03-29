@@ -33,6 +33,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -50,7 +51,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -74,7 +74,47 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY node/requirements.txt ./requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt
+    mkdir -p /build/wheels && \
+    echo "building wheels from source" && \
+    pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
+    echo "wheel build complete" && \
+    echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './node' './service_configs' './configs/docker' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './service_configs/x_lucid_cluster_calibration'; \
+    for d in \
+      '.' \
+      './configs' \
+      './node' \
+      './service_configs' \
+      './configs/docker' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './service_configs/x_lucid_cluster_calibration' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt
@@ -98,21 +138,16 @@ marker = os.path.join(site_packages, '.lucid-marker'); \
 assert os.path.isfile(marker) and os.path.getsize(marker) > 0; \
 print('✅ All packages verified in builder stage')"
 
-RUN mkdir -p ./node ./host ./infrastructure/kubernetes ./configs ./configs/services ./configs/operations ./tmp && \
-    printf "LUCID_NODE_MGMT_NODE_$(date +%s)" > ./node/.keep && \
-    printf "LUCID_NODE_MGMT_HOST_$(date +%s)" > ./host/.keep && \
-    printf "LUCID_NODE_MGMT_K8S_$(date +%s)" > ./infrastructure/kubernetes/.keep && \
-    printf "LUCID_NODE_MGMT_OPS_$(date +%s)" > ./configs/operations/.keep && \
-    chown -R 65532:65532 ./node ./host ./infrastructure/kubernetes ./configs ./configs/services ./configs/operations ./tmp
 
 COPY node/ ./node/
 RUN echo "LUCID_NODE_MANAGEMENT_SOURCE_$(date +%s)" > ./node/.keep && chown 65532:65532 ./node/.keep
 
-COPY infrastructure/containers/host-config.yml ./host/host-config.yml
-COPY infrastructure/containers/services/container-runtime-layout.yml ./configs/services/container-runtime-layout.yml
-COPY infrastructure/kubernetes/01_configmaps/database-config.yaml ./infrastructure/kubernetes/database-config.yaml
-COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml ./infrastructure/kubernetes/api-gateway-config.yaml
-COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./configs/operations/docker-compose.node-management.yml
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./service_configs/container-runtime-layout.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/application-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/application-cluster-host-alignment.yml
+COPY service_configs/kubernetes/01_configmaps/database-config.yaml ./configs/database-config.yaml
+COPY service_configs/kubernetes/01_configmaps/api-gateway-config.yaml ./configs/api-gateway-config.yaml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./service_configs/docker-compose.node-management.yml
 COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./configs/docker-compose.node-data-system.yml
 COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./configs/docker-compose.node-sessions.yml
 
@@ -145,6 +180,22 @@ LABEL maintainer="Lucid Development Team" \
 
 WORKDIR /app
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -152,7 +203,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=node_management \
     LUCID_SERVICE_HOST_IP=172.20.10.25 \
     LUCID_SERVICE_HTTP_PATH=http://node-management:8095/app \
@@ -160,6 +211,32 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     NODE_MANAGEMENT_HOST=0.0.0.0 \
     API_GATEWAY_HOST=api-gateway \
     API_GATEWAY_PORT=8080
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /app-dirs/ /app/app-dirs/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -177,12 +254,11 @@ COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 COPY --from=builder --chown=65532:65532 /app-dirs/cache /app/cache
 COPY --from=builder --chown=65532:65532 /app-dirs/data /app/data
 COPY --from=builder --chown=65532:65532 /app-dirs/logs /app/logs
-COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
 
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
-COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/configs/database-config.yaml /app/configs/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/api-gateway-config.yaml /app/configs/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/application-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/application-cluster-host-alignment.yml
 COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.node-management.yml /app/configs/operations/docker-compose.node-management.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-data-system.yml /app/configs/docker-compose.node-data-system.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-sessions.yml /app/configs/docker-compose.node-sessions.yml

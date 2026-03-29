@@ -1,4 +1,8 @@
 """
+File: /app/node/dht_crdt/__init__.py
+x-lucid-file-path: /app/node/dht_crdt/__init__.py
+x-lucid-file-type: python
+
 LUCID DHT/CRDT Components
 Distributed hash table and conflict-free replicated data
 """

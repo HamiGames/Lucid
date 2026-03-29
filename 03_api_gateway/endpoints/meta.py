@@ -1,4 +1,8 @@
 """
+File: /app/03_api_gateway/endpoints/meta.py
+x-lucid-file-path: /app/03_api_gateway/endpoints/meta.py
+x-lucid-file-type: python
+
 Meta Endpoints Module
 
 Provides system metadata and health check endpoints for the API Gateway.

@@ -1,5 +1,8 @@
 # Path: gui/core/telemetry.py
 """
+file: /app/gui/core/telemetry.py
+x-lucid-file-path: /app/gui/core/telemetry.py
+x-lucid-file-type: python
 Optional telemetry system for Lucid RDP GUI.
 Provides anonymous usage statistics and crash reporting (disabled by default).
 """

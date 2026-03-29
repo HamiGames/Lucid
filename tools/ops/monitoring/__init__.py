@@ -1,4 +1,8 @@
 """
+File: /app/tools/ops/monitoring/__init__.py
+x-lucid-file-path: /app/tools/ops/monitoring/__init__.py
+x-lucid-file-type: python
+
 System monitoring module for Lucid RDP.
 
 This module provides comprehensive system monitoring capabilities including:
@@ -12,7 +16,6 @@ Components:
 - HealthChecker: Health checking and alerting system
 
 path: ..tools.ops.monitoring
-file: tools/ops/monitoring/__init__.py
 the monitoring calls the monitoring
 """
 

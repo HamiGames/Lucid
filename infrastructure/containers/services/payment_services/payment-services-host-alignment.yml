@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/payment_services/payment-services-host-alignment.yml
+# Runtime (container): /app/service_configs/payment_services/payment-services-host-alignment.yml
 # Canonical payment-stack alignment for x-lucid deployment (merge with docker-compose.payment-internal.yml).
 # Source registry: infrastructure/containers/host-config.yml; static host_ip completes with repository root service-ip.txt
 #   for keys omitted from the generated host-config fragment (payment_system_gateway, tron_relay).

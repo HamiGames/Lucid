@@ -1,15 +1,20 @@
 # Multi-Stage Development Configuration for Lucid Project
 # Development-friendly configuration for multi-stage containers
 
-version: '3.8'
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   # Multi-stage development environment
   dev-multi-stage:
     image: lucid/multi-stage-dev:${VERSION:-latest}
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.development
     environment:
       - PYTHONPATH=/app:/app/src
       - PYTHONDONTWRITEBYTECODE=1
@@ -26,11 +31,11 @@ services:
       - no-new-privileges:true
     read_only: false  # Allow writes for development
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
-      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
-      - /mnt/myssd/Lucid/Lucid/cache:/app/cache:rw
-      - /mnt/myssd/Lucid/Lucid/temp:/app/temp:rw
-      - /mnt/myssd/Lucid/Lucid/configs:/app/configs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/cache:/app/cache:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/temp:/app/temp:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs:/app/configs:rw
     cap_drop:
       - ALL
     cap_add:
@@ -54,8 +59,8 @@ services:
   dev-builder:
     image: lucid/multi-stage-builder:${VERSION:-latest}
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.development
     environment:
       - PYTHONPATH=/app
       - BUILD_STAGE=builder
@@ -69,10 +74,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:rw
-      - /mnt/myssd/Lucid/Lucid/build-cache:/cache:rw
-      - /mnt/myssd/Lucid/Lucid/build-artifacts:/artifacts:rw
-      - /mnt/myssd/Lucid/Lucid/build-logs:/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-cache:/cache:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-artifacts:/artifacts:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-logs:/logs:rw
       - /var/run/docker.sock:/var/run/docker.sock
     cap_drop:
       - ALL
@@ -88,8 +93,8 @@ services:
   dev-tools:
     image: lucid/multi-stage-dev:${VERSION:-latest}
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.development
     environment:
       - PYTHONPATH=/app
       - DEV_TOOLS_MODE=true
@@ -101,9 +106,9 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
-      - /mnt/myssd/Lucid/Lucid/logs:/app/logs:rw
-      - /mnt/myssd/Lucid/Lucid/tools:/app/tools:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/tools:/app/tools:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
     cap_drop:
       - ALL
@@ -123,8 +128,8 @@ services:
   dev-database:
     image: mongo:7.0
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.development
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.development
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DB_USER:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD:-password}
@@ -133,8 +138,8 @@ services:
       - lucid-distroless-dev
     restart: unless-stopped
     volumes:
-      - /mnt/myssd/Lucid/Lucid/dev-data:/data/db:rw
-      - /mnt/myssd/Lucid/Lucid/dev-scripts:/docker-entrypoint-initdb.d:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/dev-data:/data/db:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/dev-scripts:/docker-entrypoint-initdb.d:ro
     ports:
       - "27017:27017"
     healthcheck:

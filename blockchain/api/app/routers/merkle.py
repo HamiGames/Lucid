@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/merkle.py
+x-lucid-file-path: /app/blockchain/api/app/routers/merkle.py
+x-lucid-file-type: python
+
 Merkle Router
 
 This module contains the Merkle tree operation endpoints.
 Implements the OpenAPI 3.0 specification for Merkle tree operations.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List

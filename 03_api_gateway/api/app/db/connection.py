@@ -1,4 +1,10 @@
 # app/db/connection.py
+"""
+File: /app/03_api_gateway/api/app/db/connection.py
+x-lucid-file-path: /app/03_api_gateway/api/app/db/connection.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

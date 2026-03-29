@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/blockchain.py
+x-lucid-file-path: /app/blockchain/api/app/routers/blockchain.py
+x-lucid-file-type: python
+
 Blockchain Router
 
 This module contains the blockchain information and status endpoints.
 Implements the OpenAPI 3.0 specification for blockchain queries.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List

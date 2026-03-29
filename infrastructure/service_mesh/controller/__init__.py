@@ -1,31 +1,13 @@
 """
+File: /app/service_mesh/controller/__init__.py
+x-lucid-file-path: /app/service_mesh/controller/__init__.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller
 Cluster: Infrastructure
 Port: 8090
-
-Features:
-- Service discovery and registration
-- Policy enforcement and governance
-- Health monitoring and diagnostics
-- Configuration management and updates
-- Cross-cluster service integration
-- Service mesh orchestration
+Purpose: Service mesh controller
+Dependencies: asyncio, logging, config_manager, policy_engine, health_checker
 """
-
-from .config_manager import ConfigManager
-from .policy_engine import PolicyEngine
-from .health_checker import HealthChecker
-
-__all__ = [
-    'ConfigManager',
-    'PolicyEngine', 
-    'HealthChecker'
-]
-
-# HTTP server is conditionally available (requires FastAPI)
-try:
-    from .http_server import HTTPServer
-    __all__.append('HTTPServer')
-except ImportError:
-    pass
 

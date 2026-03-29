@@ -1,6 +1,12 @@
 # Error Response Schemas
 # Standardized error responses for API endpoints
 
+"""
+File: /app/03_api_gateway/api/app/schemas/errors.py
+x-lucid-file-path: /app/03_api_gateway/api/app/schemas/errors.py
+x-lucid-file-type: python
+"""
+
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone

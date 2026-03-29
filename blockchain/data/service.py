@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/data/service.py
+x-lucid-file-path: /app/blockchain/data/service.py
+x-lucid-file-type: python
+
 Data Chain Service
 Core service for data chain operations
 
@@ -6,6 +10,8 @@ This service integrates with the blockchain core to provide
 data chain functionality for the Lucid RDP system, managing
 data chunks, Merkle trees, and integrity verification.
 """
+
+
 
 from __future__ import annotations
 

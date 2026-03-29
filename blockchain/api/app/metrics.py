@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/metrics.py
+x-lucid-file-path: /app/blockchain/api/app/metrics.py
+x-lucid-file-type: python
+
 Metrics Module
 
 This module contains metrics collection and reporting utilities for the Blockchain API.
 Handles Prometheus metrics, custom metrics, and performance monitoring.
 """
+
+
 
 import logging
 import time

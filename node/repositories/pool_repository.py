@@ -3,6 +3,10 @@
 # Based on LUCID-STRICT requirements per Spec-1c
 
 """
+File: /app/node/repositories/pool_repository.py
+x-lucid-file-path: /app/node/repositories/pool_repository.py
+x-lucid-file-type: python
+
 Pool repository for Lucid system.
 
 This module provides data access methods for:

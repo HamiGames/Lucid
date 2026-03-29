@@ -1,4 +1,8 @@
 """
+File: /app/database/api/search.py
+x-lucid-file-path: /app/database/api/search.py
+x-lucid-file-type: python
+
 Database Search API
 
 Provides Elasticsearch search endpoints:

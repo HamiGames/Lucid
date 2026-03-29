@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/integration/auth_service_client.py
+x-lucid-file-path: /app/sessions/pipeline/integration/auth_service_client.py
+x-lucid-file-type: python
+
 Auth Service Integration Client
 Handles interaction with lucid-auth-service for authentication and authorization
 """

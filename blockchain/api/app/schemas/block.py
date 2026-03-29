@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/api/app/schemas/block.py
+x-lucid-file-path: /app/blockchain/api/app/schemas/block.py
+x-lucid-file-type: python
+
 Block Schema Models
 
 This module defines Pydantic models for block-related API endpoints.
@@ -10,6 +14,8 @@ Models:
 - BlockValidationRequest: Block validation request
 - BlockValidationResponse: Block validation results
 """
+
+
 
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict

@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/middleware/cors.py
+x-lucid-file-path: /app/03_api_gateway/api/app/middleware/cors.py
+x-lucid-file-type: python
+
 CORS Configuration
 
-File: 03_api_gateway/api/app/middleware/cors.py
 Purpose: CORS configuration and utilities.
 All configuration from environment variables via app.config.
 """

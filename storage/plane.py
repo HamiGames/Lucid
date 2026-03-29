@@ -1,5 +1,11 @@
 # Path: storage/plane.py
-"""Lucid storage plane: bind to mounted capacity, layout, and free-space health (not database logic)."""
+"""
+File: /app/storage/plane.py
+x-lucid-file-path: /app/storage/plane.py
+x-lucid-file-type: python
+
+Lucid storage plane: bind to mounted capacity, layout, and free-space health (not database logic).
+"""
 
 from __future__ import annotations
 

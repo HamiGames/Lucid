@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+File: /app/payment_systems/tron/trx_staking_entrypoint.py
+x-lucid-file-path: /app/payment_systems/tron/trx_staking_entrypoint.py
+x-lucid-file-type: python
+
 TRX Staking Service Entrypoint
 UTF-8 encoded entrypoint script for distroless container
 """

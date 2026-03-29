@@ -1,4 +1,8 @@
 """
+File: /app/RDP/session_controller/integration/session_recorder_client.py
+x-lucid-file-path: /app/RDP/session_controller/integration/session_recorder_client.py
+x-lucid-file-type: python
+
 Session Recorder Client
 
 HTTP client for integrating with session-recorder service.

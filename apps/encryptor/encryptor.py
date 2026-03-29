@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/encryptor/encryptor.py
+x-lucid-file-path: /app/apps/encryptor/encryptor.py
+x-lucid-file-type: python
+
 Lucid RDP Encryptor Service
 High-performance encryption using libsodium bindings
 """

@@ -1,4 +1,8 @@
 """
+File: /app/sessions/processor/encryption.py
+x-lucid-file-path: /app/sessions/processor/encryption.py
+x-lucid-file-type: python
+
 Chunk Encryption Module
 Implements AES-256-GCM encryption for session chunks.
 

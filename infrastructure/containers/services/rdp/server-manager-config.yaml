@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/rdp/server-manager-config.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/rdp/server-manager-config.yaml — see ../container-runtime-layout.yml
 # Lucid RDP Server Manager - Configuration File
 # Optional YAML configuration for RDP server management
 # File: RDP/config/server-manager-config.yaml

@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/api/app/services/tron_support_service.py
+x-lucid-file-path: /app/03_api_gateway/api/app/services/tron_support_service.py
+x-lucid-file-type: python
+
 TRON Support Services
 
-File: 03_api_gateway/api/app/services/tron_support_service.py
 Purpose: Service for handling TRON support services (payout router, wallet manager, USDT manager)
 """
 import aiohttp

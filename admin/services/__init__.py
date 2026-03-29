@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/admin/services/__init__.py
+x-lucid-file-path: /app/admin/services/__init__.py
+x-lucid-file-type: python
+
 Lucid Admin Interface - Cross-Container Service Modules
 Step 24: Admin Container & Integration
 

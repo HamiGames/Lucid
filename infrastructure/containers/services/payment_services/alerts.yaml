@@ -1,7 +1,7 @@
 # LUCID TRON Client - Prometheus Alert Rules
 # File: payment-systems/tron/config/alerts.yaml
 # Purpose: Define alert rules for tron-client service monitoring
-# Runtime (container): /app/configs/services/payment_services/alerts.yaml
+# Runtime (container): /app/service_configs/payment_services/alerts.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

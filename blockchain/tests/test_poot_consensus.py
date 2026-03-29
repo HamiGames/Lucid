@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/tests/test_poot_consensus.py
+x-lucid-file-path: /app/blockchain/tests/test_poot_consensus.py
+x-lucid-file-type: python
+
 Unit Tests for PoOT Consensus Engine
 Based on rebuild-blockchain-engine.md specifications
 
@@ -9,6 +13,8 @@ Tests PoOT consensus functionality:
 - Slot progression
 - MongoDB integration
 """
+
+
 
 import asyncio
 import pytest

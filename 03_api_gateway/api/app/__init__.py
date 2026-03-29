@@ -1,6 +1,9 @@
 """
+File: /app/03_api_gateway/api/app/__init__.py
+x-lucid-file-path: /app/03_api_gateway/api/app/__init__.py
+x-lucid-file-type: python
+
 API Gateway Application Package
-File: 03_api_gateway/api/app/__init__.py
 Purpose: Main application package initialization
 """
 from api.app.middleware.auth import AuthMiddleware

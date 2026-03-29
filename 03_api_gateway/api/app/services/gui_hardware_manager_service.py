@@ -1,8 +1,11 @@
 """
+File: /app/03_api_gateway/api/app/services/gui_hardware_manager_service.py
+x-lucid-file-path: /app/03_api_gateway/api/app/services/gui_hardware_manager_service.py
+x-lucid-file-type: python
+
 GUI Hardware Manager Service
 path: ..03_api_gateway.api.app.services.gui_hardware_manager_service.py
 alt_path: .....services.gui_hardware_manager_service.py
-File: 03_api_gateway/api/app/services/gui_hardware_manager_service.py
 Purpose: Service for handling GUI Hardware Manager integration and proxy operations
 """
 

@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/utils/rate_limiter.py
+x-lucid-file-path: /app/payment_systems/tron/utils/rate_limiter.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Client Rate Limiter Module
 Rate limiting implementation using token bucket algorithm
 Following architecture patterns from build/docs/

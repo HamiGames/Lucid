@@ -3,6 +3,10 @@
 # LUCID-STRICT Layer 1 Core Infrastructure
 
 """
+File: /app/node/flags/__init__.py
+x-lucid-file-path: /app/node/flags/__init__.py
+x-lucid-file-type: python
+
 Flags module for Lucid node operations.
 
 This module provides:

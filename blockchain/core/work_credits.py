@@ -1,5 +1,8 @@
-# Path: blockchain/core/work_credits.py
 """
+File: /app/blockchain/core/work_credits.py
+x-lucid-file-path: /app/blockchain/core/work_credits.py
+x-lucid-file-type: python
+
 PoOT Work Credits System
 
 Implements work credits calculation for Proof of Operational Tasks (PoOT) consensus
@@ -13,6 +16,9 @@ Work Credits Sources:
 
 Formula: W_t = max(S_t, ceil(B_t / BASE_MB_PER_SESSION))
 """
+
+# Path: blockchain/core/work_credits.py
+
 
 from __future__ import annotations
 

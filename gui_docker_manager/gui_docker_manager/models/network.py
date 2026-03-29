@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/network.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/network.py
+x-lucid-file-type: python
+
 Network Data Models
-File: gui_docker_manager/gui_docker_manager/models/network.py
 
 Models for Docker network management and information.
 """

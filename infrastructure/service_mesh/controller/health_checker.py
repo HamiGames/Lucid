@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/controller/health_checker.py
+x-lucid-file-path: /app/service_mesh/controller/health_checker.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Health Checker
 Monitors health of services in the mesh.
 
-File: infrastructure/service_mesh/controller/health_checker.py
 Lines: ~220
 Purpose: Health monitoring
 Dependencies: asyncio, aiohttp, consul

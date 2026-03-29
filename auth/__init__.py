@@ -1,4 +1,8 @@
 """
+File: /app/auth/__init__.py
+x-lucid-file-path: /app/auth/__init__.py
+x-lucid-file-type: python
+
 Lucid Authentication Service
 Cluster 09: Authentication
 Port: 8089

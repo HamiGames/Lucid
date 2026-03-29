@@ -3,6 +3,12 @@
 # Implements distributed leader selection for consensus protocols
 # LUCID-STRICT Layer 1 Core Infrastructure
 
+"""
+File: /app/node/consensus/leader_selection.py
+x-lucid-file-path: /app/node/consensus/leader_selection.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

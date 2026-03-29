@@ -1,8 +1,12 @@
 """
+File: /app/service_mesh/controller/main.py
+x-lucid-file-path: /app/service_mesh/controller/main.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Main Entry Point
 Service mesh controller for cross-cluster integration.
 
-File: infrastructure/service_mesh/controller/main.py
 Lines: ~200
 Purpose: Service mesh controller entry point
 Dependencies: asyncio, logging, config_manager, policy_engine, health_checker

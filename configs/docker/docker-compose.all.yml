@@ -2,7 +2,12 @@
 # Step 45: Docker Compose Configurations - Master File
 # Combines all phases: Foundation, Core, Application, Support
 
-version: "3.8"
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   # ===========================================
@@ -15,11 +20,11 @@ services:
     container_name: lucid-auth-service
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
     ports:
       - "8089:8089"
     environment:
@@ -36,8 +41,8 @@ services:
       - HARDWARE_WALLET_ENABLED=true
       - RBAC_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/auth:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/auth:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/auth:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/auth:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -62,11 +67,11 @@ services:
     container_name: lucid-mongodb
     restart: unless-stopped
     env_file:
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.foundation
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.secrets
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.core
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.application
-      - /mnt/myssd/Lucid/Lucid/configs/environment/.env.support
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.foundation
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.secrets
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.core
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.application
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/configs/environment/.env.support
     ports:
       - "27017:27017"
     environment:
@@ -74,8 +79,8 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}
       - MONGO_INITDB_DATABASE=lucid
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/mongodb:/data/db
-      - /mnt/myssd/Lucid/Lucid/data/mongodb-config:/data/configdb
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/mongodb:/data/db
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/mongodb-config:/data/configdb
       - ./database/init_collections.js:/docker-entrypoint-initdb.d/init_collections.js:ro
     networks:
       - lucid-pi-network
@@ -98,7 +103,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/redis:/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/redis:/data
       - ./configs/database/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - lucid-pi-network
@@ -125,7 +130,7 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/elasticsearch:/usr/share/elasticsearch/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/elasticsearch:/usr/share/elasticsearch/data
       - ./configs/database/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
       - lucid-pi-network
@@ -160,9 +165,9 @@ services:
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/storage:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/storage:/app/data
-      - /mnt/myssd/Lucid/Lucid/backups:/app/backups
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/storage:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/storage:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/backups:/app/backups
     networks:
       - lucid-pi-network
     depends_on:
@@ -203,8 +208,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-anchoring:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-anchoring:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-anchoring:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-anchoring:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -239,8 +244,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/block-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/block-manager:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/block-manager:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/block-manager:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -275,8 +280,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/data-chain:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/data-chain:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/data-chain:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/data-chain:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -318,7 +323,7 @@ services:
       - CORS_ENABLED=true
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/api-gateway:/app/logs
     networks:
       - lucid-pi-network
     depends_on:
@@ -358,8 +363,8 @@ services:
       - BLOCK_TIME_SECONDS=10
       - MAX_TRANSACTIONS_PER_BLOCK=1000
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/blockchain:/app/data
-      - /mnt/myssd/Lucid/Lucid/logs/blockchain:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/blockchain:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/blockchain:/app/logs
     networks:
       - lucid-pi-network
     depends_on:
@@ -399,8 +404,8 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/data/consul:/consul/data
-      - /mnt/myssd/Lucid/Lucid/logs/consul:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/consul:/consul/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/consul:/app/logs
     networks:
       - lucid-pi-network
     healthcheck:
@@ -438,8 +443,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-recorder:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-recorder:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-recorder:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-recorder:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -474,8 +479,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/chunk-processor:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/chunk-processor:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/chunk-processor:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/chunk-processor:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -510,8 +515,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-storage:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-storage:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-storage:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-storage:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -546,8 +551,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-api:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-api:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-api:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-api:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -582,8 +587,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-server-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/rdp-server-manager:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/rdp-server-manager:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/rdp-server-manager:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -618,8 +623,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-xrdp:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/rdp-xrdp:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/rdp-xrdp:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/rdp-xrdp:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -654,8 +659,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-controller:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/rdp-controller:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/rdp-controller:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/rdp-controller:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -690,8 +695,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/rdp-monitor:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/rdp-monitor:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/rdp-monitor:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/rdp-monitor:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -729,8 +734,8 @@ services:
       - CHUNK_SIZE_MB=10
       - COMPRESSION_LEVEL=6
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/session-pipeline:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/session-pipeline:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/session-pipeline:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/session-pipeline:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -768,8 +773,8 @@ services:
       - PAYOUT_PROCESSING_ENABLED=true
       - TRON_NETWORK=${TRON_NETWORK:-shasta}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/node-management:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/node-management:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/node-management:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/node-management:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -811,8 +816,8 @@ services:
       - AUDIT_LOGGING_ENABLED=true
       - EMERGENCY_CONTROLS_ENABLED=true
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/admin-interface:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/admin-interface:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/admin-interface:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/admin-interface:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -847,8 +852,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/payout-router:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/payout-router:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/payout-router:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payout-router:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -883,8 +888,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/wallet-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/wallet-manager:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/wallet-manager:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/wallet-manager:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -919,8 +924,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/usdt-manager:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/usdt-manager:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/usdt-manager:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/usdt-manager:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -955,8 +960,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/trx-staking:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/trx-staking:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/trx-staking:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/trx-staking:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -991,8 +996,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/payment-gateway:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/payment-gateway:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/payment-gateway:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/payment-gateway:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -1029,8 +1034,8 @@ services:
       - TRON_TESTNET_URL=${TRON_TESTNET_URL:-https://api.shasta.trongrid.io}
       - TRON_PRIVATE_KEY=${TRON_PRIVATE_KEY:?ERROR - TRON_PRIVATE_KEY must be set}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/tron-client:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tron-client:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tron-client:/app/data
     networks:
       - lucid-tron-isolated
     healthcheck:
@@ -1064,8 +1069,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/gui:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/gui:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/gui:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -1100,8 +1105,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/rdp:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/rdp:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/rdp:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/rdp:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -1136,8 +1141,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/vm:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/vm:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/vm:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/vm:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -1172,8 +1177,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/database:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/database:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/database:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/database:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -1208,8 +1213,8 @@ services:
       - MONGODB_URI=mongodb://lucid:${MONGODB_PASSWORD:?ERROR - MONGODB_PASSWORD must be set}@lucid-mongodb:27017/lucid?authSource=admin
       - REDIS_URI=redis://:${REDIS_PASSWORD:?ERROR - REDIS_PASSWORD must be set}@lucid-redis:6379/0
     volumes:
-      - /mnt/myssd/Lucid/Lucid/logs/storage:/app/logs
-      - /mnt/myssd/Lucid/Lucid/data/storage:/app/data
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/storage:/app/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/storage:/app/data
     networks:
       - lucid-pi-network
     depends_on:
@@ -1256,5 +1261,5 @@ networks:
 # =============================================================================
 # VOLUMES - Using Direct Host Paths on Pi
 # =============================================================================
-# All volumes are mounted directly to /mnt/myssd/Lucid on the Pi
+# Host bind paths use ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/ (Pi default).
 # No named volumes needed - using host path mounts for better performance

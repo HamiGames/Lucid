@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/models/service_group.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/models/service_group.py
+x-lucid-file-type: python
+
 Service Group Data Models
-File: gui_docker_manager/gui_docker_manager/models/service_group.py
 """
 
 from pydantic import BaseModel, Field

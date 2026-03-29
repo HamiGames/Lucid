@@ -1,7 +1,7 @@
 # LUCID TRON Client - Circuit Breaker Configuration
 # File: payment-systems/tron/config/circuit-breaker-config.yaml
 # Purpose: Define circuit breaker settings for resilient service calls
-# Runtime (container): /app/configs/services/payment_services/circuit-breaker-config.yaml
+# Runtime (container): /app/service_configs/payment_services/circuit-breaker-config.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

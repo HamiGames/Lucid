@@ -1,4 +1,8 @@
 """
+File: /app/blockchain/evm/__init__.py
+x-lucid-file-path: /app/blockchain/evm/__init__.py
+x-lucid-file-type: python
+
 EVM (Ethereum Virtual Machine) Components
 On-System Chain EVM-compatible client and utilities
 
@@ -8,6 +12,8 @@ This module provides:
 - Transaction monitoring and status checking
 - Gas estimation and circuit breakers
 """
+
+
 
 from .evm_client import EVMClient, ContractCall, ContractEvent, TransactionStatus
 from .gas_estimator import GasEstimator

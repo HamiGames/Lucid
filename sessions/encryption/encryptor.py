@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/encryption/encryptor.py
+x-lucid-file-path: /app/sessions/encryption/encryptor.py
+x-lucid-file-type: python
+
 LUCID Session Encryptor - SPEC-1B Implementation
 XChaCha20-Poly1305 per-chunk encryption with HKDF-BLAKE2b key derivation
 """

@@ -2,6 +2,12 @@
 # Implements comprehensive on-system chain client for session anchoring and data storage
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/blockchain/chain_client/on_system_chain_client.py
+x-lucid-file-path: /app/blockchain/chain_client/on_system_chain_client.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -24,7 +30,7 @@ from cryptography.hazmat.backends import default_backend
 import aiohttp
 import aiofiles
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Configuration from environment (required)
 ON_SYSTEM_CHAIN_RPC_URL = os.getenv("ON_SYSTEM_CHAIN_RPC") or os.getenv("ON_SYSTEM_CHAIN_RPC_URL")
@@ -40,7 +46,7 @@ GAS_PRICE_DEFAULT = 20000000000  # 20 gwei
 
 
 class ChainStatus(Enum):
-    """On-system chain status"""
+    """On-system chain status."""
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
     SYNCING = "syncing"

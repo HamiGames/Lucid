@@ -1,4 +1,8 @@
 """ Configuration for Lucid GUI services 
+file: /app/gui/config/config.py
+x-lucid-file-path: /app/gui/config/config.py
+x-lucid-file-type: python
+
 about this script:
 - hosts the core Classes for the GUI services
 - includes the config classes for the GUI services

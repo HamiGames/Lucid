@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/storage/chunk_store.py
+x-lucid-file-path: /app/sessions/storage/chunk_store.py
+x-lucid-file-type: python
+
 LUCID Chunk Store Service - Step 17 Implementation
 Handles chunk storage operations and file management
 """

@@ -1,4 +1,8 @@
 """
+File: /app/database/services/backup_service.py
+x-lucid-file-path: /app/database/services/backup_service.py
+x-lucid-file-type: python
+
 Backup Service for Lucid Database Infrastructure
 Provides backup and restore operations for MongoDB, Redis, and Elasticsearch.
 

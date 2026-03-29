@@ -1,4 +1,8 @@
 """
+File: /app/RDP/common/models.py
+x-lucid-file-path: /app/RDP/common/models.py
+x-lucid-file-type: python
+
 RDP Common Models - Shared Data Models
 
 This module contains shared data models used across RDP services.

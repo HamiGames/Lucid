@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/on_system_chain/chain_client.py
+x-lucid-file-path: /app/blockchain/on_system_chain/chain_client.py
+x-lucid-file-type: python
+
 LUCID On-System Data Chain Client - SPEC-1B Implementation
 Primary blockchain client for On-System Data Chain (EVM-compatible)
 LucidAnchors, LucidChunkStore, manifest builder, anchoring system
 """
+
+
 
 import asyncio
 import hashlib

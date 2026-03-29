@@ -32,6 +32,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         curl \
         ca-certificates \
         tini \
@@ -47,7 +48,6 @@ RUN printf "LUCID_NODE_OVERLORD_RUNTIME_DIRECTORY" > /var/run/.keep && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
 WORKDIR /build
-RUN mkdir -p /build/configs /build/overlord /build/host /build/infrastructure/kubernetes /build/configs/services /build/configs/operations /build/wheels
 
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
@@ -60,29 +60,90 @@ COPY infrastructure/containers/overlord/runtime/requirements.txt /build/overlord
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r /build/overlord/requirements.txt && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r /build/overlord/requirements.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './node' './overlord' './service_configs' './sessions' './configs/docker' './node/api' './node/config' './node/consensus' './node/dht_crdt' './node/economy' './node/flags' './node/governance' './node/models' './node/over_lord' './node/payouts' './node/pools' './node/poot' './node/registration' './node/repositories' './node/resources' './node/shards' './node/sync' './node/tor' './node/validation' './node/worker' './overlord/templates' './service_configs/operations' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config'; \
+    for d in \
+      '.' \
+      './configs' \
+      './node' \
+      './overlord' \
+      './service_configs' \
+      './sessions' \
+      './configs/docker' \
+      './node/api' \
+      './node/config' \
+      './node/consensus' \
+      './node/dht_crdt' \
+      './node/economy' \
+      './node/flags' \
+      './node/governance' \
+      './node/models' \
+      './node/over_lord' \
+      './node/payouts' \
+      './node/pools' \
+      './node/poot' \
+      './node/registration' \
+      './node/repositories' \
+      './node/resources' \
+      './node/shards' \
+      './node/sync' \
+      './node/tor' \
+      './node/validation' \
+      './node/worker' \
+      './overlord/templates' \
+      './service_configs/operations' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
-RUN printf "LUCID_NODE_OVERLORD_MARKER_$(date +%s)" > /usr/local/lib/python3.11/site-packages/.lucid-overlord-marker && \
-    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.lucid-overlord-marker
+RUN printf "LUCID_NODE_OVERLORD_RUNTIME_DIRECTORY" > /usr/local/lib/python3.11/site-packages/.keep && \
+    chown 65532:65532 /usr/local/lib/python3.11/site-packages/.keep
 
-COPY infrastructure/containers/overlord/runtime/entrypoint.py /build/overlord/entrypoint.py
-COPY infrastructure/containers/overlord/runtime/app.py /build/overlord/app.py
-COPY infrastructure/containers/overlord/runtime/trigger_engine.py /build/overlord/trigger_engine.py
-COPY infrastructure/containers/overlord/runtime/templates/ /build/overlord/templates/
+COPY infrastructure/containers/overlord/runtime/entrypoint.py ./overlord/entrypoint.py
+COPY infrastructure/containers/overlord/runtime/app.py ./overlord/app.py
+COPY infrastructure/containers/overlord/runtime/trigger_engine.py ./overlord/trigger_engine.py
+COPY infrastructure/containers/overlord/runtime/templates/ ./overlord/templates/
 
-RUN mkdir -p /build/overlord/configs/environment && \
-    echo "LUCID_NODE_OVERLORD_ENV_DIR" > /build/overlord/configs/environment/.keep
 
-COPY node/over_lord /build/node_over_lord
+COPY node/ ./node/
+COPY node/over_lord/ ./overlord/
+COPY sessions/ ./sessions/
 
-COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
-COPY infrastructure/kubernetes/01_configmaps/database-config.yaml /build/infrastructure/kubernetes/database-config.yaml
-COPY infrastructure/kubernetes/01_configmaps/api-gateway-config.yaml /build/infrastructure/kubernetes/api-gateway-config.yaml
-COPY infrastructure/containers/services/node/docker-compose.node-management.yml /build/configs/operations/docker-compose.node-management.yml
-COPY infrastructure/containers/node/docker-compose.node-data-system.yml /build/configs/docker-compose.node-data-system.yml
-COPY infrastructure/containers/node/docker-compose.node-sessions.yml /build/configs/docker-compose.node-sessions.yml
 
-RUN chown -R 65532:65532 /build/overlord /build/node_over_lord /build/host /build/infrastructure/kubernetes /build/configs
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml ./service_configs/container-runtime-layout.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/application-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/application-cluster-host-alignment.yml
+COPY service_configs/kubernetes/01_configmaps/database-config.yaml ./configs/database-config.yaml
+COPY service_configs/kubernetes/01_configmaps/api-gateway-config.yaml ./configs/api-gateway-config.yaml
+COPY infrastructure/containers/services/node/docker-compose.node-management.yml ./service_configs/operations/docker-compose.node-management.yml
+COPY infrastructure/containers/node/docker-compose.node-data-system.yml ./service_configs/docker-compose.node-data-system.yml
+COPY infrastructure/containers/node/docker-compose.node-sessions.yml ./service_configs/docker-compose.node-sessions.yml
+
+RUN chown -R 65532:65532 /build/overlord ./node ./service_configs /build/kubernetes /build/configs
 
 RUN /usr/local/bin/python3 -c "import fastapi, uvicorn, yaml; print('✅ overlord deps ok')" && \
     PYTHONPATH=/build/overlord /usr/local/bin/python3 -c "import trigger_engine; print('✅ trigger_engine ok')"
@@ -113,6 +174,22 @@ LABEL maintainer="Lucid Development Team" \
 
 WORKDIR /app
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -120,7 +197,7 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=node_overlord \
     LUCID_SERVICE_HOST_IP=172.20.10.32 \
     LUCID_SERVICE_HTTP_PATH=http://node-overlord:8130/app \
@@ -134,6 +211,28 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     OVERLORD_TRIGGERS_PATH=/app/over_lord/triggers.yaml \
     API_GATEWAY_HOST=api-gateway \
     API_GATEWAY_PORT=8080
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/node/ /app/node/
+COPY --from=builder --chown=65532:65532 /build/overlord/ /app/overlord/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -149,18 +248,18 @@ COPY --from=builder /usr/sbin/ /app/usr/sbin/
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
 
 COPY --from=builder --chown=65532:65532 /build/overlord/entrypoint.py /build/overlord/app.py /build/overlord/trigger_engine.py /app/
-COPY --from=builder --chown=65532:65532 /build/overlord/templates/ /app/templates/
-COPY --from=builder --chown=65532:65532 /build/overlord/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/overlord/templates/ /app/overlord/templates/
+COPY --from=builder --chown=65532:65532 /build/overlord/configs/ /app/overlord/configs/
 
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/database-config.yaml /app/infrastructure/kubernetes/database-config.yaml
-COPY --from=builder --chown=65532:65532 /build/infrastructure/kubernetes/api-gateway-config.yaml /app/infrastructure/kubernetes/api-gateway-config.yaml
-COPY --from=builder --chown=65532:65532 /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/configs/database-config.yaml /app/configs/database-config.yaml
+COPY --from=builder --chown=65532:65532 /build/configs/api-gateway-config.yaml /app/configs/api-gateway-config.yaml
+COPY --from=builder --chown=65532:65532 /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/application-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/application-cluster-host-alignment.yml
 COPY --from=builder --chown=65532:65532 /build/configs/operations/docker-compose.node-management.yml /app/configs/operations/docker-compose.node-management.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-data-system.yml /app/configs/docker-compose.node-data-system.yml
 COPY --from=builder --chown=65532:65532 /build/configs/docker-compose.node-sessions.yml /app/configs/docker-compose.node-sessions.yml
 
-COPY --from=builder --chown=65532:65532 /build/node_over_lord /app/over_lord
+COPY --from=builder --chown=65532:65532 /build/node_over_lord /app/node_over_lord
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os; import fastapi, uvicorn, yaml; \
 assert os.path.isfile('/app/host/host-config.yml'); print('✅ node-overlord runtime deps ok')"]

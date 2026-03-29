@@ -2,6 +2,12 @@
 # Implements hardware wallet integration for secure key management
 # LUCID-STRICT Layer 2 Service Integration
 
+"""
+File: /app/wallet/walletd/hardware_wallet.py
+x-lucid-file-path: /app/wallet/walletd/hardware_wallet.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

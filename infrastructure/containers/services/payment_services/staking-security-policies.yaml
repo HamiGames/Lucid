@@ -1,7 +1,7 @@
 # LUCID TRON Staking Service - Security Policies Configuration
 # File: payment-systems/tron/config/staking-security-policies.yaml
 # Purpose: Security, compliance, and operational policies for staking service
-# Runtime (container): /app/configs/services/payment_services/staking-security-policies.yaml
+# Runtime (container): /app/service_configs/payment_services/staking-security-policies.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

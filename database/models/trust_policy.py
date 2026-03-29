@@ -1,4 +1,8 @@
 """
+File: /app/database/models/trust_policy.py
+x-lucid-file-path: /app/database/models/trust_policy.py
+x-lucid-file-type: python
+
 Trust Policy Data Models
 
 Pydantic models for trust policy entities in the Lucid system.

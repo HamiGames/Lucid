@@ -2,6 +2,15 @@
 # Phase 4: Payment Systems (TRON Integration, Payment Governance, Distribution)
 # Aligned with essentials.md and service-ip-configuration.md
 # Project Root: /mnt/myssd/Lucid/Lucid/
+# Paths in this file are relative to: infrastructure/compose/
+# master-env-config.txt is bind-mounted to /app/configs/.env.master (runtime; matches Dockerfiles).
+# configs/environment/.env.secrets is bind-mounted to /app/configs/.env.secrets and listed in env_file for Compose.
+# Do not list master-env-config.txt in env_file: Compose interpolates ${...} and breaks on required placeholders.
+# Optional per-service env fragments (e.g. .env.node): bind-mount from configs/environment/ into /app/configs/ when present; omitted from env_file so compose does not require those files on the host.
+# Host registry: infrastructure/containers/host-config.yml -> /app/service_configs/host-config.yml (x-lucid-file-path).
+# Packaged service configs tree: infrastructure/containers/services/ -> /app/service_configs/ (container-runtime-layout.yml).
+# Build references: infrastructure/containers/<stack>/Dockerfile* (repo root build context).
+
 
 services:
   # TRON Client - Main TRON integration service
@@ -13,9 +22,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-client
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -41,6 +48,11 @@ services:
       - RATE_LIMIT_REQUESTS=100
       - RATE_LIMIT_WINDOW=60
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/tron:/data/tron:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:rw
       - /mnt/myssd/Lucid/Lucid/logs/tron-client:/app/logs:rw
@@ -85,9 +97,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-payout-router
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -114,6 +124,11 @@ services:
       - RATE_LIMIT_REQUESTS=100
       - RATE_LIMIT_WINDOW=60
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/payments:/data/payouts:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
       - /mnt/myssd/Lucid/Lucid/data/batches:/data/batches:rw
@@ -161,9 +176,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-wallet-manager
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -190,6 +203,11 @@ services:
       - RATE_LIMIT_REQUESTS=100
       - RATE_LIMIT_WINDOW=60
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/wallets:/data/wallets:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
       - /mnt/myssd/Lucid/Lucid/logs/wallet-manager:/app/logs:rw
@@ -236,9 +254,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-usdt-manager
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -265,6 +281,11 @@ services:
       - RATE_LIMIT_REQUESTS=100
       - RATE_LIMIT_WINDOW=60
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/usdt:/data/usdt:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
       - /mnt/myssd/Lucid/Lucid/logs/usdt-manager:/app/logs:rw
@@ -311,9 +332,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-staking
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -339,6 +358,11 @@ services:
       - RATE_LIMIT_REQUESTS=100
       - RATE_LIMIT_WINDOW=60
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/staking:/data/staking:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
       - /mnt/myssd/Lucid/Lucid/logs/trx-staking:/app/logs:rw
@@ -385,9 +409,7 @@ services:
     pull_policy: always
     restart: unless-stopped
     env_file:
-      - /app/configs/.env.master
-      - /app/configs/.env.secrets
-      - /app/usr/config/.env.tron-payment-gateway
+      - ../../configs/environment/.env.secrets
     environment:
       - LUCID_ENV=production
       - LUCID_PLATFORM=arm64
@@ -417,6 +439,11 @@ services:
       - RATE_LIMIT_REQUESTS=100
       - RATE_LIMIT_WINDOW=60
     volumes:
+      - ../../master-env-config.txt:/app/configs/.env.master:ro
+      - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
+      - ../../infrastructure/containers/services:/app/service_configs:ro
+      - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
+
       - /mnt/myssd/Lucid/Lucid/data/gateway:/data/gateway:rw
       - /mnt/myssd/Lucid/Lucid/data/keys:/data/keys:ro
       - /mnt/myssd/Lucid/Lucid/logs/payment-gateway:/app/logs:rw
@@ -464,11 +491,6 @@ networks:
   lucid-pi-network:
     external: true
     name: lucid-pi-network
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
 
 volumes:
   tron_data:

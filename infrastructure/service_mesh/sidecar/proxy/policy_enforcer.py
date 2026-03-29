@@ -1,9 +1,12 @@
 """
+File: /app/service_mesh/sidecar/proxy/policy_enforcer.py
+x-lucid-file-path: /app/service_mesh/sidecar/proxy/policy_enforcer.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh - Policy Enforcer
 Enforces service mesh policies on sidecar proxies.
 
-File: infrastructure/service_mesh/sidecar/proxy/policy_enforcer.py
-Lines: ~300
 Purpose: Policy enforcement
 Dependencies: asyncio, yaml, envoy
 """

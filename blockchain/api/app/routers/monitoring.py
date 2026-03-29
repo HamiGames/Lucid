@@ -1,9 +1,15 @@
 """
+File: /app/blockchain/api/app/routers/monitoring.py
+x-lucid-file-path: /app/blockchain/api/app/routers/monitoring.py
+x-lucid-file-type: python
+
 Monitoring Router
 
 This module contains monitoring and metrics endpoints.
 Provides health checks, metrics, and system monitoring capabilities.
 """
+
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any

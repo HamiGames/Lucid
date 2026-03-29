@@ -1,4 +1,8 @@
 """
+File: /app/database/models/session.py
+x-lucid-file-path: /app/database/models/session.py
+x-lucid-file-type: python
+
 Session Data Models
 
 Pydantic models for session entities in the Lucid system.

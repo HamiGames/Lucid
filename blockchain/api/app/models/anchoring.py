@@ -1,7 +1,13 @@
 """
+File: /app/blockchain/api/app/models/anchoring.py
+x-lucid-file-path: /app/blockchain/api/app/models/anchoring.py
+x-lucid-file-type: python
+
 Anchoring Data Models
 Pydantic models for session anchoring, Merkle trees, and related structures.
 """
+
+
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional

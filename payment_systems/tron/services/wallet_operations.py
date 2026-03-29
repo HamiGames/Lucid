@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/wallet_operations.py
+x-lucid-file-path: /app/payment_systems/tron/services/wallet_operations.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - Wallet Operations Coordinator Service
 High-level operations coordinating multiple services
 Distroless container: lucid-tron-wallet-manager:latest

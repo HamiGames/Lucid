@@ -2,6 +2,12 @@
 # Lucid RDP Node Vote Systems - Comprehensive governance voting separate from consensus
 # Based on LUCID-STRICT requirements per Spec-1c
 
+"""
+File: /app/node/governance/node_vote_systems.py
+x-lucid-file-path: /app/node/governance/node_vote_systems.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

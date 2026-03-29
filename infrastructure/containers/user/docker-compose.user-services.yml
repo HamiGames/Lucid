@@ -1,6 +1,6 @@
 # User Services Docker Compose — user-plane mesh
 # Path (repo): infrastructure/containers/user/docker-compose.user-services.yml
-# Container path note: service definitions align with /app/configs/services/*.yml (container-runtime-layout.yml).
+# Container path note: service definitions align with /app/service_configs/*.yml (container-runtime-layout.yml).
 #
 # Required stack behavior (header spec):
 # - Mesh user-facing entry via api-gateway (api-gateway.yml; hostname api-gateway @ host-config main_lucid_gateway)

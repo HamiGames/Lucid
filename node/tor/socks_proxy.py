@@ -1,4 +1,8 @@
 """
+File: /app/node/tor/socks_proxy.py
+x-lucid-file-path: /app/node/tor/socks_proxy.py
+x-lucid-file-type: python
+
 LUCID Node Tor - SOCKS Proxy Management
 Handles SOCKS proxy connections, tunneling, and network routing
 Distroless container: pickme/lucid:node-worker:latest

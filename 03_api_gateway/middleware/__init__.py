@@ -1,7 +1,10 @@
 """
+File: /app/03_api_gateway/middleware/__init__.py
+x-lucid-file-path: /app/03_api_gateway/middleware/__init__.py
+x-lucid-file-type: python
+
 Lucid API Gateway - Middleware Package
 Path: ..middleware
-File: 03_api_gateway/middleware/__init__.py
 Purpose: Re-exports middleware from api/app/middleware for backwards compatibility.
 
 Note: Primary middleware implementations are in api/app/middleware/

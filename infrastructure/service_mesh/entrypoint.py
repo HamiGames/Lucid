@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 """
+File: /app/service_mesh/entrypoint.py
+x-lucid-file-path: /app/service_mesh/entrypoint.py
+x-lucid-file-directory: /app/service_mesh
+x-lucid-file-type: python
+
 Lucid Service Mesh Controller - Entrypoint Script
 Distroless-compatible entrypoint that ensures proper Python path setup
 """

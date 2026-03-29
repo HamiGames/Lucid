@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/api/wallets.py
+x-lucid-file-path: /app/payment_systems/tron/api/wallets.py
+x-lucid-file-type: python
+
 LUCID Payment Systems - TRON Wallets API
 Wallet management and operations
 Distroless container: lucid-tron-payment-service:latest

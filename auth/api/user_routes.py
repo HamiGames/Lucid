@@ -1,4 +1,8 @@
 """
+File: /app/auth/api/user_routes.py
+x-lucid-file-path: /app/auth/api/user_routes.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - User Routes
 GET /users/{user_id}, PUT /users/{user_id}, etc.
 """

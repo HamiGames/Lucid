@@ -4,6 +4,12 @@
 # Emergency controls system for the Lucid admin interface.
 # Provides emergency response capabilities and system lockdown.
 
+"""
+File: /app/admin/emergency/__init__.py
+x-lucid-file-path: /app/admin/emergency/__init__.py
+x-lucid-file-type: python
+"""
+
 from admin.emergency.controls import (EmergencyControls, EmergencyAction, EmergencyStatus, 
                                       EmergencySeverity, EmergencyControl, EmergencyEvent,
                                       get_emergency_controls )

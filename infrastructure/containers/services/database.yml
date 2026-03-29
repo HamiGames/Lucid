@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/database.yml — see container-runtime-layout.yml
+# Runtime (container): /app/service_configs/database.yml — see container-runtime-layout.yml
 # Database Service Configuration
 # This file contains configuration for all database services in the Lucid system
 # Docker DNS: lucid-mongodb:27017, lucid-redis:6379, lucid-elasticsearch-http:9200 — host-config.yml (lucid_mongodb, lucid_redis, lucid_elasticsearch_http)

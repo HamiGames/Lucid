@@ -2,6 +2,12 @@
 # Lucid RDP User Client - Main user interface for RDP connections
 # Based on LUCID-STRICT requirements per Spec-1a, Spec-1c
 
+"""
+File: /app/user_content/client/user_client.py
+x-lucid-file-path: /app/user_content/client/user_client.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import os

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/blockchain/governance/integrate_timelock.py
+x-lucid-file-path: /app/blockchain/governance/integrate_timelock.py
+x-lucid-file-type: python
+
 Timelock Governance Integration Script
 
 This script integrates the timelock governance system with the existing
@@ -8,6 +12,8 @@ Lucid RDP blockchain components and ensures proper spin-up.
 Author: Lucid RDP Team
 Version: 1.0.0
 """
+
+
 
 import asyncio
 import logging

@@ -1,4 +1,8 @@
 """
+File: /app/gui_hardware_manager/gui_hardware_manager/config.py
+x-lucid-file-path: /app/gui_hardware_manager/gui_hardware_manager/config.py
+x-lucid-file-type: python
+
 Configuration Management for GUI Hardware Manager
 Uses Pydantic Settings for environment variable validation
 Aligned with docker-compose.gui-integration.yml naming conventions

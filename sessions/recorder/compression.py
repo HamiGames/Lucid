@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/recorder/compression.py
+x-lucid-file-path: /app/sessions/recorder/compression.py
+x-lucid-file-type: python
+
 Lucid Session Management Compression Module
 Handles compression of session chunks with gzip level 6
 """

@@ -31,7 +31,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -42,6 +41,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -116,6 +116,96 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r ./requirements.txt && \
     echo "wheel build complete" && \
     echo "total wheels built: $(ls -1 /build/wheels/ | wc -l)"
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './blockchain' './configs' './database' './service_configs' './sessions' './blockchain/anchoring' './blockchain/api' './blockchain/chain-to-pay' './blockchain/chain_client' './blockchain/config' './blockchain/contracts' './blockchain/core' './blockchain/data' './blockchain/deployment' './blockchain/docs' './blockchain/evm' './blockchain/governance' './blockchain/manager' './blockchain/on_system_chain' './blockchain/scripts' './blockchain/tests' './blockchain/utils' './configs/docker' './database/api' './database/config' './database/elasticsearch' './database/models' './database/mongodb' './database/redis' './database/repositories' './database/schema' './database/schemas' './database/services' './service_configs/blockchain' './service_configs/distroless' './service_configs/logging' './service_configs/multi-stage' './service_configs/node' './service_configs/payment_services' './service_configs/rdp' './service_configs/security' './service_configs/service_mesh' './service_configs/sessions' './service_configs/x_lucid_cluster_calibration' './sessions/api' './sessions/config' './sessions/core' './sessions/encryption' './sessions/integration' './sessions/pipeline' './sessions/processor' './sessions/recorder' './sessions/security' './sessions/session_systems_control' './sessions/storage' './blockchain/api/app' './blockchain/data/api' './database/services/backup' './database/services/migration' './database/services/monitoring' './sessions/api/config' './sessions/api/integration' './sessions/pipeline/integration' './sessions/processor/config' './sessions/processor/integration' './sessions/recorder/config' './sessions/recorder/integration' './sessions/storage/config' './blockchain/api/app/crypto' './blockchain/api/app/database' './blockchain/api/app/db' './blockchain/api/app/middleware' './blockchain/api/app/models' './blockchain/api/app/repo' './blockchain/api/app/routers' './blockchain/api/app/routes' './blockchain/api/app/schemas' './blockchain/api/app/services' './blockchain/api/app/database/repositories'; \
+    for d in \
+      '.' \
+      './blockchain' \
+      './configs' \
+      './database' \
+      './service_configs' \
+      './sessions' \
+      './blockchain/anchoring' \
+      './blockchain/api' \
+      './blockchain/chain-to-pay' \
+      './blockchain/chain_client' \
+      './blockchain/config' \
+      './blockchain/contracts' \
+      './blockchain/core' \
+      './blockchain/data' \
+      './blockchain/deployment' \
+      './blockchain/docs' \
+      './blockchain/evm' \
+      './blockchain/governance' \
+      './blockchain/manager' \
+      './blockchain/on_system_chain' \
+      './blockchain/scripts' \
+      './blockchain/tests' \
+      './blockchain/utils' \
+      './configs/docker' \
+      './database/api' \
+      './database/config' \
+      './database/elasticsearch' \
+      './database/models' \
+      './database/mongodb' \
+      './database/redis' \
+      './database/repositories' \
+      './database/schema' \
+      './database/schemas' \
+      './database/services' \
+      './service_configs/blockchain' \
+      './service_configs/distroless' \
+      './service_configs/logging' \
+      './service_configs/multi-stage' \
+      './service_configs/node' \
+      './service_configs/payment_services' \
+      './service_configs/rdp' \
+      './service_configs/security' \
+      './service_configs/service_mesh' \
+      './service_configs/sessions' \
+      './service_configs/x_lucid_cluster_calibration' \
+      './sessions/api' \
+      './sessions/config' \
+      './sessions/core' \
+      './sessions/encryption' \
+      './sessions/integration' \
+      './sessions/pipeline' \
+      './sessions/processor' \
+      './sessions/recorder' \
+      './sessions/security' \
+      './sessions/session_systems_control' \
+      './sessions/storage' \
+      './blockchain/api/app' \
+      './blockchain/data/api' \
+      './database/services/backup' \
+      './database/services/migration' \
+      './database/services/monitoring' \
+      './sessions/api/config' \
+      './sessions/api/integration' \
+      './sessions/pipeline/integration' \
+      './sessions/processor/config' \
+      './sessions/processor/integration' \
+      './sessions/recorder/config' \
+      './sessions/recorder/integration' \
+      './sessions/storage/config' \
+      './blockchain/api/app/crypto' \
+      './blockchain/api/app/database' \
+      './blockchain/api/app/db' \
+      './blockchain/api/app/middleware' \
+      './blockchain/api/app/models' \
+      './blockchain/api/app/repo' \
+      './blockchain/api/app/routers' \
+      './blockchain/api/app/routes' \
+      './blockchain/api/app/schemas' \
+      './blockchain/api/app/services' \
+      './blockchain/api/app/database/repositories' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN echo "installing wheels into system python" && \
     pip install --no-cache-dir --no-index --find-links /build/wheels -r ./requirements.txt && \
@@ -126,28 +216,6 @@ RUN echo "=== Verifying pip installation (merkle tree builder / processor stack)
     test -d /usr/local/lib/python3.11/site-packages && \
     pip list
 
-RUN mkdir -p ./sessions ./sessions/pipeline ./sessions/core ./sessions/encryption ./sessions/api ./sessions/config \
-    ./sessions/integration ./sessions/security ./sessions/storage ./sessions/recorder ./sessions/processor \
-    ./blockchain ./blockchain/data ./blockchain/data/api ./database ./config ./tmp && \
-    printf "LUCID_SESSIONS_DIRECTORY_$(date +%s)" > ./sessions/.keep && touch ./sessions/.keep && \
-    printf "LUCID_SESSIONS_PIPELINE_DIRECTORY_$(date +%s)" > ./sessions/pipeline/.keep && touch ./sessions/pipeline/.keep && \
-    printf "LUCID_SESSIONS_CORE_DIRECTORY_$(date +%s)" > ./sessions/core/.keep && touch ./sessions/core/.keep && \
-    printf "LUCID_SESSIONS_ENCRYPTION_DIRECTORY_$(date +%s)" > ./sessions/encryption/.keep && touch ./sessions/encryption/.keep && \
-    printf "LUCID_SESSIONS_API_DIRECTORY_$(date +%s)" > ./sessions/api/.keep && touch ./sessions/api/.keep && \
-    printf "LUCID_SESSIONS_CONFIG_DIRECTORY_$(date +%s)" > ./sessions/config/.keep && touch ./sessions/config/.keep && \
-    printf "LUCID_SESSIONS_INTEGRATION_DIRECTORY_$(date +%s)" > ./sessions/integration/.keep && touch ./sessions/integration/.keep && \
-    printf "LUCID_SESSIONS_SECURITY_DIRECTORY_$(date +%s)" > ./sessions/security/.keep && touch ./sessions/security/.keep && \
-    printf "LUCID_SESSIONS_STORAGE_DIRECTORY_$(date +%s)" > ./sessions/storage/.keep && touch ./sessions/storage/.keep && \
-    printf "LUCID_SESSIONS_RECORDER_DIRECTORY_$(date +%s)" > ./sessions/recorder/.keep && touch ./sessions/recorder/.keep && \
-    printf "LUCID_SESSIONS_PROCESSOR_DIRECTORY_$(date +%s)" > ./sessions/processor/.keep && touch ./sessions/processor/.keep && \
-    printf "LUCID_BLOCKCHAIN_DIRECTORY_$(date +%s)" > ./blockchain/.keep && touch ./blockchain/.keep && \
-    printf "LUCID_BLOCKCHAIN_DATA_DIRECTORY_$(date +%s)" > ./blockchain/data/.keep && touch ./blockchain/data/.keep && \
-    printf "LUCID_BLOCKCHAIN_DATA_API_DIRECTORY_$(date +%s)" > ./blockchain/data/api/.keep && touch ./blockchain/data/api/.keep && \
-    printf "LUCID_DATABASE_DIRECTORY_$(date +%s)" > ./database/.keep && touch ./database/.keep && \
-    printf "LUCID_CONFIG_DIRECTORY_$(date +%s)" > ./config/.keep && touch ./config/.keep && \
-    printf "LUCID_MERKLE_TREE_BUILDER_TMP_$(date +%s)" > ./tmp/.keep && touch ./tmp/.keep && \
-    chown -R 65532:65532 ./sessions ./blockchain ./database ./config ./tmp && \
-    chmod 644 ./sessions/.keep ./tmp/.keep ./config/.keep ./database/.keep ./blockchain/.keep
 
 COPY sessions/pipeline/ ./sessions/pipeline/
 COPY sessions/processor/ ./sessions/processor/
@@ -163,17 +231,16 @@ COPY sessions/__init__.py ./sessions/__init__.py
 
 COPY blockchain/ ./blockchain/
 COPY database/ ./database/
-RUN mkdir -p ./host ./config
-COPY infrastructure/containers/services/ ./configs/services/
+COPY infrastructure/containers/services/ ./service_configs/
 COPY master-env-config.txt ./configs/.env.master
 COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY infrastructure/containers/host-config.yml ./host/host-config.yml
-RUN cp -f ./configs/services/session-management.yml ./config/session-management.yml
+COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/services/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
+RUN cp -f ./service_configs/session-management.yml ./config/session-management.yml
 
 RUN test -d ./sessions/pipeline && test -d ./blockchain && test -f ./config/session-management.yml && \
     python3.11 -c "import sys; sys.path.insert(0, '/build'); import os; assert os.path.isdir('/build/sessions/processor'); print('✅ Merkle builder source tree OK')"
 
-RUN mkdir -p /build/tmp
 
 COPY <<'PY' /build/tmp/verify_runtime.py
 import os
@@ -187,7 +254,7 @@ dirs = [
     "/app/blockchain",
     "/app/database",
     "/app/config",
-    "/app/configs/services",
+    "/app/service_configs",
     "/app/usr/local/lib/python3.11/site-packages",
     "/app/wheels",
 ]
@@ -198,11 +265,11 @@ for d in dirs:
     if d.endswith("site-packages") and not os.listdir(d):
         print(f"ERROR: {d} empty")
         sys.exit(1)
-for cfg in ("/app/config/session-management.yml", "/app/configs/services/session-management.yml"):
+for cfg in ("/app/config/session-management.yml", "/app/service_configs/session-management.yml"):
     if not os.path.isfile(cfg) or os.path.getsize(cfg) <= 0:
         print(f"ERROR: {cfg} missing or empty")
         sys.exit(1)
-layout = "/app/configs/services/container-runtime-layout.yml"
+layout = "/app/service_configs/container-runtime-layout.yml"
 if not os.path.isfile(layout) or os.path.getsize(layout) <= 0:
     print(f"ERROR: {layout} missing or empty")
     sys.exit(1)
@@ -215,6 +282,22 @@ PY
 FROM --platform=$TARGETPLATFORM gcr.io/distroless/python3-debian12:latest
 
 WORKDIR /app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -238,18 +321,37 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml \
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=session_merkle_tree_builder \
     LUCID_SERVICE_HOST_IP=172.20.10.15 \
     LUCID_SERVICE_HTTP_PATH=http://session-merkle-tree-builder:8092/app \
     MERKLE_PORT=8092 \
     SESSION_PROCESSOR_HOST=0.0.0.0 \
     SESSION_PROCESSOR_PORT=8092
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
+COPY --from=builder --chown=65532:65532 /build/service_configs/ /app/service_configs/
+COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /root/ /app/root/
+COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
-COPY --from=builder --chown=65532:65532 /build/configs/services/ /app/configs/services/
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
@@ -260,11 +362,8 @@ COPY --from=builder /usr/bin/ /app/usr/bin/
 COPY --from=builder /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/ /app/wheels/
-COPY --from=builder --chown=65532:65532 /build/sessions/ /app/sessions/
-COPY --from=builder --chown=65532:65532 /build/blockchain/ /app/blockchain/
-COPY --from=builder --chown=65532:65532 /build/database/ /app/database/
 COPY --from=builder --chown=65532:65532 /build/config/session-management.yml /app/config/session-management.yml
-COPY --from=builder --chown=65532:65532 /build/host/host-config.yml /app/host/host-config.yml
+COPY --from=builder --chown=65532:65532 /build/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml /app/service_configs/x_lucid_cluster_calibration/processing-cluster-host-alignment.yml
 COPY --from=builder --chown=65532:65532 /build/tmp/verify_runtime.py /app/tmp/verify_runtime.py
 
 RUN ["/app/usr/bin/python3.11", "-c", "import os, blake3, zstandard, lz4, fastapi, uvicorn; sp='/app/usr/local/lib/python3.11/site-packages'; assert os.path.isdir(sp) and os.listdir(sp); print('✅ Runtime site-packages OK')"]
@@ -275,7 +374,7 @@ assert os.path.isdir('/app/sessions/processor'), 'sessions/processor missing'; \
 assert os.path.isfile('/app/sessions/processor/main.py'), 'processor main missing'; \
 assert os.path.isfile('/app/sessions/pipeline/merkle_tree_builder.py'), 'merkle_tree_builder.py missing'; \
 assert os.path.isfile('/app/config/session-management.yml'), 'session-management.yml missing'; \
-assert os.path.isfile('/app/configs/services/session-management.yml'), 'services/session-management.yml missing'; \
+assert os.path.isfile('/app/service_configs/session-management.yml'), 'services/session-management.yml missing'; \
 assert os.path.isdir('/app/blockchain'), 'blockchain missing'; \
 print('✅ Merkle tree builder application paths verified')"]
 

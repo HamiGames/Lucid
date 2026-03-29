@@ -31,7 +31,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -42,6 +41,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update --allow-releaseinfo-change && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -96,6 +96,19 @@ COPY database/elasticsearch/requirements.txt ./requirements.elasticsearch.txt
 # Skip unsupported packages (e.g. pymongo-backup on Python 3.11 arm64).
 RUN --mount=type=cache,target=/root/.cache/pip \
     python3.11 <<'PY'
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 import subprocess
 import sys
 from pathlib import Path
@@ -132,35 +145,6 @@ RUN echo "=== Verifying pip installation (database stack) ===" && \
     echo "Package count: $(ls -1 /usr/local/lib/python3.11/site-packages/ | wc -l)" && \
     pip list
 
-RUN mkdir -p ./database ./database/services ./database/services/monitoring ./common ./common/governance ./common/tor ./database/schemas ./database/models ./database/services/backup ./database/mongodb ./database/redis ./database/elasticsearch ./tmp && \
-    printf "LUCID_DATABASE_APP_$(date +%s)" > ./database/.keep && \
-    touch ./database/.keep && \
-    printf "LUCID_DATABASE_SERVICES_$(date +%s)" > ./database/services/.keep && \
-    touch ./database/services/.keep && \
-    printf "LUCID_DATABASE_SERVICES_MONITORING_$(date +%s)" > ./database/services/monitoring/.keep && \
-    touch ./database/services/monitoring/.keep && \
-    printf "LUCID_DATABASE_COMMON_$(date +%s)" > ./common/.keep && \
-    touch ./common/.keep && \
-    printf "LUCID_DATABASE_COMMON_GOVERNANCE_$(date +%s)" > ./common/governance/.keep && \
-    touch ./common/governance/.keep && \
-    printf "LUCID_DATABASE_COMMON_TOR_$(date +%s)" > ./common/tor/.keep && \
-    touch ./common/tor/.keep && \
-    printf "LUCID_DATABASE_SCHEMAS_$(date +%s)" > ./database/schemas/.keep && \
-    touch ./database/schemas/.keep && \
-    printf "LUCID_DATABASE_MODELS_$(date +%s)" > ./database/models/.keep && \
-    touch ./database/models/.keep && \
-    printf "LUCID_DATABASE_SERVICES_BACKUP_$(date +%s)" > ./database/services/backup/.keep && \
-    touch ./database/services/backup/.keep && \
-    printf "LUCID_DATABASE_MONGODB_$(date +%s)" > ./database/mongodb/.keep && \
-    touch ./database/mongodb/.keep && \
-    printf "LUCID_DATABASE_REDIS_$(date +%s)" > ./database/redis/.keep && \
-    touch ./database/redis/.keep && \
-    printf "LUCID_DATABASE_ELASTICSEARCH_$(date +%s)" > ./database/elasticsearch/.keep && \
-    touch ./database/elasticsearch/.keep && \
-    printf "LUCID_DATABASE_TMP_$(date +%s)" > ./tmp/.keep && \
-    touch ./tmp/.keep && \
-    chown -R 65532:65532 ./database ./database/services ./database/services/monitoring ./database/schemas ./database/models ./database/services/backup ./database/mongodb ./database/redis ./database/elasticsearch ./tmp && \
-    chmod 644 ./database/.keep ./database/services/.keep ./database/services/monitoring/.keep ./database/schemas/.keep ./database/models/.keep ./database/services/backup/.keep ./database/mongodb/.keep ./database/redis/.keep ./database/elasticsearch/.keep ./tmp/.keep
 
 COPY database/ ./database/
 COPY common/ ./common/
@@ -215,7 +199,22 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     MONITORING_SERVICE_PORT=27018 \
     MONGODB_URI=${MONGODB_URI:-mongodb://lucid:lucid@lucid-mongodb:27017/lucid?authSource=admin} \
     PROMETHEUS_ENABLED=true
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
 
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /usr/ /app/usr/
+COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (runtime)
 COPY --from=builder --chown=65532:65532 /build/configs/.env.secrets /app/configs/.env.secrets
 COPY --from=builder --chown=65532:65532 /build/configs/.env.master /app/configs/.env.master
@@ -236,24 +235,8 @@ COPY --from=builder --chown=65532:65532 /usr/sbin/ /app/usr/sbin/
 
 COPY --from=builder --chown=65532:65532 /build/wheels/         /app/wheels/
 COPY --from=builder --chown=65532:65532 /build/database/       /app/database/
-COPY --from=builder --chown=65532:65532 /build/database/services/monitoring/ /app/database/services/monitoring/
-COPY --from=builder --chown=65532:65532 /build/database/services/backup/ /app/database/services/backup/
-COPY --from=builder --chown=65532:65532 /build/database/mongodb/ /app/database/mongodb/
-COPY --from=builder --chown=65532:65532 /build/database/redis/ /app/database/redis/
-COPY --from=builder --chown=65532:65532 /build/database/elasticsearch/ /app/database/elasticsearch/
-COPY --from=builder --chown=65532:65532 /build/database/schemas/ /app/database/schemas/
-COPY --from=builder --chown=65532:65532 /build/database/models/ /app/database/models/
-
-COPY --from=builder --chown=65532:65532 /build/database/services/monitoring/ /app/database/services/monitoring/
-COPY --from=builder --chown=65532:65532 /build/database/services/backup/ /app/database/services/backup/
-COPY --from=builder --chown=65532:65532 /build/database/mongodb/ /app/database/mongodb/
-COPY --from=builder --chown=65532:65532 /build/database/redis/ /app/database/redis/
-COPY --from=builder --chown=65532:65532 /build/database/elasticsearch/ /app/database/elasticsearch/
-COPY --from=builder --chown=65532:65532 /build/database/schemas/ /app/database/schemas/
-COPY --from=builder --chown=65532:65532 /build/database/models/ /app/database/models/
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
-COPY --from=builder --chown=65532:65532 /build/common/governance/ /app/common/governance/
-COPY --from=builder --chown=65532:65532 /build/common/tor/ /app/common/tor/
+
 EXPOSE 27018
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

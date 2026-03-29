@@ -13,6 +13,19 @@ WORKDIR /workspaces/Lucid
 
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
 RUN mkdir -p configs
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY master-env-config.txt ./configs/.env.master
 

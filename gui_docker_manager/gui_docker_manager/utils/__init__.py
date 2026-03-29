@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/utils/__init__.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/utils/__init__.py
+x-lucid-file-type: python
+
 Utility modules for Docker Manager
-File: gui_docker_manager/gui_docker_manager/utils/__init__.py
 """
 
 from .errors import DockerManagerError, PermissionDeniedError, ContainerNotFoundError

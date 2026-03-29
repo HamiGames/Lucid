@@ -1,7 +1,12 @@
 # Multi-Stage Build Configuration for Lucid Project
 # Configuration for building multi-stage images with layer optimization
 
-version: '3.8'
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   # Multi-stage build orchestrator
@@ -17,9 +22,9 @@ services:
       - OPTIMIZE_LAYERS=${OPTIMIZE_LAYERS:-true}
       - PARALLEL_BUILDS=${PARALLEL_BUILDS:-4}
     volumes:
-      - /mnt/myssd/Lucid/Lucid/build-cache:/cache
-      - /mnt/myssd/Lucid/Lucid/build-logs:/logs
-      - /mnt/myssd/Lucid/Lucid/layer-analysis:/analysis
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-cache:/cache
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-logs:/logs
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/layer-analysis:/analysis
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - lucid-multi-stage-network
@@ -38,7 +43,7 @@ services:
       - OPTIMIZATION_LEVEL=aggressive
       - GENERATE_REPORTS=true
     volumes:
-      - /mnt/myssd/Lucid/Lucid/layer-reports:/reports
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/layer-reports:/reports
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - lucid-multi-stage-network
@@ -57,8 +62,8 @@ services:
       - CACHE_STRATEGY=aggressive
       - CLEANUP_OLD_CACHES=true
     volumes:
-      - /mnt/myssd/Lucid/Lucid/build-cache:/cache
-      - /mnt/myssd/Lucid/Lucid/cache-reports:/reports
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-cache:/cache
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/cache-reports:/reports
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - lucid-multi-stage-network
@@ -77,7 +82,7 @@ services:
       - SECURITY_SCAN=true
       - SIZE_ANALYSIS=true
     volumes:
-      - /mnt/myssd/Lucid/Lucid/validation-reports:/reports
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/validation-reports:/reports
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       lucid-multi-stage-network

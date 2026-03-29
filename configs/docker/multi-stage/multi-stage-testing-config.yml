@@ -1,7 +1,12 @@
 # Multi-Stage Testing Configuration for Lucid Project
 # Configuration for testing multi-stage containers and builds
 
-version: '3.8'
+# Lucid — aligned with infrastructure/containers/**/Dockerfile* (build context: repo root),
+# x-files-listing.txt (packaged paths under /app/configs/docker/…),
+# infrastructure/containers/host-config.yml (→ /app/service_configs/host-config.yml),
+# infrastructure/containers/services/ (→ /app/service_configs/, container-runtime-layout.yml).
+# Host data/logs: ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/…  Override on non-Pi hosts.
+# Image env files: master-env-config.txt → /app/configs/.env.master ; configs/environment/.env.secrets → /app/configs/.env.secrets (bind-mount or image COPY). Do not list master-env-config.txt in env_file (Compose interpolates ${…} and fails on required placeholders).
 
 services:
   # Multi-stage testing environment
@@ -22,10 +27,10 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
-      - /mnt/myssd/Lucid/Lucid/tests:/app/tests:ro
-      - /mnt/myssd/Lucid/Lucid/test-logs:/app/logs:rw
-      - /mnt/myssd/Lucid/Lucid/coverage:/app/coverage:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/tests:/app/tests:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/test-logs:/app/logs:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/coverage:/app/coverage:rw
     cap_drop:
       - ALL
     user: "1000:1000"
@@ -51,9 +56,9 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - /mnt/myssd/Lucid/Lucid/src:/app/src:ro
-      - /mnt/myssd/Lucid/Lucid/build-tests:/app/build-tests:ro
-      - /mnt/myssd/Lucid/Lucid/test-artifacts:/artifacts:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/src:/app/src:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/build-tests:/app/build-tests:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/test-artifacts:/artifacts:rw
       - /var/run/docker.sock:/var/run/docker.sock
     cap_drop:
       - ALL
@@ -76,8 +81,8 @@ services:
       - lucid-test
     restart: "no"
     volumes:
-      - /mnt/myssd/Lucid/Lucid/test-data:/data/db:rw
-      - /mnt/myssd/Lucid/Lucid/test-scripts:/docker-entrypoint-initdb.d:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/test-data:/data/db:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/test-scripts:/docker-entrypoint-initdb.d:ro
     ports:
       - "27018:27017"
     healthcheck:
@@ -101,9 +106,9 @@ services:
       - no-new-privileges:true
     read_only: false
     volumes:
-      - /mnt/myssd/Lucid/Lucid/test-logs:/logs:ro
-      - /mnt/myssd/Lucid/Lucid/coverage:/coverage:ro
-      - /mnt/myssd/Lucid/Lucid/test-reports:/reports:rw
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/test-logs:/logs:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/coverage:/coverage:ro
+      - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/test-reports:/reports:rw
     cap_drop:
       - ALL
     user: "1000:1000"

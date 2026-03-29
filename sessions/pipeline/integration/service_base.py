@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/integration/service_base.py
+x-lucid-file-path: /app/sessions/pipeline/integration/service_base.py
+x-lucid-file-type: python
+
 Base Service Client for Integration Modules
 Provides common functionality for service communication
 """

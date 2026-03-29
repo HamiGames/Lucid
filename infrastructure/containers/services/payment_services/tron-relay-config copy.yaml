@@ -2,7 +2,7 @@
 # YAML configuration for TRON relay service
 # File: payment-systems/tron-relay/config/tron-relay-config.yaml
 # SECURITY: READ-ONLY service - NO private key access
-# Runtime (container): /app/configs/services/payment_services/tron-relay-config copy.yaml
+# Runtime (container): /app/service_configs/payment_services/tron-relay-config copy.yaml
 # x-lucid: payment-services-host-alignment.yml + infrastructure/containers/host-config.yml
 x-lucid-host-config:
   file: ../../host-config.yml

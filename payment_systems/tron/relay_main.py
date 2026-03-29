@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/relay_main.py
+x-lucid-file-path: /app/payment_systems/tron/relay_main.py
+x-lucid-file-type: python
+
 LUCID TRON Relay Service - Main Application
 READ-ONLY blockchain relay and caching service for TRON
 

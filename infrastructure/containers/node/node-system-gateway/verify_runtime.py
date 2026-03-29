@@ -51,8 +51,8 @@ if not isinstance(ydoc, dict):
 
 for path in (
     "/app/host/host-config.yml",
-    "/app/infrastructure/kubernetes/api-gateway-config.yaml",
-    "/app/infrastructure/kubernetes/database-config.yaml",
+    "/build/configs/api-gateway-config.yaml",
+    "/build/configs/database-config.yaml",
 ):
     if not os.path.isfile(path):
         print(f"ERROR: {path} missing", file=sys.stderr)

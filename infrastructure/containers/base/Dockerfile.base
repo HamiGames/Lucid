@@ -29,6 +29,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
+        bash \
         gcc \
         g++ \
         libffi-dev \
@@ -43,7 +44,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /opt
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
-RUN mkdir -p /build/configs
 COPY configs/environment/.env.secrets /build/configs/.env.secrets
 COPY master-env-config.txt /build/configs/.env.master
 
@@ -53,8 +53,23 @@ RUN python -m venv /opt/venv && \
 
 COPY infrastructure/docker/distroless/base/requirements-minimal.txt ./requirements-minimal.txt
 
+
+
 RUN --mount=type=cache,target=/root/.cache/pip \
-    /opt/venv/bin/pip install --prefer-binary -r requirements-minimal.txt
+    /opt/venv/bin/pip install --no-cache-dir --no-index --find-links /build/wheels --prefer-binary -r requirements-minimal.txt
+# LUCID_X_FILES_SKELETON_BEGIN
+# Dirs: (listing ∩ COPY-approved) ∪ builder-stage COPY roots; after pip cache RUN or before first /build COPY
+RUN set -eux; \
+    mkdir -p '.' './configs' './configs/docker'; \
+    for d in \
+      '.' \
+      './configs' \
+      './configs/docker' \
+    ; do \
+      printf 'LUCID_X_FILES_SKELETON_%s' "$(date +%s)" > "$d/.keep"; \
+      touch "$d/.keep"; \
+    done
+# LUCID_X_FILES_SKELETON_END
 
 RUN mkdir -p /opt/lucid-base/scripts
 
@@ -99,9 +114,8 @@ EOF
 
 RUN ls -la /opt/lucid-base/scripts/lucid_base_bootstrap.py
 
-RUN mkdir -p /build/host /build/configs/services /build/configs/operations
 COPY infrastructure/containers/host-config.yml /build/host/host-config.yml
-COPY infrastructure/containers/services/container-runtime-layout.yml /build/configs/services/container-runtime-layout.yml
+COPY infrastructure/containers/services/container-runtime-layout.yml /build/service_configs/container-runtime-layout.yml
 COPY infrastructure/containers/base/docker-compose.base.yml /build/configs/operations/docker-compose.base.yml
 
 FROM gcr.io/distroless/python3-debian12:latest
@@ -133,7 +147,25 @@ ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/bin:/bin \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app:/opt/venv/lib/python3.11/site-packages \
-    LUCID_HOST_CONFIG_PATH=/app/host/host-config.yml
+    LUCID_HOST_CONFIG_PATH=/app/configs/host-config.yml
+# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
+# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
+COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
+# LUCID_RUNTIME_COPY_FROM_BUILD_END
+
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
+COPY --from=builder --chown=65532:65532 /opt/lucid-base/scripts/ /app/opt/lucid-base/scripts/
+COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
+
+
 
 # Host static IPs: repository root service-ip.txt (values are baked into host-config.yml per service).
 
@@ -146,8 +178,22 @@ COPY --from=builder /opt/lucid-base /opt/lucid-base
 
 WORKDIR /app
 
-COPY --from=builder /build/host/host-config.yml /app/host/host-config.yml
-COPY --from=builder /build/configs/services/container-runtime-layout.yml /app/configs/services/container-runtime-layout.yml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+COPY --from=builder /build/service_configs/container-runtime-layout.yml /app/service_configs/container-runtime-layout.yml
 COPY --from=builder /build/configs/operations/docker-compose.base.yml /app/configs/operations/docker-compose.base.yml
 
 USER 65532:65532

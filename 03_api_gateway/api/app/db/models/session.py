@@ -1,4 +1,10 @@
 # Path: 03_api_gateway/api/app/db/models/session.py
+"""
+File: /app/03_api_gateway/api/app/db/models/session.py
+x-lucid-file-path: /app/03_api_gateway/api/app/db/models/session.py
+x-lucid-file-type: python
+"""
+
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime

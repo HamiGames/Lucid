@@ -1,6 +1,9 @@
 """
+File: /app/gui_docker_manager/gui_docker_manager/utils/errors.py
+x-lucid-file-path: /app/gui_docker_manager/gui_docker_manager/utils/errors.py
+x-lucid-file-type: python
+
 Error Definitions
-File: gui_docker_manager/gui_docker_manager/utils/errors.py
 """
 
 

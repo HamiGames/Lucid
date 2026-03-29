@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/sessions/pipeline/integration/blockchain_engine_client.py
+x-lucid-file-path: /app/sessions/pipeline/integration/blockchain_engine_client.py
+x-lucid-file-type: python
+
 Blockchain Engine Integration Client
 Handles interaction with blockchain-engine service for anchoring and verification
 """

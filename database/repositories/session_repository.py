@@ -1,4 +1,8 @@
 """
+File: /app/database/repositories/session_repository.py
+x-lucid-file-path: /app/database/repositories/session_repository.py
+x-lucid-file-type: python
+
 Session Repository
 
 Repository pattern implementation for session data access.

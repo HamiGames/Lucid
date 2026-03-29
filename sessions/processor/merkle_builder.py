@@ -1,4 +1,8 @@
 """
+File: /app/sessions/processor/merkle_builder.py
+x-lucid-file-path: /app/sessions/processor/merkle_builder.py
+x-lucid-file-type: python
+
 Merkle Tree Builder Module
 Builds and validates Merkle trees from session chunk hashes.
 

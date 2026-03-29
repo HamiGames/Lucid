@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/node/main.py
+x-lucid-file-path: /app/node/main.py
+x-lucid-file-type: python
+
 Lucid Node Management Service - Main Application
 Port: 8095
 Features: Node pool management, PoOT calculation, payout threshold (10 USDT), max 100 nodes

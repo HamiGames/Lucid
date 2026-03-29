@@ -1,4 +1,8 @@
 """
+File: /app/payment_systems/tron/services/wallet_audit.py
+x-lucid-file-path: /app/payment_systems/tron/services/wallet_audit.py
+x-lucid-file-type: python
+
 Wallet Audit Logging Service
 Tracks all wallet operations for security and compliance
 """

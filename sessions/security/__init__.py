@@ -1,8 +1,11 @@
 """
+File: /app/sessions/security/__init__.py
+x-lucid-file-path: /app/sessions/security/__init__.py
+x-lucid-file-type: python
+
 LUCID Session Security Components
 Policy enforcement and input control for session security
 path: ..security
-file: sessions/security/__init__.py
 the security calls the sessions security
 """
 

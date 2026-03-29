@@ -3,6 +3,12 @@
 # Professional input validation and control for session security
 # Multi-platform support for ARM64 Pi and AMD64 development
 
+"""
+File: /app/sessions/security/input_controller.py
+x-lucid-file-path: /app/sessions/security/input_controller.py
+x-lucid-file-type: python
+"""
+
 from __future__ import annotations
 
 import asyncio

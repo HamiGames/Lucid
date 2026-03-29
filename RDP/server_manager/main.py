@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/RDP/server_manager/main.py
+x-lucid-file-path: /app/RDP/server_manager/main.py
+x-lucid-file-type: python
+
 LUCID RDP Server Manager Service - Main Entry Point
 """
 

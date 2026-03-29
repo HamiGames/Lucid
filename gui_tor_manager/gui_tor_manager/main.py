@@ -1,4 +1,8 @@
 """
+File: /app/gui_tor_manager/gui_tor_manager/main.py
+x-lucid-file-path: /app/gui_tor_manager/gui_tor_manager/main.py
+x-lucid-file-type: python
+
 FastAPI Application Main Module for GUI Tor Manager
 Sets up FastAPI app with middleware, routers, and lifespan management
 """

@@ -1,8 +1,11 @@
 """
+File: /app/auth/services/mongodb_clone.py
+x-lucid-file-path: /app/auth/services/mongodb_clone.py
+x-lucid-file-type: python
+
 Lucid Authentication Service - MongoDB Clone Manager
 Manages MongoDB clone instances for nodes
 
-File: auth/services/mongodb_clone.py
 Purpose: Create and manage MongoDB clone instances for node operations
 Dependencies: orchestrator, motor, asyncio, logging
 """

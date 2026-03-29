@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/apps/recorder/chain_client.py
+x-lucid-file-path: /app/apps/recorder/chain_client.py
+x-lucid-file-type: python
+
 Chain Client Module for Lucid RDP Recorder
 Handles blockchain interactions for session anchoring
 """

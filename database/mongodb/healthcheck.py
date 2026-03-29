@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+File: /app/database/mongodb/healthcheck.py
+x-lucid-file-path: /app/database/mongodb/healthcheck.py
+x-lucid-file-type: python
+
 MongoDB Healthcheck Script for Distroless Container
 Checks MongoDB connectivity and authentication
 """

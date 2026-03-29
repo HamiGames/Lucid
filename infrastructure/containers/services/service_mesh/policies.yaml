@@ -1,4 +1,4 @@
-# Runtime (container): /app/configs/services/service_mesh/policies.yaml — see ../container-runtime-layout.yml
+# Runtime (container): /app/service_configs/service_mesh/policies.yaml — see ../container-runtime-layout.yml
 # Lucid Service Mesh - Policy Configuration
 # File: service-mesh/config/policies.yaml
 # Purpose: Traffic management and security policies
