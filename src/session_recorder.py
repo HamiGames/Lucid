@@ -26,7 +26,7 @@ CHUNK_MIN_SIZE = int(os.getenv("LUCID_CHUNK_MIN_SIZE", "8388608"))  # 8MB
 CHUNK_MAX_SIZE = int(os.getenv("LUCID_CHUNK_MAX_SIZE", "16777216"))  # 16MB
 COMPRESSION_LEVEL = int(os.getenv("LUCID_COMPRESSION_LEVEL", "3"))  # Zstd level 3
 SESSION_DATA_DIR = Path(os.getenv("LUCID_SESSION_DATA_DIR", "/tmp/lucid/sessions"))
-ONION_STATE_DIR = Path(os.getenv("LUCID_ONION_STATE_DIR", "/run/lucid/onion"))
+ONION_STATE_DIR = Path(os.getenv("LUCID_ONION_STATE_DIR", "/app/run/lucid/onion"))
 
 
 @dataclass(frozen=True)

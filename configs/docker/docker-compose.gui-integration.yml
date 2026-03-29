@@ -138,7 +138,7 @@ services:
     volumes:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/data/tor:/app/tor-data:rw
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/gui-tor-manager:/app/logs:rw
-      - onion-state:/run/lucid/onion:ro # ADDED: Read onion state from tor-proxy
+      - onion-state:/app/run/lucid/onion:ro # ADDED: Read onion state from tor-proxy (tor-proxy-02 layout)
     networks:
       - lucid-gui-network
       - lucid-pi-network # ADDED: To connect to tor-proxy

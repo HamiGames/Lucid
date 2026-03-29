@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Shared helpers for tunnel scripts
+# Canonical layout: infrastructure/containers/services/tor/tor-operational-layout.yml
+# (with container-runtime-layout.yml lucid_services_config_root + x-files-listing host-config paths)
 # Aligns with:
-#   - 02_network_security/tunnels/Dockerfile (lucid-tunnel-tools, WORKDIR /app)
-#   - 02_network_security/tor/Dockerfile.tor-proxy-02 (scripts also at /app/run/lucid/tunnels/scripts)
+#   - 02_network_security/tunnels/Dockerfile.tunnels → /app/tunnel/scripts (create_ephemeral = tor/scripts overlay)
+#   - infrastructure/containers/tor/Dockerfile.tor-proxy-02 → /app/run/lucid/tor/bin and /app/run/lucid/tunnels/scripts mirror
 #
-# Terminal DIR: scripts live at repo 02_network_security/tunnels/scripts or
-#   /app/tunnels/scripts (tunnel-tools) / /app/run/lucid/tunnels/scripts (tor-proxy).
+# Terminal DIR: repo 02_network_security/tunnels/scripts; in-image /app/tunnel/scripts;
+#   tor-proxy volume tree /app/run/lucid/tunnels/scripts (same create_ephemeral + bootstrap as tor/scripts).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,10 +24,10 @@ _lucid_tunnel_env_defaults() {
       if [[ -z "${COOKIE_FILE:-}" ]]; then
         COOKIE_FILE=""
         local c
-        for c in /app/run/lucid/tor/control_auth_cookie /app/var/lib/tor/control_auth_cookie; do
+        for c in /app/run/lucid/onion/control_auth_cookie /app/var/lib/tor/control_auth_cookie; do
           [[ -r "$c" ]] && { COOKIE_FILE="$c"; break; }
         done
-        COOKIE_FILE="${COOKIE_FILE:-/app/run/lucid/tor/control_auth_cookie}"
+        COOKIE_FILE="${COOKIE_FILE:-/app/var/lib/tor/control_auth_cookie}"
       fi
     else
       # lucid-tunnel-tools (or dev with /app layout)
@@ -33,7 +35,7 @@ _lucid_tunnel_env_defaults() {
       if [[ -z "${COOKIE_FILE:-}" ]]; then
         COOKIE_FILE=""
         local c
-        for c in /app/var/lib/tor/control_auth_cookie /app/run/lucid/tor/control_auth_cookie; do
+        for c in /app/run/lucid/onion/control_auth_cookie /app/var/lib/tor/control_auth_cookie; do
           [[ -r "$c" ]] && { COOKIE_FILE="$c"; break; }
         done
         COOKIE_FILE="${COOKIE_FILE:-/app/var/lib/tor/control_auth_cookie}"
@@ -41,10 +43,10 @@ _lucid_tunnel_env_defaults() {
     fi
     WRITE_ENV="${WRITE_ENV:-/app/run/lucid/onion/.onion.env}"
   else
-    # Host / CI: no /app — use legacy paths or env
+    # No /app tree (rare): match tor-proxy-02 layout if bind-mounts provide it, else set COOKIE_FILE in env
     CONTROL_HOST="${CONTROL_HOST:-tor-proxy}"
-    COOKIE_FILE="${COOKIE_FILE:-/run/lucid/tor/control_auth_cookie}"
-    WRITE_ENV="${WRITE_ENV:-/run/lucid/onion/.onion.env}"
+    COOKIE_FILE="${COOKIE_FILE:-/app/run/lucid/onion/control_auth_cookie}"
+    WRITE_ENV="${WRITE_ENV:-/app/run/lucid/onion/.onion.env}"
   fi
   CONTROL_PORT="${CONTROL_PORT:-9051}"
   TOR_CONTAINER_NAME="${TOR_CONTAINER_NAME:-${CONTROL_HOST:-tor-proxy}}"

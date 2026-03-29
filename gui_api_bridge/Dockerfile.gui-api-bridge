@@ -44,10 +44,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 
-# Create system directory markers (per dockerfile-design.md)
+# Runtime onion layout matches infrastructure/containers/tor/Dockerfile.tor-proxy-02
+# (TOR_ONION_SERVICE_DIR=/app/run/lucid/onion; TOR_COOKIE_TARGETS=.../control_auth_cookie).
 RUN echo "LUCID_GUI_API_BRIDGE_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_GUI_API_BRIDGE_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib
+    mkdir -p /app/run/lucid/onion && \
+    echo "LUCID_GUI_API_BRIDGE_RUN_LUCID" > /app/run/lucid/.keep && \
+    chown -R 65532:65532 /var/run /var/lib /app/run/lucid
 
 # Install Python dependencies
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -143,13 +146,16 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages \
     PYTHONIOENCODING=utf-8 \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=C.UTF-8 \
+    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
+    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
 
 WORKDIR /app
 
 # Copy system directories and certificates
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
+COPY --from=builder --chown=65532:65532 /app/run/lucid /app/run/lucid
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Bake Python packages into distroless image - explicit COPY with verification

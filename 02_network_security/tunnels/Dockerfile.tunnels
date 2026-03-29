@@ -5,6 +5,7 @@
 # Configuration: All values from .env.tunnel-tools, .env.secrets, .env.foundation via docker-compose
 # Build Context: 02_network_security/tunnels (relative paths used in COPY commands)
 #
+# Operational path spec: infrastructure/containers/services/tor/tor-operational-layout.yml
 # Directory Structure (aligned with Dockerfile.tor-proxy):
 #   /run/lucid/tunnel         — Tunnel data root (primary runtime data dir for tunnel-tools)
 #   /run/lucid/tunnels        — Cross-container shared tree (scripts/config accessible to tor-proxy)
@@ -80,6 +81,9 @@ COPY 02_network_security/tunnels/tunnel_metrics.py /app/tunnel/tunnel_metrics.py
 COPY 02_network_security/tunnels/tunnel_status.py /app/tunnel/tunnel_status.py
 COPY 02_network_security/tunnels/scripts/ /app/tunnel/scripts/
 COPY 02_network_security/tunnels/config/ /app/tunnel/config/
+# Authoritative tor sources (must match tor-proxy-02; overrides tunnels/scripts copies — see tor-operational-layout.yml)
+COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/tunnel/scripts/bootstrap-helper.sh
+COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/tunnel/scripts/create_ephemeral_onion.sh
 
 RUN chmod +x /app/tunnel/entrypoint.py || true \
     && chmod +x /app/tunnel/scripts/*.sh || true \
@@ -189,9 +193,10 @@ print('✅ All tunnel-tools modules verified')"]
 # =============================================================================
 ENV CONTROL_HOST=tor-proxy \
     CONTROL_PORT=9051 \
-    COOKIE_FILE=/run/lucid/tor/control_auth_cookie \
+    COOKIE_FILE=/app/var/lib/tor/control_auth_cookie \
+    COOKIE_FILE_SHARED=/app/run/lucid/onion/control_auth_cookie \
     ONION_PORTS="80 api-gateway:8080" \
-    WRITE_ENV=/run/lucid/onion/.onion.env \
+    WRITE_ENV=/app/run/lucid/onion/.onion.env \
     ROTATE_INTERVAL=0 \
     TUNNEL_PORT=7000 \
     TUNNEL_MODE=client \
@@ -248,5 +253,5 @@ CMD ["/usr/bin/python3.11", "/app/tunnel/entrypoint.py"]
 #     ✓ Uses /opt/bin, /opt/lib for binaries/libraries
 #     ✓ Uses /opt/lucid/service/bin for service-specific tools
 #     ✓ Distroless-compatible (no /var/lib, /var/log expectations)
-#     ✓ WRITE_ENV aligned with shell scripts: /run/lucid/onion/.onion.env
-#     ✓ COOKIE_FILE aligned with tor-proxy TOR_DATA_DIR: /run/lucid/tor/control_auth_cookie
+#     ✓ WRITE_ENV aligned with tor-proxy-02: /app/run/lucid/onion/.onion.env
+#     ✓ COOKIE_FILE + COOKIE_FILE_SHARED aligned with tor-proxy-02 (/app/var/lib/tor, onion mirror)

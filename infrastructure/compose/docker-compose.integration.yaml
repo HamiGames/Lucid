@@ -47,7 +47,7 @@ services:
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/openapi-gateway:/app/logs:rw
       - openapi-gateway-cache:/tmp/gateway
     networks:
@@ -116,7 +116,7 @@ services:
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/openapi-server:/app/logs:rw
       - openapi-server-cache:/tmp/server
     networks:

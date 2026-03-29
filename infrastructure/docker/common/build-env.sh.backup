@@ -209,7 +209,7 @@ TOR_SOCKS_PORT=9050
 TOR_CONTROL_PORT=9051
 
 # Onion Service Configuration
-ONION_SERVICE_DIR=/run/lucid/onion
+ONION_SERVICE_DIR=/app/run/lucid/onion
 ONION_SERVICE_VERSION=3
 
 # Network Configuration

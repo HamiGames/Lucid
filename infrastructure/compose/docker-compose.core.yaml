@@ -225,15 +225,16 @@ services:
       - TOR_CONTROL_PORT=9051
       - TOR_CONTROL_PASSWORD=${TOR_CONTROL_PASSWORD}
       - ONION_COUNT=5
-      - TOR_DATA_DIR=/var/lib/tor
+      - TOR_DATA_DIR=/app/var/lib/tor
+      - TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
     volumes:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/tor:/var/lib/tor:rw
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:rw
+      - /mnt/myssd/Lucid/Lucid/data/tor:/app/var/lib/tor:rw
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:rw
       - /mnt/myssd/Lucid/Lucid/logs/tor:/var/log/tor:rw
     networks:
       - lucid-pi-network
@@ -292,14 +293,14 @@ services:
       - API_GATEWAY_URL=http://lucid-api-gateway:8080
       - TOR_SOCKS=tor-proxy:9050
       - TOR_CONTROL_PORT=9051
-      - ONION_DIR=/run/lucid/onion
+      - ONION_DIR=/app/run/lucid/onion
     volumes:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/api-server:/app/logs:rw
     networks:
       - lucid-pi-network
@@ -372,7 +373,7 @@ services:
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/logs/api-gateway:/app/logs:rw
     networks:
       lucid-pi-network:
@@ -431,15 +432,15 @@ services:
       - TUNNEL_PORT=7000
       - TUNNEL_MODE=client
       - TOR_SOCKS=tor-proxy:9050
-      - ONION_DIR=/run/lucid/onion
-      - COOKIE_FILE_SHARED=/run/lucid/onion/control_auth_cookie
+      - ONION_DIR=/app/run/lucid/onion
+      - COOKIE_FILE_SHARED=/app/run/lucid/onion/control_auth_cookie
     volumes:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:rw
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:rw
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:rw
       - /mnt/myssd/Lucid/Lucid/logs/tunnel-tools:/app/logs:rw
     networks:
@@ -494,7 +495,7 @@ services:
       - LUCID_PLANE=ops
       - LUCID_PLATFORM=arm64
       - PROJECT_ROOT=/mnt/myssd/Lucid/Lucid
-      - ONION_DIR=/run/lucid/onion
+      - ONION_DIR=/app/run/lucid/onion
       - TUNNEL_DATA_DIR=/var/lib/tunnel
     volumes:
       - ../../master-env-config.txt:/app/configs/.env.master:ro
@@ -502,7 +503,7 @@ services:
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - /mnt/myssd/Lucid/Lucid/data/onion:/run/lucid/onion:ro
+      - /mnt/myssd/Lucid/Lucid/data/onion:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/Lucid/data/tunnel:/var/lib/tunnel:ro
       - /mnt/myssd/Lucid/Lucid/logs/server-tools:/app/logs:rw
     networks:

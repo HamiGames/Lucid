@@ -4,6 +4,7 @@
 #
 # Registry: infrastructure/containers/host-config.yml → tor_socks (service_name tor-socks, port 9050, http_path template).
 # Runtime layout: infrastructure/containers/services/container-runtime-layout.yml → lucid_services_config_root: /app/service_configs
+# Tor/tunnel shell alignment: infrastructure/containers/services/tor/tor-operational-layout.yml (packaged under /app/service_configs/tor/)
 # Canonical host registry file in-image: /app/service_configs/host-config.yml (x-lucid-file-path in host-config.yml); mirror at /app/configs/host-config.yml.
 
 ARG BUILD_DATE
@@ -449,6 +450,8 @@ ENV PATH=/app/run/lucid/tor/bin:/app/usr/bin:/usr/local/bin:/usr/bin:/bin \
     TOR_CONTROL_PORT=9051 \
     TOR_CONTROL_HOST=127.0.0.1 \
     TOR_DATA_DIR=/app/var/lib/tor \
+    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
+    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie \
     LUCID_HOST_CONFIG_STABLE_ID=tor_socks \
     LUCID_HOST_CONFIG_PATH=/app/service_configs/host-config.yml \
     LUCID_HOST_CONFIG_SERVICE_KEY=tor_socks \
@@ -521,16 +524,19 @@ COPY --chmod=755 02_network_security/tor/t_entrypoint.sh /app/run/lucid/tor/bin/
 COPY --chmod=755 02_network_security/tor/tor-health.sh /app/run/lucid/tor/bin/tor-health.sh
 COPY --chmod=755 02_network_security/tor/tor-show-onion.sh /app/run/lucid/tor/bin/tor-show-onion.sh
 COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/run/lucid/tor/bin/create-ephemeral-onion.sh
-
+# Mirror authoritative tor scripts for /run/lucid/tunnels volume parity (tunnel-tools + _lib.sh; see tor-operational-layout.yml)
+COPY --chmod=755 02_network_security/tor/bootstrap-helper.sh /app/run/lucid/tunnels/scripts/bootstrap-helper.sh
+COPY --chmod=755 02_network_security/tor/scripts/create_ephemeral_onion.sh /app/run/lucid/tunnels/scripts/create_ephemeral_onion.sh
 
 USER debian-tor:debian-tor
 
 # Expose ports (SOCKS, control, optional HTTP) — ports match host-config.yml tor_socks / tor_control
 EXPOSE 9050 9051 8888
 
+# Paths match COPY above (tor/bin + tunnels/scripts mirror); do not use /app/02_network_security/tor/* here — that tree is a separate builder copy.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=5 \
-  CMD ["/app/usr/bin/bash", "/app/02_network_security/tor/tor-health.sh"]
+  CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor-health.sh"]
 
 # tini + bash paths match Debian (/usr/bin); same ENTRYPOINT pattern as user/Dockerfile + tor/Dockerfile (tunnel-tools)
 ENTRYPOINT ["/app/usr/bin/tini", "--"]
-CMD ["/app/usr/bin/bash", "/app/02_network_security/tor/tor_entrypoint.sh"]
+CMD ["/app/usr/bin/bash", "/app/run/lucid/tor/bin/tor_entrypoint.sh"]

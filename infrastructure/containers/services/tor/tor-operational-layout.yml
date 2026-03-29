@@ -1,0 +1,37 @@
+# =============================================================================
+# Tor + tunnel-tools — canonical operational paths (single source of truth)
+# =============================================================================
+# Read-only alignment with (do not duplicate those files here):
+#   - infrastructure/containers/services/container-runtime-layout.yml
+#       → lucid_services_config_root: /app/service_configs
+#   - x-files-listing.txt (repo root)
+#       → host-config.yml canonical in-image: /app/service_configs/host-config.yml
+#
+# tunnel-tools (pickme/lucid-tunnel-tools) calls create_ephemeral_onion.sh from
+#   02_network_security/tunnels/scripts/rotate_onion.sh via SCRIPT_DIR — that file
+#   MUST match 02_network_security/tor/scripts/create_ephemeral_onion.sh (Dockerfile
+#   overlay in Dockerfile.tunnels). bootstrap-helper.sh is used by tor entrypoints
+#   (tor_entrypoint.sh / entrypoint.sh), not by tunnel Python entrypoint.
+# =============================================================================
+
+# Repo paths (authoritative shell sources)
+repo_tor_bootstrap_helper: 02_network_security/tor/bootstrap-helper.sh
+repo_tor_create_ephemeral_onion: 02_network_security/tor/scripts/create_ephemeral_onion.sh
+
+# pickme/lucid-tor-proxy (infrastructure/containers/tor/Dockerfile.tor-proxy-02)
+image_tor_proxy_operations_bin: /app/run/lucid/tor/bin
+# Same files as repo tor/*, for volumes shared with tunnel-tools (see _lib.sh)
+image_tor_proxy_tunnel_scripts_mirror: /app/run/lucid/tunnels/scripts
+
+# pickme/lucid-tunnel-tools (02_network_security/tunnels/Dockerfile.tunnels)
+image_tunnel_tools_scripts: /app/tunnel/scripts
+
+# Shared onion state + control cookie mirror (tor_entrypoint copy_cookie_to_shared; tunnel-tools entrypoint.py)
+image_onion_state_dir: /app/run/lucid/onion
+image_shared_control_cookie: /app/run/lucid/onion/control_auth_cookie
+image_tor_data_dir_default: /app/var/lib/tor
+image_tor_control_cookie_default: /app/var/lib/tor/control_auth_cookie
+
+# Optional env hints (set in Compose, not required)
+env_hint_tor_operations_bin: LUCID_TOR_OPERATIONS_BIN
+env_hint_tunnel_scripts: LUCID_TUNNEL_SCRIPTS

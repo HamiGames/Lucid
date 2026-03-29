@@ -41,7 +41,7 @@ x-lucid-env: &lucid-env
   ONION_TOR_CONTROL: ${ONION_TOR_CONTROL:-}
   
   # Dynamic onion support (for wallet and runtime services)
-  ONION_DIR: "/run/lucid/onion"
+  ONION_DIR: "/app/run/lucid/onion"
   DYNAMIC_ONION_SUPPORT: "enabled"
   WALLET_ONION_SUPPORT: "enabled"
   
@@ -259,7 +259,7 @@ services:
 
       - tor_data:/var/lib/tor
       - tor_config:/etc/tor
-      - onion_state:/run/lucid/onion
+      - onion_state:/app/run/lucid/onion
       # Mount the multi-onion scripts from Pi mount path
       - /mnt/myssd/Lucid/02-network-security/tor/scripts:/usr/local/bin/tor-scripts:ro
     networks:
@@ -313,7 +313,7 @@ services:
       UVICORN_WORKERS: "1"  # Single worker for Pi resource constraints
     volumes:
       # App tree first; config overlays after so /app bind does not hide /app/configs.
-      - onion_state:/run/lucid/onion:ro
+      - onion_state:/app/run/lucid/onion:ro
       - /mnt/myssd/Lucid/03-api-gateway/api/app:/app:ro
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
@@ -370,7 +370,7 @@ services:
       NGINX_WORKER_PROCESSES: "1"  # Single worker for Pi
       NGINX_WORKER_CONNECTIONS: "1024"
     volumes:
-      - onion_state:/run/lucid/onion:ro
+      - onion_state:/app/run/lucid/onion:ro
       - ../../master-env-config.txt:/app/configs/.env.master:ro
       - ../../configs/environment/.env.secrets:/app/configs/.env.secrets:ro
       - ../../infrastructure/containers/services:/app/service_configs:ro
@@ -426,7 +426,7 @@ services:
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - onion_state:/run/lucid/onion
+      - onion_state:/app/run/lucid/onion
       - tunnel_data:/var/lib/tunnel
     networks:
       lucid_core_net:
@@ -488,7 +488,7 @@ services:
       - ../../infrastructure/containers/services:/app/service_configs:ro
       - ../../infrastructure/containers/host-config.yml:/app/service_configs/host-config.yml:ro
 
-      - onion_state:/run/lucid/onion:ro
+      - onion_state:/app/run/lucid/onion:ro
       - tunnel_data:/var/lib/tunnel:ro
     command:
       - /bin/sh

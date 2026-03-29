@@ -292,12 +292,14 @@ SESSION_COOKIE_HTTPONLY=true
 HMAC_KEY=$HMAC_KEY
 SIGNING_KEY=$SIGNING_KEY
 
-# Tor Configuration
+# Tor Configuration (aligned with infrastructure/containers/tor/Dockerfile.tor-proxy-02)
 TOR_ENABLED=true
 TOR_SOCKS_PORT=9050
 TOR_CONTROL_PORT=9051
 TOR_PASSWORD=$TOR_PASSWORD
-TOR_DATA_DIR=/var/lib/tor
+TOR_DATA_DIR=/app/var/lib/tor
+TOR_ONION_SERVICE_DIR=/app/run/lucid/onion
+TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
 
 # Tor Hidden Services
 API_GATEWAY_ONION=$API_GATEWAY_ONION

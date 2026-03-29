@@ -28,7 +28,7 @@ services:
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/logs/tor:/run/lucid/tor/log:rw
       - ${LUCID_REPO_ROOT:-${PROJECT_ROOT:-/mnt/myssd/Lucid/Lucid}}/02-network-security/tor/scripts:/run/lucid/tor/bin:ro
       - tor-config:/opt/lucid/tor
-      - onion-state:/run/lucid/onion
+      - onion-state:/app/run/lucid/onion
     healthcheck:
       test: ["CMD", "/run/lucid/tor/bin/tor-health.sh"]
       interval: 30s

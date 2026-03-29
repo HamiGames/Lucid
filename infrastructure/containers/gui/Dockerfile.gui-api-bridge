@@ -66,9 +66,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Onion scaffold: infrastructure/containers/tor/Dockerfile.tor-proxy-02 (TOR_ONION_SERVICE_DIR, TOR_COOKIE_TARGETS).
 RUN printf "LUCID_GUI_API_BRIDGE_RUNTIME_DIRECTORY" > /var/run/.keep && \
     printf "LUCID_GUI_API_BRIDGE_LIB_DIRECTORY" > /var/lib/.keep && \
-    chown -R 65532:65532 /var/run /var/lib && \
+    mkdir -p /app/run/lucid/onion && \
+    printf "LUCID_GUI_API_BRIDGE_RUN_LUCID" > /app/run/lucid/.keep && \
+    chown -R 65532:65532 /var/run /var/lib /app/run/lucid && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
 RUN mkdir -p /usr/local/lib/python3.11/site-packages /usr/local/bin /build/wheels && \
@@ -285,7 +288,9 @@ ENV PATH=/app/usr/local/bin:/app/usr/bin:/app/bin:$PATH \
     LUCID_SERVICE_HOST_IP=172.20.10.61 \
     LUCID_SERVICE_HTTP_PATH=http://gui-api-bridge:8102/app \
     LUCID_API_GATEWAY_HOST=api-gateway \
-    LUCID_API_GATEWAY_PORT=8080
+    LUCID_API_GATEWAY_PORT=8080 \
+    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
+    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/common/ /app/common/
@@ -317,6 +322,7 @@ COPY --from=builder --chown=65532:65532 /build/service_configs /app/service_conf
 
 COPY --from=builder /var/run/ /app/var/run/
 COPY --from=builder /var/lib/ /app/var/lib/
+COPY --from=builder --chown=65532:65532 /app/run/lucid/ /app/run/lucid/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/

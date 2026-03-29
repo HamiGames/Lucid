@@ -59,9 +59,9 @@ RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.
 # Copy application code
 COPY --chown=lucid:lucid app/ /app/app/
 
-# Create directories for onion state and logs
-RUN mkdir -p /run/lucid/onion /var/log/lucid \
-    && chown -R lucid:lucid /run/lucid /var/log/lucid
+# Onion/run paths align with infrastructure/containers/tor/Dockerfile.tor-proxy-02 (/app/run/lucid/onion).
+RUN mkdir -p /app/run/lucid/onion /var/log/lucid \
+    && chown -R lucid:lucid /app/run/lucid /var/log/lucid
 
 # Stage 2: Distroless runtime with Python
 FROM gcr.io/distroless/python3-debian12:latest
@@ -101,16 +101,17 @@ COPY --from=api-builder /etc/group /etc/group
 # Copy CA certificates
 COPY --from=api-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-# Copy application with proper ownership
+# Copy application with proper ownership (/app includes /app/run/lucid from api-builder)
 COPY --from=api-builder --chown=lucid:lucid /app /app
-COPY --from=api-builder --chown=lucid:lucid /run/lucid /run/lucid
 COPY --from=api-builder --chown=lucid:lucid /var/log/lucid /var/log/lucid
 
 # Runtime environment
 ENV PYTHONPATH=/app \
     UVICORN_WORKERS=1 \
     UVICORN_HOST=0.0.0.0 \
-    UVICORN_PORT=8081
+    UVICORN_PORT=8081 \
+    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
+    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
 
 # Security and runtime configuration
 EXPOSE 8081

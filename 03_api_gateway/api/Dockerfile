@@ -45,13 +45,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 WORKDIR /build
 
-# Create system directory markers (ensures COPY won't fail silently)
+# Runtime onion/run layout matches infrastructure/containers/tor/Dockerfile.tor-proxy-02
+# (TOR_ONION_SERVICE_DIR=/app/run/lucid/onion; builder copies /run/lucid → /app/run/lucid in tor image).
 RUN echo "LUCID_API_SERVER_RUNTIME_DIRECTORY" > /var/run/.keep && \
     echo "LUCID_API_SERVER_LIB_DIRECTORY" > /var/lib/.keep && \
-    mkdir -p /run/lucid/onion /var/log/lucid && \
-    echo "LUCID_API_SERVER_RUN_LUCID" > /run/lucid/.keep && \
+    mkdir -p /app/run/lucid/onion /var/log/lucid && \
+    echo "LUCID_API_SERVER_RUN_LUCID" > /app/run/lucid/.keep && \
     echo "LUCID_API_SERVER_LOG_LUCID" > /var/log/lucid/.keep && \
-    chown -R 65532:65532 /var/run /var/lib /run/lucid /var/log/lucid
+    chown -R 65532:65532 /var/run /var/lib /app/run/lucid /var/log/lucid
 
 # Upgrade pip
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -112,14 +113,16 @@ ENV PATH=/usr/local/bin:/usr/bin:/bin \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     UVICORN_HOST=0.0.0.0 \
-    UVICORN_PORT=8081
+    UVICORN_PORT=8081 \
+    TOR_ONION_SERVICE_DIR=/app/run/lucid/onion \
+    TOR_COOKIE_TARGETS=/app/run/lucid/onion/control_auth_cookie
 
 WORKDIR /app
 
 # Copy system directories from builder
 COPY --from=builder --chown=65532:65532 /var/run /var/run
 COPY --from=builder --chown=65532:65532 /var/lib /var/lib
-COPY --from=builder --chown=65532:65532 /run/lucid /run/lucid
+COPY --from=builder --chown=65532:65532 /app/run/lucid /app/run/lucid
 COPY --from=builder --chown=65532:65532 /var/log/lucid /var/log/lucid
 
 # Copy CA certificates (distroless base already has correct linker/runtime)

@@ -173,7 +173,7 @@ services:
     volumes:
       - lucid_user_gui_tor_data:/app/tor-data:rw
       - lucid_user_gui_tor_manager_logs:/app/logs:rw
-      - onion-state:/run/lucid/onion:ro
+      - onion-state:/app/run/lucid/onion:ro
     networks:
       - lucid-pi-network
       - lucid-gui-network

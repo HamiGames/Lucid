@@ -5,8 +5,9 @@ x-lucid-file-path: /app/02_network_security/tunnels/entrypoint.py
 x-lucid-file-type: python
 
 Lucid Tunnel Tools entrypoint — manages ephemeral onions through pickme/lucid-tor-proxy.
-Assumes:
-  * `/run/lucid/tor/control_auth_cookie` is mounted from the tor-proxy container
+Assumes (paths match infrastructure/containers/tor/Dockerfile.tor-proxy-02: /app/run/lucid/*, /app/var/lib/tor):
+  * Shared onion volume: `/app/run/lucid/onion/control_auth_cookie` (tor-proxy distributes via TOR_COOKIE_TARGETS), or
+  * Direct tor data mount: `/app/var/lib/tor/control_auth_cookie` (or compose override e.g. /var/lib/tor/...)
   * The tunnel container can reach the tor ControlPort (default tor-proxy:9051)
   * Environment variables mirror the compose stack
 """
@@ -35,10 +36,10 @@ CONTROL_HOST = os.getenv("CONTROL_HOST", "tor-proxy")
 CONTROL_PORT = int(os.getenv("CONTROL_PORT", "9051"))
 # Cookie file locations (check shared volume first, then fallback to direct mount)
 # Both locations map to paths under /run/lucid/tor — tor-proxy's TOR_DATA_DIR
-COOKIE_FILE_SHARED = Path(os.getenv("COOKIE_FILE_SHARED", "/run/lucid/onion/control_auth_cookie"))
-COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/run/lucid/tor/control_auth_cookie"))
+COOKIE_FILE_SHARED = Path(os.getenv("COOKIE_FILE_SHARED", "/app/run/lucid/onion/control_auth_cookie"))
+COOKIE_FILE_DIRECT = Path(os.getenv("COOKIE_FILE", "/app/run/lucid/tor/control_auth_cookie"))
 ONION_PORTS = os.getenv("ONION_PORTS", "80 api-gateway:8080")
-WRITE_ENV = Path(os.getenv("WRITE_ENV", "/run/lucid/onion/.onion.env"))
+WRITE_ENV = Path(os.getenv("WRITE_ENV", "/app/run/lucid/onion/.onion.env"))
 ROTATE_INTERVAL = int(os.getenv("ROTATE_INTERVAL", "0"))  # minutes; 0 = create once
 
 LOG_PREFIX = "[tunnel-tools]"
@@ -67,7 +68,7 @@ def find_cookie_file() -> Optional[Path]:
         except (PermissionError, OSError) as e:
             log(f"WARNING: Cannot read shared cookie file {COOKIE_FILE_SHARED}: {e}")
     
-    # Fallback to direct mount location (/run/lucid/tor/control_auth_cookie via volume)
+    # Fallback: tor DataDirectory cookie (image default /app/var/lib/tor; compose may use /var/lib/tor)
     # Use os.path.exists() which returns False on permission errors instead of raising
     if os.path.exists(str(COOKIE_FILE_DIRECT)):
         try:

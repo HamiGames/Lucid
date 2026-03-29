@@ -71,9 +71,9 @@ HEALTH_CHECK_START_PERIOD=45
 # Status and Metrics Configuration
 # =============================================================================
 # Status file paths
-STATUS_JSON_PATH=/run/lucid/onion/tunnel_status.json
+STATUS_JSON_PATH=/app/run/lucid/onion/tunnel_status.json
 METRICS_JSON_PATH=/var/lib/tunnel/metrics.json
-STATUS_ENV_PATH=/run/lucid/onion/tunnel_status.env
+STATUS_ENV_PATH=/app/run/lucid/onion/tunnel_status.env
 
 # Metrics collection
 METRICS_ENABLED=true
