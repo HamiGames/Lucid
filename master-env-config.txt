@@ -6,7 +6,8 @@
 # Service hostnames and ports follow Docker DNS names in ports.txt (service_name + port).
 # Secrets remain as ${...} — fill via .env.secrets / deployment.
 # =============================================================================
-
+PUBLIC_IP=124.170.49.249
+PUBLIC_TOR_IP=109.70.100.1
 ACCESS_LOG=true
 ADMIN_CONFIG_DIR=/app/data/configs
 ADMIN_DATA_DIR=/app/data

@@ -28,6 +28,8 @@ WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master (builder)
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+      consul \
+      build-essential \
       tor \
       tor-geoipdb \
       obfs4proxy \
@@ -464,6 +466,19 @@ ENV PATH=/app/run/lucid/tor/bin:/app/usr/bin:/usr/local/bin:/usr/bin:/bin \
     LUCID_SERVICE_PORT=9050 \
     LUCID_SERVICE_HOST_IP=172.20.10.64 \
     LUCID_SERVICE_HTTP_PATH=http://tor-socks:9050/app
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /dev/null)"/ /app/dev/null)"/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/ssl/ /app/etc/ssl/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/tor/ /app/etc/tor/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/ /app/run/lucid/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /tor-export/bin/ /app/tor-export/bin/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /tor-export/dynamic/ /app/tor-export/dynamic/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/bin/ /app/usr/bin/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /var/lib/tor/ /app/var/lib/tor/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=tor-builder --chown=65532:65532 /build/02_network_security/ /app/02_network_security/
@@ -479,6 +494,7 @@ COPY --from=tor-builder --chown=65532:65532 /build/service_mesh/ /app/service_me
 COPY --from=tor-builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=tor-builder --chown=65532:65532 /build/storage/ /app/storage/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
+
 
 
     
