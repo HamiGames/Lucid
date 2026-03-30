@@ -469,7 +469,7 @@ ENV PATH=/app/run/lucid/tor/bin:/app/usr/bin:/usr/local/bin:/usr/bin:/bin \
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=tor-builder --chown=debian-tor:debian-tor /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=tor-builder --chown=debian-tor:debian-tor /dev/null)"/ /app/dev/null)"/
+COPY --from=tor-builder --chown=debian-tor:debian-tor /dev/null/ /app/dev/null/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/ssl/ /app/etc/ssl/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /etc/tor/ /app/etc/tor/
 COPY --from=tor-builder --chown=debian-tor:debian-tor /run/lucid/ /app/run/lucid/
