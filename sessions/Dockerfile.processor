@@ -48,10 +48,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libzstd1 \
         liblz4-dev \
         liblz4-1 \
-        python3-dev \
+        pyhton3.11-dev \
         python3-pip \
-        python3-setuptools \
-        python3-wheel \
+        pyhton3.11-setuptools \
+        pyhton3.11-wheel \
         curl \
         tini \
         cargo \

@@ -32,10 +32,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libssl-dev \
       pkg-config \
       curl \
-      python3-dev \
+      pyhton3.11-dev \
       python3-pip \
-      python3-setuptools \
-      python3-wheel \
+      pyhton3.11-setuptools \
+      pyhton3.11-wheel \
       ca-certificates \
       tini \
       bash \
@@ -523,7 +523,6 @@ COPY --from=role-manager-builder --chown=role_user /bin/ /app/bin/
 COPY --from=role-manager-builder --chown=role_user /data/ /app/data/
 COPY --from=role-manager-builder --chown=role_user /etc/ssl/ /app/etc/ssl/
 COPY --from=role-manager-builder --chown=role_user /usr/bin/ /app/usr/bin/
-COPY --from=role-manager-builder --chown=role_user /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=role-manager-builder --chown=role_user /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 

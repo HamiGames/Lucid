@@ -40,10 +40,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libssl-dev \
       pkg-config \
       curl \
-      python3-dev \
+      pyhton3.11-dev \
       python3-pip \
-      python3-setuptools \
-      python3-wheel \
+      pyhton3.11-setuptools \
+      pyhton3.11-wheel \
       ca-certificates \
       tini \
       bash \

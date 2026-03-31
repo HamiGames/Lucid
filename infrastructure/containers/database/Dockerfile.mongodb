@@ -47,10 +47,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         libcurl4-openssl-dev \
         python3.11 \
-        python3-dev \
-        python3-pip \
-        python3-setuptools \
-        python3-wheel \
+        python3.11-dev \
+        python3.11-pip \
+        python3.11-setuptools \
+        python3.11-wheel \
         tini \
         openssl \
         xxd \
@@ -371,15 +371,10 @@ COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/ /app/usr/local/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
-# Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=builder --chown=65532:65532 /build/admin/ /app/admin/
 COPY --from=builder --chown=65532:65532 /build/configs/ /app/configs/
 COPY --from=builder --chown=65532:65532 /build/database/ /app/database/

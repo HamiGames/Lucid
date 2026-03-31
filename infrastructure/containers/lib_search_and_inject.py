@@ -1596,7 +1596,7 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
     }
     if args.inject_dockerfile:
         try:
-            raw_df = df.read_text(encoding="utf-8")
+            raw_df = df.read_text(encoding="utf-8", errors="replace")
         except OSError as e:
             out["docker_skipped"] = 1
             out["inject_skip_reason"] = f"read error: {e}"
@@ -1622,7 +1622,7 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
                 out["inject_would"] = True
     elif args.cleanup_commented_copy:
         try:
-            raw_df = df.read_text(encoding="utf-8")
+            raw_df = df.read_text(encoding="utf-8", errors="replace")
         except OSError as e:
             out["docker_skipped"] = 1
             out["inject_skip_reason"] = f"read error: {e}"
@@ -1647,7 +1647,7 @@ def apply_actions_to_dockerfile(r: dict, args: argparse.Namespace) -> dict[str, 
                 out["inject_would"] = True
     elif args.dedupe_build_app_copy:
         try:
-            raw_df = df.read_text(encoding="utf-8")
+            raw_df = df.read_text(encoding="utf-8", errors="replace")
         except OSError as e:
             out["docker_skipped"] = 1
             out["inject_skip_reason"] = f"read error: {e}"

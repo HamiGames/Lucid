@@ -46,7 +46,7 @@ class RDPControllerClient:
         Initialize RDP controller client
         
         Args:
-            base_url: Base URL for rdp-controller service (e.g., http://rdp-controller:8092)
+            base_url: Base URL for rdp-controller service (e.g., http://rdp-controller:8192)
             timeout: Request timeout in seconds
             retry_count: Number of retry attempts
             retry_delay: Delay between retries in seconds

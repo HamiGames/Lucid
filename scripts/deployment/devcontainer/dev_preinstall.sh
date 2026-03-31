@@ -56,7 +56,7 @@ _run_as_root 'apt-get update -y'
 log "Installing base packages..."
 _run_as_root 'apt-get install -y --no-install-recommends \
   ca-certificates curl gnupg lsb-release git \
-  build-essential pkg-config python3-dev \
+  build-essential pkg-config pyhton3.11-dev \
   libssl-dev libffi-dev \
   netcat-openbsd jq openssl shellcheck tzdata'
 

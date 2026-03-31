@@ -69,10 +69,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         curl \
         ca-certificates \
         tini \
-        python3-wheel \
-        python3-dev \
+        pyhton3.11-wheel \
+        pyhton3.11-dev \
         python3-pip \
-        python3-setuptools \
+        pyhton3.11-setuptools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -368,7 +368,6 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/libcurl.so* /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 COPY --from=builder --chown=65532:65532 /usr/local/bin/ /app/usr/local/bin/
 COPY --from=builder --chown=65532:65532 /usr/local/lib/python3.11/site-packages/ /app/usr/local/lib/python3.11/site-packages/

@@ -90,7 +90,7 @@ class HealthChecker:
                 "timeout": 10
             },
             "session-management": {
-                "health_endpoint": "http://session-api:8087/health",
+                "health_endpoint": "http://session-api:8113/health",
                 "check_interval": 30,
                 "timeout": 10
             },

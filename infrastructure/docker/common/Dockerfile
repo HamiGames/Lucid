@@ -56,12 +56,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         openssl \
         pkg-config \
         procps \
-        python3 \
-        python3-dev \
+        pyhton3.11 \
+        pyhton3.11-dev \
         python3-pip \
-        python3-setuptools \
+        pyhton3.11-setuptools \
         python3-venv \
-        python3-wheel \
+        pyhton3.11-wheel \
         rsync \
         socat \
         strace \
@@ -410,7 +410,6 @@ COPY --from=builder --chown=65532:65532 /usr/lib/*/ossl-modules/ /app/usr/lib/
 COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 COPY --from=builder --chown=65532:65532 /var/log/lucid/ /app/var/log/lucid/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END

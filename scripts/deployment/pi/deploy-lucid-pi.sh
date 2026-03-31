@@ -65,7 +65,7 @@ install_dependencies() {
     apt-get install -y \
         tor \
         mongodb \
-        python3 \
+        pyhton3.11 \
         python3-pip \
         curl \
         jq \

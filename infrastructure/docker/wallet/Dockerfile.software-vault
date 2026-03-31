@@ -46,10 +46,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libssl-dev \
       pkg-config \
       curl \
-      python3-dev \
+      pyhton3.11-dev \
       python3-pip \
-      python3-setuptools \
-      python3-wheel \
+      pyhton3.11-setuptools \
+      pyhton3.11-wheel \
       ca-certificates \
       tini \
       bash \
@@ -402,6 +402,19 @@ ENV PYTHONUNBUFFERED="1" \
     VAULT_TIMEOUT="300" \
     WALLET_PATH="/app/lucid/wallet" \
     XDG_RUNTIME_DIR="/app/tmp/vault"
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
+# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
+COPY --from=vault-builder --chown=vault_user /usr/lib/*/libffi.so* /app/usr/lib/
+COPY --from=vault-builder --chown=vault_user /usr/lib/*/libssl.so* /app/usr/lib/
+COPY --from=vault-builder --chown=vault_user /usr/lib/*/ossl-modules/ /app/usr/lib/
+COPY --from=vault-builder --chown=vault_user /usr/lib/*/libcurl.so* /app/usr/lib/
+COPY --from=vault-builder --chown=vault_user /bin/ /app/bin/
+COPY --from=vault-builder --chown=vault_user /data/ /app/data/
+COPY --from=vault-builder --chown=vault_user /etc/ssl/ /app/etc/ssl/
+COPY --from=vault-builder --chown=vault_user /usr/bin/ /app/usr/bin/
+COPY --from=vault-builder --chown=vault_user /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
+# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
+
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
 # Generated: same directory set as LUCID_X_FILES_SKELETON (./ under WORKDIR /build).
 COPY --from=vault-builder --chown=65532:65532 /build/03_api_gateway/ /app/03_api_gateway/
@@ -416,29 +429,6 @@ COPY --from=vault-builder --chown=65532:65532 /build/service_mesh/ /app/service_
 COPY --from=vault-builder --chown=65532:65532 /build/sessions/ /app/sessions/
 COPY --from=vault-builder --chown=65532:65532 /build/wallet/ /app/wallet/
 # LUCID_RUNTIME_COPY_FROM_BUILD_END
-
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_BEGIN
-# Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
-COPY --from=vault-builder --chown=vault_user /usr/lib/*/libffi.so* /app/usr/lib/
-COPY --from=vault-builder --chown=vault_user /usr/lib/*/libssl.so* /app/usr/lib/
-COPY --from=vault-builder --chown=vault_user /usr/lib/*/ossl-modules/ /app/usr/lib/
-COPY --from=vault-builder --chown=vault_user /usr/lib/*/libcurl.so* /app/usr/lib/
-COPY --from=vault-builder --chown=vault_user /usr/bin/openssl /app/usr/bin/openssl
-COPY --from=vault-builder --chown=vault_user /etc/ssl/openssl.cnf /app/etc/ssl/openssl.cnf
-COPY --from=vault-builder --chown=vault_user /usr/bin/curl /app/usr/bin/curl
-COPY --from=vault-builder --chown=vault_user /usr/bin/python3.11 /app/usr/bin/python3.11
-COPY --from=vault-builder --chown=vault_user /usr/lib/python3.11/ /app/usr/lib/python3.11/
-COPY --from=vault-builder --chown=vault_user /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
-COPY --from=vault-builder --chown=vault_user /etc/ssl/certs/ca-certificates.crt /app/etc/ssl/certs/ca-certificates.crt
-COPY --from=vault-builder --chown=vault_user /etc/ssl/certs/ /app/etc/ssl/certs/
-COPY --from=vault-builder --chown=vault_user /usr/bin/tini /app/usr/bin/tini
-COPY --from=vault-builder --chown=vault_user /usr/bin/bash /app/usr/bin/bash
-COPY --from=vault-builder --chown=vault_user /bin/bash /app/bin/bash
-COPY --from=vault-builder --chown=vault_user /usr/bin/jq /app/usr/bin/jq
-COPY --from=vault-builder --chown=vault_user /usr/bin/xxd /app/usr/bin/xxd
-COPY --from=vault-builder --chown=vault_user /data/vaults/ /app/data/vaults/
-COPY --from=vault-builder --chown=vault_user /data/ /app/data/
-# LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
 COPY --from=vault-builder /usr/local/lib/python3.11 /app/usr/local/lib/python3.11
 COPY --from=vault-builder /usr/local/bin/python3.11 /app/usr/local/bin/python3.11

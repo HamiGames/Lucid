@@ -33,19 +33,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 WORKDIR /build
 # LUCID_IMAGE_CONFIG: .env.secrets + .env.master + host-config + container services (builder)
-COPY configs/ ./configs/
-RUN rm -rf ./configs/environment && \
-    echo ".env.* files removed"
-COPY configs/environment/.env.secrets ./configs/.env.secrets
-COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml /build/configs/host-config.yml
-COPY infrastructure/containers/services/ /build/service_configs/
-COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
-
-# Container directory layout (03_api_gateway/Dockerfile): common/tor, kubernetes configmaps
-COPY common/__init__.py /build/common/__init__.py
-COPY common/tor/ /build/common/tor/
-COPY service_configs/kubernetes/01_configmaps/ /build/configs/
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -65,10 +52,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         cargo \
         rustc \
         tini \
-        python3-wheel \
-        python3-dev \
+        pyhton3.11-wheel \
+        pyhton3.11-dev \
         python3-pip \
-        python3-setuptools \
+        pyhton3.11-setuptools \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # LUCID_X_FILES_SKELETON_BEGIN
@@ -301,15 +288,17 @@ RUN printf "LUCID_ELECTRON_GUI_ADMIN_VAR_RUN" > /var/run/.keep && \
     chown -R 65532:65532 /var/run /var/lib && \
     chmod 644 /var/run/.keep /var/lib/.keep
 
-COPY electron_gui/ ./electron_gui/
-COPY infrastructure/containers/services/ ./service_configs/
 COPY configs/ ./configs/
-RUN rm -rf ./configs/environment
+RUN rm -rf ./configs/environment && \
+        echo ".env.* files removed"
 COPY configs/environment/.env.secrets ./configs/.env.secrets
 COPY master-env-config.txt ./configs/.env.master
-COPY infrastructure/containers/host-config.yml ./service_configs/host-config.yml
+COPY infrastructure/containers/host-config.yml ./configs/host-config.yml
+COPY infrastructure/containers/services/ ./service_configs/
 COPY infrastructure/containers/services/x_lucid_cluster_calibration/core-cluster-host-alignment.yml ./service_configs/x_lucid_cluster_calibration/core-cluster-host-alignment.yml
-COPY common/ ./common/
+COPY common/__init__.py ./common/__init__.py
+COPY common/tor/ ./common/tor/
+COPY electron_gui/ ./electron_gui/
 COPY gui_api/ ./gui_api/
 COPY gui_hardware_manager/ ./gui_hardware_manager/
 COPY gui_tor_manager/ ./gui_tor_manager/
@@ -437,7 +426,6 @@ COPY --from=builder --chown=65532:65532 /bin/ /app/bin/
 COPY --from=builder --chown=65532:65532 /dev/null/ /app/dev/null/
 COPY --from=builder --chown=65532:65532 /etc/ssl/ /app/etc/ssl/
 COPY --from=builder --chown=65532:65532 /usr/bin/ /app/usr/bin/
-COPY --from=builder --chown=65532:65532 /usr/lib/python3.11/ /app/usr/lib/python3.11/
 COPY --from=builder --chown=65532:65532 /usr/lib/python3/dist-packages/ /app/usr/lib/python3/dist-packages/
 COPY --from=builder --chown=65532:65532 /var/lib/ /app/var/lib/
 COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/

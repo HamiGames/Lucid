@@ -210,6 +210,13 @@ COPY --from=builder --chown=65532:65532 /var/run/ /app/var/run/
 
 
 
+
+
+
+
+
+
+
 # Expose port
 EXPOSE 8097
 

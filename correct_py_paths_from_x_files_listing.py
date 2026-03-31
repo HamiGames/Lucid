@@ -572,4 +572,162 @@ def process_file(
 
     new = raw
     if fix_headers:
-        new, he
+        new, header_changed = fix_lucid_header_block(new, rel, rel_to_canonical)
+        if header_changed:
+            report["header"] = True
+
+    new, pc = replace_app_string_literals(
+        new, rel_to_canonical, valid_paths, valid_dirs
+    )
+    report["paths"] = pc
+
+    new, hc = replace_http_hosts(
+        new,
+        alias_to_canonical,
+        canonical_to_port=canonical_to_port,
+        enforce_authority_port=enforce_authority_port,
+    )
+    report["http"] = hc
+
+    new, sc = replace_service_name_assignments(new, alias_to_canonical)
+    report["service_name"] = sc
+
+    if new != raw:
+        report["modified"] = True
+        if apply:
+            py_path.write_text(new, encoding="utf-8", newline="\n")
+
+    return report
+
+
+def main(argv: Iterable[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Align *.py paths with x-files-listing.txt and service names with host-config."
+    )
+    parser.add_argument(
+        "--listing",
+        type=Path,
+        default=REPO / LISTING_NAME,
+        help="Path to x-files-listing.txt",
+    )
+    parser.add_argument(
+        "--repo",
+        type=Path,
+        default=REPO,
+        help="Repository root",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Explicit dry-run only (default behaviour when --apply is omitted).",
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Write changes (default is dry-run)",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print per-file reports even when unchanged",
+    )
+    parser.add_argument(
+        "--no-headers",
+        action="store_true",
+        help="Do not rewrite Lucid module docstring headers",
+    )
+    parser.add_argument(
+        "--authority-service-name-port",
+        choices=("host-config", "config-listings"),
+        default=None,
+        help=(
+            "New mode: authority for service_name + port updates in *.py content "
+            "(http://service:port and SERVICE_NAME)."
+        ),
+    )
+    parser.add_argument(
+        "--config-listings",
+        type=Path,
+        default=CONFIG_LISTINGS,
+        help="Path to infrastructure/containers/config-listings.json",
+    )
+    args = parser.parse_args(list(argv) if argv is not None else None)
+
+    if args.dry_run and args.apply:
+        parser.error("Do not combine --dry-run with --apply")
+
+    repo = args.repo.resolve()
+    listing_path = args.listing.resolve()
+    if not listing_path.is_file():
+        print(f"error: listing not found: {listing_path}")
+        return 1
+
+    rel_to_canonical, valid_paths, valid_dirs = parse_x_files_listing(listing_path)
+    authority_mode = args.authority_service_name_port
+    if authority_mode == "config-listings":
+        cfg_path = args.config_listings.resolve()
+        if not cfg_path.is_file():
+            print(f"error: config-listings not found: {cfg_path}")
+            return 1
+        alias_to_canonical, canonical_to_port = build_service_authority_from_config_listings(
+            cfg_path
+        )
+    elif authority_mode == "host-config":
+        alias_to_canonical, canonical_to_port = build_service_authority_from_host_config(HOST_CONFIG)
+    else:
+        alias_to_canonical, _ = build_service_alias_map(HOST_CONFIG)
+        canonical_to_port = {}
+    layout_meta = load_runtime_layout_roots(RUNTIME_LAYOUT)
+    svc_root = layout_meta.get("lucid_services_config_root")
+    if svc_root:
+        root = svc_root.rstrip("/")
+        has_under = any(
+            v == root or v.startswith(root + "/") for v in valid_paths
+        )
+        if not has_under:
+            print(
+                f"Note: {svc_root} from container-runtime-layout.yml has no matching "
+                "paths in x-files-listing.txt (expected: service configs are not *.py)."
+            )
+
+    total_changed = 0
+    for py_path in iter_repo_py_files(repo):
+        if py_path.resolve() == Path(__file__).resolve():
+            continue
+        r = process_file(
+            py_path,
+            repo,
+            rel_to_canonical,
+            valid_paths,
+            valid_dirs,
+            alias_to_canonical,
+            canonical_to_port,
+            apply=args.apply,
+            fix_headers=not args.no_headers,
+            enforce_authority_port=bool(authority_mode),
+        )
+        if not r["modified"] and not args.verbose:
+            continue
+        if r["modified"]:
+            total_changed += 1
+        print(f"--- {r['path']} ---")
+        if r["header"]:
+            print("  header: synced File / x-lucid-file-path / directory from listing")
+        for old, new in r["paths"]:  # type: ignore[assignment]
+            print(f"  path literal: {old!r} -> {new!r}")
+        for old, new in r["http"]:  # type: ignore[assignment]
+            print(f"  URL host: {old!r} -> {new!r}")
+        for old, new in r["service_name"]:  # type: ignore[assignment]
+            print(f"  SERVICE_NAME: {old!r} -> {new!r}")
+        if not r["modified"]:
+            print("  (no changes)")
+
+    mode = "apply" if args.apply else "dry-run"
+    print(f"\nDone ({mode}). Files with changes: {total_changed}")
+    if not args.apply and total_changed:
+        print("Re-run with --apply to write.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

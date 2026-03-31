@@ -262,11 +262,11 @@ WORKDIR /workspaces/Lucid
 # Generated: apt + RUN scaffold (mkdir/printf/touch/chown) -> FHS (not ./ or /build/; lib_search_and_inject.py).
 COPY --from=base --chown=root /dev/null/ /app/dev/null/
 COPY --from=base --chown=root /etc/apt/apt.conf.d/80-retries/ /app/etc/apt/apt.conf.d/80-retries/
-COPY --from=base --chown=root /etc/tor/torrc/ /app/etc/tor/torrc
+COPY --from=base --chown=root /etc/tor/torrc/ /app/etc/tor/torrc/
 COPY --from=base --chown=root /run/lucid/onion/ /app/run/lucid/onion/
 COPY --from=base --chown=root /usr/local/bin/start-lucid-dev/ /app/usr/local/bin/start-lucid-dev/
 COPY --from=base --chown=root /var/lib/tor/ /app/var/lib/tor/
-COPY --from=base --chown=root /workspaces/Lucid/configs/ /app/lucidconfigs/
+COPY --from=base --chown=root /workspaces/Lucid/configs/ /app/workspaces/Lucid/configs/
 # LUCID_RUNTIME_COPY_FROM_BUILDER_APT_END
 
 # LUCID_RUNTIME_COPY_FROM_BUILD_BEGIN
